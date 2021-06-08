@@ -389,7 +389,7 @@ public interface ObjectInputFilter {
     /**
      * Returns a filter that invokes a given filter and maps {@code UNDECIDED} to {@code REJECTED}
      * for classes, with some special cases, and otherwise returns the status.
-     * If the class is not a primitive class and not an array, the status returned is REJECTED.
+     * If the class is not a primitive class and not an array, the status returned is {@code REJECTED}.
      * If the class is a primitive class or an array class additional checks are performed;
      * see the list below for details.
      *
@@ -547,7 +547,8 @@ public interface ObjectInputFilter {
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
      * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
      * If the filter factory constructor is not invoked successfully, an {@link ExceptionInInitializerError}
-     * is thrown.
+     * is thrown and subsequent use of the filter factory for deserialization fails with
+     * {@link IllegalStateException}.
      * The filter factory configured using the system or security property during initialization
      * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
@@ -774,6 +775,7 @@ public interface ObjectInputFilter {
          * {@link ObjectInputStream#setObjectInputFilter}.
          *
          * @return the JVM-wide deserialization filter factory; non-null
+         * @throws IllegalStateException if the filter factory initialization is incomplete
          * @since 17
          */
         public static BinaryOperator<ObjectInputFilter> getSerialFilterFactory() {
@@ -792,6 +794,7 @@ public interface ObjectInputFilter {
          * is created.
          *
          * @return the serial filter factory
+         * @throws IllegalStateException if the filter factory initialization is incomplete
          */
         /* package-private */
         static BinaryOperator<ObjectInputFilter> getSerialFilterFactorySingleton() {
@@ -836,6 +839,8 @@ public interface ObjectInputFilter {
             if (sm != null) {
                 sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
             }
+            if (serialFilterFactory == null)
+                throw new IllegalStateException("Serial filter factory initialization incomplete");
             if (filterFactoryNoReplace.getAndSet(true)) {
                 throw new IllegalStateException("Cannot replace filter factory: " +
                         serialFilterFactory.getClass().getName());
