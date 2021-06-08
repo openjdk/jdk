@@ -556,7 +556,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
       page_size = (int)large_page_size;
     } else {
       // Should have been checked during argument initialization
-      assert(!ShenandoahUncommit, "Uncommit requires region size aligns to underline page size");
+      assert(!ShenandoahUncommit, "Uncommit requires region size aligns to large page size");
     }
   } else {
     max_heap_size = align_up(max_heap_size, page_size);
