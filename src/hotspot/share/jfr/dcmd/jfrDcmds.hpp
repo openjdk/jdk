@@ -26,76 +26,31 @@
 #define SHARE_JFR_DCMD_JFRDCMDS_HPP
 
 #include "services/diagnosticCommand.hpp"
+class JfrJavaArguments;
 
-class JfrDumpFlightRecordingDCmd : public DCmdWithParser {
- protected:
-  DCmdArgument<char*> _name;
-  DCmdArgument<char*> _filename;
-  DCmdArgument<NanoTimeArgument> _maxage;
-  DCmdArgument<MemorySizeArgument> _maxsize;
-  DCmdArgument<char*> _begin;
-  DCmdArgument<char*> _end;
-  DCmdArgument<bool>  _path_to_gc_roots;
-
+class jfrDCmd : public DCmd {
+ private:
+  const char* _args;
+  char _delimiter;
  public:
-  JfrDumpFlightRecordingDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "JFR.dump";
+  jfrDCmd(outputStream* output, bool heap)
+    : DCmd(output,heap), _args(NULL), _delimiter('\0')  {
   }
-  static const char* description() {
-    return "Copies contents of a JFR recording to file. Either the name or the recording id must be specified.";
-  }
-  static const char* impact() {
-    return "Low";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
+  virtual void print_help(const char* name) const;
+  virtual GrowableArray<const char*>* argument_name_array() const;
+  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
+  virtual void parse(CmdLine* line, char delim, TRAPS);
+ protected:
+  virtual const char* javaClass() const = 0;
+  void invoke(JfrJavaArguments& method, TRAPS) const;
 };
 
-class JfrCheckFlightRecordingDCmd : public DCmdWithParser {
- protected:
-  DCmdArgument<char*> _name;
-  DCmdArgument<bool>  _verbose;
-
+class JfrStartFlightRecordingDCmd : public jfrDCmd {
  public:
-  JfrCheckFlightRecordingDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "JFR.check";
+  JfrStartFlightRecordingDCmd(outputStream* output, bool heap)
+    : jfrDCmd(output, heap) {
   }
-  static const char* description() {
-    return "Checks running JFR recording(s)";
-  }
-  static const char* impact() {
-    return "Low";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class JfrStartFlightRecordingDCmd : public DCmdWithParser {
- protected:
-  DCmdArgument<char*> _name;
-  DCmdArgument<StringArrayArgument*> _settings;
-  DCmdArgument<NanoTimeArgument> _delay;
-  DCmdArgument<NanoTimeArgument> _duration;
-  DCmdArgument<bool> _disk;
-  DCmdArgument<char*> _filename;
-  DCmdArgument<NanoTimeArgument> _maxage;
-  DCmdArgument<MemorySizeArgument> _maxsize;
-  DCmdArgument<NanoTimeArgument> _flush_interval;
-  DCmdArgument<bool> _dump_on_exit;
-  DCmdArgument<bool> _path_to_gc_roots;
-
- public:
-  JfrStartFlightRecordingDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "JFR.start";
   }
@@ -109,17 +64,62 @@ class JfrStartFlightRecordingDCmd : public DCmdWithParser {
     JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
     return p;
   }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdStart";
+  }
 };
 
-class JfrStopFlightRecordingDCmd : public DCmdWithParser {
- protected:
-  DCmdArgument<char*> _name;
-  DCmdArgument<char*> _filename;
-
+class JfrDumpFlightRecordingDCmd : public jfrDCmd {
  public:
-  JfrStopFlightRecordingDCmd(outputStream* output, bool heap);
+  JfrDumpFlightRecordingDCmd(outputStream* output, bool heap)
+    : jfrDCmd(output, heap) {
+  }
+  static const char* name() {
+    return "JFR.dump";
+  }
+  static const char* description() {
+    return "Copies contents of a JFR recording to file. Either the name or the recording id must be specified.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    return p;
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdDump";
+  }
+};
+
+class JfrCheckFlightRecordingDCmd : public jfrDCmd {
+ public:
+  JfrCheckFlightRecordingDCmd(outputStream* output, bool heap)
+    : jfrDCmd(output, heap) {
+  }
+  static const char* name() {
+    return "JFR.check";
+  }
+  static const char* description() {
+    return "Checks running JFR recording(s)";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    return p;
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdCheck";
+  }
+};
+
+class JfrStopFlightRecordingDCmd : public jfrDCmd {
+ public:
+  JfrStopFlightRecordingDCmd(outputStream* output, bool heap)
+    : jfrDCmd(output, heap) {
+  }
   static const char* name() {
     return "JFR.stop";
   }
@@ -133,8 +133,9 @@ class JfrStopFlightRecordingDCmd : public DCmdWithParser {
     JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
     return p;
   }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdStop";
+  }
 };
 
 class JfrRuntimeOptions;
@@ -173,7 +174,9 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   }
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
+  virtual void print_help(const char* name) const;
 };
+
 
 bool register_jfr_dcmds();
 
