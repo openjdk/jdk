@@ -859,7 +859,7 @@ printUsage(void)
  "               Java Debugger JDWP Agent Library\n"
  "               --------------------------------\n"
  "\n"
- "  (See the \"Oracle VM Invocation Options\" section of the JPDA\n"
+ "  (See the \"VM Invocation Options\" section of the JPDA\n"
  "   \"Connection and Invocation Details\" document for more information.)\n"
  "\n"
  "jdwp usage: java " AGENTLIB "=[help]|[<option>=<value>, ...]\n"
