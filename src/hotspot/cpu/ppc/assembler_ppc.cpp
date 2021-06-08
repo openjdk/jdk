@@ -356,10 +356,10 @@ void Assembler::paddi_or_addi(Register d, Register s, long si34) {
     if (is_aligned(reinterpret_cast<uintptr_t>(pc()) + BytesPerInstWord, 64) ||
         code_section()->scratch_emit()) {
       // Always emit a nop if the target is a scratch buffer, otherwise fill_buffer() may raise
-      // an assertion failure because the size of actually generated code can be larger than that
-      // in scratch_emit phase. A difference of code buffer addresses for the two phases can result
-      // in different number of nops for alignment. By emitting a nop before every paddi, we avoid
-      // buffer overrun in acrual code generation phase.
+      // an assertion failure because the size of actual generated code can be larger than that
+      // in the scratch_emit phase. A difference of code buffer addresses for the two phases can
+      // result in different number of nops for alignment. By emitting a nop before every paddi,
+      // we avoid a buffer overrun in the actual code generation phase.
       nop();
     }
     paddi_r0ok(d, s, si34);
@@ -393,7 +393,7 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
   }
 
   // pli can require a nop for alignement depending on the code address, so we don't use pli
-  // when the caller expects the number of generated code is always the same.
+  // when the caller expects the amount of generated code is always the same.
   bool use_pli = (PowerArchitecturePPC64 >= 10 && !fixed_size);
 
   if (d == R0) { // Can't use addi.
@@ -451,7 +451,7 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
           if (xc) { oris(d, d, (unsigned short)xc); }
           if (xd) { ori( d, d, (unsigned short)xd); }
         } else {
-          // Exploit instruction level parallelism if we have a tmp register.
+          // Exploit instruction-level parallelism if we have a tmp register.
           bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
           if (xa_loaded) {
             lis(tmp, xa);
@@ -597,7 +597,7 @@ int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
 
   // Case 3: Can use paddi. (However, paddi can require a nop for alignement depending
   //                         on the code address, so we don't use paddi when the caller
-  //                         expects the number of generated code is always the same.
+  //                         expects the amount of generated code is always the same.
   if (PowerArchitecturePPC64 >= 10 && !fixed_size) {
     long xd = x & 0x3FFFFFFFFL; // Lowest 34-bit chunk.
     rem = (x >> 34) + (xd >> 33);

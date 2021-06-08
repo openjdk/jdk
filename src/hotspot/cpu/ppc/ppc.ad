@@ -6039,7 +6039,7 @@ instruct loadConLhighest16_Ex(iRegLdst dst, immLhighest16 src) %{
 // possible since ADLC forbids predicates for chain rules. The higher
 // costs do not prevent matching in this case. For that reason the
 // operand immL_NM with predicate(false) is used.
-// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+// On Power 10 and up, this instruction is also used for larger offsets upto signed 32-bit.
 instruct loadConL(iRegLdst dst, immL_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
@@ -6324,7 +6324,7 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
 // possible since ADLC forbids predicates for chain rules. The higher
 // costs do not prevent matching in this case. For that reason the
 // operand immP_NM with predicate(false) is used.
-// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+// On Power 10 and up, this instruction is also used for larger offsets upto signed 32-bit.
 instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
@@ -6394,7 +6394,7 @@ instruct loadConP_Ex(iRegPdst dst, immP src) %{
 // possible since ADLC forbids predicates for chain rules. The higher
 // costs do not prevent matching in this case. For that reason the
 // operand immF_NM with predicate(false) is used.
-// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+// On Power 10 and up, this instruction is also used for larger offsets upto signed 32-bit.
 instruct loadConF(regF dst, immF_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
@@ -6469,7 +6469,7 @@ instruct loadConF_Ex(regF dst, immF src) %{
 // possible since ADLC forbids predicates for chain rules. The higher
 // costs do not prevent matching in this case. For that reason the
 // operand immD_NM with predicate(false) is used.
-// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+// On Power 10 and up, this instruction is also used for larger offsets upto signed 32-bit.
 instruct loadConD(regD dst, immD_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
