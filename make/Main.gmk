@@ -92,11 +92,8 @@ $(eval $(call SetupTarget, buildtools-modules, \
     MAKEFILE := CompileModuleTools, \
 ))
 
-# interim-langtools is needed by hotspot only when $(INCLUDE_GRAAL) is true
-GRAAL_INTERIM_LANGTOOLS_true = interim-langtools
 $(eval $(call SetupTarget, buildtools-hotspot, \
     MAKEFILE := CompileToolsHotspot, \
-    DEPS := $(GRAAL_INTERIM_LANGTOOLS_$(INCLUDE_GRAAL)), \
 ))
 
 ################################################################################

@@ -82,9 +82,10 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
-          "Partial inline size used for array copy acceleration.")          \
-          range(-1, 64)                                                     \
+  product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
+          "Partial inline size used for small array operations"             \
+          "(e.g. copy,cmp) acceleration.")                                  \
+          range(0, 64)                                                      \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -720,6 +721,9 @@
                                                                             \
   product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
           "Enables aggressive reboxing of vectors")                         \
+                                                                            \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \

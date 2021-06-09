@@ -2103,7 +2103,8 @@ public class HtmlDocletWriter {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")
-                .replaceAll("^(Module|Package|Class)$", "$1Declaration");
+                .replaceAll("^(Module|Package|Class)$", "$1Declaration")
+                .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
         return HtmlStyle.valueOf(page);
     }

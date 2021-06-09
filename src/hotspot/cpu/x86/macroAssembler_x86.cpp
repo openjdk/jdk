@@ -3345,42 +3345,42 @@ void MacroAssembler::evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds,
 }
 
 void MacroAssembler::evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
@@ -4580,7 +4580,7 @@ static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
     return true;                // All other stack states do not matter
   }
 
-  assert((fs->_control_word._value & 0xffff) == StubRoutines::_fpu_cntrl_wrd_std,
+  assert((fs->_control_word._value & 0xffff) == StubRoutines::x86::fpu_cntrl_wrd_std(),
          "bad FPU control word");
 
   // compute stack depth
@@ -4646,7 +4646,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
-      ldmxcsr(ExternalAddress(StubRoutines::addr_mxcsr_std()));
+      ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()));
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
@@ -5167,7 +5167,7 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
 #ifndef _LP64
   // If method sets FPU control word do it now
   if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
   }
   if (UseSSE >= 2 && VerifyFPU) {
     verify_FPU(0, "FPU stack must be clean on entry");
@@ -8061,7 +8061,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
@@ -8111,7 +8111,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 

@@ -27,7 +27,6 @@ package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
@@ -78,19 +77,18 @@ public class StrLenTest {
     static final MethodHandle FREE_TRIVIAL;
 
     static {
-        LibraryLookup lookup = LibraryLookup.ofDefault();
         CLinker abi = CLinker.getInstance();
-        STRLEN = abi.downcallHandle(lookup.lookup("strlen").get(),
+        STRLEN = abi.downcallHandle(CLinker.systemLookup().lookup("strlen").get(),
                 MethodType.methodType(int.class, MemoryAddress.class),
                 FunctionDescriptor.of(C_INT, C_POINTER));
-        STRLEN_TRIVIAL = abi.downcallHandle(lookup.lookup("strlen").get(),
+        STRLEN_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("strlen").get(),
                 MethodType.methodType(int.class, MemoryAddress.class),
                 FunctionDescriptor.of(C_INT, C_POINTER).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
-        MALLOC_TRIVIAL = abi.downcallHandle(lookup.lookup("malloc").get(),
+        MALLOC_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
                 MethodType.methodType(MemoryAddress.class, long.class),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
 
-        FREE_TRIVIAL = abi.downcallHandle(lookup.lookup("free").get(),
+        FREE_TRIVIAL = abi.downcallHandle(CLinker.systemLookup().lookup("free").get(),
                 MethodType.methodType(void.class, MemoryAddress.class),
                 FunctionDescriptor.ofVoid(C_POINTER).withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
     }
