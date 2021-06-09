@@ -267,7 +267,7 @@ public class TestDeprecatedDocs extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <ul>
-                    <li><a href="#for-removal">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#class">Classes</a></li>
                     <li><a href="#enum-class">Enum Classes</a></li>
                     <li><a href="#exception">Exceptions</a></li>
@@ -281,13 +281,13 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </ul>""",
                 """
                     <div id="for-removal">
-                    <div class="caption"><span>For Removal</span></div>
+                    <div class="caption"><span>Terminally Deprecated Elements</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div id="enum-class">
-                    <div class="caption"><span>Enum Classes</span></div>
+                    <div class="caption"><span>Deprecated Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>
@@ -297,7 +297,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="exception">
-                    <div class="caption"><span>Exceptions</span></div>
+                    <div class="caption"><span>Deprecated Exceptions</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Exceptions</div>
                     <div class="table-header col-last">Description</div>
@@ -307,7 +307,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="field">
-                    <div class="caption"><span>Fields</span></div>
+                    <div class="caption"><span>Deprecated Fields</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Field</div>
                     <div class="table-header col-last">Description</div>
@@ -337,7 +337,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
@@ -365,7 +365,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="constructor">
-                    <div class="caption"><span>Constructors</span></div>
+                    <div class="caption"><span>Deprecated Constructors</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Constructor</div>
                     <div class="table-header col-last">Description</div>

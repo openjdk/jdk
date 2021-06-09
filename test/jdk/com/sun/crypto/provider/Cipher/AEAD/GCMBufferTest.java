@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 
 public class GCMBufferTest implements Cloneable {
@@ -65,6 +65,7 @@ public class GCMBufferTest implements Cloneable {
     boolean theoreticalCheck;
     List<Data> dataSet;
     int inOfs = 0, outOfs = 0;
+    static HexFormat hex = HexFormat.of();
 
     static class Data {
         int id;
@@ -108,12 +109,19 @@ public class GCMBufferTest implements Cloneable {
                     new GCMParameterSpec(tag.length * 8, this.iv));
                 tct = c.doFinal(pt);
             } catch (Exception e) {
-                System.out.println("Error in generating data for length " +
-                    ptlen);
+                throw new RuntimeException("Error in generating data for length " +
+                    ptlen, e);
             }
             ct = new byte[ptlen];
             System.arraycopy(tct, 0, ct, 0, ct.length);
             System.arraycopy(tct, ct.length, tag, 0, tag.length);
+        }
+
+        private static final byte[] HexToBytes(String hexVal) {
+            if (hexVal == null) {
+                return new byte[0];
+            }
+            return hex.parseHex(hexVal);
         }
 
     }
@@ -176,7 +184,7 @@ public class GCMBufferTest implements Cloneable {
                 return this;
             }
         }
-        throw new Exception("Unaeble to find dataSet id = " + id);
+        throw new Exception("Unable to find dataSet id = " + id);
     }
 
     /**
@@ -244,7 +252,7 @@ public class GCMBufferTest implements Cloneable {
 
     void test() throws Exception {
         int i = 1;
-        System.out.println("Algo: " + algo + " \tOps: " + ops.toString());
+        System.err.println("Algo: " + algo + " \tOps: " + ops.toString());
         for (Data data : dataSet) {
 
             // If incrementalSegments is enabled, run through that test only
@@ -256,31 +264,31 @@ public class GCMBufferTest implements Cloneable {
                 sizes = new int[ops.size()];
 
                 while (incrementSizes(data.pt.length)) {
-                    System.out.print("Encrypt:  Data Index: " + i + " \tSizes[ ");
+                    System.err.print("Encrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
-                        System.out.print(v + " ");
+                        System.err.print(v + " ");
                     }
-                    System.out.println("]");
+                    System.err.println("]");
                     encrypt(data);
                 }
                 Arrays.fill(sizes, 0);
 
                 while (incrementSizes(data.ct.length + data.tag.length)) {
-                    System.out.print("Decrypt:  Data Index: " + i + " \tSizes[ ");
+                    System.err.print("Decrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
-                        System.out.print(v + " ");
+                        System.err.print(v + " ");
                     }
-                    System.out.println("]");
+                    System.err.println("]");
                     decrypt(data);
                 }
 
             } else {
                 // Default test of 0 and 2 offset doing in place and different
                 // i/o buffers
-                System.out.println("Encrypt:  Data Index: " + i);
+                System.err.println("Encrypt:  Data Index: " + i);
                 encrypt(data);
 
-                System.out.println("Decrypt:  Data Index: " + i);
+                System.err.println("Decrypt:  Data Index: " + i);
                 decrypt(data);
             }
             i++;
@@ -298,13 +306,13 @@ public class GCMBufferTest implements Cloneable {
             data.tag.length);
 
         // Test different input/output buffers
-        System.out.println("\tinput len: " + input.length + "  inOfs " +
+        System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in/out buffer: different");
         crypto(true, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
             cryptoSameBuffer(true, data, input, output);
         }
@@ -320,13 +328,13 @@ public class GCMBufferTest implements Cloneable {
         output = data.pt;
 
         // Test different input/output buffers
-        System.out.println("\tinput len: " + input.length + "  inOfs " +
-            inOfs + "  outOfs " + outOfs + "  in-place: different");
+        System.err.println("\tinput len: " + input.length + "  inOfs " +
+            inOfs + "  outOfs " + outOfs + "  in/out buffer: different");
         crypto(false, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in-place: same");
             cryptoSameBuffer(false, data, input, output);
         }
@@ -484,12 +492,10 @@ public class GCMBufferTest implements Cloneable {
                 if (ctresult.length != expectedOut.length ||
                     Arrays.compare(ctresult, expectedOut) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
-                        "):\nresult   (len=" + ctresult.length + "):" +
-                        String.format("%0" + (ctresult.length << 1) + "x",
-                            new BigInteger(1, ctresult)) +
-                        "\nexpected (len=" + output.length + "):" +
-                    String.format("%0" + (output.length << 1) + "x",
-                        new BigInteger(1, output));
+                        "):\nresult   (len=" + ctresult.length + "): " +
+                        hex.formatHex(ctresult) +
+                        "\nexpected (len=" + output.length + "): " +
+                        hex.formatHex(output);
                     System.err.println(s);
                     throw new Exception(s);
 
@@ -605,10 +611,9 @@ public class GCMBufferTest implements Cloneable {
                         output.length) != 0) {
                     String s = "Ciphertext mismatch (" + v.name() +
                         "):\nresult (len=" + len + "):\n" +
-                        byteToHex(out) +
+                        hex.formatHex(out) +
                         "\nexpected (len=" + output.length + "):\n" +
-                        String.format("%0" + (output.length << 1) + "x",
-                            new BigInteger(1, output));
+                        hex.formatHex(output);
                     System.err.println(s);
                     throw new Exception(s);
                 }
@@ -623,7 +628,10 @@ public class GCMBufferTest implements Cloneable {
     }
 
     public static void main(String args[]) throws Exception {
+        GCMBufferTest t;
+
         initTest();
+
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
         offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
@@ -662,7 +670,7 @@ public class GCMBufferTest implements Cloneable {
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
 
         // Test update-update-doFinal with byte arrays and preset data sizes
-        GCMBufferTest t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
             new int[] { 1, 1, GCMBufferTest.REMAINDER});
         t.clone().test();
@@ -678,6 +686,7 @@ public class GCMBufferTest implements Cloneable {
             List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
         t.clone().test();
         offsetTests(t.clone());
+
         // Test update-doFinal with a direct bytebuffer and a byte array.
         t = new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
@@ -710,26 +719,10 @@ public class GCMBufferTest implements Cloneable {
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
             incrementalSegments().dataSet(0).test();
-    }
 
-    private static byte[] HexToBytes(String hexVal) {
-        if (hexVal == null) {
-            return new byte[0];
-        }
-        byte[] result = new byte[hexVal.length()/2];
-        for (int i = 0; i < result.length; i++) {
-            String byteVal = hexVal.substring(2*i, 2*i +2);
-            result[i] = Integer.valueOf(byteVal, 16).byteValue();
-        }
-        return result;
-    }
-
-    private static String byteToHex(byte[] barray) {
-        StringBuilder s = new StringBuilder();
-        for (byte b : barray) {
-            s.append(String.format("%02x", b));
-        }
-        return s.toString();
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+            dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
     }
 
     // Test data
@@ -762,8 +755,7 @@ public class GCMBufferTest implements Cloneable {
                 "b6e6f197168f5049aeda32dafbdaeb"),
             // zero'd test data
             new Data("AES", 3, "272f16edb81a7abbea887357a58c1917",
-                "794ec588176c703d3d2a7a07",
-                new byte[256], null,
+                "794ec588176c703d3d2a7a07", new byte[256], null,
                 "15b461672153270e8ba1e6789f7641c5411f3e642abda731b6086f535c216457" +
                 "e87305bc59a1ff1f7e1e0bbdf302b75549b136606c67d7e5f71277aeca4bc670" +
                 "07a98f78e0cfa002ed183e62f07893ad31fe67aad1bb37e15b957a14d145f14f" +

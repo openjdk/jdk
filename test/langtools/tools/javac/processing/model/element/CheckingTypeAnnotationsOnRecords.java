@@ -32,8 +32,7 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} CheckingTypeAnnotationsOnRecords.java
- * @run main/othervm --enable-preview CheckingTypeAnnotationsOnRecords
+ * @run main/othervm CheckingTypeAnnotationsOnRecords
  */
 
 import java.io.*;
@@ -144,10 +143,7 @@ public class CheckingTypeAnnotationsOnRecords extends TestRunner {
 
         for (Mode mode : new Mode[] {Mode.API}) {
             new JavacTask(tb, mode)
-                    .options("-nowarn",
-                            "-processor", Processor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                    .options("-nowarn", "-processor", Processor.class.getName())
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()
