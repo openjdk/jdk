@@ -131,6 +131,11 @@
     return false; // not supported
   }
 
+  // Does the CPU supports vector unsigned comparison instructions?
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return false;
+  }
+
   // Some microarchitectures have mask registers used on vectors
   static constexpr bool has_predicated_vectors(void) {
     return false;
@@ -139,7 +144,7 @@
   // true means we have fast l2f convers
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
-      return true;
+      return false;
   }
 
 #endif // CPU_ARM_MATCHER_ARM_HPP

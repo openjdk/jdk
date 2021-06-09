@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,7 @@ public abstract class InputStream implements Closeable {
 
     /**
      * Reads up to a specified number of bytes from the input stream. This
-     * method blocks until the requested number of bytes have been read, end
+     * method blocks until the requested number of bytes has been read, end
      * of stream is detected, or an exception is thrown. This method does not
      * close the input stream.
      *
@@ -560,7 +560,7 @@ public abstract class InputStream implements Closeable {
      * If {@code n} is negative, then no bytes are skipped.
      * Subclasses may handle the negative value differently.
      *
-     * <p> This method blocks until the requested number of bytes have been
+     * <p> This method blocks until the requested number of bytes has been
      * skipped, end of file is reached, or an exception is thrown.
      *
      * <p> If end of stream is reached before the stream is at the desired

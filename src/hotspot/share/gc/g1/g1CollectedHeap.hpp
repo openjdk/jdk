@@ -516,6 +516,9 @@ private:
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
+  // Helper to do a full collection that clears soft references.
+  bool upgrade_to_full_collection();
+
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
@@ -534,7 +537,7 @@ private:
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
-                                             bool clear_all_soft_refs,
+                                             bool maximum_compaction,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
@@ -739,6 +742,10 @@ public:
   // ranges to make the regions parseable. This must be called after
   // alloc_archive_regions, and after class loading has occurred.
   void fill_archive_regions(MemRegion* range, size_t count);
+
+  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // memory ranges.
+  void populate_archive_regions_bot_part(MemRegion* range, size_t count);
 
   // For each of the specified MemRegions, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
@@ -1401,18 +1408,10 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Partial cleaning of VM internal data structures.
-  void string_dedup_cleaning(BoolObjectClosure* is_alive,
-                             OopClosure* keep_alive,
-                             G1GCPhaseTimes* phase_times = NULL);
-
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Verification
-
-  // Deduplicate the string
-  virtual void deduplicate_string(oop str);
 
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();

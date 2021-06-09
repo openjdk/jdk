@@ -1002,7 +1002,7 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
 }
 #endif
 
-bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* THREAD) {
+bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD) {
   // Screen for unavailable/bad comp level or null method
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == NULL) {
@@ -2080,7 +2080,6 @@ WB_END
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
-  Thread* THREAD = Thread::current();
 
   //Get the class of our object
   Klass* arg_klass = object->klass();
@@ -2301,13 +2300,13 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
-WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
+WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean update_map))
   intx tty_token = -1;
   if (log) {
     tty_token = ttyLocker::hold_tty();
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
   }
-  for (StackFrameStream fst(JavaThread::current(), true, true); !fst.is_done(); fst.next()) {
+  for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {
       current_frame->print_value();
@@ -2567,7 +2566,7 @@ static JNINativeMethod methods[] = {
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
-  {CC"verifyFrames",                CC"(Z)V",            (void*)&WB_VerifyFrames },
+  {CC"verifyFrames",                CC"(ZZ)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },

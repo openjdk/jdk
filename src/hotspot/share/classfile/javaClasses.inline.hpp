@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -71,6 +72,32 @@ bool java_lang_String::is_latin1(oop java_string) {
   jbyte coder = java_string->byte_field(_coder_offset);
   assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
   return coder == CODER_LATIN1;
+}
+
+uint8_t* java_lang_String::flags_addr(oop java_string) {
+  assert(_initialized, "Must be initialized");
+  assert(is_instance(java_string), "Must be java string");
+  return java_string->obj_field_addr<uint8_t>(_flags_offset);
+}
+
+bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
+  return (Atomic::load(flags_addr(java_string)) & flag_mask) != 0;
+}
+
+bool java_lang_String::deduplication_forbidden(oop java_string) {
+  return is_flag_set(java_string, _deduplication_forbidden_mask);
+}
+
+bool java_lang_String::deduplication_requested(oop java_string) {
+  return is_flag_set(java_string, _deduplication_requested_mask);
+}
+
+void java_lang_String::set_deduplication_forbidden(oop java_string) {
+  test_and_set_flag(java_string, _deduplication_forbidden_mask);
+}
+
+bool java_lang_String::test_and_set_deduplication_requested(oop java_string) {
+  return test_and_set_flag(java_string, _deduplication_requested_mask);
 }
 
 int java_lang_String::length(oop java_string, typeArrayOop value) {

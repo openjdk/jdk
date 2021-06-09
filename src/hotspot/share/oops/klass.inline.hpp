@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_KLASS_INLINE_HPP
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "oops/klass.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,6 +293,7 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member {@literal ->} value map.
      */
+    @SuppressWarnings("removal")
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)
     {
@@ -355,11 +356,18 @@ public class AnnotationParser {
 
         if (result == null) {
             result = new AnnotationTypeMismatchExceptionProxy(
-                memberType.getClass().getName());
+                Proxy.isProxyClass(memberType)
+                        ? memberType.getInterfaces()[0].getName()
+                        : memberType.getName());
         } else if (!(result instanceof ExceptionProxy) &&
             !memberType.isInstance(result)) {
-            result = new AnnotationTypeMismatchExceptionProxy(
-                result.getClass() + "[" + result + "]");
+            if (result instanceof Annotation) {
+                result = new AnnotationTypeMismatchExceptionProxy(
+                    result.toString());
+            } else {
+                result = new AnnotationTypeMismatchExceptionProxy(
+                    result.getClass().getName() + "[" + result + "]");
+            }
         }
         return result;
     }
@@ -462,12 +470,9 @@ public class AnnotationParser {
         String typeName  = constPool.getUTF8At(typeNameIndex);
         int constNameIndex = buf.getShort() & 0xFFFF;
         String constName = constPool.getUTF8At(constNameIndex);
-        if (!enumType.isEnum()) {
+        if (!enumType.isEnum() || enumType != parseSig(typeName, container)) {
             return new AnnotationTypeMismatchExceptionProxy(
-                typeName + "." + constName);
-        } else if (enumType != parseSig(typeName, container)) {
-            return new AnnotationTypeMismatchExceptionProxy(
-                typeName + "." + constName);
+                    typeName.substring(1, typeName.length() - 1).replace('/', '.') + "." + constName);
         }
 
         try {
@@ -754,7 +759,7 @@ public class AnnotationParser {
      */
     private static ExceptionProxy exceptionProxy(int tag) {
         return new AnnotationTypeMismatchExceptionProxy(
-            "Array with component tag: " + tag);
+            "Array with component tag: " + (tag == 0 ? "0" : (char) tag));
     }
 
     /**

@@ -57,6 +57,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
@@ -637,6 +641,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_broadcast_coerced();
   case vmIntrinsics::_VectorShuffleIota:
     return inline_vector_shuffle_iota();
+  case vmIntrinsics::_VectorMaskOp:
+    return inline_vector_mask_operation();
   case vmIntrinsics::_VectorShuffleToVector:
     return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
@@ -2800,37 +2806,83 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 #ifdef JFR_HAVE_INTRINSICS
 
-/*
-* oop -> myklass
-* myklass->trace_id |= USED
-* return myklass->trace_id & ~0x3
-*/
+/**
+ * if oop->klass != null
+ *   // normal class
+ *   epoch = _epoch_state ? 2 : 1
+ *   if oop->klass->trace_id & ((epoch << META_SHIFT) | epoch)) != epoch {
+ *     ... // enter slow path when the klass is first recorded or the epoch of JFR shifts
+ *   }
+ *   id = oop->klass->trace_id >> TRACE_ID_SHIFT // normal class path
+ * else
+ *   // primitive class
+ *   if oop->array_klass != null
+ *     id = (oop->array_klass->trace_id >> TRACE_ID_SHIFT) + 1 // primitive class path
+ *   else
+ *     id = LAST_TYPE_ID + 1 // void class path
+ *   if (!signaled)
+ *     signaled = true
+ */
 bool LibraryCallKit::inline_native_classID() {
-  Node* cls = null_check(argument(0), T_OBJECT);
-  Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
-  kls = null_check(kls, T_OBJECT);
+  Node* cls = argument(0);
 
-  ByteSize offset = KLASS_TRACE_ID_OFFSET;
-  Node* insp = basic_plus_adr(kls, in_bytes(offset));
-  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
+  IdealKit ideal(this);
+#define __ ideal.
+  IdealVariable result(ideal); __ declarations_done();
+  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
+                                                 basic_plus_adr(cls, java_lang_Class::klass_offset()),
+                                                 TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
 
-  Node* clsused = longcon(0x01l); // set the class bit
-  Node* orl = _gvn.transform(new OrLNode(tvalue, clsused));
-  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
-  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
 
-#ifdef TRACE_ID_META_BITS
-  Node* mbits = longcon(~TRACE_ID_META_BITS);
-  tvalue = _gvn.transform(new AndLNode(tvalue, mbits));
-#endif
-#ifdef TRACE_ID_SHIFT
-  Node* cbits = intcon(TRACE_ID_SHIFT);
-  tvalue = _gvn.transform(new URShiftLNode(tvalue, cbits));
-#endif
+  __ if_then(kls, BoolTest::ne, null()); {
+    Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
 
-  set_result(tvalue);
+    Node* epoch_address = makecon(TypeRawPtr::make(Jfr::epoch_address()));
+    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+    epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
+    Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
+    mask = _gvn.transform(new OrLNode(mask, epoch));
+    Node* kls_trace_id_raw_and_mask = _gvn.transform(new AndLNode(kls_trace_id_raw, mask));
+
+    float unlikely  = PROB_UNLIKELY(0.999);
+    __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
+      sync_kit(ideal);
+      make_runtime_call(RC_LEAF,
+                        OptoRuntime::get_class_id_intrinsic_Type(),
+                        CAST_FROM_FN_PTR(address, Jfr::get_class_id_intrinsic),
+                        "get_class_id_intrinsic",
+                        TypePtr::BOTTOM,
+                        kls);
+      ideal.sync_kit(this);
+    } __ end_if();
+
+    ideal.set(result,  _gvn.transform(new URShiftLNode(kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT))));
+  } __ else_(); {
+    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
+                                                   basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
+                                                   TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+    __ if_then(array_kls, BoolTest::ne, null()); {
+      Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
+      Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
+      ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
+    } __ else_(); {
+      // void class case
+      ideal.set(result, _gvn.transform(longcon(LAST_TYPE_ID + 1)));
+    } __ end_if();
+
+    Node* signaled_flag_address = makecon(TypeRawPtr::make(Jfr::signal_address()));
+    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
+    __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
+      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
+    } __ end_if();
+  } __ end_if();
+
+  final_sync(ideal);
+  set_result(ideal.value(result));
+#undef __
   return true;
-
 }
 
 bool LibraryCallKit::inline_native_getEventWriter() {
@@ -4181,7 +4233,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       Node* alloc_obj = new_array(obj_klass, obj_length, 0, &obj_size, /*deoptimize_on_exception=*/true);
 
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, BarrierSetC2::Parsing)) {
+      if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Parsing)) {
         // If it is an oop array, it requires very special treatment,
         // because gc barriers are required when accessing the array.
         Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)NULL);
@@ -5184,46 +5236,134 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 
 //-------------inline_vectorizedMismatch------------------------------
 bool LibraryCallKit::inline_vectorizedMismatch() {
-  assert(UseVectorizedMismatchIntrinsic, "not implementated on this platform");
+  assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
-  address stubAddr = StubRoutines::vectorizedMismatch();
-  if (stubAddr == NULL) {
-    return false; // Intrinsic's stub is not implemented on this platform
-  }
-  const char* stubName = "vectorizedMismatch";
-  int size_l = callee()->signature()->size();
   assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+  Node* obja    = argument(0); // Object
+  Node* aoffset = argument(1); // long
+  Node* objb    = argument(3); // Object
+  Node* boffset = argument(4); // long
+  Node* length  = argument(6); // int
+  Node* scale   = argument(7); // int
 
-  Node* obja = argument(0);
-  Node* aoffset = argument(1);
-  Node* objb = argument(3);
-  Node* boffset = argument(4);
-  Node* length = argument(6);
-  Node* scale = argument(7);
-
-  const Type* a_type = obja->Value(&_gvn);
-  const Type* b_type = objb->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  if (top_a == NULL || top_a->klass() == NULL ||
-    top_b == NULL || top_b->klass() == NULL) {
-    // failed array check
-    return false;
+  const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
+  const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
+  if (obja_t == NULL || obja_t->klass() == NULL ||
+      objb_t == NULL || objb_t->klass() == NULL ||
+      scale == top()) {
+    return false; // failed input validation
   }
-
-  Node* call;
-  jvms()->set_should_reexecute(true);
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
 
-  call = make_runtime_call(RC_LEAF,
-    OptoRuntime::vectorizedMismatch_Type(),
-    stubAddr, stubName, TypePtr::BOTTOM,
-    obja_adr, objb_adr, length, scale);
+  // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
+  //
+  //    inline_limit = ArrayOperationPartialInlineSize / element_size;
+  //    if (length <= inline_limit) {
+  //      inline_path:
+  //        vmask   = VectorMaskGen length
+  //        vload1  = LoadVectorMasked obja, vmask
+  //        vload2  = LoadVectorMasked objb, vmask
+  //        result1 = VectorCmpMasked vload1, vload2, vmask
+  //    } else {
+  //      call_stub_path:
+  //        result2 = call vectorizedMismatch_stub(obja, objb, length, scale)
+  //    }
+  //    exit_block:
+  //      return Phi(result1, result2);
+  //
+  enum { inline_path = 1,  // input is small enough to process it all at once
+         stub_path   = 2,  // input is too large; call into the VM
+         PATH_LIMIT  = 3
+  };
 
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  Node* exit_block = new RegionNode(PATH_LIMIT);
+  Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
+  Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+
+  Node* call_stub_path = control();
+
+  BasicType elem_bt = T_ILLEGAL;
+
+  const TypeInt* scale_t = _gvn.type(scale)->is_int();
+  if (scale_t->is_con()) {
+    switch (scale_t->get_con()) {
+      case 0: elem_bt = T_BYTE;  break;
+      case 1: elem_bt = T_SHORT; break;
+      case 2: elem_bt = T_INT;   break;
+      case 3: elem_bt = T_LONG;  break;
+
+      default: elem_bt = T_ILLEGAL; break; // not supported
+    }
+  }
+
+  int inline_limit = 0;
+  bool do_partial_inline = false;
+
+  if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
+    inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
+    do_partial_inline = inline_limit >= 16;
+  }
+
+  if (do_partial_inline) {
+    assert(elem_bt != T_ILLEGAL, "sanity");
+
+    const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
+
+    if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
+
+      Node* cmp_length = _gvn.transform(new CmpINode(length, intcon(inline_limit)));
+      Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
+
+      call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
+
+      if (!stopped()) {
+        Node* casted_length = _gvn.transform(new CastIINode(control(), length, TypeInt::make(0, inline_limit, Type::WidenMin)));
+
+        const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
+        const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
+        Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
+        Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
+
+        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
+        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
+        Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
+
+        exit_block->init_req(inline_path, control());
+        memory_phi->init_req(inline_path, map()->memory());
+        result_phi->init_req(inline_path, result);
+
+        C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
+        clear_upper_avx();
+      }
+    }
+  }
+
+  if (call_stub_path != NULL) {
+    set_control(call_stub_path);
+
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::vectorizedMismatch_Type(),
+                                   StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
+                                   obja_adr, objb_adr, length, scale);
+
+    exit_block->init_req(stub_path, control());
+    memory_phi->init_req(stub_path, map()->memory());
+    result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  }
+
+  exit_block = _gvn.transform(exit_block);
+  memory_phi = _gvn.transform(memory_phi);
+  result_phi = _gvn.transform(result_phi);
+
+  set_control(exit_block);
+  set_all_memory(memory_phi);
+  set_result(result_phi);
+
   return true;
 }
 

@@ -39,7 +39,7 @@ import util.BaseStAXUT;
  * @test
  * @bug 6675332
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug6675332Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.Bug6675332Test
  * @run testng/othervm stream.XMLStreamWriterTest.Bug6675332Test
  * @summary Test XMLStreamWriter writeAttribute when IS_REPAIRING_NAMESPACES is true.
  */

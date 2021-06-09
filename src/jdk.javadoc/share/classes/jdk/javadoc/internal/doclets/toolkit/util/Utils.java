@@ -54,6 +54,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -79,7 +80,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.ElementKindVisitor14;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import javax.lang.model.util.SimpleElementVisitor14;
@@ -91,6 +91,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -124,7 +125,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
-import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
@@ -486,105 +486,6 @@ public class Utils {
 
     public boolean definesSerializableFields(TypeElement aclass) {
         return configuration.workArounds.definesSerializableFields( aclass);
-    }
-
-    @SuppressWarnings("preview")
-    public String modifiersToString(Element e, boolean trailingSpace) {
-        SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
-        modifiers.remove(NATIVE);
-        modifiers.remove(STRICTFP);
-        modifiers.remove(SYNCHRONIZED);
-
-        return new ElementKindVisitor14<String, SortedSet<Modifier>>() {
-            final StringBuilder sb = new StringBuilder();
-
-            void addVisibilityModifier(Set<Modifier> modifiers) {
-                if (modifiers.contains(PUBLIC)) {
-                    append("public");
-                } else if (modifiers.contains(PROTECTED)) {
-                    append("protected");
-                } else if (modifiers.contains(PRIVATE)) {
-                    append("private");
-                }
-            }
-
-            void addStatic(Set<Modifier> modifiers) {
-                if (modifiers.contains(STATIC)) {
-                    append("static");
-                }
-            }
-
-            void addSealed(TypeElement e) {
-                if (e.getModifiers().contains(Modifier.SEALED)) {
-                    append("sealed");
-                } else if (e.getModifiers().contains(Modifier.NON_SEALED)) {
-                    append("non-sealed");
-                }
-            }
-
-            void addModifiers(Set<Modifier> modifiers) {
-                modifiers.stream()
-                        .map(Modifier::toString)
-                        .forEachOrdered(this::append);
-            }
-
-            void append(String s) {
-                if (sb.length() > 0) {
-                    sb.append(" ");
-                }
-                sb.append(s);
-            }
-
-            String finalString(String s) {
-                append(s);
-                if (trailingSpace) {
-                    sb.append(" ");
-                }
-                return sb.toString();
-            }
-
-            @Override
-            public String visitTypeAsInterface(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                addSealed(e);
-                return finalString("interface");
-            }
-
-            @Override
-            public String visitTypeAsEnum(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                return finalString("enum");
-            }
-
-            @Override
-            public String visitTypeAsAnnotationType(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                return finalString("@interface");
-            }
-
-            @Override
-            public String visitTypeAsRecord(TypeElement e, SortedSet<Modifier> mods) {
-                mods.remove(FINAL); // suppress the implicit `final`
-                return visitTypeAsClass(e, mods);
-            }
-
-            @Override
-            public String visitTypeAsClass(TypeElement e, SortedSet<Modifier> mods) {
-                addModifiers(mods);
-                String keyword = e.getKind() == ElementKind.RECORD ? "record" : "class";
-                return finalString(keyword);
-            }
-
-            @Override
-            protected String defaultAction(Element e, SortedSet<Modifier> mods) {
-                addModifiers(mods);
-                return sb.toString().trim();
-            }
-
-        }.visit(e, modifiers);
     }
 
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
@@ -1501,12 +1402,30 @@ public class Utils {
     }
 
     /**
-     * Return true if the given Element is deprecated for removal.
+     * Returns true if the given Element is deprecated for removal.
      *
      * @param e the Element to check.
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
+        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        return forRemoval != null && (boolean) forRemoval;
+    }
+
+    /**
+     * Returns the value of the {@code Deprecated.since} element if it is set on the given Element.
+     *
+     * @param e the Element to check.
+     * @return the Deprecated.since value for e, or null.
+     */
+    public String getDeprecatedSince(Element e) {
+        return (String) getDeprecatedElement(e, "since");
+    }
+
+    /**
+     * Returns the Deprecated annotation element value of the given element, or null.
+     */
+    private Object getDeprecatedElement(Element e, String elementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
@@ -1514,14 +1433,14 @@ public class Utils {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals("forRemoval")) {
-                            return Boolean.parseBoolean((pairs.get(element)).toString());
+                        if (element.getSimpleName().contentEquals(elementName)) {
+                            return (pairs.get(element)).getValue();
                         }
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -1736,11 +1655,11 @@ public class Utils {
 
         private Collator createCollator(Locale locale) {
             Collator baseCollator = Collator.getInstance(locale);
-            if (baseCollator instanceof RuleBasedCollator) {
+            if (baseCollator instanceof RuleBasedCollator rbc) {
                 // Extend collator to sort signatures with additional args and var-args in a well-defined order:
                 // () < (int) < (int, int) < (int...)
                 try {
-                    return new RuleBasedCollator(((RuleBasedCollator) baseCollator).getRules()
+                    return new RuleBasedCollator(rbc.getRules()
                             + "& ')' < ',' < '.','['");
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2332,8 +2251,8 @@ public class Utils {
         protected String defaultAction(TypeMirror e, Object val) {
             if (val == null)
                 return null;
-            else if (val instanceof String)
-                return sourceForm((String) val);
+            else if (val instanceof String s)
+                return sourceForm(s);
             return val.toString(); // covers int, short
         }
 
@@ -2631,10 +2550,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet) {
-                return ((BaseTaglet) taglet).accepts(t);
-            } else if (t instanceof UnknownBlockTagTree) {
-                return ((UnknownBlockTagTree) t).getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet baseTaglet) {
+                return baseTaglet.accepts(t);
+            } else if (t instanceof BlockTagTree blockTagTree) {
+                return blockTagTree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
@@ -2988,29 +2907,12 @@ public class Utils {
      * @param e the Element to check.
      * @return the set of preview language features used to declare the given element
      */
-    @SuppressWarnings("preview")
     public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
-        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
-
-        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
-            e.getModifiers().contains(Modifier.SEALED)) {
-            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
-            boolean hasLinkablePermits = permits.stream()
-                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
-            if (hasLinkablePermits) {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
-            } else {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED);
-            }
-        }
-
-        return result;
+        return new HashSet<>();
     }
 
     public enum DeclarationPreviewLanguageFeatures {
-
-        SEALED(List.of("sealed")),
-        SEALED_PERMITS(List.of("sealed", "permits"));
+        NONE(List.of(""));
         public final List<String> features;
 
         DeclarationPreviewLanguageFeatures(List<String> features) {
@@ -3018,7 +2920,6 @@ public class Utils {
         }
     }
 
-    @SuppressWarnings("preview")
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
         usedInDeclaration.addAll(annotations2Classes(el));
@@ -3212,11 +3113,12 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
-            configuration.workArounds.isPreviewAPI(el) ||
-            !previewAPIs.previewAPI.isEmpty() ||
-            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
+             configuration.workArounds.isPreviewAPI(el) ||
+             !previewAPIs.previewAPI.isEmpty() ||
+             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
+            !hasNoProviewAnnotation(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3232,4 +3134,9 @@ public class Utils {
         PREVIEW
     }
 
+    private boolean hasNoProviewAnnotation(Element el) {
+        return el.getAnnotationMirrors()
+                 .stream()
+                 .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
+    }
 }

@@ -979,11 +979,29 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+
 #
-# Serialization system-wide filter
+# Deserialization system-wide filter factory
 #
-# A filter, if configured, is used by java.io.ObjectInputStream during
-# deserialization to check the contents of the stream.
+# A filter factory class name is used to configure the system-wide filter factory.
+# The filter factory value "OVERRIDE" in combination with setting "jdk.serialFilter"
+# indicates that the builtin filter factory can be overridden by the application.
+# The class must be public, must have a public zero-argument constructor, implement the
+# java.util.stream.BinaryOperator<ObjectInputFilter> interface, provide its implementation and
+# be accessible via the application class loader.
+# A builtin filter factory is used if no filter factory is defined.
+# See java.io.ObjectInputFilter.Config for more information.
+#
+# If the system property jdk.serialFilterFactory is also specified, it supersedes
+# the security property value defined here.
+#
+#jdk.serialFilterFactory=<classname>
+
+#
+# Deserialization system-wide filter
+#
+# A filter, if configured, is used by the filter factory to provide the filter used by
+# java.io.ObjectInputStream during deserialization to check the contents of the stream.
 # A filter is configured as a sequence of patterns, each pattern is either
 # matched against the name of a class in the stream or defines a limit.
 # Patterns are separated by ";" (semicolon).
@@ -1061,7 +1079,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    sun.rmi.server.UnicastRef;\
 #    sun.rmi.server.RMIClientSocketFactory;\
 #    sun.rmi.server.RMIServerSocketFactory;\
-#    java.rmi.activation.ActivationID;\
 #    java.rmi.server.UID
 #
 # RMI Distributed Garbage Collector (DGC) Serial Filter

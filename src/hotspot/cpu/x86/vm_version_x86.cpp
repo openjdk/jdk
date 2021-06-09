@@ -898,6 +898,24 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+#ifdef _LP64
+  if (supports_avx2()) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      UseAdler32Intrinsics = true;
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 Intrinsics requires avx2 instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+#else
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+#endif
+
   if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       UseCRC32CIntrinsics = true;
@@ -991,11 +1009,6 @@ void VM_Version::get_processor_features() {
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   if (!supports_rtm() && UseRTMLocking) {
@@ -1406,12 +1419,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
-           ArrayCopyPartialInlineSize != 0 &&
-           ArrayCopyPartialInlineSize != 32 &&
-           ArrayCopyPartialInlineSize != 16 &&
-           ArrayCopyPartialInlineSize != 64)) {
+      if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
+           ArrayOperationPartialInlineSize != 0 &&
+           ArrayOperationPartialInlineSize != 16 &&
+           ArrayOperationPartialInlineSize != 32 &&
+           ArrayOperationPartialInlineSize != 64)) {
         int inline_size = 0;
         if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
           inline_size = 64;
@@ -1420,18 +1433,18 @@ void VM_Version::get_processor_features() {
         } else if (MaxVectorSize >= 16) {
           inline_size = 16;
         }
-        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+          warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
         }
-        ArrayCopyPartialInlineSize = inline_size;
+        ArrayOperationPartialInlineSize = inline_size;
       }
 
-      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
-        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (ArrayCopyPartialInlineSize) {
-          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+      if (ArrayOperationPartialInlineSize > MaxVectorSize) {
+        ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayOperationPartialInlineSize) {
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
         } else {
-          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
         }
       }
     }

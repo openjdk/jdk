@@ -160,6 +160,7 @@ public final class OCSPResponse {
      * value is negative, set the skew to the default.
      */
     private static int initializeClockSkew() {
+        @SuppressWarnings("removal")
         Integer tmp = java.security.AccessController.doPrivileged(
                 new GetIntegerAction("com.sun.security.ocsp.clockSkew"));
         if (tmp == null || tmp < 0) {

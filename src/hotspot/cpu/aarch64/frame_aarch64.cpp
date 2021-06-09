@@ -272,6 +272,9 @@ void frame::patch_pc(Thread* thread, address pc) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
                   p2i(pc_addr), p2i(*pc_addr), p2i(pc));
   }
+
+  // Only generated code frames should be patched, therefore the return address will not be signed.
+  assert(pauth_ptr_is_raw(*pc_addr), "cannot be signed");
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
   assert(_pc == *pc_addr || pc == *pc_addr, "must be");
@@ -359,6 +362,16 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+  ShouldNotCallThis();
+  return {};
+}
+
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //
@@ -436,7 +449,9 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc());
+  // Use the raw version of pc - the interpreter should not have signed it.
+
+  return frame(sender_sp, unextended_sp, link(), sender_pc_maybe_signed());
 }
 
 
@@ -499,6 +514,7 @@ frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
+
   return frame(sender_sp(), link(), sender_pc());
 }
 

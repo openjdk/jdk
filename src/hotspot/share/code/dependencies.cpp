@@ -1647,16 +1647,14 @@ bool Dependencies::is_concrete_method(Method* m, Klass* k) {
   return true;
  }
 
-Klass* Dependencies::find_finalizable_subclass(Klass* k) {
-  if (k->is_interface())  return NULL;
-  if (k->has_finalizer()) return k;
-  k = k->subklass();
-  while (k != NULL) {
-    Klass* result = find_finalizable_subclass(k);
-    if (result != NULL) return result;
-    k = k->next_sibling();
+Klass* Dependencies::find_finalizable_subclass(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    if (sub->has_finalizer() && !sub->is_interface()) {
+      return sub;
+    }
   }
-  return NULL;
+  return NULL; // not found
 }
 
 bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
@@ -1777,6 +1775,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   if (m->is_old()) {
     return NULL;
   }
+  if (m->is_default_method()) {
+    return NULL; // not supported
+  }
   assert(verify_method_context(ctxk, m), "proper context");
   ConcreteMethodFinder wf(m);
   wf.record_witnesses(1);
@@ -1883,10 +1884,12 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   assert(fm == NULL || !fm->is_abstract(), "sanity");
   // Old CHA conservatively reports concrete methods in abstract classes
   // irrespective of whether they have concrete subclasses or not.
+  // Also, abstract root method case is not fully supported.
 #ifdef ASSERT
   Klass*  uniqp = NULL;
   Method* uniqm = Dependencies::find_unique_concrete_method(ctxk, m, &uniqp);
   assert(uniqm == NULL || uniqm == fm ||
+         m->is_abstract() ||
          uniqm->method_holder()->is_abstract() ||
          (fm == NULL && uniqm != NULL && uniqp != NULL && !InstanceKlass::cast(uniqp)->is_linked()),
          "sanity");
@@ -1895,9 +1898,10 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
 }
 
 Klass* Dependencies::check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes) {
-  Klass* search_at = ctxk;
-  if (changes != NULL)
+  InstanceKlass* search_at = ctxk;
+  if (changes != NULL) {
     search_at = changes->new_type(); // just look at the new bit
+  }
   return find_finalizable_subclass(search_at);
 }
 

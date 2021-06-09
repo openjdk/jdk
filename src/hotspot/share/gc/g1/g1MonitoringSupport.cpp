@@ -303,7 +303,6 @@ void G1MonitoringSupport::update_sizes() {
     _old_gen_counters->update_all();
 
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 

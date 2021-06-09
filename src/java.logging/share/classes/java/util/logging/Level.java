@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,6 +621,7 @@ public class Level implements java.io.Serializable {
 
         private static void registerWithClassLoader(Level customLevel) {
             PrivilegedAction<ClassLoader> pa = customLevel.getClass()::getClassLoader;
+            @SuppressWarnings("removal")
             final ClassLoader cl = AccessController.doPrivileged(pa);
             CUSTOM_LEVEL_CLV.computeIfAbsent(cl, (c, v) -> new ArrayList<>())
                 .add(customLevel);

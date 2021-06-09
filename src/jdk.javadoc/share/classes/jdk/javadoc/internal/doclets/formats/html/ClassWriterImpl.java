@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -83,9 +84,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.Constable",
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
-
-    private static final Set<String> previewModifiers
-            = Set.of("sealed", "non-sealed");
 
     protected final TypeElement typeElement;
 
@@ -196,29 +194,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         return typeElement;
     }
 
-    @Override @SuppressWarnings("preview")
-    public void addClassSignature(String modifiers, Content classInfoTree) {
-        ContentBuilder mods = new ContentBuilder();
-        String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) {
-            if (sep != null) {
-                mods.add(sep);
-            }
-            if (previewModifiers.contains(modifiersPart)) {
-                mods.add(modifiersPart);
-                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
-                                                       contents.previewMark)));
-            } else {
-                mods.add(modifiersPart);
-            }
-            sep = " ";
-        }
-        if (modifiers.endsWith(" ")) {
-            mods.add(" ");
-        }
+    @Override
+    public void addClassSignature(Content classInfoTree) {
         classInfoTree.add(new HtmlTree(TagName.HR));
         classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
-                .setModifiers(mods)
                 .toContent());
     }
 
@@ -470,9 +449,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 isFirst = false;
             }
             // TODO: should we simply split this method up to avoid instanceof ?
-            if (type instanceof TypeElement) {
+            if (type instanceof TypeElement te) {
                 Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, (TypeElement)(type)));
+                        new HtmlLinkInfo(configuration, context, te));
                 content.add(HtmlTree.CODE(link));
             } else {
                 Content link = getLink(

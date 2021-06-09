@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,7 @@ public abstract class IIOMetadata {
             // Try to load from the module of the IIOMetadata implementation
             // for this plugin since the IIOMetadataImpl is part of the plugin
             PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            @SuppressWarnings("removal")
             Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);

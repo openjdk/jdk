@@ -540,8 +540,9 @@ public class TestSearch extends JavadocTester {
                     <dt><a href="../pkg/package-summary.html#SingleWord" class="search-tag-link">Sin\
                     gleWord</a> - Search tag in package pkg</dt>""",
                 """
-                    <br><a href="../allclasses-index.html">All&nbsp;Classes</a><span class="vertical\
-                    -separator">|</span><a href="../allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="../allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces\
+                    </a><span class="vertical-separator">|</span><a href="../allpackages-index.html"\
+                    >All&nbsp;Packages</a>""");
         checkOutput("index-files/index-10.html", true,
                 """
                     <dt><a href="../pkg/package-summary.html#phrasewithspaces" class="search-tag-lin\
@@ -673,10 +674,10 @@ public class TestSearch extends JavadocTester {
 
     void checkInvalidUsageIndexTag() {
         checkOutput(Output.OUT, true,
-                "AnotherClass.java:29: warning - invalid usage of tag {@index",
-                "AnotherClass.java:39: warning - invalid usage of tag {@index",
-                "AnotherClass.java:34: warning - invalid usage of tag {@index",
-                "AnotherClass.java:68: warning - invalid usage of tag {@index");
+                "AnotherClass.java:29: warning: invalid usage of tag {@index",
+                "AnotherClass.java:39: warning: invalid usage of tag {@index",
+                "AnotherClass.java:34: warning: invalid usage of tag {@index",
+                "AnotherClass.java:68: warning: invalid usage of tag {@index");
     }
 
     void checkJqueryAndImageFiles(boolean expectedOutput) {
@@ -846,13 +847,14 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
         checkOutput("package-search-index.js", true,
                 """
                     {"l":"All Packages","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
-                    """
-                        <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                        parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                """
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
+                    s</a><span class="vertical-separator">|</span><a href="allpackages-index.htm\
+                    l">All&nbsp;Packages</a>""");
     }
 }
