@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@ import static jdk.incubator.foreign.MemoryLayouts.ADDRESS;
 public enum CABI {
     SysV,
     Win64,
-    AArch64;
+    LinuxAArch64,
+    MacOsAArch64;
 
     private static final CABI current;
 
@@ -49,7 +50,12 @@ public enum CABI {
                 current = SysV;
             }
         } else if (arch.equals("aarch64")) {
-            current = AArch64;
+            if (os.startsWith("Mac")) {
+                current = MacOsAArch64;
+            } else {
+                // The Linux ABI follows the standard AAPCS ABI
+                current = LinuxAArch64;
+            }
         } else {
             throw new ExceptionInInitializerError(
                 "Unsupported os, arch, or address size: " + os + ", " + arch + ", " + addressSize);

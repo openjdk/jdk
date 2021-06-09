@@ -189,6 +189,7 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
+     @SuppressWarnings("removal")
      private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
         /*
          * See if interface is set, then call retrieve function of the class

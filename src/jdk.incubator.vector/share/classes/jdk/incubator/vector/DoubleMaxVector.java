@@ -324,15 +324,9 @@ final class DoubleMaxVector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(DoubleMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -798,6 +792,8 @@ final class DoubleMaxVector extends DoubleVector {
     DoubleVector fromArray0(double[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

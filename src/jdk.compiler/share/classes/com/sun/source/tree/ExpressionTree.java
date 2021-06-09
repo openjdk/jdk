@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.NoPreview;
+
 /**
  * A tree node used as the base class for the different types of
  * expressions.
@@ -35,4 +37,5 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-public interface ExpressionTree extends Tree {}
+@NoPreview
+public interface ExpressionTree extends Tree, CaseLabelTree {}

@@ -385,6 +385,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         /** class holding the field */
         private final Class<T> tclass;
 
+        @SuppressWarnings("removal")
         AtomicIntegerFieldUpdaterImpl(final Class<T> tclass,
                                       final String fieldName,
                                       final Class<?> caller) {

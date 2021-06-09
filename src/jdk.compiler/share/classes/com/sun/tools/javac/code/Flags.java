@@ -415,7 +415,6 @@ public class Flags {
         LocalVarFlags                     = FINAL | PARAMETER,
         ReceiverParamFlags                = PARAMETER;
 
-    @SuppressWarnings("preview")
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
         if (modifiers == null) {

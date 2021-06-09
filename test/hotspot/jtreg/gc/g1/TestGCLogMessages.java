@@ -247,6 +247,8 @@ public class TestGCLogMessages {
                                                                   "-XX:+G1EvacuationFailureALot",
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:-G1AllowPreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -258,6 +260,8 @@ public class TestGCLogMessages {
                                                    "-Xmx32M",
                                                    "-Xmn16M",
                                                    "-Xms32M",
+                                                   "-XX:+UnlockDiagnosticVMOptions",
+                                                   "-XX:-G1AllowPreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 

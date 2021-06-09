@@ -356,7 +356,6 @@ class Thread: public ThreadShadow {
   virtual bool is_active_Java_thread() const         { return false; }
 
   // Casts
-  inline const WorkerThread* as_Worker_thread() const;
   inline JavaThread* as_Java_thread();
   inline const JavaThread* as_Java_thread() const;
 
@@ -1428,8 +1427,6 @@ class JavaThread: public Thread {
   // the VMThread, it also returns the JavaThread that instigated the VMThread's
   // operation.  You may not want that either.
   static JavaThread* active();
-
-  inline CompilerThread* as_CompilerThread();
 
  protected:
   virtual void pre_run();

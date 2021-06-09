@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
@@ -267,6 +269,16 @@ public interface TreeVisitor<R,P> {
     R visitBindingPattern(BindingPatternTree node, P p);
 
     /**
+     * Visits a DefaultCaseLabelTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 17
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p);
+
+    /**
      * Visits a MethodTree node.
      * @param node the node being visited
      * @param p a parameter value
@@ -289,6 +301,26 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitNewArray(NewArrayTree node, P p);
+
+    /**
+     * Visits a GuardPatternTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 17
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    R visitGuardedPattern(GuardedPatternTree node, P p);
+
+    /**
+     * Visits a ParenthesizedPatternTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 17
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    R visitParenthesizedPattern(ParenthesizedPatternTree node, P p);
 
     /**
      * Visits a NewClassTree node.

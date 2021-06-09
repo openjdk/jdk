@@ -420,11 +420,12 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     }
 
     private static File checkFile(File file) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         return (sm == null || file == null) ? file : checkFile(file, sm);
     }
 
-    private static File checkFile(File file, SecurityManager sm) {
+    private static File checkFile(File file, @SuppressWarnings("removal") SecurityManager sm) {
         try {
             sm.checkRead(file.getPath());
 
@@ -443,6 +444,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     }
 
     static File[] checkFiles(File[] files) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || files == null || files.length == 0) {
             return files;
@@ -451,6 +453,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     }
 
     private static File[] checkFiles(List<File> files) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || files.isEmpty()) {
             return files.toArray(new File[files.size()]);
@@ -458,7 +461,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return checkFiles(files.stream(), sm);
     }
 
-    private static File[] checkFiles(Stream<File> filesStream, SecurityManager sm) {
+    private static File[] checkFiles(Stream<File> filesStream, @SuppressWarnings("removal") SecurityManager sm) {
         return filesStream.filter((file) -> checkFile(file, sm) != null)
                 .toArray(File[]::new);
     }
@@ -471,6 +474,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (dir != null && dir == getDrives()) {
             return true;
         } else {
+            @SuppressWarnings("removal")
             String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {
                     return dir.getAbsolutePath();
@@ -564,6 +568,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
+        @SuppressWarnings("removal")
         private ComInvoker() {
             super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<>());
             allowCoreThreadTimeOut(false);
@@ -581,6 +586,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             });
         }
 
+        @SuppressWarnings("removal")
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {
@@ -612,6 +618,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             return comThread;
         }
 
+        @SuppressWarnings("removal")
         public <T> T invoke(Callable<T> task) throws Exception {
             if (Thread.currentThread() == comThread) {
                 // if it's already called from the COM

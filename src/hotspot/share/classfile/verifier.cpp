@@ -1890,6 +1890,12 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
         catch_type_index, cp, CHECK_VERIFY(this));
       VerificationType throwable =
         VerificationType::reference_type(vmSymbols::java_lang_Throwable());
+      // If the catch type is Throwable pre-resolve it now as the assignable check won't
+      // do that, and we need to avoid a runtime resolution in case we are trying to
+      // catch OutOfMemoryError.
+      if (cp->klass_name_at(catch_type_index) == vmSymbols::java_lang_Throwable()) {
+        cp->klass_at(catch_type_index, CHECK);
+      }
       bool is_subclass = throwable.is_assignable_from(
         catch_type, this, false, CHECK_VERIFY(this));
       if (!is_subclass) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1322,6 +1322,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
         }
     }
 
+    @SuppressWarnings("removal")
     static Object getPrivateFieldValue(Object instance, String name) {
         Field field = fields.get(name);
         if (field == null) {
