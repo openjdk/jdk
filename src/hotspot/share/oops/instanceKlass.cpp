@@ -3304,8 +3304,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 // -----------------------------------------------------------------------------------------------------
 // Printing
 
-#ifndef PRODUCT
-
 #define BULLET  " - "
 
 static const char* state_names[] = {
@@ -3455,15 +3453,11 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#endif //PRODUCT
-
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   if (Verbose || WizardMode)  access_flags().print_on(st);
   name()->print_value_on(st);
 }
-
-#ifndef PRODUCT
 
 void FieldPrinter::do_field(fieldDescriptor* fd) {
   _st->print(BULLET);
@@ -3521,6 +3515,8 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
 }
+
+#ifndef PRODUCT
 
 bool InstanceKlass::verify_itable_index(int i) {
   int method_count = klassItable::method_count_for_interface(this);

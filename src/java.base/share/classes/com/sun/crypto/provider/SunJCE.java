@@ -165,7 +165,7 @@ public final class SunJCE extends Provider {
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
-            "|GCM|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
+            "|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
             "|OFB72|OFB80|OFB88|OFB96|OFB104|OFB112|OFB120|OFB128";
         final String BLOCK_PADS = "NOPADDING|PKCS5PADDING|ISO10126PADDING";
 
@@ -214,9 +214,6 @@ public final class SunJCE extends Provider {
         psA("Cipher", "AES_128/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_CFB_NoPadding",
                 attrs);
-        psA("Cipher", "AES_128/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES128_GCM_NoPadding",
-                attrs);
         psA("Cipher", "AES_128/KW/NoPadding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES128_KW_NoPadding",
                 attrs);
@@ -238,9 +235,6 @@ public final class SunJCE extends Provider {
                 attrs);
         psA("Cipher", "AES_192/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_CFB_NoPadding",
-                attrs);
-        psA("Cipher", "AES_192/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES192_GCM_NoPadding",
                 attrs);
         psA("Cipher", "AES_192/KW/NoPadding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES192_KW_NoPadding",
@@ -264,9 +258,6 @@ public final class SunJCE extends Provider {
         psA("Cipher", "AES_256/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_CFB_NoPadding",
                 attrs);
-        psA("Cipher", "AES_256/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES256_GCM_NoPadding",
-                attrs);
         psA("Cipher", "AES_256/KW/NoPadding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES256_KW_NoPadding",
                 attrs);
@@ -275,6 +266,23 @@ public final class SunJCE extends Provider {
                 null, attrs);
         psA("Cipher", "AES_256/KWP/NoPadding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES256_KWP_NoPadding",
+                attrs);
+
+        attrs.clear();
+        attrs.put("SupportedModes", "GCM");
+        attrs.put("SupportedKeyFormats", "RAW");
+
+        ps("Cipher", "AES/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null,
+                attrs);
+        psA("Cipher", "AES_128/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES128",
+                attrs);
+        psA("Cipher", "AES_192/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES192",
+                attrs);
+        psA("Cipher", "AES_256/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES256",
                 attrs);
 
         attrs.clear();

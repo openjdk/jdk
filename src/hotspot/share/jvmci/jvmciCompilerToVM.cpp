@@ -881,11 +881,13 @@ C2V_VMENTRY_0(jint, installCode, (JNIEnv *env, jobject, jobject target, jobject 
 
   TraceTime install_time("installCode", JVMCICompiler::codeInstallTimer(!thread->is_Compiler_thread()));
 
+  nmethodLocker nmethod_handle;
   CodeInstaller installer(JVMCIENV);
   JVMCI::CodeInstallResult result = installer.install(compiler,
       target_handle,
       compiled_code_handle,
       cb,
+      nmethod_handle,
       installed_code_handle,
       (FailedSpeculation**)(address) failed_speculations_address,
       speculations,

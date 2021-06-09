@@ -40,7 +40,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.inline.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -98,13 +97,11 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      atomic_discovery,
-                                       BoolObjectClosure* is_alive_non_header,
-                                       bool      adjust_no_of_processing_threads)  :
+                                       BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _next_id(0),
-  _adjust_no_of_processing_threads(adjust_no_of_processing_threads),
   _is_alive_non_header(is_alive_non_header)
 {
   assert(is_subject_to_discovery != NULL, "must be set");
@@ -931,8 +928,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    Thread* thr = Thread::current();
-    id = thr->as_Worker_thread()->id();
+    id = WorkerThread::current()->id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
@@ -1320,12 +1316,7 @@ RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  if (!_rp->adjust_no_of_processing_threads() || (ReferencesPerThread == 0)) {
-    return;
-  }
-
   uint workers = ergo_proc_thread_count(ref_count, _rp->num_queues(), phase);
-
   _rp->set_active_mt_degree(workers);
 }
 
