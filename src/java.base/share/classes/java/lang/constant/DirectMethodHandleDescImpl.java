@@ -139,9 +139,11 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
                  SPECIAL,
                  INTERFACE_VIRTUAL,
                  INTERFACE_SPECIAL        -> invocationType.dropParameterTypes(0, 1).descriptorString();
-            case STATIC, INTERFACE_STATIC -> invocationType.descriptorString();
+            case STATIC,
+                 INTERFACE_STATIC         -> invocationType.descriptorString();
             case CONSTRUCTOR              -> invocationType.changeReturnType(CD_void).descriptorString();
-            case GETTER, STATIC_GETTER    -> invocationType.returnType().descriptorString();
+            case GETTER,
+                 STATIC_GETTER            -> invocationType.returnType().descriptorString();
             case SETTER                   -> invocationType.parameterType(1).descriptorString();
             case STATIC_SETTER            -> invocationType.parameterType(0).descriptorString();
             default -> throw new IllegalStateException(kind.toString());
