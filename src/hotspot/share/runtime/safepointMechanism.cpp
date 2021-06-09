@@ -94,7 +94,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
 
-    need_rechecking = thread->handshake_state()->should_process() && thread->handshake_state()->process_by_self();
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self();
 
   } while (need_rechecking);
 }
@@ -113,6 +113,7 @@ uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_wate
 }
 
 void SafepointMechanism::update_poll_values(JavaThread* thread) {
+  assert(thread == Thread::current(), "Must be");
   assert(thread->thread_state() != _thread_blocked, "Must not be");
   assert(thread->thread_state() != _thread_in_native, "Must not be");
   for (;;) {
