@@ -246,11 +246,13 @@ public:
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
-  static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static bool check_unique_unregistered_class(Thread* current, InstanceKlass* k);
+  static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {

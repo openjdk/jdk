@@ -682,9 +682,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_annotations(NULL);
 
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(this);
-  }
+  SystemDictionaryShared::handle_class_unloading(this);
 }
 
 bool InstanceKlass::is_record() const {

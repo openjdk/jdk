@@ -1163,29 +1163,41 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-class LoadedUnregisteredClassesTable : public ResourceHashtable<
-  Symbol*, bool,
+class UniqueUnregisteredClassesTable : public ResourceHashtable<
+  Symbol*, InstanceKlass*,
   primitive_hash<Symbol*>,
   primitive_equals<Symbol*>,
-  6661,                             // prime number
+  15889, // prime number
   ResourceObj::C_HEAP> {};
 
-static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
+static UniqueUnregisteredClassesTable* _unique_unregistered_classes = NULL;
 
-bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* k) {
+bool SystemDictionaryShared::check_unique_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes of the same name.
-  assert(DumpSharedSpaces, "only when dumping");
-  Symbol* name = k->name();
-  if (_loaded_unregistered_classes == NULL) {
-    _loaded_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)LoadedUnregisteredClassesTable();
+  Arguments::assert_is_dumping_archive();
+  MutexLocker ml(current, UniqueUnregisteredClasses_lock);
+  Symbol* name = klass->name();
+  if (_unique_unregistered_classes == NULL) {
+    _unique_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)UniqueUnregisteredClassesTable();
   }
-  bool created = false;
-  _loaded_unregistered_classes->put_if_absent(name, true, &created);
+  bool created;
+  InstanceKlass** v = _unique_unregistered_classes->put_if_absent(name, klass, &created);
   if (created) {
+    name->increment_refcount();
+  }
+  return (klass == *v);
+}
+
+// true == class was successfully added; false == a duplicated class already exists.
+bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
+  assert(DumpSharedSpaces, "only when dumping");
+  if (check_unique_unregistered_class(current, k)) {
     MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
+    return true;
+  } else {
+    return false;
   }
-  return created;
 }
 
 // This function is called to lookup the super/interfaces of shared classes for
@@ -1288,6 +1300,21 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   _dumptime_table->remove(k);
 }
 
+void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
+  if (Arguments::is_dumping_archive()) {
+    remove_dumptime_info(klass);
+  }
+
+  if (_unique_unregistered_classes != NULL) {
+    MutexLocker ml(Thread::current(), UniqueUnregisteredClasses_lock);
+    Symbol* name = klass->name();
+    InstanceKlass** v = _unique_unregistered_classes->get(name);
+    if (v != NULL) {
+      *v = NULL;
+    }
+  }
+}
+
 bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
   while (k) {
     if (k->name()->equals("jdk/internal/event/Event")) {
@@ -1320,7 +1347,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  log_warning(cds)("Skipping %s: %s @%p", k->name()->as_C_string(), reason, k);
   return true;
 }
 
@@ -1424,6 +1451,20 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     if (check_for_exclusion(intf, NULL)) {
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
+    }
+  }
+
+  if (DynamicDumpSharedSpaces && !SystemDictionaryShared::is_builtin(k)) { // unregistered class -- check for uniqueness.
+    // At this point, if any of my supertype T is an unregistered class, we know that
+    // T must have already passed the uniqueness check.
+    //
+    // Note that we may have two identical class herarchies loaded by two different
+    // custom loaders. If we do the uniqueness check before checking the supertypes,
+    // we may end up excluding most classes in both hierarchies due to the random
+    // traversal order of ResourceHashtable.
+    bool i_am_first = SystemDictionaryShared::check_unique_unregistered_class(Thread::current(), k);
+    if (!i_am_first) {
+      return warn_excluded(k, "Duplicated unregistered class");
     }
   }
 
