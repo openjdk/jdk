@@ -1036,7 +1036,7 @@ void VirtualSpace::check_for_contiguity() {
   assert(high() <= upper_high(), "upper high");
 }
 
-void VirtualSpace::print_on(outputStream* out) {
+void VirtualSpace::print_on(outputStream* out) const {
   out->print   ("Virtual space:");
   if (special()) out->print(" (pinned in memory)");
   out->cr();
@@ -1046,7 +1046,7 @@ void VirtualSpace::print_on(outputStream* out) {
   out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
-void VirtualSpace::print() {
+void VirtualSpace::print() const {
   print_on(tty);
 }
 
