@@ -153,8 +153,8 @@ public class ChannelInputStream
                 long pos = fc.position();
                 long size = fc.size();
                 long i = 0L;
-                for (long n = size - pos; i < n;
-                  i += fc.transferTo(pos + i, Long.MAX_VALUE, oc));
+                for (long n = size - pos; i < n;)
+                    i += fc.transferTo(pos + i, Long.MAX_VALUE, oc);
                 fc.position(size);
                 return i;
             }
@@ -166,8 +166,8 @@ public class ChannelInputStream
                     long pos = sbc.position();
                     long size = sbc.size();
                     long i = 0L;
-                    for (long n = size - pos; i < n;
-                      i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE));
+                    for (long n = size - pos; i < n;)
+                        i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
                     fc.position(fcpos + i);
                     return i;
                 }
@@ -182,7 +182,7 @@ public class ChannelInputStream
                         if (r > -1) {
                             bb.flip();
                             while (bb.hasRemaining())
-                              oc.write(bb);
+                                oc.write(bb);
                             bb.clear();
                             i += r;
                         }
@@ -200,7 +200,7 @@ public class ChannelInputStream
                 for (int r = ch.read(bb); r > -1; r = ch.read(bb)) {
                     bb.flip();
                     while (bb.hasRemaining())
-                      oc.write(bb);
+                        oc.write(bb);
                     bb.clear();
                     i += r;
                 }
