@@ -381,16 +381,17 @@ final class DCmdStart extends AbstractDCmd {
 
                Event settings and .jfc options can also be specified using the following syntax:
 
-                 jfc-option=value    (Optional) The option value to modify. To see available options for
-                                     a .jfc file, use the 'jfr configure' command.
+                 jfc-option=value    (Optional) The option value to modify. To see available
+                                     options for a .jfc file, use the 'jfr configure' command.
 
                  event-setting=value (Optional) The event setting value to modify. Use the form:
                                      <event-name>#<setting-name>=<value>
                                      To add a new event setting, prefix the event name with '+'.
 
-               In case of a conflict between a parameter and a .jfc option, the parameter will take precedence.
-               The whitespace character can be omitted for timespan values, i.e. 20s. For
-               more information about the settings syntax, see Javadoc of the jdk.jfr package.
+               In case of a conflict between a parameter and a .jfc option, the parameter will
+               take  precedence. The whitespace character can be omitted for timespan values,
+               i.e. 20s. For more information about the settings syntax, see Javadoc of the
+               jdk.jfr package.
 
                Options must be specified using the <key> or <key>=<value> syntax.
 
@@ -409,7 +410,7 @@ final class DCmdStart extends AbstractDCmd {
                 $ jcmd <pid> JFR.start settings=user.jfc com.example.UserDefined#enabled=true
                 $ jcmd <pid> JFR.start settings=none +Hello#enabled=true
 
-               Note, if the default event settings are modified, overhead may exceed 1%.
+               Note, if the default event settings are modified, overhead may exceed 1%%.
 
                """.formatted(exampleDirectory()).lines().toArray(String[]::new);
     }
