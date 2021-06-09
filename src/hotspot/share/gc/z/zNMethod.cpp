@@ -105,7 +105,7 @@ ZReentrantLock* ZNMethod::lock_for_nmethod(nmethod* nm) {
 }
 
 void ZNMethod::log_register(const nmethod* nm) {
-  LogTarget(Trace, gc, nmethod) log;
+  LogTarget(Debug, gc, nmethod) log;
   if (!log.is_enabled()) {
     return;
   }
