@@ -141,6 +141,7 @@ public:
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_opr);
+    state->do_output(_opr);
   }
 
   virtual void emit_code(LIR_Assembler* ce) {
@@ -176,6 +177,7 @@ public:
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_opr);
+    state->do_output(_opr);
     state->do_stub(_stub);
   }
 
@@ -237,18 +239,14 @@ public:
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_new_zaddress);
-    if (_stub != NULL) {
-      state->do_input(_addr);
+    state->do_input(_addr);
 
-      // Use temp registers to ensure these they use different registers.
-      state->do_temp(_addr);
-      state->do_temp(_new_zaddress);
+    // Use temp registers to ensure these they use different registers.
+    state->do_temp(_addr);
+    state->do_temp(_new_zaddress);
 
-      state->do_output(_new_zpointer);
-      state->do_stub(_stub);
-    } else {
-      state->do_output(_new_zaddress);
-    }
+    state->do_output(_new_zpointer);
+    state->do_stub(_stub);
   }
 
   virtual void emit_code(LIR_Assembler* ce) {
@@ -375,6 +373,7 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
 #ifdef AMD64
   cmp_value.load_item_force(FrameMap::rax_oop_opr);
 #else
+  // TODO: Check that this actually works on AArch64
   cmp_value.load_item();
   cmp_value.set_destroys_register();
 #endif
@@ -397,18 +396,15 @@ LIR_Opr ZBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value
   }
 
   value.load_item();
-  value.set_destroys_register();
 
   LIR_Opr value_zpointer = store_barrier(access, value.result(), true /* is_atomic */);
 
   // The parent class expects the in-parameter and out-parameter to be the same.
   // Move the colored pointer to the expected register.
-  __ move(value_zpointer, value.result());
+  __ xchg(access.resolved_addr(), value_zpointer, value_zpointer, LIR_OprFact::illegalOpr);
+  __ append(new LIR_OpZUncolor(value_zpointer));
 
-  LIR_Opr result = BarrierSetC1::atomic_xchg_at_resolved(access, value);
-  __ append(new LIR_OpZUncolor(result));
-
-  return result;
+  return value_zpointer;
 }
 
 #undef __
