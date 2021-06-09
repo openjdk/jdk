@@ -1,3 +1,4 @@
+package jdk.jfr.internal.dcmd;
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,7 +23,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.dcmd;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +37,8 @@ final class ArgumentParser {
     private final StringBuilder builder = new StringBuilder();
     private final String text;
     private final char delimiter;
+    private final String keyValueDelimiter;
+    private final String valueDelimiter;
     private final Argument[] arguments;
     private int position;
 
@@ -43,15 +46,17 @@ final class ArgumentParser {
         this.text = text;
         this.delimiter = delimiter;
         this.arguments = arguments;
+        this.keyValueDelimiter = "=" + delimiter;
+        this.valueDelimiter = Character.toString(delimiter);
     }
 
     public Map<String, Object> parse() {
         eatDelimiter();
         while (!atEnd()) {
-            String key = readText('=', delimiter);
+            String key = readText(keyValueDelimiter);
             String value = null;
             if (accept('=')) {
-                value = readText(delimiter);
+                value = readText(valueDelimiter);
             }
             if (!atEnd() && !accept(delimiter)) { // must be followed by delimiter
                 throw new IllegalArgumentException("Expected delimiter, but found " + currentChar());
@@ -126,36 +131,33 @@ final class ArgumentParser {
         return false;
     }
 
-    private String readText(char... abortCharacters) {
-        if (accept('\'') || accept('\"')) { // begin quote
-            String s = readUntil(false, lastChar());
-            position++; // end quote
-            return s;
-        }
-        return readUntil(true, abortCharacters);
-    }
-
-    private String readUntil(boolean acceptEnd, char... abortCharacters) {
+    // Mostly copied from native DCmdParser
+    private String readText(String abortChars) {
         builder.setLength(0);
-        while (!atEnd()) {
-            char c = currentChar();
-            if (c == '\\' && position < text.length() - 2) { // escaped
-                position++;
-                c = currentChar();
-            } else {
-                for (char a : abortCharacters) {
-                    if (c == a) {
-                        return builder.toString();
-                    }
-                }
+        boolean quoted = false; ;
+        while (position <= text.length() - 1 && abortChars.indexOf(currentChar()) == -1) {
+          if (currentChar() == '\"' || currentChar() == '\'') {
+            char quote =currentChar();
+            quoted = true;
+            while (position < text.length() - 1) {
+              position++;
+              if (currentChar() == quote && lastChar() != '\\') {
+                break;
+              }
+              builder.append(currentChar());
             }
-            builder.append(c);
+            if (currentChar() != quote) {
+              throw new IllegalArgumentException("Format error in diagnostic command arguments");
+            }
+            break;
+          }
+          builder.append(currentChar());
+          position++;
+        }
+        if (quoted) {
             position++;
         }
-        if (acceptEnd) {
-            return builder.toString();
-        }
-        throw new IllegalArgumentException("Expected " + new String());
+        return builder.toString();
     }
 
     private Object value(String name, String type, String text) {
