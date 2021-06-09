@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ class thrstat002a extends Thread {
             }
             System.out.println("thrstat002a.run after blockingMonitor lock");
 
+            System.out.println("thrstat002a.run before runningBarrier unlock");
             thrstat002.runningBarrier.unlock();
-            System.out.println("thrstat002a.run after runningBarrier unlock");
             int i = 0;
             int n = 1000;
             while (flag) {
