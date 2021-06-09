@@ -1805,6 +1805,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
           }
         } else {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
+          MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
           if (!nm->make_in_use()) {
             result = JVMCI::nmethod_reclaimed;
           }
