@@ -172,8 +172,8 @@ public class ChannelInputStream
                     return i;
                 }
 
+                ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                 try {
-                    ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                     long i = 0L;
                     int r;
                     do {
@@ -194,8 +194,8 @@ public class ChannelInputStream
                 }
             }
 
+            ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
             try {
-                ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                 long i = 0L;
                 for (int r = ch.read(bb); r > -1; r = ch.read(bb)) {
                     bb.flip();
