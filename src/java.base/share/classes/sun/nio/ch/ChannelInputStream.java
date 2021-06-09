@@ -148,15 +148,18 @@ public class ChannelInputStream
     public long transferTo(OutputStream out) throws IOException {
         if (out instanceof ChannelOutputStream cos) {
             WritableByteChannel oc = cos.channel();
+            long i = 0L;
 
             if (ch instanceof FileChannel fc) {
                 long pos = fc.position();
                 long size = fc.size();
-                long i = 0L;
-                for (long n = size - pos; i < n;)
-                    i += fc.transferTo(pos + i, Long.MAX_VALUE, oc);
-                fc.position(size);
-                return i;
+                try {
+                    for (long n = size - pos; i < n;)
+                        i += fc.transferTo(pos + i, Long.MAX_VALUE, oc);
+                    return i;
+                } finally {
+                    fc.position(pos + i);
+                }
             }
 
             if (oc instanceof FileChannel fc) {
@@ -165,16 +168,17 @@ public class ChannelInputStream
                 if (ch instanceof SeekableByteChannel sbc) {
                     long pos = sbc.position();
                     long size = sbc.size();
-                    long i = 0L;
-                    for (long n = size - pos; i < n;)
-                        i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
-                    fc.position(fcpos + i);
-                    return i;
+                    try {
+                        for (long n = size - pos; i < n;)
+                            i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
+                        return i;
+                    } finally {
+                        fc.position(fcpos + i);
+                    }
                 }
 
                 ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                 try {
-                    long i = 0L;
                     int r;
                     do {
                         i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
@@ -187,16 +191,15 @@ public class ChannelInputStream
                             i += r;
                         }
                     } while (r > -1);
-                    fc.position(fcpos + i);
                     return i;
                 } finally {
+                    fc.position(fcpos + i);
                     Util.releaseTemporaryDirectBuffer(bb);
                 }
             }
 
             ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
             try {
-                long i = 0L;
                 for (int r = ch.read(bb); r > -1; r = ch.read(bb)) {
                     bb.flip();
                     while (bb.hasRemaining())
