@@ -36,7 +36,8 @@ import java.security.spec.AlgorithmParameterSpec;
  * size, and optionally an initialization vector (IV) (only in feedback mode).
  *
  * <p> This class can be used to initialize a {@code Cipher} object that
- * implements the <i>RC5</i> algorithm as specified in <a href="https://datatracker.ietf.org/doc/html/rfc2040">RFC 2040</a>.
+ * implements the <i>RC5</i> algorithm as specified in
+ * <a href="https://datatracker.ietf.org/doc/html/rfc2040">RFC 2040</a>.
  *
  * @author Jan Luehe
  *
