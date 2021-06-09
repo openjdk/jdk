@@ -25,7 +25,6 @@ package jdk.test.failurehandler;
 
 import jdk.test.failurehandler.action.ActionSet;
 import jdk.test.failurehandler.action.ActionHelper;
-import jdk.test.failurehandler.action.PatternAction;
 
 import java.io.IOException;
 import java.io.PrintWriter;
