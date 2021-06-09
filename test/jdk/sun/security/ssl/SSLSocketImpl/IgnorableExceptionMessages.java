@@ -38,22 +38,16 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.util.ForceGC;
 
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSocket;
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ref.WeakReference;
-import java.net.SocketException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 
 public class IgnorableExceptionMessages extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
+        if (args.length > 0) {
             // A non-empty set of arguments occurs when the "runTest" argument
             // is passed to the test via ProcessTools::executeTestJvm.
             //
@@ -63,13 +57,12 @@ public class IgnorableExceptionMessages extends SSLSocketTemplate {
             // properties passed to the test JVM - debug flags, tls version, etc.
             new IgnorableExceptionMessages().run();
         } else {
-            String clientCipherSuites = "-Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA";
-            String serverCipherSuites = "-Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA";
+            String clientTLSVersion = "-Djdk.tls.client.protocols=TLSv1.2";
             String javaxDebugFlag = "-Djavax.net.debug=all";
             String className = "IgnorableExceptionMessages";
             String extraArgument = "runTest"; // Triggers the test JVM to execute when args.length > 0
-            List<String> jvmArgs = List.of(clientCipherSuites,
-                    serverCipherSuites,
+            List<String> jvmArgs = List.of(
+                    clientTLSVersion,
                     javaxDebugFlag,
                     className,
                     extraArgument);
@@ -77,17 +70,22 @@ public class IgnorableExceptionMessages extends SSLSocketTemplate {
             OutputAnalyzer output = ProcessTools.executeTestJvm(jvmArgs);
 
             if (output.getExitValue() != 0) {
-                output.asLines().forEach(System.out::println); // will
+                output.asLines().forEach(System.out::println); // No need to dump the output unless the test fails
                 throw new RuntimeException("Test JVM process failed");
             }
-            output.shouldContain("SSLSocket close failed. Debug info only. Exception details:");
-            output.shouldContain("SSLSocket duplex close failed. Debug info only. Exception details:");
+
+            try {
+                output.shouldContain("SSLSocket duplex close failed. Debug info only. Exception details:");
+            } catch (Exception ex) {
+                output.asLines().forEach(System.out::println); // No need to dump the output unless the test fails
+                throw ex;
+            }
         }
     }
 
     @Override
     protected void runClientApplication(int serverPort) throws Exception {
-        String urlString = serverAddress.getHostAddress() + serverPort + "/";
+        String urlString = "https://localhost:" + serverPort + "/";
         URL url = new URL(urlString);
 
         try {
