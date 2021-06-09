@@ -1,5 +1,3 @@
-// rr record ~/jdk-jdk/build/linux-x86_64-server-fastdebug/images/jdk/bin/java -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+PrintCompilation -XX:CompileOnly=TestPinnedUseInOuterLSM::test -XX:CompileCommand=quiet -XX:PrintIdealGraphFile=graph.xml -XX:PrintIdealGraphLevel=2 -XX:+UseG1GC -XX:+TraceLoopOpts -XX:LoopUnrollLimit=0 TestPinnedUseInOuterLSM
-
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
