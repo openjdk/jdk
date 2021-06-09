@@ -285,9 +285,6 @@ private:
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
-  // Return true if should upgrade to full gc after an incremental one.
-  bool should_upgrade_to_full_gc(GCCause::Cause cause);
-
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
 
@@ -1089,9 +1086,10 @@ public:
     return _hrm.available() == 0;
   }
 
-  // Returns whether there are any regions left in the heap for allocation.
-  bool has_regions_left_for_allocation() const {
-    return !is_maximal_no_gc() || num_free_regions() != 0;
+  // Returns true if an incremental GC should be upgrade to a full gc. This
+  // is done when there are no free regions and the heap can't be expanded.
+  bool should_upgrade_to_full_gc() const {
+    return is_maximal_no_gc() && num_free_regions() == 0;
   }
 
   // The current number of regions in the heap.
