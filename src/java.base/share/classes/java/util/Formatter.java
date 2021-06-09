@@ -2674,27 +2674,26 @@ public final class Formatter implements Closeable, Flushable {
             int index = fs.index();
             try {
                 switch (index) {
-                case -2:  // fixed string, "%n", or "%%"
-                    fs.print(null, l);
-                    break;
-                case -1:  // relative index
-                    if (last < 0 || (args != null && last > args.length - 1))
-                        throw new MissingFormatArgumentException(fs.toString());
-                    fs.print((args == null ? null : args[last]), l);
-                    break;
-                case 0:  // ordinary index
-                    lasto++;
-                    last = lasto;
-                    if (args != null && lasto > args.length - 1)
-                        throw new MissingFormatArgumentException(fs.toString());
-                    fs.print((args == null ? null : args[lasto]), l);
-                    break;
-                default:  // explicit index
-                    last = index - 1;
-                    if (args != null && last > args.length - 1)
-                        throw new MissingFormatArgumentException(fs.toString());
-                    fs.print((args == null ? null : args[last]), l);
-                    break;
+                    case -2 ->  // fixed string, "%n", or "%%"
+                        fs.print(null, l);
+                    case -1 -> {  // relative index
+                        if (last < 0 || (args != null && last > args.length - 1))
+                            throw new MissingFormatArgumentException(fs.toString());
+                        fs.print((args == null ? null : args[last]), l);
+                    }
+                    case 0 -> {  // ordinary index
+                        lasto++;
+                        last = lasto;
+                        if (args != null && lasto > args.length - 1)
+                            throw new MissingFormatArgumentException(fs.toString());
+                        fs.print((args == null ? null : args[lasto]), l);
+                    }
+                    default -> {  // explicit index
+                        last = index - 1;
+                        if (args != null && last > args.length - 1)
+                            throw new MissingFormatArgumentException(fs.toString());
+                        fs.print((args == null ? null : args[last]), l);
+                    }
                 }
             } catch (IOException x) {
                 lastException = x;
@@ -4111,15 +4110,9 @@ public final class Formatter implements Closeable, Flushable {
                 int i = t.get(Calendar.YEAR);
                 int size = 2;
                 switch (c) {
-                case DateTime.CENTURY:
-                    i /= 100;
-                    break;
-                case DateTime.YEAR_2:
-                    i %= 100;
-                    break;
-                case DateTime.YEAR_4:
-                    size = 4;
-                    break;
+                    case DateTime.CENTURY -> i /= 100;
+                    case DateTime.YEAR_2  -> i %= 100;
+                    case DateTime.YEAR_4  -> size = 4;
                 }
                 Flags flags = Flags.ZERO_PAD;
                 sb.append(localizedMagnitude(null, i, flags, size, l));
@@ -4352,15 +4345,9 @@ public final class Formatter implements Closeable, Flushable {
                     int i = t.get(ChronoField.YEAR_OF_ERA);
                     int size = 2;
                     switch (c) {
-                    case DateTime.CENTURY:
-                        i /= 100;
-                        break;
-                    case DateTime.YEAR_2:
-                        i %= 100;
-                        break;
-                    case DateTime.YEAR_4:
-                        size = 4;
-                        break;
+                        case DateTime.CENTURY -> i /= 100;
+                        case DateTime.YEAR_2  -> i %= 100;
+                        case DateTime.YEAR_4  -> size = 4;
                     }
                     Flags flags = Flags.ZERO_PAD;
                     sb.append(localizedMagnitude(null, i, flags, size, l));
@@ -4836,46 +4823,16 @@ public final class Formatter implements Closeable, Flushable {
         static final char ISO_STANDARD_DATE     = 'F'; // (%Y-%m-%d)
 
         static boolean isValid(char c) {
-            switch (c) {
-            case HOUR_OF_DAY_0:
-            case HOUR_0:
-            case HOUR_OF_DAY:
-            case HOUR:
-            case MINUTE:
-            case NANOSECOND:
-            case MILLISECOND:
-            case MILLISECOND_SINCE_EPOCH:
-            case AM_PM:
-            case SECONDS_SINCE_EPOCH:
-            case SECOND:
-            case TIME:
-            case ZONE_NUMERIC:
-            case ZONE:
-
-            // Date
-            case NAME_OF_DAY_ABBREV:
-            case NAME_OF_DAY:
-            case NAME_OF_MONTH_ABBREV:
-            case NAME_OF_MONTH:
-            case CENTURY:
-            case DAY_OF_MONTH_0:
-            case DAY_OF_MONTH:
-            case NAME_OF_MONTH_ABBREV_X:
-            case DAY_OF_YEAR:
-            case MONTH:
-            case YEAR_2:
-            case YEAR_4:
-
-            // Composites
-            case TIME_12_HOUR:
-            case TIME_24_HOUR:
-            case DATE_TIME:
-            case DATE:
-            case ISO_STANDARD_DATE:
-                return true;
-            default:
-                return false;
-            }
+            return switch (c) {
+                case HOUR_OF_DAY_0, HOUR_0, HOUR_OF_DAY, HOUR, MINUTE, NANOSECOND, MILLISECOND, MILLISECOND_SINCE_EPOCH,
+                     AM_PM, SECONDS_SINCE_EPOCH, SECOND, TIME, ZONE_NUMERIC, ZONE -> true;
+                // Date
+                case NAME_OF_DAY_ABBREV, NAME_OF_DAY, NAME_OF_MONTH_ABBREV, NAME_OF_MONTH, CENTURY, DAY_OF_MONTH_0,
+                     DAY_OF_MONTH, NAME_OF_MONTH_ABBREV_X, DAY_OF_YEAR, MONTH, YEAR_2, YEAR_4 -> true;
+                // Composites
+                case TIME_12_HOUR, TIME_24_HOUR, DATE_TIME, DATE, ISO_STANDARD_DATE -> true;
+                default -> false;
+            };
         }
     }
 }

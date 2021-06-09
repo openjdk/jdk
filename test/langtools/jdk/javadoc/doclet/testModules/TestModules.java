@@ -1111,7 +1111,7 @@ public class TestModules extends JavadocTester {
         checkOutput("deprecated-list.html", found,
                 """
                     <ul>
-                    <li><a href="#for-removal">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#module">Modules</a></li>
                     </ul>""",
                 """
@@ -1439,13 +1439,14 @@ public class TestModules extends JavadocTester {
                     <table summary="Package Summary table, listing packages, and an explanation">""");
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
         checkOutput("package-search-index.js", true,
                 """
                     {"l":"All Packages","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
                 """
-                    <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                    parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a\
+                    ><span class="vertical-separator">|</span><a href="allpackages-index.html">All&n\
+                    bsp;Packages</a>""");
     }
 }

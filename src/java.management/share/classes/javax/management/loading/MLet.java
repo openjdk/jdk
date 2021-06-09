@@ -1287,6 +1287,7 @@ public class MLet extends java.net.URLClassLoader
         return param;
      }
 
+    @SuppressWarnings("removal")
     private synchronized void setMBeanServer(final MBeanServer server) {
         this.server = server;
         PrivilegedAction<ClassLoaderRepository> act =

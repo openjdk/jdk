@@ -738,27 +738,22 @@ public class SimpleTimeZone extends TimeZone {
         cdate.setNormalizedYear(year);
         cdate.setMonth(month + 1);
         switch (mode) {
-        case DOM_MODE:
-            cdate.setDayOfMonth(dayOfMonth);
-            break;
-
-        case DOW_IN_MONTH_MODE:
-            cdate.setDayOfMonth(1);
-            if (dayOfMonth < 0) {
-                cdate.setDayOfMonth(cal.getMonthLength(cdate));
+            case DOM_MODE -> cdate.setDayOfMonth(dayOfMonth);
+            case DOW_IN_MONTH_MODE -> {
+                cdate.setDayOfMonth(1);
+                if (dayOfMonth < 0) {
+                    cdate.setDayOfMonth(cal.getMonthLength(cdate));
+                }
+                cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(dayOfMonth, dayOfWeek, cdate);
             }
-            cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(dayOfMonth, dayOfWeek, cdate);
-            break;
-
-        case DOW_GE_DOM_MODE:
-            cdate.setDayOfMonth(dayOfMonth);
-            cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(1, dayOfWeek, cdate);
-            break;
-
-        case DOW_LE_DOM_MODE:
-            cdate.setDayOfMonth(dayOfMonth);
-            cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(-1, dayOfWeek, cdate);
-            break;
+            case DOW_GE_DOM_MODE -> {
+                cdate.setDayOfMonth(dayOfMonth);
+                cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(1, dayOfWeek, cdate);
+            }
+            case DOW_LE_DOM_MODE -> {
+                cdate.setDayOfMonth(dayOfMonth);
+                cdate = (BaseCalendar.Date) cal.getNthDayOfWeek(-1, dayOfWeek, cdate);
+            }
         }
         return cal.getTime(cdate) + timeOfDay;
     }
@@ -1527,9 +1522,7 @@ public class SimpleTimeZone extends TimeZone {
          * rules anyway.
          */
         switch (startTimeMode) {
-        case UTC_TIME:
-            startTime += rawOffset;
-            break;
+            case UTC_TIME -> startTime += rawOffset;
         }
         while (startTime < 0) {
             startTime += millisPerDay;
@@ -1541,11 +1534,8 @@ public class SimpleTimeZone extends TimeZone {
         }
 
         switch (endTimeMode) {
-        case UTC_TIME:
-            endTime += rawOffset + dstSavings;
-            break;
-        case STANDARD_TIME:
-            endTime += dstSavings;
+            case UTC_TIME -> endTime += rawOffset + dstSavings;
+            case STANDARD_TIME -> endTime += dstSavings;
         }
         while (endTime < 0) {
             endTime += millisPerDay;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
+        @SuppressWarnings("removal")
         String forceStr = java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
 
@@ -186,6 +187,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
+        @SuppressWarnings("removal")
         String shapeTextStr =java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
 
@@ -729,6 +731,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
           GraphicsEnvironment.getLocalGraphicsEnvironment().
           getDefaultScreenDevice().getDefaultConfiguration();
 
+        @SuppressWarnings("removal")
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
                 public PrintService run() {
@@ -809,6 +812,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
+        @SuppressWarnings("removal")
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
                 public PrintService run() {
@@ -949,6 +953,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -2554,6 +2559,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * to throw a SecurityException if the permission is not granted
      */
     private void throwPrintToFile() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (printToFilePermission == null) {

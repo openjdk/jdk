@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,22 @@
  * @run testng/othervm
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   -Dforeign.restricted=permit
+ *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestIntrinsics
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.SymbolLookup;
 import org.testng.annotations.*;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -52,16 +53,14 @@ import static org.testng.Assert.assertEquals;
 public class TestIntrinsics {
 
     static final CLinker abi = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofLibrary("Intrinsics");
+    static {
+        System.loadLibrary("Intrinsics");
+    }
 
-    private static MethodHandle linkIndentity(String name, Class<?> carrier, MemoryLayout layout, boolean trivial) {
-        LibraryLookup.Symbol ma = lookup.lookup(name).orElseThrow();
-        MethodType mt = methodType(carrier, carrier);
-        FunctionDescriptor fd = FunctionDescriptor.of(layout, layout);
-        if (trivial) {
-            fd = fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true);
-        }
-        return abi.downcallHandle(ma, mt, fd);
+    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
+
+    private interface RunnableX {
+        void run() throws Throwable;
     }
 
     @Test(dataProvider = "tests")
@@ -71,45 +70,50 @@ public class TestIntrinsics {
         }
     }
 
-    private interface RunnableX {
-        void run() throws Throwable;
-    }
-
-    private interface AddTest {
-        void add(MethodHandle target, Object expectedResult, Object... args);
-    }
-
     @DataProvider
     public Object[][] tests() {
         List<RunnableX> testsList = new ArrayList<>();
+
+        interface AddTest {
+            void add(MethodHandle target, Object expectedResult, Object... args);
+        }
+
         AddTest tests = (mh, expectedResult, args) -> testsList.add(() -> {
             Object actual = mh.invokeWithArguments(args);
             assertEquals(actual, expectedResult);
         });
 
+        interface AddIdentity {
+            void add(String name, Class<?> carrier, MemoryLayout layout, Object arg);
+        }
+
+        AddIdentity addIdentity = (name, carrier, layout, arg) -> {
+            MemoryAddress ma = LOOKUP.lookup(name).get();
+            MethodType mt = methodType(carrier, carrier);
+            FunctionDescriptor fd = FunctionDescriptor.of(layout, layout);
+
+            tests.add(abi.downcallHandle(ma, mt, fd), arg, arg);
+            tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), arg, arg);
+            tests.add(abi.downcallHandle(mt, fd), arg, ma, arg);
+        };
+
         { // empty
-            LibraryLookup.Symbol ma = lookup.lookup("empty").orElseThrow();
+            MemoryAddress ma = LOOKUP.lookup("empty").get();
             MethodType mt = methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             tests.add(abi.downcallHandle(ma, mt, fd), null);
             tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), null);
         }
 
-        tests.add(linkIndentity("identity_char", byte.class, C_CHAR, false), (byte) 10, (byte) 10);
-        tests.add(linkIndentity("identity_char", byte.class, C_CHAR, true), (byte) 10, (byte) 10);
-        tests.add(linkIndentity("identity_short", short.class, C_SHORT, false), (short) 10, (short) 10);
-        tests.add(linkIndentity("identity_short", short.class, C_SHORT, true), (short) 10, (short) 10);
-        tests.add(linkIndentity("identity_int", int.class, C_INT, false), 10, 10);
-        tests.add(linkIndentity("identity_int", int.class, C_INT, true), 10, 10);
-        tests.add(linkIndentity("identity_long", long.class, C_LONG_LONG, false), 10L, 10L);
-        tests.add(linkIndentity("identity_long", long.class, C_LONG_LONG, true), 10L, 10L);
-        tests.add(linkIndentity("identity_float", float.class, C_FLOAT, false), 10F, 10F);
-        tests.add(linkIndentity("identity_float", float.class, C_FLOAT, true), 10F, 10F);
-        tests.add(linkIndentity("identity_double", double.class, C_DOUBLE, false), 10D, 10D);
-        tests.add(linkIndentity("identity_double", double.class, C_DOUBLE, true), 10D, 10D);
+        addIdentity.add("identity_char",   byte.class,   C_CHAR,   (byte) 10);
+        addIdentity.add("identity_short",  short.class,  C_SHORT, (short) 10);
+        addIdentity.add("identity_int",    int.class,    C_INT,           10);
+        addIdentity.add("identity_long",   long.class,   C_LONG_LONG,     10L);
+        addIdentity.add("identity_float",  float.class,  C_FLOAT,         10F);
+        addIdentity.add("identity_double", double.class, C_DOUBLE,        10D);
 
         { // identity_va
-            LibraryLookup.Symbol ma = lookup.lookup("identity_va").orElseThrow();
+            MemoryAddress ma = LOOKUP.lookup("identity_va").get();
             MethodType mt = methodType(int.class, int.class, double.class, int.class, float.class, long.class);
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, asVarArg(C_DOUBLE),
                     asVarArg(C_INT), asVarArg(C_FLOAT), asVarArg(C_LONG_LONG));
@@ -124,7 +128,7 @@ public class TestIntrinsics {
                     C_SHORT, C_SHORT);
             Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {
-                LibraryLookup.Symbol ma = lookup.lookup("invoke_high_arity" + i).orElseThrow();
+                MemoryAddress ma = LOOKUP.lookup("invoke_high_arity" + i).get();
                 MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
                 FunctionDescriptor fd = baseFD.withReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];

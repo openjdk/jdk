@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 #define SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 
-#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
+
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"

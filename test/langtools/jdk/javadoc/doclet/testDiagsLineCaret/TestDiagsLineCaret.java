@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8267126
+ * @bug      8267126 8267176
  * @summary  javadoc should show "line and caret" for diagnostics
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -70,7 +70,7 @@ public class TestDiagsLineCaret extends JavadocTester {
                     error: This is a error
                     warning: This is a warning
                     warning: This is a mandatory_warning
-                    This is a note
+                    Note: This is a note
                     MyClass.java:5: error: This is a error for MyClass
                     public class MyClass { }
                            ^

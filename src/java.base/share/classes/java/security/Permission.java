@@ -103,6 +103,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      */
     public void checkGuard(Object object) throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(this);
     }

@@ -53,6 +53,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -3768,6 +3769,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     StringDedup::threads_do(&cl);
   }
   cl.do_thread(WatcherThread::watcher_thread());
+  cl.do_thread(AsyncLogWriter::instance());
 
   st->flush();
 }
@@ -3821,6 +3823,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
+  print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
