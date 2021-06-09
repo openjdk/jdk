@@ -95,7 +95,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
-    private final List<String> disabledAlgorithms;
+    private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
@@ -127,11 +127,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public DisabledAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {
         super(decomposer);
-        disabledAlgorithms = getAlgorithms(propertyName);
+        List<String> disabledAlgorithmsList = getAlgorithms(propertyName);
 
         // Check for alias
         int ecindex = -1, i = 0;
-        for (String s : disabledAlgorithms) {
+        for (String s : disabledAlgorithmsList) {
             if (s.regionMatches(true, 0,"include ", 0, 8)) {
                 if (s.regionMatches(true, 8, PROPERTY_DISABLED_EC_CURVES, 0,
                         PROPERTY_DISABLED_EC_CURVES.length())) {
@@ -142,11 +142,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             i++;
         }
         if (ecindex > -1) {
-            disabledAlgorithms.remove(ecindex);
-            disabledAlgorithms.addAll(ecindex,
+            disabledAlgorithmsList.remove(ecindex);
+            disabledAlgorithmsList.addAll(ecindex,
                     getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
         }
-        algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
+        algorithmConstraints = new Constraints(propertyName, disabledAlgorithmsList);
+
+        disabledAlgorithms = new HashSet<String>();
+        for (String algorithm : disabledAlgorithmsList) {
+            if (algorithm == null || algorithm.isEmpty()) {
+                continue;
+            }
+            disabledAlgorithms.add(algorithm.toLowerCase());
+        }
     }
 
     /*

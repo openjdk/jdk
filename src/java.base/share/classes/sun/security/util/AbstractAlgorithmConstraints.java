@@ -78,34 +78,26 @@ public abstract class AbstractAlgorithmConstraints
         return new ArrayList<>(Arrays.asList(algorithmsInProperty));
     }
 
-    static boolean checkAlgorithm(List<String> algorithms, String algorithm,
+    static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
         Set<String> elements = null;
-        for (String item : algorithms) {
-            if (item == null || item.isEmpty()) {
-                continue;
-            }
+        if (algorithms.contains(algorithm.toLowerCase())) {
+            return false;
+        }
 
-            // check the full name
-            if (item.equalsIgnoreCase(algorithm)) {
-                return false;
-            }
-
-            // decompose the algorithm into sub-elements
-            if (elements == null) {
-                elements = decomposer.decompose(algorithm);
-            }
-
-            // check the items of the algorithm
-            for (String element : elements) {
-                if (item.equalsIgnoreCase(element)) {
-                    return false;
-                }
-            }
+        // decompose the algorithm into sub-elements
+        if (elements == null) {
+            elements = decomposer.decompose(algorithm);
+        }
+        // check the element of the elements
+        for (String element : elements) {
+            if (algorithms.contains(element.toLowerCase())) {
+                 return false;
+             }
         }
 
         return true;
