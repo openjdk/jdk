@@ -1292,7 +1292,9 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (k != NULL) {
+#if INCLUDE_CDS
       SharedClassLoadingMark slm(THREAD, k);
+#endif
       k = find_or_define_instance_class(class_name, class_loader, k, CHECK_NULL);
     }
     return k;

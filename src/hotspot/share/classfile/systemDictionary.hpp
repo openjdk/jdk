@@ -81,23 +81,6 @@ class EventClassLoad;
 class Symbol;
 class TableStatistics;
 
-class SharedClassLoadingMark {
- private:
-  Thread* THREAD;
-  InstanceKlass* _klass;
- public:
-  SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
-  ~SharedClassLoadingMark() {
-    assert(THREAD != NULL, "Current thread is NULL");
-    assert(_klass != NULL, "InstanceKlass is NULL");
-    if (HAS_PENDING_EXCEPTION) {
-      if (_klass->is_shared()) {
-        _klass->set_shared_loading_failed();
-      }
-    }
-  }
-};
-
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class vmClasses;

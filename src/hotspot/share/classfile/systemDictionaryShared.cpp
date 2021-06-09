@@ -1048,7 +1048,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   assert(UseSharedSpaces, "must be");
   InstanceKlass* ik = find_builtin_class(class_name);
 
-  if (ik != NULL && !ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
+  if (ik != NULL && !ik->shared_loading_failed()) {
     if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->is_shared_app_class())  ||
         (SystemDictionary::is_platform_class_loader(class_loader()) && ik->is_shared_platform_class())) {
       SharedClassLoadingMark slm(THREAD, ik);
