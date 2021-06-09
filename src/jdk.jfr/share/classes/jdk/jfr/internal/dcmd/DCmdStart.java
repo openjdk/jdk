@@ -33,8 +33,6 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,13 +42,9 @@ import java.util.Set;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
@@ -310,12 +304,13 @@ final class DCmdStart extends AbstractDCmd {
         return false;
     }
 
+    @Override
     public String[] printHelp() {
         // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
                Syntax : JFR.start [options]
 
-               Options: (options must be specified using the <key> or <key>=<value> syntax)
+               Options:
 
                  delay           (Optional) Length of time to wait before starting to record
                                  (INTEGER followed by 's' for seconds 'm' for minutes or h' for

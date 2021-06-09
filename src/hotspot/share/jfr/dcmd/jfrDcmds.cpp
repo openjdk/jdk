@@ -115,17 +115,6 @@ static bool is_disabled(outputStream* output) {
   return false;
 }
 
-static bool is_recorder_instance_created(outputStream* output) {
-  if (!JfrRecorder::is_created()) {
-    if (output != NULL) {
-      output->print_cr("No available recordings.\n");
-      output->print_cr("Use JFR.start to start a recording.\n");
-    }
-    return false;
-  }
-  return true;
-}
-
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   return is_disabled(out) || !is_module_available(out, THREAD);
@@ -253,9 +242,11 @@ void jfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
 void jfrDCmd::execute(DCmdSource source, TRAPS) {
   static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
   static const char* jc = javaClass();
-  if(!JfrJavaSupport::is_jdk_jfr_module_available(output(), THREAD)) {
+
+  if (invalid_state(output(), THREAD)) {
     return;
   }
+
   JavaValue result(T_OBJECT);
   JfrJavaArguments execute(&result, jc, "execute", signature, CHECK);
   jstring argument = JfrJavaSupport::new_string(_args, CHECK);
@@ -297,7 +288,7 @@ GrowableArray<DCmdArgumentInfo*>* jfrDCmd::argument_info_array() const {
 
   objArrayOop arguments = objArrayOop(result.get_jobject());
   assert(arguments != NULL, "invariant");
-  assert(arguments->is_array(), "must be array");
+  assert(arguments->is_array(), "must be array");*/
 
   GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo*>();
   const int length = 0;arguments->length();
