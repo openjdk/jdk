@@ -475,6 +475,16 @@ public:
 
   // Typing
   virtual bool is_vtable_blob() const { return true; }
+
+  // Profiling/safepoint support
+  class FrameParser : public BufferBlob::FrameParser {
+   public:
+    FrameParser(const VtableBlob* cb) : BufferBlob::FrameParser(cb) {}
+    virtual bool sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
 };
 
 //----------------------------------------------------------------------------------------------------

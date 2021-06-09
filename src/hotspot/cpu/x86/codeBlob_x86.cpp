@@ -93,6 +93,27 @@ bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, 
   return true;
 }
 
+bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+
+  assert(sender_pc != NULL, "invariant");
+  assert(sender_sp != NULL, "invariant");
+
+  *sender_sp = unextended_sp;
+  // Is sender_sp safe?
+  if (thread != NULL && !thread->is_in_full_stack_checked((address)*sender_sp)) {
+    return false;
+  }
+  // On Intel the return_address is always the word on the stack
+  *sender_pc = (address)*((*sender_sp) - frame::pc_return_offset);
+
+  if (sender_unextended_sp) *sender_unextended_sp = *sender_sp;
+  // Note: frame::sender_sp_offset is only valid for compiled frame
+  if (saved_fp) *saved_fp = (intptr_t**)((*sender_sp) - frame::sender_sp_offset);
+
+  return true;
+}
+
 bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
