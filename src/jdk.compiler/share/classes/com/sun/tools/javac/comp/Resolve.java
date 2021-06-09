@@ -3417,7 +3417,7 @@ public class Resolve {
          */
         final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
-                !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS;
+                 !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS || sym.kind == STATICERR;
         }
 
         /**

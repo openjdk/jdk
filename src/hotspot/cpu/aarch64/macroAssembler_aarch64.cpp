@@ -5339,6 +5339,49 @@ void MacroAssembler::safepoint_isb() {
 #endif
 }
 
+void MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
+                                  FloatRegister src2, int cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement(type2aelembytes(bt), isQ);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    switch (cond) {
+      case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
+      case BoolTest::ne: {
+        fcmeq(dst, size, src1, src2);
+        notr(dst, T16B, dst);
+        break;
+      }
+      case BoolTest::ge: fcmge(dst, size, src1, src2); break;
+      case BoolTest::gt: fcmgt(dst, size, src1, src2); break;
+      case BoolTest::le: fcmge(dst, size, src2, src1); break;
+      case BoolTest::lt: fcmgt(dst, size, src2, src1); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  } else {
+    switch (cond) {
+      case BoolTest::eq: cmeq(dst, size, src1, src2); break;
+      case BoolTest::ne: {
+        cmeq(dst, size, src1, src2);
+        notr(dst, T16B, dst);
+        break;
+      }
+      case BoolTest::ge: cmge(dst, size, src1, src2); break;
+      case BoolTest::gt: cmgt(dst, size, src1, src2); break;
+      case BoolTest::le: cmge(dst, size, src2, src1); break;
+      case BoolTest::lt: cmgt(dst, size, src2, src1); break;
+      case BoolTest::uge: cmhs(dst, size, src1, src2); break;
+      case BoolTest::ugt: cmhi(dst, size, src1, src2); break;
+      case BoolTest::ult: cmhi(dst, size, src2, src1); break;
+      case BoolTest::ule: cmhs(dst, size, src2, src1); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  }
+}
+
+
 #ifndef PRODUCT
 void MacroAssembler::verify_cross_modify_fence_not_required() {
   if (VerifyCrossModifyFence) {

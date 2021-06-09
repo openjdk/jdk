@@ -420,7 +420,7 @@ public final class TaskHelper {
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
-                    throw new PluginException(PluginsResourceBundle.
+                    throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
             }
