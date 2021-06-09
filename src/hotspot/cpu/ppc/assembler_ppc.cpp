@@ -397,42 +397,30 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
   bool use_pli = (PowerArchitecturePPC64 >= 10 && !fixed_size);
 
   if (d == R0) { // Can't use addi.
-    if (is_simm(x, 32)) { // opt 2: simm32
+    if (is_simm(x, 32)) { // opt 2: simm32 && !simm16
       xc = (x >> 16) & 0xffff;
-      bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
-      if (xc_loaded) {
-        if (xd && use_pli) {
-          pli_or_li(d, x);
-        } else {
-          lis(d, x >> 16);
-        }
+      if (xd && use_pli) {
+        pli_or_li(d, x);
+      } else {
+        lis(d, x >> 16);
       }
       if (xd && !use_pli) ori(d, d, (unsigned short)xd);
-    } else {
+    } else { // High 32 bits needed.
       if (use_pli) {
         // 64-bit value: x = xA xB
         int32_t xA, xB; // Two 32-bit chunks of const.
         xA = (x >> 32) & 0xffffffff;
         xB = x & 0xffffffff;    // Lower 32-bit chunk.
-        bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
         if (tmp == noreg || xB == 0) {
-          if (xA_loaded) {
-            pli_or_li(d, xA);
-            xc = (x >> 16) & 0xffff;
-            sldi(d, d, 32);
-            if (xc) { oris(d, d, (unsigned short)xc); }
-            if (xd) { ori( d, d, (unsigned short)xd); }
-          } else if (xB) {
-            pli_or_li(d, xB);
-          }
+          pli_or_li(d, xA);
+          xc = (x >> 16) & 0xffff;
+          sldi(d, d, 32);
+          if (xc) { oris(d, d, (unsigned short)xc); }
+          if (xd) { ori( d, d, (unsigned short)xd); }
         } else {
-          if (xA_loaded) {
-            pli_or_li(tmp, xA);
-            pli_or_li(d, xB);
-            insrdi(d, tmp, 32, 0);
-          } else {
-            pli_or_li(d, xB);
-          }
+          pli_or_li(tmp, xA);
+          pli_or_li(d, xB);
+          insrdi(d, tmp, 32, 0);
         }
       } else {
         // 64-bit value: x = xa xb xc xd
@@ -479,7 +467,7 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
   xc = rem & 0xFFFF; // Next 16-bit chunk.
   rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
 
-  if (rem == 0) { // opt 2: simm32
+  if (rem == 0) { // opt 2: simm32 && !simm16
     if (use_pli) {
       pli_or_li(d, x);
       return retval;
@@ -495,14 +483,9 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
         int32_t xA, xB; // Two 32-bit chunks of const.
         xA = (x >> 32) & 0xffffffff;
         xB = x & 0xffffffff;    // Lower 32-bit chunk.
-        bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
-        if (xA_loaded) {
-          pli_or_li(tmp, xA);
-          pli_or_li(d, xB);
-          insrdi(d, tmp, 32, 0);
-        } else {
-          pli_or_li(d, xB);
-        }
+        pli_or_li(tmp, xA);
+        pli_or_li(d, xB);
+        insrdi(d, tmp, 32, 0);
         return retval;
       } else {
         xa = (x >> 48) & 0xffff;
@@ -528,19 +511,14 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp,
     }
 
     if (use_pli) {
-      int32_t xA, xB; // Two 32-bit chunks of const.
+      // 64-bit value: x = xA xB
+      int32_t xA; // Two 32-bit chunks of const, but the lower half is further broken down
       xA = (x >> 32) & 0xffffffff;
-      xB = x & 0xffffffff;    // Lower 32-bit chunk.
-      bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
-      if (xA_loaded) {
-        pli_or_li(d, xA);
-        xc = (x >> 16) & 0xffff;
-        sldi(d, d, 32);
-        if (xc) { oris(d, d, (unsigned short)xc); }
-        if (xd) { ori( d, d, (unsigned short)xd); }
-      } else {
-        pli_or_li(d, xB);
-      }
+      pli_or_li(d, xA);
+      xc = (x >> 16) & 0xffff;
+      sldi(d, d, 32);
+      if (xc) { oris(d, d, (unsigned short)xc); }
+      if (xd) { ori( d, d, (unsigned short)xd); }
       return retval;
     } else {
       xb = rem & 0xFFFF; // Next 16-bit chunk.
