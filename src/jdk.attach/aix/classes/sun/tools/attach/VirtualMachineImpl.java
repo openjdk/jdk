@@ -71,9 +71,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         File socket_file = new File(tmpdir, ".java_pid" + pid);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
-            File f = createAttachFile(pid);
-            // Keep a canonical version of File, to delete, in case target process ends and /proc link has gone:
-            File f2 = f.getCanonicalFile();
+            // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
+            File f = createAttachFile(pid).getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
@@ -103,7 +102,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                                       time_spend));
                 }
             } finally {
-                f2.delete();
+                f.delete();
             }
         }
 
