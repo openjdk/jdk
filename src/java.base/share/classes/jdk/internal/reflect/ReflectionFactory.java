@@ -129,6 +129,7 @@ public class ReflectionFactory {
      *             <code>checkPermission</code> method doesn't allow
      *             access to the RuntimePermission "reflectionFactoryAccess".  */
     public static ReflectionFactory getReflectionFactory() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(

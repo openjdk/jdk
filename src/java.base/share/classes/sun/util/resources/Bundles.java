@@ -255,6 +255,7 @@ public abstract class Bundles {
     /**
      * Loads ResourceBundle from service providers.
      */
+    @SuppressWarnings("removal")
     private static ResourceBundle loadBundleFromProviders(String baseName,
                                                           Locale locale,
                                                           ServiceLoader<ResourceBundleProvider> providers,

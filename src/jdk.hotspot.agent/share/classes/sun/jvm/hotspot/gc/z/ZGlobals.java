@@ -102,6 +102,14 @@ public class ZGlobals {
         return instance().ZAddressOffsetMask();
     }
 
+    public static long ZAddressMetadataMask() {
+        return instance().ZAddressMetadataMask();
+    }
+
+    public static long ZAddressMetadataFinalizable() {
+        return instance().ZAddressMetadataFinalizable();
+    }
+
     public static long ZAddressGoodMask() {
         return instance().ZAddressGoodMask();
     }

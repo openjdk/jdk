@@ -330,15 +330,9 @@ final class IntMaxVector extends IntVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        int[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(IntMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -608,6 +602,14 @@ final class IntMaxVector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public IntMaxMask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            IntMaxMask m = (IntMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -806,6 +808,8 @@ final class IntMaxVector extends IntVector {
     IntVector fromArray0(int[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

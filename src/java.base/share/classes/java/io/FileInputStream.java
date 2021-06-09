@@ -140,6 +140,7 @@ public class FileInputStream extends InputStream
      */
     public FileInputStream(File file) throws FileNotFoundException {
         String name = (file != null ? file.getPath() : null);
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(name);
@@ -182,6 +183,7 @@ public class FileInputStream extends InputStream
      * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
     public FileInputStream(FileDescriptor fdObj) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();

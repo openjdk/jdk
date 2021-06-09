@@ -923,6 +923,7 @@ class WindowsFileSystemView extends FileSystemView {
     }
 
     public boolean isFloppyDrive(final File dir) {
+        @SuppressWarnings("removal")
         String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 return dir.getAbsolutePath();

@@ -28,18 +28,24 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 
 import jdk.jfr.internal.management.ChunkFilename;
 import jdk.jfr.internal.management.ManagementSupport;
@@ -49,12 +55,48 @@ final class DiskRepository implements Closeable {
     static final class DiskChunk {
         final Path path;
         final long startTimeNanos;
+        final DiskRepository repository;
+        int referenceCount;
         Instant endTime;
         long size;
+        long endTimeNanos;
 
-        DiskChunk(Path path, long startNanos) {
+        DiskChunk(DiskRepository repository, Path path, long startNanos) {
+            this.repository = repository;
             this.path = path;
             this.startTimeNanos = startNanos;
+            this.referenceCount = 1;
+        }
+
+        public void acquire() {
+            referenceCount++;
+        }
+
+        public void release() {
+            referenceCount--;
+            if (referenceCount == 0) {
+                destroy();
+            }
+            if (referenceCount < 0) {
+                throw new InternalError("Reference count below zero");
+            }
+        }
+
+        private void destroy() {
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                // Schedule for deletion later.
+                this.repository.deadChunks.add(this);
+            }
+        }
+
+        public boolean isDead() {
+            return referenceCount == 0;
+        }
+
+        public Path path() {
+            return path;
         }
     }
 
@@ -77,8 +119,9 @@ final class DiskRepository implements Closeable {
     static final int HEADER_SIZE = 68;
     static final int HEADER_FILE_DURATION = 40;
 
-    private final Deque<DiskChunk> activeChunks = new ArrayDeque<>();
+    private final Deque<DiskChunk> chunks = new ArrayDeque<>();
     private final Deque<DiskChunk> deadChunks = new ArrayDeque<>();
+    private final Deque<FileDump> fileDumps = new ArrayDeque<>();
     private final boolean deleteDirectory;
     private final ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
@@ -300,6 +343,7 @@ final class DiskRepository implements Closeable {
             currentChunk.size = Files.size(currentChunk.path);
             long durationNanos = buffer.getLong(HEADER_FILE_DURATION);
             long endTimeNanos = currentChunk.startTimeNanos + durationNanos;
+            currentChunk.endTimeNanos = endTimeNanos;
             currentChunk.endTime = ManagementSupport.epochNanosToInstant(endTimeNanos);
         }
         raf.seek(position);
@@ -330,7 +374,7 @@ final class DiskRepository implements Closeable {
         ZoneOffset z = OffsetDateTime.now().getOffset();
         LocalDateTime d = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, z);
         String filename = chunkFilename.next(d);
-        return new DiskChunk(Paths.get(filename), nanos);
+        return new DiskChunk(this, Paths.get(filename), nanos);
     }
 
     @Override
@@ -339,7 +383,10 @@ final class DiskRepository implements Closeable {
         if (raf != null) {
             raf.close();
         }
-        deadChunks.addAll(activeChunks);
+        for (FileDump dump: fileDumps) {
+            dump.close();
+        }
+        deadChunks.addAll(chunks);
         if (currentChunk != null) {
             deadChunks.add(currentChunk);
         }
@@ -368,20 +415,21 @@ final class DiskRepository implements Closeable {
             return;
         }
         int count = 0;
-        while (size > maxSize && activeChunks.size() > 1) {
+        while (size > maxSize && chunks.size() > 1) {
             removeOldestChunk();
             count++;
         }
         cleanUpDeadChunk(count + 10);
     }
 
+
     private void trimToAge(Instant oldest) {
         if (maxAge == null) {
             return;
         }
         int count = 0;
-        while (activeChunks.size() > 1) {
-            DiskChunk oldestChunk = activeChunks.getLast();
+        while (chunks.size() > 1) {
+            DiskChunk oldestChunk = chunks.getLast();
             if (oldestChunk.endTime.isAfter(oldest)) {
                 return;
             }
@@ -391,33 +439,35 @@ final class DiskRepository implements Closeable {
         cleanUpDeadChunk(count + 10);
     }
 
+    private void removeOldestChunk() {
+        DiskChunk chunk = chunks.poll();
+        chunk.release();
+        size -= chunk.size;
+    }
+
     public synchronized void onChunkComplete(long endTimeNanos) {
-        int count = 0;
-        while (!activeChunks.isEmpty()) {
-            DiskChunk oldestChunk = activeChunks.peek();
+        while (!chunks.isEmpty()) {
+            DiskChunk oldestChunk = chunks.peek();
             if (oldestChunk.startTimeNanos < endTimeNanos) {
                 removeOldestChunk();
-                count++;
             } else {
                 break;
             }
         }
-        cleanUpDeadChunk(count + 10);
     }
 
     private void addChunk(DiskChunk chunk) {
         if (maxAge != null) {
             trimToAge(chunk.endTime.minus(maxAge));
         }
-        activeChunks.push(chunk);
+        chunks.push(chunk);
         size += chunk.size;
         trimToSize();
-    }
 
-    private void removeOldestChunk() {
-        DiskChunk chunk = activeChunks.poll();
-        deadChunks.add(chunk);
-        size -= chunk.size;
+        for (FileDump fd : fileDumps) {
+            fd.add(chunk);
+        }
+        fileDumps.removeIf(FileDump::isComplete);
     }
 
     private void cleanUpDeadChunk(int maxCount) {
@@ -425,13 +475,13 @@ final class DiskRepository implements Closeable {
         Iterator<DiskChunk> iterator = deadChunks.iterator();
         while (iterator.hasNext()) {
             DiskChunk chunk = iterator.next();
+            count++;
             try {
                 Files.delete(chunk.path);
                 iterator.remove();
             } catch (IOException e) {
                 // ignore
             }
-            count++;
             if (count == maxCount) {
                 return;
             }
@@ -446,5 +496,16 @@ final class DiskRepository implements Closeable {
                 ManagementSupport.logDebug("Could not complete chunk " + currentChunk.path + " : " + ioe.getMessage());
             }
         }
+    }
+
+    public synchronized FileDump newDump(long endTime) {
+        FileDump fd = new FileDump(endTime);
+        for (DiskChunk dc : chunks) {
+            fd.add(dc);
+        }
+        if (!fd.isComplete()) {
+            fileDumps.add(fd);
+        }
+        return fd;
     }
 }
