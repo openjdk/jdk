@@ -1878,6 +1878,8 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
       len = LIR_OprFact::longConst(length.result()->as_jlong());
     }
   }
+  // C1 can not handle the case that comparing index with constant value while condition
+  // is neither lir_cond_equal nor lir_cond_notEqual, see LIR_Assembler::comp_op.
   LIR_Opr zero_reg = new_register(type);
   __ move(zero, zero_reg);
 #if defined(X86) && !defined(_LP64)
