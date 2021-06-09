@@ -179,7 +179,6 @@ final class ClientHello {
                 this.cookie = null;
             }
 
-            //byte[] encodedIds = Record.getBytes16(m);
             int csLen = Short.toUnsignedInt(m.getShort());
             if (csLen == 0 || (csLen & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(
@@ -198,6 +197,7 @@ final class ClientHello {
             this.cipherSuites = strm.distinct().collect(Collectors.toList());
             this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
             /*
+            byte[] encodedIds = Record.getBytes16(m);
             if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(
                         Alert.ILLEGAL_PARAMETER,
