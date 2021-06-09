@@ -1108,6 +1108,8 @@ Type::Category Type::category() const {
     case Type::AryPtr:
     case Type::MetadataPtr:
     case Type::KlassPtr:
+    case Type::InstKlassPtr:
+    case Type::AryKlassPtr:
     case Type::Function:
     case Type::Return_Address:
     case Type::FloatTop:
