@@ -39,6 +39,7 @@ ZPage::ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
 ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),
     _generation_id(ZGenerationId::old),
+    _age(ZPageAge::eden),
     _numa_id((uint8_t)-1),
     _seqnum(0),
     _seqnum_other(0),
@@ -61,6 +62,7 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
 ZPage::ZPage(const ZPage& other) :
     _type(other._type),
     _generation_id(other._generation_id),
+    _age(other._age),
     _numa_id(other._numa_id),
     _seqnum(other._seqnum),
     _seqnum_other(other._seqnum_other),
@@ -79,56 +81,35 @@ void ZPage::reset_seqnum(ZGenerationId generation_id) {
   Atomic::store(&_seqnum_other, ZHeap::heap()->get_cycle(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::reset(ZGenerationId generation_id) {
+void ZPage::reset(ZGenerationId generation_id, ZPageAge age, bool flip, bool in_place) {
+  ZPageAge prev_age = _age;
   _generation_id = generation_id;
+  _age = age;
+  _last_used = 0;
   reset_seqnum(_generation_id);
 
-  _top = start();
-  _last_used = 0;
+  if (!flip) {
+    _top = start();
+  }
 
-  _livemap.reset();
   if (is_old()) {
-    _remember_set.reset();
+    if (in_place && prev_age == ZPageAge::old) {
+      // Current bits are needed to copy the remset incrementally. It will get
+      // cleared later on.
+      _remember_set.clear_previous();
+    } else {
+      _remember_set.reset();
+    }
+  }
+
+  if (!in_place || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
+    // Promoted in-place relocations also reset the live map, because they clone
+    // the page.
+    _livemap.reset();
   }
 }
 
-void ZPage::reset_to_old() {
-  _generation_id = ZGenerationId::old;
-  reset_seqnum(_generation_id);
-
-  // Keep _top
-  // TODO: Is it correct to clear _last_used here?
-  _last_used = 0;
-
-  _livemap.reset();
-  _remember_set.reset();
-}
-
-void ZPage::reset_for_in_place_relocation_from_young() {
-  assert(_generation_id == ZGenerationId::young, "Unexpected generation");
-
-  reset(ZGenerationId::old);
-}
-
-void ZPage::reset_for_in_place_relocation_from_old() {
-  assert(_generation_id == ZGenerationId::old, "Unexpected generation");
-
-  _generation_id = ZGenerationId::old;
-  reset_seqnum(_generation_id);
-
-  _top = start();
-  // FIXME: Is it correct to set clear _last_used here?
-  _last_used = 0;
-
-  // Kept the same ZPage. The _livemap is being iterated
-  // over and needs to be kept intact.
-
-  // In-place relocation needs the current bits, and
-  // is therefore responsible for clearing them.
-  _remember_set.clear_previous();
-}
-
-void ZPage::finalize_reset_for_in_place_relocation_from_old() {
+void ZPage::finalize_reset_for_in_place_relocation() {
   // Now we're done iterating over the livemaps
   _livemap.reset();
 }

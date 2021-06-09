@@ -167,28 +167,31 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   // Otherwise, we are dealing with a young-to-any pointer,
   // and the address that contained the pointed-to object, is
   // guaranteed to have only been used by either the young gen
-  // the old gen.
+  // or the old gen.
 
   // Longer explanation:
 
   // Double remap bad pointers in young gen:
   //
-  // After minor relocate, the young gen objects where promoted to old gen,
+  // After minor relocate, the young gen objects were promoted to old gen,
   // and we keep track of those old-to-young pointers via the remset
   // (described above in the roots section).
   //
   // However, when minor mark started, the current set of young gen objects
   // are snapshotted, and subsequent allocations end up in the next minor
   // collection. Between minor mark start, and minor relocate start, stores
-  // can happen to the "young allocating" objects. These pointers will become
+  // can happen to either the "young allocating" objects, or objects that
+  // are about to become survivors. For both survivors and young-allocating
+  // objects, it is true that their zpointers will be store good when
+  // minor marking finishes, and can not get demoted. These pointers will become
   // minor remap bad after minor relocate start. We don't maintain a remset
   // for the young allocating objects, so we don't have the same guarantee as
   // we have for roots (including remset). Pointers in these objects are
   // therefore therefore susceptible to become double remap bad.
   //
   // The scenario that can happen is:
-  //   - Store in young allocating happens between minor mark start and minor
-  //     relocate start
+  //   - Store in young allocating or future survivor happens between minor mark
+  //     start and minor relocate start
   //   - Minor relocate start makes this pointer minor remap bad
   //   - It is NOT fixed in roots_remap (it is not part of the remset or roots)
   //   - Major relocate start makes this pointer also major remap bad
@@ -216,7 +219,9 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   //
   // Whenever we:
   // - perform a store barrier, we heal with one remember bit.
-  // - perform a non-store barrier, we heal with double remember bits.
+  // - mark objects in young gen, we heal with one remember bit.
+  // - perform a non-store barrier outside of young gen, we heal with
+  //   double remember bits.
   // - "remset forget" a pointer in an old object, we heal with double
   //   remember bits.
   //
@@ -224,17 +229,17 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   // a slow path.
   //
   // If we encounter a pointer that is both double remap bad *and* has double
-  // remember bits, we know that it is can't be young and it has to be old!
+  // remember bits, we know that it can't be young and it has to be old!
   //
   // Pointers in young objects:
   //
   // The only double remap bad young pointers are inside "young allocating"
-  // objects, as described above. When such a pointer was written into the
-  // young allocating memory, the pointer was remap good and the store
-  // barrier healed with a single remember bit. No other barrier could
-  // replace that bit, because store good is the greatest barrier, and all
-  // other barriers will take the fast-path. This is true until the minor
-  // relocate starts.
+  // objects and survivors, as described above. When such a pointer was written
+  // into the young allocating memory, or marked in young gen, the pointer was
+  // remap good and the store/young mark barrier healed with a single remember bit.
+  // No other barrier could replace that bit, because store good is the greatest
+  // barrier, and all other barriers will take the fast-path. This is true until
+  // the minor relocate starts.
   //
   // After the minor relocate has started, the pointer becames minor remap
   // bad, and maybe we even started a major relocate, and the pointer became
@@ -243,8 +248,8 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   // heal with good remap bits.
   //
   // So, if we have entered this "double remap bad" path, and the pointer was
-  // located in young gen, then it was young allocating, and it must only have
-  // one remember bit set!
+  // located in young gen, then it was young allocating or a survivor, and it
+  // must only have one remember bit set!
   //
   // Pointers in old objects:
   //
@@ -264,13 +269,13 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   // then we know that it is and young-to-any pointer. We still don't know
   // if the pointed-to object is young or old.
 
-  // Figuring out if a double remap bad pointer in young allocating is
+  // Figuring out if a double remap bad pointer in young is pointed at
   // young or old:
   //
   // The scenario that created a double remap bad pointer in the young
-  // allocating memory is that it was written during the last minor mark
-  // before the major relocate started. At that point, the major cycle has
-  // already taken its marking snapshot, and determined what pages will be
+  // allocating or survivor memory is that it was written during the last
+  // minor mark before the major relocate started. At that point, the major cycle
+  // has already taken its marking snapshot, and determined what pages will be
   // marked and therefore eligible to become part of the major relocation
   // set. If the minor cycle relocated/freed a page (address range), and that
   // address range was then reused for an old page, it won't be part of the

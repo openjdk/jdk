@@ -26,6 +26,7 @@
 
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRemember.hpp"
 
@@ -35,7 +36,7 @@ protected:
   ZObjectAllocator _object_allocator;
 
 public:
-  ZGeneration(ZGenerationId generation_id);
+  ZGeneration(ZGenerationId generation_id, ZPageAge age);
 
   ZGenerationId generation_id() const;
 
@@ -46,20 +47,15 @@ public:
   zaddress alloc_tlab(size_t size);
   zaddress alloc_object(size_t size);
   zaddress alloc_object_non_blocking(size_t size);
-  zaddress alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+  virtual zaddress alloc_object_for_relocation(size_t size) = 0;
+  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size) = 0;
   void undo_alloc_object(zaddress addr, size_t size);
-  void retire_pages();
-
-  // Statistics
-  size_t used() const;
-  size_t remaining() const;
-  size_t relocated() const;
 };
 
 class ZYoungGeneration : public ZGeneration {
 private:
-  ZRemember _remember;
+  ZRemember        _remember;
+  ZObjectAllocator _survivor_allocator;
 
 public:
   ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -73,6 +69,15 @@ public:
   void scan_remembered();
   void flip_remembered_set();
 
+  zaddress alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+  void retire_pages();
+
+  // Statistics
+  size_t used() const;
+  size_t remaining() const;
+  size_t relocated() const;
+
   // Verification
   bool is_remembered(volatile zpointer* p);
 };
@@ -80,6 +85,15 @@ public:
 class ZOldGeneration : public ZGeneration {
 public:
   ZOldGeneration();
+
+  zaddress alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+  void retire_pages();
+
+  // Statistics
+  size_t used() const;
+  size_t remaining() const;
+  size_t relocated() const;
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

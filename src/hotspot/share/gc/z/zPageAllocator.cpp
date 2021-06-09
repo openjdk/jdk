@@ -33,6 +33,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zSafeDelete.inline.hpp"
@@ -230,7 +231,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, NULL /* cycle */);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, NULL /* cycle */, ZGenerationId::young, ZPageAge::eden);
   if (page == NULL) {
     return false;
   }
@@ -639,7 +640,7 @@ void ZPageAllocator::alloc_page_failed(ZPageAllocation* allocation) {
   satisfy_stalled();
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation_id, ZPageAge age) {
   EventZPageAllocation event;
 
 retry:
@@ -663,15 +664,10 @@ retry:
     goto retry;
   }
 
-  // non-blocking (relocations) go into old gen, other allocations go into young gen
-  const ZGenerationId generation_id = flags.non_blocking()
-      ? ZGenerationId::old
-      : ZGenerationId::young;
-
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset(generation_id);
+  page->reset(generation_id, age, false /* flip */, false /* in-place */);
 
   // Update allocation statistics. Exclude worker relocations to avoid
   // artificial inflation of the allocation rate during relocation.

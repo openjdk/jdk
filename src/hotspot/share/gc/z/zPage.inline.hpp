@@ -171,6 +171,10 @@ inline uint8_t ZPage::numa_id() {
   return _numa_id;
 }
 
+inline ZPageAge ZPage::age() const {
+  return _age;
+}
+
 inline uint32_t ZPage::seqnum() const {
   return _seqnum;
 }

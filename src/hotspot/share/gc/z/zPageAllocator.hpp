@@ -28,6 +28,7 @@
 #include "gc/z/zArray.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zSafeDelete.hpp"
@@ -130,7 +131,7 @@ public:
 
   ZPageAllocatorStats stats(ZCycle* cycle) const;
 
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation_id, ZPageAge age);
   void recycle_page(ZPage* page);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page, ZCycle* cycle);

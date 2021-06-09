@@ -28,6 +28,7 @@
 #include "gc/z/zForwardingEntry.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
 class ObjectClosure;
@@ -48,6 +49,8 @@ private:
   const AttachedArray    _entries;
   ZPage* const           _page;
   ZGenerationId          _generation_id;
+  ZPageAge               _age_from;
+  ZPageAge               _age_to;
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
@@ -56,7 +59,6 @@ private:
 
   // In-place relocation support
   bool                   _in_place;
-  bool                   _in_place_from_old;
   uintptr_t              _in_place_clear_remset_watermark;
   zoffset                _in_place_top_at_start;
 
@@ -73,14 +75,17 @@ private:
   template <typename Function>
   void object_iterate_forwarded_via_table(Function function);
 
-  ZForwarding(ZPage* page, size_t nentries);
+  ZForwarding(ZPage* page, size_t nentries, bool promote_all);
 
 public:
   static uint32_t nentries(const ZPage* page);
-  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page);
+  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page, bool promote_all);
+  static ZPageAge compute_age_to(ZPageAge age_from, bool promote_all);
 
   uint8_t type() const;
   ZGenerationId generation_id() const;
+  ZPageAge age_from() const;
+  ZPageAge age_to() const;
   zoffset start() const;
   size_t size() const;
   size_t object_alignment_shift() const;

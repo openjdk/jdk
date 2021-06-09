@@ -187,8 +187,8 @@ void ZHeap::out_of_memory() {
   log_info(gc)("Out Of Memory (%s)", Thread::current()->name());
 }
 
-ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, cycle);
+ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation, ZPageAge age) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, cycle, generation, age);
   if (page != NULL) {
     // Insert page table entry
     _page_table.insert(page);

@@ -56,15 +56,6 @@ inline zaddress ZGeneration::alloc_object(size_t size) {
   return addr;
 }
 
-inline zaddress ZGeneration::alloc_object_for_relocation(size_t size) {
-  return _object_allocator.alloc_object_for_relocation(size);
-}
-
-inline void ZGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
-  ZPage* const page = ZHeap::heap()->page(addr);
-  _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
-}
-
 inline void ZYoungGeneration::remember(volatile zpointer* p) {
   _remember.remember(p);
 }

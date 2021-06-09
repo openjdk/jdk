@@ -155,7 +155,9 @@ void ZRelocationSetSelectorGroup::select_inner(ZGenerationId generation_id) {
   // Finalize selection
   for (int i = selected_from; i < _live_pages.length(); i++) {
     ZPage* page = _live_pages.at(i);
-    _not_selected_pages.append(page);
+    if (page->is_young()) {
+      _not_selected_pages.append(page);
+    }
   }
   _live_pages.trunc_to(selected_from);
   _forwarding_entries = selected_forwarding_entries;

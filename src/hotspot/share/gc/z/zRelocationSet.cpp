@@ -23,6 +23,8 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -88,14 +90,16 @@ public:
 
   virtual void work() {
     // Allocate and install forwardings for small pages
+    bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
+
     for (ZPage* page; _small_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, promote_all);
       install_small(forwarding);
     }
 
     // Allocate and install forwardings for medium pages
     for (ZPage* page; _medium_iter.next(&page);) {
-      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, promote_all);
       install_medium(forwarding);
     }
   }
@@ -113,7 +117,9 @@ ZRelocationSet::ZRelocationSet(ZCycle* cycle) :
     _cycle(cycle),
     _allocator(),
     _forwardings(NULL),
-    _nforwardings(0) {}
+    _nforwardings(0),
+    _promotion_lock(),
+    _promoted_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
   return _cycle->workers();

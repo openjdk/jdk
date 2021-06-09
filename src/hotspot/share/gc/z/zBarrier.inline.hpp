@@ -387,6 +387,11 @@ inline void ZBarrier::mark_barrier_on_oop_field(volatile zpointer* p, bool final
   }
 }
 
+inline void ZBarrier::mark_barrier_on_young_oop_field(volatile zpointer* p) {
+  const zpointer o = load_atomic(p);
+  barrier(is_store_good_fast_path, mark_slow_path, color_store_good, p, o);
+}
+
 //
 // Mark barrier
 //

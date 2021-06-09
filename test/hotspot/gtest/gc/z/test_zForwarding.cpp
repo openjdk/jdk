@@ -178,7 +178,7 @@ public:
     const ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZPageSizeSmall, true));
     ZPage page(ZPageTypeSmall, vmem, pmem);
 
-    page.reset(ZGenerationId::young);
+    page.reset(ZGenerationId::young, ZPageAge::eden, false /* flip */, false /* in_place */);
 
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
@@ -204,7 +204,7 @@ public:
     allocator.reset((sizeof(ZForwarding)) + (nentries * sizeof(ZForwardingEntry)));
 
     // Setup forwarding
-    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page);
+    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page, false /* promote_all */);
 
     // Actual test function
     (*function)(forwarding);

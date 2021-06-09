@@ -27,6 +27,7 @@
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLiveMap.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zRememberSet.hpp"
 #include "gc/z/zVirtualMemory.hpp"
@@ -40,6 +41,7 @@ class ZPage : public CHeapObj<mtGC> {
 private:
   uint8_t          _type;
   ZGenerationId    _generation_id;
+  ZPageAge         _age;
   uint8_t          _numa_id;
   uint32_t         _seqnum;
   uint32_t         _seqnum_other;
@@ -93,6 +95,7 @@ public:
   ZPhysicalMemory& physical_memory();
 
   uint8_t numa_id();
+  ZPageAge age() const;
 
   uint32_t seqnum() const;
   bool is_allocating() const;
@@ -101,12 +104,9 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  void reset(ZGenerationId generation_id);
-  void reset_for_in_place_relocation_from_young();
-  void reset_for_in_place_relocation_from_old();
-  void reset_to_old();
+  void reset(ZGenerationId generation_id, ZPageAge age, bool flip, bool in_place);
 
-  void finalize_reset_for_in_place_relocation_from_old();
+  void finalize_reset_for_in_place_relocation();
 
   ZPage* retype(uint8_t type);
   ZPage* split(size_t split_of_size);

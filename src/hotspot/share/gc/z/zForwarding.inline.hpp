@@ -49,25 +49,36 @@ inline uint32_t ZForwarding::nentries(const ZPage* page) {
   return round_up_power_of_2(page->live_objects() * 2);
 }
 
-inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page) {
+inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page, bool promote_all) {
   const size_t nentries = ZForwarding::nentries(page);
   void* const addr = AttachedArray::alloc(allocator, nentries);
-  return ::new (addr) ZForwarding(page, nentries);
+  return ::new (addr) ZForwarding(page, nentries, promote_all);
 }
 
-inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
+inline ZPageAge ZForwarding::compute_age_to(ZPageAge age_from, bool promote_all) {
+  if (promote_all) {
+    return ZPageAge::old;
+  } else if (age_from == ZPageAge::eden) {
+    return ZPageAge::survivor;
+  } else {
+    return ZPageAge::old;
+  }
+}
+
+inline ZForwarding::ZForwarding(ZPage* page, size_t nentries, bool promote_all) :
     _virtual(page->virtual_memory()),
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
     _generation_id(page->generation_id()),
+    _age_from(page->age()),
+    _age_to(compute_age_to(_age_from, promote_all)),
     _claimed(false),
     _ref_lock(),
     _ref_count(1),
     _ref_abort(false),
     _remset_scanned(false),
     _in_place(false),
-    _in_place_from_old(false),
     _in_place_clear_remset_watermark(0),
     _in_place_top_at_start(),
     _in_place_thread(NULL) {}
@@ -78,6 +89,14 @@ inline uint8_t ZForwarding::type() const {
 
 inline ZGenerationId ZForwarding::generation_id() const {
   return _generation_id;
+}
+
+inline ZPageAge ZForwarding::age_from() const {
+  return _age_from;
+}
+
+inline ZPageAge ZForwarding::age_to() const {
+  return _age_to;
 }
 
 inline zoffset ZForwarding::start() const {

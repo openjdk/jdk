@@ -75,6 +75,7 @@ private:
   ZDriverPort         _port;
   ZConditionLock      _lock;
   bool                _active;
+  bool                _promote_all;
   ZDriverMinor* const _minor;
 
   bool should_minor_before_major();
@@ -85,6 +86,7 @@ private:
 
   void active();
   void inactive();
+  void stop_aggressive_promotion();
 
   template <typename T> bool pause();
 
@@ -112,6 +114,7 @@ public:
   ZDriverMajor(ZDriverMinor* minor);
 
   bool is_active();
+  bool promote_all();
 
   void collect(GCCause::Cause cause);
 };

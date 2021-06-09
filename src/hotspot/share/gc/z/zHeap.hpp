@@ -28,6 +28,7 @@
 #include "gc/z/zArray.hpp"
 #include "gc/z/zCycle.hpp"
 #include "gc/z/zGeneration.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zServiceability.hpp"
@@ -116,7 +117,7 @@ public:
   void remember_fields_filtered(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation, ZPageAge age);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page, ZCycle* cycle);
   void free_pages(const ZArray<ZPage*>* pages, ZCycle* cycle);

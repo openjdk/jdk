@@ -535,6 +535,7 @@ ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
     _lock(),
     _active(false),
+    _promote_all(false),
     _minor(minor) {
   set_name("ZDriverMajor");
   create_and_start();
@@ -545,9 +546,20 @@ bool ZDriverMajor::is_active() {
   return _active;
 }
 
+bool ZDriverMajor::promote_all() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  return _promote_all;
+}
+
 void ZDriverMajor::active() {
   ZLocker<ZConditionLock> locker(&_lock);
   _active = true;
+  _promote_all = should_minor_before_major();
+}
+
+void ZDriverMajor::stop_aggressive_promotion() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  _promote_all = false;
 }
 
 void ZDriverMajor::inactive() {
@@ -811,13 +823,17 @@ void ZDriverMajor::run_service() {
 
     ZBreakpoint::at_before_gc();
 
+    minor_block();
     active();
+    minor_unblock();
 
-    if (should_minor_before_major()) {
+    if (_promote_all) {
       _minor->collect(GCCause::_z_minor_before_major);
     }
 
     minor_block();
+
+    stop_aggressive_promotion();
 
     // Run GC
     gc(cause);

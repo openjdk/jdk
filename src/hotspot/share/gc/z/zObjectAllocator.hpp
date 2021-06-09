@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zValue.hpp"
 
 class ZPage;
@@ -33,6 +34,8 @@ class ZPageTable;
 
 class ZObjectAllocator {
 private:
+  ZGenerationId      _generation_id;
+  ZPageAge           _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
@@ -64,7 +67,7 @@ private:
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
 
 public:
-  ZObjectAllocator();
+  ZObjectAllocator(ZGenerationId generation_id, ZPageAge age);
 
   zaddress alloc_object(size_t size);
   zaddress alloc_object_for_relocation(size_t size);

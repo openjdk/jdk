@@ -141,6 +141,7 @@ public:
   static bool clean_barrier_on_final_oop_field(volatile zpointer* p);
 
   // Mark barrier
+  static void mark_barrier_on_young_oop_field(volatile zpointer* p);
   static void mark_barrier_on_oop_field(volatile zpointer* p, bool finalizable);
   static zaddress mark_minor_good_barrier_on_oop_field(volatile zpointer* p);
 

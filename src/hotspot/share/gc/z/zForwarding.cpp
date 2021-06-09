@@ -60,7 +60,6 @@ void ZForwarding::in_place_relocation_start() {
   _page->log_msg("In-place reloc start");
 
   _in_place = true;
-  _in_place_from_old = _page->is_old();
 
   // Support for ZHeap::is_in checks of from-space objects
   // in a page that is in-place relocating
@@ -73,15 +72,18 @@ void ZForwarding::in_place_relocation_finish() {
 
   _page->log_msg(err_msg("In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start)));
 
-  if (_in_place_from_old) {
+  if (_age_from == ZPageAge::old && _age_to == ZPageAge::old) {
     // The old to old relocation reused the ZPage
-
     // It took ownership of clearing and updating the remset up to,
     // and including, the last from object. Clear the rest.
     in_place_relocation_clear_remset_up_to(_in_place_top_at_start - _page->start());
 
+  }
+
+  if (_age_from == ZPageAge::old || _age_to != ZPageAge::old) {
+    // Only do this for non-promoted pages, that still need to reset live map.
     // Done with iterating over the "from-page" view, so can now drop the _livemap.
-    _page->finalize_reset_for_in_place_relocation_from_old();
+    _page->finalize_reset_for_in_place_relocation();
   }
 
   // Disable relaxed ZHeap::is_in checks

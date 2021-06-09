@@ -175,9 +175,13 @@ void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   stacks->push(allocator(), &_stripes, stripe, entry, false /* publish */);
 }
 
-static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool finalizable) {
+static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool finalizable, bool young) {
   for (volatile const zpointer* const end = p + length; p < end; p++) {
-    ZBarrier::mark_barrier_on_oop_field(p, finalizable);
+    if (young) {
+      ZBarrier::mark_barrier_on_young_oop_field(p);
+    } else {
+      ZBarrier::mark_barrier_on_oop_field(p, finalizable);
+    }
   }
 }
 
@@ -187,7 +191,7 @@ void ZMark::follow_small_array(uintptr_t addr, size_t size, bool finalizable) {
 
   log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", addr, size);
 
-  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable);
+  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _cycle->cycle_id() == ZCycleId::_minor);
 }
 
 void ZMark::follow_large_array(uintptr_t addr, size_t size, bool finalizable) {
@@ -245,7 +249,7 @@ void ZMark::follow_partial_array(ZMarkStackEntry entry, bool finalizable) {
   follow_array(addr, size, finalizable);
 }
 
-template <bool finalizable>
+template <bool finalizable, bool young>
 class ZMarkBarrierOldGenOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   static int claim_value() {
@@ -275,7 +279,11 @@ public:
       _visit_metadata(visit_metadata()) {}
 
   virtual void do_oop(oop* p) {
-    ZBarrier::mark_barrier_on_oop_field((zpointer*)p, finalizable);
+    if (young) {
+      ZBarrier::mark_barrier_on_young_oop_field((zpointer*)p);
+    } else {
+      ZBarrier::mark_barrier_on_oop_field((zpointer*)p, finalizable);
+    }
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -291,10 +299,10 @@ public:
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   if (_cycle->is_major()) {
     if (finalizable) {
-      ZMarkBarrierOldGenOopClosure<true /* finalizable */> cl;
+      ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
     } else {
-      ZMarkBarrierOldGenOopClosure<false /* finalizable */> cl;
+      ZMarkBarrierOldGenOopClosure<false /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
     }
   }
@@ -312,10 +320,10 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   if (_cycle->is_major()) {
     if (ZHeap::heap()->is_old(to_zaddress(obj))) {
       if (finalizable) {
-        ZMarkBarrierOldGenOopClosure<true /* finalizable */> cl;
+        ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
         obj->oop_iterate(&cl);
       } else {
-        ZMarkBarrierOldGenOopClosure<false /* finalizable */> cl;
+        ZMarkBarrierOldGenOopClosure<false /* finalizable */, false /* young */> cl;
         obj->oop_iterate(&cl);
       }
     } else {
@@ -323,7 +331,7 @@ void ZMark::follow_object(oop obj, bool finalizable) {
     }
   } else {
     // Young gen must help out with major marking
-    ZMarkBarrierOldGenOopClosure<false /* finalizable */> cl;
+    ZMarkBarrierOldGenOopClosure<false /* finalizable */, true /* young */> cl;
     obj->oop_iterate(&cl);
   }
 }
