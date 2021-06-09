@@ -135,7 +135,8 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
     @Override
     public String lookupDescriptor() {
         return switch (kind) {
-            case VIRTUAL, SPECIAL,
+            case VIRTUAL,
+                 SPECIAL,
                  INTERFACE_VIRTUAL,
                  INTERFACE_SPECIAL        -> invocationType.dropParameterTypes(0, 1).descriptorString();
             case STATIC, INTERFACE_STATIC -> invocationType.descriptorString();
@@ -152,9 +153,12 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
         Class<?> resolvedOwner = (Class<?>) owner.resolveConstantDesc(lookup);
         MethodType invocationType = (MethodType) this.invocationType().resolveConstantDesc(lookup);
         return switch (kind) {
-            case STATIC, INTERFACE_STATIC   -> lookup.findStatic(resolvedOwner, name, invocationType);
-            case INTERFACE_VIRTUAL, VIRTUAL -> lookup.findVirtual(resolvedOwner, name, invocationType.dropParameterTypes(0, 1));
-            case SPECIAL, INTERFACE_SPECIAL -> lookup.findSpecial(resolvedOwner, name, invocationType.dropParameterTypes(0, 1), lookup.lookupClass());
+            case STATIC,
+                 INTERFACE_STATIC           -> lookup.findStatic(resolvedOwner, name, invocationType);
+            case VIRTUAL,
+                 INTERFACE_VIRTUAL          -> lookup.findVirtual(resolvedOwner, name, invocationType.dropParameterTypes(0, 1));
+            case SPECIAL,
+                 INTERFACE_SPECIAL          -> lookup.findSpecial(resolvedOwner, name, invocationType.dropParameterTypes(0, 1), lookup.lookupClass());
             case CONSTRUCTOR                -> lookup.findConstructor(resolvedOwner, invocationType.changeReturnType(void.class));
             case GETTER                     -> lookup.findGetter(resolvedOwner, name, invocationType.returnType());
             case STATIC_GETTER              -> lookup.findStaticGetter(resolvedOwner, name, invocationType.returnType());
