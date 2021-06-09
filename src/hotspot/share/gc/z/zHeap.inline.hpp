@@ -24,10 +24,11 @@
 #ifndef SHARE_GC_Z_ZHEAP_INLINE_HPP
 #define SHARE_GC_Z_ZHEAP_INLINE_HPP
 
+#include "gc/z/zHeap.hpp"
+
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
-#include "gc/z/zHeap.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -117,8 +118,8 @@ inline uintptr_t ZHeap::remap_object(uintptr_t addr) {
   return _relocate.forward_object(forwarding, ZAddress::good(addr));
 }
 
-inline bool ZHeap::is_alloc_stalled() const {
-  return _page_allocator.is_alloc_stalled();
+inline bool ZHeap::has_alloc_stalled() const {
+  return _page_allocator.has_alloc_stalled();
 }
 
 inline void ZHeap::check_out_of_memory() {

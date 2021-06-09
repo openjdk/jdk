@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"

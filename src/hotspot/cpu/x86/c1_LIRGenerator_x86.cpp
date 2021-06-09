@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,7 +393,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   }
   LIR_Opr reg = rlock(x);
   LIR_Opr tmp = LIR_OprFact::illegalOpr;
-  if (x->is_strictfp() && (x->op() == Bytecodes::_dmul || x->op() == Bytecodes::_ddiv)) {
+  if (x->op() == Bytecodes::_dmul || x->op() == Bytecodes::_ddiv) {
     tmp = new_register(T_DOUBLE);
   }
 
@@ -429,7 +429,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
     __ move(result_reg, result);
   } else {
-    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp(), tmp);
+    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
     set_result(x, round_item(reg));
   }
 #else
@@ -449,7 +449,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     __ move(fpu0, reg);
 
   } else {
-    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp(), tmp);
+    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
   }
   set_result(x, round_item(reg));
 #endif // _LP64

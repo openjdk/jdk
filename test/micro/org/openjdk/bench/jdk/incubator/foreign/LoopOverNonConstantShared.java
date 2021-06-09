@@ -25,6 +25,7 @@ package org.openjdk.bench.jdk.incubator.foreign;
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -59,7 +60,7 @@ public class LoopOverNonConstantShared {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
     MemorySegment segment;
     long unsafe_addr;
 
@@ -71,7 +72,7 @@ public class LoopOverNonConstantShared {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(unsafe_addr + (i * CARRIER_SIZE) , i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE).share();
+        segment = MemorySegment.allocateNative(ALLOC_SIZE, CARRIER_SIZE, ResourceScope.newSharedScope());
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_int.set(segment, (long) i, i);
         }
@@ -83,7 +84,7 @@ public class LoopOverNonConstantShared {
 
     @TearDown
     public void tearDown() {
-        segment.close();
+        segment.scope().close();
         unsafe.invokeCleaner(byteBuffer);
         unsafe.freeMemory(unsafe_addr);
     }
@@ -146,7 +147,7 @@ public class LoopOverNonConstantShared {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemorySegment base = segment.withAccessModes(MemorySegment.READ);
+        MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }

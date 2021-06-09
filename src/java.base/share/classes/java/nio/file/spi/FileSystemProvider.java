@@ -121,6 +121,7 @@ public abstract class FileSystemProvider {
     private static boolean loadingProviders  = false;
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("fileSystemProvider"));
@@ -198,6 +199,7 @@ public abstract class FileSystemProvider {
                     }
                     loadingProviders = true;
 
+                    @SuppressWarnings("removal")
                     List<FileSystemProvider> list = AccessController
                         .doPrivileged(new PrivilegedAction<>() {
                             @Override

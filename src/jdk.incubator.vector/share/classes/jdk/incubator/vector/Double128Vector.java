@@ -324,15 +324,9 @@ final class Double128Vector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Double128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -606,6 +600,14 @@ final class Double128Vector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Double128Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double128Mask m = (Double128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -793,6 +795,8 @@ final class Double128Vector extends DoubleVector {
     DoubleVector fromArray0(double[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

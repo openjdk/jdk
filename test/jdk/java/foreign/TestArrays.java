@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng/othervm -Dforeign.restricted=permit TestArrays
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
 import jdk.incubator.foreign.MemoryAddress;
@@ -32,6 +32,7 @@ import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 
 import java.lang.invoke.VarHandle;
@@ -42,36 +43,35 @@ import java.util.function.Function;
 
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.MemorySegment.READ;
 import static org.testng.Assert.*;
 
 public class TestArrays {
 
-    static SequenceLayout bytes = MemoryLayout.ofSequence(100,
+    static SequenceLayout bytes = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_BYTE
     );
 
-    static SequenceLayout chars = MemoryLayout.ofSequence(100,
+    static SequenceLayout chars = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_CHAR
     );
 
-    static SequenceLayout shorts = MemoryLayout.ofSequence(100,
+    static SequenceLayout shorts = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_SHORT
     );
 
-    static SequenceLayout ints = MemoryLayout.ofSequence(100,
+    static SequenceLayout ints = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_INT
     );
 
-    static SequenceLayout floats = MemoryLayout.ofSequence(100,
+    static SequenceLayout floats = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_FLOAT
     );
 
-    static SequenceLayout longs = MemoryLayout.ofSequence(100,
+    static SequenceLayout longs = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_LONG
     );
 
-    static SequenceLayout doubles = MemoryLayout.ofSequence(100,
+    static SequenceLayout doubles = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_DOUBLE
     );
 
@@ -101,27 +101,27 @@ public class TestArrays {
 
     @Test(dataProvider = "arrays")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
-        try (MemorySegment segment = MemorySegment.allocateNative(layout)) {
-            init.accept(segment);
-            checker.accept(segment);
-        }
+        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
+        init.accept(segment);
+        assertFalse(segment.isReadOnly());
+        checker.accept(segment);
     }
 
     @Test(dataProvider = "elemLayouts",
-            expectedExceptions = UnsupportedOperationException.class)
+            expectedExceptions = IllegalStateException.class)
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemoryLayout seq = MemoryLayout.ofSequence((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
+        MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
         //do not really allocate here, as it's way too much memory
-        try (MemorySegment segment = MemoryAddress.NULL.asSegmentRestricted(seq.byteSize())) {
-            arrayFactory.apply(segment);
-        }
+        MemorySegment segment = MemoryAddress.NULL.asSegment(seq.byteSize(), ResourceScope.globalScope());
+        arrayFactory.apply(segment);
     }
 
     @Test(dataProvider = "elemLayouts",
-            expectedExceptions = UnsupportedOperationException.class)
+            expectedExceptions = IllegalStateException.class)
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        if (layout.byteSize() == 1) throw new UnsupportedOperationException(); //make it fail
-        try (MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1)) {
+        if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), scope);
             arrayFactory.apply(segment);
         }
     }
@@ -129,25 +129,9 @@ public class TestArrays {
     @Test(dataProvider = "elemLayouts",
             expectedExceptions = IllegalStateException.class)
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemorySegment segment = MemorySegment.allocateNative(layout);
-        segment.close();
+        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newConfinedScope());
+        segment.scope().close();
         arrayFactory.apply(segment);
-    }
-
-    @Test(dataProvider = "elemLayouts",
-            expectedExceptions = UnsupportedOperationException.class)
-    public void testArrayFromHeapSegmentWithoutAccess(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemorySegment segment = MemorySegment.ofArray(new byte[(int)layout.byteSize()]);
-        segment = segment.withAccessModes(MemorySegment.ALL_ACCESS & ~READ);
-        arrayFactory.apply(segment);
-    }
-
-    @Test(dataProvider = "elemLayouts",
-            expectedExceptions = UnsupportedOperationException.class)
-    public void testArrayFromNativeSegmentWithoutAccess(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        try (MemorySegment segment = MemorySegment.allocateNative(layout).withAccessModes(MemorySegment.ALL_ACCESS & ~READ)) {
-            arrayFactory.apply(segment);
-        }
     }
 
     @DataProvider(name = "arrays")
