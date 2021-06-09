@@ -5164,9 +5164,9 @@ hugepages\-1048576kB\ \ hugepages\-2048kB
 .PP
 The above environment supports 2 MB and 1 GB large pages, but they need
 to be configured so that the JVM can use them.
-When using explicit large pages (options \f[CB]\-XX:+UseSHM\f[R] or
-\f[CB]\-XX:+UseHugeTLBFS\f[R]), the number of large pages must be
-pre\-allocated.
+When using large pages and not enabling transparent huge pages (option
+\f[CB]\-XX:+UseTransparentHugePages\f[R]), the number of large pages must
+be pre\-allocated.
 For example, to enable 8 GB of memory to be backed by 2 MB large pages,
 login as \f[CB]root\f[R] and run:
 .RS
