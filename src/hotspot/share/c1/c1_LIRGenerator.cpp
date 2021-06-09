@@ -1878,22 +1878,24 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
       len = LIR_OprFact::longConst(length.result()->as_jlong());
     }
   }
+  LIR_Opr zero_reg = new_register(type);
+  __ move(zero, zero_reg);
 #if defined(X86) && !defined(_LP64)
   // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
   LIR_Opr index_copy = new_register(index.type());
   // index >= 0
   __ move(index.result(), index_copy);
-  __ cmp(lir_cond_less, index_copy, zero);
+  __ cmp(lir_cond_less, index_copy, zero_reg);
   __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
                                                     Deoptimization::Action_make_not_entrant));
   // index < length
   __ move(index.result(), index_copy);
   __ cmp(lir_cond_greaterEqual, index_copy, len);
   __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
-                                                          Deoptimization::Action_make_not_entrant));
+                                                            Deoptimization::Action_make_not_entrant));
 #else
   // index >= 0
-  __ cmp(lir_cond_less, index.result(), zero);
+  __ cmp(lir_cond_less, index.result(), zero_reg);
   __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
                                                     Deoptimization::Action_make_not_entrant));
   // index < length
