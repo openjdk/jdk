@@ -44,7 +44,7 @@ bool CodeBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address
   // other generic buffer blobs are more problematic so we just assume they are
   // ok. adapter blobs never have a frame complete and are never ok.
 
-  if (!_cb->is_frame_complete_at(pc)) {
+  if (check && !_cb->is_frame_complete_at(pc)) {
     if (_cb->is_adapter_blob()) {
       return false;
     }
@@ -93,7 +93,7 @@ bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, 
   return true;
 }
 
-bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
@@ -101,7 +101,7 @@ bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intpt
 
   *sender_sp = unextended_sp;
   // Is sender_sp safe?
-  if (thread != NULL && !thread->is_in_full_stack_checked((address)*sender_sp)) {
+  if (check && thread != NULL && !thread->is_in_full_stack_checked((address)*sender_sp)) {
     return false;
   }
   // On Intel the return_address is always the word on the stack
@@ -114,20 +114,20 @@ bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intpt
   return true;
 }
 
-bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
   assert(sender_sp != NULL, "invariant");
 
   // fp must be safe
-  if (!fp_safe) {
+  if (check && !fp_safe) {
     return false;
   }
 
   *sender_sp = fp + frame::sender_sp_offset;
   // Is sender_sp safe?
-  if (thread != NULL && !thread->is_in_full_stack_checked((address)*sender_sp)) {
+  if (check && thread != NULL && !thread->is_in_full_stack_checked((address)*sender_sp)) {
     return false;
   }
   *sender_unextended_sp = *sender_sp;
@@ -140,21 +140,21 @@ bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc,
   return true;
 }
 
-bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
   assert(sender_sp != NULL, "invariant");
 
-  if (!_cb->is_frame_complete_at(pc)) {
+  if (check && !_cb->is_frame_complete_at(pc)) {
     return false;
   }
 
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CodeBlob::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
 
-bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool nmethod::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
@@ -169,7 +169,7 @@ bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t
     int offset = pc - _cb->as_nmethod()->verified_entry_point();
     // If it's stack banging or `push %rbp`, %rsp hasn't been modified by this method
     if (offset == 0 /* stack banging */ || offset == 7 /* `push %rbp` */) {
-      if (!thread->is_in_full_stack_checked((address)sp)) {
+      if (check && thread != NULL && !thread->is_in_full_stack_checked((address)sp)) {
         return false;
       }
 
@@ -195,7 +195,7 @@ bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t
     // If it's `sub N, %rsp`, %rsp has been incremented by `push %rbp` already
     // but the stack frame hasn't been allocated
     } else if (offset == 8 /* `sub N, %rsp` */) {
-      if (!thread->is_in_full_stack_checked((address)sp)) {
+      if (check && thread != NULL && !thread->is_in_full_stack_checked((address)sp)) {
         return false;
       }
 
@@ -207,6 +207,6 @@ bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t
     }
   }
 
-  return CompiledMethod::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CompiledMethod::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                                    sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }

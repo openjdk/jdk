@@ -43,7 +43,7 @@ bool CodeBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address
   // other generic buffer blobs are more problematic so we just assume they are
   // ok. adapter blobs never have a frame complete and are never ok.
 
-  if (!_cb->is_frame_complete_at(pc)) {
+  if (check && !_cb->is_frame_complete_at(pc)) {
     if (_cb->is_adapter_blob()) {
       return false;
     }
@@ -62,43 +62,43 @@ bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, 
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
 
-bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool VtableBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CodeBlob::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
 
-bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
   assert(sender_sp != NULL, "invariant");
 
   // First check if frame is complete and tester is reliable
-  if (!_cb->is_frame_complete_at(pc)) {
+  if (check && !_cb->is_frame_complete_at(pc)) {
     return false;
   }
 
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CodeBlob::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
 
-bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
 
   assert(sender_pc != NULL, "invariant");
   assert(sender_sp != NULL, "invariant");
 
-  if (!_cb->is_frame_complete_at(pc)) {
+  if (check && !_cb->is_frame_complete_at(pc)) {
     return false;
   }
 
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CodeBlob::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
 
-bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+bool nmethod::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
-  return CompiledMethod::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+  return CompiledMethod::FrameParser::sender_frame(thread, check, pc, sp, unextended_sp, fp, fp_safe,
                                                    sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
