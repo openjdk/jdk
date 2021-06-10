@@ -48,7 +48,7 @@ public class issuspended002 {
                 timeMax = Integer.parseUnsignedInt(argv[0]);
             } catch (NumberFormatException nfe) {
                 System.err.println("'" + argv[0] + "': invalid timeMax value.");
-                    usage();
+                usage();
             }
         }
 

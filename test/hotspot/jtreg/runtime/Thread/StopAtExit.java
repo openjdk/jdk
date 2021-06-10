@@ -65,7 +65,7 @@ public class StopAtExit extends Thread {
                 timeMax = Integer.parseUnsignedInt(args[0]);
             } catch (NumberFormatException nfe) {
                 System.err.println("'" + args[0] + "': invalid timeMax value.");
-                    usage();
+                usage();
             }
         }
 
