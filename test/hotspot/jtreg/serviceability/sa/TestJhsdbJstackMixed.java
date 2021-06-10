@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @bug 8208091
  * @requires (os.family == "linux") & (vm.hasSA)
  * @library /test/lib
- * @run main/othervm TestJhsdbJstackMixed
+ * @run driver TestJhsdbJstackMixed
  */
 public class TestJhsdbJstackMixed {
 

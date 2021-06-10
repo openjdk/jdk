@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @run main DeadlockDetectionTest
+ * @run driver DeadlockDetectionTest
  */
 
 import java.util.stream.Collectors;

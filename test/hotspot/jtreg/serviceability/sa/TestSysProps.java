@@ -38,7 +38,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @summary Test "jhsdb jinfo --sysprops", "jinfo -sysprops", and clhsdb "sysprops" commands
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm TestSysProps
+ * @run driver TestSysProps
  */
 
 public class TestSysProps {

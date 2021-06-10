@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @requires vm.hasSA
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run main/othervm ClhsdbJstackXcompStress
+ * @run driver ClhsdbJstackXcompStress
  */
 public class ClhsdbJstackXcompStress {
 

@@ -49,7 +49,7 @@ import jdk.test.lib.SA.SATestUtils;
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build JMapHProfLargeHeapProc
- * @run main JMapHProfLargeHeapTest
+ * @run driver JMapHProfLargeHeapTest
  */
 
 public class JMapHProfLargeHeapTest {

@@ -31,7 +31,7 @@ import jdk.test.lib.Utils;
  * @test
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm TestJhsdbJstackLock
+ * @run driver TestJhsdbJstackLock
  */
 
 public class TestJhsdbJstackLock {

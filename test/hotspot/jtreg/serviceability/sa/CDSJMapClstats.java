@@ -27,7 +27,7 @@
  * @summary Test the jhsdb jmap -clstats command with CDS enabled
  * @requires vm.hasSA & vm.cds
  * @library /test/lib
- * @run main/othervm/timeout=2400 CDSJMapClstats
+ * @run driver/timeout=2400 CDSJMapClstats
  */
 
 import java.util.stream.Collectors;

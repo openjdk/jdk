@@ -39,7 +39,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb dumpclass command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbDumpclass
+ * @run driver ClhsdbDumpclass
  */
 
 public class ClhsdbDumpclass {

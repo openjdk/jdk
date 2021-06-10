@@ -44,7 +44,7 @@ import jdk.test.lib.Utils;
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
- * @run main/othervm TestRevPtrsForInvokeDynamic
+ * @run driver TestRevPtrsForInvokeDynamic
  */
 
 public class TestRevPtrsForInvokeDynamic {

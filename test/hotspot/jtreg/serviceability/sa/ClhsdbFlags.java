@@ -37,7 +37,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb flags command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbFlags
+ * @run driver ClhsdbFlags
  */
 
 public class ClhsdbFlags {

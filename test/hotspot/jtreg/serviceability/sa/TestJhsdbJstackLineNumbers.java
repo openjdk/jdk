@@ -39,7 +39,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires os.family=="windows" | os.family == "linux" | os.family == "mac"
  * @library /test/lib
- * @run main/othervm TestJhsdbJstackLineNumbers
+ * @run driver TestJhsdbJstackLineNumbers
  */
 
 /*
