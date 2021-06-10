@@ -37,7 +37,7 @@
  * @requires os.maxMemory > 6G
  * @build GetObjectSizeOverflowAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeOverflowAgent
- * @run main GetObjectSizeOverflow
+ * @run driver GetObjectSizeOverflow
  */
 
 import java.io.PrintWriter;
