@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8262017
- * @summary Dominator failure because ConvL2I node becomes TOP due to missing case in overflow/underflow handling in range check elimination.
+ * @summary Dominator failure because ConvL2I node becomes TOP due to missing overflow/underflow handling in range check elimination
+ *          in PhaseIdealLoop::add_constraint().
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.rangechecks.TestRangeCheckLimits::*
  *                   compiler.rangechecks.TestRangeCheckLimits
  */
@@ -38,12 +39,15 @@
     static int iFld;
 
     public static void main(String[] k) {
-        test();
-        test2();
+        // Test all cases in PhaseIdealLoop::add_constraint().
+        testPositiveCaseMainLoop();
+        testNegativeCaseMainLoop();
+        testPositiveCasePreLoop();
+        testNegativeCasePreLoop();
     }
-
-    public static void test() {
-        int e, f, g, h[] = new int[a];
+    
+    public static void testPositiveCaseMainLoop() {
+        int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];
         long j = 9;
         Helper.init(h, 3);
@@ -52,21 +56,50 @@
                 b = e;
             }
             i[1] = b;
-            // In RC: flipped to negative stride*scale
-            for (g = 8; 168 > g; g += 2) {
-                j = g;
-                if (j < 3) {
+            for (g = 8; g < 168; g += 2) {
+                j = g - 5;
+                if (j > Integer.MAX_VALUE - 1) {
+                    switch (3) {
+                        case 3:
+                    }
+                }
+            }
+            
+        }
+        if (g != 168) {
+            throw new RuntimeException("fail");
+        }
+        lFld = j;
+    }
+
+    
+    public static void testPositiveCasePreLoop() {
+        int e, f, g = 0, h[] = new int[a];
+        double i[] = new double[a];
+        long j = 9;
+        Helper.init(h, 3);
+        for (e = 5; e < 154; e++) {
+            for (f = 1; f < 169; f += 2) {
+                b = e;
+            }
+            i[1] = b;
+            for (g = 8; g < 168; g += 2) {
+                j = g + 5;
+                if (j > 180) {
                     switch (3) {
                         case 3:
                     }
                 }
             }
         }
+        if (g != 168) {
+            throw new RuntimeException("fail");
+        }
         lFld = j;
     }
-
-    public static void test2() {
-        int e, f, g, h[] = new int[a];
+    
+    public static void testNegativeCaseMainLoop() {
+        int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];
         long j = 9;
         Helper.init(h, 3);
@@ -75,15 +108,43 @@
                 b = e;
             }
             i[1] = b;
-            // In RC: flipped to positive stride*scale
-            for (g = 168; 8 < g; g -= 2) {
-                j = g - 1;
-                if (j < 3) {
+            for (g = 8; g < 168; g += 2) {
+                j = g;
+                if (j < 5) {
                     switch (3) {
                         case 3:
                     }
                 }
             }
+        }
+        if (g != 168) {
+            throw new RuntimeException("fail");
+        }
+        lFld = j;
+    }
+    
+    
+    public static void testNegativeCasePreLoop() {
+        int e, f, g = 0, h[] = new int[a];
+        double i[] = new double[a];
+        long j = 9;
+        Helper.init(h, 3);
+        for (e = 5; e < 154; e++) {
+            for (f = 1; f < 169; f += 2) {
+                b = e;
+            }
+            i[1] = b;
+            for (g = 168; g > 8; g -= 2) {
+                j = g - 5;
+                if (j > Integer.MAX_VALUE - 1) {
+                    switch (3) {
+                        case 3:
+                    }
+                }
+            }
+        }
+        if (g != 8) {
+            throw new RuntimeException("fail");
         }
         lFld = j;
     }
