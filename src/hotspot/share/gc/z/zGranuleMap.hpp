@@ -55,7 +55,7 @@ public:
 };
 
 template <typename T>
-class ZGranuleMapIterator : public ZArrayIteratorImpl<T, false /* Parallel */> {
+class ZGranuleMapIterator : public ZArrayIteratorImpl<T, true /* Parallel */> {
 public:
   ZGranuleMapIterator(const ZGranuleMap<T>* granule_map);
 };

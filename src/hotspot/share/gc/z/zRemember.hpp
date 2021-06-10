@@ -33,6 +33,9 @@ class ZRememberSetContaining;
 template <typename T> class GrowableArrayView;
 
 class ZRemember {
+  friend class ZRememberScanForwardingTask;
+  friend class ZRememberScanPageTask;
+
 private:
   ZPageTable* const _page_table;
   ZPageAllocator* const _page_allocator;

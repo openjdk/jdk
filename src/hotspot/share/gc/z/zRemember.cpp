@@ -28,6 +28,7 @@
 #include "gc/z/zIterator.inline.hpp"
 #include "gc/z/zRemember.inline.hpp"
 #include "gc/z/zRememberSet.hpp"
+#include "gc/z/zTask.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -118,12 +119,21 @@ static void fill_containing(GrowableArrayCHeap<ZRememberSetContaining, mtGC>* ar
   }
 }
 
-void ZRemember::scan() const {
-  if (ZHeap::heap()->major_cycle()->phase() == ZPhase::Relocate) {
+class ZRememberScanForwardingTask : public ZTask {
+private:
+  ZForwardingTableIterator _iter;
+  const ZRemember& _remember;
+
+public:
+  ZRememberScanForwardingTask(const ZRemember& remember) :
+      ZTask("ZRememberScanForwardingTask"),
+      _iter(ZHeap::heap()->major_cycle()->forwarding_table()),
+      _remember(remember) {}
+
+  virtual void work() {
     GrowableArrayCHeap<ZRememberSetContaining, mtGC> containing_array;
 
-    ZForwardingTableIterator iter(ZHeap::heap()->major_cycle()->forwarding_table());
-    for (ZForwarding* forwarding; iter.next(&forwarding);) {
+    for (ZForwarding* forwarding; _iter.next(&forwarding);) {
       if (forwarding->get_and_set_remset_scanned()) {
         // Scanned last minor cycle; implies that the to-space objects
         // are going to be found in the page table scan
@@ -138,23 +148,46 @@ void ZRemember::scan() const {
 
         // Relocate (and mark) while page is released, to prevent
         // retain deadlock when relocation threads in-place relocate.
-        scan_forwarded_via_containing(&containing_array);
+        _remember.scan_forwarded_via_containing(&containing_array);
       } else {
-        scan_forwarded(forwarding);
+        _remember.scan_forwarded(forwarding);
       }
     }
   }
+};
 
-  ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
-  for (ZPage* page; iter.next(&page);) {
-    if (!should_scan(page)) {
-      continue;
+class ZRememberScanPageTask : public ZTask {
+private:
+  ZGenerationPagesIterator _iter;
+  const ZRemember& _remember;
+
+public:
+  ZRememberScanPageTask(const ZRemember& remember) :
+      ZTask("ZRememberScanPageTask"),
+      _iter(remember._page_table, ZGenerationId::old, remember._page_allocator),
+      _remember(remember) {}
+
+  virtual void work() {
+    for (ZPage* page; _iter.next(&page);) {
+      if (!_remember.should_scan(page)) {
+        continue;
+      }
+      // Visit all entries pointing into young gen
+      _remember.scan_page(page);
+      // ... and as a side-effect clear the previous entries
+      page->clear_previous_remembered();
     }
-    // Visit all entries pointing into young gen
-    scan_page(page);
-    // ... and as a side-effect clear the previous entries
-    page->clear_previous_remembered();
   }
+};
+
+void ZRemember::scan() const {
+  if (ZHeap::heap()->major_cycle()->phase() == ZPhase::Relocate) {
+    ZRememberScanForwardingTask task(*this);
+    ZHeap::heap()->minor_cycle()->workers()->run_concurrent(&task);
+  }
+
+  ZRememberScanPageTask task(*this);
+  ZHeap::heap()->minor_cycle()->workers()->run_concurrent(&task);
 }
 
 void ZRemember::mark_and_remember(volatile zpointer* p) const {

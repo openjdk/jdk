@@ -860,7 +860,6 @@ public:
   void apply(OopClosure* cl) {
     // FIXME: Only visited by one thread at the moment
     if (Atomic::cmpxchg(&_task_taken, false, true) == false) {
-      ZHeap::heap()->young_generation()->scan_remembered();
     }
   }
 };
@@ -883,8 +882,6 @@ private:
   ZColoredRootsAllIterator   _roots_colored;
   ZUncoloredRootsAllIterator _roots_uncolored;
 
-  ZMarkRememberSetIterator   _remember_set;
-
   ZMarkYoungOopClosure       _cl_colored;
   ZMarkYoungGenCLDClosure    _cld_cl;
 
@@ -897,7 +894,6 @@ public:
       _mark(mark),
       _roots_colored(),
       _roots_uncolored(),
-      _remember_set(),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
@@ -921,10 +917,6 @@ public:
       ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
-    }
-    {
-      ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
-      _remember_set.apply(&_cl_colored);
     }
     // Flush and free worker stacks. Needed here since
     // the set of workers executing during root scanning
@@ -963,6 +955,10 @@ void ZMark::mark_roots() {
     ZMarkOldGenRootsTask task(this);
     workers()->run_concurrent(&task);
   } else {
+    {
+      ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
+      ZHeap::heap()->young_generation()->scan_remembered();
+    }
     ZMarkYoungGenRootsTask task(this);
     workers()->run_concurrent(&task);
   }
