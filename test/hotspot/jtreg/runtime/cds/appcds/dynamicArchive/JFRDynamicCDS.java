@@ -26,7 +26,7 @@
  * @test
  * @bug 8268470
  * @summary Test dynamic CDS with JFR recording.
- *          Dynamic dump should skip the class such as jdk/jfr/events/FileReadEvent 
+ *          Dynamic dump should skip the class such as jdk/jfr/events/FileReadEvent
  *          if one of its super classes has been redefined during JFR startup.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
