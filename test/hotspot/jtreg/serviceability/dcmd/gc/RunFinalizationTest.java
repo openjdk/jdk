@@ -30,6 +30,7 @@ import jdk.test.lib.process.ProcessTools;
 /*
  * @test
  * @summary Test of diagnostic command GC.run_finalization
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler

@@ -26,6 +26,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 /*
  * @test CodeHeapAnalyticsParams
  * @summary Test the Compiler.CodeHeap_Analytics command
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
