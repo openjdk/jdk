@@ -34,7 +34,7 @@
  *          jdk.jartool/sun.tools.jar
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build UnresolvedClassAgent
- * @run main TestRedefineWithUnresolvedClass
+ * @run driver TestRedefineWithUnresolvedClass
  */
 
 import java.io.File;

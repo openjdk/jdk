@@ -32,7 +32,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile -XDignore.symbol.file TestLambdaFormRetransformation.java
- * @run main TestLambdaFormRetransformation
+ * @run driver TestLambdaFormRetransformation
  */
 
 import java.io.IOException;
