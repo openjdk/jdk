@@ -43,10 +43,8 @@
 import java.io.PrintWriter;
 
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 public class GetObjectSizeOverflow {
     public static void main(String[] args) throws Exception  {
