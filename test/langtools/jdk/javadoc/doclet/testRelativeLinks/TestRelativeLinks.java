@@ -138,6 +138,8 @@ public class TestRelativeLinks extends JavadocTester {
             """
                 <a href="../pkg/relative-package-link.html">relative package link</a>""",
             """
+                <a href="../pkg/package-summary.html#package-fragment">package fragment link</a>""",
+            """
                 <a href="../pkg/relative-class-link.html">relative class link</a>""",
             """
                 <a href="../pkg/C.html#class-fragment">fragment class link</a>""");
