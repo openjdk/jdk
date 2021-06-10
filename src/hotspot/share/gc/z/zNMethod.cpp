@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,7 +376,7 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
     {
       ZNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run_concurrent(&task);
+      workers->run(&task);
       if (task.success()) {
         return;
       }
@@ -421,5 +421,5 @@ public:
 
 void ZNMethod::purge(ZWorkers* workers) {
   ZNMethodPurgeTask task;
-  workers->run_concurrent(&task);
+  workers->run(&task);
 }

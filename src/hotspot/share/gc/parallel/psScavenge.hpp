@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,8 +132,6 @@ class PSScavenge: AllStatic {
   // the heap and calls the other version (if the arg is true).
   template <class T> static inline bool should_scavenge(T* p, MutableSpace* to_space);
   template <class T> static inline bool should_scavenge(T* p, bool check_to_space);
-
-  static void copy_and_push_safe_barrier_from_klass(PSPromotionManager* pm, oop* p);
 
   // Is an object in the young generation
   // This assumes that the 'o' is in the heap,
