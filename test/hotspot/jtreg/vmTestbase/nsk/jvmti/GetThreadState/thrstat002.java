@@ -160,6 +160,9 @@ class thrstat002a extends Thread {
 
             System.out.println("thrstat002a.run before runningBarrier unlock");
             thrstat002.runningBarrier.unlock();
+
+            // Don't do println's from this point until we have exited the loop,
+            // else we can suspend in the println in an unexpected state.
             int i = 0;
             int n = 1000;
             while (flag) {
