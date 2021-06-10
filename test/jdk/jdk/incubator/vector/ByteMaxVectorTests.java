@@ -1326,6 +1326,9 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    static VectorSpecies [] VALIDCASTSPECIES = castSpeciesProvider(SPECIES, true);
+    static VectorSpecies [] INVALIDCASTSPECIES = castSpeciesProvider(SPECIES, false);
+
     static byte ADD(byte a, byte b) {
         return (byte)(a + b);
     }
@@ -5422,6 +5425,67 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "maskProvider")
+    static void maskCastByteMaxVectorTestsTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vmask.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleCastByteMaxVectorTestsTest(BiFunction<Integer,Integer,int[]> fa) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vshuffle.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void maskIllegalCastByteMaxVectorTestsTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vmask.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleIllegalCastByteMaxVectorTestsTest(BiFunction<Integer,Integer,int[]> fa) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vshuffle.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
+            }
+        }
+    }
 
 
 

@@ -1286,15 +1286,9 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test
-    static void vectorMaskCastIllegalArgumentSmokeTest() {
-        try {
-            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
-            m.cast(IntVector.SPECIES_64);
-            Assert.fail();
-        } catch (IllegalArgumentException e) {
-        }
-    }
+    static VectorSpecies [] VALIDCASTSPECIES = castSpeciesProvider(SPECIES, true);
+    static VectorSpecies [] INVALIDCASTSPECIES = castSpeciesProvider(SPECIES, false);
+
     static int ADD(int a, int b) {
         return (int)(a + b);
     }
@@ -5381,91 +5375,63 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskProvider")
-    static void maskCastInt64VectorTestsIntTest(IntFunction<boolean[]> fa) {
+    static void maskCastInt64VectorTestsTest(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(IntVector.SPECIES_64);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-    @Test(dataProvider = "maskProvider")
-    static void maskCastInt64VectorTestsLongTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(LongVector.SPECIES_128);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-    @Test(dataProvider = "maskProvider")
-    static void maskCastInt64VectorTestsFloatTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(FloatVector.SPECIES_64);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-    @Test(dataProvider = "maskProvider")
-    static void maskCastInt64VectorTestsDoubleTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(DoubleVector.SPECIES_128);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vmask.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
             }
         }
     }
 
     @Test(dataProvider = "shuffleProvider")
-    static void shuffleCastInt64VectorTestsIntTest(BiFunction<Integer,Integer,int[]> fa) {
+    static void shuffleCastInt64VectorTestsTest(BiFunction<Integer,Integer,int[]> fa) {
         int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(IntVector.SPECIES_64);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vshuffle.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
             }
         }
     }
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCastInt64VectorTestsLongTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+
+    @Test(dataProvider = "maskProvider")
+    static void maskIllegalCastInt64VectorTestsTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(LongVector.SPECIES_128);
-                assertArraysEquals(res.toArray(), a, i);
+                var vmask = SPECIES.loadMask(a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vmask.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
             }
         }
     }
+
     @Test(dataProvider = "shuffleProvider")
-    static void shuffleCastInt64VectorTestsFloatTest(BiFunction<Integer,Integer,int[]> fa) {
+    static void shuffleIllegalCastInt64VectorTestsTest(BiFunction<Integer,Integer,int[]> fa) {
         int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(FloatVector.SPECIES_64);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCastInt64VectorTestsDoubleTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(DoubleVector.SPECIES_128);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vshuffle.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
             }
         }
     }

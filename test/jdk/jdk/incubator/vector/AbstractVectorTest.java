@@ -27,6 +27,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -34,6 +35,8 @@ import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
+import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.VectorShape;
 
 import org.testng.Assert;
 
@@ -282,5 +285,39 @@ public class AbstractVectorTest {
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
         }
+    }
+
+    static  VectorSpecies [] castSpeciesProvider(VectorSpecies SPECIES, boolean legal) {
+        List<VectorSpecies> res = new ArrayList<VectorSpecies>();
+        for (int elmSz : new int[] {8,16,32,64} ) {
+            int toSpeciesLength = SPECIES.length() * elmSz;
+            boolean pickSpecies = legal ?
+                                  toSpeciesLength >= 64 && toSpeciesLength <= 512 :
+                                  toSpeciesLength < 64 || toSpeciesLength > 512;
+            if (pickSpecies) {
+                if (!legal) {
+                    toSpeciesLength = toSpeciesLength < 64 ? 64 : 512;
+                }
+                switch(elmSz) {
+                    case 8:
+                        res.add(VectorSpecies.of(byte.class, VectorShape.forBitSize(toSpeciesLength)));
+                        break;
+                    case 16:
+                        res.add(VectorSpecies.of(short.class, VectorShape.forBitSize(toSpeciesLength)));
+                        break;
+                    case 32:
+                        res.add(VectorSpecies.of(int.class, VectorShape.forBitSize(toSpeciesLength)));
+                        res.add(VectorSpecies.of(float.class, VectorShape.forBitSize(toSpeciesLength)));
+                        break;
+                    case 64:
+                        res.add(VectorSpecies.of(long.class, VectorShape.forBitSize(toSpeciesLength)));
+                        res.add(VectorSpecies.of(double.class, VectorShape.forBitSize(toSpeciesLength)));
+                        break;
+                    default:
+                        assert false;
+                }
+            }
+        }
+        return res.toArray(VectorSpecies[]::new);
     }
 }

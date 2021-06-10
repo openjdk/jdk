@@ -1573,18 +1573,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[BITWISE]
 
-#if[!byte]
-    @Test
-    static void vectorMaskCastIllegalArgumentSmokeTest() {
-        try {
-            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
-#if[MaxBit]
-            m.cast($abstractvectortype$.SPECIES_MAX);
-#else[MaxBit]
-            m.cast($abstractvectortype$.SPECIES_$bits$);
-#end[MaxBit]
-            Assert.fail();
-        } catch (IllegalArgumentException e) {
-        }
-    }
-#end[!byte]
+    static VectorSpecies [] VALIDCASTSPECIES = castSpeciesProvider(SPECIES, true);
+    static VectorSpecies [] INVALIDCASTSPECIES = castSpeciesProvider(SPECIES, false);
+

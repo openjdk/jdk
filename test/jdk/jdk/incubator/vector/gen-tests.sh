@@ -57,6 +57,9 @@ bash ./gen-template.sh $generate_perf_tests
 
 Log false "Generating Vector API tests, $(date)\n"
 
+JAVAC=/home/jatinbha/softwares/jdk-17//bin/javac
+JAVA=/home/jatinbha/softwares/jdk-17//bin/java
+
 # Compile SPP
 Log true "Compiling SPP... "
 compilation=$(${JAVAC} -d . "${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/spp/Spp.java")
@@ -88,17 +91,14 @@ do
   case $type in
     byte)
       Wideboxtype=Byte
-      sizeInBytes=1
       args="$args -KbyteOrShort"
       ;;
     short)
       Wideboxtype=Short
-      sizeInBytes=2
       args="$args -KbyteOrShort"
       ;;
     int)
       Boxtype=Integer
-      sizeInBytes=4
       Wideboxtype=Integer
       fptype=float
       Fptype=Float
@@ -107,7 +107,6 @@ do
       ;;
     long)
       Wideboxtype=Long
-      sizeInBytes=8
       fptype=double
       Fptype=Double
       Boxfptype=Double
@@ -115,7 +114,6 @@ do
       ;;
     float)
       kind=FP
-      sizeInBytes=4
       bitstype=int
       Bitstype=Int
       Boxbitstype=Integer
@@ -125,7 +123,6 @@ do
       ;;
     double)
       kind=FP
-      sizeInBytes=8
       bitstype=long
       Bitstype=Long
       Boxbitstype=Long
@@ -159,7 +156,6 @@ do
     fpvectortype=${typeprefix}${Fptype}${bits}Vector
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
-    numLanes=$((bits / (sizeInBytes * 8)))
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
       args="$args -KByteMax"
     fi
@@ -167,45 +163,6 @@ do
     if [ $bits == 'Max' ]; then
       bitargs="$bitargs -KMaxBit"
     fi
-
-    bytecastbits=""
-    toBits=$(( numLanes * 8 ))
-    castargs=""
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidByteCast"
-       bytecastbits=$(( numLanes * 8 ))
-    fi
-    shortcastbits=""
-    toBits=$(( numLanes * 16 ))
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidShortCast"
-       shortcastbits=$(( numLanes * 16 ))
-    fi
-    intcastbits=""
-    toBits=$(( numLanes * 32 ))
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidIntegerCast"
-       intcastbits=$(( numLanes * 32 ))
-    fi
-    longcastbits=""
-    toBits=$(( numLanes * 64 ))
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidLongCast"
-       longcastbits=$(( numLanes * 64 ))
-    fi
-    floatcastbits=""
-    toBits=$(( numLanes * 32 ))
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidFloatCast"
-       floatcastbits=$(( numLanes * 32 ))
-    fi
-    doublecastbits=""
-    toBits=$(( numLanes * 64 ))
-    if [[ $toBits -ge 64 ]] && [[ $toBits -le 512 ]] ; then
-       castargs="$castargs -KvalidDoubleCast"
-       doublecastbits=$(( numLanes * 64 ))
-    fi
-    bitargs="$bitargs $castargs -Dbytecastbits=$bytecastbits -Dshortcastbits=$shortcastbits -Dintcastbits=$intcastbits -Dfloatcastbits=$floatcastbits -Ddoublecastbits=$doublecastbits -Dlongcastbits=$longcastbits"
 
     # Generate jtreg tests
     case $vectorteststype in

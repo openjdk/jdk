@@ -444,165 +444,67 @@
         }
     }
 
-#if[!MaxBit]
-#if[validByteCast]
     @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$ByteTest(IntFunction<boolean[]> fa) {
+    static void maskCast$vectorteststype$Test(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(ByteVector.SPECIES_$bytecastbits$);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vmask.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
             }
         }
     }
-#end[validByteCast]
-#if[validShortCast]
-    @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$ShortTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(ShortVector.SPECIES_$shortcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validShortCast]
-#if[validIntegerCast]
-    @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$IntTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(IntVector.SPECIES_$intcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validIntegerCast]
-#if[validLongCast]
-    @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$LongTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(LongVector.SPECIES_$longcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validLongCast]
-#if[validFloatCast]
-    @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$FloatTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(FloatVector.SPECIES_$floatcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validFloatCast]
-#if[validDoubleCast]
-    @Test(dataProvider = "maskProvider")
-    static void maskCast$vectorteststype$DoubleTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vmask = SPECIES.loadMask(a, i);
-                var res = vmask.cast(DoubleVector.SPECIES_$doublecastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validDoubleCast]
 
-#if[validByteCast]
     @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$ByteTest(BiFunction<Integer,Integer,int[]> fa) {
+    static void shuffleCast$vectorteststype$Test(BiFunction<Integer,Integer,int[]> fa) {
         int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(ByteVector.SPECIES_$bytecastbits$);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < VALIDCASTSPECIES.length; j++) {
+                    var res = vshuffle.cast(VALIDCASTSPECIES[j]);
+                    assertArraysEquals(res.toArray(), a, i);
+                }
             }
         }
     }
-#end[validByteCast]
-#if[validShortCast]
+
+    @Test(dataProvider = "maskProvider")
+    static void maskIllegalCast$vectorteststype$Test(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vmask.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
+            }
+        }
+    }
+
     @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$ShortTest(BiFunction<Integer,Integer,int[]> fa) {
+    static void shuffleIllegalCast$vectorteststype$Test(BiFunction<Integer,Integer,int[]> fa) {
         int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(ShortVector.SPECIES_$shortcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
+                for (int j = 0 ; j < INVALIDCASTSPECIES.length; j++) {
+                    try {
+                        vshuffle.cast(INVALIDCASTSPECIES[j]);
+                        Assert.fail();
+                    } catch (IllegalArgumentException e) {
+                    }
+                }
             }
         }
     }
-#end[validShortCast]
-#if[validIntegerCast]
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$IntTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(IntVector.SPECIES_$intcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validIntegerCast]
-#if[validLongCast]
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$LongTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(LongVector.SPECIES_$longcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validLongCast]
-#if[validFloatCast]
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$FloatTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(FloatVector.SPECIES_$floatcastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validFloatCast]
-#if[validDoubleCast]
-    @Test(dataProvider = "shuffleProvider")
-    static void shuffleCast$vectorteststype$DoubleTest(BiFunction<Integer,Integer,int[]> fa) {
-        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
-                var res = vshuffle.cast(DoubleVector.SPECIES_$doublecastbits$);
-                assertArraysEquals(res.toArray(), a, i);
-            }
-        }
-    }
-#end[validDoubleCast]
-#end[!MaxBit]
 
 
 #if[!MaxBit]
