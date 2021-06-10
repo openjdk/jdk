@@ -53,7 +53,9 @@ import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.invoke.MethodHandleInfo.*;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -361,6 +363,19 @@ public class MethodHandleDescTest extends SymbolicDescTest {
         for (Kind k : Kind.values()) {
             assertEquals(Kind.valueOf(k.refKind), Kind.valueOf(k.refKind, k.refKind == MethodHandleInfo.REF_invokeInterface));
             assertEquals(Kind.valueOf(k.refKind, k.isInterface), k);
+        }
+        // let's now verify those cases for which the value of the isInterface parameter is ignored
+        int[] isInterfaceIgnored = new int[] {
+                REF_getField,
+                REF_getStatic,
+                REF_putField,
+                REF_putStatic,
+                REF_newInvokeSpecial,
+                REF_invokeInterface
+        };
+
+        for (int refKind : isInterfaceIgnored) {
+            assertEquals(Kind.valueOf(refKind, false), Kind.valueOf(refKind, true));
         }
     }
 }

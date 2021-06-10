@@ -137,13 +137,14 @@ public sealed interface DirectMethodHandleDesc
             if (i >= 0 && i < TABLE.length) {
                 Kind kind = TABLE[i];
                 if (kind == null) {
-                    throw new IllegalArgumentException(String.format("refKind=%d", refKind));
+                    throw new IllegalArgumentException(String.format("refKind=%d isInterface=%s", refKind, isInterface));
                 }
-                if (kind.refKind == refKind && kind.isInterface == isInterface) {
+                if (kind.refKind == refKind &&
+                        (refKind != REF_invokeStatic || refKind != REF_invokeSpecial || kind.isInterface == isInterface)){
                     return kind;
                 }
             }
-            throw new IllegalArgumentException(String.format("refKind=%d", refKind));
+            throw new IllegalArgumentException(String.format("refKind=%d isInterface=%s", refKind, isInterface));
         }
 
         private static int tableIndex(int refKind, boolean isInterface) {
