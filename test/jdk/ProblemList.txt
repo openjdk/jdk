@@ -800,6 +800,10 @@ sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
+sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 ############################################################################
 
