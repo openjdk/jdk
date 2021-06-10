@@ -37,10 +37,10 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file TestMultiANewArray.java
- * @run main/othervm TestMultiANewArray 49
- * @run main/othervm TestMultiANewArray 50
- * @run main/othervm TestMultiANewArray 51
- * @run main/othervm TestMultiANewArray 52
+ * @run driver TestMultiANewArray 49
+ * @run driver TestMultiANewArray 50
+ * @run driver TestMultiANewArray 51
+ * @run driver TestMultiANewArray 52
  */
 
 public class TestMultiANewArray {

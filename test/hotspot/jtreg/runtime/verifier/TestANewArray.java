@@ -38,8 +38,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file TestANewArray.java
- * @run main/othervm TestANewArray 49
- * @run main/othervm TestANewArray 52
+ * @run driver TestANewArray 49
+ * @run driver TestANewArray 52
  */
 
 /*

@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file OverriderMsg.java
- * @run main/othervm OverriderMsg
+ * @run driver OverriderMsg
  */
 
 // This test checks that the super class name is included in the message when
