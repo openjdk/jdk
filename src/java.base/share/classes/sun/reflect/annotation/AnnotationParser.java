@@ -528,10 +528,11 @@ public class AnnotationParser {
         } else if (componentType.isEnum()) {
             return parseEnumArray(length, (Class<? extends Enum<?>>)componentType, buf,
                                   constPool, container);
-        } else {
-            assert componentType.isAnnotation();
+        } else if (componentType.isAnnotation()) {
             return parseAnnotationArray(length, (Class <? extends Annotation>)componentType, buf,
                                         constPool, container);
+        } else {
+            return parseUnknownArray(length, buf);
         }
     }
 
@@ -751,6 +752,18 @@ public class AnnotationParser {
             }
         }
         return (exceptionProxy != null) ? exceptionProxy : result;
+    }
+
+    private static Object parseUnknownArray(int length,
+                                            ByteBuffer buf) {
+        int tag = 0;
+
+        for (int i = 0; i < length; i++) {
+            tag = buf.get();
+            skipMemberValue(tag, buf);
+        }
+
+        return exceptionProxy(tag);
     }
 
     /**

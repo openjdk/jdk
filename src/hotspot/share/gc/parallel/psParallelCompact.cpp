@@ -2114,7 +2114,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+    WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(),
+                                is_alive_closure(),
+                                &do_nothing_cl,
+                                1);
   }
 
   {

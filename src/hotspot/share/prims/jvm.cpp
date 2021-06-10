@@ -443,7 +443,10 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(void, JVM_GC(void))
   if (!DisableExplicitGC) {
+    EventSystemGC event;
+    event.set_invokedConcurrent(ExplicitGCInvokesConcurrent);
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
+    event.commit();
   }
 JVM_END
 
