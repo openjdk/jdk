@@ -265,9 +265,9 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   }
 
   bool will_become_free(HeapRegion* hr) const {
-    // A region will be freed by free_collection_set if the region is in the
+    // A region will be freed by during the FreeCollectionSet phase if the region is in the
     // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !hr->evacuation_failed();
+    return _g1h->is_in_cset(hr) && !_g1h->evacuation_failed(hr->hrm_index());
   }
 
  public:
@@ -379,8 +379,8 @@ public:
   }
 
   void account_evacuated_region(HeapRegion* r) {
-      size_t used = r->used();
-      assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
+    size_t used = r->used();
+    assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
     _before_used_bytes += used;
     _regions_freed += 1;
   }
@@ -431,7 +431,7 @@ class FreeCSetClosure : public HeapRegionClosure {
   Tickspan         _non_young_time;
   FreeCSetStats*   _stats;
 
-  void assert_in_cset(HeapRegion* r) {
+  void assert_tracks_surviving_words(HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
            (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
@@ -486,15 +486,14 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    _g1h->clear_region_attr(r);
     stats()->account_rs_length(r);
 
     if (r->is_young()) {
-      assert_in_cset(r);
+      assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
 
-    if (r->evacuation_failed()) {
+    if (_g1h->evacuation_failed(r->hrm_index())) {
       handle_failed_region(r);
     } else {
       handle_evacuated_region(r);
