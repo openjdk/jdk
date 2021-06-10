@@ -5685,7 +5685,7 @@ address generate_avx_ghash_processBlocks() {
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "lookup_lo");
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5701,7 +5701,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_lookup_hi_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "lookup_hi");
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x0605040302010080, relocInfo::none);
@@ -5716,7 +5716,7 @@ address generate_avx_ghash_processBlocks() {
   }
   address base64_vbmi_lookup_lo_url_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "lookup_lo_url");
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64url");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5732,7 +5732,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_lookup_hi_url_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64url");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x0605040302010080, relocInfo::none);
@@ -5748,7 +5748,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_pack_vec_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "pack_vec");
+    StubCodeMark mark(this, "StubRoutines", "pack_vec_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x090a040506000102, relocInfo::none);
@@ -5764,7 +5764,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_join_0_1_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "join_0_1");
+    StubCodeMark mark(this, "StubRoutines", "join_0_1_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x090a040506000102, relocInfo::none);
@@ -5780,7 +5780,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_join_1_2_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "join_1_2");
+    StubCodeMark mark(this, "StubRoutines", "join_1_2_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5796,7 +5796,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_vbmi_join_2_3_addr() {
     __ align(64, (unsigned long) __ pc());
-    StubCodeMark mark(this, "StubRoutines", "join_2_3");
+    StubCodeMark mark(this, "StubRoutines", "join_2_3_base64");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
@@ -5811,7 +5811,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_decoding_table_addr() {
-    StubCodeMark mark(this, "StubRoutines", "decoding_table");
+    StubCodeMark mark(this, "StubRoutines", "decoding_table_base64");
     address start = __ pc();
     __ emit_data64(0xffffffffffffffff, relocInfo::none);
     __ emit_data64(0xffffffffffffffff, relocInfo::none);
@@ -5979,13 +5979,14 @@ address generate_avx_ghash_processBlocks() {
     Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
 
     // calculate length from offsets
-    __ movq(length, end_offset);
-    __ subq(length, start_offset);
+    __ movl(length, end_offset);
+    __ subl(length, start_offset);
     __ push(dest);          // Save for return value calc
 
     // If AVX512 VBMI not supported, just compile non-AVX code
-    if(VM_Version::supports_avx512_vbmi()) {
-      __ cmpq(length, 128);     // 128-bytes is break-even for AVX-512
+    if(VM_Version::supports_avx512_vbmi() &&
+       VM_Version::supports_avx512bw()) {
+      __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
       __ jcc(Assembler::lessEqual, L_bruteForce);
 
       __ cmpl(isMIME, 0);
@@ -6008,7 +6009,7 @@ address generate_avx_ghash_processBlocks() {
       __ movl(r15, 0x00011000);
       __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
 
-      __ cmpq(length, 0xff);
+      __ cmpl(length, 0xff);
       __ jcc(Assembler::lessEqual, L_process64);
 
       // load masks required for decoding data
@@ -6063,10 +6064,10 @@ address generate_avx_ghash_processBlocks() {
       // We multiply each byte pair [00dddddd | 00cccccc | 00bbbbbb | 00aaaaaa]
       // Multiply [00cccccc] by 2^6 added to [00dddddd] to get [0000cccc | ccdddddd]
       // The pack16_op is a vector of 0x01400140, so multiply D by 1 and C by 0x40
-      __ evpmaddubsw(merge_ab_bc0, translated0, tmp16_op3, Assembler::AVX_512bit);
-      __ evpmaddubsw(merge_ab_bc1, translated1, tmp16_op2, Assembler::AVX_512bit);
-      __ evpmaddubsw(merge_ab_bc2, translated2, tmp16_op1, Assembler::AVX_512bit);
-      __ evpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc0, translated0, tmp16_op3, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc1, translated1, tmp16_op2, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc2, translated2, tmp16_op1, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
 
       // Now do the same with packed 16-bit values.
       // We start with [0000cccc | ccdddddd | 0000aaaa | aabbbbbb]
@@ -6089,10 +6090,10 @@ address generate_avx_ghash_processBlocks() {
       __ evmovdquq(Address(dest, dp, Address::times_1, 0x40), arr12, Assembler::AVX_512bit);
       __ evmovdquq(Address(dest, dp, Address::times_1, 0x80), arr23, Assembler::AVX_512bit);
 
-      __ addq(source, 0x100);
-      __ addq(dest, 0xc0);
-      __ subq(length, 0x100);
-      __ cmpq(length, 64 * 4);
+      __ addptr(source, 0x100);
+      __ addptr(dest, 0xc0);
+      __ subl(length, 0x100);
+      __ cmpl(length, 64 * 4);
       __ jcc(Assembler::greaterEqual, L_process256);
 
       // At this point, we've decoded 64 * 4 * n bytes.
@@ -6102,7 +6103,7 @@ address generate_avx_ghash_processBlocks() {
       //
       // Note that this will be the path for MIME-encoded strings.
 
-      __ cmpq(length, 63);
+      __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
       __ align(32);
@@ -6110,7 +6111,7 @@ address generate_avx_ghash_processBlocks() {
 
       // Handle first 64-byte block
 
-      __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
+      __ evmovdquq(input0, Address(source, start_offset), Assembler::AVX_512bit);
       __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
       __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
 
@@ -6123,20 +6124,20 @@ address generate_avx_ghash_processBlocks() {
 
       __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
-      __ evpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-      __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), merged0, Assembler::AVX_512bit);
+      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
 
-      __ subq(length, 64);
-      __ addq(source, 64);
-      __ addq(dest, 48);
+      __ subl(length, 64);
+      __ addptr(source, 64);
+      __ addptr(dest, 48);
 
-      __ cmpq(length, 64);
+      __ cmpl(length, 64);
       __ jcc(Assembler::greaterEqual, L_process64);
 
-      __ cmpq(length, 0);
+      __ cmpl(length, 0);
       __ jcc(Assembler::lessEqual, L_exit);
 
       __ BIND(L_finalBit);
@@ -6145,15 +6146,15 @@ address generate_avx_ghash_processBlocks() {
       // I was going to let Java take care of the final fragment
       // however it will repeatedly call this routine for every 4 bytes
       // of input data, so handle the rest here.
-      __ movq(output_size, 0x40);
-      __ subq(output_size, length);
+      __ movl(output_size, 0x40);
+      __ subl(output_size, length);
       __ movq(rax, -1);
       __ shrxq(rax, rax, output_size);    // Input mask in rax
 
       __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
-      __ movq(output_size, length);
-      __ shrq(output_size, 2);   // Find (len / 4) * 3 (output length)
+      __ movl(output_size, length);
+      __ shrl(output_size, 2);   // Find (len / 4) * 3 (output length)
       __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
       // output_size in r13
 
@@ -6197,20 +6198,20 @@ address generate_avx_ghash_processBlocks() {
       __ kortestql(k2, k2);
       __ jcc(Assembler::notZero, L_exit);
 
-      __ evpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
       __ vpmaddwd(tmp, tmp, pack32_op, Assembler::AVX_512bit);
 
       __ vpermb(tmp, pack24bits, tmp, Assembler::AVX_512bit);
       __ kmovql(k1, output_mask);
-      __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, tmp, true, Assembler::AVX_512bit);
+      __ evmovdqub(Address(dest, dp), k1, tmp, true, Assembler::AVX_512bit);
 
-      __ addq(dest, output_size);
+      __ addptr(dest, output_size);
 
       __ BIND(L_exit);
       __ vzeroupper();
       __ pop(rax);             // Get original dest value
-      __ subq(dest, rax);      // Number of bytes converted
-      __ movq(rax, dest);
+      __ subptr(dest, rax);      // Number of bytes converted
+      __ movptr(rax, dest);
       __ pop(rbx);
       __ pop(r15);
       __ pop(r14);
@@ -6269,19 +6270,19 @@ address generate_avx_ghash_processBlocks() {
     const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r8);
     const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(rsi);
 
-    __ shrq(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
-    __ cmpq(length, 0);
+    __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
+    __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit_no_vzero);
 
     // Set up src and dst pointers properly
-    __ addq(source, start_offset);     // Initial offset
-    __ addq(dest, dp);
+    __ addptr(source, start_offset);     // Initial offset
+    __ addptr(dest, dp);
     __ pop(byte2);    // Clear old dest from stack
     __ push(dest);
 
     __ shll(isURL, 8);    // index into decode table based on isURL
     __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
-    __ addq(decode_table, isURL);
+    __ addptr(decode_table, isURL);
 
     __ jmp(L_bottomLoop);
 
@@ -6294,27 +6295,27 @@ address generate_avx_ghash_processBlocks() {
     __ orl(byte1, byte3);
     __ orl(byte1, byte4);
 
-    __ incrementq(source, 4);
+    __ addptr(source, 4);
 
-    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 2), byte1);
+    __ movb(Address(dest, 2), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 1), byte1);
+    __ movb(Address(dest, 1), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
+    __ movb(Address(dest, 0), byte1);
 
-    __ incrementq(dest, 3);
+    __ addptr(dest, 3);
     __ decrementl(length, 1);
     __ jcc(Assembler::zero, L_exit_no_vzero);
 
     __ BIND(L_bottomLoop);
-    __ load_signed_byte(byte1, Address(source, RegisterOrConstant(), Address::times_1, 0));
-    __ load_signed_byte(byte2, Address(source, RegisterOrConstant(), Address::times_1, 1));
-    __ load_signed_byte(byte1, Address(decode_table, byte1, Address::times_1, 0));
-    __ load_signed_byte(byte2, Address(decode_table, byte2, Address::times_1, 0));
-    __ load_signed_byte(byte3, Address(source, RegisterOrConstant(), Address::times_1, 2));
-    __ load_signed_byte(byte4, Address(source, RegisterOrConstant(), Address::times_1, 3));
-    __ load_signed_byte(byte3, Address(decode_table, byte3, Address::times_1, 0));
-    __ load_signed_byte(byte4, Address(decode_table, byte4, Address::times_1, 0));
+    __ load_signed_byte(byte1, Address(source, 0));
+    __ load_signed_byte(byte2, Address(source, 1));
+    __ load_signed_byte(byte1, Address(decode_table, byte1));
+    __ load_signed_byte(byte2, Address(decode_table, byte2));
+    __ load_signed_byte(byte3, Address(source, 2));
+    __ load_signed_byte(byte4, Address(source, 3));
+    __ load_signed_byte(byte3, Address(decode_table, byte3));
+    __ load_signed_byte(byte4, Address(decode_table, byte4));
 
     __ mov(rax, byte1);
     __ orl(rax, byte2);
@@ -6324,8 +6325,8 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_exit_no_vzero);
     __ pop(rax);             // Get original dest value
-    __ subq(dest, rax);      // Number of bytes converted
-    __ movq(rax, dest);
+    __ subptr(dest, rax);      // Number of bytes converted
+    __ movptr(rax, dest);
     __ pop(rbx);
     __ pop(r15);
     __ pop(r14);
@@ -7624,17 +7625,18 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::x86::_left_shift_mask = base64_left_shift_mask_addr();
       StubRoutines::x86::_right_shift_mask = base64_right_shift_mask_addr();
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
-      if (VM_Version::supports_avx512_vbmi()) {
-        StubRoutines::x86::_lookup_lo = base64_vbmi_lookup_lo_addr();
-        StubRoutines::x86::_lookup_hi = base64_vbmi_lookup_hi_addr();
-        StubRoutines::x86::_lookup_lo_url = base64_vbmi_lookup_lo_url_addr();
-        StubRoutines::x86::_lookup_hi_url = base64_vbmi_lookup_hi_url_addr();
-        StubRoutines::x86::_pack_vec = base64_vbmi_pack_vec_addr();
-        StubRoutines::x86::_join_0_1 = base64_vbmi_join_0_1_addr();
-        StubRoutines::x86::_join_1_2 = base64_vbmi_join_1_2_addr();
-        StubRoutines::x86::_join_2_3 = base64_vbmi_join_2_3_addr();
+      if(VM_Version::supports_avx512_vbmi() &&
+         VM_Version::supports_avx512bw()) {
+        StubRoutines::x86::_lookup_lo_base64 = base64_vbmi_lookup_lo_addr();
+        StubRoutines::x86::_lookup_hi_base64 = base64_vbmi_lookup_hi_addr();
+        StubRoutines::x86::_lookup_lo_base64url = base64_vbmi_lookup_lo_url_addr();
+        StubRoutines::x86::_lookup_hi_base64url = base64_vbmi_lookup_hi_url_addr();
+        StubRoutines::x86::_pack_vec_base64 = base64_vbmi_pack_vec_addr();
+        StubRoutines::x86::_join_0_1_base64 = base64_vbmi_join_0_1_addr();
+        StubRoutines::x86::_join_1_2_base64 = base64_vbmi_join_1_2_addr();
+        StubRoutines::x86::_join_2_3_base64 = base64_vbmi_join_2_3_addr();
       }
-      StubRoutines::x86::_decoding_table = base64_decoding_table_addr();
+      StubRoutines::x86::_decoding_table_base64 = base64_decoding_table_addr();
       StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
