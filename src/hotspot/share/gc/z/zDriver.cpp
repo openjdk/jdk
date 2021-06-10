@@ -48,6 +48,7 @@ static const ZStatPhaseCycle      ZPhaseMinorCycle(ZCycleId::_minor, "Minor Garb
 static const ZStatPhaseCycle      ZPhaseMajorCycle(ZCycleId::_major, "Major Garbage Collection Cycle");
 
 static const ZStatPhasePause      ZPhasePauseMinorMarkStart("Pause Minor Mark Start");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkRoots("Concurrent Minor Mark Roots");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMark("Concurrent Minor Mark");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkContinue("Concurrent Minor Mark Continue");
 static const ZStatPhasePause      ZPhasePauseMinorMarkEnd("Pause Minor Mark End");
@@ -287,9 +288,14 @@ void ZDriverMinor::pause_mark_start() {
 }
 
 void ZDriverMinor::concurrent_mark() {
-  ZStatTimerMinor timer(ZPhaseConcurrentMinorMark);
-  ZHeap::heap()->minor_cycle()->mark_roots();
-  ZHeap::heap()->minor_cycle()->mark_follow();
+  {
+    ZStatTimerMinor timer(ZPhaseConcurrentMinorMarkRoots);
+    ZHeap::heap()->minor_cycle()->mark_roots();
+  }
+  {
+    ZStatTimerMinor timer(ZPhaseConcurrentMinorMark);
+    ZHeap::heap()->minor_cycle()->mark_follow();
+  }
 }
 
 bool ZDriverMinor::pause_mark_end() {
