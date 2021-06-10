@@ -154,14 +154,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                 this.implClass = implInfo.getDeclaringClass();
                 this.implIsInstanceMethod = true;
 
-                // Classes compiled prior to dynamic nestmate support invokes a private instance
-                // method with REF_invokeSpecial.
-                //
-                // invokespecial should only be used to invoke private nestmate constructors.
-                // The lambda proxy class will be defined as a nestmate of targetClass.
-                // If the method to be invoked is an instance method of targetClass, then
-                // convert to use invokevirtual or invokeinterface.
-                if (targetClass == implClass && !implInfo.getName().equals("<init>")) {
+                // Classes compiled prior to dynamic nestmate support invoke a private instance
+                // method with REF_invokeSpecial. Newer classes use REF_invokeVirtual or
+                // REF_invokeInterface, and we can use that instruction in the lambda class.
+                if (targetClass == implClass) {
                     this.implKind = implClass.isInterface() ? REF_invokeInterface : REF_invokeVirtual;
                 } else {
                     this.implKind = REF_invokeSpecial;
