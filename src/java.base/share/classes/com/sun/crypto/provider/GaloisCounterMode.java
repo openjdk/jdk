@@ -163,7 +163,13 @@ abstract class GaloisCounterMode extends CipherSpi {
         reInit = false;
 
         // always encrypt mode for embedded cipher
-        blockCipher.init(false, key.getAlgorithm(), keyValue);
+        try {
+            blockCipher.init(false, key.getAlgorithm(), keyValue);
+        } finally {
+            if (!encryption) {
+                Arrays.fill(keyValue, (byte) 0);
+            }
+        }
     }
 
     @Override
