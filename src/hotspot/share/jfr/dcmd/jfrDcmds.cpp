@@ -276,40 +276,6 @@ void JfrDCmd::print_help(const char* name) const {
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
 }
 
-static const char* read_string_field(oop argument, const char* field_name, TRAPS) {
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result);
-  args.set_klass(argument->klass());
-  args.set_name(field_name);
-  args.set_signature("Ljava/lang/String;");
-  args.set_receiver(argument);
-  JfrJavaSupport::get_field(&args, THREAD);
-  const oop string_oop = result.get_oop();
-  return string_oop != NULL ? JfrJavaSupport::c_str(string_oop, (JavaThread*)THREAD, true) : NULL;
-}
-
-static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
-  JavaValue result(T_BOOLEAN);
-  JfrJavaArguments args(&result);
-  args.set_klass(argument->klass());
-  args.set_name(field_name);
-  args.set_signature("Z");
-  args.set_receiver(argument);
-  JfrJavaSupport::get_field(&args, THREAD);
-  return (result.get_jint() & 1) == 1;
-}
-
-static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
-  return new DCmdArgumentInfo(
-    read_string_field(argument, "name", THREAD),
-    read_string_field(argument, "description", THREAD),
-    read_string_field(argument, "type", THREAD),
-    read_string_field(argument, "defaultValue", THREAD),
-    read_boolean_field(argument, "mandatory", THREAD),
-    true, // a DcmdFramework "option"
-    read_boolean_field(argument, "allowMultiple", THREAD));
-}
-
 GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
   return new GrowableArray<DCmdArgumentInfo*>();
 }
