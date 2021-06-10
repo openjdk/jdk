@@ -53,9 +53,8 @@ public class GetObjectSizeOverflow {
             pw.println("Premain-Class: GetObjectSizeOverflowAgent");
         }
 
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class"});
-        pb.start().waitFor();
+        var jar = new ProcessBuilder(JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class");
+        jar.start().waitFor();
 
         ProcessBuilder pt = ProcessTools.createTestJvm("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
