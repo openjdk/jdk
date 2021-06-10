@@ -91,7 +91,7 @@ public class TestRelativeLinks extends JavadocTester {
                     <a href="C.html#class-fragment">fragment class link</a>""",
                 """
                     <a href="relative-method-link.html">relative method link</a>""",
-                """ 
+                """
                     <a href="C.html#method-fragment">fragment method link</a>""");
 
         // These relative paths should be redirected because they are in different
@@ -105,7 +105,7 @@ public class TestRelativeLinks extends JavadocTester {
                     <a href="../../pkg/C.html#class-fragment">fragment class link</a>""",
                 """
                     <a href="../../pkg/relative-method-link.html">relative method link</a>""",
-                """ 
+                """
                     <a href="../../pkg/C.html#method-fragment">fragment method link</a>""");
 
         // INDEX PAGE
@@ -118,7 +118,7 @@ public class TestRelativeLinks extends JavadocTester {
                 <a href="./pkg/relative-field-link.html">relative field link</a>""",
             """
                 <a href="./pkg/relative-method-link.html">relative method link</a>""",
-            """ 
+            """
                 <a href="./pkg/C.html#method-fragment">fragment method link</a>""",
             """
                 <a href="./pkg/relative-package-link.html">relative package link</a>""",
