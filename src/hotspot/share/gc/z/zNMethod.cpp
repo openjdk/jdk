@@ -112,11 +112,13 @@ void ZNMethod::log_register(const nmethod* nm) {
 
   const ZNMethodData* const data = gc_data(nm);
 
-  log.print("Register NMethod: %s.%s (" PTR_FORMAT "), "
+  log.print("Register NMethod: %s.%s (" PTR_FORMAT ") [" PTR_FORMAT ", " PTR_FORMAT "] "
             "Compiler: %s, Barriers: %d, Oops: %d, ImmediateOops: %d, NonImmediateOops: %s",
             nm->method()->method_holder()->external_name(),
             nm->method()->name()->as_C_string(),
             p2i(nm),
+            p2i(nm->code_begin()),
+            p2i(nm->code_end()),
             nm->compiler_name(),
             data->barriers()->length(),
             nm->oops_count() - 1,
@@ -158,10 +160,12 @@ void ZNMethod::log_unregister(const nmethod* nm) {
     return;
   }
 
-  log.print("Unregister NMethod: %s.%s (" PTR_FORMAT ")",
+  log.print("Unregister NMethod: %s.%s (" PTR_FORMAT ") [" PTR_FORMAT ", " PTR_FORMAT "] ",
             nm->method()->method_holder()->external_name(),
             nm->method()->name()->as_C_string(),
-            p2i(nm));
+            p2i(nm),
+            p2i(nm->code_begin()),
+            p2i(nm->code_end()));
 }
 
 void ZNMethod::register_nmethod(nmethod* nm) {

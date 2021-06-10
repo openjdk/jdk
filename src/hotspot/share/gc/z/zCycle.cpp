@@ -607,7 +607,7 @@ public:
       ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
       ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
-      log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old remapping", p2i(nm));
+      log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old remapping", p2i(nm));
 
       // Disarm
       _bs_nm->disarm(nm);

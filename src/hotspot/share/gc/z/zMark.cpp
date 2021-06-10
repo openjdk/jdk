@@ -734,7 +734,7 @@ public:
       ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
       ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
-      log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old", p2i(nm));
+      log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old", p2i(nm));
 
       // Disarm
       _bs_nm->disarm(nm);
@@ -785,10 +785,10 @@ public:
       _bs_nm->disarm_with_value(nm, (int)untype(new_disarm_value_ptr));
 
       if (complete_disarm) {
-        log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
+        log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
         assert(!_bs_nm->is_armed(nm), "Must not be considered armed anymore");
       } else {
-        log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (incomplete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
+        log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (incomplete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
         assert(_bs_nm->is_armed(nm), "Must be considered armed");
       }
     }
