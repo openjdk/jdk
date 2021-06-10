@@ -487,28 +487,30 @@ Klass* JfrJavaSupport::klass(const jobject handle) {
   return obj->klass();
 }
 
-// caller needs ResourceMark
-const char* JfrJavaSupport::c_str(oop string, JavaThread* t) {
+static char* allocate_string(bool c_heap, int length, JavaThread* jt) {
+  return c_heap ? NEW_C_HEAP_ARRAY(char, length, mtTracing) :
+                  NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, length);
+}
+
+const char* JfrJavaSupport::c_str(oop string, JavaThread* t, bool c_heap /* false */) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  char* resource_copy = NULL;
+  char* str = NULL;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != NULL) {
     const int length = java_lang_String::utf8_length(string, value);
-    resource_copy = NEW_RESOURCE_ARRAY_IN_THREAD(t, char, (length + 1));
-    if (resource_copy == NULL) {
-      JfrJavaSupport::throw_out_of_memory_error("Unable to allocate thread local native memory", t);
+    str = allocate_string(c_heap, length + 1, t);
+    if (str == NULL) {
+      JfrJavaSupport::throw_out_of_memory_error("Unable to allocate native memory", t);
       return NULL;
     }
-    assert(resource_copy != NULL, "invariant");
-    java_lang_String::as_utf8_string(string, value, resource_copy, length + 1);
+    java_lang_String::as_utf8_string(string, value, str, length + 1);
   }
-  return resource_copy;
+  return str;
 }
 
-// caller needs ResourceMark
-const char* JfrJavaSupport::c_str(jstring string, JavaThread* t) {
+const char* JfrJavaSupport::c_str(jstring string, JavaThread* t, bool c_heap /* false */) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  return string != NULL ? c_str(resolve_non_null(string), t) : NULL;
+  return string != NULL ? c_str(resolve_non_null(string), t, c_heap) : NULL;
 }
 
 /*
