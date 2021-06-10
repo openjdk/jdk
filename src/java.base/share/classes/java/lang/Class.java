@@ -232,8 +232,8 @@ public final class Class<T> implements java.io.Serializable,
      * @return a string representation of this {@code Class} object.
      */
     public String toString() {
-        return (isInterface() ? "interface " : (isPrimitive() ? "" : "class "))
-            + getName();
+        String kind = isInterface() ? "interface " : isPrimitive() ? "" : "class ";
+        return kind.concat(getName());
     }
 
     /**
