@@ -61,6 +61,8 @@ public class TestRelativeLinks extends JavadocTester {
             """
                 <a href="#class-fragment">fragment class link</a>""",
             """
+                <a id="class-fragment">Class fragment</a>""",
+            """
                 <a href="relative-field-link.html">relative field link</a>""",
             """
                 <a href="relative-method-link.html">relative method link</a>""",
@@ -68,23 +70,32 @@ public class TestRelativeLinks extends JavadocTester {
                 <a href="#method-fragment">fragment method link</a>""",
             """
                 <a href="relative-multi-line-link.html">relative-multi-line-link</a>""");
+
         checkOutput("pkg/package-summary.html", true,
             """
-                <a href="relative-package-link.html">relative package link</a>""");
-
-        // These relative paths should be redirected because they are in different
-        // places.
-
-        // subclass in same pacakge
-        checkOutput("pkg/D.html", true,
+                <a href="relative-package-link.html">relative package link</a>""",
+            """
+                <a href="#package-fragment">package fragment link</a>""",
+            """
+                <a id="package-fragment">Package fragment</a>""",
             """
                 <a href="relative-class-link.html">relative class link</a>""",
             """
-                <a href="C.html#class-fragment">fragment class link</a>""",
-            """
-                <a href="relative-method-link.html">relative method link</a>""",
-            """ 
-                <a href="C.html#method-fragment">fragment method link</a>""");
+                <a href="C.html#class-fragment">fragment class link</a>""");
+
+        // subclass in same pacakge
+        checkOutput("pkg/D.html", true,
+                """
+                    <a href="relative-class-link.html">relative class link</a>""",
+                """
+                    <a href="C.html#class-fragment">fragment class link</a>""",
+                """
+                    <a href="relative-method-link.html">relative method link</a>""",
+                """ 
+                    <a href="C.html#method-fragment">fragment method link</a>""");
+
+        // These relative paths should be redirected because they are in different
+        // places.
 
         // subclass in subpackage
         checkOutput("pkg/sub/F.html", true,
@@ -113,6 +124,14 @@ public class TestRelativeLinks extends JavadocTester {
                 <a href="./pkg/relative-package-link.html">relative package link</a>""",
             """
                 <a href="./pkg/relative-multi-line-link.html">relative-multi-line-link</a>""");
+
+        // This is not a relative path and should not be redirected.
+        checkOutput("index-all.html", true,
+            """
+                <div class="block"><a id="masters"></a>""");
+        checkOutput("index-all.html", false,
+            """
+                <div class="block"><a id="./pkg/masters"></a>""");
 
         // PACKAGE USE
         checkOutput("pkg/package-use.html", true,

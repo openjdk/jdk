@@ -1669,11 +1669,14 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Returns true if element lives in the same package as typeElement.
+     * Returns true if element lives in the same package as the type or package
+     * element of this writer.
      */
-    private boolean inSamePackage(TypeElement typeElement, Element element) {
-        return typeElement != null && !utils.isModule(element)
-                && utils.containingPackage(typeElement) == utils.containingPackage(element);
+    private boolean inSamePackage(Element element) {
+        Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
+                ? packageWriter.packageElement : getCurrentPageElement();
+        return currentPageElement != null && !utils.isModule(element)
+                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
     }
 
     /**
@@ -1724,7 +1727,7 @@ public class HtmlDocletWriter {
             }
         }
 
-        if (!inSamePackage(getCurrentPageElement(), element)) {
+        if (!inSamePackage(element)) {
             DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
                 @Override
                 public DocPath visitType(TypeElement e, Void p) {
