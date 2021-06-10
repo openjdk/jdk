@@ -260,14 +260,24 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const src = ac->in(ArrayCopyNode::Src);
 
   if (ac->is_clone_array()) {
-    BasicType bt = src->get_ptr_type()->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(bt)) {
-      // Clone object array
-      bt = T_OBJECT;
-    } else {
-      // Clone primitive array
+    const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
+    BasicType bt;
+    if (ary_ptr == NULL) {
+      // ary_ptr can be null iff we are running with StressReflectiveCode
+      // This code will be unreachable
+      assert(StressReflectiveCode, "Guard against surprises");
       bt = T_LONG;
+    } else {
+      bt = ary_ptr->elem()->array_element_basic_type();
+      if (is_reference_type(bt)) {
+        // Clone object array
+        bt = T_OBJECT;
+      } else {
+        // Clone primitive array
+        bt = T_LONG;
+      }
     }
+
     Node* ctrl = ac->in(TypeFunc::Control);
     Node* mem = ac->in(TypeFunc::Memory);
     Node* src = ac->in(ArrayCopyNode::Src);
@@ -291,8 +301,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     phase->igvn().replace_node(ac, call);
     return;
   }
-
-
+  
   // Clone instance
   Node* const ctrl       = ac->in(TypeFunc::Control);
   Node* const mem        = ac->in(TypeFunc::Memory);
