@@ -26,7 +26,7 @@
  * @bug 8225193
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main RemovingUnixDomainSocketTest
+ * @run driver RemovingUnixDomainSocketTest
  */
 
 import java.io.File;

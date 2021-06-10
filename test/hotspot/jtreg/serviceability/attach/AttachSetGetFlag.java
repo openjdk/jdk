@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main AttachSetGetFlag
+ * @run driver AttachSetGetFlag
  */
 
 import java.io.BufferedReader;

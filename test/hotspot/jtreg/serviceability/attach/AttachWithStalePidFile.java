@@ -30,7 +30,7 @@
  * @modules jdk.attach/sun.tools.attach
  * @library /test/lib
  * @requires os.family != "windows"
- * @run main AttachWithStalePidFile
+ * @run driver AttachWithStalePidFile
  */
 
 import jdk.test.lib.Platform;
