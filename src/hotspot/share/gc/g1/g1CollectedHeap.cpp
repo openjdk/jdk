@@ -1915,16 +1915,6 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   }
 }
 
-bool G1CollectedHeap::should_upgrade_to_full_gc(GCCause::Cause cause) {
-  if (should_do_concurrent_full_gc(_gc_cause)) {
-    return false;
-  } else if (has_regions_left_for_allocation()) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
 #ifndef PRODUCT
 void G1CollectedHeap::allocate_dummy_regions() {
   // Let's fill up most of the region
