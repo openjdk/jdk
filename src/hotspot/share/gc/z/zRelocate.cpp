@@ -529,7 +529,7 @@ private:
       // Add remset entry in the to-page
       const uintptr_t offset = field_local_offset - from_local_offset;
       const zaddress to_field = to_addr + offset;
-      log_info(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
+      log_debug(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
       to_page->remember((volatile zpointer*)to_field);
     }
 

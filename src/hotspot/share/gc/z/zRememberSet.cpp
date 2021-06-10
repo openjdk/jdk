@@ -153,7 +153,7 @@ bool ZRememberSetContainingIterator::next(ZRememberSetContaining* containing) {
       containing->_field_addr = to_addr(index);
       containing->_addr = _obj;
 
-      log_info(gc, remset)("Remset Containing Obj  index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
+      log_debug(gc, remset)("Remset Containing Obj  index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
 
       _obj_remset_iter.reset(to_index(containing->_field_addr) - 1);
       return true;
@@ -174,7 +174,7 @@ bool ZRememberSetContainingIterator::next(ZRememberSetContaining* containing) {
 
     // Found live object. Not necessarily the one that originally owned the remset bit.
 
-    log_info(gc, remset)("Remset Containing Main index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
+    log_debug(gc, remset)("Remset Containing Main index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
 
     // Don't scan inside the object in the main iterator
     // Note: Can't use -1, since this might be the first object in the page.

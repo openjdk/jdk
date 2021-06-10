@@ -222,7 +222,7 @@ void ZPage::clear_previous_remembered() {
 }
 
 void ZPage::log_msg(const char* msg) const {
-  LogStreamHandle(Info, gc, reloc) handle;
+  LogStreamHandle(Debug, gc, reloc) handle;
   print_on_msg(&handle, msg);
 }
 
