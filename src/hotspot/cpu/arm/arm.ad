@@ -977,7 +977,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   // TODO
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
+  bool ret_value = match_rule_supported(opcode) && vector_size_supported(bt, vlen);
   // Add rules here.
 
   return ret_value;  // Per default match rules are supported.

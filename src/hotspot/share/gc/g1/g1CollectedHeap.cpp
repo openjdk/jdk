@@ -1139,6 +1139,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
+  GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
   bool success = do_full_collection(false /* explicit gc */,
                                     true  /* clear_all_soft_refs */,
@@ -1188,6 +1189,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   }
 
   if (do_gc) {
+    GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
     // Expansion didn't work, we'll try to do a Full GC.
     // If maximum_compaction is set we clear all soft references and don't
     // allow any dead wood to be left on the heap.

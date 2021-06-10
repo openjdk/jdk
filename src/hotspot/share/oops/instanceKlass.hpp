@@ -207,29 +207,27 @@ class InstanceKlass: public Klass {
   // Number of heapOopSize words used by non-static fields in this klass
   // (including inherited fields but after header_size()).
   int             _nonstatic_field_size;
-  int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
-
-  int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
-  int             _itable_len;           // length of Java itable (in words)
+  int             _static_field_size;       // number words used by static fields (oop and non-oop) in this klass
+  int             _nonstatic_oop_map_size;  // size in words of nonstatic oop map blocks
+  int             _itable_len;              // length of Java itable (in words)
 
   // The NestHost attribute. The class info index for the class
   // that is the nest-host of this class. This data has not been validated.
   u2              _nest_host_index;
-  u2              _this_class_index;              // constant pool entry
+  u2              _this_class_index;        // constant pool entry
+  u2              _static_oop_field_count;  // number of static oop fields in this klass
+  u2              _java_fields_count;       // The number of declared Java fields
 
-  u2              _static_oop_field_count;// number of static oop fields in this klass
-  u2              _java_fields_count;    // The number of declared Java fields
-
-  volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
+  volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
-  bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
+  bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
   // Class states are defined as ClassState (see above).
   // Place the _init_state here to utilize the unused 2-byte after
   // _idnum_allocated_count.
-  u1              _init_state;                    // state of class
+  u1              _init_state;              // state of class
 
   // This can be used to quickly discriminate among the four kinds of
   // InstanceKlass. This should be an enum (?)
@@ -250,7 +248,7 @@ class InstanceKlass: public Klass {
     _misc_has_nonstatic_concrete_methods      = 1 << 5,  // class/superclass/implemented interfaces has non-static, concrete methods
     _misc_declares_nonstatic_concrete_methods = 1 << 6,  // directly declares non-static, concrete methods
     _misc_has_been_redefined                  = 1 << 7,  // class has been redefined
-    _unused                                   = 1 << 8,  //
+    _misc_shared_loading_failed               = 1 << 8,  // class has been loaded from shared archive
     _misc_is_scratch_class                    = 1 << 9,  // class is the redefined scratch class
     _misc_is_shared_boot_class                = 1 << 10, // defining class loader is boot class loader
     _misc_is_shared_platform_class            = 1 << 11, // defining class loader is platform class loader
@@ -353,6 +351,18 @@ class InstanceKlass: public Klass {
 
   void clear_shared_class_loader_type() {
     _misc_flags &= ~shared_loader_type_bits();
+  }
+
+  bool shared_loading_failed() const {
+    return (_misc_flags & _misc_shared_loading_failed) != 0;
+  }
+
+  void set_shared_loading_failed() {
+    _misc_flags |= _misc_shared_loading_failed;
+  }
+
+  void clear_shared_loading_failed() {
+    _misc_flags &= ~_misc_shared_loading_failed;
   }
 
   void set_shared_class_loader_type(s2 loader_type);
