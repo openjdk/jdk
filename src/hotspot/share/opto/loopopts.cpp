@@ -1523,7 +1523,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
                 if (x->is_AddP() && k == AddPNode::Base) {
                   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
                     Node* u = x->fast_out(i);
-                    if (u->is_AddP() && u->in(AddPNode::Base) == x->in(AddPNode::Base)) {
+                    if (u->is_AddP() && u->in(AddPNode::Base) == n->in(AddPNode::Base)) {
                       _igvn.replace_input_of(u, AddPNode::Base, cast);
                       assert(u->find_out_with(Op_AddP) == NULL, "more than 2 chained AddP nodes?");
                     }
