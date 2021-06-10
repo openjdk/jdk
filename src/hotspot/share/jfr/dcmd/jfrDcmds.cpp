@@ -233,11 +233,11 @@ void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
 }
 
 void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
-    _args = line->args_addr();
-    _delimiter = delim;
-     // Error checking done in execute.
-     // Will not matter from DCmdFactory perspective
-     // where parse and execute are called consecutively.
+  _args = line->args_addr();
+  _delimiter = delim;
+  // Error checking done in execute.
+  // Will not matter from DCmdFactory perspective
+  // where parse and execute are called consecutively.
 }
 
 void JfrDCmd::execute(DCmdSource source, TRAPS) {

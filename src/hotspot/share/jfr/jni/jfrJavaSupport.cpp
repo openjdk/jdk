@@ -508,7 +508,6 @@ const char* JfrJavaSupport::c_str(oop string, JavaThread* t, bool c_heap /* fals
   return str;
 }
 
-// caller needs ResourceMark
 const char* JfrJavaSupport::c_str(jstring string, JavaThread* t, bool c_heap /* false */) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
   return string != NULL ? c_str(resolve_non_null(string), t, c_heap) : NULL;
