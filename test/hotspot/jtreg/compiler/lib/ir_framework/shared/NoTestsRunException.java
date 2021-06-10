@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,22 @@
  * questions.
  */
 
-// key: compiler.err.switch.null.not.allowed
+package compiler.lib.ir_framework.shared;
 
-class SwitchNullNotAllowed {
+/**
+ * Exception that is thrown by the test VM if no tests are run as a result of specifying {@code -DTest} and/or
+ * {@code -DExclude} defining an empty set with the used test VM flags.
+ */
+public class NoTestsRunException extends RuntimeException {
+    /**
+     * Default constructor used by test VM
+     */
+    public NoTestsRunException() {}
 
-    void test(Integer i) {
-        switch (i) {
-            case null: break;
-            case 0: break;
-        }
+    /**
+     * Constructor used to eventually throw the exception in the driver VM.
+     */
+    public NoTestsRunException(String message) {
+        super(message);
     }
 }

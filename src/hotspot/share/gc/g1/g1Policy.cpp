@@ -68,6 +68,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
+  _predicted_surviving_bytes_from_survivor(0),
+  _predicted_surviving_bytes_from_old(0),
   _rs_length(0),
   _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
@@ -450,6 +452,7 @@ void G1Policy::record_full_collection_end() {
   // also call this on any additional surv rate groups
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
+  update_survival_estimates_for_next_collection();
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
@@ -779,6 +782,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_rs_length_prediction();
+  update_survival_estimates_for_next_collection();
 
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
@@ -1398,6 +1402,86 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Predicted time: %.3fms",
                             num_optional_regions, max_optional_regions, prediction_ms);
+}
+
+// Number of regions required to store the given number of bytes, taking
+// into account the target amount of wasted space in PLABs.
+static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
+  size_t byte_count_adjusted = byte_count * (size_t)(100 + TargetPLABWastePct) / 100.0;
+
+  // Round up the region count
+  return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
+}
+
+bool G1Policy::preventive_collection_required(uint alloc_region_count) {
+  if (!G1AllowPreventiveGC || !Universe::is_fully_initialized()) {
+    // Don't attempt any preventive GC's if the feature is disabled,
+    // or before initialization is complete.
+    return false;
+  }
+
+  if (_g1h->young_regions_count() == 0 && !_collection_set->has_candidates()) {
+    return false;
+  }
+
+  uint eden_count = _g1h->eden_regions_count();
+  size_t const eden_surv_bytes_pred = _eden_surv_rate_group->accum_surv_rate_pred(eden_count) * HeapRegion::GrainBytes;
+  size_t const total_young_predicted_surviving_bytes = eden_surv_bytes_pred + _predicted_surviving_bytes_from_survivor;
+
+  uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
+                                get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
+
+  if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
+    log_debug(gc, ergo, cset)("Preventive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
+            required_regions,
+            eden_count,
+            (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
+            _g1h->survivor_regions_count(),
+            (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
+            _g1h->old_regions_count(),
+            (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
+            _g1h->num_free_regions(),
+            alloc_region_count);
+
+    return true;
+  }
+
+  return false;
+}
+
+void G1Policy::update_survival_estimates_for_next_collection() {
+  // Predict the number of bytes of surviving objects from survivor and old
+  // regions and update the associated members.
+
+  // Survivor regions
+  size_t survivor_bytes = 0;
+  const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
+  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
+       it != survivor_regions->end();
+       ++it) {
+    survivor_bytes += predict_bytes_to_copy(*it);
+  }
+
+  _predicted_surviving_bytes_from_survivor = survivor_bytes;
+
+  // Old regions
+  if (!_collection_set->has_candidates()) {
+    _predicted_surviving_bytes_from_old = 0;
+    return;
+  }
+
+  // Use the minimum old gen collection set as conservative estimate for the number
+  // of regions to take for this calculation.
+  G1CollectionSetCandidates *candidates = _collection_set->candidates();
+  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length(candidates));
+  uint current_index = candidates->cur_idx();
+  size_t old_bytes = 0;
+  for (uint i = 0; i < iterate_count; i++) {
+    HeapRegion *region = candidates->at(current_index + i);
+    old_bytes += predict_bytes_to_copy(region);
+  }
+
+  _predicted_surviving_bytes_from_old = old_bytes;
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

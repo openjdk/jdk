@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,22 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZWORKERS_INLINE_HPP
-#define SHARE_GC_Z_ZWORKERS_INLINE_HPP
+/*
+ * @test
+ * @bug 8262891
+ * @summary Check errors reported for guarded patterns.
+ * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
+ */
 
-#include "gc/z/zWorkers.hpp"
+public class GuardsErrors {
 
-#include "gc/shared/gc_globals.hpp"
-#include "utilities/globalDefinitions.hpp"
+    void typeTestPatternSwitchTest(Object o, int check) {
+        switch (o) {
+            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
+            default -> {}
+        }
+        check = 0;
 
-inline uint ZWorkers::nparallel() const {
-  return _boost ? nworkers() : nparallel_no_boost();
+    }
+
 }
-
-inline uint ZWorkers::nparallel_no_boost() const {
-  return ParallelGCThreads;
-}
-
-inline uint ZWorkers::nconcurrent() const {
-  return _boost ? nworkers() : nconcurrent_no_boost();
-}
-
-inline uint ZWorkers::nconcurrent_no_boost() const {
-  return ConcGCThreads;
-}
-
-inline uint ZWorkers::nworkers() const {
-  return MAX2(ParallelGCThreads, ConcGCThreads);
-}
-
-#endif // SHARE_GC_Z_ZWORKERS_INLINE_HPP

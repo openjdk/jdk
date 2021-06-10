@@ -956,19 +956,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(ClassFileStream* st,
 
 
 #if INCLUDE_CDS
-// Load a class for boot loader from the shared spaces. This also
-// forces the superclass and all interfaces to be loaded.
-InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
-                                                        PackageEntry* pkg_entry,
-                                                        TRAPS) {
-  assert(UseSharedSpaces, "Sanity check");
-  InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
-  if (ik != NULL && ik->is_shared_boot_class()) {
-    return load_shared_class(ik, Handle(), Handle(), NULL, pkg_entry, THREAD);
-  }
-  return NULL;
-}
-
 // Check if a shared class can be loaded by the specific classloader.
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
@@ -1289,7 +1276,11 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     if (UseSharedSpaces)
     {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
-      k = load_shared_boot_class(class_name, pkg_entry, THREAD);
+      InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
+      if (ik != NULL && ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
+        SharedClassLoadingMark slm(THREAD, ik);
+        k = load_shared_class(ik, class_loader, Handle(), NULL,  pkg_entry, CHECK_NULL);
+      }
     }
 #endif
 
@@ -1301,6 +1292,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (k != NULL) {
+      CDS_ONLY(SharedClassLoadingMark slm(THREAD, k);)
       k = find_or_define_instance_class(class_name, class_loader, k, CHECK_NULL);
     }
     return k;

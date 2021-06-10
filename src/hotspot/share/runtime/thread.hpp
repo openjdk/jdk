@@ -356,7 +356,6 @@ class Thread: public ThreadShadow {
   virtual bool is_active_Java_thread() const         { return false; }
 
   // Casts
-  inline const WorkerThread* as_Worker_thread() const;
   inline JavaThread* as_Java_thread();
   inline const JavaThread* as_Java_thread() const;
 

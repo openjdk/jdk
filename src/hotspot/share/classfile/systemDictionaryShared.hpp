@@ -112,6 +112,23 @@ class LambdaProxyClassDictionary;
 class RunTimeSharedClassInfo;
 class RunTimeSharedDictionary;
 
+class SharedClassLoadingMark {
+ private:
+  Thread* THREAD;
+  InstanceKlass* _klass;
+ public:
+  SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
+  ~SharedClassLoadingMark() {
+    assert(THREAD != NULL, "Current thread is NULL");
+    assert(_klass != NULL, "InstanceKlass is NULL");
+    if (HAS_PENDING_EXCEPTION) {
+      if (_klass->is_shared()) {
+        _klass->set_shared_loading_failed();
+      }
+    }
+  }
+};
+
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
 public:
@@ -207,6 +224,7 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
