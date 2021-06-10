@@ -311,22 +311,7 @@ static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
 }
 
 GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
-  static const char signature[] = "()[Ljdk/jfr/internal/dcmd/Argument;";
-  JavaThread* thread = JavaThread::current();
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments getArgumentInfos(&result, javaClass(), "getArgumentInfos", signature, thread);
-  invoke(getArgumentInfos, thread);
-  objArrayOop arguments = objArrayOop(result.get_oop());
-  assert(arguments != NULL, "invariant");
-  assert(arguments->is_array(), "must be array");
-  GrowableArray<DCmdArgumentInfo*>* const array = new GrowableArray<DCmdArgumentInfo*>();
-  const int length = arguments->length();
-  for (int i = 0; i < length; ++i) {
-    DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
-    assert(dai != NULL, "invariant");
-    array->append(dai);
-  }
-  return array;
+  return new GrowableArray<DCmdArgumentInfo*>();
 }
 
 GrowableArray<const char*>* JfrDCmd::argument_name_array() const {
