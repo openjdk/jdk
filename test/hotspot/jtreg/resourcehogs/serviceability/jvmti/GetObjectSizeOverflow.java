@@ -51,9 +51,9 @@ import jtreg.SkippedException;
 public class GetObjectSizeOverflow {
     public static void main(String[] args) throws Exception  {
 
-        PrintWriter pw = new PrintWriter("MANIFEST.MF");
-        pw.println("Premain-Class: GetObjectSizeOverflowAgent");
-        pw.close();
+        try (var pw = new PrintWriter("MANIFEST.MF")) {
+            pw.println("Premain-Class: GetObjectSizeOverflowAgent");
+        }
 
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class"});
