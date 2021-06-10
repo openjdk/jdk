@@ -2616,9 +2616,13 @@ class Assembler : public AbstractAssembler {
 
  private:
   // Helper function used in load_const_optimized() and add_const_optimized()
-  void paddi_or_addi(Register d, Register s, long si34);
-  void pli_or_li(    Register d, long si34) {
-    paddi_or_addi(d, R0, si34);
+  void paddi_or_addi_r0ok(Register d, Register s, long si34);
+  void paddi_or_addi(Register d, Register s, long si34) {
+    assert(s != R0, "r0 not allowed");
+    paddi_or_addi_r0ok(d, s, si34);
+  }
+  void pli_or_li(Register d, long si34) {
+    paddi_or_addi_r0ok(d, R0, si34);
   }
 
  public:

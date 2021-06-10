@@ -347,7 +347,7 @@ void Assembler::load_const(Register d, long x, Register tmp) {
 // Generate prefixed or non-prefixed addi, or addis based on the immediate value
 // Emit a nop if a prefixed addi is going to cross a 64-byte boundary.
 // (See Section 1.6 of Power ISA Version 3.1)
-void Assembler::paddi_or_addi(Register d, Register s, long si34) {
+void Assembler::paddi_or_addi_r0ok(Register d, Register s, long si34) {
   if (is_simm16(si34)) {
     addi_r0ok(d, s, (int)si34);
   } else if (is_simm32(si34) && (si34 & 0xffff) == 0) {
