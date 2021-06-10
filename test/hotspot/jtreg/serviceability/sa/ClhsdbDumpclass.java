@@ -70,8 +70,8 @@ public class ClhsdbDumpclass {
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
             launcher.addVMArgs(Utils.getTestJavaOpts());
-            launcher.addToolArg(APP_DOT_CLASSNAME);
-            System.out.println("> javap " + APP_DOT_CLASSNAME);
+            launcher.addToolArg(classFile.toString());
+            System.out.println("> javap " + classFile.toString());
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());
             ProcessBuilder pb = new ProcessBuilder(cmdStringList);
             Process javap = pb.start();
