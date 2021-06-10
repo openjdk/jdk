@@ -24,6 +24,7 @@
 /*
  * @test TestMultipleXlogArgs
  * @summary Ensure multiple -Xlog arguments aggregate the logging options.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestMultipleXlogArgs

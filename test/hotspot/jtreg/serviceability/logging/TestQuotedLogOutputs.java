@@ -24,6 +24,7 @@
 /*
  * @test TestQuotedLogOutputs
  * @summary Ensure proper parsing of quoted output names for -Xlog arguments.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @comment after JDK-8224505, this has to be run in othervm mode

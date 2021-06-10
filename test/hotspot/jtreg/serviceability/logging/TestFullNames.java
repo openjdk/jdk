@@ -23,8 +23,9 @@
 
 /*
  * @test TestFullNames
- * @summary Ensure proper parsing of unquoted full output names for -Xlog arguments.
  * @bug 8215398
+ * @summary Ensure proper parsing of unquoted full output names for -Xlog arguments.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestFullNames
