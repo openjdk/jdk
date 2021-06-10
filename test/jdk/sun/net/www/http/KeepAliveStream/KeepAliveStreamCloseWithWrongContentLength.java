@@ -24,74 +24,107 @@
 /*
  * @test
  * @bug 4533243
- * @summary Closing a keep alive stream gives NullPointerException
+ * @summary Closing a keep alive stream should not give NullPointerException
  * @library /test/lib
  * @run main/othervm/timeout=30 KeepAliveStreamCloseWithWrongContentLength
  */
 
 import java.net.*;
 import java.io.*;
+
 import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveStreamCloseWithWrongContentLength {
 
-    static class XServer extends Thread {
-        ServerSocket srv;
-        Socket s;
-        InputStream is;
-        OutputStream os;
+    private final static String path = "/KeepAliveStreamCloseWithWrongContentLength";
+    private final static String getRequest1stLine = "GET %s".formatted(path);
 
-        XServer (ServerSocket s) {
-            srv = s;
+    static class XServer extends Thread {
+
+        ServerSocket serverSocket;
+        OutputStream outputStream;
+
+        XServer (ServerSocket socket) {
+            serverSocket = socket;
         }
 
         public void run() {
             try {
-                s = srv.accept ();
-                // read HTTP request from client
-                InputStream is = s.getInputStream();
-                // read the first ten bytes
-                for (int i=0; i<10; i++) {
-                    is.read();
+
+                ByteArrayOutputStream clientInput;
+                Socket socket = null;
+
+                // in a concurrent test environment it can happen that other rouge clients connect to this server
+                // so we need to identify and connect only to the client from this test
+                // if the rouge client sends as least bytes as there is in getRequest1stLine it will be discarded and
+                // the test should proceed otherwise it should timeout on readNBytes below
+                do {
+                    if (socket != null) {
+                        final String client = "%s:%d".formatted(
+                                socket.getInetAddress().getHostAddress(),
+                                socket.getPort()
+                        );
+                        try {
+                            socket.close();
+                        }
+                        catch (IOException ioe) {
+                            ioe.printStackTrace();
+                        }
+                        finally {
+                            System.err.println("rogue client (%s) connection attempt, ignoring".formatted(client));
+                        }
+                    }
+
+                    socket = serverSocket.accept();
+                    System.out.println(socket.getInetAddress().getHostAddress());
+
+                    // read HTTP request from client
+                    clientInput = new ByteArrayOutputStream();
+                    clientInput.write(socket.getInputStream().readNBytes(getRequest1stLine.getBytes().length));
                 }
-                OutputStreamWriter ow =
-                    new OutputStreamWriter((os = s.getOutputStream()));
-                ow.write("HTTP/1.0 200 OK\n");
+                while(!getRequest1stLine.equals(clientInput.toString()));
+
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream = socket.getOutputStream());
+                outputStreamWriter.write("HTTP/1.0 200 OK\n");
 
                 // Note: The client expects 10 bytes.
-                ow.write("Content-Length: 10\n");
-                ow.write("Content-Type: text/html\n");
+                outputStreamWriter.write("Content-Length: 10\n");
+                outputStreamWriter.write("Content-Type: text/html\n");
 
                 // Note: If this line is missing, everything works fine.
-                ow.write("Connection: Keep-Alive\n");
-                ow.write("\n");
+                outputStreamWriter.write("Connection: Keep-Alive\n");
+                outputStreamWriter.write("\n");
 
                 // Note: The (buggy) server only sends 9 bytes.
-                ow.write("123456789");
-                ow.flush();
+                outputStreamWriter.write("123456789");
+                outputStreamWriter.flush();
             } catch (Exception e) {
+                e.printStackTrace();
             } finally {
-                try {if (os != null) { os.close(); }} catch (IOException e) {}
+                try {if (outputStream != null) { outputStream.close(); }} catch (IOException e) {}
             }
         }
     }
 
     public static void main (String[] args) throws Exception {
+
+        final Integer port = 61234;
+
         final InetAddress loopback = InetAddress.getLoopbackAddress();
         final ServerSocket serversocket = new ServerSocket();
-        serversocket.bind(new InetSocketAddress(loopback, 0));
+        serversocket.bind(new InetSocketAddress(loopback, port));
 
         try {
-            int port = serversocket.getLocalPort ();
-            XServer server = new XServer (serversocket);
+            XServer server = new XServer(serversocket);
             server.start ();
             URL url = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
+                .path(path)
                 .port(port)
                 .toURL();
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
-            InputStream is = urlc.getInputStream ();
+            InputStream is = urlc.getInputStream();
             int c = 0;
             while (c != -1) {
                 try {
@@ -103,7 +136,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
             }
             is.close();
         } catch (IOException e) {
-            return;
+            throw new RuntimeException (e);
         } catch (NullPointerException e) {
             throw new RuntimeException (e);
         } finally {
