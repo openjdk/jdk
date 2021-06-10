@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         File socket_file = findSocketFile(pid, ns_pid);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
-            File f = createAttachFile(pid, ns_pid);
+            // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
+            File f = createAttachFile(pid, ns_pid).getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
@@ -290,7 +291,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         try {
-            f = f.getCanonicalFile();
+            // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
         } catch (IOException x) {
             String root;
@@ -303,7 +304,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 root = tmpdir;
             }
             f = new File(root, fn);
-            f = f.getCanonicalFile();
             f.createNewFile();
         }
         return f;

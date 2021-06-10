@@ -2378,7 +2378,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_OVERFLOW:
   case EXCEPTION_FLT_STACK_CHECK:
   case EXCEPTION_FLT_UNDERFLOW:
-    jint fp_control_word = (* (jint*) StubRoutines::addr_fpu_cntrl_wrd_std());
+    jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
     if (fp_control_word != ctx->FloatSave.ControlWord) {
       // Restore FPCW and mask out FLT exceptions
       ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,22 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZWORKERS_INLINE_HPP
-#define SHARE_GC_Z_ZWORKERS_INLINE_HPP
+package compiler.lib.ir_framework.shared;
 
-#include "gc/z/zWorkers.hpp"
+/**
+ * Exception that is thrown by the test VM if no tests are run as a result of specifying {@code -DTest} and/or
+ * {@code -DExclude} defining an empty set with the used test VM flags.
+ */
+public class NoTestsRunException extends RuntimeException {
+    /**
+     * Default constructor used by test VM
+     */
+    public NoTestsRunException() {}
 
-#include "gc/shared/gc_globals.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-inline uint ZWorkers::nparallel() const {
-  return _boost ? nworkers() : nparallel_no_boost();
+    /**
+     * Constructor used to eventually throw the exception in the driver VM.
+     */
+    public NoTestsRunException(String message) {
+        super(message);
+    }
 }
-
-inline uint ZWorkers::nparallel_no_boost() const {
-  return ParallelGCThreads;
-}
-
-inline uint ZWorkers::nconcurrent() const {
-  return _boost ? nworkers() : nconcurrent_no_boost();
-}
-
-inline uint ZWorkers::nconcurrent_no_boost() const {
-  return ConcGCThreads;
-}
-
-inline uint ZWorkers::nworkers() const {
-  return MAX2(ParallelGCThreads, ConcGCThreads);
-}
-
-#endif // SHARE_GC_Z_ZWORKERS_INLINE_HPP

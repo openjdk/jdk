@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class LogDecorations {
   LogLevelType _level;            // for "level" (needs to be nonconst)
   const LogTagSet& _tagset;       // for "tags"
   // In debug mode we keep the decorators around for sanity checking when printing
-  DEBUG_ONLY(const LogDecorators& _decorators;)
+  DEBUG_ONLY(const LogDecorators _decorators;)
 
   static const char* volatile _host_name;
   static const char* host_name();
