@@ -27,6 +27,7 @@
  * @bug 7170638
  * @summary Test SDT probes available on GNU/Linux when DTRACE_ENABLED
  * @requires os.family == "linux"
+ * @requires vm.flagless
  *
  * @library /test/lib
  * @run driver SDTProbesGNULinuxTest
