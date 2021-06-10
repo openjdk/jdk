@@ -55,6 +55,7 @@
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/memRegion.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -868,7 +869,7 @@ public:
   // Number of regions evacuation failed in the current collection.
   volatile uint _num_regions_failed_evacuation;
   // Records for every region on the heap whether evacuation failed for it.
-  volatile bool* _regions_failed_evacuation;
+  CHeapBitMap _regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 
