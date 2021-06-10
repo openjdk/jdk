@@ -174,6 +174,7 @@ static void handle_dcmd_result(outputStream* output,
                                TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(output != NULL, "invariant");
+  ResourceMark rm(THREAD);
   const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
     handle_pending_exception(output, startup, PENDING_EXCEPTION);
@@ -213,7 +214,7 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   return args->result()->get_oop();
 }
 
-void jfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
+void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   JavaValue constructor_result(T_OBJECT);
   JfrJavaArguments constructor_args(&constructor_result);
   constructor_args.set_klass(javaClass(), CHECK);
@@ -231,7 +232,7 @@ void jfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   JfrJavaSupport::call_virtual(&method, THREAD);
 }
 
-void jfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
+void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
     _args = line->args_addr();
     _delimiter = delim;
      // Error checking done in execute.
@@ -239,16 +240,15 @@ void jfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
      // where parse and execute are called consecutively.
 }
 
-void jfrDCmd::execute(DCmdSource source, TRAPS) {
+void JfrDCmd::execute(DCmdSource source, TRAPS) {
   static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
-  static const char* jc = javaClass();
 
   if (invalid_state(output(), THREAD)) {
     return;
   }
 
   JavaValue result(T_OBJECT);
-  JfrJavaArguments execute(&result, jc, "execute", signature, CHECK);
+  JfrJavaArguments execute(&result, javaClass(), "execute", signature, CHECK);
   jstring argument = JfrJavaSupport::new_string(_args, CHECK);
   jstring s = NULL;
   if (source == DCmd_Source_Internal) {
@@ -267,49 +267,71 @@ void jfrDCmd::execute(DCmdSource source, TRAPS) {
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
-void jfrDCmd::print_help(const char* name) const {
+void JfrDCmd::print_help(const char* name) const {
   static const char signature[] = "()[Ljava/lang/String;";
-  static const char* jc = javaClass();
-
   JavaThread* thread = JavaThread::current();
   JavaValue result(T_OBJECT);
-  JfrJavaArguments execute(&result, jc, "printHelp", signature, thread);
-  invoke(execute, thread);
+  JfrJavaArguments print_help(&result, javaClass(), "printHelp", signature, thread);
+  invoke(print_help, thread);
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
 }
 
-GrowableArray<DCmdArgumentInfo*>* jfrDCmd::argument_info_array() const {
+static const char* read_string_field(oop argument, const char* field_name, TRAPS) {
+  JavaValue result(T_OBJECT);
+  JfrJavaArguments args(&result);
+  args.set_klass(argument->klass());
+  args.set_name(field_name);
+  args.set_signature("Ljava/lang/String;");
+  args.set_receiver(argument);
+  JfrJavaSupport::get_field(&args, THREAD);
+  const oop string_oop = result.get_oop();
+  return string_oop != NULL ? JfrJavaSupport::c_str(string_oop, (JavaThread*)THREAD, true) : NULL;
+}
+
+static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
+  JavaValue result(T_BOOLEAN);
+  JfrJavaArguments args(&result);
+  args.set_klass(argument->klass());
+  args.set_name(field_name);
+  args.set_signature("Z");
+  args.set_receiver(argument);
+  JfrJavaSupport::get_field(&args, THREAD);
+  return (result.get_jint() & 1) == 1;
+}
+
+static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
+  return new DCmdArgumentInfo(
+    read_string_field(argument, "name", THREAD),
+    read_string_field(argument, "description", THREAD),
+    read_string_field(argument, "type", THREAD),
+    read_string_field(argument, "defaultValue", THREAD),
+    read_boolean_field(argument, "mandatory", THREAD),
+    true, // a DcmdFramework "option"
+    read_boolean_field(argument, "allowMultiple", THREAD));
+}
+
+GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
   static const char signature[] = "()[Ljdk/jfr/internal/dcmd/Argument;";
-  static const char* jc = javaClass();
   JavaThread* thread = JavaThread::current();
   JavaValue result(T_OBJECT);
-  JfrJavaArguments execute(&result, jc, "getArgumentInfos", signature, thread);
-  invoke(execute, thread);
-
-  objArrayOop arguments = objArrayOop(result.get_jobject());
+  JfrJavaArguments getArgumentInfos(&result, javaClass(), "getArgumentInfos", signature, thread);
+  invoke(getArgumentInfos, thread);
+  objArrayOop arguments = objArrayOop(result.get_oop());
   assert(arguments != NULL, "invariant");
-  assert(arguments->is_array(), "must be array");*/
-
-  GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo*>();
-  const int length = 0;arguments->length();
+  assert(arguments->is_array(), "must be array");
+  GrowableArray<DCmdArgumentInfo*>* const array = new GrowableArray<DCmdArgumentInfo*>();
+  const int length = arguments->length();
   for (int i = 0; i < length; ++i) {
-    oop argument = arguments->obj_at(i);
-    DCmdArgumentInfo* dai = new DCmdArgumentInfo(
-      "name", // read_field_string(argument, "name"),
-      "description", // read_field_string(argument, "description"),
-      "type", // read_field_string(argument, "type"),
-      "defaultValue", // read_field_string(argument, "defaultValue"),
-      false, // read_field_boolean(argument, "mandatory"),
-      false, // read_field_boolean(argument, "multiple"),
-      i);
+    DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
+    assert(dai != NULL, "invariant");
     array->append(dai);
   }
   return array;
 }
 
-GrowableArray<const char*>* jfrDCmd::argument_name_array() const {
+GrowableArray<const char*>* JfrDCmd::argument_name_array() const {
   GrowableArray<DCmdArgumentInfo*>* argument_infos = argument_info_array();
-  GrowableArray<const char *> * array = new GrowableArray<const char *>(argument_infos->length());
+  GrowableArray<const char*>* array = new GrowableArray<const char*>(argument_infos->length());
   for (int i = 0; i < argument_infos->length(); i++) {
     array->append(argument_infos->at(i)->name());
   }
@@ -370,7 +392,7 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     they are written to a permanent file. (STRING, The default");
   out->print_cr("                     location is the temporary directory for the operating system. On");
   out->print_cr("                     Linux operating systems, the temporary directory is /tmp. On");
-  out->print_cr("                     Windwows, the temporary directory is specified by the TMP");
+  out->print_cr("                     Windows, the temporary directory is specified by the TMP");
   out->print_cr("                     environment variable.)");
   out->print_cr("");
   out->print_cr("  stackdepth         (Optional) Stack depth for stack traces. Setting this value");
