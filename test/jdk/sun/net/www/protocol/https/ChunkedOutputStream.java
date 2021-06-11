@@ -37,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -45,6 +44,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -113,9 +113,7 @@ public class ChunkedOutputStream implements HttpHandler {
 
                 String reqbody = "";
                 try(InputStream inputStream = req.getRequestBody()) {
-                    if(inputStream != null) {
-                        reqbody = new String(inputStream.readAllBytes());
-                    }
+                    reqbody = new String(inputStream.readAllBytes(), Charset.forName("ISO8859_1"));
                 }
                 if (!reqbody.equals(str1)) {
                     req.sendResponseHeaders(500, -1);
@@ -130,12 +128,12 @@ public class ChunkedOutputStream implements HttpHandler {
                     req.getResponseHeaders().set("Connection", "close");
                 }
                 req.sendResponseHeaders(200, 0);
-                try (PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-                    pw.print(reqbody);
+                try (OutputStream os = req.getResponseBody()) {
+                    os.write(reqbody.getBytes(Charset.forName("ISO8859_1")));
                 }
                 break;
             case 2: /* test 3 */
-                reqbody = new String(req.getRequestBody().readAllBytes());
+                reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
                 if (!reqbody.equals(str2)) {
                     req.sendResponseHeaders(500, -1);
                     break;
@@ -147,8 +145,8 @@ public class ChunkedOutputStream implements HttpHandler {
                 }
                 req.getResponseHeaders().set("Connection", "close");
                 req.sendResponseHeaders(200, 0);
-                try (PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-                    pw.print(reqbody);
+                try (OutputStream os = req.getResponseBody()) {
+                    os.write(reqbody.getBytes(Charset.forName("ISO8859_1")));
                 }
                 break;
             case 3: /* test 6 */
@@ -158,7 +156,7 @@ public class ChunkedOutputStream implements HttpHandler {
                 break;
             case 4: /* test 7 */
             case 5: /* test 8 */
-                reqbody = new String(req.getRequestBody().readAllBytes());
+                reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
                 if (reqbody != null && !"".equals(reqbody)) {
                     req.sendResponseHeaders(501, -1);
                     break;
@@ -214,7 +212,7 @@ public class ChunkedOutputStream implements HttpHandler {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str1.getBytes());
+        os.write(str1.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         InputStream is = urlc.getInputStream();
         readAndCompare(is, str1);
@@ -231,7 +229,7 @@ public class ChunkedOutputStream implements HttpHandler {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write (str2.getBytes());
+        os.write (str2.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         InputStream is = urlc.getInputStream();
         readAndCompare(is, str2);
@@ -248,7 +246,7 @@ public class ChunkedOutputStream implements HttpHandler {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str2.getBytes());
+        os.write(str2.getBytes(Charset.forName("ISO8859_1")));
         try {
             os.close();
             throw new Exception("should have thrown IOException");
@@ -266,7 +264,7 @@ public class ChunkedOutputStream implements HttpHandler {
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
         try {
-            os.write(str2.getBytes());
+            os.write(str2.getBytes(Charset.forName("ISO8859_1")));
             throw new Exception("should have thrown IOException");
         } catch (IOException e) {}
     }
@@ -281,7 +279,7 @@ public class ChunkedOutputStream implements HttpHandler {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str1.getBytes());
+        os.write(str1.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         try {
             InputStream is = urlc.getInputStream();

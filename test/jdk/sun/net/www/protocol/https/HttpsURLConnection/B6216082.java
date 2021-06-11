@@ -89,12 +89,8 @@ public class B6216082 {
             // created as it will use an ephemeral port.
             System.setProperty("https.proxyPort",
                         Integer.toString(proxy.getLocalPort()));
-
+            
             makeHttpCall();
-
-            if (httpTrans.hasBadRequest) {
-                throw new RuntimeException("Test failed : bad http request");
-            }
         } finally {
             if (proxy != null) {
                 proxy.terminate();
@@ -188,6 +184,10 @@ public class B6216082 {
                             server.getAddress().getPort(), "/");
         HttpURLConnection uc = (HttpURLConnection)url.openConnection();
         System.out.println(uc.getResponseCode());
+        if(uc.getResponseCode() == 400) {
+            uc.disconnect();
+            throw new RuntimeException("Test failed : bad http request");
+        }
         uc.disconnect();
     }
 
@@ -199,7 +199,6 @@ public class B6216082 {
 }
 
 class SimpleHttpTransaction implements HttpHandler {
-    public boolean hasBadRequest = false;
 
     /*
      * Our http server which simply redirect first call
@@ -213,16 +212,7 @@ class SimpleHttpTransaction implements HttpHandler {
                 trans.getResponseHeaders().set("Location", location);
                 trans.sendResponseHeaders(302, -1);
             } else {
-                // if the bug exsits, it'll send 2 GET commands
-                // check 2nd GET here
-                String duplicatedGet = trans.getRequestHeaders().getFirst(null);
-                if (duplicatedGet != null &&
-                    duplicatedGet.toUpperCase().indexOf("GET") >= 0) {
-                    trans.sendResponseHeaders(400, -1);
-                    hasBadRequest = true;
-                } else {
-                    trans.sendResponseHeaders(200, -1);
-                }
+                trans.sendResponseHeaders(200, -1);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
