@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,24 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZFORWARDINGTABLE_HPP
-#define SHARE_GC_Z_ZFORWARDINGTABLE_HPP
+#ifndef SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
+#define SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
 
-#include "gc/z/zGranuleMap.hpp"
-#include "gc/z/zIndexDistributor.hpp"
-
-class ZForwarding;
-
-class ZForwardingTable {
-  friend class ZOldGenerationPagesSafeIterator;
-  friend class ZForwardingTableParallelIterator;
-
+class ZIndexDistributor {
 private:
-  ZGranuleMap<ZForwarding*> _map;
+  void* _strategy;
 
-  ZForwarding* at(size_t index) const;
+  template <typename Strategy>
+  Strategy* strategy();
+
+  static void* create_strategy(int count);
 
 public:
-  ZForwardingTable();
-
-  ZForwarding* get(zaddress_unsafe addr) const;
-
-  void insert(ZForwarding* forwarding);
-  void remove(ZForwarding* forwarding);
-};
-
-class ZForwardingTableParallelIterator : public StackObj {
-private:
-  const ZForwardingTable* _table;
-  ZIndexDistributor       _index_distributor;
-
-public:
-  ZForwardingTableParallelIterator(const ZForwardingTable* table);
+  ZIndexDistributor(int count);
+  ~ZIndexDistributor();
 
   template <typename Function>
-  void do_forwardings(Function function);
+  void do_indices(Function function);
 };
 
-#endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP
+#endif // SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP

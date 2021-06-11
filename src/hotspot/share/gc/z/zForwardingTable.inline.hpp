@@ -29,10 +29,15 @@
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline ZForwardingTable::ZForwardingTable() :
     _map(ZAddressOffsetMaxSize) {}
+
+inline ZForwarding* ZForwardingTable::at(size_t index) const {
+  return _map.at(index);
+}
 
 inline ZForwarding* ZForwardingTable::get(zaddress_unsafe addr) const {
   assert(!is_null(addr), "Invalid address");
@@ -55,21 +60,19 @@ inline void ZForwardingTable::remove(ZForwarding* forwarding) {
   _map.put(offset, size, NULL);
 }
 
-inline ZForwardingTableIterator::ZForwardingTableIterator(const ZForwardingTable* table) :
-    _iter(&table->_map),
-    _prev(NULL) {}
+inline ZForwardingTableParallelIterator::ZForwardingTableParallelIterator(const ZForwardingTable* table) :
+    _table(table),
+    _index_distributor(int(ZAddressOffsetMaxSize >> ZGranuleSizeShift)) {}
 
-inline bool ZForwardingTableIterator::next(ZForwarding** forwarding) {
-  for (ZForwarding* entry; _iter.next(&entry);) {
-    if (entry != NULL && entry != _prev) {
+template <typename Function>
+inline void ZForwardingTableParallelIterator::do_forwardings(Function function) {
+  _index_distributor.do_indices([&](int index) {
+    ZForwarding* const forwarding = _table->at(index);
+    if (forwarding != NULL) {
       // Next forwarding found
-      *forwarding = _prev = entry;
-      return true;
+      function(forwarding);
     }
-  }
-
-  // No more forwardings
-  return false;
+  });
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

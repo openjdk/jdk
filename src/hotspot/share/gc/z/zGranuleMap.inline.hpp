@@ -54,6 +54,11 @@ inline size_t ZGranuleMap<T>::index_for_offset(zoffset offset) const {
 }
 
 template <typename T>
+inline T ZGranuleMap<T>::at(size_t index) const {
+  return _map[index];
+}
+
+template <typename T>
 inline T ZGranuleMap<T>::get(zoffset offset) const {
   const size_t index = index_for_offset(offset);
   return _map[index];

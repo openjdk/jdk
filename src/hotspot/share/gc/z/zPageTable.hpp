@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
 #include "gc/z/zGranuleMap.hpp"
+#include "gc/z/zIndexDistributor.hpp"
 #include "memory/allocation.hpp"
 
 class ZForwarding;
@@ -45,6 +46,8 @@ public:
   ZPage* get(zaddress addr) const;
   ZPage* get(volatile zpointer* p) const;
 
+  ZPage* at(size_t index) const;
+
   void insert(ZPage* page);
   void remove(ZPage* page);
   void replace(ZPage* old_page, ZPage* new_page);
@@ -62,26 +65,41 @@ public:
 };
 
 class ZPageTableParallelIterator : public StackObj {
-private:
-  ZGranuleMapIterator<ZPage*, true> _iter;
+  const ZPageTable* _table;
+  ZIndexDistributor _index_distributor;
 
 public:
   ZPageTableParallelIterator(const ZPageTable* table);
 
-  bool next(ZPage** page);
+  template <typename Function>
+  void do_pages(Function function);
 };
 
 class ZGenerationPagesIterator : public StackObj {
 private:
-  ZPageTableParallelIterator _iterator;
-  ZGenerationId              _generation_id;
-  ZPageAllocator*            _page_allocator;
+  ZPageTableIterator _iterator;
+  ZGenerationId      _generation_id;
+  ZPageAllocator*    _page_allocator;
 
 public:
   ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);
   ~ZGenerationPagesIterator();
 
   bool next(ZPage** page);
+};
+
+class ZGenerationPagesParallelIterator : public StackObj {
+private:
+  ZPageTableParallelIterator _iterator;
+  ZGenerationId              _generation_id;
+  ZPageAllocator*            _page_allocator;
+
+public:
+  ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesParallelIterator();
+
+  template <typename Function>
+  void do_pages(Function function);
 };
 
 #endif // SHARE_GC_Z_ZPAGETABLE_HPP

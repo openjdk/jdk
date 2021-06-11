@@ -64,6 +64,11 @@
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
+  product(uintx, ZIndexDistributorStrategy, 0,                              \
+                 "Strategy used to distribute indices to parallel workers " \
+                 "0: Claim tree "                                           \
+                 "1: Simple Striped ")                                      \
+                                                                            \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \

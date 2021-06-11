@@ -121,23 +121,23 @@ static void fill_containing(GrowableArrayCHeap<ZRememberSetContaining, mtGC>* ar
 
 class ZRememberScanForwardingTask : public ZTask {
 private:
-  ZForwardingTableIterator _iter;
-  const ZRemember& _remember;
+  ZForwardingTableParallelIterator _iterator;
+  const ZRemember&                 _remember;
 
 public:
   ZRememberScanForwardingTask(const ZRemember& remember) :
       ZTask("ZRememberScanForwardingTask"),
-      _iter(ZHeap::heap()->major_cycle()->forwarding_table()),
+      _iterator(ZHeap::heap()->major_cycle()->forwarding_table()),
       _remember(remember) {}
 
   virtual void work() {
     GrowableArrayCHeap<ZRememberSetContaining, mtGC> containing_array;
 
-    for (ZForwarding* forwarding; _iter.next(&forwarding);) {
+    _iterator.do_forwardings([&](ZForwarding* forwarding) {
       if (forwarding->get_and_set_remset_scanned()) {
         // Scanned last minor cycle; implies that the to-space objects
         // are going to be found in the page table scan
-        continue;
+        return;
       }
 
       if (forwarding->retain_page()) {
@@ -152,40 +152,44 @@ public:
       } else {
         _remember.scan_forwarded(forwarding);
       }
-    }
+    });
   }
 };
 
 class ZRememberScanPageTask : public ZTask {
 private:
-  ZGenerationPagesIterator _iter;
-  const ZRemember& _remember;
+  ZGenerationPagesParallelIterator _iterator;
+  const ZRemember&                 _remember;
 
 public:
   ZRememberScanPageTask(const ZRemember& remember) :
       ZTask("ZRememberScanPageTask"),
-      _iter(remember._page_table, ZGenerationId::old, remember._page_allocator),
+      _iterator(remember._page_table, ZGenerationId::old, remember._page_allocator),
       _remember(remember) {}
 
   virtual void work() {
-    for (ZPage* page; _iter.next(&page);) {
-      if (!_remember.should_scan(page)) {
-        continue;
+    _iterator.do_pages([&](ZPage* page) {
+      if (_remember.should_scan(page)) {
+        // Visit all entries pointing into young gen
+        _remember.scan_page(page);
+        // ... and as a side-effect clear the previous entries
+        page->clear_previous_remembered();
       }
-      // Visit all entries pointing into young gen
-      _remember.scan_page(page);
-      // ... and as a side-effect clear the previous entries
-      page->clear_previous_remembered();
-    }
+    });
   }
 };
 
+static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetForwarding("Concurrent Minor Mark Root Remset Forw");
+static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetPage("Concurrent Minor Mark Root Remset Page");
+
 void ZRemember::scan() const {
   if (ZHeap::heap()->major_cycle()->phase() == ZPhase::Relocate) {
+    ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetForwarding);
     ZRememberScanForwardingTask task(*this);
     ZHeap::heap()->minor_cycle()->workers()->run_concurrent(&task);
   }
 
+  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetPage);
   ZRememberScanPageTask task(*this);
   ZHeap::heap()->minor_cycle()->workers()->run_concurrent(&task);
 }

@@ -32,7 +32,9 @@ template <typename T>
 class ZGranuleMap {
   friend class VMStructs;
   template <typename, bool> friend class ZGranuleMapIterator;
-  friend class ZForwardingTableIterator;
+  friend class ZForwardingTable;
+  friend class ZPageTable;
+  friend class ZForwardingTableParallelIterator;
   friend class ZOldGenerationPagesSafeIterator;
 
 private:
@@ -40,6 +42,8 @@ private:
   T* const     _map;
 
   size_t index_for_offset(zoffset offset) const;
+
+  T at(size_t index) const;
 
 public:
   ZGranuleMap(size_t max_offset);

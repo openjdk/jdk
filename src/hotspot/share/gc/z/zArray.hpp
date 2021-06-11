@@ -25,6 +25,9 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
 
 template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
