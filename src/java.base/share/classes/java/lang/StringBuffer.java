@@ -428,6 +428,18 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         super.append(i);
         return this;
     }
+    
+     /**
+      * Only append the given object if it is not NULL. Else just return the current StringBuffer instance.
+      * @since 18
+      */
+    public synchronized StringBuffer appendValue(Object obj) {
+        if(obj != null) {
+            return append(obj);
+        } else {
+            return this;
+        }
+    }
 
     /**
      * @since 1.5
