@@ -42,6 +42,16 @@ method name readNBytes descriptor (I)[B thrownTypes java/io/IOException flags 1
 class name java/io/InputStreamReader
 method name read descriptor (Ljava/nio/CharBuffer;)I thrownTypes java/io/IOException flags 1
 
+class name java/io/ObjectInputFilter
+method name allowFilter descriptor (Ljava/util/function/Predicate;Ljava/io/ObjectInputFilter$Status;)Ljava/io/ObjectInputFilter; flags 9 signature (Ljava/util/function/Predicate<Ljava/lang/Class<*>;>;Ljava/io/ObjectInputFilter$Status;)Ljava/io/ObjectInputFilter;
+method name rejectFilter descriptor (Ljava/util/function/Predicate;Ljava/io/ObjectInputFilter$Status;)Ljava/io/ObjectInputFilter; flags 9 signature (Ljava/util/function/Predicate<Ljava/lang/Class<*>;>;Ljava/io/ObjectInputFilter$Status;)Ljava/io/ObjectInputFilter;
+method name merge descriptor (Ljava/io/ObjectInputFilter;Ljava/io/ObjectInputFilter;)Ljava/io/ObjectInputFilter; flags 9
+method name rejectUndecidedClass descriptor (Ljava/io/ObjectInputFilter;)Ljava/io/ObjectInputFilter; flags 9
+
+class name java/io/ObjectInputFilter$Config
+method name getSerialFilterFactory descriptor ()Ljava/util/function/BinaryOperator; flags 9 signature ()Ljava/util/function/BinaryOperator<Ljava/io/ObjectInputFilter;>;
+method name setSerialFilterFactory descriptor (Ljava/util/function/BinaryOperator;)V flags 9 signature (Ljava/util/function/BinaryOperator<Ljava/io/ObjectInputFilter;>;)V
+
 class name java/io/PrintStream
 header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
@@ -75,6 +85,14 @@ header extends java/lang/RuntimeException flags 21
 
 class name java/lang/NamedPackage
 header extends java/lang/Object flags 20
+
+class name java/lang/Process
+method name inputReader descriptor ()Ljava/io/BufferedReader; flags 11
+method name inputReader descriptor (Ljava/nio/charset/Charset;)Ljava/io/BufferedReader; flags 11
+method name errorReader descriptor ()Ljava/io/BufferedReader; flags 11
+method name errorReader descriptor (Ljava/nio/charset/Charset;)Ljava/io/BufferedReader; flags 11
+method name outputWriter descriptor ()Ljava/io/BufferedWriter; flags 11
+method name outputWriter descriptor (Ljava/nio/charset/Charset;)Ljava/io/BufferedWriter; flags 11
 
 class name java/lang/SecurityManager
 header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
@@ -187,6 +205,11 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/lang/reflect/InaccessibleObjectException
 header extends java/lang/RuntimeException flags 21
+
+class name java/lang/runtime/SwitchBootstraps
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SWITCH_PATTERN_MATCHING;)
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name typeSwitch descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite; thrownTypes java/lang/Throwable flags 89
 
 class name java/net/DatagramSocket
 -method name setDatagramSocketImplFactory descriptor (Ljava/net/DatagramSocketImplFactory;)V
@@ -327,6 +350,19 @@ class name java/text/RuleBasedCollator
 header extends java/text/Collator flags 21
 innerclass innerClass java/text/Normalizer$Form outerClass java/text/Normalizer innerClassName Form flags 4019
 
+class name java/time/Clock
+header extends java/lang/Object implements java/time/InstantSource flags 421
+
+class name java/time/InstantSource
+header extends java/lang/Object flags 601
+method name system descriptor ()Ljava/time/InstantSource; flags 9
+method name tick descriptor (Ljava/time/InstantSource;Ljava/time/Duration;)Ljava/time/InstantSource; flags 9
+method name fixed descriptor (Ljava/time/Instant;)Ljava/time/InstantSource; flags 9
+method name offset descriptor (Ljava/time/InstantSource;Ljava/time/Duration;)Ljava/time/InstantSource; flags 9
+method name instant descriptor ()Ljava/time/Instant; flags 401
+method name millis descriptor ()J flags 1
+method name withZone descriptor (Ljava/time/ZoneId;)Ljava/time/Clock; flags 1
+
 class name java/time/chrono/ChronoLocalDate
 header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDate;>;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
@@ -402,6 +438,9 @@ class name java/util/Locale$IsoCountryCode
 header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
 innerclass innerClass java/util/Locale$IsoCountryCode outerClass java/util/Locale innerClassName IsoCountryCode flags 4409
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/util/Map$Entry
+method name copyOf descriptor (Ljava/util/Map$Entry;)Ljava/util/Map$Entry; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(Ljava/util/Map$Entry<+TK;+TV;>;)Ljava/util/Map$Entry<TK;TV;>;
 
 class name java/util/Observable
 header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
