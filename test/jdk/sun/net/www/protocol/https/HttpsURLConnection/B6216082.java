@@ -82,14 +82,11 @@ public class B6216082 {
             if (!setupEnv()) {
                 return;
             }
-
             startHttpServer();
-
             // https.proxyPort can only be set after the TunnelProxy has been
             // created as it will use an ephemeral port.
             System.setProperty("https.proxyPort",
                         Integer.toString(proxy.getLocalPort()));
-            
             makeHttpCall();
         } finally {
             if (proxy != null) {
