@@ -34,6 +34,7 @@ class ZPageTable {
   friend class VMStructs;
   friend class ZOldGenerationPagesSafeIterator;
   friend class ZPageTableIterator;
+  friend class ZPageTableParallelIterator;
 
 private:
   ZGranuleMap<ZPage*> _map;
@@ -51,8 +52,8 @@ public:
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZGranuleMapIterator<ZPage*> _iter;
-  ZPage*                      _prev;
+  ZGranuleMapIterator<ZPage*, false> _iter;
+  ZPage*                              _prev;
 
 public:
   ZPageTableIterator(const ZPageTable* table);
@@ -60,11 +61,21 @@ public:
   bool next(ZPage** page);
 };
 
+class ZPageTableParallelIterator : public StackObj {
+private:
+  ZGranuleMapIterator<ZPage*, true> _iter;
+
+public:
+  ZPageTableParallelIterator(const ZPageTable* table);
+
+  bool next(ZPage** page);
+};
+
 class ZGenerationPagesIterator : public StackObj {
 private:
-  ZPageTableIterator _iterator;
-  ZGenerationId      _generation_id;
-  ZPageAllocator*    _page_allocator;
+  ZPageTableParallelIterator _iterator;
+  ZGenerationId              _generation_id;
+  ZPageAllocator*            _page_allocator;
 
 public:
   ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);

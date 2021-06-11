@@ -54,6 +54,26 @@ inline bool ZPageTableIterator::next(ZPage** page) {
   return false;
 }
 
+inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table) :
+    _iter(&table->_map) {}
+
+inline bool ZPageTableParallelIterator::next(ZPage** page) {
+  for (size_t index; _iter.next_index(&index);) {
+    ZPage* const elem = _iter.index_to_elem(index);
+    if (elem != NULL) {
+      const size_t start_index = untype(elem->start()) >> ZGranuleSizeShift;
+      if (index == start_index) {
+        // Next page found
+        *page = elem;
+        return true;
+      }
+    }
+  }
+
+  // No more pages
+  return false;
+}
+
 inline bool ZGenerationPagesIterator::next(ZPage** page) {
   while (_iterator.next(page)) {
     if ((*page)->generation_id() == _generation_id) {

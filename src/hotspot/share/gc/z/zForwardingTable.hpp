@@ -46,8 +46,8 @@ public:
 
 class ZForwardingTableIterator : public StackObj {
 private:
-  ZGranuleMapIterator<ZForwarding*> _iter;
-  ZForwarding*                      _prev;
+  ZGranuleMapIterator<ZForwarding*, false /* Parallel */> _iter;
+  ZForwarding*                                            _prev;
 
 public:
   ZForwardingTableIterator(const ZForwardingTable* table);

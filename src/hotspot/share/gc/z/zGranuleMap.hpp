@@ -31,7 +31,7 @@
 template <typename T>
 class ZGranuleMap {
   friend class VMStructs;
-  template <typename> friend class ZGranuleMapIterator;
+  template <typename, bool> friend class ZGranuleMapIterator;
   friend class ZForwardingTableIterator;
   friend class ZOldGenerationPagesSafeIterator;
 
@@ -54,8 +54,8 @@ public:
   void release_put(zoffset offset, size_t size, T value);
 };
 
-template <typename T>
-class ZGranuleMapIterator : public ZArrayIteratorImpl<T, true /* Parallel */> {
+template <typename T, bool Parallel>
+class ZGranuleMapIterator : public ZArrayIteratorImpl<T, Parallel> {
 public:
   ZGranuleMapIterator(const ZGranuleMap<T>* granule_map);
 };

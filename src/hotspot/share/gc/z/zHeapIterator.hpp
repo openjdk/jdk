@@ -36,7 +36,7 @@ class ZHeapIteratorBitMap;
 class ZHeapIteratorContext;
 
 using ZHeapIteratorBitMaps = ZGranuleMap<ZHeapIteratorBitMap*>;
-using ZHeapIteratorBitMapsIterator = ZGranuleMapIterator<ZHeapIteratorBitMap*>;
+using ZHeapIteratorBitMapsIterator = ZGranuleMapIterator<ZHeapIteratorBitMap*, false /* Parallel */>;
 using ZHeapIteratorQueue = OverflowTaskQueue<oop, mtGC>;
 using ZHeapIteratorQueues = GenericTaskQueueSet<ZHeapIteratorQueue, mtGC>;
 using ZHeapIteratorArrayQueue = OverflowTaskQueue<ObjArrayTask, mtGC>;
