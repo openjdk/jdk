@@ -232,6 +232,7 @@ private:
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static bool check_for_exclusion_impl(InstanceKlass* k);
+  static bool has_been_redefined(InstanceKlass* k);
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
