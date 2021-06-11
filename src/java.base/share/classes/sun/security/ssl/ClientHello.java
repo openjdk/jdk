@@ -188,11 +188,11 @@ final class ClientHello {
             Stream.Builder<CipherSuite> sb = Stream.builder();
             for (int i=0; i < csLen; i+=2) {
                 CipherSuite cs = CipherSuite.valueOf(
-                                Short.toUnsignedInt(m.getShort()));
+                        Short.toUnsignedInt(m.getShort()));
                 if (cs != null) {
                     sb.add(cs);
                 }
-           }
+            }
             Stream<CipherSuite> strm = sb.build();
             this.cipherSuites = strm.distinct().collect(Collectors.toList());
             this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
