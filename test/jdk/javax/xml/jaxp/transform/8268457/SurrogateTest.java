@@ -48,7 +48,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @summary XML Transformer outputs Unicode supplementary character incorrectly to HTML
  */
 public class SurrogateTest {
-    
+
     final static String TEST_SRC = System.getProperty("test.src", ".");
     static File baseDir = new File(TEST_SRC + File.separator + "testdata");
 
@@ -56,30 +56,30 @@ public class SurrogateTest {
         case01();
         case02();
     }
-    
+
     private static void case01() throws Exception {
         File out = new File("case01out.html");
         File expected = new File(baseDir, "case01ok.html");
         FileInputStream tFis = null;
         FileInputStream fis = null;
         FileOutputStream fos = null;
-        
+
         try {
             tFis = new FileInputStream(new File(baseDir, "case01.xslt"));
             Source tSrc = new StreamSource(tFis);
-            
+
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer t = tf.newTransformer(tSrc);
             t.setOutputProperty("method", "html");
-            
+
             fis = new FileInputStream(new File(baseDir, "case01.xml"));
             fos = new FileOutputStream(out);
-        
+
             Source src = new StreamSource(fis);
             Result res = new StreamResult(fos);
-        
+
             t.transform(src, res);
-            
+
         } finally {
             try {
                 if (tFis != null) {
@@ -100,25 +100,23 @@ public class SurrogateTest {
         }
         verify(out, expected);
     }
-    
+
     private static void case02() throws Exception {
         File xmlFile = new File(baseDir, "case02.xml");
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
         SAXParser sp = spf.newSAXParser();
-        
+
         TestHandler th = new TestHandler();
         sp.parse(xmlFile, th);
-        
+
         File out = new File("case02out.txt");
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(out);
             OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-            
             osw.write(th.sb.toString());
             osw.flush();
-            
         } finally {
             if (fos != null) {
                 fos.close();
@@ -126,16 +124,16 @@ public class SurrogateTest {
         }
         verify(out, new File(baseDir, "case02ok.txt"));
     }
-    
+
     private static class TestHandler extends DefaultHandler {
         private StringBuilder sb = new StringBuilder();
-        
+
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             sb.append( localName + "@attr:" + attributes.getValue("attr") + '\n');
         }
     }
-    
+
     /*
      * Compare output of test run to expected output.
      * Throw an Error if they don't match.
