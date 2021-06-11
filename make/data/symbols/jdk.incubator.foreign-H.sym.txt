@@ -53,6 +53,7 @@ method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;)Ljava
 method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljava/nio/charset/Charset;)Ljava/lang/String; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name allocateMemory descriptor (J)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name freeMemory descriptor (Ljdk/incubator/foreign/MemoryAddress;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
 class name jdk/incubator/foreign/CLinker$VaList
 header extends java/lang/Object implements jdk/incubator/foreign/Addressable nestHost jdk/incubator/foreign/CLinker sealed true flags 601
@@ -82,18 +83,7 @@ class name jdk/incubator/foreign/GroupLayout
 header extends jdk/incubator/foreign/AbstractLayout implements jdk/incubator/foreign/MemoryLayout flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
-class name jdk/incubator/foreign/LibraryLookup
-header extends java/lang/Object flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
--method name lookup descriptor (Ljava/lang/String;)Ljava/util/Optional;
--method name ofDefault descriptor ()Ljdk/incubator/foreign/LibraryLookup;
--method name ofPath descriptor (Ljava/nio/file/Path;)Ljdk/incubator/foreign/LibraryLookup;
--method name ofLibrary descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/LibraryLookup;
-method name lookup descriptor (Ljava/lang/String;)Ljava/util/Optional; flags 401 signature (Ljava/lang/String;)Ljava/util/Optional<Ljdk/incubator/foreign/MemoryAddress;>;
-method name lookup descriptor (Ljava/lang/String;Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/Optional; flags 401 signature (Ljava/lang/String;Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/Optional<Ljdk/incubator/foreign/MemorySegment;>;
-method name ofDefault descriptor ()Ljdk/incubator/foreign/LibraryLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
-method name ofPath descriptor (Ljava/nio/file/Path;)Ljdk/incubator/foreign/LibraryLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
-method name ofLibrary descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/LibraryLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+-class name jdk/incubator/foreign/LibraryLookup
 
 -class name jdk/incubator/foreign/LibraryLookup$Symbol
 
@@ -142,9 +132,7 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 -field name ALL_ACCESS descriptor I
 -field name SHARE descriptor I
 -method name ownerThread descriptor ()Ljava/lang/Thread;
-method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
 -method name isAlive descriptor ()Z
-method name isReadOnly descriptor ()Z flags 401
 -method name close descriptor ()V
 -method name allocateNative descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljdk/incubator/foreign/MemorySegment;
 -method name allocateNative descriptor (J)Ljdk/incubator/foreign/MemorySegment;
@@ -159,6 +147,8 @@ method name isReadOnly descriptor ()Z flags 401
 -method name registerCleaner descriptor (Ljava/lang/ref/Cleaner;)Ljdk/incubator/foreign/MemorySegment;
 -method name mapFile descriptor (Ljava/nio/file/Path;JJLjava/nio/channels/FileChannel$MapMode;)Ljdk/incubator/foreign/MemorySegment;
 -method name ofNativeRestricted descriptor ()Ljdk/incubator/foreign/MemorySegment;
+method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
+method name isReadOnly descriptor ()Z flags 401
 method name spliterator descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/Spliterator; flags 401 signature (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/Spliterator<Ljdk/incubator/foreign/MemorySegment;>;
 method name elements descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/stream/Stream; flags 401 signature (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/stream/Stream<Ljdk/incubator/foreign/MemorySegment;>;
 method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope; flags 401
@@ -229,4 +219,10 @@ method name ofScope descriptor (Ljdk/incubator/foreign/ResourceScope;)Ljdk/incub
 class name jdk/incubator/foreign/SequenceLayout
 header extends jdk/incubator/foreign/AbstractLayout implements jdk/incubator/foreign/MemoryLayout flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/incubator/foreign/SymbolLookup
+header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name lookup descriptor (Ljava/lang/String;)Ljava/util/Optional; flags 401 signature (Ljava/lang/String;)Ljava/util/Optional<Ljdk/incubator/foreign/MemoryAddress;>;
+method name loaderLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
