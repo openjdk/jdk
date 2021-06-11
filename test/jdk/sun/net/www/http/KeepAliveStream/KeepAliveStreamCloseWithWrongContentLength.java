@@ -32,6 +32,7 @@
 
 import java.net.*;
 import java.io.*;
+import java.util.Optional;
 
 import jdk.test.lib.net.URIBuilder;
 
@@ -42,13 +43,17 @@ public class KeepAliveStreamCloseWithWrongContentLength {
 
     static class XServer extends Thread implements AutoCloseable {
 
-        volatile ServerSocket serverSocket;
+        final ServerSocket serverSocket;
         volatile Socket clientSocket;
 
-        XServer (InetAddress address, Integer port) throws IOException {
+        XServer (InetAddress address) throws IOException {
             ServerSocket serversocket = new ServerSocket();
-            serversocket.bind(new InetSocketAddress(address, port));
+            serversocket.bind(new InetSocketAddress(address, 0));
             this.serverSocket = serversocket;
+        }
+
+        public int getLocalPort() {
+            return serverSocket.getLocalPort();
         }
 
         public void run() {
@@ -109,7 +114,9 @@ public class KeepAliveStreamCloseWithWrongContentLength {
 
         @Override
         public void close() throws Exception {
-            clientSocket.close();
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
             serverSocket.close();
         }
 
@@ -117,16 +124,15 @@ public class KeepAliveStreamCloseWithWrongContentLength {
 
     public static void main (String[] args) throws Exception {
 
-        final Integer port = 61234;
         final InetAddress loopback = InetAddress.getLoopbackAddress();
 
-        try (XServer server = new XServer(loopback,port)) {
+        try (XServer server = new XServer(loopback)) {
             server.start ();
             URL url = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
                 .path(path)
-                .port(port)
+                .port(server.getLocalPort())
                 .toURL();
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream();
@@ -140,9 +146,6 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                 }
             }
             is.close();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
 
     }
