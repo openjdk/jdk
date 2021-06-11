@@ -389,8 +389,6 @@ public final class CPrinterJob extends RasterPrinterJob {
             if (printError != null) {
                 if (printError instanceof PrinterException) {
                     throw (PrinterException) printError;
-                } else if (printError instanceof RuntimeException) {
-                    throw (RuntimeException) printError;
                 }
                 throw (PrinterException)
                     new PrinterException().initCause(printError);

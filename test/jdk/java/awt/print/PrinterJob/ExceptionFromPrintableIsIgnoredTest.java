@@ -26,10 +26,10 @@
    @key headful printer
    @summary Verify that "PrinterJob.print" throws the expected exception,
             if "Printable.print" throws an exception.
-   @run main/manual ExceptionFromPrintableIsIgnoredTest MAIN PE
-   @run main/manual ExceptionFromPrintableIsIgnoredTest MAIN RE
-   @run main/manual ExceptionFromPrintableIsIgnoredTest EDT PE
-   @run main/manual ExceptionFromPrintableIsIgnoredTest EDT RE
+   @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
+   @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
+   @run main ExceptionFromPrintableIsIgnoredTest EDT PE
+   @run main ExceptionFromPrintableIsIgnoredTest EDT RE
  */
 
 import java.awt.Graphics;
@@ -43,6 +43,8 @@ import javax.swing.SwingUtilities;
 public class ExceptionFromPrintableIsIgnoredTest {
     private enum TestThreadType {MAIN, EDT}
     private enum TestExceptionType {PE, RE}
+
+    private volatile Throwable printError;
 
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -62,6 +64,16 @@ public class ExceptionFromPrintableIsIgnoredTest {
                 "Test started. threadType='%s', exceptionType='%s'",
                 threadType, exceptionType));
 
+        String osName = System.getProperty("os.name");
+        boolean isOSX = osName.toLowerCase().startsWith("mac");
+        if ((exceptionType == TestExceptionType.RE) && !isOSX) {
+            System.out.println(
+                "Currently this test scenario can be verified only on macOS.");
+            return;
+        }
+
+        printError = null;
+
         if (threadType == TestThreadType.MAIN) {
             runTest(exceptionType);
         } else if (threadType == TestThreadType.EDT) {
@@ -76,13 +88,20 @@ public class ExceptionFromPrintableIsIgnoredTest {
                 throw new RuntimeException(e);
             }
         }
+
+        if (printError == null) {
+            throw new RuntimeException("No exception was thrown.");
+        } else if (!(printError instanceof PrinterException)) {
+            throw new RuntimeException("Unexpected exception was thrown.");
+        }
         System.out.println("Test passed.");
     }
 
     private void runTest(final TestExceptionType exceptionType) {
         PrinterJob job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
-            throw new RuntimeException("No printers are available.");
+            System.out.println("No printers are available.");
+            return;
         }
 
         job.setPrintable(new Printable() {
@@ -103,27 +122,13 @@ public class ExceptionFromPrintableIsIgnoredTest {
             }
         });
 
-        Throwable printEx = null;
         try {
             job.print();
         } catch (Throwable t) {
-            printEx = t;
-        }
+            printError = t;
 
-        if (printEx != null) {
             System.out.println("'PrinterJob.print' threw the exception:");
-            printEx.printStackTrace(System.out);
-
-            if (((printEx instanceof PrinterException) &&
-                    (exceptionType == TestExceptionType.PE)) ||
-                ((printEx instanceof RuntimeException) &&
-                    (exceptionType == TestExceptionType.RE))) {
-                return;// Test passed.
-            }
-            throw new RuntimeException("Unexpected exception was thrown.");
-        } else {
-            throw new RuntimeException(
-                "'PrinterJob.print' did not throw any exception.");
+            t.printStackTrace(System.out);
         }
     }
 }
