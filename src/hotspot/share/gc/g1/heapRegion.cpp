@@ -104,7 +104,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  reset_evacuation_failed();
   set_old();
   _next_marked_bytes = 0;
 }
@@ -118,8 +117,6 @@ void HeapRegion::unlink_from_list() {
 void HeapRegion::hr_clear(bool clear_space) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(!in_collection_set(),
-         "Should not clear heap region %u in the collection set", hrm_index());
 
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
@@ -134,7 +131,6 @@ void HeapRegion::hr_clear(bool clear_space) {
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
-  Atomic::store(&_evacuation_failed, false);
   _gc_efficiency = -1.0;
 }
 
@@ -242,7 +238,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _hrm_index(hrm_index),
   _type(),
   _humongous_start_region(NULL),
-  _evacuation_failed(false),
   _index_in_opt_cset(InvalidCSetIndex),
   _next(NULL), _prev(NULL),
 #ifdef ASSERT

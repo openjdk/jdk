@@ -274,32 +274,26 @@ public class MethodHandleProxies {
     }
 
     private static boolean isObjectMethod(Method m) {
-        switch (m.getName()) {
-        case "toString":
-            return (m.getReturnType() == String.class
-                    && m.getParameterCount() == 0);
-        case "hashCode":
-            return (m.getReturnType() == int.class
-                    && m.getParameterCount() == 0);
-        case "equals":
-            return (m.getReturnType() == boolean.class
-                    && m.getParameterCount() == 1
-                    && m.getParameterTypes()[0] == Object.class);
-        }
-        return false;
+        return switch (m.getName()) {
+            case "toString" -> m.getReturnType() == String.class
+                               && m.getParameterCount() == 0;
+            case "hashCode" -> m.getReturnType() == int.class
+                               && m.getParameterCount() == 0;
+            case "equals"   -> m.getReturnType() == boolean.class
+                               && m.getParameterCount() == 1
+                               && m.getParameterTypes()[0] == Object.class;
+            default -> false;
+        };
     }
 
     private static Object callObjectMethod(Object self, Method m, Object[] args) {
         assert(isObjectMethod(m)) : m;
-        switch (m.getName()) {
-        case "toString":
-            return self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
-        case "hashCode":
-            return System.identityHashCode(self);
-        case "equals":
-            return (self == args[0]);
-        }
-        return null;
+        return switch (m.getName()) {
+            case "toString" -> self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
+            case "hashCode" -> System.identityHashCode(self);
+            case "equals"   -> (self == args[0]);
+            default -> null;
+        };
     }
 
     private static Method[] getSingleNameMethods(Class<?> intfc) {

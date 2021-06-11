@@ -1403,22 +1403,23 @@ comma.
 .RE
 .TP
 .B \f[CB]\-XX:LargePageSizeInBytes=\f[R]\f[I]size\f[R]
-Sets the maximum size (in bytes) for large pages used for the Java heap.
-The \f[I]size\f[R] argument must be a power of 2 (2, 4, 8, 16, and so
-on).
+Sets the maximum large page size (in bytes) used by the JVM.
+The \f[I]size\f[R] argument must be a valid page size supported by the
+environment to have any effect.
 Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
 \f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, or \f[CB]g\f[R] or
 \f[CB]G\f[R] to indicate gigabytes.
-By default, the size is set to 0, meaning that the JVM chooses the size
-for large pages automatically.
+By default, the size is set to 0, meaning that the JVM will use the
+default large page size for the environment as the maximum size for
+large pages.
 See \f[B]Large Pages\f[R].
 .RS
 .PP
-The following example describes how to set the large page size to 4
-megabytes (MB):
+The following example describes how to set the large page size to 1
+gigabyte (GB):
 .RS
 .PP
-\f[CB]\-XX:LargePageSizeInBytes=4m\f[R]
+\f[CB]\-XX:LargePageSizeInBytes=1g\f[R]
 .RE
 .RE
 .TP
@@ -1756,6 +1757,22 @@ is needed.
 .PP
 You can specify values for multiple parameters by separating them with a
 comma.
+.PP
+Event settings and .jfc options can also be specified using the following
+syntax:
+.TP
+.B \f[CB]option=\f[R]\f[I]value\f[R]
+Specifies the option value to modify. To list available options, use the 
+JAVA_HOME/bin/jfr tool.
+.TP
+.B \f[CB]event-setting=\f[R]\f[I]value\f[R]
+Specifies the event setting value to modify. Use the form:
+<event-name>#<setting-name>=<value>
+To add a new event setting, prefix the event name with '+'.
+.PP
+In case of a conflict between a parameter and a .jfc option, the parameter
+will take precedence. The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For
+more information about the settings syntax, see Javadoc of the jdk.jfr package.
 .RE
 .TP
 .B \f[CB]\-XX:ThreadStackSize=\f[R]\f[I]size\f[R]
@@ -5120,9 +5137,8 @@ larger memory range.
 This results in less pressure on a TLB, and memory\-intensive
 applications may have better performance.
 .PP
-However, large pages page memory can negatively affect system
-performance.
-For example, when a large mount of memory is pinned by an application,
+However, using large pages can negatively affect system performance.
+For example, when a large amount of memory is pinned by an application,
 it may create a shortage of regular memory and cause excessive paging in
 other applications and slow down the entire system.
 Also, a system that has been up for a long time could produce excessive
@@ -5133,74 +5149,84 @@ When this happens, either the OS or JVM reverts to using regular pages.
 Linux and Windows support large pages.
 .SS Large Pages Support for Linux
 .PP
-The 2.6 kernel supports large pages.
-Some vendors have backported the code to their 2.4\-based releases.
-To check if your system can support large page memory, try the
-following:
+Linux supports large pages since version 2.6.
+To check if your environment supports large pages, try the following:
 .IP
 .nf
 \f[CB]
 #\ cat\ /proc/meminfo\ |\ grep\ Huge
 HugePages_Total:\ 0
 HugePages_Free:\ 0
+\&...
 Hugepagesize:\ 2048\ kB
 \f[R]
 .fi
 .PP
-If the output shows the three "Huge" variables, then your system can
-support large page memory but it needs to be configured.
-If the command prints nothing, then your system doesn\[aq]t support
-large pages.
-To configure the system to use large page memory, login as
-\f[CB]root\f[R], and then follow these steps:
-.IP "1." 3
-If you\[aq]re using the option \f[CB]\-XX:+UseSHM\f[R] (instead of
-\f[CB]\-XX:+UseHugeTLBFS\f[R]), then increase the \f[CB]SHMMAX\f[R] value.
-It must be larger than the Java heap size.
-On a system with 4 GB of physical RAM (or less), the following makes all
-the memory sharable:
-.RS 4
+If the output contains items prefixed with "Huge", then your system
+supports large pages.
+The values may vary depending on environment.
+The \f[CB]Hugepagesize\f[R] field shows the default large page size in
+your environment, and the other fields show details for large pages of
+this size.
+Newer kernels have support for multiple large page sizes.
+To list the supported page sizes, run this:
+.IP
+.nf
+\f[CB]
+#\ ls\ /sys/kernel/mm/hugepages/
+hugepages\-1048576kB\ \ hugepages\-2048kB
+\f[R]
+.fi
+.PP
+The above environment supports 2 MB and 1 GB large pages, but they need
+to be configured so that the JVM can use them.
+When using large pages and not enabling transparent huge pages (option
+\f[CB]\-XX:+UseTransparentHugePages\f[R]), the number of large pages must
+be pre\-allocated.
+For example, to enable 8 GB of memory to be backed by 2 MB large pages,
+login as \f[CB]root\f[R] and run:
 .RS
 .PP
-\f[CB]#\ echo\ 4294967295\ >\ /proc/sys/kernel/shmmax\f[R]
+\f[CB]#\ echo\ 4096\ >\ /sys/kernel/mm/hugepages/hugepages\-2048kB/nr_hugepages\f[R]
 .RE
-.RE
-.IP "2." 3
-If you\[aq]re using the option \f[CB]\-XX:+UseSHM\f[R] or
-\f[CB]\-XX:+UseHugeTLBFS\f[R], then specify the number of large pages.
-In the following example, 3 GB of a 4 GB system are reserved for large
-pages (assuming a large page size of 2048kB, then 3 GB = 3 * 1024 MB =
-3072 MB = 3072 * 1024 kB = 3145728 kB and 3145728 kB / 2048 kB = 1536):
-.RS 4
+.PP
+It is always recommended to check the value of \f[CB]nr_hugepages\f[R]
+after the request to make sure the kernel was able to allocate the
+requested number of large pages.
+.PP
+When using the option \f[CB]\-XX:+UseSHM\f[R] to enable large pages you
+also need to make sure the \f[CB]SHMMAX\f[R] parameter is configured to
+allow large enough shared memory segments to be allocated.
+To allow a maximum shared segment of 8 GB, login as \f[CB]root\f[R] and
+run:
 .RS
 .PP
-\f[CB]#\ echo\ 1536\ >\ /proc/sys/vm/nr_hugepages\f[R]
+\f[CB]#\ echo\ 8589934592\ >\ /proc/sys/kernel/shmmax\f[R]
 .RE
+.PP
+In some environments this is not needed since the default value is large
+enough, but it is important to make sure the value is large enough to
+fit the amount of memory intended to be backed by large pages.
 .RS
 .PP
-\f[B]Note:\f[R] The values contained in \f[CB]/proc\f[R] resets after you
-reboot your system, so may want to set them in an initialization script
-(for example, \f[CB]rc.local\f[R] or \f[CB]sysctl.conf\f[R]).
+\f[B]Note:\f[R] The values contained in \f[CB]/proc\f[R] and \f[CB]/sys\f[R]
+reset after you reboot your system, so may want to set them in an
+initialization script (for example, \f[CB]rc.local\f[R] or
+\f[CB]sysctl.conf\f[R]).
 .RE
-.RE
-.IP \[bu] 2
-If you configure (or resize) the OS kernel parameters
-\f[CB]/proc/sys/kernel/shmmax\f[R] or \f[CB]/proc/sys/vm/nr_hugepages\f[R],
-Java processes may allocate large pages for areas in addition to the
-Java heap.
-These steps can allocate large pages for the following areas:
-.RS 2
-.IP \[bu] 2
-Java heap
+.PP
+If you configure the OS kernel parameters to enable use of large pages,
+the Java processes may allocate large pages for the Java heap as well as
+other internal areas, for example:
 .IP \[bu] 2
 Code cache
 .IP \[bu] 2
-The marking bitmap data structure for the parallel GC
+Marking bitmaps
 .PP
 Consequently, if you configure the \f[CB]nr_hugepages\f[R] parameter to
-the size of the Java heap, then the JVM can fail in allocating the code
-cache areas on large pages because these areas are quite large in size.
-.RE
+the size of the Java heap, then the JVM can still fail to allocate the
+heap using large pages because other areas such as the code cache might
+already have used some of the configured large pages.
 .SS Large Pages Support for Windows
 .PP
 To use large pages support on Windows, the administrator must first
