@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4533243
- * @summary Closing a keep alive stream should not give NullPointerException
+ * @bug 4533243 8263364
+ * @summary Closing a keep alive stream should not give NullPointerException and should accept a connection from  a
+ *          client only from this test
  * @library /test/lib
  * @run main/othervm/timeout=30 KeepAliveStreamCloseWithWrongContentLength
  */
@@ -51,7 +52,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
         public void run() {
             try {
 
-                ByteArrayOutputStream clientInput;
+                ByteArrayOutputStream clientBytes;
                 Socket socket = null;
 
                 // in a concurrent test environment it can happen that other rouge clients connect to this server
@@ -76,13 +77,12 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                     }
 
                     socket = serverSocket.accept();
-                    System.out.println(socket.getInetAddress().getHostAddress());
 
                     // read HTTP request from client
-                    clientInput = new ByteArrayOutputStream();
-                    clientInput.write(socket.getInputStream().readNBytes(getRequest1stLine.getBytes().length));
+                    clientBytes = new ByteArrayOutputStream();
+                    clientBytes.write(socket.getInputStream().readNBytes(getRequest1stLine.getBytes().length));
                 }
-                while(!getRequest1stLine.equals(clientInput.toString()));
+                while(!getRequest1stLine.equals(clientBytes.toString()));
 
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream = socket.getOutputStream());
                 outputStreamWriter.write("HTTP/1.0 200 OK\n");
