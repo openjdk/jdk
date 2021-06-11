@@ -797,11 +797,7 @@ void ZDriverMajor::gc(GCCause::Cause cause) {
 }
 
 bool ZDriverMajor::should_minor_before_major() {
-  if (!ScavengeBeforeFullGC) {
-    return false;
-  }
-
-  return ZHeap::heap()->major_cycle()->workers()->boost();
+  return ScavengeBeforeFullGC;
 }
 
 void ZDriverMajor::run_service() {

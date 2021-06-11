@@ -46,7 +46,6 @@ public:
   uint nworkers() const;
 
   void set_boost(bool boost);
-  bool boost() const;
 
   void run_parallel(ZTask* task);
   void run_concurrent(ZTask* task);
