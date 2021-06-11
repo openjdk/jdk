@@ -45,8 +45,9 @@ public class LoadLibraryDeadlock {
                     Object o = c1.newInstance();
                 } catch (ClassNotFoundException |
                          InstantiationException |
-                         IllegalAccessException ignore) {
+                         IllegalAccessException e) {
                     System.out.println("Class Class1 not found.");
+                    throw new RuntimeException(e);
                 }
             }
         };
@@ -56,8 +57,9 @@ public class LoadLibraryDeadlock {
                     // load a class from a signed jar, which locks the JarFile
                     Class c2 = Class.forName("p.Class2");
                     System.out.println("Signed jar loaded.");
-                } catch (ClassNotFoundException ignore) {
+                } catch (ClassNotFoundException e) {
                     System.out.println("Class Class2 not found.");
+                    throw new RuntimeException(e);
                 }
             }
         };

@@ -28,12 +28,19 @@
 /*
  * @test
  * @bug 8266310
- * @summary deadlock while loading the JNI code
+ * @summary Loads a native library from multiple class loaders and multiple
+ *          threads. This creates a race for loading the library. The winner
+ *          loads the library in two threads. All threads except two would fail
+ *          with UnsatisfiedLinkError when the class being loaded is already
+ *          loaded in a different class loader that won the race. The test
+ *          checks that the loaded class is GC'ed, that means the class loader
+ *          is GC'ed and the native library is unloaded.
  * @library /test/lib
  * @build LoadLibraryUnload p.Class1
  * @run main/othervm/native -Xcheck:jni LoadLibraryUnload
  */
 import jdk.test.lib.Asserts;
+import jdk.test.lib.util.ForceGC;
 import java.lang.*;
 import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
@@ -80,8 +87,8 @@ public class LoadLibraryUnload {
             try {
                 this.object = fromClass.newInstance();
                 this.method = fromClass.getDeclaredMethod("loadLibrary");
-            } catch (Exception error) {
-                throw new Error(error);
+            } catch (ReflectiveOperationException roe) {
+                throw new RuntimeException(roe);
             }
         }
 
@@ -89,8 +96,8 @@ public class LoadLibraryUnload {
         public void run() {
             try {
                 method.invoke(object);
-            } catch (Exception error) {
-                throw new Error(error);
+            } catch (ReflectiveOperationException roe) {
+                throw new RuntimeException(roe);
             }
         }
     }
@@ -145,15 +152,9 @@ public class LoadLibraryUnload {
         clazz = null;
         threads = null;
         exceptions.clear();
-        waitForUnload(wClass);
-        Asserts.assertTrue(wClass.get() == null, "Class1 hasn't been GC'ed");
-    }
-
-    private static void waitForUnload(WeakReference<Class> wClass)
-            throws InterruptedException {
-        for (int i = 0; i < 100 && wClass.get() != null; ++i) {
-            System.gc();
-            Thread.sleep(1);
+        ForceGC gc = new ForceGC();
+        if (!gc.await(() -> wClass.refersTo(null))) {
+            throw new RuntimeException("Class1 hasn't been GC'ed");
         }
     }
 }

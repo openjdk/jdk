@@ -25,7 +25,8 @@
 /*
  * @test
  * @bug 8266310
- * @summary deadlock while loading the JNI code
+ * @summary Checks if there's no deadlock between the two lock objects -
+ *          class loading lock and ClassLoader.loadedLibraryNames hashmap.
  * @library /test/lib
  * @build LoadLibraryDeadlock Class1 p.Class2
  * @run main/othervm/native -Xcheck:jni TestLoadLibraryDeadlock
@@ -34,9 +35,11 @@
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.*;
+import jdk.test.lib.util.FileUtils;
 
 import java.lang.ProcessBuilder;
 import java.lang.Process;
+import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -66,7 +69,8 @@ public class TestLoadLibraryDeadlock {
     }
 
     private static OutputAnalyzer genKey() throws Throwable {
-        runCommandInTestClassPath("rm", "-f", KEYSTORE);
+        FileUtils.deleteFileIfExistsWithRetry(
+                Paths.get(testClassPath, KEYSTORE));
         String keytool = JDKToolFinder.getJDKTool("keytool");
         return runCommandInTestClassPath(keytool,
                 "-storepass", STOREPASS,
@@ -161,8 +165,12 @@ public class TestLoadLibraryDeadlock {
         genKey()
                 .shouldHaveExitValue(0);
 
-        runCommandInTestClassPath("rm", "-f", "*.jar")
-                .shouldHaveExitValue(0);
+        FileUtils.deleteFileIfExistsWithRetry(
+                Paths.get(testClassPath, "a.jar"));
+        FileUtils.deleteFileIfExistsWithRetry(
+                Paths.get(testClassPath, "b.jar"));
+        FileUtils.deleteFileIfExistsWithRetry(
+                Paths.get(testClassPath, "c.jar"));
 
         createJar("a.jar",
                 "LoadLibraryDeadlock.class",

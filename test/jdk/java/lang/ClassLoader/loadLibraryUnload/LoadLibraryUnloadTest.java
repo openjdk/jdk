@@ -29,7 +29,9 @@
 /*
  * @test
  * @bug 8266310
- * @summary deadlock while loading the JNI code
+ * @summary Checks that JNI_OnLoad is invoked only once when multiple threads
+ *          call System.loadLibrary concurrently, and JNI_OnUnload is invoked
+ *          when the native library is loaded from a custom class loader.
  * @library /test/lib
  * @build LoadLibraryUnload p.Class1
  * @run main/othervm/native -Xcheck:jni LoadLibraryUnloadTest

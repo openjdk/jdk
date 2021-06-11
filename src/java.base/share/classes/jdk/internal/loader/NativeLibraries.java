@@ -203,14 +203,14 @@ public final class NativeLibraries {
              * When a library is being loaded, JNI_OnLoad function can cause
              * another loadLibrary invocation that should succeed.
              *
-             * We use a static stack to hold the list of libraries we are
-             * loading, so that each thread maintains its own stack.
+             * Each thread maintains its own stack to hold the list of
+             * libraries it is loading.
              *
              * If there is a pending load operation for the library, we
              * immediately return success; if the pending load is from
              * a different class loader, we raise UnsatisfiedLinkError.
              */
-            for (NativeLibraryImpl lib : NativeLibraryContext.get()) {
+            for (NativeLibraryImpl lib : NativeLibraryContext.current()) {
                 if (name.equals(lib.name())) {
                     if (loader == lib.fromClass.getClassLoader()) {
                         return lib;
@@ -531,24 +531,24 @@ public final class NativeLibraries {
                 new ConcurrentHashMap<>();
 
         // returns a context associated with the current thread
-        private static Deque<NativeLibraryImpl> get() {
+        private static Deque<NativeLibraryImpl> current() {
             return nativeLibraryThreadContext.computeIfAbsent(
                     Thread.currentThread(),
                     t -> new ArrayDeque<>(8));
         }
 
         private static NativeLibraryImpl peek() {
-            return get().peek();
+            return current().peek();
         }
 
         private static void push(NativeLibraryImpl lib) {
-            get().push(lib);
+            current().push(lib);
         }
 
         private static void pop() {
             // this does not require synchronization since each
             // thread has its own context
-            Deque<NativeLibraryImpl> libs = get();
+            Deque<NativeLibraryImpl> libs = current();
             libs.pop();
             if (libs.isEmpty()) {
                 // context can be safely removed once empty
