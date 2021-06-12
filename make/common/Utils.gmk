@@ -92,40 +92,58 @@ SetIfEmpty = \
 #     foo/bar/baz, /foo/bar -> <empty>
 #
 # The x prefix is used to preserve the presence of the initial slash
+# On Windows paths are treated as case-insensitive
 #
 # $1 - Path to compare
 # $2 - Other path to compare
 FindCommonPathPrefix = \
-    $(patsubst x%,%,$(subst $(SPACE),/,$(strip \
-        $(call FindCommonPathPrefixHelper, \
-            $(subst /,$(SPACE),x$(strip $1)), $(subst /,$(SPACE),x$(strip $2))) \
-    )))
+    $(call DecodeSpace,$(patsubst x%,%,$(subst $(SPACE),/,$(strip \
+        $(call FindCommonPathPrefixHelper1, \
+            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $1))), \
+            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $2)))) \
+    ))))
 
-FindCommonPathPrefixHelper = \
+FindCommonPathPrefixHelper1 = \
+    $(if $(filter $(OPENJDK_TARGET_OS), windows), \
+        $(call FindCommonPathPrefixHelper2,$(call uppercase,$1),$(call uppercase,$2),$1), \
+        $(call FindCommonPathPrefixHelper2,$1,$2,$1))
+
+FindCommonPathPrefixHelper2 = \
     $(if $(call equals, $(firstword $1), $(firstword $2)), \
-      $(firstword $1) \
-      $(call FindCommonPathPrefixHelper, \
-          $(wordlist 2, $(words $1), $1), $(wordlist 2, $(words $2), $2) \
+      $(if $(call equals, $(firstword $1),),, \
+        $(firstword $3) \
+        $(call FindCommonPathPrefixHelper2, \
+            $(wordlist 2, $(words $1), $1), \
+            $(wordlist 2, $(words $2), $2), \
+            $(wordlist 2, $(words $3), $3) \
+        ) \
       ) \
     )
-
-# Convert a partial path into as many directory levels of ../, removing
-# leading and following /.
-# Ex: foo/bar/baz/ -> ../../..
-#     foo/bar -> ../..
-#     /foo -> ..
-DirToDotDot = \
-    $(subst $(SPACE),/,$(foreach d, $(subst /,$(SPACE),$1),..))
 
 # Computes the relative path from a directory to a file
 # $1 - File to compute the relative path to
 # $2 - Directory to compute the relative path from
 RelativePath = \
-    $(eval $1_prefix := $(call FindCommonPathPrefix, $1, $2)) \
-    $(eval $1_dotdots := $(call DirToDotDot, $(patsubst $($(strip $1)_prefix)%, %, $2))) \
-    $(eval $1_dotdots := $(if $($(strip $1)_dotdots),$($(strip $1)_dotdots),.)) \
-    $(eval $1_suffix := $(patsubst $($(strip $1)_prefix)/%, %, $1)) \
-    $($(strip $1)_dotdots)/$($(strip $1)_suffix)
+    $(call DecodeSpace,$(strip $(call RelativePathHelper,$(call EncodeSpace \
+        ,$(strip $1)),$(call EncodeSpace \
+        ,$(strip $2)),$(call EncodeSpace \
+        ,$(call FindCommonPathPrefix,$1,$2)))))
+
+RelativePathHelper = \
+    $(eval $3_prefix_length := $(words $(subst /,$(SPACE),$3))) \
+    $(eval $1_words := $(subst /,$(SPACE),$1)) \
+    $(eval $2_words := $(subst /,$(SPACE),$2)) \
+    $(if $(call equals,$($3_prefix_length),0),, \
+        $(eval $1_words := $(wordlist 2,$(words $($1_words)),$(wordlist \
+            $($3_prefix_length),$(words $($1_words)),$($1_words)))) \
+        $(eval $2_words := $(wordlist 2,$(words $($2_words)),$(wordlist \
+            $($3_prefix_length),$(words $($2_words)),$($2_words)))) \
+    ) \
+    $(eval $1_suffix := $(subst $(SPACE),/,$($1_words))) \
+    $(eval $2_dotdots := $(subst $(SPACE),/,$(foreach d,$($2_words),..))) \
+    $(if $($1_suffix), \
+        $(if $($2_dotdots), $($2_dotdots)/$($1_suffix), $($1_suffix)), \
+        $(if $($2_dotdots), $($2_dotdots), .))
 
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.

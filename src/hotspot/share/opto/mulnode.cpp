@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,31 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   Node *progress = NULL;        // Progress flag
+
+  // convert "max(a,b) * min(a,b)" into "a*b".
+  Node *in1 = in(1);
+  Node *in2 = in(2);
+  if ((in(1)->Opcode() == max_opcode() && in(2)->Opcode() == min_opcode())
+      || (in(1)->Opcode() == min_opcode() && in(2)->Opcode() == max_opcode())) {
+    Node *in11 = in(1)->in(1);
+    Node *in12 = in(1)->in(2);
+
+    Node *in21 = in(2)->in(1);
+    Node *in22 = in(2)->in(2);
+
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
+      set_req(1, in11);
+      set_req(2, in12);
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      progress = this;
+    }
+  }
+
   // We are OK if right is a constant, or right is a load and
   // left is a non-constant.
   if( !(t2->singleton() ||
@@ -104,8 +129,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         const Type *tcon01 = ((MulNode*)mul1)->mul_ring(t2,t12);
         if( tcon01->singleton() ) {
           // The Mul of the flattened expression
-          set_req(1, mul1->in(1));
-          set_req(2, phase->makecon( tcon01 ));
+          set_req_X(1, mul1->in(1), phase);
+          set_req_X(2, phase->makecon(tcon01), phase);
           t2 = tcon01;
           progress = this;      // Made progress
         }
@@ -164,7 +189,7 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 #if defined(IA32)
   // Can't trust native compilers to properly fold strict double
   // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD && phase->C->method()->is_strict()) {
+  if (op == Op_MulD) {
     return TypeD::DOUBLE;
   }
 #endif
@@ -201,21 +226,19 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftINode(in(1), phase->intcon(log2_uint(bit1)));
+    res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
-
     // Check for constant with 2 bits set
-    unsigned int bit2 = abs_con-bit1;
-    bit2 = bit2 & (0-bit2);          // Extract 2nd bit
+    unsigned int bit2 = abs_con - bit1;
+    bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform( new LShiftINode(in(1), phase->intcon(log2_uint(bit1))));
-      Node *n2 = phase->transform( new LShiftINode(in(1), phase->intcon(log2_uint(bit2))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
+      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddINode(n2, n1);
-
-    } else if (is_power_of_2(abs_con+1)) {
-      // Sleezy: power-of-2 -1.  Next time be generic.
+    } else if (is_power_of_2(abs_con + 1)) {
+      // Sleezy: power-of-2 - 1.  Next time be generic.
       unsigned int temp = abs_con + 1;
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2_uint(temp))));
+      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubINode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);
@@ -297,21 +320,21 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   julong bit1 = abs_con & (0-abs_con);      // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftLNode(in(1), phase->intcon(log2_long(bit1)));
+    res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
 
     // Check for constant with 2 bits set
     julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit1))));
-      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit2))));
+      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
+      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddLNode(n2, n1);
 
     } else if (is_power_of_2(abs_con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       julong temp = abs_con + 1;
-      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2_long(temp))));
+      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubLNode(n1, in(1));
     } else {
       return MulNode::Ideal(phase, can_reshape);
@@ -447,9 +470,9 @@ Node* AndINode::Identity(PhaseGVN* phase) {
   if (t2 && t2->is_con()) {
     int con = t2->get_con();
     // Masking off high bits which are always zero is useless.
-    const TypeInt* t1 = phase->type( in(1) )->isa_int();
+    const TypeInt* t1 = phase->type(in(1))->isa_int();
     if (t1 != NULL && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2_jint(t1->_hi));
+      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
       if ((t1_support & con) == t1_support)
         return in1;
     }
@@ -572,7 +595,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
     if (t1 != NULL && t1->_lo >= 0) {
-      int bit_count = log2_long(t1->_hi) + 1;
+      int bit_count = log2i_graceful(t1->_hi) + 1;
       jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
         return usr;
@@ -957,11 +980,11 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // that is the job of 'Identity' calls and Identity calls only work on
       // direct inputs ('ld' is an extra Node removed from 'this').  The
       // combined optimization requires Identity only return direct inputs.
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
-    else if( can_reshape &&
+    else if (can_reshape &&
              ld->Opcode() == Op_LoadUS &&
              ld->outcnt() == 1 && ld->unique_out() == shl)
       // Replace zero-extension-load with sign-extension-load
@@ -973,10 +996,10 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (t3 = phase->type(shl->in(2))->isa_int()) &&
       t3->is_con(24) ) {
     Node *ld = shl->in(1);
-    if( ld->Opcode() == Op_LoadB ) {
+    if (ld->Opcode() == Op_LoadB) {
       // Sign extension is just useless here
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
   }

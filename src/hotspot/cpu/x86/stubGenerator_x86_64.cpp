@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
@@ -45,6 +47,9 @@
 #include "runtime/thread.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
@@ -284,7 +289,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
@@ -597,7 +602,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls) {
       Label ok_ret;
-      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
       __ stmxcsr(mxcsr_save);
@@ -801,6 +806,17 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
     __ emit_data64(0x3736353433323130, relocInfo::none);
     __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_byte_shuffle_mask(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0x7070707070707070, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
+    __ emit_data64(0xF0F0F0F0F0F0F0F0, relocInfo::none);
     return start;
   }
 
@@ -1467,6 +1483,7 @@ class StubGenerator: public StubCodeGenerator {
         __ subq(temp1, loop_size[shift]);
 
         // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
+        __ align(32);
         __ BIND(L_main_loop);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 0);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 64);
@@ -1533,6 +1550,7 @@ class StubGenerator: public StubCodeGenerator {
 
         // Main loop with aligned copy block size of 192 bytes at
         // 64 byte copy granularity.
+        __ align(32);
         __ BIND(L_main_loop_64bytes);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 0 , true);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 64, true);
@@ -1672,6 +1690,7 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_main_pre_loop);
 
         // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
+        __ align(32);
         __ BIND(L_main_loop);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -64);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -128);
@@ -1704,6 +1723,7 @@ class StubGenerator: public StubCodeGenerator {
 
         // Main loop with aligned copy block size of 192 bytes at
         // 64 byte copy granularity.
+        __ align(32);
         __ BIND(L_main_loop_64bytes);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -64 , true);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -128, true);
@@ -1766,7 +1786,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jbyte_disjoint_arraycopy_avx3", 0,
                                                  aligned, false, false);
     }
@@ -1882,7 +1902,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_byte_copy(bool aligned, address nooverlap_target,
                                       address* entry, const char *name) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jbyte_conjoint_arraycopy_avx3", 0,
                                                  nooverlap_target, aligned, false, false);
     }
@@ -1993,7 +2013,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_short_copy(bool aligned, address *entry, const char *name) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jshort_disjoint_arraycopy_avx3", 1,
                                                  aligned, false, false);
     }
@@ -2124,7 +2144,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_short_copy(bool aligned, address nooverlap_target,
                                        address *entry, const char *name) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jshort_conjoint_arraycopy_avx3", 1,
                                                  nooverlap_target, aligned, false, false);
     }
@@ -2228,7 +2248,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry,
                                          const char *name, bool dest_uninitialized = false) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jint_disjoint_arraycopy_avx3", 2,
                                                  aligned, is_oop, dest_uninitialized);
     }
@@ -2339,7 +2359,7 @@ class StubGenerator: public StubCodeGenerator {
                                          address *entry, const char *name,
                                          bool dest_uninitialized = false) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jint_conjoint_arraycopy_avx3", 2,
                                                  nooverlap_target, aligned, is_oop, dest_uninitialized);
     }
@@ -2452,7 +2472,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3,
                                                  aligned, is_oop, dest_uninitialized);
     }
@@ -2562,7 +2582,7 @@ class StubGenerator: public StubCodeGenerator {
                                           address nooverlap_target, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
 #if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
                                                  nooverlap_target, aligned, is_oop, dest_uninitialized);
     }
@@ -5770,6 +5790,47 @@ address generate_avx_ghash_processBlocks() {
       return start;
   }
 
+
+  /***
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff
+   *   c_rarg2   - int   len
+   *
+   * Output:
+   *   rax   - int adler result
+   */
+
+  address generate_updateBytesAdler32() {
+      assert(UseAdler32Intrinsics, "need AVX2");
+
+      __ align(CodeEntryAlignment);
+      StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+
+      address start = __ pc();
+
+      const Register data = r9;
+      const Register size = r10;
+
+      const XMMRegister yshuf0 = xmm6;
+      const XMMRegister yshuf1 = xmm7;
+      assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
+
+      BLOCK_COMMENT("Entry:");
+      __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+      __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table), r9);
+      __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table), r9);
+      __ movptr(data, c_rarg1); //data
+      __ movl(size, c_rarg2); //length
+      __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));
+      __ leave();
+      __ ret(0);
+      return start;
+  }
+
   /**
    *  Arguments:
    *
@@ -6652,24 +6713,8 @@ address generate_avx_ghash_processBlocks() {
   }
 
   void create_control_words() {
-    // Round to nearest, 53-bit mode, exceptions masked
-    StubRoutines::_fpu_cntrl_wrd_std   = 0x027F;
-    // Round to zero, 53-bit mode, exception mased
-    StubRoutines::_fpu_cntrl_wrd_trunc = 0x0D7F;
-    // Round to nearest, 24-bit mode, exceptions masked
-    StubRoutines::_fpu_cntrl_wrd_24    = 0x007F;
     // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::_mxcsr_std           = 0x1F80;
-    // Note: the following two constants are 80-bit values
-    //       layout is critical for correct loading by FPU.
-    // Bias for strict fp multiply/divide
-    StubRoutines::_fpu_subnormal_bias1[0]= 0x00000000; // 2^(-15360) == 0x03ff 8000 0000 0000 0000
-    StubRoutines::_fpu_subnormal_bias1[1]= 0x80000000;
-    StubRoutines::_fpu_subnormal_bias1[2]= 0x03ff;
-    // Un-Bias for strict fp multiply/divide
-    StubRoutines::_fpu_subnormal_bias2[0]= 0x00000000; // 2^(+15360) == 0x7bff 8000 0000 0000 0000
-    StubRoutines::_fpu_subnormal_bias2[1]= 0x80000000;
-    StubRoutines::_fpu_subnormal_bias2[2]= 0x7bff;
+    StubRoutines::x86::_mxcsr_std = 0x1F80;
   }
 
   // Initialization
@@ -6734,6 +6779,11 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
+
+    if (UseAdler32Intrinsics) {
+       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
     if (UseLibmIntrinsic && InlineIntrinsics) {
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
           vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
@@ -6824,6 +6874,7 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32("vector_64_bit_mask", Assembler::AVX_512bit,
                                                                         0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
     StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask("vector_int_shuffle_mask", 0x0302010003020100);
+    StubRoutines::x86::_vector_byte_shuffle_mask = generate_vector_byte_shuffle_mask("vector_byte_shuffle_mask");
     StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask("vector_short_shuffle_mask", 0x0100010001000100);
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
@@ -6944,6 +6995,67 @@ address generate_avx_ghash_processBlocks() {
     if (UseMontgomerySquareIntrinsic) {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
+    }
+
+    // Get svml stub routine addresses
+    void *libsvml = NULL;
+    char ebuf[1024];
+    libsvml = os::dll_load(JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, ebuf, sizeof ebuf);
+    if (libsvml != NULL) {
+      // SVML method naming convention
+      //   All the methods are named as __svml_op<T><N>_ha_<VV>
+      //   Where:
+      //      ha stands for high accuracy
+      //      <T> is optional to indicate float/double
+      //              Set to f for vector float operation
+      //              Omitted for vector double operation
+      //      <N> is the number of elements in the vector
+      //              1, 2, 4, 8, 16
+      //              e.g. 128 bit float vector has 4 float elements
+      //      <VV> indicates the avx/sse level:
+      //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
+      //      e.g. __svml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
+      //           __svml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
+
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, p2i(libsvml));
+      if (UseAVX > 2) {
+        for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
+          int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+          if ((!VM_Version::supports_avx512dq()) &&
+              (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
+            continue;
+          }
+          snprintf(ebuf, sizeof(ebuf), "__svml_%sf16_ha_z0", VectorSupport::svmlname[op]);
+          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+          snprintf(ebuf, sizeof(ebuf), "__svml_%s8_ha_z0", VectorSupport::svmlname[op]);
+          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libsvml, ebuf);
+        }
+      }
+      const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
+      for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
+        int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+        if (vop == VectorSupport::VECTOR_OP_POW) {
+          continue;
+        }
+        snprintf(ebuf, sizeof(ebuf), "__svml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "__svml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "__svml_%sf8_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "__svml_%s1_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "__svml_%s2_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsvml, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "__svml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libsvml, ebuf);
+      }
     }
 #endif // COMPILER2
 

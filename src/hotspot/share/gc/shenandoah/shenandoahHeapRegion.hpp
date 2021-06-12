@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -250,7 +251,8 @@ public:
 
   static const size_t MIN_NUM_REGIONS = 10;
 
-  static void setup_sizes(size_t max_heap_size);
+  // Return adjusted max heap size
+  static size_t setup_sizes(size_t max_heap_size);
 
   double empty_time() {
     return _empty_time;

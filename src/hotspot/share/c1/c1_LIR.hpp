@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,8 +231,8 @@ class LIR_OprDesc: public CompilationResourceObj {
     , is_xmm_bits    = 1
     , last_use_bits  = 1
     , is_fpu_stack_offset_bits = 1        // used in assertion checking on x86 for FPU stack slot allocation
-    , non_data_bits  = kind_bits + type_bits + size_bits + destroys_bits + last_use_bits +
-                       is_fpu_stack_offset_bits + virtual_bits + is_xmm_bits
+    , non_data_bits  = pointer_bits + kind_bits + type_bits + size_bits + destroys_bits + virtual_bits
+                       + is_xmm_bits + last_use_bits + is_fpu_stack_offset_bits
     , data_bits      = BitsPerInt - non_data_bits
     , reg_bits       = data_bits / 2      // for two registers in one value encoding
   };
@@ -649,6 +649,11 @@ class LIR_OprFact: public AllStatic {
 #endif // X86
 
   static LIR_Opr virtual_register(int index, BasicType type) {
+    if (index > LIR_OprDesc::vreg_max) {
+      // Running out of virtual registers. Caller should bailout.
+      return illegalOpr;
+    }
+
     LIR_Opr res;
     switch (type) {
       case T_OBJECT: // fall through
@@ -926,9 +931,7 @@ enum LIR_Code {
       , lir_add
       , lir_sub
       , lir_mul
-      , lir_mul_strictfp
       , lir_div
-      , lir_div_strictfp
       , lir_rem
       , lir_sqrt
       , lir_abs
@@ -956,7 +959,6 @@ enum LIR_Code {
       , lir_static_call
       , lir_optvirtual_call
       , lir_icvirtual_call
-      , lir_virtual_call
       , lir_dynamic_call
   , end_opJavaCall
   , begin_opArrayCopy
@@ -1198,11 +1200,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
   bool is_method_handle_invoke() const {
     return method()->is_compiled_lambda_form() ||   // Java-generated lambda form
            method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic
-  }
-
-  intptr_t vtable_offset() const {
-    assert(_code == lir_virtual_call, "only have vtable for real vcall");
-    return (intptr_t) addr();
   }
 
   virtual void emit_code(LIR_Assembler* masm);
@@ -2049,10 +2046,6 @@ class LIR_List: public CompilationResourceObj {
                       address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
     append(new LIR_OpJavaCall(lir_icvirtual_call, method, receiver, result, dest, arguments, info));
   }
-  void call_virtual(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
-                    intptr_t vtable_offset, LIR_OprList* arguments, CodeEmitInfo* info) {
-    append(new LIR_OpJavaCall(lir_virtual_call, method, receiver, result, vtable_offset, arguments, info));
-  }
   void call_dynamic(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
                     address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
     append(new LIR_OpJavaCall(lir_dynamic_call, method, receiver, result, dest, arguments, info));
@@ -2161,9 +2154,9 @@ class LIR_List: public CompilationResourceObj {
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL) { append(new LIR_Op2(lir_sub, left, right, res, info)); }
   void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res) { append(new LIR_Op2(lir_mul, left, right, res)); }
-  void mul_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul_strictfp, left, right, res, tmp)); }
+  void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul, left, right, res, tmp)); }
   void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_div, left, right, res, info)); }
-  void div_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div_strictfp, left, right, res, tmp)); }
+  void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div, left, right, res, tmp)); }
   void rem (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_rem, left, right, res, info)); }
 
   void volatile_load_mem_reg(LIR_Address* address, LIR_Opr dst, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);

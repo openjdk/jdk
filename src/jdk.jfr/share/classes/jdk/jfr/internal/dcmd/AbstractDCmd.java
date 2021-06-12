@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -40,6 +38,9 @@ import java.util.List;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Utils;
@@ -50,20 +51,62 @@ import jdk.jfr.internal.Utils;
  */
 abstract class AbstractDCmd {
 
-    private final StringWriter result;
-    private final PrintWriter log;
+    private final StringBuilder currentLine = new StringBuilder(80);
+    private final List<String> lines = new ArrayList<>();
+    private String source;
 
-    protected AbstractDCmd() {
-        result = new StringWriter();
-        log = new PrintWriter(result);
+    // Called by native
+    public abstract String[] printHelp();
+
+    // Called by native
+    public abstract Argument[] getArgumentInfos();
+
+    // Called by native
+    protected abstract void execute(ArgumentParser parser) throws DCmdException;
+
+
+    // Called by native
+    public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
+        this.source = source;
+        try {
+            boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
+            if (log) {
+                System.out.println(arg);
+                Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
+            }
+            ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
+            parser.parse();
+            if (log) {
+                Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "DCMD options: " + parser.getOptions());
+                if (parser.hasExtendedOptions()) {
+                    Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "JFC options: " + parser.getExtendedOptions());
+                }
+            }
+            execute(parser);
+            return getResult();
+       }
+       catch (IllegalArgumentException iae) {
+            DCmdException e = new DCmdException(iae.getMessage());
+            e.addSuppressed(iae);
+            throw e;
+        }
     }
+
 
     protected final FlightRecorder getFlightRecorder() {
         return FlightRecorder.getFlightRecorder();
     }
 
-    public final String getResult() {
-        return result.toString();
+    protected final String[] getResult() {
+        return lines.toArray(new String[lines.size()]);
+    }
+
+    protected void logWarning(String message) {
+        if (source.equals("internal")) { // -XX:StartFlightRecording
+            Logger.log(LogTag.JFR_START, LogLevel.WARN, message);
+        } else { // DiagnosticMXBean or JCMD
+            println("Warning! " + message);
+        }
     }
 
     public String getPid() {
@@ -136,15 +179,16 @@ abstract class AbstractDCmd {
     }
 
     protected final void println() {
-        log.println();
+        lines.add(currentLine.toString());
+        currentLine.setLength(0);
     }
 
     protected final void print(String s) {
-        log.print(s);
+        currentLine.append(s);
     }
 
     protected final void print(String s, Object... args) {
-        log.printf(s, args);
+        currentLine.append(String.format(s, args));
     }
 
     protected final void println(String s, Object... args) {
@@ -197,5 +241,29 @@ abstract class AbstractDCmd {
             }
         }
         throw new DCmdException("Could not find %s.\n\nUse JFR.check without options to see list of all available recordings.", name);
+    }
+
+    protected final String exampleRepository() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Repositories";
+        } else {
+            return "/Repositories";
+        }
+    }
+
+    protected final String exampleFilename() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Users\\user\\recording.jfr";
+        } else {
+            return "/recordings/recording.jfr";
+        }
+    }
+
+    protected final String exampleDirectory() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Directory\\recordings";
+        } else {
+            return "/directory/recordings";
+        }
     }
 }

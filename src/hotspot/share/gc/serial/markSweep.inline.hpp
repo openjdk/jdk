@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -79,7 +80,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = oop(obj->mark().decode_pointer());
+    oop new_obj = cast_to_oop(obj->mark().decode_pointer());
 
     assert(new_obj != NULL ||                      // is forwarding ptr?
            obj->mark() == markWord::prototype() || // not gc marked?

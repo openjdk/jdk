@@ -128,7 +128,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * locks: a deserialized lock is in the unlocked state, regardless of
  * its state when serialized.
  *
- * <p><b>Sample usages</b>. Here is a code sketch showing how to perform
+ * <p><b>Sample usages.</b> Here is a code sketch showing how to perform
  * lock downgrading after updating a cache (exception handling is
  * particularly tricky when handling multiple locks in a non-nested
  * fashion):
@@ -149,7 +149,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *         // Recheck state because another thread might have
  *         // acquired write lock and changed state before we did.
  *         if (!cacheValid) {
- *           data = ...
+ *           data = ...;
  *           cacheValid = true;
  *         }
  *         // Downgrade by acquiring read lock before releasing write lock

@@ -100,11 +100,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Name of this compiler
   virtual const char* name() = 0;
 
-  // Missing feature tests
-  virtual bool supports_native()                 { return true; }
-  virtual bool supports_osr   ()                 { return true; }
-  virtual bool can_compile_method(const methodHandle& method)  { return true; }
-
   // Determine if the current compiler provides an intrinsic
   // for method 'method'. An intrinsic is available if:
   //  - the intrinsic is enabled (by using the appropriate command-line flag,
@@ -149,10 +144,10 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   }
 
   // Compiler type queries.
-  const bool is_c1()                             { return _type == compiler_c1; }
-  const bool is_c2()                             { return _type == compiler_c2; }
-  const bool is_jvmci()                          { return _type == compiler_jvmci; }
-  const CompilerType type()                      { return _type; }
+  bool is_c1() const                     { return _type == compiler_c1; }
+  bool is_c2() const                     { return _type == compiler_c2; }
+  bool is_jvmci() const                  { return _type == compiler_jvmci; }
+  CompilerType type() const              { return _type; }
 
   // Customization
   virtual void initialize () = 0;
@@ -169,7 +164,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
     ShouldNotReachHere();
   }
-
 
   // Print compilation timers and statistics
   virtual void print_timers() {

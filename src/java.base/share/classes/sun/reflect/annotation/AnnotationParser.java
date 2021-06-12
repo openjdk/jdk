@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,13 +237,8 @@ public class AnnotationParser {
         Class<? extends Annotation> annotationClass = null;
         String sig = "[unknown]";
         try {
-            try {
-                sig = constPool.getUTF8At(typeIndex);
-                annotationClass = (Class<? extends Annotation>)parseSig(sig, container);
-            } catch (IllegalArgumentException ex) {
-                // support obsolete early jsr175 format class files
-                annotationClass = (Class<? extends Annotation>)constPool.getClassAt(typeIndex);
-            }
+            sig = constPool.getUTF8At(typeIndex);
+            annotationClass = (Class<? extends Annotation>)parseSig(sig, container);
         } catch (NoClassDefFoundError e) {
             if (exceptionOnMissingAnnotationClass)
                 // note: at this point sig is "[unknown]" or VM-style
@@ -298,6 +293,7 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member {@literal ->} value map.
      */
+    @SuppressWarnings("removal")
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)
     {
@@ -358,10 +354,21 @@ public class AnnotationParser {
               result = parseConst(tag, buf, constPool);
         }
 
-        if (!(result instanceof ExceptionProxy) &&
-            !memberType.isInstance(result))
+        if (result == null) {
             result = new AnnotationTypeMismatchExceptionProxy(
-                result.getClass() + "[" + result + "]");
+                Proxy.isProxyClass(memberType)
+                        ? memberType.getInterfaces()[0].getName()
+                        : memberType.getName());
+        } else if (!(result instanceof ExceptionProxy) &&
+            !memberType.isInstance(result)) {
+            if (result instanceof Annotation) {
+                result = new AnnotationTypeMismatchExceptionProxy(
+                    result.toString());
+            } else {
+                result = new AnnotationTypeMismatchExceptionProxy(
+                    result.getClass().getName() + "[" + result + "]");
+            }
+        }
         return result;
     }
 
@@ -416,17 +423,11 @@ public class AnnotationParser {
                                           Class<?> container) {
         int classIndex = buf.getShort() & 0xFFFF;
         try {
-            try {
-                String sig = constPool.getUTF8At(classIndex);
-                return parseSig(sig, container);
-            } catch (IllegalArgumentException ex) {
-                // support obsolete early jsr175 format class files
-                return constPool.getClassAt(classIndex);
-            }
+            String sig = constPool.getUTF8At(classIndex);
+            return parseSig(sig, container);
         } catch (NoClassDefFoundError e) {
             return new TypeNotPresentExceptionProxy("[unknown]", e);
-        }
-        catch (TypeNotPresentException e) {
+        } catch (TypeNotPresentException e) {
             return new TypeNotPresentExceptionProxy(e.typeName(), e.getCause());
         }
     }
@@ -469,15 +470,9 @@ public class AnnotationParser {
         String typeName  = constPool.getUTF8At(typeNameIndex);
         int constNameIndex = buf.getShort() & 0xFFFF;
         String constName = constPool.getUTF8At(constNameIndex);
-
-        if (!typeName.endsWith(";")) {
-            // support now-obsolete early jsr175-format class files.
-            if (!enumType.getName().equals(typeName))
+        if (!enumType.isEnum() || enumType != parseSig(typeName, container)) {
             return new AnnotationTypeMismatchExceptionProxy(
-                typeName + "." + constName);
-        } else if (enumType != parseSig(typeName, container)) {
-            return new AnnotationTypeMismatchExceptionProxy(
-                typeName + "." + constName);
+                    typeName.substring(1, typeName.length() - 1).replace('/', '.') + "." + constName);
         }
 
         try {
@@ -533,10 +528,11 @@ public class AnnotationParser {
         } else if (componentType.isEnum()) {
             return parseEnumArray(length, (Class<? extends Enum<?>>)componentType, buf,
                                   constPool, container);
-        } else {
-            assert componentType.isAnnotation();
+        } else if (componentType.isAnnotation()) {
             return parseAnnotationArray(length, (Class <? extends Annotation>)componentType, buf,
                                         constPool, container);
+        } else {
+            return parseUnknownArray(length, buf);
         }
     }
 
@@ -758,13 +754,25 @@ public class AnnotationParser {
         return (exceptionProxy != null) ? exceptionProxy : result;
     }
 
+    private static Object parseUnknownArray(int length,
+                                            ByteBuffer buf) {
+        int tag = 0;
+
+        for (int i = 0; i < length; i++) {
+            tag = buf.get();
+            skipMemberValue(tag, buf);
+        }
+
+        return exceptionProxy(tag);
+    }
+
     /**
      * Returns an appropriate exception proxy for a mismatching array
      * annotation where the erroneous array has the specified tag.
      */
     private static ExceptionProxy exceptionProxy(int tag) {
         return new AnnotationTypeMismatchExceptionProxy(
-            "Array with component tag: " + tag);
+            "Array with component tag: " + (tag == 0 ? "0" : (char) tag));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
- * @run testng Short256VectorLoadStoreTests
+ * @run testng/othervm -XX:-TieredCompilation Short256VectorLoadStoreTests
  *
  */
 
@@ -58,47 +58,25 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
 
     static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * (256 / 8));
 
-    static void assertArraysEquals(short[] a, short[] r, boolean[] mask) {
+    static void assertArraysEquals(short[] r, short[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (short) 0, r[i]);
+                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (short) 0, r[i], "at index #" + i);
+            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0, "at index #" + i);
         }
     }
 
-    static void assertArraysEquals(short[] a, short[] r, int[] im) {
+    static void assertArraysEquals(byte[] r, byte[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(a[im[i]], r[i]);
+                Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(a[im[i]], r[i], "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(short[] a, short[] r, int[] im, boolean[] mask) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(mask[i % SPECIES.length()] ? a[im[i]] : (short) 0, r[i]);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(mask[i % SPECIES.length()] ? a[im[i]] : (short) 0, r[i], "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(byte[] a, byte[] r, boolean[] mask) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0, r[i]);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0, r[i], "at index #" + i);
+            Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
         }
     }
 
@@ -401,7 +379,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i);
             }
         }
-        Assert.assertEquals(a, r);
+        Assert.assertEquals(r, a);
     }
 
     @Test(dataProvider = "shortProviderForIOOBE")
@@ -472,7 +450,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
 
 
         r = new short[a.length];
@@ -483,7 +461,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 av.intoArray(r, i, vmask);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
     }
 
     @Test(dataProvider = "shortMaskProviderForIOOBE")
@@ -556,7 +534,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 vmask.intoArray(r, i);
             }
         }
-        Assert.assertEquals(mask, r);
+        Assert.assertEquals(r, mask);
     }
 
 
@@ -580,7 +558,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        Assert.assertEquals(a, r, "Buffers not equal");
+        Assert.assertEquals(r, a, "Buffers not equal");
     }
 
     @Test(dataProvider = "shortByteProviderForIOOBE")
@@ -667,7 +645,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(_a, bufferToArray(r), mask);
+        assertArraysEquals(bufferToArray(r), _a, mask);
 
 
         r = fb.apply(a.limit());
@@ -682,7 +660,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
         Assert.assertEquals(r.position(), 0, "Result buffer position changed");
         Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(_a, bufferToArray(r), mask);
+        assertArraysEquals(bufferToArray(r), _a, mask);
     }
 
     @Test(dataProvider = "shortByteMaskProviderForIOOBE")
@@ -798,7 +776,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 av.intoByteArray(r, i, bo);
             }
         }
-        Assert.assertEquals(a, r, "Byte arrays not equal");
+        Assert.assertEquals(r, a, "Byte arrays not equal");
     }
 
     @Test(dataProvider = "shortByteProviderForIOOBE")
@@ -879,7 +857,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
               av.intoByteArray(r, i, bo);
           }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
 
 
         r = new byte[a.length];
@@ -890,7 +868,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 av.intoByteArray(r, i, bo, vmask);
             }
         }
-        assertArraysEquals(a, r, mask);
+        assertArraysEquals(r, a, mask);
     }
 
     @Test(dataProvider = "shortByteMaskProviderForIOOBE")
@@ -967,7 +945,7 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
                 vmask.intoArray(r, i);
             }
         }
-        Assert.assertEquals(a, r);
+        Assert.assertEquals(r, a);
     }
 
     @Test
@@ -978,7 +956,254 @@ public class Short256VectorLoadStoreTests extends AbstractVectorTest {
             int [] r = shuffle.toArray();
 
             int [] a = expectedShuffle(SPECIES.length(), fn);
-            Assert.assertEquals(a, r);
+            Assert.assertEquals(r, a);
        }
     }
+
+
+    static void assertArraysEquals(char[] a, char[] r, boolean[] mask) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (char) 0, r[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(mask[i % SPECIES.length()] ? a[i] : (char) 0, r[i], "at index #" + i);
+        }
+    }
+
+    static final List<IntFunction<char[]>> CHAR_GENERATORS = List.of(
+            withToString("char[i * 5]", (int s) -> {
+                return fillChar(s * BUFFER_REPS,
+                            i -> (char)(i * 5));
+            }),
+            withToString("char[i + 1]", (int s) -> {
+                return fillChar(s * BUFFER_REPS,
+                            i -> (((char)(i + 1) == 0) ? 1 : (char)(i + 1)));
+            })
+    );
+
+    @DataProvider
+    public Object[][] charProvider() {
+        return CHAR_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] charProviderForIOOBE() {
+        var f = CHAR_GENERATORS.get(0);
+        return INDEX_GENERATORS.stream().map(fi -> {
+                    return new Object[] {f, fi};
+                }).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] charMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> CHAR_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fm};
+                })).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] charMaskProviderForIOOBE() {
+        var f = CHAR_GENERATORS.get(0);
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> INDEX_GENERATORS.stream().map(fi -> {
+                    return new Object[] {f, fi, fm};
+                })).
+                toArray(Object[][]::new);
+    }
+
+    interface ToCharF {
+        char apply(int i);
+    }
+
+    static char[] fillChar(int s , ToCharF f) {
+        return fillChar(new char[s], f);
+    }
+
+    static char[] fillChar(char[] a, ToCharF f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i);
+        }
+        return a;
+    }
+
+    @DontInline
+    static ShortVector fromCharArray(char[] a, int i) {
+        return ShortVector.fromCharArray(SPECIES, a, i);
+    }
+
+    @DontInline
+    static ShortVector fromCharArray(char[] a, int i, VectorMask<Short> m) {
+        return ShortVector.fromCharArray(SPECIES, a, i, m);
+    }
+
+    @DontInline
+    static void intoCharArray(ShortVector v, char[] a, int i) {
+        v.intoCharArray(a, i);
+    }
+
+    @DontInline
+    static void intoCharArray(ShortVector v, char[] a, int i, VectorMask<Short> m) {
+        v.intoCharArray(a, i, m);
+    }
+
+    @Test(dataProvider = "charProvider")
+    static void loadStoreCharArray(IntFunction<char[]> fa) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                av.intoCharArray(r, i);
+            }
+        }
+        Assert.assertEquals(a, r);
+    }
+
+    @Test(dataProvider = "charProviderForIOOBE")
+    static void loadCharArrayIOOBE(IntFunction<char[]> fa, IntFunction<Integer> fi) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = fromCharArray(a, i);
+                av.intoCharArray(r, i);
+            }
+        }
+
+        int index = fi.apply(a.length);
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.length(), index, a.length);
+        try {
+            fromCharArray(a, index);
+            if (shouldFail) {
+                Assert.fail("Failed to throw IndexOutOfBoundsException");
+            }
+        } catch (IndexOutOfBoundsException e) {
+            if (!shouldFail) {
+                Assert.fail("Unexpected IndexOutOfBoundsException");
+            }
+        }
+    }
+
+    @Test(dataProvider = "charProviderForIOOBE")
+    static void storeCharArrayIOOBE(IntFunction<char[]> fa, IntFunction<Integer> fi) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                intoCharArray(av, r, i);
+            }
+        }
+
+        int index = fi.apply(a.length);
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.length(), index, a.length);
+        try {
+            ShortVector av = ShortVector.fromCharArray(SPECIES, a, 0);
+            intoCharArray(av, r, index);
+            if (shouldFail) {
+                Assert.fail("Failed to throw IndexOutOfBoundsException");
+            }
+        } catch (IndexOutOfBoundsException e) {
+            if (!shouldFail) {
+                Assert.fail("Unexpected IndexOutOfBoundsException");
+            }
+        }
+    }
+
+    @Test(dataProvider = "charMaskProvider")
+    static void loadStoreMaskCharArray(IntFunction<char[]> fa,
+                                       IntFunction<boolean[]> fm) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromValues(SPECIES, mask);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i, vmask);
+                av.intoCharArray(r, i);
+            }
+        }
+        assertArraysEquals(a, r, mask);
+
+
+        r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                av.intoCharArray(r, i, vmask);
+            }
+        }
+        assertArraysEquals(a, r, mask);
+    }
+
+    @Test(dataProvider = "charMaskProviderForIOOBE")
+    static void loadCharArrayMaskIOOBE(IntFunction<char[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromValues(SPECIES, mask);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = fromCharArray(a, i, vmask);
+                av.intoCharArray(r, i);
+            }
+        }
+
+        int index = fi.apply(a.length);
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length);
+        try {
+            fromCharArray(a, index, vmask);
+            if (shouldFail) {
+                Assert.fail("Failed to throw IndexOutOfBoundsException");
+            }
+        } catch (IndexOutOfBoundsException e) {
+            if (!shouldFail) {
+                Assert.fail("Unexpected IndexOutOfBoundsException");
+            }
+        }
+    }
+
+    @Test(dataProvider = "charMaskProviderForIOOBE")
+    static void storeCharArrayMaskIOOBE(IntFunction<char[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        char[] a = fa.apply(SPECIES.length());
+        char[] r = new char[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromValues(SPECIES, mask);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                intoCharArray(av, r, i, vmask);
+            }
+        }
+
+        int index = fi.apply(a.length);
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length);
+        try {
+            ShortVector av = ShortVector.fromCharArray(SPECIES, a, 0);
+            intoCharArray(av, a, index, vmask);
+            if (shouldFail) {
+                Assert.fail("Failed to throw IndexOutOfBoundsException");
+            }
+        } catch (IndexOutOfBoundsException e) {
+            if (!shouldFail) {
+                Assert.fail("Unexpected IndexOutOfBoundsException");
+            }
+        }
+    }
+
+
 }

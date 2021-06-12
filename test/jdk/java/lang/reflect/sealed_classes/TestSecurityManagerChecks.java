@@ -28,8 +28,8 @@
  * @library /test/lib
  * @modules java.compiler
  * @build jdk.test.lib.compiler.CompilerUtils jdk.test.lib.compiler.ModuleInfoMaker TestSecurityManagerChecks
- * @run main/othervm --enable-preview TestSecurityManagerChecks named
- * @run main/othervm --enable-preview TestSecurityManagerChecks unnamed
+ * @run main/othervm -Djava.security.manager=allow --enable-preview TestSecurityManagerChecks named
+ * @run main/othervm -Djava.security.manager=allow --enable-preview TestSecurityManagerChecks unnamed
  */
 
 import java.io.IOException;

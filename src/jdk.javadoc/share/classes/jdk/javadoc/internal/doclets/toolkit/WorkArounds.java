@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.Options;
 
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.tool.ToolEnvironment;
@@ -513,4 +514,32 @@ public class WorkArounds {
                 ? utils.elementUtils.getPackageElement(parsedPackageName)
                 : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
     }
+
+    public boolean isPreviewAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return (sym.flags() & Flags.PREVIEW_API) != 0;
+    }
+
+    public boolean isReflectivePreviewAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return (sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0;
+    }
+
+    /**
+     * Returns whether or not to permit dynamically loaded components to access
+     * part of the javadoc internal API. The flag is the same (hidden) compiler
+     * option that allows javac plugins and annotation processors to access
+     * javac internal API.
+     *
+     * As with all workarounds, it is better to consider updating the public API,
+     * rather than relying on undocumented features like this, that may be withdrawn
+     * at any time, without notice.
+     *
+     * @return true if access is permitted to internal API
+     */
+    public boolean accessInternalAPI() {
+        Options compilerOptions = Options.instance(toolEnv.context);
+        return compilerOptions.isSet("accessInternalAPI");
+    }
+
 }

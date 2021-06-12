@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,17 @@
 package sun.print;
 
 import java.awt.print.PrinterJob;
+import java.io.Serial;
+
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 public class PrinterJobWrapper implements PrintRequestAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.8 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -8792124426995707237L;
 
     private PrinterJob job;

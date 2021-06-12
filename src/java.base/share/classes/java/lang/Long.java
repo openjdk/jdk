@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,38 +213,27 @@ public final class Long extends Number
         if (i >= 0)
             return toString(i, radix);
         else {
-            switch (radix) {
-            case 2:
-                return toBinaryString(i);
-
-            case 4:
-                return toUnsignedString0(i, 2);
-
-            case 8:
-                return toOctalString(i);
-
-            case 10:
-                /*
-                 * We can get the effect of an unsigned division by 10
-                 * on a long value by first shifting right, yielding a
-                 * positive value, and then dividing by 5.  This
-                 * allows the last digit and preceding digits to be
-                 * isolated more quickly than by an initial conversion
-                 * to BigInteger.
-                 */
-                long quot = (i >>> 1) / 5;
-                long rem = i - quot * 10;
-                return toString(quot) + rem;
-
-            case 16:
-                return toHexString(i);
-
-            case 32:
-                return toUnsignedString0(i, 5);
-
-            default:
-                return toUnsignedBigInteger(i).toString(radix);
-            }
+            return switch (radix) {
+                case 2  -> toBinaryString(i);
+                case 4  -> toUnsignedString0(i, 2);
+                case 8  -> toOctalString(i);
+                case 10 -> {
+                    /*
+                     * We can get the effect of an unsigned division by 10
+                     * on a long value by first shifting right, yielding a
+                     * positive value, and then dividing by 5.  This
+                     * allows the last digit and preceding digits to be
+                     * isolated more quickly than by an initial conversion
+                     * to BigInteger.
+                     */
+                    long quot = (i >>> 1) / 5;
+                    long rem = i - quot * 10;
+                    yield toString(quot) + rem;
+                }
+                case 16 -> toHexString(i);
+                case 32 -> toUnsignedString0(i, 5);
+                default -> toUnsignedBigInteger(i).toString(radix);
+            };
         }
     }
 
@@ -299,7 +288,7 @@ public final class Long extends Number
      * <blockquote>
      *  {@code Long.toHexString(n).toUpperCase()}
      * </blockquote>
-     * <p>
+     *
      * @apiNote
      * The {@link java.util.HexFormat} class provides formatting and parsing
      * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
@@ -682,7 +671,7 @@ public final class Long extends Number
               throws NumberFormatException
     {
         if (s == null) {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         if (radix < Character.MIN_RADIX) {
@@ -893,7 +882,7 @@ public final class Long extends Number
     public static long parseUnsignedLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         int len = s.length();

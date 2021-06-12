@@ -342,9 +342,8 @@ public final class AclEntry {
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (ob == null || !(ob instanceof AclEntry))
+        if (!(ob instanceof AclEntry other))
             return false;
-        AclEntry other = (AclEntry)ob;
         if (this.type != other.type)
             return false;
         if (!this.who.equals(other.who))

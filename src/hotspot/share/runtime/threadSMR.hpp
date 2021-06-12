@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,14 +162,19 @@ class ThreadsSMRSupport : AllStatic {
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
+  enum { THREADS_LIST_MAGIC = (int)(('T' << 24) | ('L' << 16) | ('S' << 8) | 'T') };
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
+  friend class ThreadsListHandleTest;  // for _nested_handle_cnt access
 
+  uint _magic;
   const uint _length;
   ThreadsList* _next_list;
   JavaThread *const *const _threads;
   volatile intx _nested_handle_cnt;
+
+  NONCOPYABLE(ThreadsList);
 
   template <class T>
   void threads_do_dispatch(T *cl, JavaThread *const thread) const;
@@ -184,7 +189,7 @@ class ThreadsList : public CHeapObj<mtThread> {
   static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 
 public:
-  ThreadsList(int entries);
+  explicit ThreadsList(int entries);
   ~ThreadsList();
 
   template <class T>
@@ -200,12 +205,17 @@ public:
   int find_index_of_JavaThread(JavaThread* target);
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
   bool includes(const JavaThread * const p) const;
+
+#ifdef ASSERT
+  static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
+#endif
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr
 // for leaves, or a retained reference count for nested uses. The user of this
 // API does not need to know which mechanism is providing the safety.
 class SafeThreadsListPtr {
+  friend class ThreadsListHandleTest;  // for access to the fields
   friend class ThreadsListSetter;
 
   SafeThreadsListPtr* _previous;
@@ -277,6 +287,8 @@ public:
 // ThreadsList from being deleted until it is safe.
 //
 class ThreadsListHandle : public StackObj {
+  friend class ThreadsListHandleTest;  // for _list_ptr access
+
   SafeThreadsListPtr _list_ptr;
   elapsedTimer _timer;  // Enabled via -XX:+EnableThreadSMRStatistics.
 

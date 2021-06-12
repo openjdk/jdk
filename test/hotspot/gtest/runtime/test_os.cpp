@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -367,11 +368,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // ... re-reserve in the same spot multiple areas...
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
-    EXPECT_NE(q, (address)NULL);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
     const bool executable = stripe % 2 == 0;
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+    EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
   }
   return p;
@@ -411,7 +412,11 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-TEST_VM(os, release_multi_mappings) {
+#if defined(__APPLE__) && !defined(AARCH64) // JDK-8267339
+  TEST_VM(os, DISABLED_release_multi_mappings) {
+#else
+  TEST_VM(os, release_multi_mappings) {
+#endif
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;
@@ -695,4 +700,112 @@ TEST_VM(os, pagesizes_test_print) {
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
   ASSERT_EQ(strcmp(expected, buffer), 0);
+}
+
+TEST_VM(os, dll_address_to_function_and_library_name) {
+  char tmp[1024];
+  char output[1024];
+  stringStream st(output, sizeof(output));
+
+#define EXPECT_CONTAINS(haystack, needle) \
+  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+#define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
+  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+// #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
+#define LOG(...)
+
+  // Invalid addresses
+  address addr = (address)(intptr_t)-1;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  addr = NULL;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+
+  // Valid addresses
+  // Test with or without shorten-paths, demangle, and scratch buffer
+  for (int i = 0; i < 16; i++) {
+    const bool shorten_paths = (i & 1) != 0;
+    const bool demangle = (i & 2) != 0;
+    const bool strip_arguments = (i & 4) != 0;
+    const bool provide_scratch_buffer = (i & 8) != 0;
+    LOG("shorten_paths=%d, demangle=%d, strip_arguments=%d, provide_scratch_buffer=%d",
+        shorten_paths, demangle, strip_arguments, provide_scratch_buffer);
+
+    // Should show os::min_page_size in libjvm
+    addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle,
+                                                    strip_arguments));
+    EXPECT_CONTAINS(output, "Threads");
+    EXPECT_CONTAINS(output, "create_vm");
+    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+    LOG("%s", output);
+
+    // Test truncation on scratch buffer
+    if (provide_scratch_buffer) {
+      st.reset();
+      tmp[10] = 'X';
+      EXPECT_TRUE(os::print_function_and_library_name(&st, addr, tmp, 10,
+                                                      shorten_paths, demangle));
+      EXPECT_EQ(tmp[10], 'X');
+      LOG("%s", output);
+    }
+  }
+}
+
+// Not a regex! Very primitive, just match:
+// "d" - digit
+// "a" - ascii
+// "." - everything
+// rest must match
+static bool very_simple_string_matcher(const char* pattern, const char* s) {
+  const size_t lp = strlen(pattern);
+  const size_t ls = strlen(s);
+  if (ls < lp) {
+    return false;
+  }
+  for (size_t i = 0; i < lp; i ++) {
+    switch (pattern[i]) {
+      case '.': continue;
+      case 'd': if (!isdigit(s[i])) return false; break;
+      case 'a': if (!isascii(s[i])) return false; break;
+      default: if (s[i] != pattern[i]) return false; break;
+    }
+  }
+  return true;
+}
+
+TEST_VM(os, iso8601_time) {
+  char buffer[os::iso8601_timestamp_size + 1]; // + space for canary
+  buffer[os::iso8601_timestamp_size] = 'X'; // canary
+  const char* result = NULL;
+  // YYYY-MM-DDThh:mm:ss.mmm+zzzz
+  const char* const pattern_utc = "dddd-dd-dd.dd:dd:dd.ddd.0000";
+  const char* const pattern_local = "dddd-dd-dd.dd:dd:dd.ddd.dddd";
+
+  result = os::iso8601_time(buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher(pattern_utc, result));
+
+  result = os::iso8601_time(buffer, sizeof(buffer), false);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher(pattern_local, result));
+
+  // Test with explicit timestamps
+  result = os::iso8601_time(0, buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+0000", result));
+
+  result = os::iso8601_time(17, buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+0000", result));
+
+  // Canary should still be intact
+  EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');
 }

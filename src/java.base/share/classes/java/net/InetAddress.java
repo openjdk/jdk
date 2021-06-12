@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,6 +665,7 @@ public class InetAddress implements java.io.Serializable {
                  * the hostname for this IP address, ie, connect to the host
                  */
                 if (check) {
+                    @SuppressWarnings("removal")
                     SecurityManager sec = System.getSecurityManager();
                     if (sec != null) {
                         sec.checkConnect(host, -1);
@@ -1450,6 +1451,7 @@ public class InetAddress implements java.io.Serializable {
          * give out a hostname
          */
         if (check) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkConnect(host, -1);
@@ -1611,6 +1613,7 @@ public class InetAddress implements java.io.Serializable {
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         try {
             // is cached data still valid?
@@ -1712,6 +1715,9 @@ public class InetAddress implements java.io.Serializable {
         return (InetAddressImpl) impl;
     }
 
+    /**
+     * Initializes an empty InetAddress.
+     */
     @java.io.Serial
     private void readObjectNoData () {
         if (getClass().getClassLoader() != null) {
@@ -1724,6 +1730,13 @@ public class InetAddress implements java.io.Serializable {
     private static final long FIELDS_OFFSET
             = UNSAFE.objectFieldOffset(InetAddress.class, "holder");
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     @java.io.Serial
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {
@@ -1744,9 +1757,10 @@ public class InetAddress implements java.io.Serializable {
     /* needed because the serializable fields no longer exist */
 
     /**
-     * @serialField hostName String
-     * @serialField address int
-     * @serialField family int
+     * @serialField hostName String the hostname for this address
+     * @serialField address int holds a 32-bit IPv4 address.
+     * @serialField family int specifies the address family type, for instance,
+     * {@code '1'} for IPv4 addresses, and {@code '2'} for IPv6 addresses.
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -1755,6 +1769,12 @@ public class InetAddress implements java.io.Serializable {
         new ObjectStreamField("family", int.class),
     };
 
+    /**
+     * Writes the state of this object to the stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
+     */
     @java.io.Serial
     private void writeObject (ObjectOutputStream s) throws
                         IOException {

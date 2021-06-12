@@ -240,6 +240,11 @@
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
+  product(uint, G1EagerReclaimRemSetThreshold, 0, EXPERIMENTAL,             \
+          "Maximum number of remembered set entries a humongous region "    \
+          "otherwise eligible for eager reclaim may have to be a candidate "\
+          "for eager reclaim. Will be selected ergonomically by default.")  \
+                                                                            \
   product(size_t, G1RebuildRemSetChunkSize, 256 * K, EXPERIMENTAL,          \
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
@@ -302,7 +307,12 @@
           "of getloadavg() at which G1 triggers a periodic GC. A load "     \
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
-          range(0.0, (double)max_uintx)
+          range(0.0, (double)max_uintx)                                     \
+                                                                            \
+  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                       \
+          "Allows collections to be triggered proactively based on the      \
+           number of free regions and the expected survival rates in each   \
+           section of the heap.")
 
 // end of GC_G1_FLAGS
 

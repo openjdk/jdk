@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
+@SuppressWarnings("removal")
 public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**
@@ -498,7 +499,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof HijrahEra == false) {
+        if (!(era instanceof HijrahEra)) {
             throw new ClassCastException("Era must be HijrahEra");
         }
         return yearOfEra;

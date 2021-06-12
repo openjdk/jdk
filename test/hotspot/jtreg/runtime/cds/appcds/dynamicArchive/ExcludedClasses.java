@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,16 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build ExcludedClassesApp
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar ExcludedClasses.jar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar ExcludedClasses.jar
  *             ExcludedClassesApp
  *             ExcludedClassesApp$NotLinkedSuper
  *             ExcludedClassesApp$NotLinkedChild
  *             ExcludedClassesApp$NotLinkedInterface
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ExcludedClasses
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ExcludedClasses extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {

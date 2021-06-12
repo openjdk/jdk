@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,7 @@ size_t G1CodeRootSetTable::mem_size() {
 
 G1CodeRootSetTable::Entry* G1CodeRootSetTable::new_entry(nmethod* nm) {
   unsigned int hash = compute_hash(nm);
-  Entry* entry = (Entry*) new_entry_free_list();
-  if (entry == NULL) {
-    entry = (Entry*) NEW_C_HEAP_ARRAY2(char, entry_size(), mtGC, CURRENT_PC);
-  }
-  entry->set_next(NULL);
-  entry->set_hash(hash);
-  entry->set_literal(nm);
-  return entry;
+  return (Entry*)Hashtable<nmethod*, mtGC>::new_entry(hash, nm);
 }
 
 void G1CodeRootSetTable::remove_entry(Entry* e, Entry* previous) {
@@ -73,17 +66,10 @@ G1CodeRootSetTable::~G1CodeRootSetTable() {
       Entry* to_remove = e;
       // read next before freeing.
       e = e->next();
-      unlink_entry(to_remove);
-      FREE_C_HEAP_ARRAY(char, to_remove);
+      BasicHashtable<mtGC>::free_entry(to_remove);
     }
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  // Each of the entries in new_entry_free_list() have been allocated in
-  // G1CodeRootSetTable::new_entry(). We never call the block allocator
-  // in BasicHashtable::new_entry().
-  for (BasicHashtableEntry<mtGC>* e = new_entry_free_list(); e != NULL; e = new_entry_free_list()) {
-    FREE_C_HEAP_ARRAY(char, e);
-  }
 }
 
 bool G1CodeRootSetTable::add(nmethod* nm) {
@@ -124,7 +110,6 @@ void G1CodeRootSetTable::copy_to(G1CodeRootSetTable* new_table) {
       new_table->add(e->literal());
     }
   }
-  new_table->copy_freelist(this);
 }
 
 void G1CodeRootSetTable::nmethods_do(CodeBlobClosure* blk) {

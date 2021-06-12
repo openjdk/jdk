@@ -43,8 +43,8 @@ import java.util.*;
  * @summary Test proxy classes that implement non-public interface
  *
  * @build p.Foo
- * @run main/othervm NonPublicProxyClass grant
- * @run main/othervm NonPublicProxyClass deny
+ * @run main/othervm -Djava.security.manager=allow NonPublicProxyClass grant
+ * @run main/othervm -Djava.security.manager=allow NonPublicProxyClass deny
  * @run main/othervm NonPublicProxyClass
  */
 public class NonPublicProxyClass {

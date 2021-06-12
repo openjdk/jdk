@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_GLOBALS_HPP
 
 #include "compiler/compiler_globals_pd.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -168,9 +167,6 @@ const intx ObjectAlignmentInBytes = 8;
           "region.")                                                        \
           range(1, max_uintx)                                               \
                                                                             \
-  develop(bool, CleanChunkPoolAsync, true,                                  \
-          "Clean the chunk pool asynchronously")                            \
-                                                                            \
   product(uint, HandshakeTimeout, 0, DIAGNOSTIC,                            \
           "If nonzero set a timeout in milliseconds for handshakes")        \
                                                                             \
@@ -243,7 +239,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
-          "Large page size (0 to let VM choose the page size)")             \
+          "Maximum large page size used (0 will use the default large "     \
+          "page size for the environment as the maximum)")                  \
           range(0, max_uintx)                                               \
                                                                             \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
@@ -430,22 +427,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(bool, AssertOnSuspendWaitFailure, false,                          \
-          "Assert/Guarantee on external suspend wait failure")              \
-                                                                            \
-  product(bool, TraceSuspendWaitFailures, false,                            \
-          "Trace external suspend wait failures")                           \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -461,9 +442,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
-                                                                            \
-  develop(bool, ForceFloatExceptions, trueInDebug,                          \
-          "Force exceptions on FP stack under/overflow")                    \
                                                                             \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
@@ -561,8 +539,11 @@ const intx ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(bool, BreakAtWarning, false,                                      \
-          "Execute breakpoint upon encountering VM warning")                \
+  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+          "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
+          "level of the dump file. 0 (the default) disables gzip "          \
+          "compression. Otherwise the level must be between 1 and 9.")      \
+          range(0, 9)                                                       \
                                                                             \
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
@@ -667,9 +648,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
-  notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
-          "Print warnings for stalled SpinLocks")                           \
-                                                                            \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
           "after allocation")                                               \
@@ -678,18 +656,11 @@ const intx ObjectAlignmentInBytes = 8;
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
                                                                             \
-  develop(bool, IgnoreRewrites, false,                                      \
-          "Suppress rewrites of bytecodes in the oopmap generator. "        \
-          "This is unsafe!")                                                \
-                                                                            \
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
                                                                             \
   develop(bool, UsePrivilegedStack, true,                                   \
           "Enable the security JVM functions")                              \
-                                                                            \
-  develop(bool, ProtectionDomainVerification, true,                         \
-          "Verify protection domain before resolution in system dictionary")\
                                                                             \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
@@ -697,22 +668,18 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ClassUnloadingWithConcurrentMark, true,                     \
           "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
-  develop(bool, DisableStartThread, false,                                  \
-          "Disable starting of additional Java threads "                    \
-          "(for debugging only)")                                           \
-                                                                            \
-  develop(bool, MemProfiling, false,                                        \
-          "Write memory usage profiling to log file")                       \
-                                                                            \
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
+                                                                            \
+  notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
+          "Print the class loader data graph at exit")                      \
                                                                             \
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
   product(bool, AlwaysLockClassLoader, false,                               \
-          "Require the VM to acquire the class loader lock before calling " \
-          "loadClass() even for class loaders registering "                 \
+          "(Deprecated) Require the VM to acquire the class loader lock "   \
+          "before calling loadClass() even for class loaders registering "  \
           "as parallel capable")                                            \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
@@ -733,12 +700,10 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
-  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+  product(size_t, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,           \
           "Used to estimate a variable ceiling based on number of threads " \
           "for use with MonitorUsedDeflationThreshold (0 is off).")         \
-          range(0, max_jint)                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
@@ -747,11 +712,16 @@ const intx ObjectAlignmentInBytes = 8;
           "at one time (minimum is 1024).")                      \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
+  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
           "or AsyncDeflationInterval.")                                     \
           range(0, 100)                                                     \
+                                                                            \
+  product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
+          "Max number of no progress async deflation attempts to tolerate " \
+          "before adjusting the in_use_list_ceiling up (0 is off).")        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
@@ -991,11 +961,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, UseStackBanging, true,                                      \
-          "use stack banging for stack overflow checks (required for "      \
-          "proper StackOverflow handling; disable only to measure cost "    \
-          "of stackbanging)")                                               \
-                                                                            \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
@@ -1029,6 +994,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
+                                                                            \
+  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
+          "Use vtable information during CHA")                              \
                                                                             \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
@@ -1147,10 +1115,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \
-  notproduct(bool, ExitVMOnVerifyError, false,                              \
-          "standard exit from VM if bytecode verify error "                 \
-          "(only in debug mode)")                                           \
-                                                                            \
   product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
@@ -1186,9 +1150,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
                                                                             \
-  develop(bool, UseLoopSafepoints, true,                                    \
-          "Generate Safepoint nodes in every loop")                         \
-                                                                            \
   develop(intx, FastAllocateSizeLimit, 128*K,                               \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
@@ -1215,19 +1176,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "Count method invocations")                                       \
-                                                                            \
-  notproduct(bool, CountRuntimeCalls, false,                                \
-          "Count VM runtime calls")                                         \
-                                                                            \
-  develop(bool, CountJNICalls, false,                                       \
-          "Count jni method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountJVMCalls, false,                                    \
-          "Count jvm method invocations")                                   \
-                                                                            \
-  notproduct(bool, CountRemovableExceptions, false,                         \
-          "Count exceptions that could be replaced by branches due to "     \
-          "inlining")                                                       \
                                                                             \
   notproduct(bool, ICMissHistogram, false,                                  \
           "Produce histogram of IC misses")                                 \
@@ -1414,9 +1362,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(intx, SweeperLogEntries, 1024,                                 \
           "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
-  notproduct(intx, MemProfilingInterval, 500,                               \
-          "Time between each invocation of the MemProfiler")                \
-                                                                            \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
@@ -1507,7 +1452,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  product_pd(size_t, MetaspaceSize,                                         \
+  product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
@@ -1521,8 +1466,15 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
+  develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
+          "Force the class space to be allocated at this address or "       \
+          "fails VM initialization (requires -Xshare=off.")                 \
+                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
+          "Print metaspace statistics upon VM exit.")                       \
                                                                             \
   product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
           "Metapace allocations are guarded.")                              \
@@ -1687,25 +1639,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
                                                                             \
-  /* AOT parameters */                                                      \
-  product(bool, UseAOT, false, EXPERIMENTAL,                                \
-          "Use AOT compiled files")                                         \
-                                                                            \
-  product(ccstrlist, AOTLibrary, NULL, EXPERIMENTAL,                        \
-          "AOT library")                                                    \
-                                                                            \
-  product(bool, PrintAOT, false, EXPERIMENTAL,                              \
-          "Print used AOT klasses and methods")                             \
-                                                                            \
-  notproduct(bool, PrintAOTStatistics, false,                               \
-          "Print AOT statistics")                                           \
-                                                                            \
-  product(bool, UseAOTStrictLoading, false, DIAGNOSTIC,                     \
-          "Exit the VM if any of the AOT libraries has invalid config")     \
-                                                                            \
-  product(bool, CalculateClassFingerprint, false,                           \
-          "Calculate class fingerprint")                                    \
-                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -1845,6 +1778,9 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, UseDebuggerErgo2, false,                                 \
           "Debugging Only: Limit the number of spawned JVM threads")        \
                                                                             \
+  notproduct(bool, EnableJVMTIStackDepthAsserts, true,                      \
+          "Enable JVMTI asserts related to stack depth checks")             \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \
@@ -1922,6 +1858,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, DynamicDumpSharedSpaces, false,                             \
           "Dynamic archive")                                                \
+                                                                            \
+  product(bool, RecordDynamicDumpInfo, false,                               \
+          "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
@@ -2006,16 +1945,39 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
                                                                             \
-  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+  product(uint, StringDeduplicationAgeThreshold, 3,                         \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
           range(1, markWord::max_age)                                       \
                                                                             \
-  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
-          "Force table resize every time the table is scanned")             \
+  product(size_t, StringDeduplicationInitialTableSize, 500, EXPERIMENTAL,   \
+          "Approximate initial number of buckets in the table")             \
+          range(1, 1 * G)                                                   \
                                                                             \
-  product(bool, StringDeduplicationRehashALot, false, DIAGNOSTIC,           \
-          "Force table rehash every time the table is scanned")             \
+  product(double, StringDeduplicationGrowTableLoad, 14.0, EXPERIMENTAL,     \
+          "Entries per bucket above which the table should be expanded")    \
+          range(0.1, 1000.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationShrinkTableLoad, 1.0, EXPERIMENTAL,    \
+          "Entries per bucket below which the table should be shrunk")      \
+          range(0.01, 100.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationTargetTableLoad, 7.0, EXPERIMENTAL,    \
+          "Desired entries per bucket when resizing the table")             \
+          range(0.01, 1000.0)                                               \
+                                                                            \
+  product(size_t, StringDeduplicationCleanupDeadMinimum, 100, EXPERIMENTAL, \
+          "Minimum number of dead table entries for cleaning the table")    \
+                                                                            \
+  product(int, StringDeduplicationCleanupDeadPercent, 5, EXPERIMENTAL,      \
+          "Minimum percentage of dead table entries for cleaning the table") \
+          range(1, 100)                                                     \
+                                                                            \
+  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
+          "Force more frequent table resizing")                             \
+                                                                            \
+  product(uint64_t, StringDeduplicationHashSeed, 0, DIAGNOSTIC,             \
+          "Seed for the table hashing function; 0 requests computed seed")  \
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
@@ -2058,6 +2020,11 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(size_t, AsyncLogBufferSize, 2*M,                                  \
+          "Memory budget (in bytes) for the buffer of Asynchronous "        \
+          "Logging (-Xlog:async).")                                         \
+          range(100*K, 50*M)                                                \
+                                                                            \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
@@ -2079,7 +2046,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
-          "Path to the directoy where a temporary file will be created "    \
+          "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
@@ -2117,6 +2084,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 

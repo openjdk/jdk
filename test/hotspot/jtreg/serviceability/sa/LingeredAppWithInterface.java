@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 import jdk.test.lib.apps.LingeredApp;
+
+import java.lang.ref.Reference;
 
 interface Language {
     static final long nbrOfWords = 99999;
@@ -54,5 +56,6 @@ public class LingeredAppWithInterface extends LingeredApp {
         System.out.println(lang.getNbrOfWords() + muggleSpeak.getNbrOfWords());
 
         LingeredApp.main(args);
+        Reference.reachabilityFence(lang);
     }
 }

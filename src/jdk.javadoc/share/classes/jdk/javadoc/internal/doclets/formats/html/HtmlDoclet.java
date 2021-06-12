@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
@@ -48,6 +55,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -126,6 +135,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 // in standard.properties
                 { "doclet.Enum_Hierarchy", "doclet.Enum_Class_Hierarchy" },
                 { "doclet.Annotation_Type_Hierarchy", "doclet.Annotation_Interface_Hierarchy" },
+                { "doclet.Href_Annotation_Title", "doclet.Href_Annotation_Interface_Title" },
                 { "doclet.Href_Enum_Title", "doclet.Href_Enum_Class_Title" },
                 { "doclet.Annotation_Types", "doclet.Annotation_Interfaces" },
                 { "doclet.Annotation_Type_Members", "doclet.Annotation_Interface_Members" },
@@ -137,8 +147,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 { "doclet.help.annotation_type.description", "doclet.help.annotation_interface.description" },
 
                 // in doclets.properties
-                { "doclet.Annotation_Types_Summary", "doclet.Annotation_Interfaces_Summary" },
-                { "doclet.Enum_Summary", "doclet.Enum_Class_Summary" },
                 { "doclet.Enums", "doclet.EnumClasses" },
                 { "doclet.AnnotationType", "doclet.AnnotationInterface" },
                 { "doclet.AnnotationTypes", "doclet.AnnotationInterfaces" },
@@ -166,14 +174,26 @@ public class HtmlDoclet extends AbstractDoclet {
 
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
-
+        List<String> since = configuration.getOptions().since();
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
-            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
-            if (!builder.isEmpty()) {
-                configuration.deprecatedAPIListBuilder = builder;
+            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, since);
+            if (!deprecatedBuilder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = deprecatedBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
+        }
+        if (!since.isEmpty()) {
+            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, since);
+            if (!newAPIBuilder.isEmpty()) {
+                configuration.newAPIPageBuilder = newAPIBuilder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.NEW);
+            }
+        }
+        PreviewAPIListBuilder previewBuilder = new PreviewAPIListBuilder(configuration);
+        if (!previewBuilder.isEmpty()) {
+            configuration.previewAPIListBuilder = previewBuilder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
 
         super.generateClassFiles(classTree);
@@ -221,6 +241,14 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
             DeprecatedListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
+            PreviewListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
+            NewAPIListWriter.generate(configuration);
         }
 
         if (options.createOverview()) {
@@ -276,6 +304,8 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.JQUERY_OVERRIDES_CSS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.JQUERY_OVERRIDES_CSS), true, true);
         }
+
+        copyLegalFiles(options.createIndex());
     }
 
     private void copyJqueryFiles() throws DocletException {
@@ -300,6 +330,49 @@ public class HtmlDoclet extends AbstractDoclet {
             DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
             f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
+        }
+    }
+
+    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+        Path legalNoticesDir;
+        String legalNotices = configuration.getOptions().legalNotices();
+        switch (legalNotices) {
+            case "", "default" -> {
+                Path javaHome = Path.of(System.getProperty("java.home"));
+                legalNoticesDir = javaHome.resolve("legal").resolve(getClass().getModule().getName());
+            }
+
+            case "none" -> {
+                return;
+            }
+
+            default -> {
+                try {
+                    legalNoticesDir = Path.of(legalNotices);
+                } catch (InvalidPathException e) {
+                    messages.error("doclet.Error_invalid_path_for_legal_notices",
+                            legalNotices, e.getMessage());
+                    return;
+                }
+            }
+        }
+
+        if (Files.exists(legalNoticesDir)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(legalNoticesDir)) {
+                for (Path entry: ds) {
+                    if (!Files.isRegularFile(entry)) {
+                        continue;
+                    }
+                    if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                        continue;
+                    }
+                    DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
+                    DocFile df = DocFile.createFileForOutput(configuration, filePath);
+                    df.copyFile(DocFile.createFileForInput(configuration, entry));
+                }
+            } catch (IOException e) {
+                messages.error("doclet.Error_copying_legal_notices", e);
+            }
         }
     }
 

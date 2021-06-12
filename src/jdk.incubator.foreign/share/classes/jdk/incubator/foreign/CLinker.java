@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,17 @@
  */
 package jdk.incubator.foreign;
 
+import jdk.internal.foreign.AbstractCLinker;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.PlatformLayouts;
-import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64VaList;
+import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64VaList;
+import jdk.internal.foreign.abi.x64.sysv.SysVVaList;
+import jdk.internal.foreign.abi.x64.windows.WinVaList;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import java.lang.constant.Constable;
 import java.lang.invoke.MethodHandle;
@@ -36,7 +43,6 @@ import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
 
@@ -65,7 +71,8 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * carrier type can be used to match the native {@code va_list} type.
  * <p>
  * For the linking process to be successful, some requirements must be satisfied; if {@code M} and {@code F} are
- * the method type and the function descriptor, respectively, used during the linking process, then it must be that:
+ * the method type (obtained after dropping any prefix arguments) and the function descriptor, respectively,
+ * used during the linking process, then it must be that:
  * <ul>
  *     <li>The arity of {@code M} is the same as that of {@code F};</li>
  *     <li>If the return type of {@code M} is {@code void}, then {@code F} should have no return layout
@@ -100,59 +107,132 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
- * @apiNote In the future, if the Java language permits, {@link CLinker}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface CLinker {
+public sealed interface CLinker permits AbstractCLinker {
 
     /**
      * Returns the C linker for the current platform.
      * <p>
-     * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
+     *
      * @return a linker for this system.
-     * @throws IllegalAccessError if the runtime property {@code foreign.restricted} is not set to either
-     * {@code permit}, {@code warn} or {@code debug} (the default value is set to {@code deny}).
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     static CLinker getInstance() {
-        Utils.checkRestrictedAccess("CLinker.getInstance");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         return SharedUtils.getSystemLinker();
     }
 
     /**
-     * Obtain a foreign method handle, with given type, which can be used to call a
-     * target foreign function at a given address and featuring a given function descriptor.
-     *
-     * @see LibraryLookup#lookup(String)
+     * Obtains a system lookup which is suitable to find symbols in the standard C libraries. The set of symbols
+     * available for lookup is unspecified, as it depends on the platform and on the operating system.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     * @return a system-specific library lookup which is suitable to find symbols in the standard C libraries.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    static SymbolLookup systemLookup() {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        return SystemLookup.getInstance();
+    }
+
+    /**
+     * Obtains a foreign method handle, with the given type and featuring the given function descriptor,
+     * which can be used to call a target foreign function at the given address.
+     * <p>
+     * If the provided method type's return type is {@code MemorySegment}, then the resulting method handle features
+     * an additional prefix parameter, of type {@link SegmentAllocator}, which will be used by the linker runtime
+     * to allocate structs returned by-value.
      *
      * @param symbol   downcall symbol.
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
-     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
+     *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
     /**
-     * Allocates a native segment whose base address (see {@link MemorySegment#address}) can be
-     * passed to other foreign functions (as a function pointer); calling such a function pointer
-     * from native code will result in the execution of the provided method handle.
+     * Obtain a foreign method handle, with the given type and featuring the given function descriptor,
+     * which can be used to call a target foreign function at the given address.
+     * <p>
+     * If the provided method type's return type is {@code MemorySegment}, then the provided allocator will be used by
+     * the linker runtime to allocate structs returned by-value.
      *
-     * <p>The returned segment is <a href=MemorySegment.html#thread-confinement>shared</a>, and it only features
-     * the {@link MemorySegment#CLOSE} access mode. When the returned segment is closed,
-     * the corresponding native stub will be deallocated.</p>
+     * @param symbol    downcall symbol.
+     * @param allocator the segment allocator.
+     * @param type      the method type.
+     * @param function  the function descriptor.
+     * @return the downcall method handle.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
+     *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
+     */
+    MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function);
+
+    /**
+     * Obtains a foreign method handle, with the given type and featuring the given function descriptor, which can be
+     * used to call a target foreign function at an address.
+     * The resulting method handle features a prefix parameter (as the first parameter) corresponding to the address, of
+     * type {@link Addressable}.
+     * <p>
+     * If the provided method type's return type is {@code MemorySegment}, then the resulting method handle features an
+     * additional prefix parameter (inserted immediately after the address parameter), of type {@link SegmentAllocator}),
+     * which will be used by the linker runtime to allocate structs returned by-value.
+     * <p>
+     * The returned method handle will throw an {@link IllegalArgumentException} if the target address passed to it is
+     * {@link MemoryAddress#NULL}, or a {@link NullPointerException} if the target address is {@code null}.
+     *
+     * @param type     the method type.
+     * @param function the function descriptor.
+     * @return the downcall method handle.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     *
+     * @see SymbolLookup
+     */
+    MethodHandle downcallHandle(MethodType type, FunctionDescriptor function);
+
+    /**
+     * Allocates a native stub with given scope which can be passed to other foreign functions (as a function pointer);
+     * calling such a function pointer from native code will result in the execution of the provided method handle.
+     *
+     * <p>
+     * The returned memory address is associated with the provided scope. When such scope is closed,
+     * the corresponding native stub will be deallocated.
+     * <p>
+     * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
+     * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients
+     * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
+     * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
+     * method handle combinator, and handle exceptions as desired in the corresponding catch block.
      *
      * @param target   the target method handle.
      * @param function the function descriptor.
+     * @param scope the upcall stub scope.
      * @return the native stub segment.
      * @throws IllegalArgumentException if the target's method type and the function descriptor mismatch.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
-    MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function);
+    MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope);
 
     /**
      * The layout for the {@code char} C type
@@ -205,8 +285,8 @@ public interface CLinker {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the
-     * platform's default charset, storing the result into a new native memory segment.
+     * Converts a Java string into a null-terminated C string, using the platform's default charset,
+     * storing the result into a native memory segment allocated using the provided allocator.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array.  The
@@ -214,35 +294,18 @@ public interface CLinker {
      * control over the encoding process is required.
      *
      * @param str the Java string to be converted into a C string.
+     * @param allocator the allocator to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
      */
-    static MemorySegment toCString(String str) {
+    static MemorySegment toCString(String str, SegmentAllocator allocator) {
         Objects.requireNonNull(str);
-        return toCString(str.getBytes());
-    }
-
-    /**
-     * Converts a Java string into a null-terminated C string, using the given {@link java.nio.charset.Charset charset},
-     * storing the result into a new native memory segment.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
-     * {@link java.nio.charset.CharsetEncoder} class should be used when more
-     * control over the encoding process is required.
-     *
-     * @param str the Java string to be converted into a C string.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @return a new native memory segment containing the converted C string.
-     */
-    static MemorySegment toCString(String str, Charset charset) {
-        Objects.requireNonNull(str);
-        Objects.requireNonNull(charset);
-        return toCString(str.getBytes(charset));
+        Objects.requireNonNull(allocator);
+        return toCString(str.getBytes(), allocator);
     }
 
     /**
      * Converts a Java string into a null-terminated C string, using the platform's default charset,
-     * storing the result into a native memory segment allocated using the provided scope.
+     * storing the result into a native memory segment associated with the provided resource scope.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array.  The
@@ -250,18 +313,18 @@ public interface CLinker {
      * control over the encoding process is required.
      *
      * @param str the Java string to be converted into a C string.
-     * @param scope the scope to be used for the native segment allocation.
+     * @param scope the resource scope to be associated with the returned segment.
      * @return a new native memory segment containing the converted C string.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
-    static MemorySegment toCString(String str, NativeScope scope) {
-        Objects.requireNonNull(str);
-        Objects.requireNonNull(scope);
-        return toCString(str.getBytes(), scope);
+    static MemorySegment toCString(String str, ResourceScope scope) {
+        return toCString(str, SegmentAllocator.ofScope(scope));
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the given {@link java.nio.charset.Charset charset},
-     * storing the result into a new native memory segment native memory segment allocated using the provided scope.
+     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
+     * storing the result into a new native memory segment native memory segment allocated using the provided allocator.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array.  The
@@ -270,14 +333,34 @@ public interface CLinker {
      *
      * @param str the Java string to be converted into a C string.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @param scope the scope to be used for the native segment allocation.
+     * @param allocator the allocator to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
      */
-    static MemorySegment toCString(String str, Charset charset, NativeScope scope) {
+    static MemorySegment toCString(String str, Charset charset, SegmentAllocator allocator) {
         Objects.requireNonNull(str);
         Objects.requireNonNull(charset);
-        Objects.requireNonNull(scope);
-        return toCString(str.getBytes(charset), scope);
+        Objects.requireNonNull(allocator);
+        return toCString(str.getBytes(charset), allocator);
+    }
+
+    /**
+     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
+     * storing the result into a native memory segment associated with the provided resource scope.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement byte array.  The
+     * {@link java.nio.charset.CharsetEncoder} class should be used when more
+     * control over the encoding process is required.
+     *
+     * @param str the Java string to be converted into a C string.
+     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
+     * @param scope the resource scope to be associated with the returned segment.
+     * @return a new native memory segment containing the converted C string.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
+     */
+    static MemorySegment toCString(String str, Charset charset, ResourceScope scope) {
+        return toCString(str, charset, SegmentAllocator.ofScope(scope));
     }
 
     /**
@@ -288,37 +371,49 @@ public interface CLinker {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
-     * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
+     *
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
-    static String toJavaStringRestricted(MemoryAddress addr) {
-        Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
+    @CallerSensitive
+    static String toJavaString(MemoryAddress addr) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(addr);
         return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), Charset.defaultCharset());
     }
 
     /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@link java.nio.charset.Charset charset}.
+     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
-     * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
+     *
      * @param addr the address at which the string is stored.
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
-    static String toJavaStringRestricted(MemoryAddress addr, Charset charset) {
-        Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
+    @CallerSensitive
+    static String toJavaString(MemoryAddress addr, Charset charset) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(addr);
         Objects.requireNonNull(charset);
         return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), charset);
@@ -343,7 +438,7 @@ public interface CLinker {
     }
 
     /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@link java.nio.charset.Charset charset}.
+     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -368,14 +463,8 @@ public interface CLinker {
         MemoryAccess.setByteAtOffset(addr, bytes.length, (byte)0);
     }
 
-    private static MemorySegment toCString(byte[] bytes) {
-        MemorySegment segment = MemorySegment.allocateNative(bytes.length + 1, 1L);
-        copy(segment, bytes);
-        return segment;
-    }
-
-    private static MemorySegment toCString(byte[] bytes, NativeScope scope) {
-        MemorySegment addr = scope.allocate(bytes.length + 1, 1L);
+    private static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
+        MemorySegment addr = allocator.allocate(bytes.length + 1, 1L);
         copy(addr, bytes);
         return addr;
     }
@@ -383,16 +472,21 @@ public interface CLinker {
     /**
      * Allocates memory of given size using malloc.
      * <p>
-     * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param size memory size to be allocated
      * @return addr memory address of the allocated memory
      * @throws OutOfMemoryError if malloc could not allocate the required amount of native memory.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
-    static MemoryAddress allocateMemoryRestricted(long size) {
-        Utils.checkRestrictedAccess("CLinker.allocateMemoryRestricted");
+    @CallerSensitive
+    static MemoryAddress allocateMemory(long size) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         MemoryAddress addr = SharedUtils.allocateMemoryInternal(size);
         if (addr.equals(MemoryAddress.NULL)) {
             throw new OutOfMemoryError();
@@ -404,14 +498,19 @@ public interface CLinker {
     /**
      * Frees the memory pointed by the given memory address.
      * <p>
-     * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr memory address of the native memory to be freed
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
-    static void freeMemoryRestricted(MemoryAddress addr) {
-        Utils.checkRestrictedAccess("CLinker.freeMemoryRestricted");
+    @CallerSensitive
+    static void freeMemory(MemoryAddress addr) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(addr);
         SharedUtils.freeMemoryInternal(addr);
     }
@@ -431,21 +530,16 @@ public interface CLinker {
      *
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
      * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
-     *
-     * @apiNote In the future, if the Java language permits, {@link VaList}
-     * may become a {@code sealed} interface, which would prohibit subclassing except by
-     * explicitly permitted types.
-     *
      */
-    interface VaList extends Addressable, AutoCloseable {
+    sealed interface VaList extends Addressable permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, SharedUtils.EmptyVaList {
 
         /**
          * Reads the next value as an {@code int} and advances this va list's position.
          *
          * @param layout the layout of the value
          * @return the value read as an {@code int}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code int}
          */
         int vargAsInt(MemoryLayout layout);
@@ -455,8 +549,8 @@ public interface CLinker {
          *
          * @param layout the layout of the value
          * @return the value read as an {@code long}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code long}
          */
         long vargAsLong(MemoryLayout layout);
@@ -466,8 +560,8 @@ public interface CLinker {
          *
          * @param layout the layout of the value
          * @return the value read as an {@code double}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code double}
          */
         double vargAsDouble(MemoryLayout layout);
@@ -477,8 +571,8 @@ public interface CLinker {
          *
          * @param layout the layout of the value
          * @return the value read as an {@code MemoryAddress}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemoryAddress}
          */
         MemoryAddress vargAsAddress(MemoryLayout layout);
@@ -486,102 +580,70 @@ public interface CLinker {
         /**
          * Reads the next value as a {@code MemorySegment}, and advances this va list's position.
          * <p>
-         * The memory segment returned by this method will be allocated using
-         * {@link MemorySegment#allocateNative(long, long)}, and will have to be closed separately.
+         * The memory segment returned by this method will be allocated using the given {@link SegmentAllocator}.
          *
          * @param layout the layout of the value
+         * @param allocator the allocator to be used for the native segment allocation
          * @return the value read as an {@code MemorySegment}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
          */
-        MemorySegment vargAsSegment(MemoryLayout layout);
+        MemorySegment vargAsSegment(MemoryLayout layout, SegmentAllocator allocator);
 
         /**
          * Reads the next value as a {@code MemorySegment}, and advances this va list's position.
          * <p>
-         * The memory segment returned by this method will be allocated using the given {@code NativeScope}.
+         * The memory segment returned by this method will be associated with the given {@link ResourceScope}.
          *
          * @param layout the layout of the value
-         * @param scope the scope to allocate the segment in
+         * @param scope the resource scope to be associated with the returned segment
          * @return the value read as an {@code MemorySegment}
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          * @throws IllegalArgumentException if the given memory layout is not compatible with {@code MemorySegment}
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
          */
-        MemorySegment vargAsSegment(MemoryLayout layout, NativeScope scope);
+        MemorySegment vargAsSegment(MemoryLayout layout, ResourceScope scope);
 
         /**
          * Skips a number of elements with the given memory layouts, and advances this va list's position.
          *
          * @param layouts the layout of the value
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          */
         void skip(MemoryLayout... layouts);
 
         /**
-         * A predicate used to check if the memory associated with the C {@code va_list} modelled
-         * by this instance is still valid to use.
-         *
-         * @return true, if the memory associated with the C {@code va_list} modelled by this instance is still valid
-         * @see #close()
+         * Returns the resource scope associated with this instance.
+         * @return the resource scope associated with this instance.
          */
-        boolean isAlive();
-
-        /**
-         * Releases the underlying C {@code va_list} modelled by this instance, and any native memory that is attached
-         * to this va list that holds its elements (see {@link VaList#make(Consumer)}).
-         * <p>
-         * After calling this method, {@link #isAlive()} will return {@code false} and further attempts to read values
-         * from this va list will result in an exception.
-         *
-         * @see #isAlive()
-         */
-        void close();
+        ResourceScope scope();
 
         /**
          * Copies this C {@code va_list} at its current position. Copying is useful to traverse the va list's elements
          * starting from the current position, without affecting the state of the original va list, essentially
          * allowing the elements to be traversed multiple times.
          * <p>
-         * If this method needs to allocate native memory for the copy, it will use
-         * {@link MemorySegment#allocateNative(long, long)} to do so. {@link #close()} will have to be called on the
-         * returned va list instance to release the allocated memory.
+         * Any native resource required by the execution of this method will be allocated in the resource scope
+         * associated with this instance (see {@link #scope()}).
          * <p>
          * This method only copies the va list cursor itself and not the memory that may be attached to the
          * va list which holds its elements. That means that if this va list was created with the
-         * {@link #make(Consumer)} method, closing this va list will also release the native memory that holds its
+         * {@link #make(Consumer, ResourceScope)} method, closing this va list will also release the native memory that holds its
          * elements, making the copy unusable.
          *
          * @return a copy of this C {@code va_list}.
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
+         * @throws IllegalStateException if the resource scope associated with this instance has been closed
+         * (see {@link #scope()}).
          */
         VaList copy();
 
         /**
-         * Copies this C {@code va_list} at its current position. Copying is useful to traverse the va list's elements
-         * starting from the current position, without affecting the state of the original va list, essentially
-         * allowing the elements to be traversed multiple times.
-         * <p>
-         * If this method needs to allocate native memory for the copy, it will use
-         * the given {@code NativeScope} to do so.
-         * <p>
-         * This method only copies the va list cursor itself and not the memory that may be attached to the
-         * va list which holds its elements. That means that if this va list was created with the
-         * {@link #make(Consumer)} method, closing this va list will also release the native memory that holds its
-         * elements, making the copy unusable.
-         *
-         * @param scope the scope to allocate the copy in
-         * @return a copy of this C {@code va_list}.
-         * @throws IllegalStateException if the C {@code va_list} associated with this instance is no longer valid
-         * (see {@link #close()}).
-         */
-        VaList copy(NativeScope scope);
-
-        /**
          * Returns the memory address of the C {@code va_list} associated with this instance.
+         * The returned memory address is associated with same resource scope as that associated with this instance.
          *
          * @return the memory address of the C {@code va_list} associated with this instance.
          */
@@ -589,51 +651,58 @@ public interface CLinker {
         MemoryAddress address();
 
         /**
-         * Constructs a new {@code VaList} instance out of a memory address pointing to an existing C {@code va_list}.
+         * Constructs a new {@code VaList} instance out of a memory address pointing to an existing C {@code va_list},
+         * backed by the {@linkplain ResourceScope#globalScope() global} resource scope.
          * <p>
-         * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
+         * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
          * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
          * restricted methods, and use safe and supported functionalities, where possible.
          *
          * @param address a memory address pointing to an existing C {@code va_list}.
          * @return a new {@code VaList} instance backed by the C {@code va_list} at {@code address}.
+         * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+         * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+         * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
          */
-        static VaList ofAddressRestricted(MemoryAddress address) {
-            Utils.checkRestrictedAccess("VaList.ofAddressRestricted");
-            Objects.requireNonNull(address);
-            return SharedUtils.newVaListOfAddress(address);
+        @CallerSensitive
+        static VaList ofAddress(MemoryAddress address) {
+            Reflection.ensureNativeAccess(Reflection.getCallerClass());
+            return SharedUtils.newVaListOfAddress(address, ResourceScope.globalScope());
         }
 
         /**
-         * Constructs a new {@code VaList} using a builder (see {@link Builder}).
+         * Constructs a new {@code VaList} instance out of a memory address pointing to an existing C {@code va_list},
+         * with given resource scope.
          * <p>
-         * If this method needs to allocate native memory for the va list, it will use
-         * {@link MemorySegment#allocateNative(long, long)} to do so.
-         * <p>
-         * This method will allocate native memory to hold the elements in the va list. This memory
-         * will be 'attached' to the returned va list instance, and will be released when {@link VaList#close()}
-         * is called.
-         * <p>
-         * Note that when there are no elements added to the created va list,
-         * this method will return the same as {@link #empty()}.
+         * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+         * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+         * restricted methods, and use safe and supported functionalities, where possible.
          *
-         * @param actions a consumer for a builder (see {@link Builder}) which can be used to specify the elements
-         *                of the underlying C {@code va_list}.
-         * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
+         * @param address a memory address pointing to an existing C {@code va_list}.
+         * @param scope the resource scope to be associated with the returned {@code VaList} instance.
+         * @return a new {@code VaList} instance backed by the C {@code va_list} at {@code address}.
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
+         * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+         * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+         * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
          */
-        static VaList make(Consumer<Builder> actions) {
-            Objects.requireNonNull(actions);
-            return SharedUtils.newVaList(actions, MemorySegment::allocateNative);
+        @CallerSensitive
+        static VaList ofAddress(MemoryAddress address, ResourceScope scope) {
+            Reflection.ensureNativeAccess(Reflection.getCallerClass());
+            Objects.requireNonNull(address);
+            Objects.requireNonNull(scope);
+            return SharedUtils.newVaListOfAddress(address, scope);
         }
 
         /**
-         * Constructs a new {@code VaList} using a builder (see {@link Builder}).
+         * Constructs a new {@code VaList} using a builder (see {@link Builder}), associated with a given
+         * {@linkplain ResourceScope resource scope}.
          * <p>
-         * If this method needs to allocate native memory for the va list, it will use
-         * the given {@code NativeScope} to do so.
-         * <p>
-         * This method will allocate native memory to hold the elements in the va list. This memory
-         * will be managed by the given {@code NativeScope}, and will be released when the scope is closed.
+         * If this method needs to allocate native memory, such memory will be managed by the given
+         * {@linkplain ResourceScope resource scope}, and will be released when the resource scope is {@linkplain ResourceScope#close closed}.
          * <p>
          * Note that when there are no elements added to the created va list,
          * this method will return the same as {@link #empty()}.
@@ -642,11 +711,13 @@ public interface CLinker {
          *                of the underlying C {@code va_list}.
          * @param scope the scope to be used for the valist allocation.
          * @return a new {@code VaList} instance backed by a fresh C {@code va_list}.
+         * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+         * than the thread owning {@code scope}.
          */
-        static VaList make(Consumer<Builder> actions, NativeScope scope) {
+        static VaList make(Consumer<Builder> actions, ResourceScope scope) {
             Objects.requireNonNull(actions);
             Objects.requireNonNull(scope);
-            return SharedUtils.newVaList(actions, SharedUtils.Allocator.ofScope(scope));
+            return SharedUtils.newVaList(actions, scope);
         }
 
         /**
@@ -665,13 +736,8 @@ public interface CLinker {
          *
          * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
          * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
-         *
-         * @apiNote In the future, if the Java language permits, {@link Builder}
-         * may become a {@code sealed} interface, which would prohibit subclassing except by
-         * explicitly permitted types.
-         *
          */
-        interface Builder {
+        sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder {
 
             /**
              * Adds a native value represented as an {@code int} to the C {@code va_list} being constructed.
@@ -729,7 +795,7 @@ public interface CLinker {
      * A C type kind. Each kind corresponds to a particular C language builtin type, and can be attached to
      * {@link ValueLayout} instances using the {@link MemoryLayout#withAttribute(String, Constable)} in order
      * to obtain a layout which can be classified accordingly by {@link CLinker#downcallHandle(Addressable, MethodType, FunctionDescriptor)}
-     * and {@link CLinker#upcallStub(MethodHandle, FunctionDescriptor)}.
+     * and {@link CLinker#upcallStub(MethodHandle, FunctionDescriptor, ResourceScope)}.
      */
     enum TypeKind {
         /**
@@ -806,6 +872,6 @@ public interface CLinker {
         TypeKind = layout.attribute(TypeKind.ATTR_NAME).orElse(null);
          * }</pre></blockquote>
          */
-        public final static String ATTR_NAME = "abi/kind";
+        public static final String ATTR_NAME = "abi/kind";
     }
 }

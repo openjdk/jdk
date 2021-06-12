@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
@@ -341,7 +342,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
 
     } else if (is_power_of_2(divisor)) {
       // Convert division by a power of two into some shifts and logical operations.
-      int log2 = log2_intptr(divisor);
+      int log2 = log2i_exact(divisor);
 
       // Round towards 0.
       if (divisor == 2) {
@@ -704,13 +705,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
 }
-
-
-/* vtable_call is not enabled for ppc platform */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere(); // ic_call is used instead.
-}
-
 
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
   ImplicitNullCheckStub* stub = new ImplicitNullCheckStub(code_offset(), info);
@@ -1326,8 +1320,8 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
 
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
-  const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
-  const Register polling_page     = R12;
+  const Register return_pc = R31;  // Must survive C-call to enable_stack_reserved_zone().
+  const Register temp      = R12;
 
   // Pop the stack before the safepoint code.
   int frame_size = initial_frame_size_in_bytes();
@@ -1336,8 +1330,6 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   } else {
     __ pop_frame();
   }
-
-  __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
 
   // Restore return pc relative to callers' sp.
   __ ld(return_pc, _abi0(lr), R1_SP);
@@ -1350,8 +1342,11 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
   // We need to mark the code position where the load from the safepoint
   // polling page was emitted as relocInfo::poll_return_type here.
-  __ relocate(relocInfo::poll_return_type);
-  __ load_from_polling_page(polling_page);
+  if (!UseSIGTRAP) {
+    code_stub->set_safepoint_offset(__ offset());
+    __ relocate(relocInfo::poll_return_type);
+  }
+  __ safepoint_poll(*code_stub->entry(), temp, true /* at_return */, true /* in_nmethod */);
 
   // Return.
   __ blr();
@@ -1360,7 +1355,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register();
-  __ ld(poll_addr, in_bytes(Thread::polling_page_offset()), R16_thread);
+  __ ld(poll_addr, in_bytes(JavaThread::polling_page_offset()), R16_thread);
   if (info != NULL) {
     add_debug_info_for_branch(info);
   }
@@ -1632,10 +1627,8 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
         switch (code) {
           case lir_add: __ fadds(res, lreg, rreg); break;
           case lir_sub: __ fsubs(res, lreg, rreg); break;
-          case lir_mul: // fall through
-          case lir_mul_strictfp: __ fmuls(res, lreg, rreg); break;
-          case lir_div: // fall through
-          case lir_div_strictfp: __ fdivs(res, lreg, rreg); break;
+          case lir_mul: __ fmuls(res, lreg, rreg); break;
+          case lir_div: __ fdivs(res, lreg, rreg); break;
           default: ShouldNotReachHere();
         }
       } else {
@@ -1645,10 +1638,8 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
         switch (code) {
           case lir_add: __ fadd(res, lreg, rreg); break;
           case lir_sub: __ fsub(res, lreg, rreg); break;
-          case lir_mul: // fall through
-          case lir_mul_strictfp: __ fmul(res, lreg, rreg); break;
-          case lir_div: // fall through
-          case lir_div_strictfp: __ fdiv(res, lreg, rreg); break;
+          case lir_mul: __ fmul(res, lreg, rreg); break;
+          case lir_div: __ fdiv(res, lreg, rreg); break;
           default: ShouldNotReachHere();
         }
       }
@@ -2925,12 +2916,20 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
   LIR_Address* addr = addr_opr->as_address_ptr();
   assert(addr->scale() == LIR_Address::times_1, "no scaling on this platform");
+
   if (addr->index()->is_illegal()) {
-    __ add_const_optimized(dest->as_pointer_register(), addr->base()->as_pointer_register(), addr->disp());
+    if (patch_code != lir_patch_none) {
+      PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+      __ load_const32(R0, 0); // patchable int
+      __ add(dest->as_pointer_register(), addr->base()->as_pointer_register(), R0);
+      patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+    } else {
+      __ add_const_optimized(dest->as_pointer_register(), addr->base()->as_pointer_register(), addr->disp());
+    }
   } else {
+    assert(patch_code == lir_patch_none, "Patch code not supported");
     assert(addr->disp() == 0, "can't have both: index and disp");
     __ add(dest->as_pointer_register(), addr->index()->as_pointer_register(), addr->base()->as_pointer_register());
   }

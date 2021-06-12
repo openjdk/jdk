@@ -111,6 +111,10 @@ void G1CollectionSet::clear_candidates() {
   _candidates = NULL;
 }
 
+bool G1CollectionSet::has_candidates() {
+  return _candidates != NULL && !_candidates->is_empty();
+}
+
 void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {
   _recorded_rs_length = rs_length;
 }

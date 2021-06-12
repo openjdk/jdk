@@ -48,7 +48,6 @@ enum CompilerPhaseType {
   PHASE_ITER_GVN2,
   PHASE_PHASEIDEALLOOP_ITERATIONS,
   PHASE_OPTIMIZE_FINISHED,
-  PHASE_AFTER_MATCHING,
   PHASE_GLOBAL_CODE_MOTION,
   PHASE_FINAL_CODE,
   PHASE_AFTER_EA,
@@ -100,7 +99,6 @@ class CompilerPhaseTypeHelper {
       case PHASE_ITER_GVN2:                  return "Iter GVN 2";
       case PHASE_PHASEIDEALLOOP_ITERATIONS:  return "PhaseIdealLoop iterations";
       case PHASE_OPTIMIZE_FINISHED:          return "Optimize finished";
-      case PHASE_AFTER_MATCHING:             return "After Matching";
       case PHASE_GLOBAL_CODE_MOTION:         return "Global code motion";
       case PHASE_FINAL_CODE:                 return "Final Code";
       case PHASE_AFTER_EA:                   return "After Escape Analysis";

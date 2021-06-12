@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,11 @@ class CompilerOracle : AllStatic {
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
 
-  // Tells whether to blackhole when compiling method
-  static bool should_blackhole(const methodHandle& method);
-
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
+
+  // Tags the method as blackhole candidate, if possible.
+  static void tag_blackhole_if_possible(const methodHandle& method);
 
   // A wrapper for checking bool options
   static bool has_option(const methodHandle& method, enum CompileCommand option);

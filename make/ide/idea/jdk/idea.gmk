@@ -46,13 +46,16 @@ else #with SPEC
   endif
 
   idea:
-	$(ECHO) "SUPPORT=$(SUPPORT_OUTPUTDIR)" >> $(OUT)
-	$(ECHO) "MODULE_ROOTS=\"$(foreach mod, $(SEL_MODULES), $(call FindModuleSrcDirs,$(mod)))\"" >> $(OUT)
+	$(ECHO) "MODULES=\"$(foreach mod, $(SEL_MODULES), \
+	          module='$(mod)' \
+	          moduleSrcDirs='$(foreach m,$(call FindModuleSrcDirs,$(mod)),$(call RelativePath,$m,$(topdir)))' \
+	          moduleDependencies='$(call FindTransitiveDepsForModule,$(mod))' \
+	        #)\"" > $(OUT)
 	$(ECHO) "MODULE_NAMES=\"$(strip $(foreach mod, $(SEL_MODULES), $(mod)))\"" >> $(OUT)
-	$(ECHO) "SEL_MODULES=\"$(SEL_MODULES)\"" >> $(OUT)
-	$(ECHO) "BOOT_JDK=\"$(BOOT_JDK)\"" >> $(OUT)
-	$(ECHO) "CYGPATH=\"$(PATHTOOL)\"" >> $(OUT)
-	$(ECHO) "SPEC=\"$(SPEC)\"" >> $(OUT)
+	$(ECHO) "RELATIVE_PROJECT_DIR=\"$(call RelativePath,$(topdir),$(IDEA_OUTPUT_PARENT))\"" >> $(OUT)
+	$(ECHO) "RELATIVE_BUILD_DIR=\"$(call RelativePath,$(OUTPUTDIR),$(IDEA_OUTPUT_PARENT))\"" >> $(OUT)
+	$(ECHO) "PATHTOOL=\"$(PATHTOOL)\"" >> $(OUT)
 	$(ECHO) "JT_HOME=\"$(JT_HOME)\"" >> $(OUT)
+	$(ECHO) "WINENV_ROOT=\"$(WINENV_ROOT)\"" >> $(OUT)
 
 endif

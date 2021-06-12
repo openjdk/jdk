@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 static const int64_t MAGIC_OFFSET = 0;
 static const int64_t MAGIC_LEN = 4;
@@ -254,7 +254,7 @@ int64_t JfrChunkWriter::last_checkpoint_offset() const {
 
 int64_t JfrChunkWriter::current_chunk_start_nanos() const {
   assert(_chunk != NULL, "invariant");
-  return this->is_valid() ? _chunk->start_nanos() : invalid_time;
+  return _chunk->start_nanos();
 }
 
 void JfrChunkWriter::set_last_checkpoint_offset(int64_t offset) {

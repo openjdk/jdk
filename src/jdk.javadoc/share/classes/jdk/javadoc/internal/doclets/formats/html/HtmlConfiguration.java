@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * Configure the output based on the command-line options.
@@ -120,11 +122,28 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     protected DeprecatedAPIListBuilder deprecatedAPIListBuilder;
 
-    private Contents contents;
+    /**
+     * The collection of preview items, if any, to be displayed on the preview-list page,
+     * or null if the page should not be generated.
+     * The page will not be generated if there are no preview elements being documented.
+     */
+    protected PreviewAPIListBuilder previewAPIListBuilder;
+
+    /**
+     * The collection of new API items, if any, to be displayed on the new-list page,
+     * or null if the page should not be generated.
+     * The page is only generated if the {@code --since} option is used with release
+     * names matching {@code @since} tags in the documented code.
+     */
+    protected NewAPIBuilder newAPIPageBuilder;
+
+    public Contents contents;
 
     protected final Messages messages;
 
     public DocPaths docPaths;
+
+    public HtmlIds htmlIds;
 
     public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
@@ -136,7 +155,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, SERIALIZED_FORM, SYSTEM_PROPERTIES
+        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**
@@ -200,6 +219,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
         contents = new Contents(this);
+        htmlIds = new HtmlIds(this);
     }
 
     private final Runtime.Version docletVersion;
@@ -254,7 +274,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();
-        setTopFile(docEnv);
+        setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
@@ -266,11 +286,9 @@ public class HtmlConfiguration extends BaseConfiguration {
      * "package-summary.html" of the respective package if there is only one
      * package to document. It will be a class page(first in the sorted order),
      * if only classes are provided on the command line.
-     *
-     * @param docEnv the doclet environment
      */
-    protected void setTopFile(DocletEnvironment docEnv) {
-        if (!checkForDeprecation(docEnv)) {
+    protected void setTopFile() {
+        if (!checkForDeprecation()) {
             return;
         }
         if (options.createOverview()) {
@@ -302,7 +320,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         return null;
     }
 
-    protected boolean checkForDeprecation(DocletEnvironment docEnv) {
+    protected boolean checkForDeprecation() {
         for (TypeElement te : getIncludedTypeElements()) {
             if (isGeneratedDoc(te)) {
                 return true;
@@ -345,8 +363,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     @Override
     public JavaFileObject getOverviewPath() {
         String overviewpath = options.overviewPath();
-        if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager) {
-            StandardJavaFileManager fm = (StandardJavaFileManager) getFileManager();
+        if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager fm) {
             return fm.getJavaFileObjects(overviewpath).iterator().next();
         }
         return null;
@@ -365,7 +382,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         return options.additionalStylesheets().stream()
                 .map(ssf -> DocFile.createFileForInput(this, ssf))
                 .map(file -> DocPath.create(file.getName()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override

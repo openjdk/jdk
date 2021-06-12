@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "ci/ciInstance.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/vm_version.hpp"
 
 Register LIR_OprDesc::as_register() const {
   return FrameMap::cpu_rnr2reg(cpu_regnr());
@@ -211,9 +212,7 @@ void LIR_Op2::verify() const {
     case lir_add:
     case lir_sub:
     case lir_mul:
-    case lir_mul_strictfp:
     case lir_div:
-    case lir_div_strictfp:
     case lir_rem:
     case lir_logic_and:
     case lir_logic_or:
@@ -563,8 +562,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_cmp_fd2i:
     case lir_add:
     case lir_sub:
-    case lir_mul:
-    case lir_div:
     case lir_rem:
     case lir_sqrt:
     case lir_abs:
@@ -622,8 +619,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     // vspecial handling for strict operations: register input operands
     // as temp to guarantee that they do not overlap with other
     // registers
-    case lir_mul_strictfp:
-    case lir_div_strictfp:
+    case lir_mul:
+    case lir_div:
     {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
@@ -704,7 +701,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_static_call:
     case lir_optvirtual_call:
     case lir_icvirtual_call:
-    case lir_virtual_call:
     case lir_dynamic_call: {
       LIR_OpJavaCall* opJavaCall = op->as_OpJavaCall();
       assert(opJavaCall != NULL, "must be");
@@ -1675,9 +1671,7 @@ const char * LIR_Op::name() const {
      case lir_add:                   s = "add";           break;
      case lir_sub:                   s = "sub";           break;
      case lir_mul:                   s = "mul";           break;
-     case lir_mul_strictfp:          s = "mul_strictfp";  break;
      case lir_div:                   s = "div";           break;
-     case lir_div_strictfp:          s = "div_strictfp";  break;
      case lir_rem:                   s = "rem";           break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
@@ -1700,7 +1694,6 @@ const char * LIR_Op::name() const {
      case lir_static_call:           s = "static";        break;
      case lir_optvirtual_call:       s = "optvirtual";    break;
      case lir_icvirtual_call:        s = "icvirtual";     break;
-     case lir_virtual_call:          s = "virtual";       break;
      case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
      case lir_arraycopy:             s = "arraycopy";     break;

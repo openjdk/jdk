@@ -41,7 +41,7 @@ import org.xml.sax.SAXParseException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.MultiOccursTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.MultiOccursTest
  * @run testng/othervm validation.MultiOccursTest
  * @summary Test Schema Validator can parse multiple or unbounded occurs.
  */

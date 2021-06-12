@@ -106,6 +106,21 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
     cast->set_req(0, c);
     return cast;
   }
+  case Op_CastFF: {
+    Node* cast = new CastFFNode(n, t, carry_dependency);
+    cast->set_req(0, c);
+    return cast;
+  }
+  case Op_CastDD: {
+    Node* cast = new CastDDNode(n, t, carry_dependency);
+    cast->set_req(0, c);
+    return cast;
+  }
+  case Op_CastVV: {
+    Node* cast = new CastVVNode(n, t, carry_dependency);
+    cast->set_req(0, c);
+    return cast;
+  }
   case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, carry_dependency);
   default:
     fatal("Bad opcode %d", opcode);
@@ -240,9 +255,8 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   return res;
 }
 
-static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control,
-                                 const TypeInt* type) {
-  Node* n = new CastIINode(parent, type);
+static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInt* type, bool carry_dependency) {
+  Node* n = new CastIINode(parent, type, carry_dependency);
   n->set_req(0, control);
   Node* existing = igvn->hash_find_insert(n);
   if (existing != NULL) {
@@ -275,8 +289,8 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int());
-    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int());
+    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int(), _carry_dependency);
+    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int(), _carry_dependency);
     switch (op) {
       case Op_AddI:  return new AddINode(cx, cy);
       case Op_SubI:  return new SubINode(cx, cy);
@@ -557,4 +571,22 @@ Node *CastP2XNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 Node* CastP2XNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_CastX2P)  return in(1)->in(1);
   return this;
+}
+
+Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type) {
+  Node* cast= NULL;
+  if (type->isa_int()) {
+    cast = make_cast(Op_CastII, c, in, type, true);
+  } else if (type->isa_long()) {
+    cast = make_cast(Op_CastLL, c, in, type, true);
+  } else if (type->isa_float()) {
+    cast = make_cast(Op_CastFF, c, in, type, true);
+  } else if (type->isa_double()) {
+    cast = make_cast(Op_CastDD, c, in, type, true);
+  } else if (type->isa_vect()) {
+    cast = make_cast(Op_CastVV, c, in, type, true);
+  } else if (type->isa_ptr()) {
+    cast = make_cast(Op_CastPP, c, in, type, true);
+  }
+  return cast;
 }

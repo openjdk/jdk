@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @compile ../test-classes/Hello.java
  * @compile ../test-classes/HelloMore.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AppendClasspath
  */
 
@@ -57,8 +57,7 @@ public class AppendClasspath extends DynamicArchiveTestBase {
              "-Xlog:cds+dynamic=debug",
              "-cp", appJar, "Hello")
             .assertNormalExit(output -> {
-                    output.shouldContain("Buffer-space to target-space delta")
-                           .shouldContain("Written dynamic archive 0x");
+                    output.shouldContain("Written dynamic archive 0x");
                 });
 
         // runtime with classpath containing the one used in dump time,
