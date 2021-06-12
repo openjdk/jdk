@@ -25,7 +25,7 @@
  * @test
  * @bug 8213766
  * @summary Assertion error in TypeAnnotations$TypeAnnotationPositions.resolveFrame
- * @run compile T8213766.java
+ * @run compile AttribTreeOfExplicitLambdaType.java
  */
 
 import java.lang.annotation.Target;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
-public abstract class T8213766 {
+public abstract class AttribTreeOfExplicitLambdaType {
     @Target({ TYPE_USE })
     public @interface TestAnnotation { }
 
