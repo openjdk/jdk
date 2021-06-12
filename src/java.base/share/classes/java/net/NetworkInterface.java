@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,7 @@ public final class NetworkInterface {
         InetAddress[] local_addrs = new InetAddress[addrs.length];
         boolean trusted = true;
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             try {
@@ -169,6 +170,7 @@ public final class NetworkInterface {
     public java.util.List<InterfaceAddress> getInterfaceAddresses() {
         java.util.List<InterfaceAddress> lst = new java.util.ArrayList<>(1);
         if (bindings != null) {
+            @SuppressWarnings("removal")
             SecurityManager sec = System.getSecurityManager();
             for (int j=0; j<bindings.length; j++) {
                 try {
@@ -512,6 +514,7 @@ public final class NetworkInterface {
      * @since 1.6
      */
     public byte[] getHardwareAddress() throws SocketException {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             try {
@@ -590,10 +593,9 @@ public final class NetworkInterface {
      * @see     java.net.InetAddress#getAddress()
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof NetworkInterface)) {
+        if (!(obj instanceof NetworkInterface that)) {
             return false;
         }
-        NetworkInterface that = (NetworkInterface)obj;
         if (this.name != null ) {
             if (!this.name.equals(that.name)) {
                 return false;

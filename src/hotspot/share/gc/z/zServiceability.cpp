@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ void ZServiceabilityCounters::update_sizes() {
     _space_counters.update_used(used);
 
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 
@@ -110,8 +109,10 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
   return MemoryUsage(initial_size(), used, committed, max_size());
 }
 
-ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(ZServiceabilityMemoryPool* pool)
-    : GCMemoryManager("ZGC", "end of major GC") {
+ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
+                                                           const char* end_message,
+                                                           ZServiceabilityMemoryPool* pool) :
+    GCMemoryManager(name, end_message) {
   add_pool(pool);
 }
 
@@ -119,7 +120,8 @@ ZServiceability::ZServiceability(size_t min_capacity, size_t max_capacity) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _memory_pool(_min_capacity, _max_capacity),
-    _memory_manager(&_memory_pool),
+    _cycle_memory_manager("ZGC Cycles", "end of GC cycle", &_memory_pool),
+    _pause_memory_manager("ZGC Pauses", "end of GC pause", &_memory_pool),
     _counters(NULL) {}
 
 void ZServiceability::initialize() {
@@ -130,8 +132,12 @@ MemoryPool* ZServiceability::memory_pool() {
   return &_memory_pool;
 }
 
-GCMemoryManager* ZServiceability::memory_manager() {
-  return &_memory_manager;
+GCMemoryManager* ZServiceability::cycle_memory_manager() {
+  return &_cycle_memory_manager;
+}
+
+GCMemoryManager* ZServiceability::pause_memory_manager() {
+  return &_pause_memory_manager;
 }
 
 ZServiceabilityCounters* ZServiceability::counters() {
@@ -139,20 +145,30 @@ ZServiceabilityCounters* ZServiceability::counters() {
 }
 
 ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
-    _memory_manager_stats(ZHeap::heap()->serviceability_memory_manager(),
+    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(),
                           ZCollectedHeap::heap()->gc_cause(),
-                          true /* allMemoryPoolsAffected */,
-                          true /* recordGCBeginTime */,
-                          true /* recordPreGCUsage */,
-                          true /* recordPeakUsage */,
-                          true /* recordPostGCUsage */,
-                          true /* recordAccumulatedGCTime */,
-                          true /* recordGCEndTime */,
-                          true /* countCollection */) {}
+                          true  /* allMemoryPoolsAffected */,
+                          true  /* recordGCBeginTime */,
+                          true  /* recordPreGCUsage */,
+                          true  /* recordPeakUsage */,
+                          true  /* recordPostGCUsage */,
+                          true  /* recordAccumulatedGCTime */,
+                          true  /* recordGCEndTime */,
+                          true  /* countCollection */) {}
 
 ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
-    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()) {}
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()),
+    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(),
+                          ZCollectedHeap::heap()->gc_cause(),
+                          true  /* allMemoryPoolsAffected */,
+                          true  /* recordGCBeginTime */,
+                          false /* recordPreGCUsage */,
+                          false /* recordPeakUsage */,
+                          false /* recordPostGCUsage */,
+                          true  /* recordAccumulatedGCTime */,
+                          true  /* recordGCEndTime */,
+                          true  /* countCollection */) {}
 
 ZServiceabilityPauseTracer::~ZServiceabilityPauseTracer()  {
   ZHeap::heap()->serviceability_counters()->update_sizes();

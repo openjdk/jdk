@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahHeap.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -35,7 +37,6 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -54,7 +55,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = Atomic::add(&_index, (size_t) 1);
+  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns NULL on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -251,7 +252,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
-  oop copy_val = oop(copy);
+  oop copy_val = cast_to_oop(copy);
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
@@ -281,7 +282,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
-  oop obj = oop(entry);
+  oop obj = cast_to_oop(entry);
   return !_marking_context->is_marked_strong(obj);
 }
 
@@ -340,7 +341,7 @@ inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
-  return _concurrent_weak_root_in_progress.is_set();
+  return _gc_state.is_set(WEAK_ROOTS);
 }
 
 template<class T>
@@ -400,7 +401,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
       for (int c = 0; c < avail; c++) {
         assert (slots[c] < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(tams));
         assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
-        oop obj = oop(slots[c]);
+        oop obj = cast_to_oop(slots[c]);
         assert(oopDesc::is_oop(obj), "sanity");
         assert(ctx->is_marked(obj), "object expected to be marked");
         cl->do_object(obj);
@@ -410,7 +411,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     while (cb < limit_bitmap) {
       assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
       assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
-      oop obj = oop(cb);
+      oop obj = cast_to_oop(cb);
       assert(oopDesc::is_oop(obj), "sanity");
       assert(ctx->is_marked(obj), "object expected to be marked");
       cl->do_object(obj);
@@ -428,7 +429,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   while (cs < limit) {
     assert (cs >= tams, "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
-    oop obj = oop(cs);
+    oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
     int size = obj->size();

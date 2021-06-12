@@ -273,7 +273,6 @@ void NMethodSweeper::handle_safepoint_request() {
     MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     ThreadBlockInVM tbivm(thread);
-    thread->java_suspend_self();
   }
 }
 

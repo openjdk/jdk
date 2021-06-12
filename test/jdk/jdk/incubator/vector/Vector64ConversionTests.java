@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.function.IntFunction;
  * @requires (os.arch != "ppc64") & (os.arch != "ppc64le")
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
- * @run testng/othervm  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
+ * @run testng/othervm/timeout=300  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  *      Vector64ConversionTests
  */
 
@@ -62,6 +62,7 @@ import java.util.function.IntFunction;
 public class Vector64ConversionTests extends AbstractVectorConversionTest {
 
     static final VectorShape SHAPE = VectorShape.S_64_BIT;
+    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", 1024);
 
     @DataProvider
     public Object[][] fixedShapeXfixedShape() {
@@ -75,25 +76,25 @@ public class Vector64ConversionTests extends AbstractVectorConversionTest {
 
     @Test(dataProvider = "fixedShapeXfixedShape")
     static <I, O> void convert(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CONVERT);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void convertShape(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CONVERTSHAPE);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void castShape(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CASTSHAPE);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void reinterpret(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         reinterpret_kernel(src, dst, a);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
     SocksSocketImpl(Proxy proxy, SocketImpl delegate) {
         super(delegate);
         SocketAddress a = proxy.address();
-        if (a instanceof InetSocketAddress) {
-            InetSocketAddress ad = (InetSocketAddress) a;
+        if (a instanceof InetSocketAddress ad) {
             // Use getHostString() to avoid reverse lookups
             server = ad.getHostString();
             serverPort = ad.getPort();
@@ -74,6 +73,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         return DefaultProxySelector.socksProxyVersion() == 4;
     }
 
+    @SuppressWarnings("removal")
     private synchronized void privilegedConnect(final String host,
                                               final int port,
                                               final int timeout)
@@ -149,6 +149,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             String userName;
             String password = null;
             final InetAddress addr = InetAddress.getByName(server);
+            @SuppressWarnings("removal")
             PasswordAuthentication pw =
                 java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
@@ -210,25 +211,17 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             throw new SocketException("Reply from SOCKS server has bad length: " + n);
         if (data[0] != 0 && data[0] != 4)
             throw new SocketException("Reply from SOCKS server has bad version");
-        SocketException ex = null;
-        switch (data[1]) {
-        case 90:
-            // Success!
-            external_address = endpoint;
-            break;
-        case 91:
-            ex = new SocketException("SOCKS request rejected");
-            break;
-        case 92:
-            ex = new SocketException("SOCKS server couldn't reach destination");
-            break;
-        case 93:
-            ex = new SocketException("SOCKS authentication failed");
-            break;
-        default:
-            ex = new SocketException("Reply from SOCKS server contains bad status");
-            break;
-        }
+        SocketException ex = switch (data[1]) {
+            case 90 -> {
+                // Success!
+                external_address = endpoint;
+                yield null;
+            }
+            case 91 -> new SocketException("SOCKS request rejected");
+            case 92 -> new SocketException("SOCKS server couldn't reach destination");
+            case 93 -> new SocketException("SOCKS authentication failed");
+            default -> new SocketException("Reply from SOCKS server contains bad status");
+        };
         if (ex != null) {
             in.close();
             out.close();
@@ -271,6 +264,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             deadlineMillis = finish < 0 ? Long.MAX_VALUE : finish;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
@@ -286,6 +280,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // This is the general case
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
+            @SuppressWarnings("removal")
             ProxySelector sel = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {
                     public ProxySelector run() {

@@ -59,7 +59,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @throws DCmdException
      *             if the dump could not be completed
      */
-    public String execute
+    public String[] execute
     (
             boolean verbose,
             String repositoryPath,
@@ -177,7 +177,7 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
         if (!verbose) {
-            return "";
+            return new String[0];
         }
         if (!updated) {
             println("Current configuration:");
@@ -240,5 +240,20 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Max chunk size: ");
         printBytes(Options.getMaxChunkSize());
         println();
+    }
+
+    @Override
+    public String[] printHelp() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    public Argument[] getArgumentInfos() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    protected void execute(ArgumentParser parser) throws DCmdException {
+        throw new InternalError("Should not reach here!");
     }
 }

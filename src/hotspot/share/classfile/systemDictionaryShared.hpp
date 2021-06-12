@@ -25,9 +25,10 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/filemap.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "memory/filemap.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
 
@@ -110,6 +111,23 @@ class DumpTimeSharedClassTable;
 class LambdaProxyClassDictionary;
 class RunTimeSharedClassInfo;
 class RunTimeSharedDictionary;
+
+class SharedClassLoadingMark {
+ private:
+  Thread* THREAD;
+  InstanceKlass* _klass;
+ public:
+  SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
+  ~SharedClassLoadingMark() {
+    assert(THREAD != NULL, "Current thread is NULL");
+    assert(_klass != NULL, "InstanceKlass is NULL");
+    if (HAS_PENDING_EXCEPTION) {
+      if (_klass->is_shared()) {
+        _klass->set_shared_loading_failed();
+      }
+    }
+  }
+};
 
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
@@ -206,13 +224,14 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static void warn_excluded(InstanceKlass* k, const char* reason);
-  static bool should_be_excluded(InstanceKlass* k);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
+  static bool check_for_exclusion_impl(InstanceKlass* k);
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
@@ -245,13 +264,9 @@ public:
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
-  static bool add_unregistered_class(InstanceKlass* k, TRAPS);
-  static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,
-                                                Symbol* class_name,
-                                                Handle class_loader,
-                                                Handle protection_domain,
-                                                bool is_superclass,
-                                                TRAPS);
+  static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
+                                                            Symbol* super_name,  bool is_superclass);
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
@@ -300,13 +315,14 @@ public:
   static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
                                                           InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
-  static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
+  static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
-                                     Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
+                                     Handle loader1, Handle loader2) NOT_CDS_RETURN;
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static void check_excluded_classes();
+  static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
@@ -319,6 +335,7 @@ public:
   static void serialize_vm_classes(class SerializeClosure* soc);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
+  static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
@@ -341,11 +358,14 @@ public:
 #endif
 
   template <typename T>
-  static unsigned int hash_for_shared_dictionary(T* ptr) {
+  static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
+    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
-    address p = address(ptr) - SharedBaseAddress;
-    return primitive_hash<address>(p);
+    uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
+    return primitive_hash<uintx>(offset);
   }
+
+  static unsigned int hash_for_shared_dictionary(address ptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:

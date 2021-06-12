@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,13 +116,13 @@ public class DocLintTest {
         DL_WRN12A(WARNING, "Test.java:12: warning: no description for @return"),
 
         // javadoc messages about bad content: these should only appear when doclint is disabled
-        JD_WRN10(WARNING, "Test.java:10: warning - Tag @see: reference not found: DoesNotExist"),
-        JD_WRN13(WARNING, "Test.java:13: warning - @return tag has no arguments."),
+        JD_WRN10(WARNING, "Test.java:10: warning: Tag @see: reference not found: DoesNotExist"),
+        JD_WRN13(WARNING, "Test.java:13: warning: @return tag has no arguments."),
 
         // javadoc messages for bad options
-        OPT_BADARG(ERROR, "javadoc: error - Invalid argument for -Xdoclint option"),
-        OPT_BADQUAL(ERROR, "javadoc: error - Access qualifiers not permitted for -Xdoclint arguments"),
-        OPT_BADPACKAGEARG(ERROR, "javadoc: error - Invalid argument for -Xdoclint/package option");
+        OPT_BADARG(ERROR, "error: Invalid argument for -Xdoclint option"),
+        OPT_BADQUAL(ERROR, "error: Access qualifiers not permitted for -Xdoclint arguments"),
+        OPT_BADPACKAGEARG(ERROR, "error: Invalid argument for -Xdoclint/package option");
 
         final Diagnostic.Kind kind;
         final String text;

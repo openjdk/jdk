@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8181157 8202537 8234347 8236548
+ * @bug 8181157 8202537 8234347 8236548 8261279
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at runtime
  * @run testng/othervm -Djava.locale.providers=CLDR TimeZoneNamesTest
@@ -198,6 +198,7 @@ public class TimeZoneNamesTest {
     public void test_getZoneStrings() {
         assertFalse(
             Arrays.stream(Locale.getAvailableLocales())
+                .limit(30)
                 .peek(l -> System.out.println("Locale: " + l))
                 .map(l -> DateFormatSymbols.getInstance(l).getZoneStrings())
                 .flatMap(zs -> Arrays.stream(zs))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(true /* explicit_gc */, false /* clear_all_soft_refs */);
+  _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
+                                          false /* clear_all_soft_refs */,
+                                          false /* do_maximum_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -92,14 +94,16 @@ void VM_G1TryInitiateConcMark::doit() {
     // request will be remembered for a later partial collection, even though
     // we've rejected this request.
     _whitebox_attached = true;
-  } else if (g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
-    _gc_succeeded = true;
-  } else {
+  } else if (!g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
     // Failure to perform the collection at all occurs because GCLocker is
     // active, and we have the bad luck to be the collection request that
     // makes a later _gc_locker collection needed.  (Else we would have hit
     // the GCLocker check in the prologue.)
     _transient_failure = true;
+  } else if (g1h->should_upgrade_to_full_gc()) {
+    _gc_succeeded = g1h->upgrade_to_full_collection();
+  } else {
+    _gc_succeeded = true;
   }
 }
 
@@ -117,10 +121,15 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
   _gc_cause = gc_cause;
 }
 
+bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
+  // Don't allocate before a preventive GC.
+  return _gc_cause != GCCause::_g1_preventive_collection;
+}
+
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (_word_size > 0) {
+  if (should_try_allocation_before_gc() && _word_size > 0) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);
@@ -136,10 +145,17 @@ void VM_G1CollectForAllocation::doit() {
   // Try a partial collection of some kind.
   _gc_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
 
-  if (_gc_succeeded && (_word_size > 0)) {
-    // An allocation had been requested. Do it, eventually trying a stronger
-    // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+  if (_gc_succeeded) {
+    if (_word_size > 0) {
+      // An allocation had been requested. Do it, eventually trying a stronger
+      // kind of GC.
+      _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+    } else if (g1h->should_upgrade_to_full_gc()) {
+      // There has been a request to perform a GC to free some space. We have no
+      // information on how much memory has been asked for. In case there are
+      // absolutely no regions left to allocate into, do a full compaction.
+      _gc_succeeded = g1h->upgrade_to_full_collection();
+    }
   }
 }
 

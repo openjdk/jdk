@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public final class NativeLibraries {
      * @param file the path of the native library
      * @throws UnsatisfiedLinkError if any error in loading the native library
      */
+    @SuppressWarnings("removal")
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
         String name = findBuiltinLib(file.getName());
@@ -384,20 +385,6 @@ public final class NativeLibraries {
         }
     }
 
-    public static final NativeLibrary defaultLibrary = new NativeLibraryImpl(Object.class, "<default>", true, true) {
-
-        @Override
-        boolean open() {
-            throw new UnsupportedOperationException("Cannot load default library");
-        }
-
-        @Override
-        public long find(String name) {
-            return NativeLibraries.findEntryInProcess(name);
-        }
-
-    };
-
     /*
      * The run() method will be invoked when this class loader becomes
      * phantom reachable to unload the native library.
@@ -478,5 +465,4 @@ public final class NativeLibraries {
     private static native void unload(String name, boolean isBuiltin, boolean isJNI, long handle);
     private static native String findBuiltinLib(String name);
     private static native long findEntry0(NativeLibraryImpl lib, String name);
-    private static native long findEntryInProcess(String name);
 }

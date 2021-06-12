@@ -41,17 +41,18 @@ class XmlAttrStack {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(XmlAttrStack.class);
 
-    static class XmlsStackElement {
+    private static class XmlsStackElement {
         int level;
         boolean rendered = false;
-        List<Attr> nodes = new ArrayList<>();
+        final List<Attr> nodes = new ArrayList<>();
     }
 
     private int currentLevel = 0;
     private int lastlevel = 0;
     private XmlsStackElement cur;
-    private List<XmlsStackElement> levels = new ArrayList<>();
-    private boolean c14n11;
+
+    private final List<XmlsStackElement> levels = new ArrayList<>();
+    private final boolean c14n11;
 
     public XmlAttrStack(boolean c14n11) {
         this.c14n11 = c14n11;
@@ -120,7 +121,7 @@ class XmlAttrStack {
                 Iterator<Attr> it = e.nodes.iterator();
                 while (it.hasNext() && successiveOmitted) {
                     Attr n = it.next();
-                    if (n.getLocalName().equals("base") && !e.rendered) {
+                    if ("base".equals(n.getLocalName()) && !e.rendered) {
                         baseAttrs.add(n);
                     } else if (!loa.containsKey(n.getName())) {
                         loa.put(n.getName(), n);
@@ -133,7 +134,7 @@ class XmlAttrStack {
                 Attr baseAttr = null;
                 while (it.hasNext()) {
                     Attr n = it.next();
-                    if (n.getLocalName().equals("base")) {
+                    if ("base".equals(n.getLocalName())) {
                         base = n.getValue();
                         baseAttr = n;
                         break;
@@ -222,7 +223,7 @@ class XmlAttrStack {
                         tquery = bquery;
                     }
                 } else {
-                    if (rpath.startsWith("/")) {
+                    if (rpath.charAt(0) == '/') {
                         tpath = removeDotSegments(rpath);
                     } else {
                         if (bauthority != null && bpath.length() == 0) {
@@ -263,7 +264,7 @@ class XmlAttrStack {
         // If the input buffer starts with a root slash "/" then move this
         // character to the output buffer.
         if (input.charAt(0) == '/') {
-            output.append("/");
+            output.append('/');
             input = input.substring(1);
         }
 
@@ -282,7 +283,7 @@ class XmlAttrStack {
                 printStep("2A", output.toString(), input);
             } else if (input.startsWith("../")) {
                 input = input.substring(3);
-                if (!output.toString().equals("/")) {
+                if (!"/".equals(output.toString())) {
                     output.append("../");
                 }
                 printStep("2A", output.toString(), input);
@@ -292,7 +293,7 @@ class XmlAttrStack {
             } else if (input.startsWith("/./")) {
                 input = input.substring(2);
                 printStep("2B", output.toString(), input);
-            } else if (input.equals("/.")) {
+            } else if ("/.".equals(input)) {
                 // FIXME: what is complete path segment?
                 input = input.replaceFirst("/.", "/");
                 printStep("2B", output.toString(), input);
@@ -309,7 +310,7 @@ class XmlAttrStack {
             } else if (input.startsWith("/../")) {
                 input = input.substring(3);
                 if (output.length() == 0) {
-                    output.append("/");
+                    output.append('/');
                 } else if (output.toString().endsWith("../")) {
                     output.append("..");
                 } else if (output.toString().endsWith("..")) {
@@ -326,11 +327,11 @@ class XmlAttrStack {
                     }
                 }
                 printStep("2C", output.toString(), input);
-            } else if (input.equals("/..")) {
+            } else if ("/..".equals(input)) {
                 // FIXME: what is complete path segment?
                 input = input.replaceFirst("/..", "/");
                 if (output.length() == 0) {
-                    output.append("/");
+                    output.append('/');
                 } else if (output.toString().endsWith("../")) {
                     output.append("..");
                 } else if (output.toString().endsWith("..")) {
@@ -352,11 +353,11 @@ class XmlAttrStack {
                 // only of ".." and if the output buffer does not contain only
                 // the root slash "/", then move the ".." to the output buffer
                 // else delte it.; otherwise,
-            } else if (input.equals(".")) {
+            } else if (".".equals(input)) {
                 input = "";
                 printStep("2D", output.toString(), input);
-            } else if (input.equals("..")) {
-                if (!output.toString().equals("/")) {
+            } else if ("..".equals(input)) {
+                if (!"/".equals(output.toString())) {
                     output.append("..");
                 }
                 input = "";
@@ -392,7 +393,7 @@ class XmlAttrStack {
         // then append a slash "/". The output buffer is returned as the result
         // of remove_dot_segments
         if (output.toString().endsWith("..")) {
-            output.append("/");
+            output.append('/');
             printStep("3 ", output.toString(), input);
         }
 

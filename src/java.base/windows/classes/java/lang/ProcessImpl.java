@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ final class ProcessImpl extends Process {
      * to append to a file does not open the file in a manner that guarantees
      * that writes by the child process will be atomic.
      */
+    @SuppressWarnings("removal")
     private static FileOutputStream newFileOutputStream(File f, boolean append)
         throws IOException
     {
@@ -219,9 +220,9 @@ final class ProcessImpl extends Process {
     private static final char ESCAPE_VERIFICATION[][] = {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
-        {' ', '\t', '<', '>', '&', '|', '^'},
-        {' ', '\t', '<', '>'},
-        {' ', '\t', '<', '>'},
+        {' ', '\t', '\"', '<', '>', '&', '|', '^'},
+        {' ', '\t', '\"', '<', '>'},
+        {' ', '\t', '\"', '<', '>'},
         {' ', '\t'}
     };
 
@@ -281,18 +282,27 @@ final class ProcessImpl extends Process {
     }
 
     /**
-     * Return the argument without quotes (1st and last) if present, else the arg.
+     * Return the argument without quotes (1st and last) if properly quoted, else the arg.
+     * A properly quoted string has first and last characters as quote and
+     * the last quote is not escaped.
      * @param str a string
-     * @return the string without 1st and last quotes
+     * @return the string without quotes
      */
     private static String unQuote(String str) {
-        int len = str.length();
-        return (len >= 2 && str.charAt(0) == DOUBLEQUOTE && str.charAt(len - 1) == DOUBLEQUOTE)
-                ? str.substring(1, len - 1)
-                : str;
+        if (!str.startsWith("\"") || !str.endsWith("\"") || str.length() < 2)
+            return str;    // no beginning or ending quote, or too short not quoted
+
+        if (str.endsWith("\\\"")) {
+            return str;    // not properly quoted, treat as unquoted
+        }
+        // Strip leading and trailing quotes
+        return str.substring(1, str.length() - 1);
     }
 
     private static boolean needsEscaping(int verificationType, String arg) {
+        if (arg.isEmpty())
+            return true;            // Empty string is to be quoted
+
         // Switch off MS heuristic for internal ["].
         // Please, use the explicit [cmd.exe] call
         // if you need the internal ["].
@@ -408,6 +418,7 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
+    @SuppressWarnings("removal")
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
@@ -599,6 +610,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));

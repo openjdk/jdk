@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
  *        ../dynamicArchive/test-classes/TestMHApp.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesSpreadArgumentsTest
  */
 
@@ -50,7 +50,7 @@ import java.io.File;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 public class MethodHandlesSpreadArgumentsTest {
     @Test
@@ -69,6 +69,10 @@ public class MethodHandlesSpreadArgumentsTest {
         String appJar = JarBuilder.build("MH", new File(classDir), null);
         String classList = testClassName + ".list";
         String archiveName = testClassName + ".jsa";
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
         String[] classPaths = javaClassPath.split(File.pathSeparator);
         String junitJar = null;
@@ -82,11 +86,8 @@ public class MethodHandlesSpreadArgumentsTest {
         String jars = appJar + ps + junitJar;
 
         // dump class list
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "-cp", jars,
-            mainClass, testPackageName + "." + testClassName);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dumpClassList");
+        CDSTestUtils.dumpClassList(classList, "-cp", jars, verifyOpt, mainClass,
+                                   testPackageName + "." + testClassName);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())
@@ -98,11 +99,11 @@ public class MethodHandlesSpreadArgumentsTest {
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug", verifyOpt)
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
-        output = CDSTestUtils.runWithArchive(runOpts);
+        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
         output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesSpreadArgumentsTest[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }

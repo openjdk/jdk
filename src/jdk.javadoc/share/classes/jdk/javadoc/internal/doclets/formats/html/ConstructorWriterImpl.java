@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -117,7 +117,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
         Content constructorDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(constructor)));
+                Text.of(name(constructor)));
         HtmlId erasureAnchor = htmlIds.forErasure(constructor);
         if (erasureAnchor != null) {
             heading.setId(erasureAnchor);

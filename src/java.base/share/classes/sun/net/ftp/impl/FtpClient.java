@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,13 @@ public class FtpClient extends sun.net.ftp.FtpClient {
 
     static {
         final int vals[] = {0, 0};
-        final String encs[] = {null};
-
-        AccessController.doPrivileged(
-                new PrivilegedAction<Object>() {
-
-                    public Object run() {
+        @SuppressWarnings("removal")
+        final String enc = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
                         vals[0] = Integer.getInteger("sun.net.client.defaultReadTimeout", 300_000).intValue();
                         vals[1] = Integer.getInteger("sun.net.client.defaultConnectTimeout", 300_000).intValue();
-                        encs[0] = System.getProperty("file.encoding", "ISO8859_1");
-                        return null;
+                        return System.getProperty("file.encoding", "ISO8859_1");
                     }
                 });
         if (vals[0] == 0) {
@@ -134,7 +131,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             defaultConnectTimeout = vals[1];
         }
 
-        encoding = encs[0];
+        encoding = enc;
         try {
             if (!isASCIISuperset(encoding)) {
                 encoding = "ISO8859_1";
@@ -289,7 +286,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
     }
 
-    private class MLSxParser implements FtpDirParser {
+    private static class MLSxParser implements FtpDirParser {
         public FtpDirEntry parseLine(String line) {
             String name = null;
             int i = line.lastIndexOf(';');
@@ -631,13 +628,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = AccessController.doPrivileged(
-                        new PrivilegedAction<Socket>() {
-
-                            public Socket run() {
-                                return new Socket(proxy);
-                            }
-                        });
+                PrivilegedAction<Socket> pa = () -> new Socket(proxy);
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(pa);
+                s = tmp;
             } else {
                 s = new Socket(Proxy.NO_PROXY);
             }
@@ -645,13 +639,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             s = new Socket();
         }
 
-        InetAddress serverAddress = AccessController.doPrivileged(
-                new PrivilegedAction<InetAddress>() {
-                    @Override
-                    public InetAddress run() {
-                        return server.getLocalAddress();
-                    }
-                });
+        PrivilegedAction<InetAddress> pa = () -> server.getLocalAddress();
+        @SuppressWarnings("removal")
+        InetAddress serverAddress = AccessController.doPrivileged(pa);
 
         // Bind the socket to the same address as the control channel. This
         // is needed in case of multi-homed systems.
@@ -924,13 +914,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = AccessController.doPrivileged(
-                        new PrivilegedAction<Socket>() {
-
-                            public Socket run() {
-                                return new Socket(proxy);
-                            }
-                        });
+                PrivilegedAction<Socket> pa = () -> new Socket(proxy);
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(pa);
+                s = tmp;
             } else {
                 s = new Socket(Proxy.NO_PROXY);
             }
@@ -1217,7 +1204,6 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * @throws IOException if the transfer fails.
      */
     public sun.net.ftp.FtpClient getFile(String name, OutputStream local) throws sun.net.ftp.FtpProtocolException, IOException {
-        int mtu = 1500;
         if (restartOffset > 0) {
             Socket s;
             try {
@@ -1227,27 +1213,15 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             }
             issueCommandCheck("RETR " + name);
             getTransferSize();
-            InputStream remote = createInputStream(s.getInputStream());
-            byte[] buf = new byte[mtu * 10];
-            int l;
-            while ((l = remote.read(buf)) >= 0) {
-                if (l > 0) {
-                    local.write(buf, 0, l);
-                }
+            try (InputStream remote = createInputStream(s.getInputStream())) {
+                remote.transferTo(local);
             }
-            remote.close();
         } else {
             Socket s = openDataConnection("RETR " + name);
             getTransferSize();
-            InputStream remote = createInputStream(s.getInputStream());
-            byte[] buf = new byte[mtu * 10];
-            int l;
-            while ((l = remote.read(buf)) >= 0) {
-                if (l > 0) {
-                    local.write(buf, 0, l);
-                }
+            try (InputStream remote = createInputStream(s.getInputStream())) {
+                remote.transferTo(local);
             }
-            remote.close();
         }
         return completePending();
     }
@@ -1344,18 +1318,11 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      */
     public sun.net.ftp.FtpClient putFile(String name, InputStream local, boolean unique) throws sun.net.ftp.FtpProtocolException, IOException {
         String cmd = unique ? "STOU " : "STOR ";
-        int mtu = 1500;
         if (type == TransferType.BINARY) {
             Socket s = openDataConnection(cmd + name);
-            OutputStream remote = createOutputStream(s.getOutputStream());
-            byte[] buf = new byte[mtu * 10];
-            int l;
-            while ((l = local.read(buf)) >= 0) {
-                if (l > 0) {
-                    remote.write(buf, 0, l);
-                }
+            try (OutputStream remote = createOutputStream(s.getOutputStream())) {
+                local.transferTo(remote);
             }
-            remote.close();
         }
         return completePending();
     }
@@ -1373,17 +1340,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * @throws IOException if an error occurred during the transmission.
      */
     public sun.net.ftp.FtpClient appendFile(String name, InputStream local) throws sun.net.ftp.FtpProtocolException, IOException {
-        int mtu = 1500;
         Socket s = openDataConnection("APPE " + name);
-        OutputStream remote = createOutputStream(s.getOutputStream());
-        byte[] buf = new byte[mtu * 10];
-        int l;
-        while ((l = local.read(buf)) >= 0) {
-            if (l > 0) {
-                remote.write(buf, 0, l);
-            }
+        try (OutputStream remote = createOutputStream(s.getOutputStream())) {
+            local.transferTo(remote);
         }
-        remote.close();
         return completePending();
     }
 
@@ -1789,7 +1749,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return this;
     }
 
-    private class FtpFileIterator implements Iterator<FtpDirEntry>, Closeable {
+    private static class FtpFileIterator implements Iterator<FtpDirEntry>, Closeable {
 
         private BufferedReader in = null;
         private FtpDirEntry nextFile = null;

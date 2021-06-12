@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,10 +177,27 @@ public class TestCommon extends CDSTestUtils {
     // name of the base archive to be used for dynamic dump
     private static String tempBaseArchive = null;
 
+    private static void captureVerifyOpts(ArrayList<String> opts, ArrayList<String> verifyOpts) {
+        boolean addedDiagnosticOpt = false;
+        for (String s : opts) {
+            if (s.startsWith("-XX:-BytecodeVerification")) {
+                if (!addedDiagnosticOpt) {
+                    verifyOpts.add("-XX:+UnlockDiagnosticVMOptions");
+                    addedDiagnosticOpt = true;
+                }
+                verifyOpts.add(s);
+            }
+            if (s.startsWith("-Xverify")) {
+                verifyOpts.add(s);
+            }
+        }
+    }
+
     // Create AppCDS archive using appcds options
     public static OutputAnalyzer createArchive(AppCDSOptions opts)
         throws Exception {
         ArrayList<String> cmd = new ArrayList<String>();
+        ArrayList<String> verifyOpts = new ArrayList<String>();
         startNewArchiveName();
 
         for (String p : opts.prefix) cmd.add(p);
@@ -202,9 +219,15 @@ public class TestCommon extends CDSTestUtils {
 
         if (DYNAMIC_DUMP) {
             File baseArchive = null;
-            if (tempBaseArchive == null || !(new File(tempBaseArchive)).isFile()) {
+            captureVerifyOpts(opts.suffix, verifyOpts);
+            int size = verifyOpts.size();
+            if (tempBaseArchive == null || !(new File(tempBaseArchive)).isFile() || size > 0) {
                 tempBaseArchive = getNewArchiveName("tempBaseArchive");
-                dumpBaseArchive(tempBaseArchive);
+                if (size == 0) {
+                    dumpBaseArchive(tempBaseArchive);
+                } else {
+                    dumpBaseArchive(tempBaseArchive, verifyOpts.toArray(new String[size]));
+                }
             }
             cmd.add("-Xshare:on");
             cmd.add("-XX:SharedArchiveFile=" + tempBaseArchive);
@@ -394,7 +417,7 @@ public class TestCommon extends CDSTestUtils {
         if (RUN_WITH_JFR) {
             boolean usesJFR = false;
             for (String s : cmd) {
-                if (s.startsWith("-XX:StartFlightRecording=") || s.startsWith("-XX:FlightRecorderOptions")) {
+                if (s.startsWith("-XX:StartFlightRecording") || s.startsWith("-XX:FlightRecorderOptions")) {
                     System.out.println("JFR option might have been specified. Don't interfere: " + s);
                     usesJFR = true;
                     break;
@@ -402,7 +425,7 @@ public class TestCommon extends CDSTestUtils {
             }
             if (!usesJFR) {
                 System.out.println("JFR option not specified. Enabling JFR ...");
-                cmd.add(0, "-XX:StartFlightRecording=dumponexit=true");
+                cmd.add(0, "-XX:StartFlightRecording:dumponexit=true");
                 System.out.println(cmd);
             }
         }
@@ -426,6 +449,12 @@ public class TestCommon extends CDSTestUtils {
     public static Result run(String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
         opts.addSuffix(suffix);
+        return new Result(opts, runWithArchive(opts));
+    }
+
+    public static Result runWithoutCDS(String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions());
+        opts.addSuffix(suffix).setXShareMode("off");;
         return new Result(opts, runWithArchive(opts));
     }
 

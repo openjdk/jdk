@@ -103,7 +103,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
 
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
-    object->forward_to(oop(_compaction_top));
+    object->forward_to(cast_to_oop(_compaction_top));
   } else {
     if (object->forwardee() != NULL) {
       // Object should not move but mark-word is used so it looks like the

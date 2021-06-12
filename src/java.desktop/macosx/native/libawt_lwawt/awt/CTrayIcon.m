@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #import "jni_util.h"
 
 #import <AppKit/AppKit.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CTrayIcon.h"
 #import "ThreadUtilities.h"
@@ -69,11 +68,14 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
     view = [[AWTTrayIconView alloc] initWithTrayIcon:self];
     [theItem setView:view];
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
 
     return self;
 }
 
 -(void) dealloc {
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:nil];
+
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteGlobalRef(env, peer);
 
@@ -166,6 +168,12 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     (*env)->CallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jEvent);
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES; // We always show notifications to the user
 }
 
 @end //AWTTrayIcon
@@ -342,7 +350,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeSetToolTip
 JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *tooltip = JNFJavaToNSString(env, jtooltip);
+    NSString *tooltip = JavaStringToNSString(env, jtooltip);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [icon setTooltip:tooltip];
     }];
@@ -395,8 +403,8 @@ Java_sun_lwawt_macosx_CTrayIcon_nativeShowNotification
 JNI_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    NSString *caption = JNFJavaToNSString(env, jcaption);
-    NSString *text = JNFJavaToNSString(env, jtext);
+    NSString *caption = JavaStringToNSString(env, jcaption);
+    NSString *text = JavaStringToNSString(env, jtext);
     NSImage * contentImage = jlong_to_ptr(nsimage);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){

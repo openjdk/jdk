@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.internal.net.http.websocket.OpeningHandshake;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
+import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
@@ -61,12 +62,14 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     final boolean secure;
     final boolean expectContinue;
     private volatile boolean isWebSocket;
+    @SuppressWarnings("removal")
     private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
+        @SuppressWarnings("removal")
         String version = AccessController.doPrivileged(pa);
         return "Java-http-client/" + version;
     }
@@ -203,14 +206,15 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     }
 
     /* used for creating CONNECT requests  */
-    HttpRequestImpl(String method, InetSocketAddress authority, HttpHeaders headers) {
+    HttpRequestImpl(String method, InetSocketAddress authority, ProxyHeaders headers) {
         // TODO: isWebSocket flag is not specified, but the assumption is that
         // such a request will never be made on a connection that will be returned
         // to the connection pool (we might need to revisit this constructor later)
         assert "CONNECT".equalsIgnoreCase(method);
         this.method = method;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
-        this.userHeaders = headers;
+        this.systemHeadersBuilder.map().putAll(headers.systemHeaders().map());
+        this.userHeaders = headers.userHeaders();
         this.uri = URI.create("socket://" + authority.getHostString() + ":"
                               + Integer.toString(authority.getPort()) + "/");
         this.proxy = null;
@@ -366,6 +370,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeadersBuilder.setHeader(name, value);
     }
 
+    @SuppressWarnings("removal")
     InetSocketAddress getAddress() {
         URI uri = uri();
         if (uri == null) {

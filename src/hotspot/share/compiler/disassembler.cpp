@@ -36,11 +36,10 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
-#include CPU_HEADER(depChecker)
 
 void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;
@@ -756,6 +755,17 @@ address decode_env::decode_instructions(address start, address end, address orig
 // Each method will create a decode_env before decoding.
 // You can call the decode_env methods directly if you already have one.
 
+void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
+  int sz = buflen - offset;
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  if (written < sz) { // written successfully, not truncated.
+    if (Verbose) st->print_cr("Trying to load: %s", buf);
+    return os::dll_load(buf, ebuf, ebuflen);
+  } else if (Verbose) {
+    st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
+  }
+  return NULL;
+}
 
 bool Disassembler::load_library(outputStream* st) {
   // Do not try to load multiple times. Failed once -> fails always.
@@ -805,16 +815,10 @@ bool Disassembler::load_library(outputStream* st) {
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-    strcpy(&buf[jvm_offset], hsdis_library_name);
-    strcat(&buf[jvm_offset], os::dll_file_extension());
-    if (Verbose) st->print_cr("Trying to load: %s", buf);
-    _library = os::dll_load(buf, ebuf, sizeof ebuf);
+    _library = dll_load(buf, sizeof buf, jvm_offset, ebuf, sizeof ebuf, st);
     if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
-      strcpy(&buf[lib_offset], hsdis_library_name);
-      strcat(&buf[lib_offset], os::dll_file_extension());
-      if (Verbose) st->print_cr("Trying to load: %s", buf);
-      _library = os::dll_load(buf, ebuf, sizeof ebuf);
+      _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
     }
     if (_library == NULL && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
@@ -822,19 +826,12 @@ bool Disassembler::load_library(outputStream* st) {
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
-        strcpy(&buf[lib_offset], hsdis_library_name);
-        strcat(&buf[lib_offset], os::dll_file_extension());
-        if (Verbose) st->print_cr("Trying to load: %s", buf);
-        _library = os::dll_load(buf, ebuf, sizeof ebuf);
+        _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
       }
     }
   }
   if (_library == NULL) {
-    // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
-    strcpy(&buf[0], hsdis_library_name);
-    strcat(&buf[0], os::dll_file_extension());
-    if (Verbose) st->print_cr("Trying to load: %s via LD_LIBRARY_PATH or equivalent", buf);
-    _library = os::dll_load(buf, ebuf, sizeof ebuf);
+    _library = dll_load(buf, sizeof buf, 0, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.
@@ -882,23 +879,9 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 
   decode_env env(cb, st);
   env.output()->print_cr("--------------------------------------------------------------------------------");
-  if (cb->is_aot()) {
-    env.output()->print("A ");
-    if (cb->is_compiled()) {
-      CompiledMethod* cm = (CompiledMethod*)cb;
-      env.output()->print("%d ",cm->compile_id());
-      cm->method()->method_holder()->name()->print_symbol_on(env.output());
-      env.output()->print(".");
-      cm->method()->name()->print_symbol_on(env.output());
-      cm->method()->signature()->print_symbol_on(env.output());
-    } else {
-      env.output()->print_cr("%s", cb->name());
-    }
-  } else {
-    env.output()->print("Decoding CodeBlob");
-    if (cb->name() != NULL) {
-      env.output()->print(", name: %s,", cb->name());
-    }
+  env.output()->print("Decoding CodeBlob");
+  if (cb->name() != NULL) {
+    env.output()->print(", name: %s,", cb->name());
   }
   env.output()->print_cr(" at  [" PTR_FORMAT ", " PTR_FORMAT "]  " JLONG_FORMAT " bytes", p2i(cb->code_begin()), p2i(cb->code_end()), ((jlong)(cb->code_end() - cb->code_begin())));
 

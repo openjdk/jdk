@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,13 @@ public class EUC_JP
     static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        final static SingleByte.Decoder DEC0201 =
+        static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        final static DoubleByte.Decoder DEC0208 =
+        static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        final static DoubleByte.Decoder DEC0212 =
+        static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
         private final SingleByte.Decoder dec0201;
@@ -113,14 +113,10 @@ public class EUC_JP
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
 
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             int b1 = 0, b2 = 0;
             int inputSize = 0;
@@ -229,13 +225,13 @@ public class EUC_JP
 
     static class Encoder extends CharsetEncoder {
 
-        final static SingleByte.Encoder ENC0201 =
+        static final SingleByte.Encoder ENC0201 =
             (SingleByte.Encoder)new JIS_X_0201().newEncoder();
 
-        final static DoubleByte.Encoder ENC0208 =
+        static final DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
-        final static DoubleByte.Encoder ENC0212 =
+        static final DoubleByte.Encoder ENC0212 =
             (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -296,13 +292,10 @@ public class EUC_JP
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             int outputSize = 0;
             byte[]  outputByte;

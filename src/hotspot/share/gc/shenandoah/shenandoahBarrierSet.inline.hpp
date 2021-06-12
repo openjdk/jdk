@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+
+#include "gc/shared/accessBarrierSupport.inline.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
@@ -35,7 +36,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
@@ -101,9 +101,12 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 
 template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
+  if (obj == NULL) {
+    return NULL;
+  }
 
   // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
-  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value && obj != NULL &&
+  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
     return NULL;
@@ -111,14 +114,14 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
 
   // Prevent resurrection of unreachable weak references.
   if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
-      obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
+      _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked_strong(obj)) {
     return NULL;
   }
 
   // Prevent resurrection of unreachable objects that are visited during
   // concurrent class-unloading.
-  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
+  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value &&
       _heap->is_evacuation_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
     return obj;

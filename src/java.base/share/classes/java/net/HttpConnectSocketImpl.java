@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.Set;
  * @since 1.8
  */
 
-/*package*/ class HttpConnectSocketImpl extends DelegatingSocketImpl {
+/*package*/ @SuppressWarnings("removal") class HttpConnectSocketImpl extends DelegatingSocketImpl {
 
     private static final String httpURLClazzStr =
                                   "sun.net.www.protocol.http.HttpURLConnection";
@@ -80,10 +80,9 @@ import java.util.Set;
         super(delegate);
         this.socket = socket;
         SocketAddress a = proxy.address();
-        if ( !(a instanceof InetSocketAddress) )
+        if ( !(a instanceof InetSocketAddress ad) )
             throw new IllegalArgumentException("Unsupported address type");
 
-        InetSocketAddress ad = (InetSocketAddress) a;
         server = ad.getHostString();
         port = ad.getPort();
     }

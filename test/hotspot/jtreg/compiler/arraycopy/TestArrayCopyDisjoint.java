@@ -30,25 +30,25 @@ import java.util.Random;
  * @summary Optimize arrayCopy using AVX-512 masked instructions.
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=0 -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOptions
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=0 -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOptions
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=0 -XX:MaxVectorSize=64
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=0 -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=64
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=64 -XX:MaxVectorSize=64
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64 -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption -XX:ArrayCopyLoadStoreMaxElem=16
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption -XX:ArrayCopyLoadStoreMaxElem=16
  *      compiler.arraycopy.TestArrayCopyDisjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyPartialInlineSize=64 -XX:MaxVectorSize=64 -XX:ArrayCopyLoadStoreMaxElem=16
+ *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64 -XX:MaxVectorSize=64 -XX:ArrayCopyLoadStoreMaxElem=16
  *      compiler.arraycopy.TestArrayCopyDisjoint
  *
  */

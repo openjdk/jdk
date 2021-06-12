@@ -56,9 +56,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 
 public class PAForUserEnc {
-    final public PrincipalName name;
-    final private EncryptionKey key;
-    final public static String AUTH_PACKAGE = "Kerberos";
+    public final PrincipalName name;
+    private final EncryptionKey key;
+    public static final String AUTH_PACKAGE = "Kerberos";
 
     public PAForUserEnc(PrincipalName name, EncryptionKey key) {
         this.name = name;

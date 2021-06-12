@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2000,9 +2000,9 @@ void GraphKit::increment_counter(address counter_addr) {
 void GraphKit::increment_counter(Node* counter_addr) {
   int adr_type = Compile::AliasIdxRaw;
   Node* ctrl = control();
-  Node* cnt  = make_load(ctrl, counter_addr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory(ctrl, counter_addr, incr, T_INT, adr_type, MemNode::unordered);
+  Node* cnt  = make_load(ctrl, counter_addr, TypeLong::LONG, T_LONG, adr_type, MemNode::unordered);
+  Node* incr = _gvn.transform(new AddLNode(cnt, _gvn.longcon(1)));
+  store_to_memory(ctrl, counter_addr, incr, T_LONG, adr_type, MemNode::unordered);
 }
 
 
@@ -2319,23 +2319,6 @@ void GraphKit::record_profiled_return_for_speculation() {
   }
 }
 
-void GraphKit::round_double_result(ciMethod* dest_method) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    // If a strict caller invokes a non-strict callee, round a double result.
-    // A non-strict method may return a double value which has an extended exponent,
-    // but this must not be visible in a caller which is strict.
-    BasicType result_type = dest_method->return_type()->basic_type();
-    assert(method() != NULL, "must have caller context");
-    if( result_type == T_DOUBLE && method()->is_strict() && !dest_method->is_strict() ) {
-      // Destination method's return value is on top of stack
-      // dstore_rounding() does gvn.transform
-      Node *result = pop_pair();
-      result = dstore_rounding(result);
-      push_pair(result);
-    }
-  }
-}
-
 void GraphKit::round_double_arguments(ciMethod* dest_method) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
     // (Note:  TypeFunc::make has a cache that makes this fast.)
@@ -2358,7 +2341,7 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
 Node* GraphKit::precision_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
-    if (_method->flags().is_strict() && UseSSE == 0) {
+    if (UseSSE == 0) {
       return _gvn.transform(new RoundFloatNode(0, n));
     }
 #else
@@ -2372,7 +2355,7 @@ Node* GraphKit::precision_rounding(Node* n) {
 Node* GraphKit::dprecision_rounding(Node *n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
-    if (_method->flags().is_strict() && UseSSE < 2) {
+    if (UseSSE < 2) {
       return _gvn.transform(new RoundDoubleNode(0, n));
     }
 #else
@@ -2504,6 +2487,9 @@ Node* GraphKit::make_runtime_call(int flags,
     call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
   } else if (flags & RC_NO_FP) {
     call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+  } else  if (flags & RC_VECTOR){
+    uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
+    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -2583,8 +2569,13 @@ Node* GraphKit::sign_extend_short(Node* in) {
 }
 
 //-----------------------------make_native_call-------------------------------
-Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
-  uint n_filtered_args = nargs - 2; // -fallback, -nep;
+Node* GraphKit::make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
+  // Select just the actual call args to pass on
+  // [MethodHandle fallback, long addr, HALF addr, ... args , NativeEntryPoint nep]
+  //                                             |          |
+  //                                             V          V
+  //                                             [ ... args ]
+  uint n_filtered_args = nargs - 4; // -fallback, -addr (2), -nep;
   ResourceMark rm;
   Node** argument_nodes = NEW_RESOURCE_ARRAY(Node*, n_filtered_args);
   const Type** arg_types = TypeTuple::fields(n_filtered_args);
@@ -2594,7 +2585,7 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
   {
     for (uint vm_arg_pos = 0, java_arg_read_pos = 0;
         vm_arg_pos < n_filtered_args; vm_arg_pos++) {
-      uint vm_unfiltered_arg_pos = vm_arg_pos + 1; // +1 to skip fallback handle argument
+      uint vm_unfiltered_arg_pos = vm_arg_pos + 3; // +3 to skip fallback handle argument and addr (2 since long)
       Node* node = argument(vm_unfiltered_arg_pos);
       const Type* type = call_type->domain()->field_at(TypeFunc::Parms + vm_unfiltered_arg_pos);
       VMReg reg = type == Type::HALF
@@ -2630,11 +2621,10 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
     TypeTuple::make(TypeFunc::Parms + n_returns, ret_types)
   );
 
-  address call_addr = nep->entry_point();
   if (nep->need_transition()) {
-    BufferBlob* invoker = SharedRuntime::make_native_invoker(call_addr,
-                                                             nep->shadow_space(),
-                                                             arg_regs, ret_regs);
+    RuntimeStub* invoker = SharedRuntime::make_native_invoker(call_addr,
+                                                              nep->shadow_space(),
+                                                              arg_regs, ret_regs);
     if (invoker == NULL) {
       C->record_failure("native invoker not implemented on this platform");
       return NULL;
@@ -4206,7 +4196,7 @@ Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst
   //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
   Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
   StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
-  Node* res_mem = _gvn.transform(new SCMemProjNode(str));
+  Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
   set_memory(res_mem, TypeAryPtr::BYTES);
   return str;
 }
@@ -4228,6 +4218,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
    * }
    */
   add_empty_predicates();
+  C->set_has_loops(true);
+
   RegionNode* head = new RegionNode(3);
   head->init_req(1, control());
   gvn().set_type(head, Type::CONTROL);
