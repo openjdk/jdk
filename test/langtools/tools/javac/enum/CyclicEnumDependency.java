@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main T8225003
+ * @run main CyclicEnumDependency
  */
 
 import java.util.List;
@@ -40,16 +40,16 @@ import toolbox.ToolBox;
 import toolbox.JavacTask;
 import toolbox.Task;
 
-public class T8225003 extends TestRunner {
+public class CyclicEnumDependency extends TestRunner {
     ToolBox tb;
 
-    public T8225003() {
+    public CyclicEnumDependency() {
         super(System.err);
         tb = new ToolBox();
     }
 
     public static void main(String[] args) throws Exception {
-        T8225003 t = new T8225003();
+        CyclicEnumDependency t = new CyclicEnumDependency();
         t.runTests();
     }
 
