@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ class ParCompactionManager;
 class PSPromotionManager {
   friend class PSScavenge;
   friend class ScavengeRootsTask;
-  friend class PSRefProcTaskExecutor;
-  friend class PSRefProcTask;
 
  private:
   typedef OverflowTaskQueue<ScannerTask, mtGC>           PSScannerTasksQueue;
@@ -111,6 +109,9 @@ class PSPromotionManager {
                                     const PSPromotionLAB* lab);
 
   static PSScannerTasksQueueSet* stack_array_depth() { return _stack_array_depth; }
+
+  template<bool promote_immediately>
+  oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
  public:
   // Static

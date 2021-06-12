@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     //This whole static block is a part of 4152317 fix
     static {
+        @SuppressWarnings("removal")
         String filterString = AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 @Override

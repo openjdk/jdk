@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.beans.beancontext.BeanContext;
  * <a href="../applet/package-summary.html"> java.applet package
  * documentation</a> for further information.
  */
-@Deprecated(since = "9")
+@Deprecated(since = "9", forRemoval = true)
 public interface AppletInitializer {
 
     /**
@@ -73,6 +73,7 @@ public interface AppletInitializer {
      * @param bCtxt          The BeanContext intended for this Applet, or
      *                       null.
      */
+    @SuppressWarnings("removal")
     void initialize(Applet newAppletBean, BeanContext bCtxt);
 
     /**
@@ -84,5 +85,6 @@ public interface AppletInitializer {
      *
      * @param newApplet  The newly instantiated JavaBean
      */
+    @SuppressWarnings("removal")
     void activate(Applet newApplet);
 }

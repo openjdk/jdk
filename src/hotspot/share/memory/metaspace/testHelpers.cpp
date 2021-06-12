@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
                     reserve_limit, Metaspace::reserve_alignment_words());
   if (reserve_limit > 0) {
     // have reserve limit -> non-expandable context
-    _rs = ReservedSpace(reserve_limit * BytesPerWord, Metaspace::reserve_alignment(), false);
+    _rs = ReservedSpace(reserve_limit * BytesPerWord, Metaspace::reserve_alignment(), os::vm_page_size());
     _context = MetaspaceContext::create_nonexpandable_context(name, _rs, &_commit_limiter);
   } else {
     // no reserve limit -> expandable vslist
@@ -82,7 +82,7 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
 
 MetaspaceTestContext::~MetaspaceTestContext() {
   DEBUG_ONLY(verify();)
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   delete _context;
   if (_rs.is_reserved()) {
     _rs.release();

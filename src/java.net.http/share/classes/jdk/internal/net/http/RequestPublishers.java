@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,7 @@ public final class RequestPublishers {
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             FilePermission filePermission = null;
             boolean defaultFS = true;
@@ -289,6 +290,7 @@ public final class RequestPublishers {
 
             Permission perm = filePermission;
             assert perm == null || perm.getActions().equals("read");
+            @SuppressWarnings("removal")
             AccessControlContext acc = sm != null ?
                     AccessController.getContext() : null;
             boolean finalDefaultFS = defaultFS;
@@ -305,6 +307,7 @@ public final class RequestPublishers {
             return new FilePublisher(path, length, inputStreamSupplier);
         }
 
+        @SuppressWarnings("removal")
         private static InputStream createInputStream(Path path,
                                                      AccessControlContext acc,
                                                      Permission perm,
@@ -398,7 +401,7 @@ public final class RequestPublishers {
 //            return error;
 //        }
 
-        private int read() {
+        private int read() throws IOException {
             if (eof)
                 return -1;
             nextBuffer = bufSupplier.get();
@@ -406,30 +409,46 @@ public final class RequestPublishers {
             byte[] buf = nextBuffer.array();
             int offset = nextBuffer.arrayOffset();
             int cap = nextBuffer.capacity();
-            try {
-                int n = is.read(buf, offset, cap);
-                if (n == -1) {
-                    eof = true;
-                    is.close();
-                    return -1;
-                }
-                //flip
-                nextBuffer.limit(n);
-                nextBuffer.position(0);
-                return n;
-            } catch (IOException ex) {
+            int n = is.read(buf, offset, cap);
+            if (n == -1) {
+                eof = true;
                 return -1;
+            }
+            //flip
+            nextBuffer.limit(n);
+            nextBuffer.position(0);
+            return n;
+        }
+
+        /**
+         * Close stream in this instance.
+         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
+         */
+        private void closeStream() {
+            try {
+                is.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
 
         @Override
         public synchronized boolean hasNext() {
             if (need2Read) {
-                haveNext = read() != -1;
-                if (haveNext) {
+                try {
+                    haveNext = read() != -1;
+                    if (haveNext) {
+                        need2Read = false;
+                    }
+                } catch (IOException e) {
+                    haveNext = false;
                     need2Read = false;
+                    throw new UncheckedIOException(e);
+                } finally {
+                    if (!haveNext) {
+                        closeStream();
+                    }
                 }
-                return haveNext;
             }
             return haveNext;
         }
@@ -567,7 +586,7 @@ public final class RequestPublishers {
         AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
             this.bodies = new ConcurrentLinkedQueue<>(bodies);
             this.subscriber = subscriber;
-            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+            this.scheduler = SequentialScheduler.lockingScheduler(this::run);
         }
 
         @Override

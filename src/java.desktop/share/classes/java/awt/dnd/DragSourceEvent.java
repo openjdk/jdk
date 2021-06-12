@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.awt.dnd;
 
 import java.awt.Point;
-
+import java.io.Serial;
 import java.util.EventObject;
 
 /**
@@ -59,6 +59,10 @@ import java.util.EventObject;
 
 public class DragSourceEvent extends EventObject {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -763287114604032641L;
 
     /**

@@ -24,7 +24,6 @@ package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -37,8 +36,6 @@ import java.util.HashMap;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -107,26 +104,12 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     }
 
     @Override
-    JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl holder, HotSpotResolvedJavaField field, boolean isVolatile) {
-        Class<?> javaMirror = getMirror(holder);
-        return readFieldValue(field, javaMirror, isVolatile);
-    }
-
-    @Override
-    JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedJavaField field, boolean isVolatile) {
-        Object value = resolveObject(object);
-        return readFieldValue(field, value, isVolatile);
-    }
-
-    @Override
     boolean equals(HotSpotObjectConstantImpl a, HotSpotObjectConstantImpl b) {
         return resolveObject(a) == resolveObject(b) && a.isCompressed() == b.isCompressed();
     }
 
-    @Override
-    JavaConstant getJavaMirror(HotSpotResolvedPrimitiveType holder) {
-        return holder.mirror;
-    }
+    // This field is being kept around for compatibility with libgraal
+    @SuppressWarnings("unused") private long oopSizeOffset;
 
     @Override
     ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod) {
@@ -294,152 +277,6 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     @Override
     JavaConstant boxPrimitive(JavaConstant source) {
         return forNonNullObject(source.asBoxedPrimitive());
-    }
-
-    @Override
-    int getInt(HotSpotObjectConstantImpl object, long displacement) {
-        return UNSAFE.getInt((resolveObject(object)), displacement);
-    }
-
-    @Override
-    byte getByte(HotSpotObjectConstantImpl object, long displacement) {
-        return UNSAFE.getByte(resolveObject(object), displacement);
-    }
-
-    @Override
-    short getShort(HotSpotObjectConstantImpl object, long displacement) {
-        return UNSAFE.getShort(resolveObject(object), displacement);
-    }
-
-    @Override
-    long getLong(HotSpotObjectConstantImpl object, long displacement) {
-        return UNSAFE.getLong(resolveObject(object), displacement);
-    }
-
-    @Override
-    void checkRead(HotSpotObjectConstantImpl constant, JavaKind kind, long displacement, HotSpotResolvedObjectType type) {
-        checkRead(kind, displacement, type, resolveObject(constant));
-    }
-
-    /**
-     * Offset of injected {@code java.lang.Class::oop_size} field. No need to make {@code volatile}
-     * as initialization is idempotent.
-     */
-    private long oopSizeOffset;
-
-    private static int computeOopSizeOffset(HotSpotJVMCIRuntime runtime) {
-        MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
-        ResolvedJavaType staticType = metaAccess.lookupJavaType(Class.class);
-        for (ResolvedJavaField f : staticType.getInstanceFields(false)) {
-            if (f.getName().equals("oop_size")) {
-                int offset = f.getOffset();
-                assert offset != 0 : "not expecting offset of java.lang.Class::oop_size to be 0";
-                return offset;
-            }
-        }
-        throw new JVMCIError("Could not find injected java.lang.Class::oop_size field");
-    }
-
-    long oopSizeOffset() {
-        if (oopSizeOffset == 0) {
-            oopSizeOffset = computeOopSizeOffset(runtime());
-        }
-        return oopSizeOffset;
-    }
-
-    private boolean checkRead(JavaKind kind, long displacement, HotSpotResolvedObjectType type, Object object) {
-        if (type.isArray()) {
-            ResolvedJavaType componentType = type.getComponentType();
-            JavaKind componentKind = componentType.getJavaKind();
-            final int headerSize = runtime().getArrayBaseOffset(componentKind);
-            int sizeOfElement = runtime().getArrayIndexScale(componentKind);
-            int length = Array.getLength(object);
-            long arrayEnd = headerSize + (sizeOfElement * length);
-            boolean aligned = ((displacement - headerSize) % sizeOfElement) == 0;
-            if (displacement < 0 || displacement > (arrayEnd - sizeOfElement) || (kind == JavaKind.Object && !aligned)) {
-                int index = (int) ((displacement - headerSize) / sizeOfElement);
-                throw new IllegalArgumentException("Unsafe array access: reading element of kind " + kind +
-                                " at offset " + displacement + " (index ~ " + index + ") in " +
-                                type.toJavaName() + " object of length " + length);
-            }
-        } else if (kind != JavaKind.Object) {
-            long size;
-            if (object instanceof Class) {
-                int wordSize = runtime().getHostJVMCIBackend().getCodeCache().getTarget().wordSize;
-                size = UNSAFE.getInt(object, oopSizeOffset()) * wordSize;
-            } else {
-                size = Math.abs(type.instanceSize());
-            }
-            int bytesToRead = kind.getByteCount();
-            if (displacement + bytesToRead > size || displacement < 0) {
-                throw new IllegalArgumentException("Unsafe access: reading " + bytesToRead + " bytes at offset " + displacement + " in " +
-                                type.toJavaName() + " object of size " + size);
-            }
-        } else {
-            ResolvedJavaField field = null;
-            if (object instanceof Class) {
-                // Read of a static field
-                HotSpotResolvedJavaType hotSpotResolvedJavaType = runtime().fromClass((Class<?>) object);
-                if (hotSpotResolvedJavaType instanceof HotSpotResolvedObjectTypeImpl) {
-                    HotSpotResolvedObjectTypeImpl staticFieldsHolder = (HotSpotResolvedObjectTypeImpl) hotSpotResolvedJavaType;
-                    field = staticFieldsHolder.findStaticFieldWithOffset(displacement, JavaKind.Object);
-                }
-            }
-            if (field == null) {
-                field = type.findInstanceFieldWithOffset(displacement, JavaKind.Object);
-            }
-            if (field == null) {
-                throw new IllegalArgumentException("Unsafe object access: field not found for read of kind Object" +
-                                " at offset " + displacement + " in " + type.toJavaName() + " object");
-            }
-            if (field.getJavaKind() != JavaKind.Object) {
-                throw new IllegalArgumentException("Unsafe object access: field " + field.format("%H.%n:%T") + " not of expected kind Object" +
-                                " at offset " + displacement + " in " + type.toJavaName() + " object");
-            }
-        }
-        return true;
-    }
-
-    JavaConstant readFieldValue(HotSpotResolvedJavaField field, Object obj, boolean isVolatile) {
-        assert obj != null;
-        assert !field.isStatic() || obj instanceof Class;
-        long displacement = field.getOffset();
-        if (obj instanceof Class && field.getName().equals("componentType")) {
-            Class<?> clazz = (Class<?>) obj;
-            if (!clazz.isArray()) {
-                // Class.componentType for non-array classes can transiently contain an int[] that's
-                // used for locking so always return null to mimic Class.getComponentType()
-                return JavaConstant.NULL_POINTER;
-            }
-        }
-
-        assert checkRead(field.getJavaKind(), displacement,
-                        (HotSpotResolvedObjectType) runtime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(field.isStatic() ? (Class<?>) obj : obj.getClass()),
-                        obj);
-        JavaKind kind = field.getJavaKind();
-        switch (kind) {
-            case Boolean:
-                return JavaConstant.forBoolean(isVolatile ? UNSAFE.getBooleanVolatile(obj, displacement) : UNSAFE.getBoolean(obj, displacement));
-            case Byte:
-                return JavaConstant.forByte(isVolatile ? UNSAFE.getByteVolatile(obj, displacement) : UNSAFE.getByte(obj, displacement));
-            case Char:
-                return JavaConstant.forChar(isVolatile ? UNSAFE.getCharVolatile(obj, displacement) : UNSAFE.getChar(obj, displacement));
-            case Short:
-                return JavaConstant.forShort(isVolatile ? UNSAFE.getShortVolatile(obj, displacement) : UNSAFE.getShort(obj, displacement));
-            case Int:
-                return JavaConstant.forInt(isVolatile ? UNSAFE.getIntVolatile(obj, displacement) : UNSAFE.getInt(obj, displacement));
-            case Long:
-                return JavaConstant.forLong(isVolatile ? UNSAFE.getLongVolatile(obj, displacement) : UNSAFE.getLong(obj, displacement));
-            case Float:
-                return JavaConstant.forFloat(isVolatile ? UNSAFE.getFloatVolatile(obj, displacement) : UNSAFE.getFloat(obj, displacement));
-            case Double:
-                return JavaConstant.forDouble(isVolatile ? UNSAFE.getDoubleVolatile(obj, displacement) : UNSAFE.getDouble(obj, displacement));
-            case Object:
-                return forObject(isVolatile ? UNSAFE.getReferenceVolatile(obj, displacement) : UNSAFE.getReference(obj, displacement));
-            default:
-                throw new IllegalArgumentException("Unsupported kind: " + kind);
-
-        }
     }
 
     /**

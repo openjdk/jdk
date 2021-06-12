@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.Hashtable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.*;
+import java.util.Objects;
+
 import sun.net.util.URLUtil;
 import sun.security.util.IOUtils;
 
@@ -157,22 +159,9 @@ public class CodeSource implements java.io.Serializable {
             return true;
 
         // objects types must be equal
-        if (!(obj instanceof CodeSource))
-            return false;
-
-        CodeSource cs = (CodeSource) obj;
-
-        // URLs must match
-        if (location == null) {
-            // if location is null, then cs.location must be null as well
-            if (cs.location != null) return false;
-        } else {
-            // if location is not null, then it must equal cs.location
-            if (!location.equals(cs.location)) return false;
-        }
-
-        // certs must match
-        return matchCerts(cs, true);
+        return (obj instanceof CodeSource other)
+                && Objects.equals(location, other.location)
+                && matchCerts(other, true);
     }
 
     /**
@@ -522,6 +511,9 @@ public class CodeSource implements java.io.Serializable {
      * followed by the certificate encoding itself which is written out as an
      * array of bytes. Finally, if any code signers are present then the array
      * of code signers is serialized and written out too.
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
@@ -557,6 +549,10 @@ public class CodeSource implements java.io.Serializable {
 
     /**
      * Restores this object from a stream (i.e., deserializes it).
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream ois)

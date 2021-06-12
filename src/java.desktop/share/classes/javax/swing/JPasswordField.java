@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import javax.swing.text.*;
-import javax.accessibility.*;
-
-import java.beans.JavaBean;
 import java.beans.BeanProperty;
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Arrays;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleText;
+import javax.accessibility.AccessibleTextSequence;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Segment;
 
 /**
  * <code>JPasswordField</code> is a lightweight component that allows
@@ -52,6 +59,14 @@ import java.util.Arrays;
  * characters could be visible while they were composed using input methods.
  * If an application needs the input methods support, please use the
  * inherited method, <code>enableInputMethods(true)</code>.
+ * <p>
+ * <strong>Warning:</strong> The {@code JPasswordField} will not show the
+ * original characters that were typed, instead displaying alternative text or
+ * graphics. However this doesn't prevent the password from appearing in the
+ * system memory. For handling confidential information such as the password
+ * text, refer to the relevant section at
+ * <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">
+ * Secure Coding Guidelines</a>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
  * information see <a
@@ -331,6 +346,7 @@ public class JPasswordField extends JTextField {
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -183,7 +184,6 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -398,10 +398,19 @@ ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
   }
 }
 
+HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
+  assert_locked_or_safepoint(Heap_lock);
+  HeapWord* res = old_gen()->allocate(size);
+  if (res != NULL) {
+    _size_policy->tenured_allocation(size * HeapWordSize);
+  }
+  return res;
+}
+
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
   if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
     // Size is too big for eden, or gc is locked out.
-    return old_gen()->allocate(size);
+    return allocate_old_gen_and_record(size);
   }
 
   // If a "death march" is in progress, allocate from the old gen a limited
@@ -409,7 +418,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
   if (_death_march_count > 0) {
     if (_death_march_count < 64) {
       ++_death_march_count;
-      return old_gen()->allocate(size);
+      return allocate_old_gen_and_record(size);
     } else {
       _death_march_count = 0;
     }
@@ -457,7 +466,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   //   After mark sweep and young generation allocation failure,
   //   allocate in old generation.
   if (result == NULL) {
-    result = old_gen()->allocate(size);
+    result = allocate_old_gen_and_record(size);
   }
 
   // Fourth level allocation failure. We're running out of memory.
@@ -470,7 +479,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   // Fifth level allocation failure.
   //   After more complete mark sweep, allocate in old generation.
   if (result == NULL) {
-    result = old_gen()->allocate(size);
+    result = allocate_old_gen_and_record(size);
   }
 
   return result;
@@ -738,7 +747,7 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
   // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
   if(log_is_enabled(Info, pagesize)) {
-    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    const size_t page_size = rs.page_size();
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,

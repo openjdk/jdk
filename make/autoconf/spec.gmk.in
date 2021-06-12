@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,9 @@ VENDOR_VERSION_STRING := @VENDOR_VERSION_STRING@
 VERSION_CLASSFILE_MAJOR := @VERSION_CLASSFILE_MAJOR@
 VERSION_CLASSFILE_MINOR := @VERSION_CLASSFILE_MINOR@
 
+# Version for API docs "new-since" feature
+VERSION_DOCS_API_SINCE := @VERSION_DOCS_API_SINCE@
+
 JDK_SOURCE_TARGET_VERSION := @JDK_SOURCE_TARGET_VERSION@
 
 # Convenience CFLAGS settings for passing version information into native programs.
@@ -255,7 +258,7 @@ VERSION_CFLAGS := \
     #
 
 ifneq ($(COMPANY_NAME),)
-  # COMPANY_NAME is set to "N/A" in $AUTOCONF_DIR/version-numbers by default,
+  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
@@ -349,6 +352,8 @@ BUILD_MANPAGES := @BUILD_MANPAGES@
 
 BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
 
+ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
+
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
@@ -390,7 +395,6 @@ LIBFFI_LIBS:=@LIBFFI_LIBS@
 LIBFFI_CFLAGS:=@LIBFFI_CFLAGS@
 ENABLE_LIBFFI_BUNDLING:=@ENABLE_LIBFFI_BUNDLING@
 LIBFFI_LIB_FILE:=@LIBFFI_LIB_FILE@
-GRAALUNIT_LIB := @GRAALUNIT_LIB@
 FILE_MACRO_CFLAGS := @FILE_MACRO_CFLAGS@
 
 STATIC_LIBS_CFLAGS := @STATIC_LIBS_CFLAGS@
@@ -475,8 +479,7 @@ CXX_O_FLAG_NORM:=@CXX_O_FLAG_NORM@
 CXX_O_FLAG_NONE:=@CXX_O_FLAG_NONE@
 CXX_O_FLAG_SIZE:=@CXX_O_FLAG_SIZE@
 
-C_FLAG_DEPS:=@C_FLAG_DEPS@
-CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
+GENDEPS_FLAGS := @GENDEPS_FLAGS@
 
 DISABLE_WARNING_PREFIX := @DISABLE_WARNING_PREFIX@
 CFLAGS_WARNINGS_ARE_ERRORS:=@CFLAGS_WARNINGS_ARE_ERRORS@
@@ -508,6 +511,8 @@ JVM_LDFLAGS := @JVM_LDFLAGS@
 JVM_ASFLAGS := @JVM_ASFLAGS@
 JVM_LIBS := @JVM_LIBS@
 
+BASIC_ASFLAGS := @BASIC_ASFLAGS@
+
 # These flags might contain variables set by a custom extension that is included later.
 EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
@@ -520,9 +525,6 @@ CPP := @CPP@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD := @LD@
-
-# Linker used by the jaotc tool for AOT compilation.
-LD_JAOTC:=@LD_JAOTC@
 
 # Xcode SDK path
 SDKROOT:=@SDKROOT@
@@ -574,6 +576,8 @@ CXXFILT:=@CXXFILT@
 
 LIPO:=@LIPO@
 INSTALL_NAME_TOOL:=@INSTALL_NAME_TOOL@
+METAL := @METAL@
+METALLIB := @METALLIB@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
@@ -648,6 +652,8 @@ BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 BUILD_JAVAC=@FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
+DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
+
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
@@ -656,6 +662,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -663,6 +671,7 @@ INTERIM_LANGTOOLS_ARGS := \
     --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
@@ -756,7 +765,6 @@ TAR_INCLUDE_PARAM:=@TAR_INCLUDE_PARAM@
 TAR_SUPPORTS_TRANSFORM:=@TAR_SUPPORTS_TRANSFORM@
 
 # Build setup
-ENABLE_AOT:=@ENABLE_AOT@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
@@ -844,7 +852,6 @@ PNG_CFLAGS:=@PNG_CFLAGS@
 #
 
 INCLUDE_SA=@INCLUDE_SA@
-INCLUDE_GRAAL=@INCLUDE_GRAAL@
 INCLUDE_JVMCI=@INCLUDE_JVMCI@
 
 OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
@@ -45,10 +43,7 @@ import java.util.Collections;
  * between two machines.
  * <p>
  * The actual work of the socket is performed by an instance of the
- * {@code SocketImpl} class. An application, by changing
- * the socket factory that creates the socket implementation,
- * can configure itself to create sockets appropriate to the local
- * firewall.
+ * {@code SocketImpl} class.
  *
  * <p> The {@code Socket} class defines convenience
  * methods to set and get several socket options. This class also
@@ -96,7 +91,6 @@ import java.util.Collections;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
- * @see     java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
  * @see     java.net.SocketImpl
  * @see     java.nio.channels.SocketChannel
  * @since   1.0
@@ -186,6 +180,7 @@ public class Socket implements java.io.Closeable {
                                           : sun.net.ApplicationProxy.create(proxy);
         Proxy.Type type = p.type();
         if (type == Proxy.Type.SOCKS || type == Proxy.Type.HTTP) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.getAddress() != null) {
@@ -243,6 +238,7 @@ public class Socket implements java.io.Closeable {
         if (impl == null) {
             return null;
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
@@ -282,9 +278,7 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      */
     public Socket(String host, int port)
@@ -318,9 +312,7 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      */
     public Socket(InetAddress address, int port) throws IOException {
@@ -448,9 +440,7 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
@@ -492,9 +482,7 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
      * @see        java.net.SocketImpl
-     * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
@@ -625,14 +613,14 @@ public class Socket implements java.io.Closeable {
         if (isConnected())
             throw new SocketException("already connected");
 
-        if (!(endpoint instanceof InetSocketAddress))
+        if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
 
-        InetSocketAddress epoint = (InetSocketAddress) endpoint;
         InetAddress addr = epoint.getAddress ();
         int port = epoint.getPort();
         checkAddress(addr, "connect");
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (epoint.isUnresolved())
@@ -686,6 +674,7 @@ public class Socket implements java.io.Closeable {
         InetAddress addr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress (addr, "bind");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkListen(port);
@@ -754,6 +743,7 @@ public class Socket implements java.io.Closeable {
         InetAddress in = null;
         try {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkConnect(in.getHostAddress(), -1);
@@ -1761,13 +1751,24 @@ public class Socket implements java.io.Closeable {
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
+     * @deprecated Use a {@link javax.net.SocketFactory} and subclass {@code Socket}
+     *    directly.
+     *    <br> This method provided a way in early JDK releases to replace the
+     *    system wide implementation of {@code Socket}. It has been mostly
+     *    obsolete since Java 1.4. If required, a {@code Socket} can be
+     *    created to use a custom implementation by extending {@code Socket}
+     *    and using the {@linkplain #Socket(SocketImpl) protected
+     *    constructor} that takes an {@linkplain SocketImpl implementation}
+     *    as a parameter.
      */
+    @Deprecated(since = "17")
     public static synchronized void setSocketImplFactory(SocketImplFactory fac)
         throws IOException
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();

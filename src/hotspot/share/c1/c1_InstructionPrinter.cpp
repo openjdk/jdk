@@ -240,7 +240,7 @@ void InstructionPrinter::print_stack(ValueStack* stack) {
     output()->cr();
     fill_to(start_position, ' ');
     output()->print("locks [");
-    for (int i = i = 0; i < stack->locks_size(); i++) {
+    for (int i = 0; i < stack->locks_size(); i++) {
       Value t = stack->lock_at(i);
       if (i > 0) output()->print(", ");
       output()->print("%d:", i);
@@ -737,11 +737,6 @@ void InstructionPrinter::do_If(If* x) {
   print_value(x->y());
   output()->print(" then B%d else B%d", x->sux_at(0)->block_id(), x->sux_at(1)->block_id());
   if (x->is_safepoint()) output()->print(" (safepoint)");
-}
-
-
-void InstructionPrinter::do_IfInstanceOf(IfInstanceOf* x) {
-  output()->print("<IfInstanceOf>");
 }
 
 

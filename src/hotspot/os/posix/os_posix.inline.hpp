@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,29 @@
 #ifndef OS_POSIX_OS_POSIX_INLINE_HPP
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
+// os_posix.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
-// Exported clock functionality
+// macros for restartable system calls
 
-inline bool os::Posix::supports_monotonic_clock() {
-  return _supports_monotonic_clock;
-}
+#define RESTARTABLE(_cmd, _result) do { \
+    _result = _cmd; \
+  } while(((int)_result == OS_ERR) && (errno == EINTR))
 
-inline bool os::Posix::supports_clock_gettime() {
-  return _clock_gettime != NULL;
-}
+#define RESTARTABLE_RETURN_INT(_cmd) do { \
+  int _result; \
+  RESTARTABLE(_cmd, _result); \
+  return _result; \
+} while(false)
 
-inline int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
-}
-
-inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
+// Aix does not have NUMA support but need these for compilation.
+inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }
+inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
 
 // Platform Mutex/Monitor implementation
 

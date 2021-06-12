@@ -35,7 +35,7 @@
  *            UnDescribedMBean SqeDescriptorKey DescribedMX DescribedMXBean
  * @run build AnnotationSecurityTest Described UnDescribed DescribedMBean
  *            UnDescribedMBean SqeDescriptorKey DescribedMX DescribedMXBean
- * @run main/othervm  AnnotationSecurityTest
+ * @run main/othervm -Djava.security.manager=allow AnnotationSecurityTest
  */
 // -Djava.security.debug=access,domain,policy
 

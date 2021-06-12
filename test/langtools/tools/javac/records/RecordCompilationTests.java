@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -342,6 +342,16 @@ public class RecordCompilationTests extends CompilationTestCase {
             assertOK("record R(int x, int y) { # }", goodCtor);
 
         assertOK("import java.util.*; record R(String x, String y) {  public R { Objects.requireNonNull(x); Objects.requireNonNull(y); } }");
+
+        // The lambda expressions in the constructor should be compiled successfully.
+        assertOK("""
+                import static java.util.Objects.*;
+                record R(String v) {
+                    R {
+                        requireNonNull(v, () -> "v must be provided");
+                        requireNonNullElseGet(v, () -> "w");
+                    }
+                }""");
 
         // Not OK to redeclare canonical without DA
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x, int y) { # }",
@@ -737,8 +747,20 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 record R() {
+                    void test(U u) {}
+                }
+                """,
+                """
+                record R() {
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """,
@@ -792,11 +814,23 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 interface I {
+                    default void test(U u) {}
+                }
+                """,
+                """
+                interface I {
                     default void test1() {
                         class X { void test2(T t) {} }
                     }
                 }
                 """,
+                """
+                interface I {
+                    default void test1() {
+                        class X { void test2(U u) {} }
+                    }
+                }
+                """,
 
                 """
                 enum E {
@@ -855,8 +889,22 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """
                 enum E {
                     A;
+                    void test(U u) {}
+                }
+                """,
+                """
+                enum E {
+                    A;
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """,
@@ -910,8 +958,20 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 static class SC {
+                    void test(U u) {}
+                }
+                """,
+                """
+                static class SC {
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """
@@ -955,6 +1015,30 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+
+        // but still non-static declarations can't be accessed from a static method inside a local class
+        for (String s : List.of(
+                "System.out.println(localVar)",
+                "System.out.println(param)",
+                "System.out.println(field)",
+                "T t",
+                "U u"
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
+                    """
+                    class C<T> {
+                        int field = 0;
+                        <U> void foo(int param) {
+                            int localVar = 1;
+                            class Local {
+                                static void m() {
+                                    #S;
+                                }
+                            }
+                        }
+                    }
+                    """.replaceFirst("#S", s));
+        }
     }
 
     public void testReturnInCanonical_Compact() {

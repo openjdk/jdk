@@ -26,6 +26,7 @@
 #define SHARE_JFR_WRITERS_JFRSTREAMWRITERHOST_INLINE_HPP
 
 #include "jfr/writers/jfrStreamWriterHost.hpp"
+
 #include "runtime/os.hpp"
 
 template <typename Adapter, typename AP>

@@ -100,7 +100,7 @@ public final class AnnotationElement {
             }
             checkType(Utils.unboxType(valueType));
         }
-        this.annotationValues = Utils.smallUnmodifiable(objects);
+        this.annotationValues = List.copyOf(objects);
         this.inBootClassLoader = boot;
     }
 
@@ -203,7 +203,7 @@ public final class AnnotationElement {
             }
             v.add(object);
         }
-        this.annotationValues = Utils.smallUnmodifiable(v);
+        this.annotationValues = List.copyOf(v);
         this.inBootClassLoader = annotationType.getClassLoader() == null;
     }
 

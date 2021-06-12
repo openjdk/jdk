@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -69,7 +69,7 @@ void Klass::replace_java_mirror(oop mirror) {
 
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
-         is_subtype_of(SystemDictionary::Cloneable_klass());
+         is_subtype_of(vmClasses::Cloneable_klass());
 }
 
 void Klass::set_is_cloneable() {
@@ -244,8 +244,8 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     set_super(NULL);
     _primary_supers[0] = this;
     assert(super_depth() == 0, "Object must already be initialized properly");
-  } else if (k != super() || k == SystemDictionary::Object_klass()) {
-    assert(super() == NULL || super() == SystemDictionary::Object_klass(),
+  } else if (k != super() || k == vmClasses::Object_klass()) {
+    assert(super() == NULL || super() == vmClasses::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
     Klass* sup = k;
@@ -473,7 +473,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     return;
   }
 
-  Klass* root = SystemDictionary::Object_klass();
+  Klass* root = vmClasses::Object_klass();
   Stack<Klass*, mtGC> stack;
 
   stack.push(root);
@@ -644,33 +644,6 @@ void Klass::set_archived_java_mirror(oop m) {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-Klass* Klass::array_klass_or_null(int rank) {
-  EXCEPTION_MARK;
-  // No exception can be thrown by array_klass_impl when called with or_null == true.
-  // (In anycase, the execption mark will fail if it do so)
-  return array_klass_impl(true, rank, THREAD);
-}
-
-
-Klass* Klass::array_klass_or_null() {
-  EXCEPTION_MARK;
-  // No exception can be thrown by array_klass_impl when called with or_null == true.
-  // (In anycase, the execption mark will fail if it do so)
-  return array_klass_impl(true, THREAD);
-}
-
-
-Klass* Klass::array_klass_impl(bool or_null, int rank, TRAPS) {
-  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
-  return NULL;
-}
-
-
-Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
-  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
-  return NULL;
-}
-
 void Klass::check_array_allocation_length(int length, int max_length, TRAPS) {
   if (length > max_length) {
     if (!THREAD->in_retryable_allocation()) {
@@ -704,19 +677,7 @@ static char* convert_hidden_name_to_java(Symbol* name) {
 const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
-    if (ik->is_unsafe_anonymous()) {
-      char addr_buf[20];
-      jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
-      size_t addr_len = strlen(addr_buf);
-      size_t name_len = name()->utf8_length();
-      char*  result   = NEW_RESOURCE_ARRAY(char, name_len + addr_len + 1);
-      name()->as_klass_external_name(result, (int) name_len + 1);
-      assert(strlen(result) == name_len, "");
-      strcpy(result + name_len, addr_buf);
-      assert(strlen(result) == name_len + addr_len, "");
-      return result;
-
-    } else if (ik->is_hidden()) {
+    if (ik->is_hidden()) {
       char* result = convert_hidden_name_to_java(name());
       return result;
     }
@@ -749,11 +710,6 @@ const char* Klass::external_kind() const {
   if (is_interface()) return "interface";
   if (is_abstract()) return "abstract class";
   return "class";
-}
-
-// Unless overridden, modifier_flags is 0.
-jint Klass::compute_modifier_flags(TRAPS) const {
-  return 0;
 }
 
 int Klass::atomic_incr_biased_lock_revocation_count() {

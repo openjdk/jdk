@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,20 @@ public class InPlaceOpsCollisions extends MapWithCollisionsProviders {
         Map<Object, Object> map = ms.get();
         Object[] keys = map.keySet().toArray();
         testComputeIfAbsent(map, desc, keys, (k) -> null);
+    }
+
+    @Test(dataProvider = "nullValueFriendlyMaps")
+    void testComputeIfAbsentOverwriteNull(String desc, Supplier<Map<Object, Object>> ms) {
+        Map<Object, Object> map = ms.get();
+        map.put("key", null);
+        assertEquals(map.size(), 1, desc + ": size != 1");
+        assertTrue(map.containsKey("key"), desc + ": does not have key");
+        assertNull(map.get("key"), desc + ": value is not null");
+        Object result = map.computeIfAbsent("key", k -> "value"); // must rewrite
+        assertEquals(result, "value", desc + ": computeIfAbsent result is not 'value'");
+        assertEquals(map.size(), 1, desc + ": size != 1");
+        assertTrue(map.containsKey("key"), desc + ": does not have key");
+        assertEquals(map.get("key"), "value", desc + ": value is not 'value'");
     }
 
     private static <T> void testComputeIfPresent(Map<T, T> map, String desc, T[] keys,

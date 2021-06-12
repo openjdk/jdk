@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,35 +721,39 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
 }
 
 Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mask_len = in(3)->in(1);
-  const TypeLong* ty = phase->type(mask_len)->isa_long();
-  if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type()->array_element_basic_type();
-    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-    if ( load_sz == 32 || load_sz == 64) {
-      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
-      Node* ctr = in(MemNode::Control);
-      Node* mem = in(MemNode::Memory);
-      Node* adr = in(MemNode::Address);
-      return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+  if (!in(3)->is_top() && in(3)->Opcode() == Op_VectorMaskGen) {
+    Node* mask_len = in(3)->in(1);
+    const TypeLong* ty = phase->type(mask_len)->isa_long();
+    if (ty && ty->is_con()) {
+      BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type();
+      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+      if ( load_sz == 32 || load_sz == 64) {
+        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
+        Node* ctr = in(MemNode::Control);
+        Node* mem = in(MemNode::Memory);
+        Node* adr = in(MemNode::Address);
+        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+      }
     }
   }
   return NULL;
 }
 
 Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mask_len = in(4)->in(1);
-  const TypeLong* ty = phase->type(mask_len)->isa_long();
-  if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type()->array_element_basic_type();
-    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-    if ( load_sz == 32 || load_sz == 64) {
-      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
-      Node* ctr = in(MemNode::Control);
-      Node* mem = in(MemNode::Memory);
-      Node* adr = in(MemNode::Address);
-      Node* val = in(MemNode::ValueIn);
-      return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+  if (!in(4)->is_top() && in(4)->Opcode() == Op_VectorMaskGen) {
+    Node* mask_len = in(4)->in(1);
+    const TypeLong* ty = phase->type(mask_len)->isa_long();
+    if (ty && ty->is_con()) {
+      BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type();
+      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+      if ( load_sz == 32 || load_sz == 64) {
+        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
+        Node* ctr = in(MemNode::Control);
+        Node* mem = in(MemNode::Memory);
+        Node* adr = in(MemNode::Address);
+        Node* val = in(MemNode::ValueIn);
+        return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+      }
     }
   }
   return NULL;
@@ -1198,7 +1202,11 @@ void VectorMaskCmpNode::dump_spec(outputStream *st) const {
 Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   Node* n = in(1);
   if (n->Opcode() == Op_VectorReinterpret) {
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0) {
+    // "VectorReinterpret (VectorReinterpret node) ==> node" if:
+    //   1) Types of 'node' and 'this' are identical
+    //   2) Truncations are not introduced by the first VectorReinterpret
+    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+        length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
   }
@@ -1221,25 +1229,34 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       ciKlass* vbox_klass = vbox->box_type()->klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
-      assert(in_vt->length() == out_vt->length(), "mismatch on number of elements");
-      Node* value = vbox->in(VectorBoxNode::Value);
 
-      bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-      bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-      if (is_vector_mask) {
-        // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-        value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-        return new VectorLoadMaskNode(value, out_vt);
-      } else if (is_vector_shuffle) {
-        if (is_shuffle_to_vector()) {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-          return new VectorCastB2XNode(value, out_vt);
+      if (in_vt->length() == out_vt->length()) {
+        Node* value = vbox->in(VectorBoxNode::Value);
+
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        if (is_vector_mask) {
+          if (in_vt->length_in_bytes() == out_vt->length_in_bytes() &&
+              Matcher::match_rule_supported_vector(Op_VectorMaskCast, out_vt->length(), out_vt->element_basic_type())) {
+            // Apply "VectorUnbox (VectorBox vmask) ==> VectorMaskCast (vmask)"
+            // directly. This could avoid the transformation ordering issue from
+            // "VectorStoreMask (VectorLoadMask vmask) => vmask".
+            return new VectorMaskCastNode(value, out_vt);
+          }
+          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
+          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
+          return new VectorLoadMaskNode(value, out_vt);
+        } else if (is_vector_shuffle) {
+          if (!is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-          return new VectorLoadShuffleNode(value, out_vt);
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
-        assert(false, "type mismatch on vector: %s", vbox_klass->name()->as_utf8());
+        // Vector length mismatch.
+        // Sometimes happen in pathological cases (e.g., when unboxing happens in effectively dead code).
       }
     }
   }
@@ -1269,8 +1286,33 @@ const TypeFunc* VectorBoxNode::vec_box_type(const TypeInstPtr* box_type) {
   return TypeFunc::make(domain, range);
 }
 
+Node* ShiftVNode::Identity(PhaseGVN* phase) {
+  Node* in2 = in(2);
+  // Shift by ZERO does nothing
+  if (is_vshift_cnt(in2) && phase->find_int_type(in2->in(1)) == TypeInt::ZERO) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
+  switch(mopc) {
+    case Op_VectorMaskTrueCount:
+      return new VectorMaskTrueCountNode(mask, ty);
+    case Op_VectorMaskLastTrue:
+      return new VectorMaskLastTrueNode(mask, ty);
+    case Op_VectorMaskFirstTrue:
+      return new VectorMaskFirstTrueNode(mask, ty);
+    default:
+      assert(false, "Unhandled operation");
+  }
+  return NULL;
+}
+
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
+
 #endif // !PRODUCT

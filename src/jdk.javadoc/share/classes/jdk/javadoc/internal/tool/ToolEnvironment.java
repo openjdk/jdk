@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,21 +83,19 @@ public class ToolEnvironment {
         return instance;
     }
 
-    final Messager messager;
+    final JavadocLog log;
 
     /** Predefined symbols known to the compiler. */
     public final Symtab syms;
 
-    /** Referenced directly in RootDocImpl. */
+    /** JavaDoc's subtype of the compiler's class finder */
     private final ClassFinder finder;
 
-    /** Javadoc's own version of the compiler's enter phase. */
+    /** Javadoc's subtype of the compiler's enter phase. */
     final Enter enter;
 
     /** The name table. */
     private Names names;
-
-    final Symbol externalizableSym;
 
     /** If true, prevent printing of any notifications. */
     boolean quiet = false;
@@ -139,17 +137,16 @@ public class ToolEnvironment {
         context.put(ToolEnvKey, this);
         this.context = context;
 
-        messager = Messager.instance0(context);
+        log = JavadocLog.instance0(context);
         syms = Symtab.instance(context);
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
         names = Names.instance(context);
-        externalizableSym = syms.enterClass(syms.java_base, names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof JavacFileManager) {
-            ((JavacFileManager)fileManager).setSymbolFileEnabled(false);
+        if (fileManager instanceof JavacFileManager jfm) {
+            jfm.setSymbolFileEnabled(false);
         }
         docTrees = JavacTrees.instance(context);
         source = Source.instance(context);
@@ -202,7 +199,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.notice(key);
+        log.noticeUsingKey(key);
     }
 
     /**
@@ -215,7 +212,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.notice(key, a1);
+        log.noticeUsingKey(key, a1);
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {

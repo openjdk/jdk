@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,9 +152,6 @@
                                                                             \
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
-                                                                            \
-  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
-          "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \
           "Canonicalize graph nodes")                                       \
@@ -328,7 +325,7 @@
   product(bool, C1OptimizeVirtualCallProfiling, true,                       \
           "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
-  product(bool, C1UpdateMethodData, trueInTiered,                           \
+  product(bool, C1UpdateMethodData, true,                                   \
           "Update MethodData*s in Tier1-generated code")                    \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \

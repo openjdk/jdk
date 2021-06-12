@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 package java.math;
 
 /**
- * Specifies a <i>rounding behavior</i> for numerical operations
- * capable of discarding precision. Each rounding mode indicates how
- * the least significant returned digit of a rounded result is to be
- * calculated.  If fewer digits are returned than the digits needed to
- * represent the exact numerical result, the discarded digits will be
- * referred to as the <i>discarded fraction</i> regardless the digits'
+ * Specifies a <i>rounding policy</i> for numerical operations capable
+ * of discarding precision. Each rounding mode indicates how the least
+ * significant returned digit of a rounded result is to be calculated.
+ * If fewer digits are returned than the digits needed to represent
+ * the exact numerical result, the discarded digits will be referred
+ * to as the <i>discarded fraction</i> regardless the digits'
  * contribution to the value of the number.  In other words,
  * considered as a numerical value, the discarded fraction could have
  * an absolute value greater than one.
@@ -89,7 +89,7 @@ package java.math;
  *
  * @apiNote
  * Five of the rounding modes declared in this class correspond to
- * rounding direction attributes defined in the <cite>IEEE Standard
+ * rounding-direction attributes defined in the <cite>IEEE Standard
  * for Floating-Point Arithmetic</cite>, IEEE 754-2019. Where present,
  * this correspondence will be noted in the documentation of the
  * particular constant.
@@ -137,7 +137,7 @@ public enum RoundingMode {
          * Rounding mode to round towards zero.  Never increments the digit
          * prior to a discarded fraction (i.e., truncates).  Note that this
          * rounding mode never increases the magnitude of the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding
+         * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTowardZero.
          *
          *<p>Example:
@@ -168,7 +168,7 @@ public enum RoundingMode {
          * result is positive, behaves as for {@code RoundingMode.UP};
          * if negative, behaves as for {@code RoundingMode.DOWN}.  Note
          * that this rounding mode never decreases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding
+         * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTowardPositive.
          *
          *<p>Example:
@@ -199,7 +199,7 @@ public enum RoundingMode {
          * result is positive, behave as for {@code RoundingMode.DOWN};
          * if negative, behave as for {@code RoundingMode.UP}.  Note that
          * this rounding mode never increases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding
+         * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTowardNegative.
          *
          *<p>Example:
@@ -232,7 +232,7 @@ public enum RoundingMode {
          * fraction is &ge; 0.5; otherwise, behaves as for
          * {@code RoundingMode.DOWN}.  Note that this is the rounding
          * mode commonly taught at school.
-         * This mode corresponds to the IEEE 754-2019 rounding
+         * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTiesToAway.
          *
          *<p>Example:
@@ -301,7 +301,7 @@ public enum RoundingMode {
          * chiefly used in the USA.  This rounding mode is analogous to
          * the rounding policy used for {@code float} and {@code double}
          * arithmetic in Java.
-         * This mode corresponds to the IEEE 754-2019 rounding
+         * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTiesToEven.
          *
          *<p>Example:
@@ -377,34 +377,16 @@ public enum RoundingMode {
      * @throws IllegalArgumentException integer is out of range
      */
     public static RoundingMode valueOf(int rm) {
-        switch(rm) {
-
-        case BigDecimal.ROUND_UP:
-            return UP;
-
-        case BigDecimal.ROUND_DOWN:
-            return DOWN;
-
-        case BigDecimal.ROUND_CEILING:
-            return CEILING;
-
-        case BigDecimal.ROUND_FLOOR:
-            return FLOOR;
-
-        case BigDecimal.ROUND_HALF_UP:
-            return HALF_UP;
-
-        case BigDecimal.ROUND_HALF_DOWN:
-            return HALF_DOWN;
-
-        case BigDecimal.ROUND_HALF_EVEN:
-            return HALF_EVEN;
-
-        case BigDecimal.ROUND_UNNECESSARY:
-            return UNNECESSARY;
-
-        default:
-            throw new IllegalArgumentException("argument out of range");
-        }
+        return switch (rm) {
+            case BigDecimal.ROUND_UP          -> UP;
+            case BigDecimal.ROUND_DOWN        -> DOWN;
+            case BigDecimal.ROUND_CEILING     -> CEILING;
+            case BigDecimal.ROUND_FLOOR       -> FLOOR;
+            case BigDecimal.ROUND_HALF_UP     -> HALF_UP;
+            case BigDecimal.ROUND_HALF_DOWN   -> HALF_DOWN;
+            case BigDecimal.ROUND_HALF_EVEN   -> HALF_EVEN;
+            case BigDecimal.ROUND_UNNECESSARY -> UNNECESSARY;
+            default -> throw new IllegalArgumentException("argument out of range");
+        };
     }
 }

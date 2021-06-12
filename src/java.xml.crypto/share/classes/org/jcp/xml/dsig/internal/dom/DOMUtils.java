@@ -21,25 +21,28 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMUtils.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import java.util.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.List;
+
+import javax.xml.XMLConstants;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
+import javax.xml.crypto.dsig.spec.XPathFilter2ParameterSpec;
+import javax.xml.crypto.dsig.spec.XPathFilterParameterSpec;
+import javax.xml.crypto.dsig.spec.XPathType;
+import javax.xml.crypto.dsig.spec.XSLTTransformParameterSpec;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.xml.XMLConstants;
-import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dsig.spec.*;
 
 /**
  * Useful static DOM utility methods.
@@ -92,7 +95,7 @@ public final class DOMUtils {
     public static Element createElement(Document doc, String tag,
                                         String nsURI, String prefix)
     {
-        String qName = prefix == null || prefix.length() == 0
+        String qName = (prefix == null || prefix.length() == 0)
                        ? tag : prefix + ":" + tag;
         return doc.createElementNS(nsURI, qName);
     }
@@ -149,23 +152,6 @@ public final class DOMUtils {
 
     /**
      * Returns the first child element of the specified node and checks that
-     * the local name is equal to {@code localName}.
-     *
-     * @param node the node
-     * @return the first child element of the specified node
-     * @throws NullPointerException if {@code node == null}
-     * @throws MarshalException if no such element or the local name is not
-     *    equal to {@code localName}
-     */
-    @Deprecated
-    public static Element getFirstChildElement(Node node, String localName)
-        throws MarshalException
-    {
-        return verifyElement(getFirstChildElement(node), localName);
-    }
-
-    /**
-     * Returns the first child element of the specified node and checks that
      * the local name is equal to {@code localName} and the namespace is equal to
      * {@code namespaceURI}
      *
@@ -179,20 +165,6 @@ public final class DOMUtils {
         throws MarshalException
     {
         return verifyElement(getFirstChildElement(node), localName, namespaceURI);
-    }
-
-    private static Element verifyElement(Element elem, String localName)
-        throws MarshalException
-    {
-        if (elem == null) {
-            throw new MarshalException("Missing " + localName + " element");
-        }
-        String name = elem.getLocalName();
-        if (!name.equals(localName)) {
-            throw new MarshalException("Invalid element name: " +
-                                       name + ", expected " + localName);
-        }
-        return elem;
     }
 
     private static Element verifyElement(Element elem, String localName, String namespaceURI)
@@ -243,23 +215,6 @@ public final class DOMUtils {
             sibling = sibling.getNextSibling();
         }
         return (Element)sibling;
-    }
-
-    /**
-     * Returns the next sibling element of the specified node and checks that
-     * the local name is equal to {@code localName}.
-     *
-     * @param node the node
-     * @return the next sibling element of the specified node
-     * @throws NullPointerException if {@code node == null}
-     * @throws MarshalException if no such element or the local name is not
-     * equal to {@code localName}
-     */
-    @Deprecated
-    public static Element getNextSiblingElement(Node node, String localName)
-        throws MarshalException
-    {
-        return verifyElement(getNextSiblingElement(node), localName);
     }
 
     /**
@@ -321,44 +276,6 @@ public final class DOMUtils {
     }
 
     /**
-     * Returns a Set of {@code Node}s, backed by the specified
-     * {@code NodeList}.
-     *
-     * @param nl the NodeList
-     * @return a Set of Nodes
-     */
-    public static Set<Node> nodeSet(NodeList nl) {
-        return new NodeSet(nl);
-    }
-
-    static class NodeSet extends AbstractSet<Node> {
-        private NodeList nl;
-        public NodeSet(NodeList nl) {
-            this.nl = nl;
-        }
-
-        public int size() { return nl.getLength(); }
-        public Iterator<Node> iterator() {
-            return new Iterator<Node>() {
-                private int index;
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-                public Node next() {
-                    if (!hasNext()) {
-                        throw new NoSuchElementException();
-                    }
-                    return nl.item(index++);
-                }
-                public boolean hasNext() {
-                    return index < nl.getLength();
-                }
-            };
-        }
-    }
-
-    /**
      * Returns the prefix associated with the specified namespace URI
      *
      * @param context contains the namespace map
@@ -401,17 +318,10 @@ public final class DOMUtils {
     }
 
     /**
-     * Compares 2 nodes for equality. Implementation is not complete.
+     * Compares 2 nodes for equality.
      */
     public static boolean nodesEqual(Node thisNode, Node otherNode) {
-        if (thisNode == otherNode) {
-            return true;
-        }
-        if (thisNode.getNodeType() != otherNode.getNodeType()) {
-            return false;
-        }
-        // FIXME - test content, etc
-        return true;
+        return thisNode.isEqualNode(otherNode);
     }
 
     /**
@@ -510,8 +420,7 @@ public final class DOMUtils {
 
     public static boolean isNamespace(Node node)
     {
-        final short nodeType = node.getNodeType();
-        if (nodeType == Node.ATTRIBUTE_NODE) {
+        if (Node.ATTRIBUTE_NODE == node.getNodeType()) {
             final String namespaceURI = node.getNamespaceURI();
             return XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(namespaceURI);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.DataInputStream;
 import java.io.ObjectInputStream;
 import java.io.Reader;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -123,6 +124,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
      *  ParserDelegator class.
      * @return a stream representing the resource
      */
+    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {
@@ -132,6 +134,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
                 });
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException {
         s.defaultReadObject();

@@ -29,6 +29,7 @@
  * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires !(vm.graal.enabled & vm.compMode == "Xcomp")
+ * @requires os.maxMemory > 1G
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
@@ -62,7 +63,7 @@ public class TestIHOPStatic {
         "-XX:-G1UseAdaptiveIHOP",
         "-XX:NewSize=" + YOUNG_SIZE,
         "-XX:MaxNewSize=" + YOUNG_SIZE,
-        "-Xlog:gc+ihop+ergo=debug,gc*=debug"
+        "-Xlog:gc+ihop+ergo=debug"
     };
 
     public static void main(String[] args) throws Throwable {

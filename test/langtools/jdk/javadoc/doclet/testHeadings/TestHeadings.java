@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4905786 6259611 8162363 8196202
+ * @bug      4905786 6259611 8162363 8196202 8261976
  * @summary  Make sure that headings use the TH tag instead of the TD tag.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -64,7 +64,7 @@ public class TestHeadings extends JavadocTester {
                     <div class="table-header col-second">Field</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <h3 id="methods.inherited.from.class.java.lang.Object">Methods inherited from class&nbsp;java.lang.Object</h3>""");
+                    <h3 id="methods-inherited-from-class-java.lang.Object">Methods inherited from class&nbsp;java.lang.Object</h3>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/C1.html", true,
@@ -92,9 +92,9 @@ public class TestHeadings extends JavadocTester {
         // Serialized Form
         checkOutput("serialized-form.html", true,
                 """
-                    <h2 title="Package">Package&nbsp;pkg1</h2>""",
+                    <h2 title="Package">Package&nbsp;<a href="pkg1/package-summary.html">pkg1</a></h2>""",
                 """
-                    <h3>Class <a href="pkg1/C1.html" title="class in pkg1">pkg1.C1</a> extends java.lang.Object implements Serializable</h3>""",
+                    <h3>Class&nbsp;<a href="pkg1/C1.html" title="class in pkg1">pkg1.C1</a></h3>""",
                 "<h4>Serialized Fields</h4>");
 
         // Overview Summary

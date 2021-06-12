@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import  java.util.concurrent.atomic.AtomicReference;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -56,6 +57,8 @@ import javax.xml.stream.XMLStreamWriter;
 public class IOUtils {
 
     public static void deleteRecursive(Path directory) throws IOException {
+        final AtomicReference<IOException> exception = new AtomicReference<>();
+
         if (!Files.exists(directory)) {
             return;
         }
@@ -67,7 +70,11 @@ public class IOUtils {
                 if (Platform.getPlatform() == Platform.WINDOWS) {
                     Files.setAttribute(file, "dos:readonly", false);
                 }
-                Files.delete(file);
+                try {
+                    Files.delete(file);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
 
@@ -83,10 +90,17 @@ public class IOUtils {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                             throws IOException {
-                Files.delete(dir);
+                try {
+                    Files.delete(dir);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+        if (exception.get() != null) {
+            throw exception.get();
+        }
     }
 
     public static void copyRecursive(Path src, Path dest) throws IOException {
@@ -229,7 +243,7 @@ public class IOUtils {
         t.start();
 
         int ret = p.waitFor();
-        Log.verbose(pb.command(), list, ret);
+        Log.verbose(pb.command(), list, ret, IOUtils.getPID(p));
 
         result.clear();
         result.addAll(list);
@@ -319,6 +333,17 @@ public class IOUtils {
             throw iae;
         }
         return filename;
+    }
+
+    public static long getPID(Process p) {
+        try {
+            return p.pid();
+        } catch (UnsupportedOperationException ex) {
+            Log.verbose(ex); // Just log exception and ignore it. This method
+                             // is used for verbose output, so not a problem
+                             // if unsupported.
+            return -1;
+        }
     }
 
     private static class PrettyPrintHandler implements InvocationHandler {

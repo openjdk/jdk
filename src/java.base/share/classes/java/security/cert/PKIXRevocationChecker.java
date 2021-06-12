@@ -91,10 +91,10 @@ import java.util.Set;
  *
  * @see <a href="http://www.ietf.org/rfc/rfc2560.txt"><i>RFC&nbsp;2560: X.509
  * Internet Public Key Infrastructure Online Certificate Status Protocol -
- * OCSP</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc5280.txt"><i>RFC&nbsp;5280: Internet X.509
- * Public Key Infrastructure Certificate and Certificate Revocation List (CRL)
- * Profile</i></a>
+ * OCSP</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc5280.txt"><i>RFC&nbsp;5280:
+ * Internet X.509 Public Key Infrastructure Certificate and Certificate
+ * Revocation List (CRL) Profile</i></a>
  */
 public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private URI ocspResponder;

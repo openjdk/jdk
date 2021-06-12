@@ -26,6 +26,7 @@
 package com.sun.net.httpserver;
 
 import java.net.InetSocketAddress;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
 /**

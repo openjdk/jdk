@@ -45,6 +45,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
@@ -672,6 +673,7 @@ void ClassLoaderDataGraph::verify() {
 // callable from debugger
 extern "C" int print_loader_data_graph() {
   ResourceMark rm;
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::print_on(tty);
   return 0;
 }

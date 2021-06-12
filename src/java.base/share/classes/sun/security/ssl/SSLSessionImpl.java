@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,9 +307,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
-        int i = 0;
-        byte[] b;
-
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
                 ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
@@ -323,7 +320,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         // Local Supported signature algorithms
         ArrayList<SignatureScheme> list = new ArrayList<>();
-        i = Byte.toUnsignedInt(buf.get());
+        int i = Byte.toUnsignedInt(buf.get());
         while (i-- > 0) {
             list.add(SignatureScheme.valueOf(
                     Short.toUnsignedInt(buf.getShort())));
@@ -340,6 +337,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
+        byte[] b;
         i = Short.toUnsignedInt(buf.getShort());
         if (i > 0) {
             b = new byte[i];
@@ -905,6 +903,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * are currently valid in this process.  For client sessions,
      * this returns null.
      */
+    @SuppressWarnings("removal")
     @Override
     public SSLSessionContext getSessionContext() {
         /*
@@ -1534,6 +1533,7 @@ class SecureKey {
     private final Object            securityCtx;
 
     static Object getCurrentSecurityContext() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         Object context = null;
 

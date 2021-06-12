@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,24 @@
  * questions.
  */
 
+/* @test
+ * @bug 4938185 7106773
+ * @summary KeyStore support for NSS cert/key databases
+ *          512 bits RSA key cannot work with SHA384 and SHA512
+ * @library /test/lib ..
+ * @run testng/othervm ClientAuth
+ */
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.security.*;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 import javax.net.*;
 import javax.net.ssl.*;
 
@@ -43,7 +57,10 @@ public class ClientAuth extends PKCS11Test {
     private static final String TS = "truststore";
     private static String p11config;
 
-    private static String DIR = System.getProperty("DIR");
+    private static final Path TEST_DATA_PATH = Path.of(BASE)
+            .resolve("ClientAuthData");
+
+    private static final String DIR = TEST_DATA_PATH.toString();
 
     /*
      * Should we run the client or server in a separate thread?
@@ -55,7 +72,7 @@ public class ClientAuth extends PKCS11Test {
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    private final CountDownLatch serverReadyLatch = new CountDownLatch(1);
 
     /*
      * Turn on SSL debugging?
@@ -70,6 +87,40 @@ public class ClientAuth extends PKCS11Test {
      * currently 3 minutes by default, but you might try to be
      * smart about it....
      */
+
+    @BeforeClass
+    public void setUp() throws Exception {
+        copyNssCertKeyToClassesDir(TEST_DATA_PATH);
+        setCommonSystemProps();
+        System.setProperty("CUSTOM_P11_CONFIG",
+                TEST_DATA_PATH.resolve("p11-nss.txt").toString());
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
+    }
+
+    @Test
+    public void testClientAuthTLSv1() throws Exception {
+        String[] args = { "TLSv1" };
+        runTest(args);
+    }
+
+    @Test
+    public void testClientAuthTLSv11() throws Exception {
+        String[] args = { "TLSv1.1" };
+        runTest(args);
+    }
+
+    @Test
+    public void testClientAuthTLSv12AndCipherSuite() throws Exception {
+        String[] args = { "TLSv1.2", "TLS_DHE_RSA_WITH_AES_128_CBC_SHA" };
+        runTest(args);
+    }
+
+    private void runTest(String[] args) throws Exception {
+        System.out.println("Running with args: " + Arrays.toString(args));
+        parseArguments(args);
+        main(new ClientAuth());
+    }
 
     /*
      * Define the server side of the test.
@@ -100,8 +151,10 @@ public class ClientAuth extends PKCS11Test {
         //ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         ctx.init(kmf.getKeyManagers(), null, null);
         ServerSocketFactory ssf = ctx.getServerSocketFactory();
-        SSLServerSocket sslServerSocket = (SSLServerSocket)
-                                ssf.createServerSocket(serverPort);
+        InetSocketAddress socketAddress =
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort);
+        SSLServerSocket sslServerSocket = (SSLServerSocket) ssf.createServerSocket();
+        sslServerSocket.bind(socketAddress);
         sslServerSocket.setNeedClientAuth(true);
         serverPort = sslServerSocket.getLocalPort();
         System.out.println("serverPort = " + serverPort);
@@ -109,7 +162,7 @@ public class ClientAuth extends PKCS11Test {
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady = true;
+        serverReadyLatch.countDown();
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         InputStream sslIS = sslSocket.getInputStream();
@@ -133,9 +186,7 @@ public class ClientAuth extends PKCS11Test {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        serverReadyLatch.await();
 
         SSLContext ctx = SSLContext.getInstance("TLS");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -194,15 +245,6 @@ public class ClientAuth extends PKCS11Test {
         if (args.length > 1) {
             clientCiperSuite = args[1];
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        Security.setProperty("jdk.tls.disabledAlgorithms", "");
-        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
-
-        // Get the customized arguments.
-        parseArguments(args);
-        main(new ClientAuth());
     }
 
     public void main(Provider p) throws Exception {
@@ -303,24 +345,22 @@ public class ClientAuth extends PKCS11Test {
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
+    void startServer (boolean newThread) {
         if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+            serverThread = new Thread(() -> {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died...");
+                    serverReadyLatch.countDown();
+                    serverException = e;
                 }
-            };
+            });
             serverThread.start();
         } else {
             try {
@@ -328,26 +368,24 @@ public class ClientAuth extends PKCS11Test {
             } catch (Exception e) {
                 serverException = e;
             } finally {
-                serverReady = true;
+                serverReadyLatch.countDown();
             }
         }
     }
 
-    void startClient(boolean newThread) throws Exception {
+    void startClient (boolean newThread) {
         if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
+            clientThread = new Thread(() -> {
+                try {
+                    doClientSide();
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died...");
+                    clientException = e;
                 }
-            };
+            });
             clientThread.start();
         } else {
             try {

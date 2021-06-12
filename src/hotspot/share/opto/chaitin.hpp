@@ -163,11 +163,11 @@ public:
   bool is_scalable() {
 #ifdef ASSERT
     if (_is_scalable) {
-      // Should only be a vector for now, but it could also be a RegVMask in future.
+      // Should only be a vector for now, but it could also be a RegVectMask in future.
       assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA), "unexpected scalable reg");
     }
 #endif
-    return _is_scalable;
+    return Matcher::implements_scalable_vector && _is_scalable;
   }
 
 private:
@@ -443,7 +443,7 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   // Helper functions for Split()
   uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
-  uint split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
+  int split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that

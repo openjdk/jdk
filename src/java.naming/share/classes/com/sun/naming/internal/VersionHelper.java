@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 package com.sun.naming.internal;
 
 import javax.naming.NamingEnumeration;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -63,11 +63,12 @@ public final class VersionHelper {
         // arbitrary URL code base
         PrivilegedAction<String> act
                 = () -> System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase", "false");
+        @SuppressWarnings("removal")
         String trust = AccessController.doPrivileged(act);
         TRUST_URL_CODE_BASE = "true".equalsIgnoreCase(trust);
     }
 
-    final static String[] PROPS = new String[]{
+    static final String[] PROPS = new String[]{
         javax.naming.Context.INITIAL_CONTEXT_FACTORY,
         javax.naming.Context.OBJECT_FACTORIES,
         javax.naming.Context.URL_PKG_PREFIXES,
@@ -78,13 +79,13 @@ public final class VersionHelper {
         javax.naming.ldap.LdapContext.CONTROL_FACTORIES
     };
 
-    public final static int INITIAL_CONTEXT_FACTORY = 0;
-    public final static int OBJECT_FACTORIES = 1;
-    public final static int URL_PKG_PREFIXES = 2;
-    public final static int STATE_FACTORIES = 3;
-    public final static int PROVIDER_URL = 4;
-    public final static int DNS_URL = 5;
-    public final static int CONTROL_FACTORIES = 6;
+    public static final int INITIAL_CONTEXT_FACTORY = 0;
+    public static final int OBJECT_FACTORIES = 1;
+    public static final int URL_PKG_PREFIXES = 2;
+    public static final int STATE_FACTORIES = 3;
+    public static final int PROVIDER_URL = 4;
+    public static final int DNS_URL = 5;
+    public static final int CONTROL_FACTORIES = 6;
 
     private VersionHelper() {} // Disallow anyone from creating one of these.
 
@@ -94,6 +95,10 @@ public final class VersionHelper {
 
     public Class<?> loadClass(String className) throws ClassNotFoundException {
         return loadClass(className, getContextClassLoader());
+    }
+
+    public Class<?> loadClassWithoutInit(String className) throws ClassNotFoundException {
+        return loadClass(className, false, getContextClassLoader());
     }
 
     /**
@@ -118,10 +123,15 @@ public final class VersionHelper {
      * This internal method is used with Thread Context Class Loader (TCCL),
      * please don't expose this method as public.
      */
+    Class<?> loadClass(String className, boolean initialize, ClassLoader cl)
+            throws ClassNotFoundException {
+        Class<?> cls = Class.forName(className, initialize, cl);
+        return cls;
+    }
+
     Class<?> loadClass(String className, ClassLoader cl)
             throws ClassNotFoundException {
-        Class<?> cls = Class.forName(className, true, cl);
-        return cls;
+        return loadClass(className, true, cl);
     }
 
     /*
@@ -129,6 +139,7 @@ public final class VersionHelper {
      * null if the property is not set, or if there is no permission
      * to read it.
      */
+    @SuppressWarnings("removal")
     String getJndiProperty(int i) {
         PrivilegedAction<String> act = () -> {
             try {
@@ -154,6 +165,7 @@ public final class VersionHelper {
                 return null;
             }
         };
+        @SuppressWarnings("removal")
         Properties sysProps = AccessController.doPrivileged(act);
         if (sysProps == null) {
             return null;
@@ -170,14 +182,12 @@ public final class VersionHelper {
             return name;
         }
         if (!name.startsWith("/")) {
-            while (c.isArray()) {
-                c = c.getComponentType();
-            }
-            String baseName = c.getName();
-            int index = baseName.lastIndexOf('.');
-            if (index != -1) {
-                name = baseName.substring(0, index).replace('.', '/')
-                    +"/"+name;
+            if (!c.isPrimitive()) {
+                String baseName = c.getPackageName();
+                if (!baseName.isEmpty()) {
+                    name = baseName.replace('.', '/') + "/"
+                            + name;
+                }
             }
         } else {
             name = name.substring(1);
@@ -189,11 +199,11 @@ public final class VersionHelper {
      * Returns the resource of a given name associated with a particular
      * class (never null), or null if none can be found.
      */
+    @SuppressWarnings("removal")
     InputStream getResourceAsStream(Class<?> c, String name) {
         PrivilegedAction<InputStream> act = () -> {
             try {
-                Module m = c.getModule();
-                return c.getModule().getResourceAsStream(resolveName(c,name));
+                return c.getModule().getResourceAsStream(resolveName(c, name));
              } catch (IOException x) {
                  return null;
              }
@@ -207,6 +217,7 @@ public final class VersionHelper {
      *
      * @param filename  The file name, sans directory.
      */
+    @SuppressWarnings("removal")
     InputStream getJavaHomeConfStream(String filename) {
         PrivilegedAction<InputStream> act = () -> {
             try {
@@ -214,9 +225,7 @@ public final class VersionHelper {
                 if (javahome == null) {
                     return null;
                 }
-                String pathname = javahome + File.separator +
-                        "conf" + File.separator + filename;
-                return new FileInputStream(pathname);
+                return Files.newInputStream(Path.of(javahome, "conf", filename));
             } catch (Exception e) {
                 return null;
             }
@@ -230,6 +239,7 @@ public final class VersionHelper {
      * loader.  Null represents the bootstrap class loader in some
      * Java implementations.
      */
+    @SuppressWarnings("removal")
     NamingEnumeration<InputStream> getResources(ClassLoader cl,
                                                 String name) throws IOException {
         Enumeration<URL> urls;
@@ -255,6 +265,7 @@ public final class VersionHelper {
      * Please don't expose this method as public.
      * @throws SecurityException if the class loader is not accessible
      */
+    @SuppressWarnings("removal")
     ClassLoader getContextClassLoader() {
 
         PrivilegedAction<ClassLoader> act = () -> {
@@ -272,20 +283,11 @@ public final class VersionHelper {
             throws MalformedURLException {
         // Parse codebase into separate URLs
         StringTokenizer parser = new StringTokenizer(codebase);
-        List<String> list = new ArrayList<>();
+        List<URL> list = new ArrayList<>();
         while (parser.hasMoreTokens()) {
-            list.add(parser.nextToken());
+            list.add(new URL(parser.nextToken()));
         }
-        String[] url = new String[list.size()];
-        for (int i = 0; i < url.length; i++) {
-            url[i] = list.get(i);
-        }
-
-        URL[] urlArray = new URL[url.length];
-        for (int i = 0; i < urlArray.length; i++) {
-            urlArray[i] = new URL(url[i]);
-        }
-        return urlArray;
+        return list.toArray(new URL[0]);
     }
 
     /**
@@ -310,6 +312,7 @@ public final class VersionHelper {
          * Returns the next InputStream, or null if there are no more.
          * An InputStream that cannot be opened is skipped.
          */
+        @SuppressWarnings("removal")
         private InputStream getNextElement() {
             PrivilegedAction<InputStream> act = () -> {
                 while (urls.hasMoreElements()) {
