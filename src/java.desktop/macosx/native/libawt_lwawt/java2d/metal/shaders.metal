@@ -643,6 +643,16 @@ kernel void stencil2tex(const device uchar *imageBuffer [[buffer(0)]],
     outputBuffer[gid] = uchar4(p, p, p, p);
 }
 
+kernel void tex2tex_opaque(texture2d<half, access::read> inTexture [[texture(0)]],
+    texture2d<half, access::write> outTexture [[texture(1)]],
+    constant InsetsUniforms& uniforms [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]])
+{
+    half4 inColor  = inTexture.read(uint2(gid[0] + uniforms.left, gid[1] + uniforms.top));
+    half4 outColor = half4(inColor.rgb, 1.0);
+    outTexture.write(outColor, gid);
+}
+
 // work item deals with 4 byte pixel
 // assuming that data is aligned
 kernel void swizzle_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
