@@ -1187,7 +1187,9 @@ Node* GraphKit::load_array_length(Node* array) {
     alen = alloc->Ideal_length();
     Node* ccast = alloc->make_ideal_length(_gvn.type(array)->is_oopptr(), &_gvn);
     if (ccast != alen) {
-      alen = _gvn.transform(ccast);
+      _gvn.set_type_bottom(ccast);
+      record_for_igvn(ccast);
+      alen = ccast;
     }
   }
   return alen;

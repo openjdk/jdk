@@ -4443,6 +4443,33 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     Node* alloc_mem = alloc->in(TypeFunc::Memory);
     C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
     C->gvn_replace_by(init->proj_out(TypeFunc::Memory), alloc_mem);
+
+    // The CastIINode created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) must stay below
+    // the allocation (i.e. is only valid if the allocation succeeds):
+    // 1) replace CastIINode with AllocateArrayNode's length here
+    // 2) Create CastIINode again once allocation has moved (see below) at the end of this method
+    Node* init_control = init->proj_out(TypeFunc::Control);
+    Node* alloc_length = alloc->Ideal_length();
+#ifdef ASSERT
+    Node* prev_cast = NULL;
+#endif
+    for (uint i = 0; i < init_control->outcnt(); i++) {
+      Node *init_out = init_control->raw_out(i);
+      if (init_out->is_CastII() && init_out->in(0) == init_control && init_out->in(1) == alloc_length) {
+#ifdef ASSERT
+        if (prev_cast == NULL) {
+          prev_cast = init_out;
+        } else {
+          if (prev_cast->cmp(*init_out) == false) {
+            prev_cast->dump();
+            init_out->dump();
+            assert(false, "not equal CastIINode");
+          }
+        }
+#endif
+        C->gvn_replace_by(init_out, alloc_length);
+      }
+    }
     C->gvn_replace_by(init->proj_out(TypeFunc::Control), alloc->in(0));
 
     // move the allocation here (after the guards)
@@ -4474,6 +4501,19 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     dest->set_req(0, control());
     Node* destx = _gvn.transform(dest);
     assert(destx == dest, "where has the allocation result gone?");
+
+    // Cast length on remaining path to be as narrow as possible
+    // previous CastNode inserted when creating AllocateArrayNode
+    // is removed in early step in LibraryCallKit::inline_arraycopy
+    Node* length = alloc->in(AllocateNode::ALength);
+    if (map()->find_edge(length) >= 0) {
+      Node* ccast = alloc->make_ideal_length(ary_type, &_gvn);
+      if (ccast != length) {
+        _gvn.set_type_bottom(ccast);
+        record_for_igvn(ccast);
+        replace_in_map(length, ccast);
+      }
+    }
   }
 }
 
