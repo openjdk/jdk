@@ -59,7 +59,7 @@ class Semaphore : public CHeapObj<mtSynchronizer> {
 
   void wait_with_safepoint_check(JavaThread* thread);
 
-#ifndef PRODUCT
+#ifdef ASSERT
   uint value() const { return _value; }
 #endif
 };
