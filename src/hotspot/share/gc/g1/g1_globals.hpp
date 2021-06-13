@@ -307,7 +307,12 @@
           "of getloadavg() at which G1 triggers a periodic GC. A load "     \
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
-          range(0.0, (double)max_uintx)
+          range(0.0, (double)max_uintx)                                     \
+                                                                            \
+  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                       \
+          "Allows collections to be triggered proactively based on the      \
+           number of free regions and the expected survival rates in each   \
+           section of the heap.")
 
 // end of GC_G1_FLAGS
 

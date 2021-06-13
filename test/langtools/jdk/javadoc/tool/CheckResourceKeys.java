@@ -227,7 +227,7 @@ public class CheckResourceKeys {
             }
 
             // special handling for code strings synthesized in
-            // jdk.javadoc.internal.tool.Messager
+            // jdk.javadoc.internal.tool.JavadocLog
             results.add("javadoc.error.msg");
             results.add("javadoc.note.msg");
             results.add("javadoc.note.pos.msg");

@@ -123,7 +123,7 @@ import com.sun.tools.javac.util.Log;
  * @see java.util.ResourceBundle
  * @see java.text.MessageFormat
  */
-public class Messager extends Log implements Reporter {
+public class JavadocLog extends Log implements Reporter {
     /** The overall context for the documentation run. */
     private final Context context;
 
@@ -138,22 +138,22 @@ public class Messager extends Log implements Reporter {
      */
     private final LinkedHashMap<JavaFileObject, SoftReference<DiagnosticSource>> diagSourceCache;
 
-    /** Get the current messager, which is also the compiler log. */
-    public static Messager instance0(Context context) {
+    /** Get the current javadoc log, which is also the compiler log. */
+    public static JavadocLog instance0(Context context) {
         Log instance = context.get(logKey);
-        if (!(instance instanceof Messager m))
-            throw new InternalError("no messager instance!");
-        return m;
+        if (!(instance instanceof JavadocLog l))
+            throw new InternalError("no JavadocLog instance!");
+        return l;
     }
 
     public static void preRegister(Context context,
                                    final String programName) {
-        context.put(logKey, (Factory<Log>)c -> new Messager(c, programName));
+        context.put(logKey, (Factory<Log>)c -> new JavadocLog(c, programName));
     }
 
     public static void preRegister(Context context, final String programName,
             final PrintWriter outWriter, final PrintWriter errWriter) {
-        context.put(logKey, (Factory<Log>)c -> new Messager(c, programName, outWriter, errWriter));
+        context.put(logKey, (Factory<Log>)c -> new JavadocLog(c, programName, outWriter, errWriter));
     }
 
     final String programName;
@@ -176,7 +176,7 @@ public class Messager extends Log implements Reporter {
      * Constructor
      * @param programName  Name of the program (for error messages).
      */
-    public Messager(Context context, String programName) {
+    public JavadocLog(Context context, String programName) {
         // use the current values of System.out, System.err, in case they have been redirected
         this(context, programName,
                 createPrintWriter(System.out, false),
@@ -189,7 +189,7 @@ public class Messager extends Log implements Reporter {
      * @param outWriter    Stream for notices etc.
      * @param errWriter    Stream for errors and warnings
      */
-    public Messager(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {
+    public JavadocLog(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {
         super(context, outWriter, errWriter);
         messages = JavacMessages.instance(context);
         messages.add(locale -> ResourceBundle.getBundle("jdk.javadoc.internal.tool.resources.javadoc",
