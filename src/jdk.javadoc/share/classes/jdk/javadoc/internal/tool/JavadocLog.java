@@ -45,6 +45,12 @@ import javax.tools.FileObject;
 import javax.tools.ForwardingFileObject;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.doctree.CommentTree;
+import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DocTypeTree;
+import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.doctree.TextTree;
+import com.sun.tools.javac.tree.DCTree;
 import jdk.javadoc.doclet.Reporter;
 
 import com.sun.tools.javac.tree.EndPosTable;
@@ -245,6 +251,48 @@ public class JavadocLog extends Log implements Reporter {
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
         report(dt, flags, ds, dp, message);
+    }
+
+    @Override // Reporter
+    public void print(Diagnostic.Kind kind, DocTreePath path, int start, int pos, int end, String message) {
+        if (!(start <= pos && pos <= end)) {
+            throw new IllegalArgumentException("start:" + start + ",pos:" + pos + ",end:" + end);
+        }
+
+        DocTree t = path.getLeaf();
+        String s = switch (t.getKind()) {
+            case COMMENT -> ((CommentTree) t).getBody();
+            case DOC_TYPE -> ((DocTypeTree) t).getText();
+            case REFERENCE -> ((ReferenceTree) t).getSignature();
+            case TEXT -> ((TextTree) t).getBody();
+            default -> throw new IllegalArgumentException(t.getKind().toString());
+        };
+
+        if (start < 0 || end > s.length()) {
+            throw new StringIndexOutOfBoundsException("start:" + start + ",pos:" + pos + ",end:" + end
+                    + "; string length " + s.length());
+        }
+
+        DiagnosticType dt = getDiagnosticType(kind);
+        Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
+        DiagnosticSource ds = getDiagnosticSource(path);
+
+        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
+        DCTree tree = (DCTree) path.getLeaf();
+        // note: it is important to evaluate the offsets in the context of the position
+        // within the comment text, and not in the context of the overall source text
+        int sStart = (int) tree.getSourcePosition(docComment, start);
+        int sPos = (int) tree.getSourcePosition(docComment, pos);
+        int sEnd = (int) tree.getSourcePosition(docComment, end);
+        DiagnosticPosition dp = createDiagnosticPosition(null, sStart, sPos, sEnd);
+
+        report(dt, flags, ds, dp, message);
+    }
+
+    private int getSourcePos(DocTreePath path, int offset) {
+        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
+        DCTree tree = (DCTree) path.getLeaf();
+        return (int) tree.getSourcePosition(docComment, offset);
     }
 
     @Override  // Reporter

@@ -28,7 +28,6 @@ package com.sun.source.util;
 import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.List;
-
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -195,7 +194,7 @@ public abstract class DocTrees extends Trees {
 
     /**
      * Prints a message of the specified kind at the location of the
-     * tree within the provided compilation unit
+     * tree within the provided compilation unit.
      *
      * @param kind the kind of message
      * @param msg  the message, or an empty string if none

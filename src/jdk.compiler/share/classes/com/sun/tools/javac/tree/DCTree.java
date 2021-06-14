@@ -63,8 +63,24 @@ public abstract class DCTree implements DocTree {
      */
     public int pos;
 
+    /**
+     * {@return the source position for this tree node}
+     *
+     * @param dc the enclosing doc comment
+     */
     public long getSourcePosition(DCDocComment dc) {
         return dc.comment.getSourcePos(pos);
+    }
+
+    /**
+     * {@return the source position for position relative to this tree node}
+     * This is primarily useful for nodes that wrap a single string child.
+     *
+     * @param dc     the enclosing doc comment
+     * @param offset the offset
+     */
+    public long getSourcePosition(DCDocComment dc, int offset) {
+        return dc.comment.getSourcePos(pos + offset);
     }
 
     public JCDiagnostic.DiagnosticPosition pos(DCDocComment dc) {
