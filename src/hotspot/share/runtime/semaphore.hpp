@@ -42,6 +42,8 @@ class JavaThread;
 
 // Implements the limited, platform independent Semaphore API.
 class Semaphore : public CHeapObj<mtSynchronizer> {
+  friend class SemaphoreLocker;
+
   SemaphoreImpl _impl;
   DEBUG_ONLY(const uint _value;)
 
@@ -58,10 +60,6 @@ class Semaphore : public CHeapObj<mtSynchronizer> {
   bool trywait()              { return _impl.trywait(); }
 
   void wait_with_safepoint_check(JavaThread* thread);
-
-#ifdef ASSERT
-  uint value() const { return _value; }
-#endif
 };
 
 #endif // SHARE_RUNTIME_SEMAPHORE_HPP

@@ -27,20 +27,32 @@
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
 
-class AsyncLogLocker : public StackObj {
+// RAII class which implements a lock using semaphore(1)
+class SemaphoreLocker : public StackObj {
   Semaphore* _sem;
+  DEBUG_ONLY(intx _locking_thread_id;)
 
  public:
-  AsyncLogLocker(Semaphore* sem): _sem(sem) {
-    assert(sem != nullptr && sem->value() == 1,
+  SemaphoreLocker(Semaphore* sem): _sem(sem)
+  DEBUG_ONLY(COMMA _locking_thread_id(os::current_thread_id())) {
+
+    assert(sem != nullptr && sem->_value == 1,
           "given semaphore must guarantee mutual exclusion!");
     _sem->wait();
   }
 
-  ~AsyncLogLocker() {
+  ~SemaphoreLocker() {
+    DEBUG_ONLY(_locking_thread_id = -1);
     _sem->signal();
   }
+
+#ifdef ASSERT
+  bool current_thread_has_lock() {
+    return _locking_thread_id == os::current_thread_id();
+  }
+#endif
 };
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
@@ -61,20 +73,23 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
   AsyncLogMessage m(output, decorations, os::strdup(msg));
 
   { // critical area
-    AsyncLogLocker locker(&_lock);
+    SemaphoreLocker locker(&_lock);
     enqueue_locked(m);
+    assert(locker.current_thread_has_lock(), "critical region is broken");
   }
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // The lock here guarantees its integrity.
 void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker locker(&_lock);
+  SemaphoreLocker locker(&_lock);
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
     enqueue_locked(m);
   }
+
+  assert(locker.current_thread_has_lock(), "critical region is broken");
 }
 
 AsyncLogWriter::AsyncLogWriter()
@@ -123,13 +138,14 @@ void AsyncLogWriter::write() {
   bool own_io = false;
 
   { // critical region
-    AsyncLogLocker locker(&_lock);
+    SemaphoreLocker locker(&_lock);
 
     _buffer.pop_all(&logs);
     // append meta-messages of dropped counters
     AsyncLogMapIterator dropped_counters_iter(logs);
     _stats.iterate(&dropped_counters_iter);
     own_io = _io_sem.trywait();
+    assert(locker.current_thread_has_lock(), "critical region is broken");
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());
