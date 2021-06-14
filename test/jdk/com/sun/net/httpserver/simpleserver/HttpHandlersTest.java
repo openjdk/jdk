@@ -76,22 +76,22 @@ public class HttpHandlersTest {
         assertThrows(NPE, () -> HttpHandlers.handleOrElse(p -> true, handler, null));
 
         final var headers = new Headers();
-        final var bytes = new byte[]{};
-        assertThrows(NPE, () -> HttpHandlers.of(200, null, bytes));
+        final var body = "";
+        assertThrows(NPE, () -> HttpHandlers.of(200, null, body));
         assertThrows(NPE, () -> HttpHandlers.of(200, headers, null));
     }
 
     @Test
     public void testOfStatusCode() {
         final var headers = new Headers();
-        final var bytes = new byte[]{};
-        assertThrows(IAE, () -> HttpHandlers.of(99, headers, bytes));
-        assertThrows(IAE, () -> HttpHandlers.of(1000, headers, bytes));
+        final var body = "";
+        assertThrows(IAE, () -> HttpHandlers.of(99, headers, body));
+        assertThrows(IAE, () -> HttpHandlers.of(1000, headers, body));
     }
 
     @Test
     public void testOfNoBody() throws Exception {
-        var handler = HttpHandlers.of(200, Headers.of("foo", "bar"), new byte[]{});
+        var handler = HttpHandlers.of(200, Headers.of("foo", "bar"), "");
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);
         server.start();
@@ -112,7 +112,7 @@ public class HttpHandlersTest {
 
     @Test
     public void testOfWithBody() throws Exception {
-        var handler = HttpHandlers.of(200, Headers.of("foo", "bar"), "hello world".getBytes(UTF_8));
+        var handler = HttpHandlers.of(200, Headers.of("foo", "bar"), "hello world");
         var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);
@@ -135,7 +135,7 @@ public class HttpHandlersTest {
     @Test
     public void testOfOverwriteHeaders() throws Exception {
         var headers = Headers.of("content-length", "1000", "date", "12345");
-        var handler = HttpHandlers.of(200, headers, "hello world".getBytes(UTF_8));
+        var handler = HttpHandlers.of(200, headers, "hello world");
         var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);

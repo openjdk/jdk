@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.util.FileUtils
- * @run testng ToolProviderPositiveTest
+ * @run testng/othervm ToolProviderPositiveTest
  */
 
 import java.io.BufferedInputStream;
@@ -130,7 +130,7 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testHelp() throws Exception {
-        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory] [-o none|info|verbose]";
+        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory] [-o none|info|verbose] [-h to show options]";
         var optionsText = """
                 Options:
                 bind address    - Address to bind to. Default: 0.0.0.0 (all interfaces).

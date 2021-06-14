@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.util.FileUtils jdk.test.lib.Platform
- * @run testng ToolProviderNegativeTest
+ * @run testng/othervm ToolProviderNegativeTest
  */
 
 import java.io.ByteArrayOutputStream;
