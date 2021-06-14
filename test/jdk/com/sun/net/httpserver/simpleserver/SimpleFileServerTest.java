@@ -219,7 +219,6 @@ public class SimpleFileServerTest {
             var root = Files.createDirectory(CWD.resolve("testForbidden"));
             var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
-            // make file not readable
             file.toFile().setReadable(false, false);
             assert !Files.isReadable(file);
 
@@ -355,7 +354,7 @@ public class SimpleFileServerTest {
             assertTrue(iae.getMessage().contains("does not exist"));
         }
         {   // not readable
-            if (!Platform.isWindows()) {  // not reliable on Windows
+            if (!Platform.isWindows()) {  // not applicable on Windows
                 Path p = Files.createDirectory(CWD.resolve("aDir"));
                 p.toFile().setReadable(false, false);
                 assert !Files.isReadable(p);

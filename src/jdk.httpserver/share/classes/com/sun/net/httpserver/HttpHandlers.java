@@ -26,6 +26,7 @@
 package com.sun.net.httpserver;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Predicate;
 import sun.net.httpserver.UnmodifiableHeaders;
@@ -37,13 +38,13 @@ import sun.net.httpserver.UnmodifiableHeaders;
  * <p> The functionality of a handler can be extended or enhanced through the
  * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
  * which allows to complement a given handler. The factory method
- * {@link #of(int, Headers, byte[])} provides a means to create handlers with
+ * {@link #of(int, Headers, String)} provides a means to create handlers with
  * pre-set response state.
  *
  * <p> Example of complementing a handler with a <i>fallbackHandler</i>:
  * <pre>{@code
  *   Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
- *   var fallbackHandler = HttpHandlers.of(405, Headers.of("Allow", "GET"), new byte[]{});
+ *   var fallbackHandler = HttpHandlers.of(405, Headers.of("Allow", "GET"), "");
  *   var handler = HttpHandlers.handleOrElse(IS_GET, new GetHandler(), fallbackHandler);
  * }</pre>
  *
@@ -116,37 +117,40 @@ public class HttpHandlers {
      * body before it sets the response state and sends the response.
      *
      * <p>{@code headers} are the effective headers of the response. The response
-     * {@linkplain HttpExchange#sendResponseHeaders(int, long) is sent} with
-     * the given {@code statusCode} and the length of {@code body} as
-     * response length. The {@code body} bytes are sent as response body, unless
-     * {@code body} is of length zero, in which case no response body is sent.
+     * <i>body bytes</i> are a {@code UTF-8} encoded byte sequence of
+     * {@code body}. The response {@linkplain HttpExchange#sendResponseHeaders(int, long) is sent}
+     * with the given {@code statusCode} and the body bytes' length. The body
+     * bytes are then sent as response body, unless they are of length zero,
+     * in which case no response body is sent.
      *
      * @param statusCode a response status code
      * @param headers a headers
-     * @param body a byte[] response body
+     * @param body a response body string
      * @return a handler
      * @throws IllegalArgumentException if statusCode is not a positive 3-digit
      *                                  integer, as per rfc2616, section 6.1.1
      * @throws NullPointerException     if headers or body are null
      * @since 18
      */
-    public static HttpHandler of(int statusCode, Headers headers, byte[] body) {
+    public static HttpHandler of(int statusCode, Headers headers, String body) {
         if (statusCode < 100 || statusCode > 999)
-            throw new IllegalArgumentException("statusCode must be 3-digit: " + statusCode);
+            throw new IllegalArgumentException("statusCode must be 3-digit: "
+                    + statusCode);
         Objects.requireNonNull(headers);
         Objects.requireNonNull(body);
 
         final var headersCopy = new UnmodifiableHeaders(headers);
+        final var bytes = body.getBytes(StandardCharsets.UTF_8);
 
         return exchange -> {
             try (exchange) {
                 exchange.getRequestBody().readAllBytes();
                 exchange.getResponseHeaders().putAll(headersCopy);
-                if (body.length == 0) {
+                if (bytes.length == 0) {
                     exchange.sendResponseHeaders(statusCode, -1);
                 } else {
-                    exchange.sendResponseHeaders(statusCode, body.length);
-                    exchange.getResponseBody().write(body);
+                    exchange.sendResponseHeaders(statusCode, bytes.length);
+                    exchange.getResponseBody().write(bytes);
                 }
             }
         };
