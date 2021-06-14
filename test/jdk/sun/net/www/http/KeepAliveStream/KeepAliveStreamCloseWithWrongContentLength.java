@@ -32,8 +32,6 @@
 
 import java.net.*;
 import java.io.*;
-import java.util.Optional;
-
 import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveStreamCloseWithWrongContentLength {
