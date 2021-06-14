@@ -301,7 +301,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     phase->igvn().replace_node(ac, call);
     return;
   }
-  
+
   // Clone instance
   Node* const ctrl       = ac->in(TypeFunc::Control);
   Node* const mem        = ac->in(TypeFunc::Memory);
