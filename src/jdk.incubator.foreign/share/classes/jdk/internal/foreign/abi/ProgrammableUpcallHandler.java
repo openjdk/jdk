@@ -295,6 +295,9 @@ public class ProgrammableUpcallHandler {
             } else {
                 return returnMoves;
             }
+        } catch(Throwable t) {
+            SharedUtils.handleUncaughtException(t);
+            return null;
         }
     }
 

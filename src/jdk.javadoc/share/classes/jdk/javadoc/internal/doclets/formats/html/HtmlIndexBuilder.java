@@ -169,7 +169,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             add(item);
         }
         IndexItem item = IndexItem.of(IndexItem.Category.TYPES,
-                resources.getText("doclet.All_Classes"),
+                resources.getText("doclet.All_Classes_And_Interfaces"),
                 DocPaths.ALLCLASSES_INDEX);
         add(item);
 

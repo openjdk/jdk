@@ -75,9 +75,8 @@ class JfrJavaSupport : public AllStatic {
 
   // misc
   static Klass* klass(const jobject handle);
-  // caller needs ResourceMark
-  static const char* c_str(jstring string, JavaThread* jt);
-  static const char* c_str(oop string, JavaThread* t);
+  static const char* c_str(jstring string, JavaThread* jt, bool c_heap = false);
+  static const char* c_str(oop string, JavaThread* jt, bool c_heap = false);
 
   // exceptions
   static void throw_illegal_state_exception(const char* message, TRAPS);

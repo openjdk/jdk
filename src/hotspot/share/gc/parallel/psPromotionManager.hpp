@@ -110,6 +110,9 @@ class PSPromotionManager {
 
   static PSScannerTasksQueueSet* stack_array_depth() { return _stack_array_depth; }
 
+  template<bool promote_immediately>
+  oop copy_unmarked_to_survivor_space(oop o, markWord m);
+
  public:
   // Static
   static void initialize();

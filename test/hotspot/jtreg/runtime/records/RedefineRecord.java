@@ -29,8 +29,8 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
- * @run main RedefineRecord buildagent
- * @run main/othervm/timeout=6000 RedefineRecord runtest
+ * @run driver RedefineRecord buildagent
+ * @run driver/timeout=6000 RedefineRecord runtest
  */
 
 import java.io.FileNotFoundException;

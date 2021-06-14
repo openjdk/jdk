@@ -62,6 +62,8 @@ class ConstraintCastNode: public TypeNode {
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  static Node* make_cast_for_type(Node* c, Node* in, const Type* type);
 };
 
 //------------------------------CastIINode-------------------------------------

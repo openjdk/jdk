@@ -109,39 +109,39 @@ abstract class MethodHandleImpl {
         // final fields.
 
         static String opName(ArrayAccess a) {
-            switch (a) {
-                case GET: return "getElement";
-                case SET: return "setElement";
-                case LENGTH: return "length";
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> "getElement";
+                case SET    -> "setElement";
+                case LENGTH -> "length";
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static MethodHandle objectAccessor(ArrayAccess a) {
-            switch (a) {
-                case GET: return ArrayAccessor.OBJECT_ARRAY_GETTER;
-                case SET: return ArrayAccessor.OBJECT_ARRAY_SETTER;
-                case LENGTH: return ArrayAccessor.OBJECT_ARRAY_LENGTH;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> ArrayAccessor.OBJECT_ARRAY_GETTER;
+                case SET    -> ArrayAccessor.OBJECT_ARRAY_SETTER;
+                case LENGTH -> ArrayAccessor.OBJECT_ARRAY_LENGTH;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static int cacheIndex(ArrayAccess a) {
-            switch (a) {
-                case GET: return ArrayAccessor.GETTER_INDEX;
-                case SET: return ArrayAccessor.SETTER_INDEX;
-                case LENGTH: return ArrayAccessor.LENGTH_INDEX;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> ArrayAccessor.GETTER_INDEX;
+                case SET    -> ArrayAccessor.SETTER_INDEX;
+                case LENGTH -> ArrayAccessor.LENGTH_INDEX;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static Intrinsic intrinsic(ArrayAccess a) {
-            switch (a) {
-                case GET: return Intrinsic.ARRAY_LOAD;
-                case SET: return Intrinsic.ARRAY_STORE;
-                case LENGTH: return Intrinsic.ARRAY_LENGTH;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> Intrinsic.ARRAY_LOAD;
+                case SET    -> Intrinsic.ARRAY_STORE;
+                case LENGTH -> Intrinsic.ARRAY_LENGTH;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
     }
 
@@ -213,21 +213,21 @@ abstract class MethodHandleImpl {
                 arrayArgClass = Object[].class;
                 elemClass = Object.class;
             }
-            switch (access) {
-                case GET:    return MethodType.methodType(elemClass,  arrayArgClass, int.class);
-                case SET:    return MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
-                case LENGTH: return MethodType.methodType(int.class,  arrayArgClass);
-            }
-            throw unmatchedArrayAccess(access);
+            return switch (access) {
+                case GET    -> MethodType.methodType(elemClass, arrayArgClass, int.class);
+                case SET    -> MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+                case LENGTH -> MethodType.methodType(int.class, arrayArgClass);
+                default -> throw unmatchedArrayAccess(access);
+            };
         }
         static MethodType correctType(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
-            switch (access) {
-                case GET:    return MethodType.methodType(elemClass,  arrayClass, int.class);
-                case SET:    return MethodType.methodType(void.class, arrayClass, int.class, elemClass);
-                case LENGTH: return MethodType.methodType(int.class,  arrayClass);
-            }
-            throw unmatchedArrayAccess(access);
+            return switch (access) {
+                case GET    -> MethodType.methodType(elemClass, arrayClass, int.class);
+                case SET    -> MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+                case LENGTH -> MethodType.methodType(int.class, arrayClass);
+                default -> throw unmatchedArrayAccess(access);
+            };
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
             String     name = name(arrayClass, access);
@@ -980,13 +980,12 @@ abstract class MethodHandleImpl {
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
     static MethodHandle fakeMethodHandleInvoke(MemberName method) {
-        int idx;
         assert(method.isMethodHandleInvoke());
-        switch (method.getName()) {
-        case "invoke":       idx = 0; break;
-        case "invokeExact":  idx = 1; break;
-        default:             throw new InternalError(method.getName());
-        }
+        int idx = switch (method.getName()) {
+            case "invoke"      -> 0;
+            case "invokeExact" -> 1;
+            default -> throw new InternalError(method.getName());
+        };
         MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE[idx];
         if (mh != null)  return mh;
         MethodType type = MethodType.methodType(Object.class, UnsupportedOperationException.class,
@@ -1395,32 +1394,24 @@ abstract class MethodHandleImpl {
 
     private static NamedFunction createFunction(byte func) {
         try {
-            switch (func) {
-                case NF_checkSpreadArgument:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-                case NF_guardWithCatch:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
-                                    MethodHandle.class, Object[].class));
-                case NF_tryFinally:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
-                case NF_loop:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
-                case NF_throwException:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("throwException", Throwable.class));
-                case NF_profileBoolean:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
-                case NF_tableSwitch:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("tableSwitch", int.class, MethodHandle.class, CasesHolder.class, Object[].class));
-                default:
-                    throw new InternalError("Undefined function: " + func);
-            }
+            return switch (func) {
+                case NF_checkSpreadArgument -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                case NF_guardWithCatch      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                                                   MethodHandle.class, Object[].class));
+                case NF_tryFinally          -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
+                case NF_loop                -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
+                case NF_throwException      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("throwException", Throwable.class));
+                case NF_profileBoolean      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
+                case NF_tableSwitch         -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("tableSwitch", int.class, MethodHandle.class, CasesHolder.class, Object[].class));
+                default -> throw new InternalError("Undefined function: " + func);
+            };
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
