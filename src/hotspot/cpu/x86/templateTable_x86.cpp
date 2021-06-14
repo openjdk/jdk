@@ -1633,41 +1633,21 @@ void TemplateTable::dop2(Operation op) {
     case add: __ fadd_d (at_rsp());                break;
     case sub: __ fsubr_d(at_rsp());                break;
     case mul: {
-      Label L_strict;
-      Label L_join;
-      const Address access_flags      (rcx, Method::access_flags_offset());
-      __ get_method(rcx);
-      __ movl(rcx, access_flags);
-      __ testl(rcx, JVM_ACC_STRICT);
-      __ jccb(Assembler::notZero, L_strict);
-      __ fmul_d (at_rsp());
-      __ jmpb(L_join);
-      __ bind(L_strict);
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias1()));
+      // strict semantics
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
       __ fmulp();
       __ fmul_d (at_rsp());
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias2()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
       __ fmulp();
-      __ bind(L_join);
       break;
     }
     case div: {
-      Label L_strict;
-      Label L_join;
-      const Address access_flags      (rcx, Method::access_flags_offset());
-      __ get_method(rcx);
-      __ movl(rcx, access_flags);
-      __ testl(rcx, JVM_ACC_STRICT);
-      __ jccb(Assembler::notZero, L_strict);
-      __ fdivr_d(at_rsp());
-      __ jmp(L_join);
-      __ bind(L_strict);
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias1()));
+      // strict semantics
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
       __ fmul_d (at_rsp());
       __ fdivrp();
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias2()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
       __ fmulp();
-      __ bind(L_join);
       break;
     }
     case rem: __ fld_d  (at_rsp()); __ fremr(rax); break;

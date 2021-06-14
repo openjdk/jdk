@@ -977,7 +977,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   // TODO
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
+  bool ret_value = match_rule_supported(opcode) && vector_size_supported(bt, vlen);
   // Add rules here.
 
   return ret_value;  // Per default match rules are supported.
@@ -989,6 +989,16 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 
 const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
+}
+
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -5181,6 +5191,39 @@ instruct castLL( iRegL dst ) %{
   ins_cost(0);
   ins_pipe(empty);
 %}
+
+instruct castFF( regF dst ) %{
+  match(Set dst (CastFF dst));
+  format %{ "! castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castDD( regD dst ) %{
+  match(Set dst (CastDD dst));
+  format %{ "! castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castVVD( vecD dst ) %{
+  match(Set dst (CastVV dst));
+  format %{ "! castVV of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castVVX( vecX dst ) %{
+  match(Set dst (CastVV dst));
+  format %{ "! castVV of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
 
 //----------Arithmetic Instructions--------------------------------------------
 // Addition Instructions

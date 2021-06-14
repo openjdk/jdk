@@ -103,13 +103,17 @@ class WorkerThread: public NamedThread {
  private:
   uint _id;
  public:
+  static WorkerThread* current() {
+    return WorkerThread::cast(Thread::current());
+  }
+
+  static WorkerThread* cast(Thread* t) {
+    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
+    return static_cast<WorkerThread*>(t);
+  }
+
   WorkerThread() : _id(0)               { }
   virtual bool is_Worker_thread() const { return true; }
-
-  virtual WorkerThread* as_Worker_thread() const {
-    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
-    return (WorkerThread*) this;
-  }
 
   void set_id(uint work_id)             { _id = work_id; }
   uint id() const                       { return _id; }

@@ -3890,7 +3890,6 @@ bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
-int jdk_internal_invoke_NativeEntryPoint::_addr_offset;
 int jdk_internal_invoke_NativeEntryPoint::_shadow_space_offset;
 int jdk_internal_invoke_NativeEntryPoint::_argMoves_offset;
 int jdk_internal_invoke_NativeEntryPoint::_returnMoves_offset;
@@ -3899,7 +3898,6 @@ int jdk_internal_invoke_NativeEntryPoint::_method_type_offset;
 int jdk_internal_invoke_NativeEntryPoint::_name_offset;
 
 #define NEP_FIELDS_DO(macro) \
-  macro(_addr_offset,            k, "addr",           long_signature, false); \
   macro(_shadow_space_offset,    k, "shadowSpace",    int_signature, false); \
   macro(_argMoves_offset,        k, "argMoves",       long_array_signature, false); \
   macro(_returnMoves_offset,     k, "returnMoves",    long_array_signature, false); \
@@ -3921,10 +3919,6 @@ void jdk_internal_invoke_NativeEntryPoint::serialize_offsets(SerializeClosure* f
   NEP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-address jdk_internal_invoke_NativeEntryPoint::addr(oop entry) {
-  return (address)entry->long_field(_addr_offset);
-}
 
 jint jdk_internal_invoke_NativeEntryPoint::shadow_space(oop entry) {
   return entry->int_field(_shadow_space_offset);
@@ -4652,26 +4646,6 @@ void java_lang_AssertionStatusDirectives::set_packageEnabled(oop o, oop val) {
 void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
-
-
-// Support for intrinsification of java.nio.Buffer.checkIndex
-
-int java_nio_Buffer::_limit_offset;
-
-#define BUFFER_FIELDS_DO(macro) \
-  macro(_limit_offset, k, "limit", int_signature, false)
-
-void java_nio_Buffer::compute_offsets() {
-  InstanceKlass* k = vmClasses::nio_Buffer_klass();
-  assert(k != NULL, "must be loaded in 1.4+");
-  BUFFER_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_nio_Buffer::serialize_offsets(SerializeClosure* f) {
-  BUFFER_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
 
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 

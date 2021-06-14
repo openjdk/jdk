@@ -26,6 +26,8 @@ import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.ValueLayout;
 
 import java.lang.invoke.VarHandle;
@@ -43,11 +45,11 @@ import static org.testng.Assert.*;
 
 public class CallGeneratorHelper extends NativeTestHelper {
 
+    static SegmentAllocator IMPLICIT_ALLOCATOR = (size, align) -> MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
+
     static final int MAX_FIELDS = 3;
     static final int MAX_PARAMS = 3;
     static final int CHUNK_SIZE = 600;
-
-    static int functions = 0;
 
     public static void assertStructEquals(MemorySegment actual, MemorySegment expected, MemoryLayout layout) {
         assertEquals(actual.byteSize(), expected.byteSize());
@@ -139,13 +141,13 @@ public class CallGeneratorHelper extends NativeTestHelper {
                     MemoryLayout l = field.layout();
                     long padding = offset % l.bitSize();
                     if (padding != 0) {
-                        layouts.add(MemoryLayout.ofPaddingBits(padding));
+                        layouts.add(MemoryLayout.paddingLayout(padding));
                         offset += padding;
                     }
                     layouts.add(l.withName("field" + offset));
                     offset += l.bitSize();
                 }
-                return MemoryLayout.ofStruct(layouts.toArray(new MemoryLayout[0]));
+                return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
             } else {
                 return layout;
             }
@@ -182,6 +184,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     @DataProvider(name = "functions")
     public static Object[][] functions() {
+        int functions = 0;
         List<Object[]> downcalls = new ArrayList<>();
         for (Ret r : Ret.values()) {
             for (int i = 0; i <= MAX_PARAMS; i++) {
@@ -193,16 +196,18 @@ public class CallGeneratorHelper extends NativeTestHelper {
                         for (int j = 1; j <= MAX_FIELDS; j++) {
                             for (List<StructFieldType> fields : StructFieldType.perms(j)) {
                                 String structCode = sigCode(fields);
+                                int count = functions;
                                 int fCode = functions++ / CHUNK_SIZE;
                                 String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                                downcalls.add(new Object[] { fName, r, ptypes, fields });
+                                downcalls.add(new Object[] { count, fName, r, ptypes, fields });
                             }
                         }
                     } else {
                         String structCode = sigCode(List.<StructFieldType>of());
+                        int count = functions;
                         int fCode = functions++ / CHUNK_SIZE;
                         String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                        downcalls.add(new Object[] { fName, r, ptypes, List.of() });
+                        downcalls.add(new Object[] { count, fName, r, ptypes, List.of() });
                     }
                 }
             }
@@ -357,19 +362,17 @@ public class CallGeneratorHelper extends NativeTestHelper {
     //helper methods
 
     @SuppressWarnings("unchecked")
-    static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check, List<MemorySegment> segments) throws ReflectiveOperationException {
+    static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout);
-            initStruct(segment, (GroupLayout)layout, checks, check, segments);
-            segments.add(segment);
+            MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
+            initStruct(segment, (GroupLayout)layout, checks, check);
             return segment;
         } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1);
-            segments.add(segment);
+            MemorySegment segment = MemorySegment.allocateNative(1, ResourceScope.newImplicitScope());
             if (check) {
                 checks.add(o -> {
                     try {
-                        assertEquals((MemoryAddress)o, segment.address());
+                        assertEquals(o, segment.address());
                     } catch (Throwable ex) {
                         throw new IllegalStateException(ex);
                     }
@@ -398,12 +401,12 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    static void initStruct(MemorySegment str, GroupLayout g, List<Consumer<Object>> checks, boolean check, List<MemorySegment> segments) throws ReflectiveOperationException {
+    static void initStruct(MemorySegment str, GroupLayout g, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         for (MemoryLayout l : g.memberLayouts()) {
             if (l.isPadding()) continue;
             VarHandle accessor = g.varHandle(structFieldCarrier(l), MemoryLayout.PathElement.groupElement(l.name().get()));
             List<Consumer<Object>> fieldsCheck = new ArrayList<>();
-            Object value = makeArg(l, fieldsCheck, check, segments);
+            Object value = makeArg(l, fieldsCheck, check);
             if (isPointer(l)) {
                 value = ((MemoryAddress)value).toRawLongValue();
             }

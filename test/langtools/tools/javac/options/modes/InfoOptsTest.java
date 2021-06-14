@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8044859
- * @summary test support for info options -help -X -version -fullversion
+ * @bug 8044859 8230623
+ * @summary test support for info options -help -X -version -fullversion --help-lint
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
@@ -45,6 +45,7 @@ public class InfoOptsTest extends OptionModesTester {
     void testInfoOpts() throws IOException {
         testInfoOpt("-help", "-deprecation");
         testInfoOpt("-X", "-Xlint");
+        testInfoOpt("--help-lint", "supported keys");
 
         String specVersion = System.getProperty("java.specification.version");
         testInfoOpt("-version", "javac", specVersion);

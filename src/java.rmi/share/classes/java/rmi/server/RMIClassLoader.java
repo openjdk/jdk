@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class RMIClassLoader {
         newDefaultProviderInstance();
 
     /** provider instance */
+    @SuppressWarnings("removal")
     private static final RMIClassLoaderSpi provider =
         AccessController.doPrivileged(
             new PrivilegedAction<RMIClassLoaderSpi>() {
@@ -601,6 +602,7 @@ public class RMIClassLoader {
      * @since   1.4
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setFactory"));

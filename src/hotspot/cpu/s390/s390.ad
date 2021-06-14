@@ -1544,6 +1544,16 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -5256,6 +5266,30 @@ instruct castLL(iRegL dst) %{
   match(Set dst (CastLL dst));
   size(0);
   format %{ "# castLL of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castFF(regF dst) %{
+  match(Set dst (CastFF dst));
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castDD(regD dst) %{
+  match(Set dst (CastDD dst));
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castVV(iRegL dst) %{
+  match(Set dst (CastVV dst));
+  size(0);
+  format %{ "# castVV of $dst" %}
   ins_encode(/*empty*/);
   ins_pipe(pipe_class_dummy);
 %}

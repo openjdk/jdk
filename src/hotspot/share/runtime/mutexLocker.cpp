@@ -285,7 +285,7 @@ void mutex_init() {
   def(JNICritical_lock             , PaddedMonitor, nonleaf,     true,  _safepoint_check_always); // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , nonleaf,     true,  _safepoint_check_always);
 
-  def(Heap_lock                    , PaddedMonitor, nonleaf+1,   false, _safepoint_check_sometimes);  // Doesn't safepoint check during termination.
+  def(Heap_lock                    , PaddedMonitor, nonleaf+1,   false, _safepoint_check_always); // Doesn't safepoint check during termination.
   def(JfieldIdCreation_lock        , PaddedMutex  , nonleaf+1,   true,  _safepoint_check_always); // jfieldID, Used in VM_Operation
 
   def(CompiledIC_lock              , PaddedMutex  , nonleaf+2,   false, _safepoint_check_never);      // locks VtableStubs_lock, InlineCacheBuffer_lock

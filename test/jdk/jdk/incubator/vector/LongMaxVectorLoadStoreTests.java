@@ -968,4 +968,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorTest {
             Assert.assertEquals(r, a);
        }
     }
+
+
+
 }

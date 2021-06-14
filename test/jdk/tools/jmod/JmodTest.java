@@ -98,7 +98,7 @@ public class JmodTest {
 
     // JDK-8166286 - jmod fails on symlink to directory
     @Test
-    public void testSymlinks() throws IOException {
+    public void testDirSymlinks() throws IOException {
         Path apaDir = EXPLODED_DIR.resolve("apa");
         Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
         assertTrue(compileModule("apa", classesDir));
@@ -110,6 +110,8 @@ public class JmodTest {
             assertTrue(Files.exists(link));
         } catch (IOException|UnsupportedOperationException uoe) {
             // OS does not support symlinks. Nothing to test!
+            System.out.println("Creating symlink failed. Test passes vacuously.");
+            uoe.printStackTrace();
             return;
         }
 
@@ -119,6 +121,42 @@ public class JmodTest {
              "--class-path", classesDir.toString(),
              jmod.toString())
             .assertSuccess();
+        Files.delete(jmod);
+    }
+
+    // JDK-8267583 - jmod fails on symlink to class file
+    @Test
+    public void testFileSymlinks() throws IOException {
+        Path apaDir = EXPLODED_DIR.resolve("apa");
+        Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
+        assertTrue(compileModule("apa", classesDir));
+
+        Files.move(classesDir.resolve("module-info.class"),
+            classesDir.resolve("module-info.class1"));
+        Files.move(classesDir.resolve(Paths.get("jdk", "test", "apa", "Apa.class")),
+            classesDir.resolve("Apa.class1"));
+        try {
+            Path link = Files.createSymbolicLink(
+                classesDir.resolve("module-info.class"),
+                classesDir.resolve("module-info.class1").toAbsolutePath());
+            assertTrue(Files.exists(link));
+            link = Files.createSymbolicLink(
+                classesDir.resolve(Paths.get("jdk", "test", "apa", "Apa.class")),
+                classesDir.resolve("Apa.class1").toAbsolutePath());
+            assertTrue(Files.exists(link));
+        } catch (IOException|UnsupportedOperationException uoe) {
+            // OS does not support symlinks. Nothing to test!
+            System.out.println("Creating symlinks failed. Test passes vacuously.");
+            uoe.printStackTrace();
+            return;
+        }
+
+        Path jmod = MODS_DIR.resolve("apa.jmod");
+        jmod("create",
+             "--class-path", classesDir.toString(),
+             jmod.toString())
+            .assertSuccess();
+        Files.delete(jmod);
     }
 
     // JDK-8170618 - jmod should validate if any exported or open package is missing

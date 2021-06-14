@@ -129,6 +129,8 @@ void fieldDescriptor::verify() const {
   }
 }
 
+#endif /* PRODUCT */
+
 void fieldDescriptor::print_on(outputStream* st) const {
   access_flags().print_on(st);
   name()->print_value_on(st);
@@ -229,4 +231,3 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   }
 }
 
-#endif /* PRODUCT */

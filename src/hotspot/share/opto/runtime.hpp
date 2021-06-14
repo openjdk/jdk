@@ -256,6 +256,7 @@ private:
   static const TypeFunc* rethrow_Type();
   static const TypeFunc* Math_D_D_Type();  // sin,cos & friends
   static const TypeFunc* Math_DD_D_Type(); // mod,pow & friends
+  static const TypeFunc* Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type);
   static const TypeFunc* modf_Type();
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
@@ -303,6 +304,8 @@ private:
   static const TypeFunc* osr_end_Type();
 
   static const TypeFunc* register_finalizer_Type();
+
+  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

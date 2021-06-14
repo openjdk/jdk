@@ -1123,14 +1123,10 @@ void GraphBuilder::stack_op(Bytecodes::Code code) {
 void GraphBuilder::arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before) {
   Value y = pop(type);
   Value x = pop(type);
-  // NOTE: strictfp can be queried from current method since we don't
-  // inline methods with differing strictfp bits
-  Value res = new ArithmeticOp(code, x, y, method()->is_strict(), state_before);
+  Value res = new ArithmeticOp(code, x, y, state_before);
   // Note: currently single-precision floating-point rounding on Intel is handled at the LIRGenerator level
   res = append(res);
-  if (method()->is_strict()) {
-    res = round_fp(res);
-  }
+  res = round_fp(res);
   push(type, res);
 }
 
@@ -1988,8 +1984,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // no point in inlining.
       ciInstanceKlass* declared_interface = callee_holder;
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
-      if (singleton != NULL &&
-          (!target->is_default_method() || target->is_overpass()) /* CHA doesn't support default methods yet. */ ) {
+      if (singleton != NULL) {
         assert(singleton != declared_interface, "not a unique implementor");
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
@@ -2030,17 +2025,16 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() &&
-      (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
     // callee is known => check if we have static binding
-    if (code == Bytecodes::_invokestatic  ||
+    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
-      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
-      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), false, code, better_receiver);
+      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
+      bool holder_known = (cha_monomorphic_target != NULL) || (exact_target != NULL);
+      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -2127,11 +2121,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   append_split(result);
 
   if (result_type != voidType) {
-    if (method()->is_strict()) {
-      push(result_type, round_fp(result));
-    } else {
-      push(result_type, result);
-    }
+    push(result_type, round_fp(result));
   }
   if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
@@ -3057,9 +3047,11 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necesary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the interpreter_invocation_count.
+  // can increment the the counters.
+  // In addition, with range check elimination, we may need a valid block
+  // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
-  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges()) {
+  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges() || RangeCheckElimination) {
     new_header_block = header_block(std_entry, BlockBegin::std_entry_flag, state);
   } else {
     new_header_block = std_entry;
@@ -3758,24 +3750,13 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineMethodsWithExceptionHandlers) INLINE_BAILOUT("callee has exception handlers");
   if (callee->is_synchronized() &&
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
-  if (!callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
+  if (bc == Bytecodes::_invokestatic &&
+      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.
   if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
-
-  if (strict_fp_requires_explicit_rounding &&
-      method()->is_strict() != callee->is_strict()) {
-#ifdef IA32
-    // If explicit rounding is required, do not inline strict code into non-strict code (or the reverse).
-    // When SSE2 is present, no special handling is needed.
-    if (UseSSE < 2) {
-      INLINE_BAILOUT("caller and callee have different strict fp requirements");
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
 
   if (is_profiling() && !callee->ensure_method_data()) {
     INLINE_BAILOUT("mdo allocation failed");
@@ -3839,6 +3820,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // printing
     print_inlining(callee, "inline", /*success*/ true);
   }
+
+  assert(bc != Bytecodes::_invokestatic || callee->holder()->is_initialized(), "required");
 
   // NOTE: Bailouts from this point on, which occur at the
   // GraphBuilder level, do not cause bailout just of the inlining but

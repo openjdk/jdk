@@ -62,7 +62,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
@@ -182,6 +181,7 @@ public final class System {
     private static @Stable int allowSecurityManager;
 
     // current security manager
+    @SuppressWarnings("removal")
     private static volatile SecurityManager security;   // read by VM
 
     // return true if a security manager is allowed
@@ -313,6 +313,7 @@ public final class System {
     }
 
     private static void checkIO() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setIO"));
@@ -353,26 +354,19 @@ public final class System {
      * @see #getSecurityManager
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
-    public static void setSecurityManager(SecurityManager sm) {
+    @Deprecated(since="17", forRemoval=true)
+    public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (allowSecurityManager()) {
-            if (security == null) {
-                // ensure image reader is initialized
-                Object.class.getResource("java/lang/ANY");
-                // ensure the default file system is initialized
-                DefaultFileSystemProvider.theFileSystem();
-            }
-            if (sm != null) {
-                try {
-                    // pre-populates the SecurityManager.packageAccess cache
-                    // to avoid recursive permission checking issues with custom
-                    // SecurityManager implementations
-                    sm.checkPackageAccess("java.lang");
-                } catch (Exception e) {
-                    // no-op
-                }
-            }
-            setSecurityManager0(sm);
+            System.err.println("WARNING: java.lang.System::setSecurityManager" +
+                    " is deprecated and will be removed in a future release.");
+            implSetSecurityManager(sm);
         } else {
             // security manager not allowed
             if (sm != null) {
@@ -382,6 +376,27 @@ public final class System {
         }
     }
 
+    private static void implSetSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
+        if (security == null) {
+            // ensure image reader is initialized
+            Object.class.getResource("java/lang/ANY");
+            // ensure the default file system is initialized
+            DefaultFileSystemProvider.theFileSystem();
+        }
+        if (sm != null) {
+            try {
+                // pre-populates the SecurityManager.packageAccess cache
+                // to avoid recursive permission checking issues with custom
+                // SecurityManager implementations
+                sm.checkPackageAccess("java.lang");
+            } catch (Exception e) {
+                // no-op
+            }
+        }
+        setSecurityManager0(sm);
+    }
+
+    @SuppressWarnings("removal")
     private static synchronized
     void setSecurityManager0(final SecurityManager s) {
         SecurityManager sm = getSecurityManager();
@@ -419,7 +434,15 @@ public final class System {
      *          current application, then that security manager is returned;
      *          otherwise, {@code null} is returned.
      * @see     #setSecurityManager
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @SuppressWarnings("removal")
+    @Deprecated(since="17", forRemoval=true)
     public static SecurityManager getSecurityManager() {
         if (allowSecurityManager()) {
             return security;
@@ -751,6 +774,7 @@ public final class System {
      * @see        java.util.Properties
      */
     public static Properties getProperties() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -803,6 +827,7 @@ public final class System {
      * @see        java.lang.SecurityManager#checkPropertiesAccess()
      */
     public static void setProperties(Properties props) {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -848,6 +873,7 @@ public final class System {
      */
     public static String getProperty(String key) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess(key);
@@ -883,6 +909,7 @@ public final class System {
      */
     public static String getProperty(String key, String def) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess(key);
@@ -926,6 +953,7 @@ public final class System {
      */
     public static String setProperty(String key, String value) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new PropertyPermission(key,
@@ -967,6 +995,7 @@ public final class System {
      */
     public static String clearProperty(String key) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new PropertyPermission(key, "write"));
@@ -1031,6 +1060,7 @@ public final class System {
      * @see    ProcessBuilder#environment()
      */
     public static String getenv(String name) {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getenv."+name));
@@ -1080,6 +1110,7 @@ public final class System {
      * @since  1.5
      */
     public static java.util.Map<String,String> getenv() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getenv.*"));
@@ -1547,6 +1578,7 @@ public final class System {
         }
 
         private static Void checkPermission() {
+            @SuppressWarnings("removal")
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -1630,6 +1662,7 @@ public final class System {
          *         {@code RuntimePermission("loggerFinder")}.
          */
         public static LoggerFinder getLoggerFinder() {
+            @SuppressWarnings("removal")
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -1639,6 +1672,7 @@ public final class System {
 
 
         private static volatile LoggerFinder service;
+        @SuppressWarnings("removal")
         static LoggerFinder accessProvider() {
             // We do not need to synchronize: LoggerFinderLoader will
             // always return the same instance, so if we don't have it,
@@ -1742,6 +1776,7 @@ public final class System {
      *
      * @since 9
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
@@ -2104,6 +2139,7 @@ public final class System {
      * The security manager and system class loader may be a custom class from
      * the application classpath or modulepath.
      */
+    @SuppressWarnings("removal")
     private static void initPhase3() {
 
         // Initialize the StringConcatFactory eagerly to avoid potential
@@ -2112,6 +2148,7 @@ public final class System {
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
         String smProp = System.getProperty("java.security.manager");
+        boolean needWarning = false;
         if (smProp != null) {
             switch (smProp) {
                 case "disallow":
@@ -2122,8 +2159,9 @@ public final class System {
                     break;
                 case "":
                 case "default":
-                    setSecurityManager(new SecurityManager());
+                    implSetSecurityManager(new SecurityManager());
                     allowSecurityManager = MAYBE;
+                    needWarning = true;
                     break;
                 default:
                     try {
@@ -2141,7 +2179,8 @@ public final class System {
                         // custom security manager may be in non-exported package
                         ctor.setAccessible(true);
                         SecurityManager sm = (SecurityManager) ctor.newInstance();
-                        setSecurityManager(sm);
+                        implSetSecurityManager(sm);
+                        needWarning = true;
                     } catch (Exception e) {
                         throw new InternalError("Could not create SecurityManager", e);
                     }
@@ -2149,6 +2188,11 @@ public final class System {
             }
         } else {
             allowSecurityManager = MAYBE;
+        }
+
+        if (needWarning) {
+            System.err.println("WARNING: The Security Manager is deprecated" +
+                    " and will be removed in a future release.");
         }
 
         // initializing the system class loader
@@ -2201,7 +2245,7 @@ public final class System {
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
             }
-            public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
+            public Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
                 return new Thread(target, acc);
             }
             @SuppressWarnings("deprecation")
@@ -2227,9 +2271,11 @@ public final class System {
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
             }
+            @SuppressWarnings("removal")
             public void addNonExportedPackages(ModuleLayer layer) {
                 SecurityManager.addNonExportedPackages(layer);
             }
+            @SuppressWarnings("removal")
             public void invalidatePackageAccessCache() {
                 SecurityManager.invalidatePackageAccessCache();
             }
@@ -2273,6 +2319,15 @@ public final class System {
             }
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
+            }
+            public Module addEnableNativeAccess(Module m) {
+                return m.implAddEnableNativeAccess();
+            }
+            public void addEnableNativeAccessAllUnnamed() {
+                Module.implAddEnableNativeAccessAllUnnamed();
+            }
+            public boolean isEnableNativeAccess(Module m) {
+                return m.implIsEnableNativeAccess();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2337,6 +2392,16 @@ public final class System {
 
             public Object classData(Class<?> c) {
                 return c.getClassData();
+            }
+
+            @Override
+            public long findNative(ClassLoader loader, String entry) {
+                return ClassLoader.findNative(loader, entry);
+            }
+
+            @Override
+            public void exit(int statusCode) {
+                Shutdown.exit(statusCode);
             }
         });
     }
