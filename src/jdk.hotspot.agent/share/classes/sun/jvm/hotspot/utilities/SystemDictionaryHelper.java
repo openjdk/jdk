@@ -65,9 +65,7 @@ public class SystemDictionaryHelper {
                         }
                      });
 
-      Object[] tmpArray = tmp.toArray();
-      klasses = new InstanceKlass[tmpArray.length];
-      System.arraycopy(tmpArray, 0, klasses, 0, tmpArray.length);
+      klasses = tmp.toArray(new InstanceKlass[0]);
       Arrays.sort(klasses, new Comparator<>() {
                           public int compare(InstanceKlass k1, InstanceKlass k2) {
                              Symbol s1 = k1.getName();
@@ -91,9 +89,7 @@ public class SystemDictionaryHelper {
          }
       }
 
-      Object[] tmpArray = tmp.toArray();
-      InstanceKlass[] searchResult = new InstanceKlass[tmpArray.length];
-      System.arraycopy(tmpArray, 0, searchResult, 0, tmpArray.length);
+      InstanceKlass[] searchResult = tmp.toArray(new InstanceKlass[0]);
       return searchResult;
    }
 

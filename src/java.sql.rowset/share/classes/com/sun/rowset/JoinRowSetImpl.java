@@ -427,13 +427,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * @see CachedRowSet#setTableName
      */
     public String[] getRowSetNames() throws SQLException {
-        Object [] arr = vecTableNames.toArray();
-        String []strArr = new String[arr.length];
-
-        for( int i = 0;i < arr.length; i++) {
-           strArr[i] = arr[i].toString();
-        }
-
+        String[] strArr = vecTableNames.toArray(new String[0]);
         return strArr;
     }
 
