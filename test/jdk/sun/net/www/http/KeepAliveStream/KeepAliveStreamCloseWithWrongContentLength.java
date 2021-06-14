@@ -114,6 +114,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
 
         @Override
         public void close() throws Exception {
+            final var clientSocket = this.clientSocket;
             if (clientSocket != null) {
                 clientSocket.close();
             }
