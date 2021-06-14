@@ -41,7 +41,7 @@ import static com.sun.crypto.provider.KWUtil.*;
 class AESKeyWrap extends FeedbackCipher {
 
     // default integrity check value (icv) if iv is not supplied
-    private static final byte[] ICV1 = { // SEMI_BLKSIZE long
+    static final byte[] ICV1 = { // SEMI_BLKSIZE long
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6,
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6
     };
