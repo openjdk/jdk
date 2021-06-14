@@ -4117,6 +4117,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   return true;
 }
 
+#undef XTOP
+
 //------------------------clone_coping-----------------------------------
 // Helper function for inline_native_clone.
 void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array) {

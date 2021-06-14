@@ -330,6 +330,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   phase->igvn().replace_node(ac, call);
 }
 
+#undef XTOP
+
 // == Dominating barrier elision ==
 
 static bool block_has_safepoint(const Block* block, uint from, uint to) {
