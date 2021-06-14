@@ -1,0 +1,4 @@
+CrashInAnnotateTest.java:31:5: compiler.err.proc.messager: annotations not allowed
+CrashInAnnotateTest.java:35:5: compiler.err.proc.messager: annotations not allowed
+CrashInAnnotateTest.java:39:5: compiler.err.proc.messager: annotations not allowed
+3 errors
