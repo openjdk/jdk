@@ -188,7 +188,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                 map.put(installed[i].toLowerCase(requestedLocale),
                         installed[i]);
             }
-            String[] retval = map.keySet().toArray(new String[0]);
+            String[] retval = map.values().toArray(new String[0]);
             return retval;
         }
     }
