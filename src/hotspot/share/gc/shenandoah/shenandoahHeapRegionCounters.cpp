@@ -156,7 +156,7 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
     if (heap->is_concurrent_old_mark_in_progress()) {
       status |= (1 << 2);
     }
-    log_develop_trace(gc)("%s, phase=%u, old_mark=%s, status=%zu",
+    log_develop_trace(gc)("%s, phase=%u, old_mark=%s, status=" JLONG_FORMAT,
       generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
