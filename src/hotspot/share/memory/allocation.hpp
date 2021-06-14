@@ -263,6 +263,21 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
+  // There are functions that all subtypes of MetaspaceObj are expected
+  // to implement, so that templates which are defined for this class hierarchy
+  // can work uniformly. Within the sub-hierarchy of Metadata, these are virtuals.
+  // Elsewhere in the hierarchy of MetaspaceObj, type(), size(), and/or on_stack()
+  // can be static if constant.
+  //
+  // The following functions are required by MetaspaceClosure:
+  //   void metaspace_pointers_do(MetaspaceClosure* it) { <walk my refs> }
+  //   int size() const { return align_up(sizeof(<This>), wordSize) / wordSize; }
+  //   MetaspaceObj::Type type() const { return <This>Type; }
+  //
+  // The following functions are required by MetadataFactory::free_metadata():
+  //   bool on_stack() { return false; }
+  //   void deallocate_contents(ClassLoaderData* loader_data);
+
   friend class VMStructs;
   // When CDS is enabled, all shared metaspace objects are mapped
   // into a single contiguous memory block, so we can use these

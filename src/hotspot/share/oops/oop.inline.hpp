@@ -305,13 +305,6 @@ oop oopDesc::forwardee() const {
   return cast_to_oop(mark().decode_pointer());
 }
 
-// Note that the forwardee is not the same thing as the displaced_mark.
-// The forwardee is used when copying during scavenge and mark-sweep.
-// It does need to clear the low two locking- and GC-related bits.
-oop oopDesc::forwardee_acquire() const {
-  return cast_to_oop(Atomic::load_acquire(&_mark).decode_pointer());
-}
-
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");

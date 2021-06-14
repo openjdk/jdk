@@ -33,26 +33,26 @@
 JNIEXPORT void JNICALL
 Java_java_lang_invoke_LambdaProxyClassArchive_addToArchive(JNIEnv *env, jclass ignore,
                                                                jclass caller,
-                                                               jstring invokedName,
-                                                               jobject invokedType,
-                                                               jobject methodType,
-                                                               jobject implMethodMember,
-                                                               jobject instantiatedMethodType,
+                                                               jstring interfaceMethodName,
+                                                               jobject factoryType,
+                                                               jobject interfaceMethodType,
+                                                               jobject implementationMember,
+                                                               jobject dynamicMethodType,
                                                                jclass lambdaProxyClass) {
-    JVM_RegisterLambdaProxyClassForArchiving(env, caller, invokedName, invokedType,
-                                             methodType, implMethodMember,
-                                             instantiatedMethodType, lambdaProxyClass);
+    JVM_RegisterLambdaProxyClassForArchiving(env, caller, interfaceMethodName, factoryType,
+                                             interfaceMethodType, implementationMember,
+                                             dynamicMethodType, lambdaProxyClass);
 }
 
 JNIEXPORT jclass JNICALL
 Java_java_lang_invoke_LambdaProxyClassArchive_findFromArchive(JNIEnv *env, jclass ignore,
                                                             jclass caller,
-                                                            jstring invokedName,
-                                                            jobject invokedType,
-                                                            jobject methodType,
-                                                            jobject implMethodMember,
-                                                            jobject instantiatedMethodType) {
-    return JVM_LookupLambdaProxyClassFromArchive(env, caller, invokedName, invokedType,
-                                                 methodType, implMethodMember,
-                                                 instantiatedMethodType);
+                                                            jstring interfaceMethodName,
+                                                            jobject factoryType,
+                                                            jobject interfaceMethodType,
+                                                            jobject implementationMember,
+                                                            jobject dynamicMethodType) {
+    return JVM_LookupLambdaProxyClassFromArchive(env, caller, interfaceMethodName, factoryType,
+                                                 interfaceMethodType, implementationMember,
+                                                 dynamicMethodType);
 }

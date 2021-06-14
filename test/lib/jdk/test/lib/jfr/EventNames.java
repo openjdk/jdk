@@ -150,6 +150,7 @@ public class EventNames {
     public final static String ZUncommit = PREFIX + "ZUncommit";
     public final static String ZUnmap = PREFIX + "ZUnmap";
     public final static String GCLocker = PREFIX + "GCLocker";
+    public static final String SystemGC = PREFIX + "SystemGC";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";

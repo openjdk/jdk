@@ -236,24 +236,11 @@ final class Configure extends Command {
     private List<SafePath> makeSafePathList(String value) {
         List<SafePath> paths = new ArrayList<>();
         for (String name : value.split(",")) {
-            paths.add(makeSafePath(name));
+            paths.add(JFC.createSafePath(name));
         }
         return paths;
     }
 
-    private SafePath makeSafePath(String path) {
-        for (SafePath predefined : SecuritySupport.getPredefinedJFCFiles()) {
-            try {
-                String name = JFC.nameFromPath(predefined.toPath());
-                if (name.equals(path) || (name + ".jfc").equals(path)) {
-                    return predefined;
-                }
-            } catch (IOException e) {
-                throw new InternalError("Error in predefined .jfc file", e);
-            }
-        }
-        return new SafePath(path);
-    }
 
     private void ensureInputFiles() throws InternalError {
         if (inputFiles.isEmpty()) {
