@@ -29,6 +29,9 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -98,12 +101,22 @@ void ZBarrierSet::on_thread_detach(Thread* thread) {
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-  // An allocation slow path can expose an object that gets promoted to the old generation.
-  // However, the compiler optimizes away barriers on new allocations, which implies that
-  // no remset entries will be tracked for this object, by the barrier. Therefore we
-  // explicitly remember such objects here. In most cases this is a no-op as the object
-  // that escapes the runtime is very likely to be young.
-  ZHeap::heap()->remember_fields_filtered(to_zaddress(new_obj));
+  if (ZHeap::heap()->is_old(to_zaddress(new_obj))) {
+    RegisterMap reg_map(thread, false);
+    frame runtime_frame = thread->last_frame();
+    assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
+    frame caller_frame = runtime_frame.sender(&reg_map);
+    assert(caller_frame.is_compiled_frame(), "must be compiled");
+    nmethod* nm = caller_frame.cb()->as_nmethod();
+    if (nm->is_compiled_by_c2()) {
+      // We promised C2 that its allocations would end up in young gen. This object
+      // breaks that promise. Take a few steps in the interpreter instead, which has
+      // no such assumptions about where an object resides.
+      if (!caller_frame.is_deoptimized_frame()) {
+        Deoptimization::deoptimize_frame(thread, caller_frame.id());
+      }
+    }
+  }
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

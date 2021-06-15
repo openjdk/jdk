@@ -341,12 +341,6 @@ inline void ZHeap::remember_fields(zaddress addr) {
   _young_generation.remember_fields(addr);
 }
 
-inline void ZHeap::remember_fields_filtered(zaddress addr) {
-  if (is_old(addr)) {
-    remember_fields(addr);
-  }
-}
-
 inline bool ZHeap::is_remembered(volatile zpointer* p) {
   return _young_generation.is_remembered(p);
 }
