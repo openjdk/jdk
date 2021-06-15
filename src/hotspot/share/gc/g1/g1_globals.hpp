@@ -338,7 +338,7 @@
   product(double, G1RemSetFreeMemoryKeepExcessRatio, 0.1, EXPERIMENTAL,     \
           "The percentage of free card set memory that G1 should keep as "  \
           "percentage of the currently used memory.")                       \
-          range(0.0, 1.0)
+          range(0.0, 1.0)                                                   \
                                                                             \
   product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                      \
           "Allows collections to be triggered proactively based on the      \
