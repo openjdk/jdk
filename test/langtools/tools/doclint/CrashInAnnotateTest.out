@@ -1,4 +1,9 @@
-CrashInAnnotateTest.java:31:5: compiler.err.proc.messager: annotations not allowed
-CrashInAnnotateTest.java:35:5: compiler.err.proc.messager: annotations not allowed
-CrashInAnnotateTest.java:39:5: compiler.err.proc.messager: annotations not allowed
-3 errors
+CrashInAnnotateTest.java:10:5: compiler.err.proc.messager: annotations not allowed
+CrashInAnnotateTest.java:14:5: compiler.err.proc.messager: annotations not allowed
+CrashInAnnotateTest.java:16:10: compiler.warn.proc.messager: no comment
+CrashInAnnotateTest.java:19:5: compiler.err.proc.messager: syntax error in reference
+CrashInAnnotateTest.java:22:5: compiler.err.proc.messager: syntax error in reference
+CrashInAnnotateTest.java:24:5: compiler.warn.proc.messager: no comment
+CrashInAnnotateTest.java:25:16: compiler.warn.proc.messager: no comment
+4 errors
+3 warnings
