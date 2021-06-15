@@ -155,8 +155,9 @@ public class ObjectReferenceImpl extends ValueImpl
         }
     }
 
+    @Override
     public int hashCode() {
-        return(int)ref();
+        return Long.hashCode(ref());
     }
 
     public Type type() {

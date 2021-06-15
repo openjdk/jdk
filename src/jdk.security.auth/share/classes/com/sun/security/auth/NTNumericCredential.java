@@ -100,7 +100,8 @@ public class NTNumericCredential {
      *
      * @return a hash code for this {@code NTNumericCredential}.
      */
+    @Override
     public int hashCode() {
-        return (int)this.impersonationToken;
+        return Long.hashCode(this.impersonationToken);
     }
 }

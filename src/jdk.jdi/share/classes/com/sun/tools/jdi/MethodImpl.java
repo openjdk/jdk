@@ -95,8 +95,9 @@ public abstract class MethodImpl extends TypeComponentImpl
         }
     }
 
+    @Override
     public int hashCode() {
-        return (int)ref();
+        return Long.hashCode(ref());
     }
 
     public final List<Location> allLineLocations()

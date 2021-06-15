@@ -175,7 +175,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public int hashCode() {
-        return (int) getMetaspaceMethod();
+        return Long.hashCode(getMetaspaceMethod());
     }
 
     /**

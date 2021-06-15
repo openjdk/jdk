@@ -51,8 +51,9 @@ public class FieldImpl extends TypeComponentImpl
         }
     }
 
+    @Override
     public int hashCode() {
-        return (int)ref();
+        return Long.hashCode(ref());
     }
 
     public int compareTo(Field field) {
