@@ -31,6 +31,7 @@ import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -105,9 +106,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         if (len == 0) {
             return;
         }
-        if ((ofs < 0) || (len < 0) || (ofs > b.length - len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(ofs, len, b.length, (xa, xb) -> new ArrayIndexOutOfBoundsException());
         if (bytesProcessed < 0) {
             engineReset();
         }

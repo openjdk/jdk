@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import sun.nio.ch.DirectBuffer;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -73,9 +74,7 @@ public class CRC32 implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        if (off < 0 || len < 0 || off > b.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(len, off, b.length, (xa, xb) -> new ArrayIndexOutOfBoundsException());
         crc = updateBytes(crc, b, off, len);
     }
 

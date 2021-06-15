@@ -189,15 +189,4 @@ class MethodHandleStatics {
         if (obj != null || obj2 != null)  message = message + ": " + obj + ", " + obj2;
         return message;
     }
-    /*non-public*/
-    static void rangeCheck2(int start, int end, int size) {
-        if (0 > start || start > end || end > size)
-            throw new IndexOutOfBoundsException(start+".."+end);
-    }
-    /*non-public*/
-    static int rangeCheck1(int index, int size) {
-        if (0 > index || index >= size)
-            throw new IndexOutOfBoundsException(index);
-        return index;
-    }
 }

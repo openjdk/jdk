@@ -28,9 +28,6 @@ package java.lang.invoke;
 import java.util.*;
 import jdk.internal.vm.annotation.Stable;
 
-import static java.lang.invoke.MethodHandleStatics.rangeCheck1;
-import static java.lang.invoke.MethodHandleStatics.rangeCheck2;
-
 /** Utility class for implementing ConstantGroup. */
 /*non-public*/
 abstract class AbstractConstantGroup implements ConstantGroup {
@@ -119,11 +116,11 @@ abstract class AbstractConstantGroup implements ConstantGroup {
             super(end - start);
             this.self = self;
             this.offset = start;
-            rangeCheck2(start, end, size);
+            Objects.checkFromToIndex(start, end, size);
         }
 
         private int mapIndex(int index) {
-            return rangeCheck1(index, size) + offset;
+            return Objects.checkIndex(index, size) + offset;
         }
 
         @Override
@@ -143,7 +140,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
 
         @Override
         public ConstantGroup subGroup(int start, int end) {
-            rangeCheck2(start, end, size);
+            Objects.checkFromToIndex(start, end, size);
             return new SubGroup(self, offset + start, offset + end);
         }
 
@@ -160,7 +157,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
         @Override
         public int copyConstants(int start, int end,
                                   Object[] buf, int pos) throws LinkageError {
-            rangeCheck2(start, end, size);
+            Objects.checkFromToIndex(start, end, size);
             return self.copyConstants(offset + start, offset + end,
                                       buf, pos);
         }
@@ -169,7 +166,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
         public int copyConstants(int start, int end,
                                   Object[] buf, int pos,
                                   Object ifNotPresent) {
-            rangeCheck2(start, end, size);
+            Objects.checkFromToIndex(start, end, size);
             return self.copyConstants(offset + start, offset + end,
                                       buf, pos, ifNotPresent);
         }
@@ -189,7 +186,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
             this.offset = start;
             this.resolving = resolving;
             this.ifNotPresent = ifNotPresent;
-            rangeCheck2(start, end, self.size());
+            Objects.checkFromToIndex(start, end, self.size());
         }
         AsList(ConstantGroup self, int start, int end) {
             this(self, start, end, true, null);
@@ -200,7 +197,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
         }
 
         private int mapIndex(int index) {
-            return rangeCheck1(index, size) + offset;
+            return Objects.checkIndex(index, size) + offset;
         }
 
         @Override public final int size() {
@@ -223,7 +220,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
         }
 
         @Override public List<Object> subList(int start, int end) {
-            rangeCheck2(start, end, size);
+            Objects.checkFromToIndex(start, end, size);
             return new AsList(self, offset + start, offset + end,
                               resolving, ifNotPresent);
         }

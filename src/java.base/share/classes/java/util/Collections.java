@@ -5178,9 +5178,7 @@ public class Collections {
         }
 
         public E get(int index) {
-            if (index < 0 || index >= n)
-                throw new IndexOutOfBoundsException("Index: "+index+
-                                                    ", Size: "+n);
+            Objects.checkIndex(index, n);
             return element;
         }
 

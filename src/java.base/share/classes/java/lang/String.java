@@ -1602,10 +1602,7 @@ public final class String
      * @since  1.5
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        if (beginIndex < 0 || beginIndex > endIndex ||
-            endIndex > length()) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(beginIndex, endIndex, length());
         if (isLatin1()) {
             return endIndex - beginIndex;
         }

@@ -28,6 +28,8 @@ package sun.net.httpserver;
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
+import java.util.Objects;
+
 import com.sun.net.httpserver.*;
 
 /**
@@ -265,9 +267,7 @@ class Request {
 
             assert channel.isBlocking();
 
-            if (off < 0 || srclen < 0|| srclen > (b.length-off)) {
-                throw new IndexOutOfBoundsException ();
-            }
+            Objects.checkFromIndexSize(srclen, off, b.length);
 
             if (reset) { /* satisfy from markBuf */
                 canreturn = markBuf.remaining ();

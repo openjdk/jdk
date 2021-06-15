@@ -709,10 +709,8 @@ public final class Integer extends Number
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                                             " less than Character.MIN_RADIX");
@@ -892,10 +890,8 @@ public final class Integer extends Number
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {

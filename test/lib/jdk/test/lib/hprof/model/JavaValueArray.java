@@ -34,6 +34,7 @@ package jdk.test.lib.hprof.model;
 
 import jdk.test.lib.hprof.parser.ReadBuffer;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * An array of values, that is, an array of ints, boolean, floats or the like.
@@ -263,9 +264,7 @@ public class JavaValueArray extends JavaLazyReadObject
     }
 
     private void checkIndex(int index) {
-        if (index < 0 || index >= getLength()) {
-            throw new ArrayIndexOutOfBoundsException(index);
-        }
+        Objects.checkIndex(index, getLength());
     }
 
     private void requireType(char type) {

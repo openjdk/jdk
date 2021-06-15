@@ -39,6 +39,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -236,9 +237,7 @@ public class CommandProcessor {
         }
 
         String at(int i) {
-            if (i < 0 || i >= length) {
-                throw new IndexOutOfBoundsException(String.valueOf(i));
-            }
+            Objects.checkIndex(i, length);
             return tokens[i];
         }
     }

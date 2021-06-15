@@ -29,6 +29,7 @@
  */
 
 import java.io.*;
+import java.util.Objects;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.event.*;
@@ -196,10 +197,7 @@ class ClippedImageCanvas extends Component implements Printable, Pageable {
 
     public PageFormat getPageFormat(int pageIndex)
         throws IndexOutOfBoundsException {
-
-        if (pageIndex < 0 || pageIndex >= getNumberOfPages()) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(pageIndex, getNumberOfPages());
 
         PageFormat pf = myPrinterJob.defaultPage();
         switch (pageIndex % 2) {
@@ -225,10 +223,8 @@ class ClippedImageCanvas extends Component implements Printable, Pageable {
 
     public Printable getPrintable(int pageIndex)
         throws IndexOutOfBoundsException {
+        Objects.checkIndex(pageIndex, getNumberOfPages());
 
-        if (pageIndex < 0 || pageIndex >= getNumberOfPages()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (pageIndex < 2) {
             paintSquares = true;
         } else {

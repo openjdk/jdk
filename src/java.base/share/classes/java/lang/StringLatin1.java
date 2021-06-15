@@ -39,14 +39,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
+import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
 
     public static char charAt(byte[] value, int index) {
-        if (index < 0 || index >= value.length) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
+        checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
     }
 

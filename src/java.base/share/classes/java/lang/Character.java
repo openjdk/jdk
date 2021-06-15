@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
@@ -9249,10 +9250,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(CharSequence seq, int beginIndex, int endIndex) {
-        int length = seq.length();
-        if (beginIndex < 0 || endIndex > length || beginIndex > endIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(beginIndex, endIndex, seq.length());
         int n = endIndex - beginIndex;
         for (int i = beginIndex; i < endIndex; ) {
             if (isHighSurrogate(seq.charAt(i++)) && i < endIndex &&
@@ -9284,9 +9282,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(char[] a, int offset, int count) {
-        if (count > a.length - offset || offset < 0 || count < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(count, offset, a.length);
         return codePointCountImpl(a, offset, count);
     }
 

@@ -32,7 +32,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 import sun.nio.cs.ISO_8859_1;
-
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -931,8 +931,7 @@ public class Base64 {
         public void write(byte[] b, int off, int len) throws IOException {
             if (closed)
                 throw new IOException("Stream is closed");
-            if (off < 0 || len < 0 || len > b.length - off)
-                throw new ArrayIndexOutOfBoundsException();
+            Preconditions.checkFromIndexSize(len, off, b.length, (xa, xb) -> new ArrayIndexOutOfBoundsException());
             if (len == 0)
                 return;
             if (leftover != 0) {
