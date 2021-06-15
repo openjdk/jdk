@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,12 @@ class JavaThread;
 
 // Implements the limited, platform independent Semaphore API.
 class Semaphore : public CHeapObj<mtSynchronizer> {
-  friend class SemaphoreLocker;
-
   SemaphoreImpl _impl;
-  DEBUG_ONLY(const uint _value;)
 
   NONCOPYABLE(Semaphore);
 
  public:
-  Semaphore(uint value = 0) : _impl(value) DEBUG_ONLY(COMMA _value(value)) {}
+  Semaphore(uint value = 0) : _impl(value) {}
   ~Semaphore() {}
 
   void signal(uint count = 1) { _impl.signal(count); }
