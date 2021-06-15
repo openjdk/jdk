@@ -226,8 +226,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred due "
             "to unstable signal handling in this distribution.");
 #else
-      fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred. "
-            "It's likely caused by dereferencing an address larger than TASK_SIZE");
+      // An irrecoverable SI_KERNEL SIGSEGV has occurred.
+      // It's likely caused by dereferencing an address larger than TASK_SIZE.
+      return false;
 #endif
     }
 
