@@ -253,6 +253,7 @@ public final class RequestPublishers {
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             FilePermission filePermission = null;
             boolean defaultFS = true;
@@ -289,6 +290,7 @@ public final class RequestPublishers {
 
             Permission perm = filePermission;
             assert perm == null || perm.getActions().equals("read");
+            @SuppressWarnings("removal")
             AccessControlContext acc = sm != null ?
                     AccessController.getContext() : null;
             boolean finalDefaultFS = defaultFS;
@@ -305,6 +307,7 @@ public final class RequestPublishers {
             return new FilePublisher(path, length, inputStreamSupplier);
         }
 
+        @SuppressWarnings("removal")
         private static InputStream createInputStream(Path path,
                                                      AccessControlContext acc,
                                                      Permission perm,

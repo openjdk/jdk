@@ -278,6 +278,10 @@
     <Field type="Tickspan" name="longestPause" label="Longest Pause" description="Longest individual pause during the garbage collection" />
   </Event>
 
+  <Event name="SystemGC" category="Java Virtual Machine, GC, Collector" label="System GC" stackTrace="true" startTime="true" thread="true">
+    <Field type="boolean" name="invokedConcurrent" label="Invoked Concurrent" />
+  </Event>
+
   <Event name="ParallelOldGarbageCollection" category="Java Virtual Machine, GC, Collector" label="Parallel Old Garbage Collection"
     description="Extra information specific to Parallel Old Garbage Collections">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />

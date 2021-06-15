@@ -562,6 +562,22 @@ is needed.
 Use \f[CB]none\f[R] to start a recording without a predefined
 configuration file.
 (STRING, \f[CB]JAVA\-HOME\f[R]/lib/jfr/default.jfc)
+.PP
+Event settings and .jfc options can also be specified using the following
+syntax:
+.TP
+.B \f[CB]option=\f[R]\f[I]value\f[R]
+Specifies the option value to modify. To list available options, use the
+JAVA_HOME/bin/jfr tool.
+.TP
+.B \f[CB]event-setting=\f[R]\f[I]value\f[R]
+Specifies the event setting value to modify. Use the form:
+<event-name>#<setting-name>=<value>
+To add a new event setting, prefix the event name with '+'.
+.PP
+In case of a conflict between a parameter and a .jfc option, the parameter
+will take precedence. The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For
+more information about the settings syntax, see Javadoc of the jdk.jfr package.
 .RE
 .TP
 .B \f[CB]JFR.stop\f[R] [\f[I]options\f[R]]

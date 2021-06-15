@@ -27,9 +27,11 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -40,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.security.AccessControlException;
 import javax.management.JMX;
@@ -50,11 +53,14 @@ import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
 /**
@@ -142,12 +148,15 @@ public final class RemoteRecordingStream implements EventStream {
     final FlightRecorderMXBean mbean;
     final long recordingId;
     final EventStream stream;
+    @SuppressWarnings("removal")
     final AccessControlContext accessControllerContext;
     final DiskRepository repository;
     final Instant creationTime;
+    final Object lock = new Object();
     volatile Instant startTime;
     volatile Instant endTime;
     volatile boolean closed;
+    private boolean started; // always guarded by lock
 
     /**
      * Creates an event stream that operates against a {@link MBeanServerConnection}
@@ -196,6 +205,7 @@ public final class RemoteRecordingStream implements EventStream {
         this(connection, directory, false);
     }
 
+    @SuppressWarnings("removal")
     private RemoteRecordingStream(MBeanServerConnection connection, Path dir, boolean delete) throws IOException {
         Objects.requireNonNull(connection);
         Objects.requireNonNull(dir);
@@ -461,10 +471,12 @@ public final class RemoteRecordingStream implements EventStream {
 
     @Override
     public void close() {
-        if (closed) {
-            return;
+        synchronized (lock) { // ensure one closer
+            if (closed) {
+                return;
+            }
+            closed = true;
         }
-        closed = true;
         ManagementSupport.setOnChunkCompleteHandler(stream, null);
         stream.close();
         try {
@@ -508,31 +520,116 @@ public final class RemoteRecordingStream implements EventStream {
 
     @Override
     public void start() {
-        try {
+        synchronized (lock) { // ensure one starter
+            ensureStartable();
             try {
-                mbean.startRecording(recordingId);
-            } catch (IllegalStateException ise) {
-                throw ise;
+                try {
+                    mbean.startRecording(recordingId);
+                } catch (IllegalStateException ise) {
+                    throw ise;
+                }
+                startDownload();
+            } catch (Exception e) {
+                ManagementSupport.logDebug(e.getMessage());
+                close();
+                return;
             }
-            startDownload();
-        } catch (Exception e) {
-            ManagementSupport.logDebug(e.getMessage());
-            close();
-            return;
+            stream.start();
+            started = true;
         }
-        stream.start();
     }
 
     @Override
     public void startAsync() {
-        stream.startAsync();
+        synchronized (lock) { // ensure one starter
+            ensureStartable();
+            stream.startAsync();
+            try {
+                mbean.startRecording(recordingId);
+                startDownload();
+            } catch (Exception e) {
+                ManagementSupport.logDebug(e.getMessage());
+                close();
+            }
+            started = true;
+        }
+    }
+
+    private void ensureStartable() {
+        if (closed) {
+            throw new IllegalStateException("Event stream is closed");
+        }
+        if (started) {
+            throw new IllegalStateException("Event stream can only be started once");
+        }
+    }
+
+    /**
+     * Writes recording data to a file.
+     * <p>
+     * The recording stream must be started, but not closed.
+     * <p>
+     * It's highly recommended that a max age or max size is set before
+     * starting the stream. Otherwise, the dump may not contain any events.
+     *
+     * @param destination the location where recording data is written, not
+     *        {@code null}
+     *
+     * @throws IOException if the recording data can't be copied to the specified
+     *         location, or if the stream is closed, or not started.
+     *
+     * @throws SecurityException if a security manager exists and the caller doesn't
+     *         have {@code FilePermission} to write to the destination path
+     *
+     * @see RemoteRecordingStream#setMaxAge(Duration)
+     * @see RemoteRecordingStream#setMaxSize(long)
+     */
+    public void dump(Path destination) throws IOException {
+        Objects.requireNonNull(destination);
+        long id = -1;
         try {
-            mbean.startRecording(recordingId);
-            startDownload();
+            FileDump fileDump;
+            synchronized (lock) { // ensure running state while preparing dump
+                if (closed) {
+                    throw new IOException("Recording stream has been closed, no content to write");
+                }
+                if (!started) {
+                    throw new IOException("Recording stream has not been started, no content to write");
+                }
+                // Take repository lock to prevent new data to be flushed
+                // client-side after clone has been created on the server.
+                synchronized (repository) {
+                    id = mbean.cloneRecording(recordingId, true);
+                    RecordingInfo ri = getRecordingInfo(mbean.getRecordings(), id);
+                    fileDump = repository.newDump(ri.getStopTime());
+                }
+            }
+            // Write outside lock
+            fileDump.write(destination);
+        } catch (IOException ioe) {
+            throw ioe;
         } catch (Exception e) {
             ManagementSupport.logDebug(e.getMessage());
             close();
+        } finally {
+            if (id != -1) {
+                try {
+                    mbean.closeRecording(id);
+                } catch (Exception e) {
+                    ManagementSupport.logDebug(e.getMessage());
+                    close();
+                }
+            }
         }
+    }
+
+    private RecordingInfo getRecordingInfo(List<RecordingInfo> infos, long id) throws IOException {
+        for (RecordingInfo info : infos) {
+            if (info.getId() == id) {
+                return info;
+            }
+        }
+        throw new IOException("Unable to find id of dumped recording");
     }
 
     @Override

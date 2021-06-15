@@ -158,8 +158,10 @@ public final class ImageFileCreator {
         BasicImageWriter writer = new BasicImageWriter(byteOrder);
         ResourcePoolManager allContent = createPoolManager(archives,
                 entriesForModule, byteOrder, writer);
-        ResourcePool result = generateJImage(allContent,
-             writer, plugins, plugins.getJImageFileOutputStream());
+        ResourcePool result;
+        try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
+            result = generateJImage(allContent, writer, plugins, out);
+        }
 
         //Handle files.
         try {

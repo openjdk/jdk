@@ -87,6 +87,7 @@ public class Table extends Content {
     private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
     private final List<Content> bodyRows;
     private HtmlId id;
+    private boolean alwaysShowDefaultTab = false;
 
     /**
      * Creates a builder for an HTML element representing a table.
@@ -139,6 +140,16 @@ public class Table extends Content {
      */
     public Table setDefaultTab(Content label) {
         defaultTab = label;
+        return this;
+    }
+
+    /**
+     * Sets whether to display the default tab even if tabs are empty or only contain a single tab.
+     * @param showDefaultTab true if default tab should always be shown
+     * @return this object
+     */
+    public Table setAlwaysShowDefaultTab(boolean showDefaultTab) {
+        this.alwaysShowDefaultTab = showDefaultTab;
         return this;
     }
 
@@ -376,7 +387,7 @@ public class Table extends Content {
         };
 
         HtmlTree table = new HtmlTree(TagName.DIV).setStyle(tableStyle).addStyle(columnStyle);
-        if (tabMap == null || tabs.size() == 1) {
+        if ((tabMap == null || tabs.size() == 1) && !alwaysShowDefaultTab) {
             if (tabMap == null) {
                 main.add(caption);
             } else {

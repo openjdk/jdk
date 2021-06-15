@@ -339,6 +339,12 @@
           "The percentage of free card set memory that G1 should keep as "  \
           "percentage of the currently used memory.")                       \
           range(0.0, 1.0)
+                                                                            \
+  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                      \
+          "Allows collections to be triggered proactively based on the      \
+           number of free regions and the expected survival rates in each   \
+           section of the heap.")
+
 // end of GC_G1_FLAGS
 
 #endif // SHARE_GC_G1_G1_GLOBALS_HPP

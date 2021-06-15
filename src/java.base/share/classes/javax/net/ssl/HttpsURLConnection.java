@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default HostnameVerifier specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SSLPermission("setHostnameVerifier"));
@@ -311,6 +312,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default SSLSocketFactory specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkSetFactory();
@@ -360,6 +362,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no SSLSocketFactory specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkSetFactory();

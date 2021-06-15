@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,12 @@ void ZArguments::initialize() {
 
   if (ConcGCThreads == 0) {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
+  }
+
+  // The heuristics used when UseDynamicNumberOfGCThreads is
+  // enabled defaults to using a ZAllocationSpikeTolerance of 1.
+  if (UseDynamicNumberOfGCThreads && FLAG_IS_DEFAULT(ZAllocationSpikeTolerance)) {
+    FLAG_SET_DEFAULT(ZAllocationSpikeTolerance, 1);
   }
 
 #ifdef COMPILER2

@@ -334,15 +334,9 @@ final class $vectortype$ extends $abstractvectortype$ {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<$Boxtype$> toShuffle() {
-        $type$[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate($shuffletype$.class); // specialize
     }
 
     // Specialized unary testing
@@ -1091,6 +1085,24 @@ final class $vectortype$ extends $abstractvectortype$ {
     $abstractvectortype$ fromArray0($type$[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+#if[short]
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+#end[short]
+
+#if[byte]
+    @ForceInline
+    @Override
+    final
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+#end[byte]
 
     @ForceInline
     @Override

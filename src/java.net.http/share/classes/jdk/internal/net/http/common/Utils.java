@@ -496,26 +496,31 @@ public final class Utils {
     }
 
 
+    @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
                 NetProperties.getInteger(name, defaultValue));
     }
 
+    @SuppressWarnings("removal")
     public static String getNetProperty(String name) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 NetProperties.get(name));
     }
 
+    @SuppressWarnings("removal")
     public static boolean getBooleanProperty(String name, boolean def) {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
                 Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
     }
 
+    @SuppressWarnings("removal")
     public static String getProperty(String name) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 System.getProperty(name));
     }
 
+    @SuppressWarnings("removal")
     public static int getIntegerProperty(String name, int defaultValue) {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
                 Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));

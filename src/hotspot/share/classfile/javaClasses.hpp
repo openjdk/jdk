@@ -66,7 +66,6 @@ class RecordComponent;
   f(java_lang_reflect_Constructor) \
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
-  f(java_nio_Buffer) \
   f(reflect_ConstantPool) \
   f(reflect_UnsafeStaticFieldAccessorImpl) \
   f(java_lang_reflect_Parameter) \
@@ -1043,7 +1042,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   friend class JavaClasses;
 
  private:
-  static int _addr_offset;  // type is jlong
   static int _shadow_space_offset;
   static int _argMoves_offset;
   static int _returnMoves_offset;
@@ -1057,7 +1055,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static address    addr(oop entry);
   static jint       shadow_space(oop entry);
   static oop        argMoves(oop entry);
   static oop        returnMoves(oop entry);
@@ -1073,7 +1070,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int addr_offset_in_bytes()            { return _addr_offset;            }
   static int shadow_space_offset_in_bytes()    { return _shadow_space_offset;    }
   static int argMoves_offset_in_bytes()        { return _argMoves_offset;        }
   static int returnMoves_offset_in_bytes()     { return _returnMoves_offset;     }
@@ -1586,16 +1582,6 @@ class java_lang_AssertionStatusDirectives: AllStatic {
   friend class JavaClasses;
 };
 
-
-class java_nio_Buffer: AllStatic {
- private:
-  static int _limit_offset;
-
- public:
-  static int  limit_offset() { CHECK_INIT(_limit_offset); }
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-};
 
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
