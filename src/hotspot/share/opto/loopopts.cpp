@@ -1503,9 +1503,13 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
-          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking. We don't add a CastPP here
-          // when the first one is sunk so if the second one is not, their bases remain the same. A CastPP of the base
-          // is only added once both AddP nodes are sunk (see special code for AddP after the cast is created).
+          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking so:
+          // 1- We don't add a CastPP here when the first one is sunk so if the second one is not, their bases remain
+          // the same.
+          // (see 2- below)
+          assert(!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP() ||
+                 x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base) ||
+                 !x->in(AddPNode::Address)->in(AddPNode::Base)->eqv_uncast(x->in(AddPNode::Base)), "unexpected AddP shape");
           if (x->in(0) == NULL && !x->is_DecodeNarrowPtr() &&
               !(x->is_AddP() && x->in(AddPNode::Address)->is_AddP() && x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base))) {
             assert(!x->is_Load(), "load should be pinned");
@@ -1520,6 +1524,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (cast != NULL) {
                 register_new_node(cast, x_ctrl);
                 x->replace_edge(in, cast);
+                // Chain of AddP:
+                // 2- A CastPP of the base is only added now that both AddP nodes are sunk
                 if (x->is_AddP() && k == AddPNode::Base) {
                   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
                     Node* u = x->fast_out(i);
