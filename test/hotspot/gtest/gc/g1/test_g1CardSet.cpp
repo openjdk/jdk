@@ -426,8 +426,6 @@ void G1CardSetTest::cardset_mt_test() {
 
   G1CardSet card_set(&config, &mm);
 
-  log_error(gc)("MT parallel part start");
-
   const uint num_workers = workers()->active_workers();
 
   G1CardSetMtTestTask cl(&card_set);
@@ -436,8 +434,6 @@ void G1CardSetTest::cardset_mt_test() {
     GCTraceTime(Error, gc) x("Cardset test");
     _workers->run_task(&cl, num_workers);
   }
-
-  log_error(gc)("MT parallel part, added " SIZE_FORMAT " duplicate " SIZE_FORMAT, cl.added(), cl.found());
 
   size_t num_found = 0;
   // Now check the contents of the card set.
