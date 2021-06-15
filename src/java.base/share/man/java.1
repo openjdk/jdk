@@ -1310,7 +1310,7 @@ By default this option is disabled.
 .RS
 .RE
 .TP
-.B \f[CB]\-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R] (or)\f[CB]\-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
+.B \f[CB]\-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R] (or)\f[CB]\-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
 Sets the parameters that control the behavior of JFR.
 .RS
 .PP
@@ -1636,7 +1636,7 @@ By default, this option is disabled.
 .RS
 .RE
 .TP
-.B \f[CB]\-XX:StartFlightRecording:\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
+.B \f[CB]\-XX:StartFlightRecording=\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
 Starts a JFR recording for the Java application.
 This option is equivalent to the \f[CB]JFR.start\f[R] diagnostic command
 that starts a recording during runtime.
@@ -1757,22 +1757,6 @@ is needed.
 .PP
 You can specify values for multiple parameters by separating them with a
 comma.
-.PP
-Event settings and .jfc options can also be specified using the following
-syntax:
-.TP
-.B \f[CB]option=\f[R]\f[I]value\f[R]
-Specifies the option value to modify. To list available options, use the 
-JAVA_HOME/bin/jfr tool.
-.TP
-.B \f[CB]event-setting=\f[R]\f[I]value\f[R]
-Specifies the event setting value to modify. Use the form:
-<event-name>#<setting-name>=<value>
-To add a new event setting, prefix the event name with '+'.
-.PP
-In case of a conflict between a parameter and a .jfc option, the parameter
-will take precedence. The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For
-more information about the settings syntax, see Javadoc of the jdk.jfr package.
 .RE
 .TP
 .B \f[CB]\-XX:ThreadStackSize=\f[R]\f[I]size\f[R]
@@ -3888,68 +3872,6 @@ future JDK release.
 They\[aq]re still accepted and acted upon, but a warning is issued when
 they\[aq]re used.
 .TP
-.B \f[CB]\-\-illegal\-access=\f[R]\f[I]parameter\f[R]
-When present at run time, \f[CB]\-\-illegal\-access=\f[R] takes a keyword
-\f[I]parameter\f[R] to specify a mode of operation:
-.RS
-.RS
-.PP
-\f[B]Note:\f[R] This option will be removed in a future release.
-.RE
-.IP \[bu] 2
-\f[CB]permit\f[R]: This mode opens each package in each module in the
-run\-time image to code in all unnamed modules ( such as code on the
-class path), if that package existed in JDK 8.
-This enables both static access, (for example, by compiled bytecode, and
-deep reflective access) through the platform\[aq]s various reflection
-APIs.
-The first reflective\-access operation to any such package causes a
-warning to be issued.
-However, no warnings are issued after the first occurrence.
-This single warning describes how to enable further warnings.
-.IP \[bu] 2
-\f[CB]warn\f[R]: This mode is identical to \f[CB]permit\f[R] except that a
-warning message is issued for each illegal reflective\-access operation.
-.IP \[bu] 2
-\f[CB]debug\f[R]: This mode is identical to \f[CB]warn\f[R] except that both
-a warning message and a stack trace are issued for each illegal
-reflective\-access operation.
-.IP \[bu] 2
-\f[CB]deny\f[R]: This mode disables all illegal\-access operations except
-for those enabled by other command\-line options, such as
-\f[CB]\-\-add\-opens\f[R].
-This mode is the default.
-.PP
-If your application does not work with the default mode of
-\f[CB]\-\-illegal\-access=deny\f[R] then you can learn more about what is
-going on with the \f[CB]warn\f[R] and \f[CB]debug\f[R] modes.
-For each library or framework on the class path that requires illegal
-access, you have two options:
-.IP \[bu] 2
-If the component\[aq]s maintainers have already released a fixed version
-that no longer uses JDK\-internal APIs then you can consider upgrading
-to that version.
-.IP \[bu] 2
-If the component still needs to be fixed, then you can contact its
-maintainers and ask them to replace their use of JDK\-internal APIs with
-the proper exported APIs.
-.PP
-If you must continue to use a component that requires illegal access,
-then you can eliminate the warning messages by using one or more
-\f[CB]\-\-add\-opens\f[R] options to open only those internal packages to
-which access is required.
-.PP
-To verify that your application is ready for a future version of the
-JDK, run it with \f[CB]\-\-illegal\-access=deny\f[R] along with any
-necessary \f[CB]\-\-add\-opens\f[R] options.
-Any remaining illegal\-access errors will most likely be due to static
-references from compiled code to JDK\-internal APIs.
-You can identify those by running the \f[B]jdeps\f[R] tool with the
-\f[CB]\-\-jdk\-internals\f[R] option.
-For performance reasons, the current JDK does not issue warnings for
-illegal static\-access operations.
-.RE
-.TP
 .B \f[CB]\-Xfuture\f[R]
 Enables strict class\-file format checks that enforce close conformance
 to the class\-file format specification.
@@ -4032,8 +3954,16 @@ By default, this option is disabled.
 .PP
 These \f[CB]java\f[R] options are still accepted but ignored, and a
 warning is issued when they\[aq]re used.
-.PP
-None in JDK 17.
+.TP
+.B \f[CB]\-\-illegal\-access=\f[R]\f[I]parameter\f[R]
+Controlled \f[I]relaxed strong encapsulation\f[R], as defined in \f[B]JEP
+261\f[R]
+[https://openjdk.java.net/jeps/261#Relaxed\-strong\-encapsulation].
+This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
+[https://openjdk.java.net/jeps/396] and made obsolete in JDK 17 by
+\f[B]JEP 403\f[R] [https://openjdk.java.net/jeps/403].
+.RS
+.RE
 .SH REMOVED JAVA OPTIONS
 .PP
 These \f[CB]java\f[R] options have been removed in JDK 17 and using them
@@ -4374,6 +4304,8 @@ the Java Virtual Machine (JVM) unified logging framework.
 .RS
 .PP
 \f[CB]\-Xlog\f[R][\f[CB]:\f[R][\f[I]what\f[R]][\f[CB]:\f[R][\f[I]output\f[R]][\f[CB]:\f[R][\f[I]decorators\f[R]][\f[CB]:\f[R]\f[I]output\-options\f[R][\f[CB],\f[R]...]]]]]
+.PP
+\f[CB]\-Xlog:\f[R]\f[I]directive\f[R]
 .RE
 .TP
 .B \f[I]what\f[R]
@@ -4402,6 +4334,11 @@ See \f[B]Decorations\f[R].
 .TP
 .B \f[I]output\-options\f[R]
 Sets the \f[CB]\-Xlog\f[R] logging output options.
+.RS
+.RE
+.TP
+.B \f[I]directive\f[R]
+A global option or subcommand: help, disable, async
 .RS
 .RE
 .SS Description
@@ -4554,6 +4491,29 @@ Specifying \f[CB]filecount=0\f[R] means that the log file shouldn\[aq]t be
 rotated.
 There\[aq]s a possibility of the pre\-existing log file getting
 overwritten.
+.SS \-Xlog Output Mode
+.PP
+By default logging messages are output synchronously \- each log message
+is written to the designated output when the logging call is made.
+But you can instead use asynchronous logging mode by specifying:
+.TP
+.B \f[CB]\-Xlog:async\f[R]
+Write all logging asynchronously.
+.RS
+.RE
+.PP
+In asynchronous logging mode, log sites enqueue all logging messages to
+an intermediate buffer and a standalone thread is responsible for
+flushing them to the corresponding outputs.
+The intermediate buffer is bounded and on buffer exhaustion the
+enqueuing message is discarded.
+Log entry write operations are guaranteed non\-blocking.
+.PP
+The option \f[CB]\-XX:AsyncLogBufferSize=N\f[R] specifies the memory
+budget in bytes for the intermediate buffer.
+The default value should be big enough to cater for most cases.
+Users can provide a custom value to trade memory overhead for log
+accuracy if they need to.
 .SS Decorations
 .PP
 Logging messages are decorated with information about the message.
