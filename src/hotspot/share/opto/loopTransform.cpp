@@ -2352,6 +2352,7 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   } else {
     inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
   }
+  set_subtree_ctrl(inner_result_long, false);
 
   // Outer MINL/MAXL:
   // The comparison is done with long values but the result is the converted back to int by using CmovI.
