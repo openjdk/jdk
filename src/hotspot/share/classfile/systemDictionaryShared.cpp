@@ -1175,7 +1175,9 @@ class UniqueUnregisteredClassesTable : public ResourceHashtable<
 static UniqueUnregisteredClassesTable* _unique_unregistered_classes = NULL;
 
 bool SystemDictionaryShared::check_unique_unregistered_class(Thread* current, InstanceKlass* klass) {
-  // We don't allow duplicated unregistered classes of the same name.
+  // We don't allow duplicated unregistered classes with the same name.
+  // The first class with that name that succeeds putting itself into the
+  // table is considerd "unique".
   Arguments::assert_is_dumping_archive();
   MutexLocker ml(current, UniqueUnregisteredClasses_lock);
   Symbol* name = klass->name();
@@ -1190,7 +1192,7 @@ bool SystemDictionaryShared::check_unique_unregistered_class(Thread* current, In
   return (klass == *v);
 }
 
-// true == class was successfully added; false == a duplicated class already exists.
+// true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
   assert(DumpSharedSpaces, "only when dumping");
   if (check_unique_unregistered_class(current, k)) {
@@ -1313,6 +1315,9 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   }
 
   if (_unique_unregistered_classes != NULL) {
+    // Remove the class from _unique_unregistered_classes: keep the entry but
+    // set it to NULL. This ensure no classes with the same name can be
+    // added again.
     MutexLocker ml(Thread::current(), UniqueUnregisteredClasses_lock);
     Symbol* name = klass->name();
     InstanceKlass** v = _unique_unregistered_classes->get(name);
@@ -1354,7 +1359,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s @%p", k->name()->as_C_string(), reason, k);
+  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
   return true;
 }
 

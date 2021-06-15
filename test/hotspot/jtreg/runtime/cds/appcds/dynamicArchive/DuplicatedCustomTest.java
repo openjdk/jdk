@@ -30,10 +30,10 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build DuplicatedCustomApp CustomLoadee
+ * @build DuplicatedCustomApp CustomLoadee CustomLoadee2
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar DuplicatedCustomApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom.jar CustomLoadee
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom.jar CustomLoadee CustomLoadee2 CustomInterface2_ia CustomInterface2_ib 
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar DuplicatedCustomTest
  */

@@ -27,6 +27,7 @@ import java.net.*;
 import sun.hotspot.WhiteBox;
 
 public class DuplicatedCustomApp {
+    static WhiteBox wb = WhiteBox.getWhiteBox();
     public static void main(String args[]) throws Exception {
         String path = args[0];
         URL url = new File(path).toURI().toURL();
@@ -40,26 +41,41 @@ public class DuplicatedCustomApp {
         }
 
         for (int i = 0; i < num_loops; i++) {
+            System.out.println("============================ LOOP = " + i);
             URLClassLoader urlClassLoader = new URLClassLoader(urls);
-            Class c = urlClassLoader.loadClass("CustomLoadee");
-            c.newInstance(); // make sure the class is linked.
-            System.out.println(c);
-            System.out.println(c.getClassLoader());
+            test(i, urlClassLoader, "CustomLoadee");
+            test(i, urlClassLoader, "CustomLoadee2");
+        }
+    }
 
-            // [1] Check that CustomLoadee is defined by the correct loader
-            if (c.getClassLoader() != urlClassLoader) {
-                throw new RuntimeException("c.getClassLoader() == " + c.getClassLoader() +
-                                           ", expected == " + urlClassLoader);
-            }
+    private static void test(int i, URLClassLoader urlClassLoader, String name) throws Exception {
+        Class c = urlClassLoader.loadClass(name);
+        c.newInstance(); // make sure the class is linked.
+        boolean is_shared = wb.isSharedClass(c);
 
-            // [2] Check that CustomLoadee is loaded from shared archive.
-            if (i == 0) {
-                WhiteBox wb = WhiteBox.getWhiteBox();
-                if (wb.isSharedClass(DuplicatedCustomApp.class)) {
-                    if (!wb.isSharedClass(c)) {
-                        throw new RuntimeException("wb.isSharedClass(c) should be true");
-                    }
+        System.out.println("Class = " + c + ", loaded from " + (is_shared ? "CDS" : "Jar"));
+        System.out.println("Loader = " + c.getClassLoader());
+
+        // [1] Check that CustomLoadee is defined by the correct loader
+        if (c.getClassLoader() != urlClassLoader) {
+            throw new RuntimeException("c.getClassLoader() == " + c.getClassLoader() +
+                                       ", expected == " + urlClassLoader);
+        }
+
+
+        // There's only one copy of the shared class of <name> in the
+        // CDS archive. 
+        if (i == 0) {
+            // The first time we must be able to load it from CDS.
+            if (wb.isSharedClass(DuplicatedCustomApp.class)) {
+                if (!is_shared) {
+                    throw new RuntimeException("Must be loaded from CDS");
                 }
+            }
+        } else {
+            // All subsequent times, we must load this from JAR file.
+            if (is_shared) {
+                throw new RuntimeException("Must be loaded from JAR");
             }
         }
     }
