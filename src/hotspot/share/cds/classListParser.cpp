@@ -85,11 +85,19 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file) {
+  if (_file != NULL) {
     fclose(_file);
   }
   Atomic::store(&_parsing_thread, (Thread*)NULL);
+  delete _indy_items;
+  delete _interfaces;
+  cleanup_table();
   _instance = NULL;
+}
+
+void ClassListParser::cleanup_table() {
+  ID2KlassTableCleaner cleaner;
+  _id2klass_table.iterate(&cleaner);
 }
 
 int ClassListParser::parse(TRAPS) {

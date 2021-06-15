@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_CLASSLISTPARSER_HPP
 #define SHARE_CDS_CLASSLISTPARSER_HPP
 
+#include "oops/instanceKlass.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -118,6 +119,15 @@ class ClassListParser : public StackObj {
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
+  void cleanup_table();
+
+  class ID2KlassTableCleaner {
+  public:
+    bool do_entry(int key, InstanceKlass** value) {
+      (*value)->release_C_heap_structures();
+      return true;
+    }
+  };
 
 public:
   ClassListParser(const char* file);
