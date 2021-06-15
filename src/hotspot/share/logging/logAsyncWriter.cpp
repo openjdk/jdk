@@ -28,16 +28,15 @@
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
 
-class AsyncLogLocker : public StackObj {
-  Semaphore* _sem;
-
+class AsyncLogWriter::AsyncLogLocker : public StackObj {
  public:
-  AsyncLogLocker(Semaphore* sem): _sem(sem) {
-    _sem->wait();
+  AsyncLogLocker() {
+    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
+    _instance->_lock.wait();
   }
 
   ~AsyncLogLocker() {
-    _sem->signal();
+    _instance->_lock.signal();
   }
 };
 
@@ -59,7 +58,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
   AsyncLogMessage m(output, decorations, os::strdup(msg));
 
   { // critical area
-    AsyncLogLocker locker(&_lock);
+    AsyncLogLocker locker;
     enqueue_locked(m);
   }
 }
@@ -67,7 +66,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // The lock here guarantees its integrity.
 void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker locker(&_lock);
+  AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
@@ -121,7 +120,7 @@ void AsyncLogWriter::write() {
   bool own_io = false;
 
   { // critical region
-    AsyncLogLocker locker(&_lock);
+    AsyncLogLocker locker;
 
     _buffer.pop_all(&logs);
     // append meta-messages of dropped counters

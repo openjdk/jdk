@@ -133,6 +133,8 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // times. It is no-op if async logging is not established.
 //
 class AsyncLogWriter : public NonJavaThread {
+  class AsyncLogLocker;
+
   static AsyncLogWriter* _instance;
   // _lock(1) denotes a critional region.
   Semaphore _lock;
