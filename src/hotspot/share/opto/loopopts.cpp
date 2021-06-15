@@ -1511,22 +1511,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               Node* in = x->in(k);
               if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
-                if (in_t->isa_int()) {
-                  cast = new CastIINode(in, in_t, true);
-                } else if (in_t->isa_long()) {
-                  cast = new CastLLNode(in, in_t, true);
-                } else if (in_t->isa_ptr()) {
-                  cast = new CastPPNode(in, in_t, true);
-                } else if (in_t->isa_float()) {
-                  cast = new CastFFNode(in, in_t, true);
-                } else if (in_t->isa_double()) {
-                  cast = new CastDDNode(in, in_t, true);
-                } else if (in_t->isa_vect()) {
-                  cast = new CastVVNode(in, in_t, true);
-                }
+                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t);
               }
               if (cast != NULL) {
-                cast->set_req(0, x_ctrl);
                 register_new_node(cast, x_ctrl);
                 x->replace_edge(in, cast);
                 break;
@@ -1990,7 +1977,7 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == NULL)) {
-      Node* c = phase->get_ctrl(u);
+      Node* c = u->in(0) != NULL ? u->in(0) : phase->get_ctrl(u);
       IdealLoopTree* u_loop = phase->get_loop(c);
       assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
       if (outer_loop->is_member(u_loop)) {
@@ -2113,11 +2100,20 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       Node* old = extra_data_nodes.at(i);
       clone_outer_loop_helper(old, loop, outer_loop, old_new, wq, this, true);
     }
+
+    Node* inner_out = sfpt->in(0);
+    if (inner_out->outcnt() > 1) {
+      clone_outer_loop_helper(inner_out, loop, outer_loop, old_new, wq, this, true);
+    }
+
     Node* new_ctrl = cl->outer_loop_exit();
     assert(get_loop(new_ctrl) != outer_loop, "must be out of the loop nest");
     for (uint i = 0; i < wq.size(); i++) {
       Node* n = wq.at(i);
       set_ctrl(n, new_ctrl);
+      if (n->in(0) != NULL) {
+        _igvn.replace_input_of(n, 0, new_ctrl);
+      }
       clone_outer_loop_helper(n, loop, outer_loop, old_new, wq, this, false);
     }
   } else {

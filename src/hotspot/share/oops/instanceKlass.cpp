@@ -2403,8 +2403,8 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 void InstanceKlass::remove_unshareable_info() {
 
   if (can_be_verified_at_dumptime()) {
-    // Set the old class bit.
-    set_is_shared_old_klass();
+    // Remember this so we can avoid walking the hierarchy at runtime.
+    set_verified_at_dump_time();
   }
 
   Klass::remove_unshareable_info();
@@ -2496,6 +2496,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");
+  assert(!shared_loading_failed(), "Must not try to load failed class again");
   set_package(loader_data, pkg_entry, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
@@ -2548,19 +2549,19 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
-    return true;
+    return false;
   }
-  if (java_super() != NULL && java_super()->can_be_verified_at_dumptime()) {
-    return true;
+  if (java_super() != NULL && !java_super()->can_be_verified_at_dumptime()) {
+    return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    if (interfaces->at(i)->can_be_verified_at_dumptime()) {
-      return true;
+    if (!interfaces->at(i)->can_be_verified_at_dumptime()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
 void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
@@ -3306,8 +3307,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 // -----------------------------------------------------------------------------------------------------
 // Printing
 
-#ifndef PRODUCT
-
 #define BULLET  " - "
 
 static const char* state_names[] = {
@@ -3457,15 +3456,11 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#endif //PRODUCT
-
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   if (Verbose || WizardMode)  access_flags().print_on(st);
   name()->print_value_on(st);
 }
-
-#ifndef PRODUCT
 
 void FieldPrinter::do_field(fieldDescriptor* fd) {
   _st->print(BULLET);
@@ -3523,6 +3518,8 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
 }
+
+#ifndef PRODUCT
 
 bool InstanceKlass::verify_itable_index(int i) {
   int method_count = klassItable::method_count_for_interface(this);

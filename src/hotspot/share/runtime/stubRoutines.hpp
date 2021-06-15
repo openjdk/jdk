@@ -151,13 +151,6 @@ class StubRoutines: AllStatic {
   static address _atomic_add_entry;
   static address _atomic_add_long_entry;
   static address _fence_entry;
-  static address _d2i_wrapper;
-  static address _d2l_wrapper;
-
-  static jint    _fpu_cntrl_wrd_std;
-  static jint    _fpu_cntrl_wrd_24;
-  static jint    _fpu_cntrl_wrd_trunc;
-  static jint    _mxcsr_std;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
   static BufferBlob* _code2;                               // code buffer for all other routines
@@ -324,15 +317,6 @@ class StubRoutines: AllStatic {
   static address atomic_add_entry()                        { return _atomic_add_entry; }
   static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
-
-  static address d2i_wrapper()                             { return _d2i_wrapper; }
-  static address d2l_wrapper()                             { return _d2l_wrapper; }
-  static jint    fpu_cntrl_wrd_std()                       { return _fpu_cntrl_wrd_std;   }
-  static address addr_fpu_cntrl_wrd_std()                  { return (address)&_fpu_cntrl_wrd_std;   }
-  static address addr_fpu_cntrl_wrd_24()                   { return (address)&_fpu_cntrl_wrd_24;   }
-  static address addr_fpu_cntrl_wrd_trunc()                { return (address)&_fpu_cntrl_wrd_trunc; }
-  static address addr_mxcsr_std()                          { return (address)&_mxcsr_std; }
-
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 

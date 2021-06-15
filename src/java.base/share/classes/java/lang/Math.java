@@ -1794,9 +1794,6 @@ public final class Math {
                     infiniteB && a == 0.0 ) {
                     return Double.NaN;
                 }
-                // Store product in a double field to cause an
-                // overflow even if non-strictfp evaluation is being
-                // used.
                 double product = a * b;
                 if (Double.isInfinite(product) && !infiniteA && !infiniteB) {
                     // Intermediate overflow; might cause a
@@ -1929,29 +1926,25 @@ public final class Math {
     public static double ulp(double d) {
         int exp = getExponent(d);
 
-        switch(exp) {
-        case Double.MAX_EXPONENT + 1:       // NaN or infinity
-            return Math.abs(d);
+        return switch(exp) {
+            case Double.MAX_EXPONENT + 1 -> Math.abs(d);      // NaN or infinity
+            case Double.MIN_EXPONENT - 1 -> Double.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
 
-        case Double.MIN_EXPONENT - 1:       // zero or subnormal
-            return Double.MIN_VALUE;
-
-        default:
-            assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Double.MIN_EXPONENT) {
-                return powerOfTwoD(exp);
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Double.MIN_EXPONENT) {
+                    yield powerOfTwoD(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of Double.MIN_VALUE appropriate
+                    // number of positions
+                    yield Double.longBitsToDouble(1L <<
+                            (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of Double.MIN_VALUE appropriate
-                // number of positions
-                return Double.longBitsToDouble(1L <<
-                (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        };
     }
 
     /**
@@ -1980,28 +1973,25 @@ public final class Math {
     public static float ulp(float f) {
         int exp = getExponent(f);
 
-        switch(exp) {
-        case Float.MAX_EXPONENT+1:        // NaN or infinity
-            return Math.abs(f);
+        return switch(exp) {
+            case Float.MAX_EXPONENT + 1 -> Math.abs(f);     // NaN or infinity
+            case Float.MIN_EXPONENT - 1 -> Float.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
 
-        case Float.MIN_EXPONENT-1:        // zero or subnormal
-            return Float.MIN_VALUE;
-
-        default:
-            assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Float.MIN_EXPONENT) {
-                return powerOfTwoF(exp);
-            } else {
-                // return a subnormal result; left shift integer
-                // representation of FloatConsts.MIN_VALUE appropriate
-                // number of positions
-                return Float.intBitsToFloat(1 <<
-                (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (FloatConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Float.MIN_EXPONENT) {
+                    yield powerOfTwoF(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of FloatConsts.MIN_VALUE appropriate
+                    // number of positions
+                    yield Float.intBitsToFloat(1 <<
+                            (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-        }
+        };
     }
 
     /**
@@ -2662,20 +2652,17 @@ public final class Math {
     }
 
     /**
-     * Returns {@code d} &times;
-     * 2<sup>{@code scaleFactor}</sup> rounded as if performed
-     * by a single correctly rounded floating-point multiply to a
-     * member of the double value set.  See the Java
-     * Language Specification for a discussion of floating-point
-     * value sets.  If the exponent of the result is between {@link
-     * Double#MIN_EXPONENT} and {@link Double#MAX_EXPONENT}, the
-     * answer is calculated exactly.  If the exponent of the result
-     * would be larger than {@code Double.MAX_EXPONENT}, an
-     * infinity is returned.  Note that if the result is subnormal,
-     * precision may be lost; that is, when {@code scalb(x, n)}
-     * is subnormal, {@code scalb(scalb(x, n), -n)} may not equal
-     * <i>x</i>.  When the result is non-NaN, the result has the same
-     * sign as {@code d}.
+     * Returns {@code d} &times; 2<sup>{@code scaleFactor}</sup>
+     * rounded as if performed by a single correctly rounded
+     * floating-point multiply.  If the exponent of the result is
+     * between {@link Double#MIN_EXPONENT} and {@link
+     * Double#MAX_EXPONENT}, the answer is calculated exactly.  If the
+     * exponent of the result would be larger than {@code
+     * Double.MAX_EXPONENT}, an infinity is returned.  Note that if
+     * the result is subnormal, precision may be lost; that is, when
+     * {@code scalb(x, n)} is subnormal, {@code scalb(scalb(x, n),
+     * -n)} may not equal <i>x</i>.  When the result is non-NaN, the
+     * result has the same sign as {@code d}.
      *
      * <p>Special cases:
      * <ul>
@@ -2693,9 +2680,7 @@ public final class Math {
      */
     public static double scalb(double d, int scaleFactor) {
         /*
-         * This method does not need to be declared strictfp to
-         * compute the same correct result on all platforms.  When
-         * scaling up, it does not matter what order the
+         * When scaling up, it does not matter what order the
          * multiply-store operations are done; the result will be
          * finite or overflow regardless of the operation ordering.
          * However, to get the correct result when scaling down, a
@@ -2709,25 +2694,7 @@ public final class Math {
          * by 2 ^ (scaleFactor % n) and then multiplying several
          * times by 2^n as needed where n is the exponent of number
          * that is a convenient power of two.  In this way, at most one
-         * real rounding error occurs.  If the double value set is
-         * being used exclusively, the rounding will occur on a
-         * multiply.  If the double-extended-exponent value set is
-         * being used, the products will (perhaps) be exact but the
-         * stores to d are guaranteed to round to the double value
-         * set.
-         *
-         * It is _not_ a valid implementation to first multiply d by
-         * 2^MIN_EXPONENT and then by 2 ^ (scaleFactor %
-         * MIN_EXPONENT) since even in a strictfp program double
-         * rounding on underflow could occur; e.g. if the scaleFactor
-         * argument was (MIN_EXPONENT - n) and the exponent of d was a
-         * little less than -(MIN_EXPONENT - n), meaning the final
-         * result would be subnormal.
-         *
-         * Since exact reproducibility of this method can be achieved
-         * without any undue performance burden, there is no
-         * compelling reason to allow double rounding on underflow in
-         * scalb.
+         * real rounding error occurs.
          */
 
         // magnitude of a power of two so large that scaling a finite
@@ -2769,20 +2736,17 @@ public final class Math {
     }
 
     /**
-     * Returns {@code f} &times;
-     * 2<sup>{@code scaleFactor}</sup> rounded as if performed
-     * by a single correctly rounded floating-point multiply to a
-     * member of the float value set.  See the Java
-     * Language Specification for a discussion of floating-point
-     * value sets.  If the exponent of the result is between {@link
-     * Float#MIN_EXPONENT} and {@link Float#MAX_EXPONENT}, the
-     * answer is calculated exactly.  If the exponent of the result
-     * would be larger than {@code Float.MAX_EXPONENT}, an
-     * infinity is returned.  Note that if the result is subnormal,
-     * precision may be lost; that is, when {@code scalb(x, n)}
-     * is subnormal, {@code scalb(scalb(x, n), -n)} may not equal
-     * <i>x</i>.  When the result is non-NaN, the result has the same
-     * sign as {@code f}.
+     * Returns {@code f} &times; 2<sup>{@code scaleFactor}</sup>
+     * rounded as if performed by a single correctly rounded
+     * floating-point multiply.  If the exponent of the result is
+     * between {@link Float#MIN_EXPONENT} and {@link
+     * Float#MAX_EXPONENT}, the answer is calculated exactly.  If the
+     * exponent of the result would be larger than {@code
+     * Float.MAX_EXPONENT}, an infinity is returned.  Note that if the
+     * result is subnormal, precision may be lost; that is, when
+     * {@code scalb(x, n)} is subnormal, {@code scalb(scalb(x, n),
+     * -n)} may not equal <i>x</i>.  When the result is non-NaN, the
+     * result has the same sign as {@code f}.
      *
      * <p>Special cases:
      * <ul>
@@ -2814,9 +2778,7 @@ public final class Math {
          * exponent range and + float -> double conversion is exact
          * the multiplication below will be exact. Therefore, the
          * rounding that occurs when the double product is cast to
-         * float will be the correctly rounded float result.  Since
-         * all operations other than the final multiply will be exact,
-         * it is not necessary to declare this method strictfp.
+         * float will be the correctly rounded float result.
          */
         return (float)((double)f*powerOfTwoD(scaleFactor));
     }

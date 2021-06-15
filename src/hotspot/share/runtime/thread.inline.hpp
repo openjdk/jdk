@@ -41,7 +41,14 @@
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
-    size_t used_bytes = tlab().used_bytes();
+    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
+    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
+    if (top <= start) {
+      return allocated_bytes;
+    }
+    const size_t used_bytes = pointer_delta(top, start, 1);
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
       // Comparing used_bytes with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB
@@ -64,11 +71,6 @@ inline ThreadsList* Thread::get_threads_hazard_ptr() const {
 
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
-}
-
-inline const WorkerThread* Thread::as_Worker_thread() const {
-  assert(is_Worker_thread(), "incorrect cast to const WorkerThread");
-  return static_cast<const WorkerThread*>(this);
 }
 
 #if defined(__APPLE__) && defined(AARCH64)

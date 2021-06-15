@@ -34,9 +34,9 @@ import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
+import java.util.Objects;
 import java.util.Spliterator;
 
 /**
@@ -737,11 +737,8 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
-        if ((i < 0) || (i >= limit))
-            throw new IndexOutOfBoundsException();
-        return i;
+        return Objects.checkIndex(i, limit);
     }
 
     final int checkIndex(int i, int nb) {               // package-private

@@ -47,6 +47,7 @@ public final class StaticProperty {
     private static final String JAVA_LIBRARY_PATH;
     private static final String SUN_BOOT_LIBRARY_PATH;
     private static final String JDK_SERIAL_FILTER;
+    private static final String JDK_SERIAL_FILTER_FACTORY;
     private static final String JAVA_IO_TMPDIR;
     private static final String NATIVE_ENCODING;
 
@@ -62,6 +63,7 @@ public final class StaticProperty {
         JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
         SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
         JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);
+        JDK_SERIAL_FILTER_FACTORY = getProperty(props, "jdk.serialFilterFactory", null);
         NATIVE_ENCODING = getProperty(props, "native.encoding");
     }
 
@@ -182,6 +184,20 @@ public final class StaticProperty {
      */
     public static String jdkSerialFilter() {
         return JDK_SERIAL_FILTER;
+    }
+
+
+    /**
+     * Return the {@code jdk.serialFilterFactory} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code user.name} system property
+     */
+    public static String jdkSerialFilterFactory() {
+        return JDK_SERIAL_FILTER_FACTORY;
     }
 
     /**

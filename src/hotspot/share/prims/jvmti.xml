@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -4963,7 +4963,9 @@ class C2 extends C1 implements I2 {
     <intro>
       <b>
         These functions and data types were introduced in the original
-        <jvmti/> version 1.0 and have been superseded by more
+        <jvmti/> version 1.0. They are deprecated and will be changed 
+        to return an error in a future release. They were superseded in
+        <jvmti/> version 1.2 (Java SE 6) by more 
       </b>
       <internallink id="Heap"><b>powerful and flexible versions</b></internallink>
       <b>
@@ -15033,6 +15035,9 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for new class file PermittedSubclasses attribute:
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file PermittedSubclasses attribute.
+  </change>
+  <change date="8 June 2021" version="17.0.0">
+      Minor update to deprecate Heap functions 1.0.
   </change>
 </changehistory>
 

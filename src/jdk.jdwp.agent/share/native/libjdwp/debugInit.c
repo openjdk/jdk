@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -859,7 +859,8 @@ printUsage(void)
  "               Java Debugger JDWP Agent Library\n"
  "               --------------------------------\n"
  "\n"
- "  (see http://java.sun.com/products/jpda for more information)\n"
+ "  (See the \"VM Invocation Options\" section of the JPDA\n"
+ "   \"Connection and Invocation Details\" document for more information.)\n"
  "\n"
  "jdwp usage: java " AGENTLIB "=[help]|[<option>=<value>, ...]\n"
  "\n"

@@ -29,6 +29,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCGuardPattern;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -96,13 +97,7 @@ public class MatchBindingsComputer extends TreeScanner {
     public MatchBindings binary(JCTree tree, MatchBindings lhsBindings, MatchBindings rhsBindings) {
         switch (tree.getTag()) {
             case AND: {
-                // e.T = union(x.T, y.T)
-                // e.F = intersection(x.F, y.F) (error recovery)
-                List<BindingSymbol> bindingsWhenTrue =
-                        union(tree.pos(), lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
-                List<BindingSymbol> bindingsWhenFalse = //error recovery
-                        intersection(tree.pos(), lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
-                return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+                return andOperation(tree.pos(), lhsBindings, rhsBindings);
             }
             case OR: {
                 // e.T = intersection(x.T, y.T) (error recovery)
@@ -117,9 +112,40 @@ public class MatchBindingsComputer extends TreeScanner {
         return EMPTY;
     }
 
+    public MatchBindings guardedPattern(JCGuardPattern tree, MatchBindings patternBindings, MatchBindings guardBindings) {
+        return andOperation(tree.pos(), patternBindings, guardBindings);
+    }
+
+    public MatchBindings andOperation(DiagnosticPosition pos, MatchBindings lhsBindings, MatchBindings rhsBindings) {
+        // e.T = union(x.T, y.T)
+        // e.F = intersection(x.F, y.F) (error recovery)
+        List<BindingSymbol> bindingsWhenTrue =
+                union(pos, lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
+        List<BindingSymbol> bindingsWhenFalse = //error recovery
+                intersection(pos, lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
+        return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+    }
+
+    public MatchBindings switchCase(JCTree tree, MatchBindings prevBindings, MatchBindings currentBindings) {
+        if (prevBindings == null)
+            return currentBindings;
+        if (!prevBindings.bindingsWhenTrue.isEmpty() && !currentBindings.bindingsWhenTrue.isEmpty()) {
+            log.error(tree.pos(), Errors.FlowsThroughToPattern);
+        }
+        if (prevBindings.nullPattern) {
+            return currentBindings;
+        }
+        if (currentBindings.nullPattern) {
+            return prevBindings;
+        }
+        return new MatchBindings(intersection(tree.pos(), prevBindings.bindingsWhenTrue, currentBindings.bindingsWhenTrue),
+                                 intersection(tree.pos(), prevBindings.bindingsWhenFalse, currentBindings.bindingsWhenFalse));
+    }
+
     public MatchBindings finishBindings(JCTree tree, MatchBindings matchBindings) {
         switch (tree.getTag()) {
             case NOT: case AND: case OR: case BINDINGPATTERN:
+            case PARENTHESIZEDPATTERN: case GUARDPATTERN:
             case PARENS: case TYPETEST:
             case CONDEXPR: //error recovery:
                 return matchBindings;
@@ -132,10 +158,16 @@ public class MatchBindingsComputer extends TreeScanner {
 
         public final List<BindingSymbol> bindingsWhenTrue;
         public final List<BindingSymbol> bindingsWhenFalse;
+        public final boolean nullPattern;
 
         public MatchBindings(List<BindingSymbol> bindingsWhenTrue, List<BindingSymbol> bindingsWhenFalse) {
+            this(bindingsWhenTrue, bindingsWhenFalse, false);
+        }
+
+        public MatchBindings(List<BindingSymbol> bindingsWhenTrue, List<BindingSymbol> bindingsWhenFalse, boolean nullPattern) {
             this.bindingsWhenTrue = bindingsWhenTrue;
             this.bindingsWhenFalse = bindingsWhenFalse;
+            this.nullPattern = nullPattern;
         }
 
     }
