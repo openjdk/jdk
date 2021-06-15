@@ -30,10 +30,12 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build DuplicatedCustomApp CustomLoadee CustomLoadee2
+ * @build DuplicatedCustomApp CustomLoadee CustomLoadee2 CustomLoadee3 CustomLoadee3Child
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar DuplicatedCustomApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom.jar CustomLoadee CustomLoadee2 CustomInterface2_ia CustomInterface2_ib 
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom.jar CustomLoadee
+ *                  CustomLoadee2 CustomInterface2_ia CustomInterface2_ib 
+ *                  CustomLoadee3 CustomLoadee3Child
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar DuplicatedCustomTest
  */
@@ -56,6 +58,7 @@ public class DuplicatedCustomTest extends DynamicArchiveTestBase {
         String appJar = ClassFileInstaller.getJarPath("app.jar");
         String customJarPath = ClassFileInstaller.getJarPath("custom.jar");
         String mainAppClass = "DuplicatedCustomApp";
+        String numberOfLoops = "2";
 
         dump(ARCHIVE_NAME,
             use_whitebox_jar,
@@ -64,7 +67,7 @@ public class DuplicatedCustomTest extends DynamicArchiveTestBase {
             "-Xlog:cds",
             "-Xlog:cds+dynamic=debug",
             "-cp", appJar,
-            mainAppClass, customJarPath, "2")
+            mainAppClass, customJarPath, numberOfLoops)
             .assertNormalExit(output -> {
                 output.shouldContain("Written dynamic archive 0x")
                       .shouldContain("Skipping CustomLoadee: Duplicated unregistered class")
@@ -79,7 +82,7 @@ public class DuplicatedCustomTest extends DynamicArchiveTestBase {
             "-Xlog:cds=debug",
             "-Xlog:cds+dynamic=info",
             "-cp", appJar,
-            mainAppClass, customJarPath, "2")
+            mainAppClass, customJarPath, numberOfLoops)
             .assertNormalExit(output -> {
                 output.shouldContain("DuplicatedCustomApp source: shared objects file")
                       .shouldContain("CustomLoadee source: shared objects file")

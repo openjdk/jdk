@@ -2610,7 +2610,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
   ClassLoadingService::notify_class_unloaded(ik);
 
   if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(ik);
+    SystemDictionaryShared::handle_class_unloading(ik);
   }
 
   if (log_is_enabled(Info, class, unload)) {

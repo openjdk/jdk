@@ -28,6 +28,13 @@ import sun.hotspot.WhiteBox;
 
 public class DuplicatedCustomApp {
     static WhiteBox wb = WhiteBox.getWhiteBox();
+    static URLClassLoader loaders[];
+
+    // If DuplicatedCustomApp.class is loaded from JAR file, it means we are dumping the
+    // dynamic archive.
+    static boolean is_dynamic_dumping = !wb.isSharedClass(DuplicatedCustomApp.class);
+    static boolean is_running_with_dynamic_archive = !is_dynamic_dumping;
+
     public static void main(String args[]) throws Exception {
         String path = args[0];
         URL url = new File(path).toURI().toURL();
@@ -39,18 +46,40 @@ public class DuplicatedCustomApp {
         if (args.length > 1) {
             num_loops = Integer.parseInt(args[1]);
         }
+        loaders = new URLClassLoader[num_loops];
+        for (int i = 0; i < num_loops; i++) {
+            loaders[i] = new URLClassLoader(urls);
+        }
+
+        if (is_dynamic_dumping) {
+            // Try to load the super interfaces of CustomLoadee2 in different orders
+            for (int i = 0; i < num_loops; i++) {
+                int a = (i + 1) % num_loops;
+                loaders[a].loadClass("CustomInterface2_ia");
+            }
+            for (int i = 0; i < num_loops; i++) {
+                int a = (i + 2) % num_loops;
+                loaders[a].loadClass("CustomInterface2_ib");
+            }
+        }
 
         for (int i = 0; i < num_loops; i++) {
             System.out.println("============================ LOOP = " + i);
-            URLClassLoader urlClassLoader = new URLClassLoader(urls);
+            URLClassLoader urlClassLoader = loaders[i];
             test(i, urlClassLoader, "CustomLoadee");
+            test(i, urlClassLoader, "CustomInterface2_ia");
+            test(i, urlClassLoader, "CustomInterface2_ib");
             test(i, urlClassLoader, "CustomLoadee2");
+            test(i, urlClassLoader, "CustomLoadee3");
+            test(i, urlClassLoader, "CustomLoadee3Child");
         }
     }
 
     private static void test(int i, URLClassLoader urlClassLoader, String name) throws Exception {
         Class c = urlClassLoader.loadClass(name);
-        c.newInstance(); // make sure the class is linked.
+        try {
+            c.newInstance(); // make sure the class is linked so it can be archived
+        } catch (Throwable t) {}
         boolean is_shared = wb.isSharedClass(c);
 
         System.out.println("Class = " + c + ", loaded from " + (is_shared ? "CDS" : "Jar"));
@@ -62,20 +91,19 @@ public class DuplicatedCustomApp {
                                        ", expected == " + urlClassLoader);
         }
 
-
-        // There's only one copy of the shared class of <name> in the
-        // CDS archive. 
-        if (i == 0) {
-            // The first time we must be able to load it from CDS.
-            if (wb.isSharedClass(DuplicatedCustomApp.class)) {
+        if (is_running_with_dynamic_archive) {
+            // There's only one copy of the shared class of <name> in the
+            // CDS archive. 
+            if (i == 0) {
+                // The first time we must be able to load it from CDS.
                 if (!is_shared) {
                     throw new RuntimeException("Must be loaded from CDS");
                 }
-            }
-        } else {
-            // All subsequent times, we must load this from JAR file.
-            if (is_shared) {
-                throw new RuntimeException("Must be loaded from JAR");
+            } else {
+                // All subsequent times, we must load this from JAR file.
+                if (is_shared) {
+                    throw new RuntimeException("Must be loaded from JAR");
+                }
             }
         }
     }

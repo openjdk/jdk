@@ -1359,7 +1359,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  log_warning(cds)("Skipping %s: %s (%p)", k->name()->as_C_string(), reason, k->class_loader_data());
   return true;
 }
 
@@ -1466,20 +1466,6 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     }
   }
 
-  if (DynamicDumpSharedSpaces && !SystemDictionaryShared::is_builtin(k)) { // unregistered class -- check for uniqueness.
-    // At this point, if any of my supertype T is an unregistered class, we know that
-    // T must have already passed the uniqueness check.
-    //
-    // Note that we may have two identical class herarchies loaded by two different
-    // custom loaders. If we do the uniqueness check before checking the supertypes,
-    // we may end up excluding most classes in both hierarchies due to the random
-    // traversal order of ResourceHashtable.
-    bool i_am_first = SystemDictionaryShared::check_unique_unregistered_class(Thread::current(), k);
-    if (!i_am_first) {
-      return warn_excluded(k, "Duplicated unregistered class");
-    }
-  }
-
   return false; // false == k should NOT be excluded
 }
 
@@ -1504,6 +1490,50 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   }
 }
 
+class UniqueUnregisteredClassesChecker : StackObj {
+  GrowableArray<InstanceKlass*> _list;
+  Thread* _thread;
+public:
+  UniqueUnregisteredClassesChecker() : _thread(Thread::current()) {}
+
+  bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
+    if (!SystemDictionaryShared::is_builtin(k)) {
+      _list.append(k);
+    }
+    return true;  // keep on iterating
+  }
+
+  static int compare_by_loader(InstanceKlass** a, InstanceKlass** b) {
+    ClassLoaderData* loader_a = a[0]->class_loader_data();
+    ClassLoaderData* loader_b = b[0]->class_loader_data();
+
+    if (loader_a != loader_b) {
+      return intx(loader_a) - intx(loader_b);
+    } else {
+      return intx(a[0]) -intx(b[0]);
+    }
+  }
+
+  void mark_duplicated_classes() {
+    // Two loaders may load two identical or similar hierarchies of classes. If we
+    // check for uniqueness in random order, we may end up excluding important base classes
+    // in both hierarchies, causing most of the classes to be excluded.
+    // We sort the classes by their loaders. This way we're likely to pick
+    // all classes in the one of the two hierarchies.
+    _list.sort(compare_by_loader);
+    for (int i = 0; i < _list.length(); i++) {
+      InstanceKlass* k = _list.at(i);
+      //log_warning(cds)("%p %p", k->class_loader_data(), k);
+      bool i_am_first = SystemDictionaryShared::check_unique_unregistered_class(_thread, k);
+      if (!i_am_first) {
+        SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
+        SystemDictionaryShared::set_excluded(k);
+      }
+      //tty->cr();
+    }
+  }
+};
+
 class ExcludeDumpTimeSharedClasses : StackObj {
 public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
@@ -1513,6 +1543,15 @@ public:
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
+  if (DynamicDumpSharedSpaces) {
+    // Do this first -- if a base class is excluded due to duplication,
+    // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses
+    ResourceMark rm;
+    UniqueUnregisteredClassesChecker uniq_checker;
+    _dumptime_table->iterate(&uniq_checker);
+    uniq_checker.mark_duplicated_classes();
+  }
+
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();

@@ -213,8 +213,8 @@ private:
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool warn_excluded(InstanceKlass* k, const char* reason);
   static bool check_for_exclusion_impl(InstanceKlass* k);
+  static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
@@ -254,7 +254,6 @@ public:
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
-  static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
@@ -311,6 +310,7 @@ public:
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
