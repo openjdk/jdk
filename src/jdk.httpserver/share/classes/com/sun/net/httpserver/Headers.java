@@ -98,20 +98,13 @@ public class Headers implements Map<String,List<String>> {
      * the same header names and values.
      *
      * @param headers a map of header names and values
-     * @throws NullPointerException if {@code headers} or any of its names or
-     *                              values are null, or if any value contains
-     *                              null.
+     * @throws NullPointerException if {@code headers} is null.
      */
     public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
         var h = headers;
-        h.forEach((k, v) -> {
-            Objects.requireNonNull(k);
-            Objects.requireNonNull(v);
-            v.forEach(Objects::requireNonNull);
-        });
         map = new HashMap<>(32);
-        h.forEach(this::put);
+        this.putAll(h);  // TODO: normalize and checkValue needed?
     }
 
     /**
@@ -306,6 +299,12 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      */
     public static Headers of(Map<String,List<String>> headers) {
+        Objects.requireNonNull(headers);
+        headers.forEach((k, v) -> {
+            Objects.requireNonNull(k);
+            Objects.requireNonNull(v);
+            v.forEach(Objects::requireNonNull);
+        });
         return new UnmodifiableHeaders(new Headers(headers));
     }
 }
