@@ -213,6 +213,7 @@ public class CommandLinePositiveTest {
             public void run() {
                 try (in; out) {
                     in.transferTo(out);
+                    out.flush();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -221,8 +222,9 @@ public class CommandLinePositiveTest {
         t.start();
         Thread.sleep(5000);
         p.destroy();
+        p.waitFor();  // TODO: assert exit code
         t.join();
-        return new Result(out.toString(UTF_8));
+        return new Result(out.toString(UTF_8));  // TODO: include exit code
     }
 
     static record Result(String output) {
