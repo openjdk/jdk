@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
 }
 
 // Is BoxLock node used for one simple lock region (same box and obj)?
-bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
+bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock) {
   LockNode* lock = NULL;
   bool has_one_lock = false;
   for (uint i = 0; i < this->outcnt(); i++) {
@@ -102,9 +102,15 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
               has_one_lock = true;
             } else if (lock != alock->as_Lock()) {
               has_one_lock = false;
+              if (bad_lock != NULL) {
+                *bad_lock = alock;
+              }
             }
           }
         } else {
+          if (bad_lock != NULL) {
+            *bad_lock = alock;
+          }
           return false; // Different objects
         }
       }
