@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SUPPORTED_VERSIONS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -70,7 +72,8 @@ final class SupportedVersionsExtension {
         final int[] requestedProtocols;
 
         private CHSupportedVersionsSpec(int[] requestedProtocols) {
-            this.requestedProtocols = requestedProtocols;
+            this.requestedProtocols =
+                    Arrays.stream(requestedProtocols).distinct().toArray();
         }
 
         private CHSupportedVersionsSpec(HandshakeContext hc,
@@ -95,14 +98,15 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: incomplete data"));
             }
 
-            int[] protocols = new int[vbs.length >> 1];
+            IntStream.Builder pBldr = IntStream.builder();
+            //int[] protocols = new int[vbs.length >> 1];
             for (int i = 0, j = 0; i < vbs.length;) {
                 byte major = vbs[i++];
                 byte minor = vbs[i++];
-                protocols[j++] = ((major & 0xFF) << 8) | (minor & 0xFF);
+                pBldr.accept(((major & 0xFF) << 8) | (minor & 0xFF));
             }
 
-            this.requestedProtocols = protocols;
+            this.requestedProtocols = pBldr.build().toArray();
         }
 
         @Override

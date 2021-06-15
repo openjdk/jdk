@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSocket;
@@ -86,7 +88,8 @@ final class AlpnExtension {
         final List<String> applicationProtocols;
 
         private AlpnSpec(String[] applicationProtocols) {
-            this.applicationProtocols = List.of(applicationProtocols);
+            this.applicationProtocols = Arrays.stream(applicationProtocols).
+                    distinct().collect(Collectors.toList());
         }
 
         private AlpnSpec(HandshakeContext hc,
@@ -107,7 +110,8 @@ final class AlpnExtension {
                     "incorrect list length (length=" + listLen + ")"));
             }
 
-            List<String> protocolNames = new LinkedList<>();
+            //List<String> protocolNames = new LinkedList<>();
+            Stream.Builder<String> alpnNames = Stream.builder();
             while (buffer.hasRemaining()) {
                 // opaque ProtocolName<1..2^8-1>, RFC 7301.
                 byte[] bytes = Record.getBytes8(buffer);
@@ -119,11 +123,12 @@ final class AlpnExtension {
                 }
 
                 String appProtocol = new String(bytes, alpnCharset);
-                protocolNames.add(appProtocol);
+                alpnNames.accept(appProtocol);
             }
 
             this.applicationProtocols =
-                    Collections.unmodifiableList(protocolNames);
+                    alpnNames.build().distinct().
+                            collect(Collectors.toUnmodifiableList());
         }
 
         @Override

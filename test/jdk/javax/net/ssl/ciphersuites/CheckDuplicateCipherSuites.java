@@ -372,12 +372,12 @@ public class CheckDuplicateCipherSuites {
             throw new RuntimeException("Expected and actual " +
                     " ciphersuites differ");
         }
-        /*
+
         if (!transitPVs.equals(expectedPV)) {
             throw new RuntimeException("Expected and actual protcol version"
                     + " lists differ");
         }
-        */
+
         // move ByteBuffer location back to the beginning point saved earlier
         data.reset();
     }

@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -99,8 +100,9 @@ final class ClientHello {
                 this.cookie = null;
             }
 
-            this.cipherSuites = cipherSuites;
-            this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
+            this.cipherSuites = cipherSuites.stream().distinct().
+                    collect(Collectors.toList());
+            this.cipherSuiteIds = getCipherSuiteIds(this.cipherSuites);
             this.extensions = new SSLExtensions(this);
 
             // Don't support compression.
@@ -185,18 +187,23 @@ final class ClientHello {
                         Alert.ILLEGAL_PARAMETER,
                         "Invalid ClientHello message");
             }
-            Stream.Builder<CipherSuite> sb = Stream.builder();
+            IntStream.Builder csBldr = IntStream.builder();
+            for (int i=0; i < csLen; i+=2) {
+                csBldr.accept(Short.toUnsignedInt(m.getShort()));
+            }
+            this.cipherSuiteIds = csBldr.build().distinct().toArray();
+            this.cipherSuites = getCipherSuites(this.cipherSuiteIds);
+            /*Stream.Builder<CipherSuite> sb = Stream.builder();
             for (int i=0; i < csLen; i+=2) {
                 CipherSuite cs = CipherSuite.valueOf(
                         Short.toUnsignedInt(m.getShort()));
                 if (cs != null) {
-                    sb.add(cs);
+                    sb.accept(cs);
                 }
             }
-            Stream<CipherSuite> strm = sb.build();
-            this.cipherSuites = strm.distinct().collect(Collectors.toList());
-            this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
-            /*
+            this.cipherSuites = sb.build().distinct().
+                    collect(Collectors.toList());
+            this.cipherSuiteIds = getCipherSuiteIds(this.cipherSuites);
             byte[] encodedIds = Record.getBytes16(m);
             if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(
