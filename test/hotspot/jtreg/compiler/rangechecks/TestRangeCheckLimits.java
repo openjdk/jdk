@@ -45,7 +45,7 @@
         testPositiveCasePreLoop();
         testNegativeCasePreLoop();
     }
-    
+
     public static void testPositiveCaseMainLoop() {
         int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];
@@ -64,7 +64,6 @@
                     }
                 }
             }
-            
         }
         if (g != 168) {
             throw new RuntimeException("fail");
@@ -72,7 +71,7 @@
         lFld = j;
     }
 
-    
+
     public static void testPositiveCasePreLoop() {
         int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];
@@ -97,7 +96,7 @@
         }
         lFld = j;
     }
-    
+
     public static void testNegativeCaseMainLoop() {
         int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];
@@ -122,8 +121,8 @@
         }
         lFld = j;
     }
-    
-    
+
+
     public static void testNegativeCasePreLoop() {
         int e, f, g = 0, h[] = new int[a];
         double i[] = new double[a];

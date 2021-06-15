@@ -2345,27 +2345,26 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   // INT() is finally converting the limit back to an integer value.
 
   // We use CMove nodes to implement long versions of min/max (MINL/MAXL).
-  // Inner MINL/MAXL with CmovL to keep a long value for the outer MINL/MAXL comparison:
-  Node* cmp = new CmpLNode(limit, _igvn.longcon(is_positive_stride ? min_jint : max_jint));
-  register_new_node(cmp, pre_ctrl);
-  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::lt : BoolTest::gt);
-  register_new_node(bol, pre_ctrl);
-  Node* inner_result_long = new CMoveLNode(bol, limit, _igvn.longcon(is_positive_stride ? min_jint : max_jint), TypeLong::LONG);
-  register_new_node(inner_result_long, pre_ctrl);
+  // We use helper methods for inner MINL/MAXL which return CMoveL nodes to keep a long value for the outer MINL/MAXL comparison:
+  Node* inner_result_long;
+  if (is_positive_stride) {
+    inner_result_long = MaxNode::signed_max(limit, _igvn.longcon(min_jint), TypeLong::LONG, _igvn);
+  } else {
+    inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
+  }
 
   // Outer MINL/MAXL:
   // The comparison is done with long values but the result is the converted back to int by using CmovI.
   Node* old_limit_long = new ConvI2LNode(old_limit);
   register_new_node(old_limit_long, pre_ctrl);
-  cmp = new CmpLNode(old_limit_long, limit);
+  Node* cmp = new CmpLNode(old_limit_long, limit);
   register_new_node(cmp, pre_ctrl);
-  bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
+  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
   register_new_node(bol, pre_ctrl);
   Node* inner_result_int = new ConvL2INode(inner_result_long); // Could under-/overflow but that's fine as comparison was done with CmpL
   register_new_node(inner_result_int, pre_ctrl);
   limit = new CMoveINode(bol, old_limit, inner_result_int, TypeInt::INT);
   register_new_node(limit, pre_ctrl);
-  C->print_method(PHASE_ADD_UNSAFE_BARRIER, 3);
   return limit;
 }
 
@@ -2414,7 +2413,6 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
     //     else /* scale < 0 and stride < 0 */
     //       I > (low_limit-offset)/scale
     //   )
-
     *pre_limit = adjust_limit(!is_positive_stride, scale, offset, low_limit, *pre_limit, pre_ctrl, round);
   } else {
     // Negative stride*scale: the affine function is decreasing,
