@@ -1,0 +1,113 @@
+package jdk.internal.net.http.websocket;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.WebSocket;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+/**
+ * This test is invoked from WebSocketAndHttpServer:
+ * The two args are the addresses of a (local) Websocket and Http server
+ *
+ * The test first sends a request to the WS server and in the listener
+ * which handles the response, it tries to send a request to the http
+ * server. This hangs if the listener was invoked from the selector
+ * manager thread. If invoked from a different thread then the http
+ * response is received and the response string is mapped to string
+ * "succeeded"
+ */
+public class WebSocketAndHttpClient {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        HttpClient httpClient = HttpClient.newBuilder().executor(executorService).build();
+
+        WsApiClient wsApiClient = new WsApiClient(httpClient, args[0]);
+        HttpApiClient httpApiClient = new HttpApiClient(httpClient, args[1]);
+
+        AtomicReference<String> result = new AtomicReference<>("failed");
+
+        wsApiClient.listen(message -> httpApiClient.getData(message).map(s -> "succeeded").ifPresent(result::set));
+        wsApiClient.sendData("TEST_DATA");
+
+        System.out.println("Wait some time");
+        Thread.sleep(3_000);
+
+        executorService.shutdownNow();
+
+        System.out.println("Result: test " + result.get());
+        if (!result.get().equals("succeeded"))
+            throw new RuntimeException("Test failed");
+    }
+
+    static class WsApiClient {
+        final HttpClient httpClient;
+        final String server;
+        volatile WebSocket webSocket;
+
+        WsApiClient(HttpClient httpClient, String server) {
+            this.httpClient = httpClient;
+            this.server = server;
+        }
+
+        public void listen(Consumer<String> consumer) {
+            URI uri = URI.create(server);
+            System.out.println("WS API client - Connecting to " + uri.toString());
+            CompletableFuture<WebSocket> cf = httpClient.newWebSocketBuilder()
+                .buildAsync(uri, new WebSocket.Listener() {
+                    @Override
+                    public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        System.out.println("WS API client - received data: " + data);
+                        consumer.accept(data.toString());
+                        return null;
+                    }
+                    public void onError(WebSocket webSocket, Throwable error) {
+                        System.out.println("WS API client - error");
+                        error.printStackTrace();
+                    }
+                });
+            System.out.println("CF created");
+            webSocket = cf.join();
+            System.out.println("Websocket created");
+        }
+
+        void sendData(String data) {
+            System.out.println("WS API client - sending data via WebSocket: {}" + data);
+            webSocket.sendText(data, true).join();
+        }
+    }
+
+    static class HttpApiClient {
+        final HttpClient httpClient;
+        final String baseUrl;
+
+        HttpApiClient(HttpClient httpClient, String baseUrl) {
+            this.httpClient = httpClient;
+            this.baseUrl = baseUrl;
+        }
+
+        private Optional<String> getData(String data) {
+            try {
+                URI uri = URI.create(baseUrl + "?param=" + data);
+                HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
+                System.out.println("Http API Client - send HTTP GET request with parameter {}" + data);
+                HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                Optional<String> responseData = Optional.ofNullable(send.body());
+                responseData.ifPresent(s -> System.out.println("Http API Client - response for HTTP GET request received"));
+                return responseData;
+            } catch (Exception e) {
+                System.out.println("Http API Client - Error getting data: " + e.getMessage());
+            }
+            return Optional.empty();
+        }
+    }
+}
