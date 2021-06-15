@@ -639,7 +639,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           if (Signature::is_method(sig)) {
             // Format check method name and signature
             verify_legal_method_name(name, CHECK);
-            verify_legal_method_signature(name, sig, CHECK);
+            // Pass no_name so method name doesn't affect check for legal signature.
+            const Symbol* const no_name = vmSymbols::type_name(); // place holder
+            verify_legal_method_signature(no_name, sig, CHECK);
           } else {
             // Format check field name and signature
             verify_legal_field_name(name, CHECK);
@@ -700,14 +702,17 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           }
           // 4509014: If a class method name begins with '<', it must be "<init>"
           const unsigned int name_len = name->utf8_length();
-          if (tag == JVM_CONSTANT_Methodref &&
-              name_len != 0 &&
-              name->char_at(0) == JVM_SIGNATURE_SPECIAL &&
-              name != vmSymbols::object_initializer_name()) {
-            classfile_parse_error(
-              "Bad method name at constant pool index %u in class file %s",
-              name_ref_index, THREAD);
-            return;
+          if (tag == JVM_CONSTANT_Methodref && name_len != 0 &&
+              name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
+            if (name != vmSymbols::object_initializer_name()) {
+              classfile_parse_error(
+                "Bad method name at constant pool index %u in class file %s",
+                name_ref_index, THREAD);
+              return;
+            } else if (!Signature::is_void_method(signature)) { // must have void return
+              throwIllegalSignature("Method", name, signature, CHECK);
+              return;
+            }
           }
         }
         break;
