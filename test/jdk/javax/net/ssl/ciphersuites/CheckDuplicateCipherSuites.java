@@ -140,6 +140,7 @@ public class CheckDuplicateCipherSuites {
     static final int TLS_RECORD_HANDSHAKE = 22;
     static final int TLS_HANDSHAKE_CLIHELLO = 1;
     static final int HELLO_EXT_SUPP_VERS = 43;
+    static final int HELLO_EXT_ALPN_NEGOT = 16;
     static final List<CipherSuite> malfCS = List.of(
             CipherSuite.TLS_AES_256_GCM_SHA384,
             CipherSuite.TLS_AES_128_GCM_SHA256,
@@ -165,6 +166,9 @@ public class CheckDuplicateCipherSuites {
             ProtocolVersion.TLS13,
             ProtocolVersion.TLS13,
             ProtocolVersion.TLS13);
+    static final List<String> malfALPN = List.of("http/1.1", "spdy/2", "spdy/3",
+            "stun.turn", "stun.nat-discovery", "h2c", "c-webrtc", "sunrpc",
+            "irc", "http/1.1", "http/1.1", "http/1.1", "http/1.1");
     static final String[] malfCSNameArr =
             CipherSuite.names(malfCS).toArray(new String[0]);
     static final String[] cleanCSNameArr =
@@ -173,89 +177,16 @@ public class CheckDuplicateCipherSuites {
             ProtocolVersion.names(malfPV).toArray(new String[0]);
     static final String[] cleanPVNamerArr =
             ProtocolVersion.names(clearDups(malfPV)).toArray(new String[0]);
+    static final String[] malfALPNNameArr = malfALPN.toArray(new String[0]);
     static SSLContext defaultCtx;
 
     public static void main(String[] args) throws Exception {
         defaultCtx = SSLContext.getDefault();
-        /*
-        testEngine();
+        /*testEngine();
         testSocket();
-        testParam();
-        */
+        testParam();*/
         ByteBuffer transitData = clientHelloEnv();
         checkClientHello(transitData);
-    }
-
-    /**
-     * Creates an SSLEngine from the default context, sets its cipher suites
-     * and protocol versions to the malformed arrays, then queries the
-     * engine for its ciphersuites and protocol versions.
-     *
-     * @throws RuntimeException if the engine's cipher suites or protocol
-     * versions do not match the expected flattened array.
-     */
-    static void testEngine() throws IOException{
-        SSLEngine sslEng  = defaultCtx.createSSLEngine();
-        sslEng.setEnabledCipherSuites(malfCSNameArr);
-        sslEng.setEnabledProtocols(malfPVNameArr);
-
-        if (!Arrays.equals(sslEng.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLEngine: getEnabledCipherSuites " +
-                    "does not return expected output");
-        }
-
-        if (!Arrays.equals(sslEng.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLEngine: getEnabledProtocols " +
-                    "does not return expected output");
-        }
-    }
-
-    /**
-     * Functions the same as testEngine but uses an SSLSocket
-     *
-     * @throws IOException if the socket's cipher suites or protocol versions
-     * do not match the expected flattened array
-     */
-    static void testSocket() throws IOException {
-        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
-        SSLSocket sslSoc = (SSLSocket) sslSF.createSocket();
-        sslSoc.setEnabledCipherSuites(malfCSNameArr);
-        sslSoc.setEnabledProtocols(malfPVNameArr);
-
-        if (!Arrays.equals(sslSoc.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledCipherSuites " +
-                    "does not return expected output");
-        }
-
-        if (!Arrays.equals(sslSoc.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
-                    "does not return expected output");
-        }
-    }
-
-    /**
-     * Functions the same as testEngine but uses a socket that has been
-     * modified via the SSLParamaters
-     *
-     * @throws RuntimeException if the socket's cipher suites or protocol
-     * versions do not match the expected flattened array.
-     */
-    static void testParam() throws IOException {
-        SSLParameters modParams =
-                new SSLParameters(malfCSNameArr, malfPVNameArr);
-        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
-        SSLSocket modSSLS = (SSLSocket) sslSF.createSocket();
-        modSSLS.setSSLParameters(modParams);
-
-        if (!Arrays.equals(modSSLS.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLSocket modified via parameters: " +
-                    "getEnabledCipherSuites does not return expected output");
-        }
-
-        if (!Arrays.equals(modSSLS.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
-                    "does not return expected output");
-        }
     }
 
     /**
@@ -264,8 +195,9 @@ public class CheckDuplicateCipherSuites {
      */
     private static ByteBuffer clientHelloEnv() throws Exception {
         SSLEngine eng = defaultCtx.createSSLEngine();
-        eng.setEnabledCipherSuites(malfCSNameArr);
-        eng.setEnabledProtocols(malfPVNameArr);
+        SSLParameters sslp = new SSLParameters(malfCSNameArr, malfPVNameArr);
+        sslp.setApplicationProtocols(malfALPNNameArr);
+        eng.setSSLParameters(sslp);
         eng.setUseClientMode(true);
         SSLSession session = eng.getSession();
         ByteBuffer clientOut = ByteBuffer.wrap("Client".getBytes());
@@ -339,9 +271,10 @@ public class CheckDuplicateCipherSuites {
             data.position(data.position() + compLen);
         }
 
-        // Go through the extensions and look for supported_versions, then add
-        // each version to a list to be checked later
+        // Go through the extensions and look for supported_versions and ALPNs,
+        // then add each entry to a list to be checked later
         List<Integer> transitPVs = new ArrayList<>();
+        List<String> transitALPNs = new ArrayList<>();
         while (data.hasRemaining()) {
             int extType = Short.toUnsignedInt(data.getShort());
             int extLen = Short.toUnsignedInt(data.getShort());
@@ -351,22 +284,34 @@ public class CheckDuplicateCipherSuites {
                     int pv = Short.toUnsignedInt(data.getShort());
                     transitPVs.add(pv);
                 }
-                break;
+            } else if (extType == HELLO_EXT_ALPN_NEGOT) {
+                int alpnListLen = Byte.toUnsignedInt(data.get());
+                while (alpnListLen > 0) {
+                    int alpnLen = Short.toUnsignedInt(data.getShort());
+                    StringBuilder alpnId = new StringBuilder("");
+                    for (int i=0; i< alpnLen; i+=2) {
+                        int alpnChunk = Short.toUnsignedInt(data.getShort());
+                        alpnId.append(alpnChunk);
+                    }
+                    transitALPNs.add(alpnId.toString());
+                    alpnListLen -= (2 + alpnLen);
+                }
             }
+            //data.position(data.position() + extLen);
         }
 
         List<Integer> expectedCS = CipherSuite.ids(clearDups(malfCS));
-        List<Integer> expectedPV = clearDups(transitPVs);
+        List<Integer> expectedPV = ProtocolVersion.ids(clearDups(malfPV));
+        List<String> expectedALPN = clearDups(malfALPN);
 
-        System.out.println("Cipher suite parameters transmitted in ClientHello: "
-                + transitCSs.toString());
-        System.out.println("Cipher suite expected output: " +
-                expectedCS.toString());
-
-        System.out.println("Protocol version parameters transmitted in "
-                + "ClientHello: " + transitPVs.toString());
-        System.out.println("Protocol versions expected output: "
-                + expectedPV.toString());
+        System.out.println("Ciphersuites transmitted in ClientHello: "
+                + transitCSs);
+        System.out.println("Expected cipher suites: " + expectedCS);
+        System.out.println("Protocol versions transmitted in ClientHello: "
+                + transitPVs);
+        System.out.println("Expected protocols: " + expectedPV);
+        System.out.println("ALPNs transmitted in ClientHello: " + transitALPNs);
+        System.out.println("Expected ALPNs: " + expectedALPN);
 
         if (!transitCSs.equals(expectedCS)) {
             throw new RuntimeException("Expected and actual " +
@@ -374,8 +319,12 @@ public class CheckDuplicateCipherSuites {
         }
 
         if (!transitPVs.equals(expectedPV)) {
-            throw new RuntimeException("Expected and actual protcol version"
-                    + " lists differ");
+            throw new RuntimeException("Expected and actual protocol versions"
+                    + " differ");
+        }
+
+        if (!transitALPNs.equals(expectedALPN)) {
+            throw new RuntimeException("Expected and actual ALPNs differ");
         }
 
         // move ByteBuffer location back to the beginning point saved earlier
@@ -398,5 +347,77 @@ public class CheckDuplicateCipherSuites {
         List<T> clean = new ArrayList<>(setVers);
 
         return clean;
+    }
+
+    /**
+     * Creates an SSLEngine from the default context, sets its cipher suites
+     * and protocol versions to the malformed arrays, then queries the
+     * engine for its ciphersuites and protocol versions.
+     *
+     * @throws RuntimeException if the engine's cipher suites or protocol
+     * versions do not match the expected flattened array.
+     */
+    static void testEngine() throws IOException{
+        SSLEngine sslEng  = defaultCtx.createSSLEngine();
+        sslEng.setEnabledCipherSuites(malfCSNameArr);
+        sslEng.setEnabledProtocols(malfPVNameArr);
+
+        if (!Arrays.equals(sslEng.getEnabledCipherSuites(), cleanCSNameArr)) {
+            throw new RuntimeException("SSLEngine: getEnabledCipherSuites " +
+                    "does not return expected output");
+        }
+
+        if (!Arrays.equals(sslEng.getEnabledProtocols(), cleanPVNamerArr)) {
+            throw new RuntimeException("SSLEngine: getEnabledProtocols " +
+                    "does not return expected output");
+        }
+    }
+
+    /**
+     * Functions the same as testEngine but uses an SSLSocket
+     *
+     * @throws IOException if the socket's cipher suites or protocol versions
+     * do not match the expected flattened array
+     */
+    static void testSocket() throws IOException {
+        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
+        SSLSocket sslSoc = (SSLSocket) sslSF.createSocket();
+        sslSoc.setEnabledCipherSuites(malfCSNameArr);
+        sslSoc.setEnabledProtocols(malfPVNameArr);
+
+        if (!Arrays.equals(sslSoc.getEnabledCipherSuites(), cleanCSNameArr)) {
+            throw new RuntimeException("SSLSocket: getEnabledCipherSuites " +
+                    "does not return expected output");
+        }
+
+        if (!Arrays.equals(sslSoc.getEnabledProtocols(), cleanPVNamerArr)) {
+            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
+                    "does not return expected output");
+        }
+    }
+
+    /**
+     * Functions the same as testEngine but uses a socket that has been
+     * modified via the SSLParamaters
+     *
+     * @throws RuntimeException if the socket's cipher suites or protocol
+     * versions do not match the expected flattened array.
+     */
+    static void testParam() throws IOException {
+        SSLParameters modParams =
+                new SSLParameters(malfCSNameArr, malfPVNameArr);
+        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
+        SSLSocket modSSLS = (SSLSocket) sslSF.createSocket();
+        modSSLS.setSSLParameters(modParams);
+
+        if (!Arrays.equals(modSSLS.getEnabledCipherSuites(), cleanCSNameArr)) {
+            throw new RuntimeException("SSLSocket modified via parameters: " +
+                    "getEnabledCipherSuites does not return expected output");
+        }
+
+        if (!Arrays.equals(modSSLS.getEnabledProtocols(), cleanPVNamerArr)) {
+            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
+                    "does not return expected output");
+        }
     }
 }

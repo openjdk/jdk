@@ -29,8 +29,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SUPPORTED_VERSIONS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -71,9 +73,10 @@ final class SupportedVersionsExtension {
     static final class CHSupportedVersionsSpec implements SSLExtensionSpec {
         final int[] requestedProtocols;
 
-        private CHSupportedVersionsSpec(int[] requestedProtocols) {
-            this.requestedProtocols =
-                    Arrays.stream(requestedProtocols).distinct().toArray();
+        private CHSupportedVersionsSpec(List<ProtocolVersion> requestedProtocols) {
+            IntStream.Builder pvStrm = IntStream.builder();
+            requestedProtocols.forEach(pv -> pvStrm.accept(pv.id));
+            this.requestedProtocols = pvStrm.build().distinct().toArray();
         }
 
         private CHSupportedVersionsSpec(HandshakeContext hc,
@@ -183,7 +186,17 @@ final class SupportedVersionsExtension {
             // Produce the extension.
             //
             // The activated protocols are used as the supported versions.
-            int[] protocols = new int[chc.activeProtocols.size()];
+            CHSupportedVersionsSpec spec = new
+                    CHSupportedVersionsSpec(chc.activeProtocols);
+            int verLen = spec.requestedProtocols.length * 2;
+            byte[] extData = new byte[verLen + 1];      // 1: versions length
+            extData[0] = (byte) verLen;
+            int i = 1;
+            for (int pv : spec.requestedProtocols) {
+                extData[i++] = (byte)(pv >>> 8);
+                extData[i++] = (byte)pv;
+            }
+            /*int[] protocols = new int[chc.activeProtocols.size()];
             int verLen = protocols.length * 2;
             byte[] extData = new byte[verLen + 1];      // 1: versions length
             extData[0] = (byte)(verLen & 0xFF);
@@ -192,11 +205,10 @@ final class SupportedVersionsExtension {
                 protocols[i++] = pv.id;
                 extData[j++] = pv.major;
                 extData[j++] = pv.minor;
-            }
+            }*/
 
             // Update the context.
-            chc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS,
-                    new CHSupportedVersionsSpec(protocols));
+            chc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS, spec);
 
             return extData;
         }

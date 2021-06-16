@@ -181,7 +181,8 @@ final class AlpnExtension {
                 return null;
             }
 
-            String[] laps = chc.sslConfig.applicationProtocols;
+            AlpnSpec spec = new AlpnSpec(chc.sslConfig.applicationProtocols);
+            String[] laps = spec.applicationProtocols.toArray(new String[0]);
             if ((laps == null) || (laps.length == 0)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
@@ -252,8 +253,7 @@ final class AlpnExtension {
             }
 
             // Update the context.
-            chc.handshakeExtensions.put(SSLExtension.CH_ALPN,
-                    new AlpnSpec(chc.sslConfig.applicationProtocols));
+            chc.handshakeExtensions.put(SSLExtension.CH_ALPN, spec);
 
             return extData;
         }
