@@ -1310,9 +1310,7 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
-  if (Arguments::is_dumping_archive()) {
-    remove_dumptime_info(klass);
-  }
+  remove_dumptime_info(klass);
 
   if (_unique_unregistered_classes != NULL) {
     // Remove the class from _unique_unregistered_classes: keep the entry but
@@ -1359,7 +1357,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s (%p)", k->name()->as_C_string(), reason, k->class_loader_data());
+  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
   return true;
 }
 
@@ -1561,6 +1559,7 @@ public:
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
+  assert_lock_strong(DumpTimeTable_lock);
   if (DynamicDumpSharedSpaces) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses

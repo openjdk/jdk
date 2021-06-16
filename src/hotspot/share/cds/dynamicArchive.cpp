@@ -219,8 +219,8 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
 
   if (log_is_enabled(Debug, cds, dynamic)) {
     ResourceMark rm;
-    log_debug(cds, dynamic)("sorting methods for " PTR_FORMAT " (" PTR_FORMAT ") %s %p",
-                            p2i(ik), p2i(to_requested(ik)), ik->external_name(), ik->class_loader_data());
+    log_debug(cds, dynamic)("sorting methods for " PTR_FORMAT " (" PTR_FORMAT ") %s",
+                            p2i(ik), p2i(to_requested(ik)), ik->external_name());
   }
 
   // Method sorting may re-layout the [iv]tables, which would change the offset(s)
