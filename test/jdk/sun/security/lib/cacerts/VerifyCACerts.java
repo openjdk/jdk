@@ -268,6 +268,8 @@ public class VerifyCACerts {
             add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
+            // Valid until: Thu Sep 30 14:01:15 GMT 2021
+            add("identrustdstx3 [jdk]");
         }
     };
 
