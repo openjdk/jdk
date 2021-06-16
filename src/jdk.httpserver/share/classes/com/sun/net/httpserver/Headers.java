@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
@@ -91,7 +92,7 @@ public class Headers implements Map<String,List<String>> {
     /**
      * Creates a mutable empty {@code Headers}.
      */
-    public Headers () {map = new HashMap<String,List<String>>(32);}
+    public Headers() {map = new HashMap<>(32);}
 
     /**
      * Creates a mutable {@code Headers} from the given {@code headers} with
@@ -104,7 +105,7 @@ public class Headers implements Map<String,List<String>> {
         Objects.requireNonNull(headers);
         var h = headers;
         map = new HashMap<>(32);
-        this.putAll(h);  // TODO: normalize and checkValue needed?
+        this.putAll(h);
     }
 
     /**
@@ -112,7 +113,7 @@ public class Headers implements Map<String,List<String>> {
      * First {@code char} upper case, rest lower case.
      * key is presumed to be {@code ASCII}.
      */
-    private String normalize (String key) {
+    private String normalize(String key) {
         if (key == null) {
             return null;
         }
@@ -164,7 +165,7 @@ public class Headers implements Map<String,List<String>> {
      * @param key the key to search for
      * @return the first {@code String} value associated with the key
      */
-    public String getFirst (String key) {
+    public String getFirst(String key) {
         List<String> l = map.get(normalize(key));
         if (l == null) {
             return null;
@@ -185,7 +186,7 @@ public class Headers implements Map<String,List<String>> {
      * @param key the header name
      * @param value the value to add to the header
      */
-    public void add (String key, String value) {
+    public void add(String key, String value) {
         checkValue(value);
         String k = normalize(key);
         List<String> l = map.get(k);
@@ -227,7 +228,7 @@ public class Headers implements Map<String,List<String>> {
      * @param key the header name
      * @param value the header value to set
      */
-    public void set (String key, String value) {
+    public void set(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
         l.add (value);
         put (key, l);
@@ -239,7 +240,8 @@ public class Headers implements Map<String,List<String>> {
     }
 
     public void putAll(Map<? extends String,? extends List<String>> t)  {
-        map.putAll (t);
+        var h = t;
+        h.forEach(this::put);
     }
 
     public void clear() {map.clear();}
@@ -250,6 +252,15 @@ public class Headers implements Map<String,List<String>> {
 
     public Set<Map.Entry<String, List<String>>> entrySet() {
         return map.entrySet();
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
+        var functionWithValueCheck = function.andThen(values -> {
+                    values.forEach(Headers::checkValue);
+                    return values;
+                });
+        Map.super.replaceAll(functionWithValueCheck);
     }
 
     public boolean equals(Object o) {return map.equals(o);}
@@ -300,11 +311,12 @@ public class Headers implements Map<String,List<String>> {
      */
     public static Headers of(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
-        headers.forEach((k, v) -> {
+        var h = headers;
+        h.forEach((k, v) -> {
             Objects.requireNonNull(k);
             Objects.requireNonNull(v);
             v.forEach(Objects::requireNonNull);
         });
-        return new UnmodifiableHeaders(new Headers(headers));
+        return new UnmodifiableHeaders(new Headers(h));
     }
 }

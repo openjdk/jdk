@@ -81,7 +81,6 @@ public class FilterTest {
 
         expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
         expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
-        expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
 
         expectThrows(NPE, () -> Filter.adaptRequest("Some description", null));
         expectThrows(NPE, () -> Filter.adaptRequest(null, r -> r.with("Foo", List.of("Bar"))));

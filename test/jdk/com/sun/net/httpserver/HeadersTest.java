@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -106,17 +107,13 @@ public class HeadersTest {
         final var map = new HashMap<String, List<String>>();
         map.put(null, List.of("Bar"));
         new Headers().putAll(map);
-        map.put("Foo", null);
-        new Headers().putAll(map);
-
-        final var list = new LinkedList<String>();
-        list.add(null);
-        map.put("Foo", list);
-        new Headers().putAll(map);
 
         new Headers(map);
 
         // expected to throw NPE
+        final var list = new LinkedList<String>();
+        list.add(null);
+
         assertThrows(NPE, () -> new Headers().add("Foo", null));
         assertThrows(NPE, () -> new Headers().set("Foo", null));
         assertThrows(NPE, () -> new Headers().put("Foo", list));
@@ -135,10 +132,14 @@ public class HeadersTest {
 
         final var m2 = new HashMap<String, List<String>>();
         m2.put("Foo", null);
+        assertThrows(NPE, () -> new Headers().putAll(m2));
+        assertThrows(NPE, () -> new Headers(m2));
         assertThrows(NPE, () -> Headers.of(m2));
 
         final var m3 = new HashMap<String, List<String>>();
         m3.put("Foo", list);
+        assertThrows(NPE, () -> new Headers().putAll(m3));
+        assertThrows(NPE, () -> new Headers(m3));
         assertThrows(NPE, () -> Headers.of(m3));
     }
 
@@ -204,22 +205,54 @@ public class HeadersTest {
     public static void testOfNumberOfElements() {
         assertThrows(IAE, () -> Headers.of(new String[] {}));
         assertThrows(IAE, () -> Headers.of("a"));
-        assertThrows(IAE, () -> Headers.of("a", "x", "b"));
+        assertThrows(IAE, () -> Headers.of("a", "1", "b"));
     }
 
     @Test
     public static void testOf() {
-        final var h = Headers.of("a", "x", "b", "y");
+        final var h = Headers.of("a", "1", "b", "2");
         assertEquals(h.size(), 2);
         List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
-        List.of("x", "y").forEach(v -> assertTrue(h.containsValue(List.of(v))));
+        List.of("1", "2").forEach(v -> assertTrue(h.containsValue(List.of(v))));
     }
 
     @Test
     public static void testOfMultipleValues() {
-        final var h = Headers.of("a", "x", "b", "x", "b", "y", "b", "z");
+        final var h = Headers.of("a", "1", "b", "1", "b", "2", "b", "3");
         assertEquals(h.size(), 2);
         List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
-        List.of(List.of("x"), List.of("x", "y", "z")).forEach(v -> assertTrue(h.containsValue(v)));
+        List.of(List.of("1"), List.of("1", "2", "3")).forEach(v -> assertTrue(h.containsValue(v)));
+    }
+
+    @Test
+    public static void testReplaceAll() {
+        var h1 = new Headers(Map.of("a", List.of("1"), "b", List.of("2")));
+        h1.replaceAll((k, v) -> {
+            String s = h1.get(k).get(0);
+            return List.of(s+s);
+        });
+        assertEquals(h1, Headers.of("a", "11", "b", "22"));
+    }
+
+    @Test
+    public static void testNormalization() {
+        var h = new Headers(Map.of("a", List.of("1")));
+        h.add("b", "2");
+        h.set("c", "3");
+        h.put("d", List.of("4"));
+        h.putAll(Map.of("e", List.of("5"), "f", List.of("6")));
+        assertEquals(h.keySet(), Set.of("A", "B", "C", "D", "E", "F"));
+        assertEquals(h, Headers.of("a", "1", "b", "2", "c", "3", "d", "4", "e", "5", "f", "6"));
+        assertEquals(h, Headers.of("A", "1", "B", "2", "C", "3", "D", "4", "E", "5", "F", "6"));
+    }
+
+    @Test
+    public static void testCheckValue() {
+        assertThrows(IAE, () -> new Headers(Map.of("a", List.of("1\n"))));
+        var h = new Headers();
+        assertThrows(IAE, () -> h.add("b", "2\n"));
+        assertThrows(IAE, () -> h.set("c", "3\n"));
+        assertThrows(IAE, () -> h.put("d", List.of("4\n")));
+        assertThrows(IAE, () -> h.putAll(Map.of("e", List.of("5\n"), "f", List.of("6\n"))));
     }
 }
