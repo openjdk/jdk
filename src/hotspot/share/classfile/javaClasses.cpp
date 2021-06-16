@@ -469,9 +469,9 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   return native_platform_string;
 }
 
-Handle java_lang_String::externalize_classname(Symbol* java_string, TRAPS) {
+Handle java_lang_String::externalize_classname(Symbol* java_name, TRAPS) {
   ResourceMark rm(THREAD);
-  return create_from_str(java_string->as_klass_external_name(), THREAD);
+  return create_from_str(java_name->as_klass_external_name(), THREAD);
 }
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {

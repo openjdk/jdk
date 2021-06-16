@@ -228,7 +228,7 @@ class java_lang_String : AllStatic {
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
   // Conversion between '.' and '/' formats, and allocate a String from the result.
-  static Handle externalize_classname(Symbol* java_string, TRAPS);
+  static Handle externalize_classname(Symbol* java_name, TRAPS);
 
   // Conversion
   static Symbol* as_symbol(oop java_string);

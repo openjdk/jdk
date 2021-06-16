@@ -128,7 +128,8 @@ oop JavaAssertions::createAssertionStatusDirectives(TRAPS) {
 }
 
 void JavaAssertions::fillJavaArrays(const OptionList* p, int len,
-objArrayHandle names, typeArrayHandle enabled, TRAPS) {
+                                    objArrayHandle names,
+                                    typeArrayHandle enabled, TRAPS) {
   // Fill in the parallel names and enabled (boolean) arrays.  Start at the end
   // of the array and work backwards, so the order of items in the arrays
   // matches the order on the command line (the list is in reverse order, since
