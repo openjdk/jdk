@@ -7,7 +7,9 @@
 
 import java.util.List;
 
-/** {@link #equals(@Deprecated Object)} */
+/** {@link #equals(@Deprecated Object)}
+ *  {@link Map.@Deprecated Entry#getKey()}
+ */
 class CrashInAnnotateTest {
 }
 
@@ -16,10 +18,10 @@ class CrashInAnnotateTest2 {
     void compare(Object o, List<List<Object>> l) {}
 }
 
-/** {@link java.lang.@Deprecated Object#hashCode()} */
+/** {@link @Deprecated java.lang.Object#hashCode()} */
 class CrashInAnnotateTest3 { }
 
-/** {@link CrashInAnnotateTest4.@Deprecated Inner#aField} */
+/** {@link CrashInAnnotateTest4.@java.lang.Deprecated Inner#aField} */
 class CrashInAnnotateTest4 {
     class Inner {
         Object aField;
