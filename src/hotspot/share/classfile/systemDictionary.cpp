@@ -1310,7 +1310,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
                                PerfClassTraceTime::CLASS_LOAD);
 
     // Translate to external class name format, i.e., convert '/' chars to '.'
-    Handle string = java_lang_String::externalize_classname(class_name, THREAD);
+    Handle string = java_lang_String::externalize_classname(class_name, CHECK_NULL);
 
     JavaValue result(T_OBJECT);
 
