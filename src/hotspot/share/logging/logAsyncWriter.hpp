@@ -157,7 +157,6 @@ class AsyncLogWriter : public NonJavaThread {
     log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
   }
   char* name() const override { return (char*)"AsyncLog Thread"; }
-  bool is_Named_thread() const override { return true; }
   void print_on(outputStream* st) const override {
     st->print("\"%s\" ", name());
     Thread::print_on(st);
