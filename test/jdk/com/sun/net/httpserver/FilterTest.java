@@ -40,6 +40,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,6 +81,9 @@ public class FilterTest {
 
         expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
         expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
+
+        expectThrows(NPE, () -> Filter.adaptRequest("Some description", null));
+        expectThrows(NPE, () -> Filter.adaptRequest(null, r -> r.with("Foo", List.of("Bar"))));
     }
 
     @Test
@@ -90,6 +95,9 @@ public class FilterTest {
 
         var afterFilter = Filter.afterHandler(desc, HttpExchange::getResponseCode);
         assertEquals(desc, afterFilter.description());
+
+        var adaptFilter = Filter.adaptRequest(desc, r -> r.with("Foo", List.of("Bar")));
+        assertEquals(desc, adaptFilter.description());
     }
 
     @DataProvider
@@ -305,6 +313,47 @@ public class FilterTest {
         }
     }
 
+    @Test
+    public void testAdaptRequest() throws Exception {
+        var handler = new EchoRequestHeaderHandler();
+        var filter = Filter.adaptRequest("Add x-foo request header",
+                r -> r.with("x-foo", List.of("bar")));
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "bar");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testInspectRequest() throws Exception {
+        var handler = new EchoHandler();
+        var inspectedURI = new AtomicReference<URI>();
+        var filter = Filter.adaptRequest("Inspect request URI",
+                r -> {inspectedURI.set(r.getRequestURI()); return r;});
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(inspectedURI.get(), URI.create("/"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    // --- infra ---
+
     static URI uri(HttpServer server, String path) {
         return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
     }
@@ -319,6 +368,24 @@ public class FilterTest {
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
                 var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                os.write(resp);
+            }
+        }
+    }
+
+    /**
+     * A test handler that discards the request and returns the test request header value
+     */
+    static class EchoRequestHeaderHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                is.readAllBytes();
+                var resp = exchange.getRequestHeaders().get("x-foo")
+                        .get(0)
+                        .getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
             }
