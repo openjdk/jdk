@@ -24,7 +24,6 @@
 package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
-import java.util.Objects;
 
 /**
  * Provides external entry points (tool and programmatic) to start the

@@ -42,7 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p> If the outputLevel is INFO, the format is based on the
  * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>.
  * In this case the output includes the following information about an exchange:
- * 
+ *
  * <p> remotehost rfc931 authuser [date] "request line" status bytes
  *
  * <p> Example:
