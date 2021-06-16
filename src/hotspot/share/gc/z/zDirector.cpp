@@ -251,6 +251,10 @@ bool ZDirector::rule_major_proactive() const {
 }
 
 bool ZDirector::rule_major_high_usage() const {
+  if (ZCollectedHeap::heap()->driver_minor()->is_active()) {
+    return false;
+  }
+
   // Perform GC if the amount of free memory is 5% or less. This is a preventive
   // meassure in the case where the application has a very low allocation rate,
   // such that the allocation rate rule doesn't trigger, but the amount of free
