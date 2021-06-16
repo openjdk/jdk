@@ -155,7 +155,6 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
 
 bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
-  if (AlwaysLockClassLoader) return false;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
