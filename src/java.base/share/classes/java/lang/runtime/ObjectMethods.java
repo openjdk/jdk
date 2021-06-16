@@ -339,28 +339,27 @@ public class ObjectMethods {
                 throw new IllegalArgumentException(type.toString());
         }
         List<MethodHandle> getterList = List.of(getters);
-        MethodHandle handle;
-        switch (methodName) {
-            case "equals":
+        MethodHandle handle = switch (methodName) {
+            case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeEquals(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "hashCode":
+                yield makeEquals(recordClass, getterList);
+            }
+            case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeHashCode(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "toString":
+                yield makeHashCode(recordClass, getterList);
+            }
+            case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
                 List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
-                handle = makeToString(recordClass, getterList, nameList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            default:
-                throw new IllegalArgumentException(methodName);
-        }
+                yield makeToString(recordClass, getterList, nameList);
+            }
+            default -> throw new IllegalArgumentException(methodName);
+        };
+        return methodType != null ? new ConstantCallSite(handle) : handle;
     }
 }

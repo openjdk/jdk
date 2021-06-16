@@ -51,7 +51,7 @@ public class TestParallelRefProc {
         }
         if (GC.Parallel.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseParallelGC" }, true);
+            testFlag(new String[] { "-XX:+UseParallelGC" }, false);
         }
         if (GC.G1.isSupported()) {
             noneGCSupported = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -76,6 +78,8 @@ import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.Assert;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
@@ -151,17 +155,36 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
+    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
+    void checkSkip() {
+        var skip = skiptests.get();
+        if (skip != null) throw skip;
+    }
+    static String name(ITestResult result) {
+        var params = result.getParameters();
+        return result.getName()
+                + (params == null ? "()" : Arrays.toString(result.getParameters()));
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            throw new RuntimeException("some tests failed");
+            if (skiptests.get() == null) {
+                SkipException skip = new SkipException("some tests failed");
+                skip.setStackTrace(new StackTraceElement[0]);
+                skiptests.compareAndSet(null, skip);
+            }
         }
     }
 
     @AfterClass
-    static final void printFailedTests() {
+    static final void printFailedTests(ITestContext context) {
         out.println("\n=========================");
         try {
+            var failed = context.getFailedTests().getAllResults().stream()
+                    .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
+            FAILURES.putAll(failed);
+
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
@@ -446,6 +469,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test(dataProvider = "sparseContent") // checks that NPE is thrown
     public void testNullPointerException(String description, String[] content) {
+        checkSkip();
         BodyPublisher[] publishers = publishers(content);
         Assert.assertThrows(NullPointerException.class, () -> BodyPublishers.concat(publishers));
     }
@@ -453,6 +477,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // Verifies that an empty array creates a "noBody" publisher
     @Test
     public void testEmpty() {
+        checkSkip();
         BodyPublisher publisher = BodyPublishers.concat();
         RequestSubscriber subscriber = new RequestSubscriber();
         assertEquals(publisher.contentLength(), 0);
@@ -466,6 +491,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // verifies that error emitted by upstream publishers are propagated downstream.
     @Test(dataProvider = "sparseContent") // nulls are replaced with error publisher
     public void testOnError(String description, String[] content) {
+        checkSkip();
         final RequestSubscriber subscriber = new RequestSubscriber();
         final PublishWithError errorPublisher;
         final BodyPublisher[] publishers;
@@ -521,6 +547,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // the length should be known.
     @Test(dataProvider = "sparseContent") // nulls are replaced with unknown length
     public void testUnknownContentLength(String description, String[] content) {
+        checkSkip();
         if (content == null) {
             content = BODIES.toArray(String[]::new);
             description = "BODIES (known length)";
@@ -561,6 +588,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test(dataProvider = "negativeRequests")
     public void testNegativeRequest(long n) {
+        checkSkip();
         assert n <= 0 : "test for negative request called with n > 0 : " + n;
         BodyPublisher[] publishers = ContentLengthPublisher.of(List.of(1L, 2L, 3L));
         BodyPublisher publisher = BodyPublishers.concat(publishers);
@@ -584,6 +612,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test
     public void testPositiveRequests()  {
+        checkSkip();
         // A composite array of publishers
         BodyPublisher[] publishers = Stream.of(
                 Stream.of(ofStrings("Lorem", " ", "ipsum", " ")),
@@ -626,6 +655,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test(dataProvider = "contentLengths")
     public void testContentLength(long expected, List<Long> lengths) {
+        checkSkip();
         BodyPublisher[] publishers = ContentLengthPublisher.of(lengths);
         BodyPublisher aggregate = BodyPublishers.concat(publishers);
         assertEquals(aggregate.contentLength(), expected,
@@ -636,6 +666,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // publishers are no longer subscribed etc...
     @Test
     public void testCancel() {
+        checkSkip();
         BodyPublisher[] publishers = BODIES.stream()
                 .map(BodyPublishers::ofString)
                 .toArray(BodyPublisher[]::new);
@@ -695,6 +726,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // Verifies that cancelling the subscription is propagated downstream
     @Test
     public void testCancelSubscription() {
+        checkSkip();
         PublishWithError upstream = new PublishWithError(BODIES, BODIES.size(),
                 () -> new AssertionError("should not come here"));
         BodyPublisher publisher = BodyPublishers.concat(upstream);
@@ -756,6 +788,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) throws Exception {
+        checkSkip();
         System.out.println("Request to " + uri);
 
         HttpClient client = newHttpClient(sameClient);

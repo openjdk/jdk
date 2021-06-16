@@ -100,7 +100,7 @@ void VM_G1TryInitiateConcMark::doit() {
     // makes a later _gc_locker collection needed.  (Else we would have hit
     // the GCLocker check in the prologue.)
     _transient_failure = true;
-  } else if (g1h->should_upgrade_to_full_gc(_gc_cause)) {
+  } else if (g1h->should_upgrade_to_full_gc()) {
     _gc_succeeded = g1h->upgrade_to_full_collection();
   } else {
     _gc_succeeded = true;
@@ -150,7 +150,7 @@ void VM_G1CollectForAllocation::doit() {
       // An allocation had been requested. Do it, eventually trying a stronger
       // kind of GC.
       _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
-    } else if (g1h->should_upgrade_to_full_gc(_gc_cause)) {
+    } else if (g1h->should_upgrade_to_full_gc()) {
       // There has been a request to perform a GC to free some space. We have no
       // information on how much memory has been asked for. In case there are
       // absolutely no regions left to allocate into, do a full compaction.

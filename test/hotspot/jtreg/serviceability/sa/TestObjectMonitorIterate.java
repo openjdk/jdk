@@ -41,7 +41,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main TestObjectMonitorIterate
+ * @run driver TestObjectMonitorIterate
  */
 
 public class TestObjectMonitorIterate {
