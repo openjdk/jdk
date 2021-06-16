@@ -2819,6 +2819,12 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
       worklist.push(use);
     }
   }
+
+  if (C->check_node_count(worklist.size() + NodeLimitFudgeFactor,
+                          "Too many clones required in clone_for_use_outside_loop in partial peeling")) {
+    return -1;
+  }
+
   while( worklist.size() ) {
     Node *use = worklist.pop();
     if (!has_node(use) || use->in(0) == C->top()) continue;
@@ -3371,6 +3377,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
 
   // Evacuate nodes in peel region into the not_peeled region if possible
+  bool too_many_clones = false;
   uint new_phi_cnt = 0;
   uint cloned_for_outside_use = 0;
   for (uint i = 0; i < peel_list.size();) {
@@ -3387,7 +3394,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
           if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
-            cloned_for_outside_use += clone_for_use_outside_loop(loop, n, worklist);
+            int new_clones = clone_for_use_outside_loop(loop, n, worklist);
+            if (new_clones == -1) {
+              too_many_clones = true;
+              break;
+            }
+            cloned_for_outside_use += new_clones;
             sink_list.push(n);
             peel.remove(n->_idx);
             not_peel.set(n->_idx);
@@ -3415,9 +3427,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   bool exceed_node_budget = !may_require_nodes(estimate);
   bool exceed_phi_limit = new_phi_cnt > old_phi_cnt + PartialPeelNewPhiDelta;
 
-  if (exceed_node_budget || exceed_phi_limit) {
+  if (too_many_clones || exceed_node_budget || exceed_phi_limit) {
 #ifndef PRODUCT
-    if (TracePartialPeeling) {
+    if (TracePartialPeeling && exceed_phi_limit) {
       tty->print_cr("\nToo many new phis: %d  old %d new cmpi: %c",
                     new_phi_cnt, old_phi_cnt, new_peel_if != NULL?'T':'F');
     }
