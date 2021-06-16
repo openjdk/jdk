@@ -80,9 +80,6 @@ public class EventNames {
     public final static String NativeMethodSample = PREFIX + "NativeMethodSample";
     public final static String ThreadDump = PREFIX + "ThreadDump";
     public final static String OldObjectSample = PREFIX + "OldObjectSample";
-    public final static String BiasedLockRevocation = PREFIX + "BiasedLockRevocation";
-    public final static String BiasedLockSelfRevocation = PREFIX + "BiasedLockSelfRevocation";
-    public final static String BiasedLockClassRevocation = PREFIX + "BiasedLockClassRevocation";
     public final static String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
     public final static String StringTableStatistics = PREFIX + "StringTableStatistics";
     public final static String PlaceholderTableStatistics = PREFIX + "PlaceholderTableStatistics";

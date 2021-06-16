@@ -3275,8 +3275,6 @@ inline const Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
 
-class BiasedLockingCounters;
-
 extern "C" void das(uint64_t start, int len);
 
 #endif // CPU_AARCH64_ASSEMBLER_AARCH64_HPP

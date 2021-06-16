@@ -38,7 +38,6 @@ public:
   // See full desription in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2,
-                 BiasedLockingCounters* counters,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,

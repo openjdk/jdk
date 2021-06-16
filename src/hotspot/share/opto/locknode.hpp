@@ -29,7 +29,6 @@
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
 
-class BiasedLockingCounters;
 class RTMLockingCounters;
 
 //------------------------------BoxLockNode------------------------------------
@@ -74,7 +73,6 @@ public:
 //------------------------------FastLockNode-----------------------------------
 class FastLockNode: public CmpNode {
 private:
-  BiasedLockingCounters*        _counters;
   RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
   RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
 
@@ -82,7 +80,6 @@ public:
   FastLockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
     init_req(0,ctrl);
     init_class_id(Class_FastLock);
-    _counters = NULL;
     _rtm_counters = NULL;
     _stack_rtm_counters = NULL;
   }
@@ -99,9 +96,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
-  void create_lock_counter(JVMState* s);
   void create_rtm_lock_counter(JVMState* state);
-  BiasedLockingCounters*        counters() const { return _counters; }
   RTMLockingCounters*       rtm_counters() const { return _rtm_counters; }
   RTMLockingCounters* stack_rtm_counters() const { return _stack_rtm_counters; }
 };

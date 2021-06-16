@@ -38,7 +38,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1005,10 +1004,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     z_btrue(slow_case);
   }
 
-  if (UseBiasedLocking) {
-    biased_locking_enter(object, displaced_header, Z_R1, Z_R0, done, &slow_case);
-  }
-
   // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
   z_oill(displaced_header, markWord::unlocked_value);
 
@@ -1115,12 +1110,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   //   monitor->set_obj(NULL);
 
   clear_mem(obj_entry, sizeof(oop));
-
-  if (UseBiasedLocking) {
-    // The object address from the monitor is in object.
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-    biased_locking_exit(object, displaced_header, done);
-  }
 
   // Test first if we are in the fast recursive case.
   MacroAssembler::load_and_test_long(displaced_header,

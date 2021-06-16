@@ -2767,9 +2767,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

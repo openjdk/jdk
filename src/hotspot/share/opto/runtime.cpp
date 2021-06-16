@@ -1598,12 +1598,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-    } else if (c->tag() == NamedCounter::BiasedLockingCounter) {
-      BiasedLockingCounters* blc = ((BiasedLockingNamedCounter*)c)->counters();
-      if (blc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        blc->print_on(tty);
-      }
 #if INCLUDE_RTM_OPT
     } else if (c->tag() == NamedCounter::RTMLockingCounter) {
       RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
@@ -1654,9 +1648,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
   NamedCounter* c;
-  if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(st.as_string());
-  } else if (tag == NamedCounter::RTMLockingCounter) {
+  if (tag == NamedCounter::RTMLockingCounter) {
     c = new RTMLockingNamedCounter(st.as_string());
   } else {
     c = new NamedCounter(st.as_string(), tag);

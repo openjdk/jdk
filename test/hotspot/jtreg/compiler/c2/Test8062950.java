@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ public class Test8062950 {
     public static void main(String[] args) throws Exception {
         ProcessTools.executeTestJvm("-Xcomp",
                                     "-XX:-TieredCompilation",
-                                    "-XX:-UseOptoBiasInlining",
                                     CLASSNAME)
                     .shouldHaveExitValue(1)
                     .shouldContain("Error: Could not find or load main class " + CLASSNAME)

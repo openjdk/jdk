@@ -2070,10 +2070,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (UseBiasedLocking) {
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, rscratch1, rscratch2, false, lock_done, &slow_path_lock);
-    }
-
     // Load immediate 1 into swap_reg %rax
     __ movl(swap_reg, 1);
 
@@ -2224,11 +2220,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
     Label done;
-
-    if (UseBiasedLocking) {
-      __ biased_locking_exit(obj_reg, old_hdr, done);
-    }
-
     // Simple recursive lock?
 
     __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), (int32_t)NULL_WORD);
