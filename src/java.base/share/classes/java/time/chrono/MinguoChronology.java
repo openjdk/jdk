@@ -317,11 +317,11 @@ public final class MinguoChronology extends AbstractChronology implements Serial
                 ValueRange range = PROLEPTIC_MONTH.range();
                 yield ValueRange.of(range.getMinimum() - YEARS_DIFFERENCE * 12L, range.getMaximum() - YEARS_DIFFERENCE * 12L);
             }
-            case YEAR_OF_ERA     -> {
+            case YEAR_OF_ERA -> {
                 ValueRange range = YEAR.range();
                 yield ValueRange.of(1, range.getMaximum() - YEARS_DIFFERENCE, -range.getMinimum() + 1 + YEARS_DIFFERENCE);
             }
-            case YEAR            -> {
+            case YEAR -> {
                 ValueRange range = YEAR.range();
                 yield ValueRange.of(range.getMinimum() - YEARS_DIFFERENCE, range.getMaximum() - YEARS_DIFFERENCE);
             }

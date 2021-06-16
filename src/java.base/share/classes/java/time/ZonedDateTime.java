@@ -815,7 +815,8 @@ public final class ZonedDateTime
     public int get(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
             return switch (chronoField) {
-                case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
+                case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field " +
+                                         "'InstantSeconds' for get() method, use getLong() instead");
                 case OFFSET_SECONDS  -> getOffset().getTotalSeconds();
                 default -> dateTime.get(field);
             };

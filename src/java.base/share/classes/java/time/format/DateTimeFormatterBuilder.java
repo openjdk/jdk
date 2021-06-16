@@ -4961,35 +4961,33 @@ public final class DateTimeFormatterBuilder {
          */
         private DateTimePrinterParser printerParser(Locale locale) {
             WeekFields weekDef = WeekFields.of(locale);
-            return switch (chr) {
-                case 'Y' -> {
-                    var field = weekDef.weekBasedYear();
+            TemporalField field = null;
+            switch (chr) {
+                case 'Y':
+                    field = weekDef.weekBasedYear();
                     if (count == 2) {
-                        yield new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE,
+                        return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE,
                                 this.subsequentWidth);
                     } else {
-                        yield new NumberPrinterParser(field, count, 19,
+                        return new NumberPrinterParser(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD,
                                 this.subsequentWidth);
                     }
-                }
-                case 'e', 'c' -> {
-                    var field = weekDef.dayOfWeek();
-                    yield new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
-                            this.subsequentWidth);
-                }
-                case 'w' -> {
-                    var field = weekDef.weekOfWeekBasedYear();
-                    yield new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
-                            this.subsequentWidth);
-                }
-                case 'W' -> {
-                    var field = weekDef.weekOfMonth();
-                    yield new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
-                            this.subsequentWidth);
-                }
-                default -> throw new IllegalStateException("unreachable");
-            };
+                case 'e':
+                case 'c':
+                    field = weekDef.dayOfWeek();
+                    break;
+                case 'w':
+                    field = weekDef.weekOfWeekBasedYear();
+                    break;
+                case 'W':
+                    field = weekDef.weekOfMonth();
+                    break;
+                default:
+                    throw new IllegalStateException("unreachable");
+            }
+            return new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
+                    this.subsequentWidth);
         }
 
         @Override

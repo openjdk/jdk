@@ -306,8 +306,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
                 case SECONDS   -> plusSeconds(amountToAdd);
                 case MINUTES   -> plusMinutes(amountToAdd);
                 case HOURS     -> plusHours(amountToAdd);
-                case HALF_DAYS -> plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12);
-                default -> with(date.plus(amountToAdd, unit), time); // no overflow (256 is multiple of 2)
+                case HALF_DAYS -> plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12); // no overflow (256 is multiple of 2)
+                default -> with(date.plus(amountToAdd, unit), time);
             };
         }
         return ChronoLocalDateTimeImpl.ensureValid(date.getChronology(), unit.addTo(this, amountToAdd));

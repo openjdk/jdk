@@ -424,9 +424,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      */
     public int length(boolean leapYear) {
         return switch (this) {
-            case FEBRUARY                         -> (leapYear ? 29 : 28);
+            case FEBRUARY -> (leapYear ? 29 : 28);
             case APRIL, JUNE, SEPTEMBER, NOVEMBER -> 30;
-            default                               -> 31;
+            default -> 31;
         };
     }
 
@@ -441,9 +441,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      */
     public int minLength() {
         return switch (this) {
-            case FEBRUARY                         -> 28;
+            case FEBRUARY -> 28;
             case APRIL, JUNE, SEPTEMBER, NOVEMBER -> 30;
-            default                               -> 31;
+            default -> 31;
         };
     }
 
@@ -458,9 +458,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      */
     public int maxLength() {
         return switch (this) {
-            case FEBRUARY                         -> 29;
+            case FEBRUARY -> 29;
             case APRIL, JUNE, SEPTEMBER, NOVEMBER -> 30;
-            default                               -> 31;
+            default -> 31;
         };
     }
 
@@ -488,6 +488,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
             case SEPTEMBER -> 244 + leap;
             case OCTOBER   -> 274 + leap;
             case NOVEMBER  -> 305 + leap;
+            // otherwise (DECEMBER)
             default -> 335 + leap;
         };
     }
