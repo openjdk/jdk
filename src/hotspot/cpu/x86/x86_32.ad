@@ -1440,6 +1440,16 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 6 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 6 : FLOATPRESSURE;
+}
+
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
   // Use hardware integer DIV instruction when
   // it is faster than a code which use multiply.
