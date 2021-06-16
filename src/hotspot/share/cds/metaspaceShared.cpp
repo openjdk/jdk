@@ -484,12 +484,10 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   NOT_PRODUCT(SystemDictionary::verify();)
 
-  // At this point, many classes have been loaded.
-  // Gather systemDictionary classes in a global array and do everything to
-  // that so we don't have to walk the SystemDictionary again.
+  // Block concurrent class unloading from changing the _dumptime_table
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   SystemDictionaryShared::check_excluded_classes();
 
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   StaticArchiveBuilder builder;
   builder.gather_source_objs();
   builder.reserve_buffer();
