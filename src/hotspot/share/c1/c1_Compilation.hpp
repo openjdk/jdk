@@ -228,8 +228,6 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile ||
            env()->comp_level() == CompLevel_limited_profile;
   }
-  bool count_invocations() { return is_profiling(); }
-  bool count_backedges()   { return is_profiling(); }
 
   // Helpers for generation of profile information
   bool profile_branches() {

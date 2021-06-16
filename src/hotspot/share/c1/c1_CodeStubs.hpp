@@ -56,8 +56,6 @@ class CodeStub: public CompilationResourceObj {
   virtual void emit_code(LIR_Assembler* e) = 0;
   virtual CodeEmitInfo* info() const             { return NULL; }
   virtual bool is_exception_throw_stub() const   { return false; }
-  virtual bool is_range_check_stub() const       { return false; }
-  virtual bool is_divbyzero_stub() const         { return false; }
   virtual bool is_simple_exception_stub() const  { return false; }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const = 0;
@@ -67,15 +65,7 @@ class CodeStub: public CompilationResourceObj {
   Label* entry()                                 { return &_entry; }
   Label* continuation()                          { return &_continuation; }
   // for LIR
-  virtual void visit(LIR_OpVisitState* visit) {
-#ifndef PRODUCT
-    if (LIRTracePeephole && Verbose) {
-      tty->print("no visitor for ");
-      print_name(tty);
-      tty->cr();
-    }
-#endif
-  }
+  virtual void visit(LIR_OpVisitState* visit) = 0;
 };
 
 class CodeStubList: public GrowableArray<CodeStub*> {
@@ -181,7 +171,6 @@ class RangeCheckStub: public CodeStub {
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual bool is_exception_throw_stub() const   { return true; }
-  virtual bool is_range_check_stub() const       { return true; }
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_slow_case(_info);
     visitor->do_input(_index);
@@ -224,7 +213,6 @@ class DivByZeroStub: public CodeStub {
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual bool is_exception_throw_stub() const   { return true; }
-  virtual bool is_divbyzero_stub() const         { return true; }
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_slow_case(_info);
   }
