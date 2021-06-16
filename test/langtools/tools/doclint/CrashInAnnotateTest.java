@@ -8,7 +8,7 @@
 import java.util.List;
 
 /** {@link #equals(@Deprecated Object)}
- *  {@link Map.@Deprecated Entry#getKey()}
+ *  {@link java.util.Map.@Deprecated Entry#getKey()}
  */
 class CrashInAnnotateTest {
 }
@@ -21,7 +21,9 @@ class CrashInAnnotateTest2 {
 /** {@link @Deprecated java.lang.Object#hashCode()} */
 class CrashInAnnotateTest3 { }
 
-/** {@link CrashInAnnotateTest4.@java.lang.Deprecated Inner#aField} */
+/** {@link CrashInAnnotateTest4.@java.lang.Deprecated Inner#aField}
+ *  {@link java.util.Map.@Deprecated#getKey()}
+ */
 class CrashInAnnotateTest4 {
     class Inner {
         Object aField;
