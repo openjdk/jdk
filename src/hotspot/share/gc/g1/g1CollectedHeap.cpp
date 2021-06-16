@@ -1138,6 +1138,18 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
                                   do_maximum_compaction);
 }
 
+bool G1CollectedHeap::upgrade_to_full_collection() {
+  GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
+  log_info(gc, ergo)("Attempting full compaction clearing soft references");
+  bool success = do_full_collection(false /* explicit gc */,
+                                    true  /* clear_all_soft_refs */,
+                                    false /* do_maximum_compaction */);
+  // do_full_collection only fails if blocked by GC locker and that can't
+  // be the case here since we only call this when already completed one gc.
+  assert(success, "invariant");
+  return success;
+}
+
 void G1CollectedHeap::resize_heap_if_necessary() {
   assert_at_safepoint_on_vm_thread();
 
@@ -1155,7 +1167,7 @@ void G1CollectedHeap::resize_heap_if_necessary() {
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             bool do_gc,
-                                                            bool clear_all_soft_refs,
+                                                            bool maximum_compaction,
                                                             bool expect_null_mutator_alloc_region,
                                                             bool* gc_succeeded) {
   *gc_succeeded = true;
@@ -1177,13 +1189,18 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   }
 
   if (do_gc) {
-    // When clear_all_soft_refs is set we want to do a maximum compaction
-    // not leaving any dead wood.
-    bool do_maximum_compaction = clear_all_soft_refs;
+    GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
     // Expansion didn't work, we'll try to do a Full GC.
+    // If maximum_compaction is set we clear all soft references and don't
+    // allow any dead wood to be left on the heap.
+    if (maximum_compaction) {
+      log_info(gc, ergo)("Attempting maximum full compaction clearing soft references");
+    } else {
+      log_info(gc, ergo)("Attempting full compaction");
+    }
     *gc_succeeded = do_full_collection(false, /* explicit_gc */
-                                       clear_all_soft_refs,
-                                       do_maximum_compaction);
+                                       maximum_compaction /* clear_all_soft_refs */ ,
+                                       maximum_compaction /* do_maximum_compaction */);
   }
 
   return NULL;
@@ -1197,7 +1214,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
   HeapWord* result =
     satisfy_failed_allocation_helper(word_size,
                                      true,  /* do_gc */
-                                     false, /* clear_all_soft_refs */
+                                     false, /* maximum_collection */
                                      false, /* expect_null_mutator_alloc_region */
                                      succeeded);
 
@@ -1208,7 +1225,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
   // Attempts to allocate followed by Full GC that will collect all soft references.
   result = satisfy_failed_allocation_helper(word_size,
                                             true, /* do_gc */
-                                            true, /* clear_all_soft_refs */
+                                            true, /* maximum_collection */
                                             true, /* expect_null_mutator_alloc_region */
                                             succeeded);
 
@@ -1219,7 +1236,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
   // Attempts to allocate, no GC
   result = satisfy_failed_allocation_helper(word_size,
                                             false, /* do_gc */
-                                            false, /* clear_all_soft_refs */
+                                            false, /* maximum_collection */
                                             true,  /* expect_null_mutator_alloc_region */
                                             succeeded);
 
@@ -1460,6 +1477,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cr(NULL),
   _task_queues(NULL),
   _num_regions_failed_evacuation(0),
+  _regions_failed_evacuation(NULL),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -1752,6 +1770,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
+  _regions_failed_evacuation = NEW_C_HEAP_ARRAY(volatile bool, max_regions(), mtGC);
+
   G1InitLogger::print();
 
   return JNI_OK;
@@ -1895,16 +1915,6 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
-  }
-}
-
-bool G1CollectedHeap::should_upgrade_to_full_gc(GCCause::Cause cause) {
-  if (should_do_concurrent_full_gc(_gc_cause)) {
-    return false;
-  } else if (has_regions_left_for_allocation()) {
-    return false;
-  } else {
-    return true;
   }
 }
 
@@ -2875,15 +2885,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   }
 
   do_collection_pause_at_safepoint_helper(target_pause_time_ms);
-  if (should_upgrade_to_full_gc(gc_cause())) {
-    log_info(gc, ergo)("Attempting maximally compacting collection");
-    bool result = do_full_collection(false /* explicit gc */,
-                                     true  /* clear_all_soft_refs */,
-                                     false /* do_maximum_compaction */);
-    // do_full_collection only fails if blocked by GC locker, but
-    // we've already checked for that above.
-    assert(result, "invariant");
-  }
   return true;
 }
 
@@ -3468,6 +3469,8 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
 
   _expand_heap_after_alloc_failure = true;
   Atomic::store(&_num_regions_failed_evacuation, 0u);
+
+  memset((void*)_regions_failed_evacuation, false, sizeof(bool) * max_regions());
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();

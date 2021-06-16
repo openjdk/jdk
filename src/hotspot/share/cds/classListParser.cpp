@@ -85,10 +85,12 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file) {
+  if (_file != NULL) {
     fclose(_file);
   }
   Atomic::store(&_parsing_thread, (Thread*)NULL);
+  delete _indy_items;
+  delete _interfaces;
   _instance = NULL;
 }
 

@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 8248268
+ * @bug 8248268 8268621
  * @summary Verify general properties of the AES/KW/NoPadding,
  *     AES/KW/PKCS5Padding, and AES/KWP/NoPadding.
  * @run main TestGeneral
  */
 import java.util.Arrays;
-import java.util.Random;
 import java.security.Key;
 import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.*;
@@ -37,7 +36,10 @@ import javax.crypto.spec.*;
 
 public class TestGeneral {
 
-    private static final SecretKey KEY = new SecretKeySpec(new byte[16], "AES");;
+    private static final byte[] DATA_128 =
+            Arrays.copyOf("1234567890123456789012345678901234".getBytes(), 128);
+    private static final SecretKey KEY =
+            new SecretKeySpec(DATA_128, 0, 16, "AES");
     private static final int KW_IV_LEN = 8;
     private static final int KWP_IV_LEN = 4;
     private static final int MAX_KW_PKCS5PAD_LEN = 16; // 1-16
@@ -133,12 +135,27 @@ public class TestGeneral {
     }
 
     public static void testIv(Cipher c) throws Exception {
+        // get a fresh Cipher instance so we can test iv with pre-init state
+        Cipher c2 = Cipher.getInstance(c.getAlgorithm(), c.getProvider());
+        if (c2.getIV() != null) {
+            throw new RuntimeException("Expects null iv");
+        }
+        if (c2.getParameters() == null) {
+            throw new RuntimeException("Expects non-null default parameters");
+        }
+
+        c2.init(Cipher.ENCRYPT_MODE, KEY);
+        byte[] defIv2 = c2.getIV();
         c.init(Cipher.ENCRYPT_MODE, KEY);
         byte[] defIv = c.getIV();
-        // try init w/ an iv w/ different length
+        if (!Arrays.equals(defIv, defIv2)) {
+            throw new RuntimeException("Failed default iv check");
+        }
+        // try init w/ an iv w/ invalid length
         try {
             c.init(Cipher.ENCRYPT_MODE, KEY, new IvParameterSpec(defIv, 0,
                 defIv.length/2));
+            throw new RuntimeException("Invalid iv accepted");
         } catch (InvalidAlgorithmParameterException iape) {
             System.out.println("Invalid IV rejected as expected");
         }
@@ -146,19 +163,23 @@ public class TestGeneral {
         c.init(Cipher.ENCRYPT_MODE, KEY, new IvParameterSpec(defIv));
         byte[] newIv = c.getIV();
         if (!Arrays.equals(newIv, defIv)) {
-            throw new RuntimeException("Failed iv check");
+            throw new RuntimeException("Failed set iv check");
+        }
+        byte[] newIv2 = c.getIV();
+        if (newIv == newIv2) {
+            throw new RuntimeException("Failed getIV copy check");
         }
     }
 
     public static void main(String[] argv) throws Exception {
-        // test all possible pad lengths, i.e. 1 - 16
-        byte[] data = new byte[128];
-        new Random().nextBytes(data);
+        byte[] data = DATA_128;
 
         String ALGO = "AES/KW/PKCS5Padding";
         System.out.println("Testing " + ALGO);
         Cipher c = Cipher.getInstance(ALGO, "SunJCE");
-        for (int i = 0; i < MAX_KW_PKCS5PAD_LEN; i++) {
+
+        // test all possible pad lengths, i.e. 1 - 16
+        for (int i = 1; i <= MAX_KW_PKCS5PAD_LEN; i++) {
             testEnc(c, data, data.length - i, KW_IV_LEN, MAX_KW_PKCS5PAD_LEN);
             testWrap(c, data, data.length - i, KW_IV_LEN, MAX_KW_PKCS5PAD_LEN);
         }
@@ -176,7 +197,9 @@ public class TestGeneral {
         ALGO = "AES/KWP/NoPadding";
         System.out.println("Testing " + ALGO);
         c = Cipher.getInstance(ALGO, "SunJCE");
-        for (int i = 0; i < MAX_KWP_PAD_LEN; i++) {
+
+        // test all possible pad lengths, i.e. 0 - 7
+        for (int i = 0; i <= MAX_KWP_PAD_LEN; i++) {
             testEnc(c, data, data.length - i, KWP_IV_LEN, MAX_KWP_PAD_LEN);
             testWrap(c, data, data.length - i, KWP_IV_LEN, MAX_KWP_PAD_LEN);
         }

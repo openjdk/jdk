@@ -178,7 +178,7 @@ private:
   enum {
     _archived_lambda_proxy_is_available = 2,
     _has_value_based_class_annotation = 4,
-    _is_shared_old_klass = 8
+    _verified_at_dump_time = 8
   };
 #endif
 
@@ -334,11 +334,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_is_shared_old_klass() {
-    CDS_ONLY(_shared_class_flags |= _is_shared_old_klass;)
+  void set_verified_at_dump_time() {
+    CDS_ONLY(_shared_class_flags |= _verified_at_dump_time;)
   }
-  bool is_shared_old_klass() const {
-    CDS_ONLY(return (_shared_class_flags & _is_shared_old_klass) != 0;)
+  bool verified_at_dump_time() const {
+    CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
     NOT_CDS(return false;)
   }
 

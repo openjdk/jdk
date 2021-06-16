@@ -1018,6 +1018,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != NULL) {
+        SharedClassLoadingMark slm(THREAD, k);
         k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
       }
     }
@@ -1047,11 +1048,10 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   assert(UseSharedSpaces, "must be");
   InstanceKlass* ik = find_builtin_class(class_name);
 
-  if (ik != NULL) {
-    if ((ik->is_shared_app_class() &&
-         SystemDictionary::is_system_class_loader(class_loader()))  ||
-        (ik->is_shared_platform_class() &&
-         SystemDictionary::is_platform_class_loader(class_loader()))) {
+  if (ik != NULL && !ik->shared_loading_failed()) {
+    if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->is_shared_app_class())  ||
+        (SystemDictionary::is_platform_class_loader(class_loader()) && ik->is_shared_platform_class())) {
+      SharedClassLoadingMark slm(THREAD, ik);
       PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
@@ -1354,11 +1354,29 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeShare
   return info->is_excluded();
 }
 
+// Check if a class or any of its supertypes has been redefined.
+bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
+  if (k->has_been_redefined()) {
+    return true;
+  }
+  if (k->java_super() != NULL && has_been_redefined(k->java_super())) {
+    return true;
+  }
+  Array<InstanceKlass*>* interfaces = k->local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    if (has_been_redefined(interfaces->at(i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
     return warn_excluded(k, "In error state");
   }
-  if (k->has_been_redefined()) {
+  if (has_been_redefined(k)) {
     return warn_excluded(k, "Has been redefined");
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
@@ -1393,7 +1411,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
     } else {
-      if (!k->can_be_verified_at_dumptime()) {
+      if (k->can_be_verified_at_dumptime()) {
         return warn_excluded(k, "Not linked");
       }
     }
@@ -1407,7 +1425,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
-  if (k->can_be_verified_at_dumptime() && k->is_linked()) {
+  if (!k->can_be_verified_at_dumptime() && k->is_linked()) {
     return warn_excluded(k, "Old class has been linked");
   }
 
