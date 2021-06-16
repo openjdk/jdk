@@ -322,7 +322,7 @@ public:
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
-  static bool check_unique_unregistered_class(Thread* current, InstanceKlass* k);
+  static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static void check_excluded_classes();
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);

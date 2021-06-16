@@ -1165,27 +1165,27 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-class UniqueUnregisteredClassesTable : public ResourceHashtable<
+class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
   primitive_hash<Symbol*>,
   primitive_equals<Symbol*>,
   15889, // prime number
   ResourceObj::C_HEAP> {};
 
-static UniqueUnregisteredClassesTable* _unique_unregistered_classes = NULL;
+static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
-bool SystemDictionaryShared::check_unique_unregistered_class(Thread* current, InstanceKlass* klass) {
+bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes with the same name.
-  // The first class with that name that succeeds putting itself into the
-  // table is considerd "unique".
+  // We only archive the first class with that name that succeeds putting
+  // itself into the table.
   Arguments::assert_is_dumping_archive();
-  MutexLocker ml(current, UniqueUnregisteredClasses_lock);
+  MutexLocker ml(current, UnregisteredClassesTable_lock);
   Symbol* name = klass->name();
-  if (_unique_unregistered_classes == NULL) {
-    _unique_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)UniqueUnregisteredClassesTable();
+  if (_unregistered_classes_table == NULL) {
+    _unregistered_classes_table = new (ResourceObj::C_HEAP, mtClass)UnregisteredClassesTable();
   }
   bool created;
-  InstanceKlass** v = _unique_unregistered_classes->put_if_absent(name, klass, &created);
+  InstanceKlass** v = _unregistered_classes_table->put_if_absent(name, klass, &created);
   if (created) {
     name->increment_refcount();
   }
@@ -1195,7 +1195,7 @@ bool SystemDictionaryShared::check_unique_unregistered_class(Thread* current, In
 // true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
   assert(DumpSharedSpaces, "only when dumping");
-  if (check_unique_unregistered_class(current, k)) {
+  if (add_unregistered_class(current, k)) {
     MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
     return true;
@@ -1312,13 +1312,13 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   remove_dumptime_info(klass);
 
-  if (_unique_unregistered_classes != NULL) {
-    // Remove the class from _unique_unregistered_classes: keep the entry but
+  if (_unregistered_classes_table != NULL) {
+    // Remove the class from _unregistered_classes_table: keep the entry but
     // set it to NULL. This ensure no classes with the same name can be
     // added again.
-    MutexLocker ml(Thread::current(), UniqueUnregisteredClasses_lock);
+    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock);
     Symbol* name = klass->name();
-    InstanceKlass** v = _unique_unregistered_classes->get(name);
+    InstanceKlass** v = _unregistered_classes_table->get(name);
     if (v != NULL) {
       *v = NULL;
     }
@@ -1506,11 +1506,11 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   }
 }
 
-class UniqueUnregisteredClassesChecker : StackObj {
+class UnregisteredClassesDuplicationChecker : StackObj {
   GrowableArray<InstanceKlass*> _list;
   Thread* _thread;
 public:
-  UniqueUnregisteredClassesChecker() : _thread(Thread::current()) {}
+  UnregisteredClassesDuplicationChecker() : _thread(Thread::current()) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!SystemDictionaryShared::is_builtin(k)) {
@@ -1532,14 +1532,14 @@ public:
 
   void mark_duplicated_classes() {
     // Two loaders may load two identical or similar hierarchies of classes. If we
-    // check for uniqueness in random order, we may end up excluding important base classes
+    // check for duplication in random order, we may end up excluding important base classes
     // in both hierarchies, causing most of the classes to be excluded.
-    // We sort the classes by their loaders. This way we're likely to pick
+    // We sort the classes by their loaders. This way we're likely to archive
     // all classes in the one of the two hierarchies.
     _list.sort(compare_by_loader);
     for (int i = 0; i < _list.length(); i++) {
       InstanceKlass* k = _list.at(i);
-      bool i_am_first = SystemDictionaryShared::check_unique_unregistered_class(_thread, k);
+      bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
       if (!i_am_first) {
         SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
         SystemDictionaryShared::set_excluded_locked(k);
@@ -1564,9 +1564,9 @@ void SystemDictionaryShared::check_excluded_classes() {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses
     ResourceMark rm;
-    UniqueUnregisteredClassesChecker uniq_checker;
-    _dumptime_table->iterate(&uniq_checker);
-    uniq_checker.mark_duplicated_classes();
+    UnregisteredClassesDuplicationChecker dup_checker;
+    _dumptime_table->iterate(&dup_checker);
+    dup_checker.mark_duplicated_classes();
   }
 
   ExcludeDumpTimeSharedClasses excl;
