@@ -38,8 +38,8 @@ public class WebSocketAndHttpClient {
 
         wsTest.listen(message -> {
             try {
-                httpTest.getData(message);
-                result.complete(message);
+                String r = httpTest.getData(message);
+                result.complete(r);
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
