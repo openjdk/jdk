@@ -25,7 +25,7 @@
  * @test
  * @bug 8268294
  * @modules java.net.http/jdk.internal.net.http.websocket:open jdk.httpserver
- * @run main/othervm/timeout=18
+ * @run main/othervm
  *      --add-reads java.net.http=ALL-UNNAMED
  *      --add-reads java.net.http=jdk.httpserver
  *      java.net.http/jdk.internal.net.http.websocket.WebSocketAndHttpTest
