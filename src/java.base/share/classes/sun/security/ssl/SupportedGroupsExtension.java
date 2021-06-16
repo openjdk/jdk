@@ -29,11 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
@@ -69,15 +66,14 @@ final class SupportedGroupsExtension {
         final int[] namedGroupsIds;
 
         private SupportedGroupsSpec(int[] namedGroupsIds) {
-            this.namedGroupsIds = namedGroupsIds;
+            this.namedGroupsIds =
+                    Arrays.stream(namedGroupsIds).distinct().toArray();
         }
 
         private SupportedGroupsSpec(List<NamedGroup> namedGroups) {
-            this.namedGroupsIds = new int[namedGroups.size()];
-            int i = 0;
-            for (NamedGroup ng : namedGroups) {
-                namedGroupsIds[i++] = ng.id;
-            }
+            IntStream.Builder ngBldr = IntStream.builder();
+            namedGroups.forEach(ng -> ngBldr.accept(ng.id));
+            this.namedGroupsIds = ngBldr.build().distinct().toArray();
         }
 
         private SupportedGroupsSpec(HandshakeContext hc,

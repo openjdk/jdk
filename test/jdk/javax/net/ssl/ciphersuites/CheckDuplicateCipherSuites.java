@@ -30,8 +30,10 @@
  * @run main/othervm CheckDuplicateCipherSuites
  */
 
+
 import javax.net.ssl.*;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.io.IOException;
 
@@ -89,6 +91,15 @@ public class CheckDuplicateCipherSuites {
             orig.forEach(cs -> ids.add(cs.id));
             return ids;
         }
+
+        private static String nameOf(int id) {
+            for (CipherSuite cs : CipherSuite.values()) {
+                if (cs.id == id) {
+                    return cs.name;
+                }
+            }
+            return "UNKNOWN-CIPHER-SUITE(" + id + ")";
+        }
     }
 
     enum ProtocolVersion {
@@ -134,6 +145,15 @@ public class CheckDuplicateCipherSuites {
             List<Integer> ids = new ArrayList<>();
             orig.forEach(cs -> ids.add(cs.id));
             return ids;
+        }
+
+        private static String nameOf(int id) {
+            for (ProtocolVersion pv : ProtocolVersion.values()) {
+                if (pv.id == id) {
+                    return pv.name;
+                }
+            }
+            return "UNKNOWN-PROTOCOL-VERSION(" + id + ")";
         }
     }
 
@@ -249,20 +269,21 @@ public class CheckDuplicateCipherSuites {
             throw new RuntimeException("Not a ClientHello, type = " + msgType);
         }
 
-        // Skip protocol version (2b) and client random (32b)
+        // Skip protocol version and client random
         data.position(data.position() + 34);
 
-        // Check session length (variable length vector) and then jump past it
+        // Jump past session ID if it exists
         int sessLen = Byte.toUnsignedInt(data.get());
         if (sessLen != 0) {
             data.position(data.position() + sessLen);
         }
 
         // Extract the cipher suites and put them in a separate List
-        List<Integer> transitCSs = new ArrayList<>();
+        List<String> transitCSs = new ArrayList<>();
         int csLen = Short.toUnsignedInt(data.getShort());
         for (int i=0; i < csLen; i+=2) {
-            transitCSs.add(Short.toUnsignedInt(data.getShort()));
+            transitCSs.add(
+                    CipherSuite.nameOf(Short.toUnsignedInt(data.getShort())));
         }
 
         // Jump past compression algorithms
@@ -273,35 +294,41 @@ public class CheckDuplicateCipherSuites {
 
         // Go through the extensions and look for supported_versions and ALPNs,
         // then add each entry to a list to be checked later
-        List<Integer> transitPVs = new ArrayList<>();
+        int extsLen = Short.toUnsignedInt(data.getShort());
+        List<String> transitPVs = new ArrayList<>();
         List<String> transitALPNs = new ArrayList<>();
         while (data.hasRemaining()) {
             int extType = Short.toUnsignedInt(data.getShort());
             int extLen = Short.toUnsignedInt(data.getShort());
-            if (extType == HELLO_EXT_SUPP_VERS) {
-                int supVerLen = Byte.toUnsignedInt(data.get());
-                for (int i=0; i < supVerLen; i+=2) {
-                    int pv = Short.toUnsignedInt(data.getShort());
-                    transitPVs.add(pv);
-                }
-            } else if (extType == HELLO_EXT_ALPN_NEGOT) {
-                int alpnListLen = Byte.toUnsignedInt(data.get());
-                while (alpnListLen > 0) {
-                    int alpnLen = Short.toUnsignedInt(data.getShort());
-                    StringBuilder alpnId = new StringBuilder("");
-                    for (int i=0; i< alpnLen; i+=2) {
-                        int alpnChunk = Short.toUnsignedInt(data.getShort());
-                        alpnId.append(alpnChunk);
+            switch (extType) {
+                case HELLO_EXT_SUPP_VERS:
+                    int supVerLen = Byte.toUnsignedInt(data.get());
+                    for (int i=0; i < supVerLen; i+=2) {
+                        transitPVs.add(ProtocolVersion.
+                                nameOf(Short.toUnsignedInt(data.getShort())));
                     }
-                    transitALPNs.add(alpnId.toString());
-                    alpnListLen -= (2 + alpnLen);
-                }
+                    break;
+                case HELLO_EXT_ALPN_NEGOT:
+                    int alpnListLen = Short.toUnsignedInt(data.getShort());
+                    while (alpnListLen > 0) {
+                        byte[] alpnBytes = new byte[Byte.toUnsignedInt(data.get())];
+                        data.get(alpnBytes);
+                        transitALPNs.add(new String(alpnBytes, StandardCharsets.UTF_8));
+                        alpnListLen -= (1 + alpnBytes.length);
+                    }
+                    break;
+                default:
+                    data.position(data.position() + extLen);
+                    break;
             }
-            //data.position(data.position() + extLen);
         }
 
-        List<Integer> expectedCS = CipherSuite.ids(clearDups(malfCS));
-        List<Integer> expectedPV = ProtocolVersion.ids(clearDups(malfPV));
+        List<String> expectedCS = CipherSuite.names(clearDups(malfCS));
+        // For protocol versions, deprecated protocols will be automatically
+        // eliminated and ordering from highest to lowest enforced, so the
+        // expected output format is not just the input with duplicates removed
+        List<String> expectedPV = List.of("TLSv1.3", "TLSv1.2", "SSLv2Hello",
+                "DTLSv1.2", "DTLSv1.0");
         List<String> expectedALPN = clearDups(malfALPN);
 
         System.out.println("Ciphersuites transmitted in ClientHello: "
@@ -333,9 +360,6 @@ public class CheckDuplicateCipherSuites {
 
     /**
      * Eliminate duplicates from a generic List while preserving order.
-     * Underlying changes to SSL implementation being tested here are done
-     * with a non-destructive for loop implementation, so here we use a Set
-     * in case there are any bugs inherent to the List/for-loop implemenation.
      *
      * @param src an unsanitized array
      *

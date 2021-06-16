@@ -73,10 +73,15 @@ final class SupportedVersionsExtension {
     static final class CHSupportedVersionsSpec implements SSLExtensionSpec {
         final int[] requestedProtocols;
 
+        private CHSupportedVersionsSpec(int[] requestedProtocols) {
+            this.requestedProtocols =
+                    Arrays.stream(requestedProtocols).distinct().toArray();
+        }
+
         private CHSupportedVersionsSpec(List<ProtocolVersion> requestedProtocols) {
-            IntStream.Builder pvStrm = IntStream.builder();
-            requestedProtocols.forEach(pv -> pvStrm.accept(pv.id));
-            this.requestedProtocols = pvStrm.build().distinct().toArray();
+            IntStream.Builder pvBldr = IntStream.builder();
+            requestedProtocols.forEach(pv -> pvBldr.accept(pv.id));
+            this.requestedProtocols = pvBldr.build().distinct().toArray();
         }
 
         private CHSupportedVersionsSpec(HandshakeContext hc,
@@ -101,15 +106,14 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: incomplete data"));
             }
 
-            IntStream.Builder pBldr = IntStream.builder();
-            //int[] protocols = new int[vbs.length >> 1];
+            IntStream.Builder pvBldr = IntStream.builder();
             for (int i = 0, j = 0; i < vbs.length;) {
                 byte major = vbs[i++];
                 byte minor = vbs[i++];
-                pBldr.accept(((major & 0xFF) << 8) | (minor & 0xFF));
+                pvBldr.accept(((major & 0xFF) << 8) | (minor & 0xFF));
             }
 
-            this.requestedProtocols = pBldr.build().toArray();
+            this.requestedProtocols = pvBldr.build().distinct().toArray();
         }
 
         @Override
