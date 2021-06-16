@@ -24,7 +24,13 @@
 package jdk.internal.net.http.websocket;
 
 /**
- * All MessageStreamConsumer methods must be implemented
+ * WebSocket server listener interface, which is the same as the client API
+ * in java.net.http. See MessageStreamResponder for how listener methods
+ * can send response messages back to the client
+ *
+ * All MessageStreamConsumer methods must be implemented (plus the handler method
+ * declared here). DefaultMessageStreamHandler provides empty implementations of all
+ * that can be extended, except for onInit() which must always be implemented.
  *
  *    void onText(CharSequence data, boolean last);
  *

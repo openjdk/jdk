@@ -14,7 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
- * This test is invoked from WebSocketAndHttpServer:
+ * This is the client side of the test invoked from WebSocketAndHttpTest:
+ *
  * The two args are the addresses of a (local) Websocket and Http server
  *
  * The test first sends a request to the WS server and in the listener
@@ -31,13 +32,13 @@ public class WebSocketAndHttpClient {
         ExecutorService executorService = Executors.newCachedThreadPool();
         HttpClient httpClient = HttpClient.newBuilder().executor(executorService).build();
 
-        WsApiClient wsApiClient = new WsApiClient(httpClient, args[0]);
-        HttpApiClient httpApiClient = new HttpApiClient(httpClient, args[1]);
+        WebSocketTest wsTest = new WebSocketTest(httpClient, args[0]);
+        HttpTest httpTest = new HttpTest(httpClient, args[1]);
 
         AtomicReference<String> result = new AtomicReference<>("failed");
 
-        wsApiClient.listen(message -> httpApiClient.getData(message).map(s -> "succeeded").ifPresent(result::set));
-        wsApiClient.sendData("TEST_DATA");
+        wsTest.listen(message -> httpTest.getData(message).map(s -> "succeeded").ifPresent(result::set));
+        wsTest.sendData("TEST_DATA");
 
         System.out.println("Wait some time");
         Thread.sleep(3_000);
@@ -49,12 +50,12 @@ public class WebSocketAndHttpClient {
             throw new RuntimeException("Test failed");
     }
 
-    static class WsApiClient {
+    static class WebSocketTest {
         final HttpClient httpClient;
         final String server;
         volatile WebSocket webSocket;
 
-        WsApiClient(HttpClient httpClient, String server) {
+        WebSocketTest(HttpClient httpClient, String server) {
             this.httpClient = httpClient;
             this.server = server;
         }
@@ -86,11 +87,11 @@ public class WebSocketAndHttpClient {
         }
     }
 
-    static class HttpApiClient {
+    static class HttpTest {
         final HttpClient httpClient;
         final String baseUrl;
 
-        HttpApiClient(HttpClient httpClient, String baseUrl) {
+        HttpTest(HttpClient httpClient, String baseUrl) {
             this.httpClient = httpClient;
             this.baseUrl = baseUrl;
         }

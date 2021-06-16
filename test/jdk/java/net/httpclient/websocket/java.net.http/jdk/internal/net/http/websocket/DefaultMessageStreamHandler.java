@@ -25,7 +25,11 @@ package jdk.internal.net.http.websocket;
 
 import java.nio.ByteBuffer;
 
-class DefaultMessageStreamHandler implements MessageStreamHandler {
+/**
+ * No implementation provided for onInit() because that must always be
+ * implemented by user
+ */
+abstract class DefaultMessageStreamHandler implements MessageStreamHandler {
 
     public void onText(CharSequence data, boolean last) {}
 
@@ -40,7 +44,5 @@ class DefaultMessageStreamHandler implements MessageStreamHandler {
     public void onComplete() {}
 
     public void onError(Throwable e) {}
-
-    public void onInit(MessageStreamResponder responder) {}
 }
 

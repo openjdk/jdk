@@ -60,7 +60,13 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
- * WebSocket Server.
+ * WebSocket Server. This is a copy of the DummyWebSocketServer test class
+ * but which also supports sending and receiving of websocket messages
+ * using a simple API once the connection has been established
+ *
+ * MessageStreamHandler is the "listener" API to be implemented for handling
+ * incoming messages. MessageStreamResponder is used by that handler to send
+ * responses back to the client.
  *
  * Performs simpler version of the WebSocket Opening Handshake over HTTP (i.e.
  * no proxying, cookies, etc.) Supports sequential connections, one at a time,
