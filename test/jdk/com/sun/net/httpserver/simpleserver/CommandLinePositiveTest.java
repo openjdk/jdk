@@ -97,6 +97,7 @@ public class CommandLinePositiveTest {
     @Test
     public void testDirectory() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -114,6 +115,7 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "ports")
     public void testPort(String port) throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", port)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -144,6 +146,7 @@ public class CommandLinePositiveTest {
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", "123.4.5.6", "-b", LOCALHOST_ADDR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
@@ -154,6 +157,7 @@ public class CommandLinePositiveTest {
     @Test
     public void testlastOneWinsDirectory() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -165,6 +169,7 @@ public class CommandLinePositiveTest {
     @Test
     public void testlastOneWinsOutput() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-o", "none", "-o", "verbose")
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -176,6 +181,7 @@ public class CommandLinePositiveTest {
     @Test
     public void testlastOneWinsPort() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "-999", "-p", "0")
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -221,13 +227,14 @@ public class CommandLinePositiveTest {
         };
         t.start();
         Thread.sleep(5000);
-        p.destroy();
-        p.waitFor();  // TODO: assert exit code
+        p.destroyForcibly();
+        p.waitFor();
         t.join();
-        return new Result(out.toString(UTF_8));  // TODO: include exit code
+        return new Result(p.exitValue(), out.toString(UTF_8));
     }
 
-    static record Result(String output) {
+    static record Result(int exitCode, String output) {
+        Result assertExternalTermination() { assertTrue(exitCode != 0, output); return this; }
         Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
     }
 }

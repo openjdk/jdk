@@ -75,6 +75,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "badOption")
     public void testBadOption(String option) throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", option)
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: unknown option(s): " + option)
                 );
@@ -94,6 +95,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "tooManyOptionArgs")
     public void testTooManyOptionArgs(String option, String arg) throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", option, arg, arg)
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: unknown option(s): " + arg)
                 );
@@ -113,6 +115,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "noArg")
     public void testNoArg(String option) throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", option)
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: no value given for " + option)
                 );
@@ -138,6 +141,7 @@ public class CommandLineNegativeTest {
     @Test(dataProvider = "invalidValue")
     public void testInvalidValue(String option, String value) throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", option, value)
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: invalid value given for "
                                 + option + ": " + value)
@@ -147,6 +151,7 @@ public class CommandLineNegativeTest {
     @Test
     public void testPortOutOfRange() throws Exception {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "65536")  // range 0 to 65535
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "port out of range:65536")
@@ -158,6 +163,7 @@ public class CommandLineNegativeTest {
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path is not absolute:")
@@ -169,6 +175,7 @@ public class CommandLineNegativeTest {
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", file)
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path is not a directory: " + file)
@@ -180,6 +187,7 @@ public class CommandLineNegativeTest {
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+                .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path does not exist: " + root.toString())
@@ -197,6 +205,7 @@ public class CommandLineNegativeTest {
                 root.toFile().setReadable(false, false);
                 assertFalse(Files.isReadable(root));
                 simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+                        .assertNormalTermination()
                         .resultChecker(r ->
                                 assertContains(r.output, "Error: server config failed: "
                                         + "Path is not readable: " + root.toString()));
@@ -233,6 +242,7 @@ public class CommandLineNegativeTest {
             public void run() {
                 try {
                     in.transferTo(out);
+                    out.flush();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -240,11 +250,13 @@ public class CommandLineNegativeTest {
         };
         t.start();
         Thread.sleep(5000);
+        p.waitFor();
         t.join();
-        return new Result(out.toString(UTF_8));
+        return new Result(p.exitValue(), out.toString(UTF_8));
     }
 
-    static record Result(String output) {
+    static record Result(int exitCode, String output) {
+        Result assertNormalTermination() { assertTrue(exitCode == 0, output); return this; }
         Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
     }
 }

@@ -81,7 +81,7 @@ public class ToolProviderNegativeTest {
     @Test
     public void testBadOption() {
         simpleserver("--badOption")
-            .assertFailure()
+            .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: unknown option(s): --badOption")
             );
@@ -101,7 +101,7 @@ public class ToolProviderNegativeTest {
     @Test(dataProvider = "tooManyOptionArgs")
     public void testTooManyOptionArgs(String option, String arg) {
         simpleserver(option, arg, arg)
-            .assertFailure()
+            .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: unknown option(s): " + arg)
             );
@@ -121,7 +121,7 @@ public class ToolProviderNegativeTest {
     @Test(dataProvider = "noArg")
     public void testNoArg(String option) {
         simpleserver(option)
-            .assertFailure()
+            .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: no value given for " + option)
             );
@@ -148,7 +148,7 @@ public class ToolProviderNegativeTest {
     @Test(dataProvider = "invalidValue")
     public void testInvalidValue(String option, String value) {
         simpleserver(option, value)
-            .assertFailure()
+            .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: invalid value given for "
                         + option + ": " + value)
@@ -158,7 +158,7 @@ public class ToolProviderNegativeTest {
     @Test
     public void testPortOutOfRange() {
         simpleserver("-p", "65536")  // range 0 to 65535
-                .assertFailure()
+                .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "port out of range:65536")
@@ -170,7 +170,7 @@ public class ToolProviderNegativeTest {
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
         simpleserver("-d", root.toString())
-                .assertFailure()
+                .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path is not absolute: ")
@@ -182,7 +182,7 @@ public class ToolProviderNegativeTest {
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
         simpleserver("-d", file)
-                .assertFailure()
+                .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path is not a directory: " + file)
@@ -194,7 +194,7 @@ public class ToolProviderNegativeTest {
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
         simpleserver("-d", root.toString())
-                .assertFailure()
+                .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
                                 + "Path does not exist: " + root.toString())
@@ -212,7 +212,7 @@ public class ToolProviderNegativeTest {
                 root.toFile().setReadable(false, false);
                 assertFalse(Files.isReadable(root));
                 simpleserver("-d", root.toString())
-                        .assertFailure()
+                        .assertExternalTermination()
                         .resultChecker(r ->
                                 assertContains(r.output, "Error: server config failed: "
                                         + "Path is not readable: " + root.toString()));
@@ -250,7 +250,7 @@ public class ToolProviderNegativeTest {
     }
 
     static record Result(int exitCode, String output) {
-        Result assertFailure() { assertTrue(exitCode != 0, output); return this; }
+        Result assertExternalTermination() { assertTrue(exitCode != 0, output); return this; }
         Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
     }
 }

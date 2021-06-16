@@ -103,6 +103,7 @@ public class ToolProviderPositiveTest {
     @Test
     public void testDirectory() throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-d", TEST_DIR_STR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -120,6 +121,7 @@ public class ToolProviderPositiveTest {
     @Test(dataProvider = "ports")
     public void testPort(String port) throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", port)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -149,6 +151,7 @@ public class ToolProviderPositiveTest {
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-b", "123.4.5.6", "-b", LOCALHOST_ADDR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
@@ -159,6 +162,7 @@ public class ToolProviderPositiveTest {
     @Test
     public void testlastOneWinsDirectory() throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -170,6 +174,7 @@ public class ToolProviderPositiveTest {
     @Test
     public void testlastOneWinsOutput() throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-o", "none", "-o", "verbose")
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -181,6 +186,7 @@ public class ToolProviderPositiveTest {
     @Test
     public void testlastOneWinsPort() throws Exception {
         simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "-999", "-p", "0")
+                .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
@@ -218,6 +224,7 @@ public class ToolProviderPositiveTest {
             public void run() {
                 try (in; out) {
                     in.transferTo(out);
+                    out.flush();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -225,12 +232,14 @@ public class ToolProviderPositiveTest {
         };
         t.start();
         Thread.sleep(5000);
-        p.destroy();
+        p.destroyForcibly();
+        p.waitFor();
         t.join();
-        return new Result(out.toString(UTF_8));
+        return new Result(p.exitValue(), out.toString(UTF_8));
     }
 
-    static record Result(String output) {
+    static record Result(int exitCode, String output) {
+        Result assertExternalTermination() { assertTrue(exitCode != 0, output); return this; }
         Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
     }
 
