@@ -93,6 +93,7 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 #if INCLUDE_JFR
+#include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #endif
 
@@ -1395,12 +1396,39 @@ objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   return o;
 }
 
+#if INCLUDE_JFR
+void InstanceKlass::clear_has_registered_finalizer() {
+  assert(!Jfr::is_recording(), "invariant");
+  _has_registered_finalizer = false;
+}
+
+inline bool InstanceKlass::set_has_registered_finalizer(Thread* thread) {
+  return !_has_registered_finalizer && !Atomic::cmpxchg(&_has_registered_finalizer, false, true);
+}
+
+static inline bool should_send_finalizer_registration_event(InstanceKlass* ik, Thread* thread) {
+  return Jfr::is_recording() && ik->set_has_registered_finalizer(thread);
+}
+
+static void send_finalizer_registration_event(instanceOop i, Thread* thread) {
+  assert(thread != NULL, "invariant");
+  InstanceKlass* const ik = InstanceKlass::cast(i->klass());
+  assert(ik != NULL, "invariant");
+  if (should_send_finalizer_registration_event(ik, thread)) {
+    EventFinalizerRegistration event;
+    event.set_finalizerClass(ik);
+    event.commit();
+  }
+}
+#endif // INCLUDE_JFR
+
 instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   if (TraceFinalizerRegistration) {
     tty->print("Registered ");
     i->print_value_on(tty);
     tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", p2i(i));
   }
+  JFR_ONLY(send_finalizer_registration_event(i, THREAD);)
   instanceHandle h_i(THREAD, i);
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
   JavaValue result(T_VOID);
