@@ -928,7 +928,8 @@ public:
 
   // Helper function
   static instanceOop register_finalizer(instanceOop i, TRAPS);
-  JFR_ONLY(bool set_has_registered_finalizer(Thread* thread);)
+  JFR_ONLY(bool has_registered_finalizer() const;)
+  JFR_ONLY(bool set_has_registered_finalizer();)
   JFR_ONLY(void clear_has_registered_finalizer();)
 
   // Check whether reflection/jni/jvm code is allowed to instantiate this class;

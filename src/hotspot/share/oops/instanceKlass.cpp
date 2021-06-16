@@ -1402,19 +1402,22 @@ void InstanceKlass::clear_has_registered_finalizer() {
   _has_registered_finalizer = false;
 }
 
-inline bool InstanceKlass::set_has_registered_finalizer(Thread* thread) {
-  return !_has_registered_finalizer && !Atomic::cmpxchg(&_has_registered_finalizer, false, true);
+inline bool InstanceKlass::has_registered_finalizer() const {
+  return _has_registered_finalizer;
 }
 
-static inline bool should_send_finalizer_registration_event(InstanceKlass* ik, Thread* thread) {
-  return Jfr::is_recording() && ik->set_has_registered_finalizer(thread);
+inline bool InstanceKlass::set_has_registered_finalizer() {
+  return Atomic::cmpxchg(&_has_registered_finalizer, false, true) == false;
 }
 
-static void send_finalizer_registration_event(instanceOop i, Thread* thread) {
-  assert(thread != NULL, "invariant");
+static inline bool should_send_finalizer_registration_event(InstanceKlass* ik) {
+  return !has_registered_finalizer() && Jfr::is_recording() && ik->set_has_registered_finalizer();
+}
+
+static void send_finalizer_registration_event(instanceOop i) {
   InstanceKlass* const ik = InstanceKlass::cast(i->klass());
   assert(ik != NULL, "invariant");
-  if (should_send_finalizer_registration_event(ik, thread)) {
+  if (should_send_finalizer_registration_event(ik)) {
     EventFinalizerRegistration event;
     event.set_finalizerClass(ik);
     event.commit();
@@ -1428,7 +1431,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
     i->print_value_on(tty);
     tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", p2i(i));
   }
-  JFR_ONLY(send_finalizer_registration_event(i, THREAD);)
+  JFR_ONLY(send_finalizer_registration_event(i);)
   instanceHandle h_i(THREAD, i);
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
   JavaValue result(T_VOID);
