@@ -1477,6 +1477,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cr(NULL),
   _task_queues(NULL),
   _num_regions_failed_evacuation(0),
+  _regions_failed_evacuation(NULL),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -1769,6 +1770,8 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
+  _regions_failed_evacuation = NEW_C_HEAP_ARRAY(volatile bool, max_regions(), mtGC);
+
   G1InitLogger::print();
 
   return JNI_OK;
@@ -1912,16 +1915,6 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
-  }
-}
-
-bool G1CollectedHeap::should_upgrade_to_full_gc(GCCause::Cause cause) {
-  if (should_do_concurrent_full_gc(_gc_cause)) {
-    return false;
-  } else if (has_regions_left_for_allocation()) {
-    return false;
-  } else {
-    return true;
   }
 }
 
@@ -3476,6 +3469,8 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
 
   _expand_heap_after_alloc_failure = true;
   Atomic::store(&_num_regions_failed_evacuation, 0u);
+
+  memset((void*)_regions_failed_evacuation, false, sizeof(bool) * max_regions());
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();

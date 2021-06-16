@@ -1224,6 +1224,8 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   return false;
 }
 
+#undef XTOP
+
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   Node* ctrl = ac->in(TypeFunc::Control);
   Node* io = ac->in(TypeFunc::I_O);

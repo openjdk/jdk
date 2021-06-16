@@ -43,17 +43,16 @@
 #include "services/diagnosticFramework.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef _WINDOWS
-#define JFR_FILENAME_EXAMPLE "C:\\Users\\user\\My Recording.jfr"
-#endif
 
-#ifdef __APPLE__
-#define JFR_FILENAME_EXAMPLE  "/Users/user/My Recording.jfr"
-#endif
-
-#ifndef JFR_FILENAME_EXAMPLE
-#define JFR_FILENAME_EXAMPLE "/home/user/My Recording.jfr"
-#endif
+bool register_jfr_dcmds() {
+  uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrCheckFlightRecordingDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrDumpFlightRecordingDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStartFlightRecordingDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStopFlightRecordingDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export, true, false));
+  return true;
+}
 
 // JNIHandle management
 
@@ -116,17 +115,6 @@ static bool is_disabled(outputStream* output) {
   return false;
 }
 
-static bool is_recorder_instance_created(outputStream* output) {
-  if (!JfrRecorder::is_created()) {
-    if (output != NULL) {
-      output->print_cr("No available recordings.\n");
-      output->print_cr("Use JFR.start to start a recording.\n");
-    }
-    return false;
-  }
-  return true;
-}
-
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   return is_disabled(out) || !is_module_available(out, THREAD);
@@ -186,6 +174,7 @@ static void handle_dcmd_result(outputStream* output,
                                TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(output != NULL, "invariant");
+  ResourceMark rm(THREAD);
   const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
     handle_pending_exception(output, startup, PENDING_EXCEPTION);
@@ -225,380 +214,79 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   return args->result()->get_oop();
 }
 
-JfrDumpFlightRecordingDCmd::JfrDumpFlightRecordingDCmd(outputStream* output,
-                                                       bool heap) : DCmdWithParser(output, heap),
-  _name("name", "Recording name, e.g. \\\"My Recording\\\"", "STRING", false, NULL),
-  _filename("filename", "Copy recording data to file, e.g. \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", false),
-  _maxage("maxage", "Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit", "NANOTIME", false, "0"),
-  _maxsize("maxsize", "Maximum amount of bytes to dump, in (M)B or (G)B, e.g. 500M, or 0 for no limit", "MEMORY SIZE", false, "0"),
-  _begin("begin", "Point in time to dump data from, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d", "STRING", false),
-  _end("end", "Point in time to dump data to, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d", "STRING", false),
-  _path_to_gc_roots("path-to-gc-roots", "Collect path to GC roots", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_name);
-  _dcmdparser.add_dcmd_option(&_filename);
-  _dcmdparser.add_dcmd_option(&_maxage);
-  _dcmdparser.add_dcmd_option(&_maxsize);
-  _dcmdparser.add_dcmd_option(&_begin);
-  _dcmdparser.add_dcmd_option(&_end);
-  _dcmdparser.add_dcmd_option(&_path_to_gc_roots);
-};
-
-int JfrDumpFlightRecordingDCmd::num_arguments() {
-  ResourceMark rm;
-  JfrDumpFlightRecordingDCmd* dcmd = new JfrDumpFlightRecordingDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  }
-  return 0;
-}
-
-void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-
-  if (invalid_state(output(), THREAD) || !is_recorder_instance_created(output())) {
-    return;
-  }
+void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
+  JavaValue constructor_result(T_OBJECT);
+  JfrJavaArguments constructor_args(&constructor_result);
+  constructor_args.set_klass(javaClass(), CHECK);
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
   JNIHandleBlockManager jni_handle_management(THREAD);
 
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments constructor_args(&result);
-  constructor_args.set_klass("jdk/jfr/internal/dcmd/DCmdDump", CHECK);
   const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
+
   Handle h_dcmd_instance(THREAD, dcmd);
   assert(h_dcmd_instance.not_null(), "invariant");
 
-  jstring name = NULL;
-  if (_name.is_set() && _name.value()  != NULL) {
-    name = JfrJavaSupport::new_string(_name.value(), CHECK);
-  }
-
-  jstring filepath = NULL;
-  if (_filename.is_set() && _filename.value() != NULL) {
-    filepath = JfrJavaSupport::new_string(_filename.value(), CHECK);
-  }
-
-  jobject maxage = NULL;
-  if (_maxage.is_set()) {
-    maxage = JfrJavaSupport::new_java_lang_Long(_maxage.value()._nanotime, CHECK);
-  }
-
-  jobject maxsize = NULL;
-  if (_maxsize.is_set()) {
-    maxsize = JfrJavaSupport::new_java_lang_Long(_maxsize.value()._size, CHECK);
-  }
-
-  jstring begin = NULL;
-  if (_begin.is_set() && _begin.value() != NULL) {
-    begin = JfrJavaSupport::new_string(_begin.value(), CHECK);
-  }
-
-  jstring end = NULL;
-  if (_end.is_set() && _end.value() != NULL) {
-    end = JfrJavaSupport::new_string(_end.value(), CHECK);
-  }
-
-  jobject path_to_gc_roots = NULL;
-  if (_path_to_gc_roots.is_set()) {
-    path_to_gc_roots = JfrJavaSupport::new_java_lang_Boolean(_path_to_gc_roots.value(), CHECK);
-  }
-
-  static const char klass[] = "jdk/jfr/internal/dcmd/DCmdDump";
-  static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)[Ljava/lang/String;";
-
-  JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
-  execute_args.set_receiver(h_dcmd_instance);
-
-  // arguments
-  execute_args.push_jobject(name);
-  execute_args.push_jobject(filepath);
-  execute_args.push_jobject(maxage);
-  execute_args.push_jobject(maxsize);
-  execute_args.push_jobject(begin);
-  execute_args.push_jobject(end);
-  execute_args.push_jobject(path_to_gc_roots);
-
-  JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
+  method.set_receiver(h_dcmd_instance);
+  JfrJavaSupport::call_virtual(&method, THREAD);
 }
 
-JfrCheckFlightRecordingDCmd::JfrCheckFlightRecordingDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
-  _name("name","Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings","STRING",false, NULL),
-  _verbose("verbose","Print event settings for the recording(s)","BOOLEAN",
-           false, "false") {
-  _dcmdparser.add_dcmd_option(&_name);
-  _dcmdparser.add_dcmd_option(&_verbose);
-};
-
-int JfrCheckFlightRecordingDCmd::num_arguments() {
-  ResourceMark rm;
-  JfrCheckFlightRecordingDCmd* dcmd = new JfrCheckFlightRecordingDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  }
-  return 0;
+void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
+  _args = line->args_addr();
+  _delimiter = delim;
+  // Error checking done in execute.
+  // Will not matter from DCmdFactory perspective
+  // where parse and execute are called consecutively.
 }
 
-void JfrCheckFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-
-  if (invalid_state(output(), THREAD) || !is_recorder_instance_created(output())) {
-    return;
-  }
-
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
-
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments constructor_args(&result);
-  constructor_args.set_klass("jdk/jfr/internal/dcmd/DCmdCheck", CHECK);
-  const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
-  Handle h_dcmd_instance(THREAD, dcmd);
-  assert(h_dcmd_instance.not_null(), "invariant");
-
-  jstring name = NULL;
-  if (_name.is_set() && _name.value() != NULL) {
-    name = JfrJavaSupport::new_string(_name.value(), CHECK);
-  }
-
-  jobject verbose = NULL;
-  if (_verbose.is_set()) {
-    verbose = JfrJavaSupport::new_java_lang_Boolean(_verbose.value(), CHECK);
-  }
-
-  static const char klass[] = "jdk/jfr/internal/dcmd/DCmdCheck";
-  static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/Boolean;)[Ljava/lang/String;";
-
-  JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
-  execute_args.set_receiver(h_dcmd_instance);
-
-  // arguments
-  execute_args.push_jobject(name);
-  execute_args.push_jobject(verbose);
-
-  JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
-}
-
-JfrStartFlightRecordingDCmd::JfrStartFlightRecordingDCmd(outputStream* output,
-                                                         bool heap) : DCmdWithParser(output, heap),
-  _name("name", "Name that can be used to identify recording, e.g. \\\"My Recording\\\"", "STRING", false, NULL),
-  _settings("settings", "Settings file(s), e.g. profile or default. See JAVA_HOME/lib/jfr", "STRING SET", false),
-  _delay("delay", "Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h.", "NANOTIME", false, "0"),
-  _duration("duration", "Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s.", "NANOTIME", false, "0"),
-  _disk("disk", "Recording should be persisted to disk", "BOOLEAN", false),
-  _filename("filename", "Resulting recording filename, e.g. \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", false),
-  _maxage("maxage", "Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit", "NANOTIME", false, "0"),
-  _maxsize("maxsize", "Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit", "MEMORY SIZE", false, "0"),
-  _flush_interval("flush-interval", "Minimum time before flushing buffers, measured in (s)econds, e.g. 4 s, or 0 for flushing when a recording ends", "NANOTIME", false, "1s"),
-  _dump_on_exit("dumponexit", "Dump running recording when JVM shuts down", "BOOLEAN", false),
-  _path_to_gc_roots("path-to-gc-roots", "Collect path to GC roots", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_name);
-  _dcmdparser.add_dcmd_option(&_settings);
-  _dcmdparser.add_dcmd_option(&_delay);
-  _dcmdparser.add_dcmd_option(&_duration);
-  _dcmdparser.add_dcmd_option(&_disk);
-  _dcmdparser.add_dcmd_option(&_filename);
-  _dcmdparser.add_dcmd_option(&_maxage);
-  _dcmdparser.add_dcmd_option(&_maxsize);
-  _dcmdparser.add_dcmd_option(&_flush_interval);
-  _dcmdparser.add_dcmd_option(&_dump_on_exit);
-  _dcmdparser.add_dcmd_option(&_path_to_gc_roots);
-};
-
-int JfrStartFlightRecordingDCmd::num_arguments() {
-  ResourceMark rm;
-  JfrStartFlightRecordingDCmd* dcmd = new JfrStartFlightRecordingDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  }
-  return 0;
-}
-
-void JfrStartFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+void JfrDCmd::execute(DCmdSource source, TRAPS) {
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
 
   if (invalid_state(output(), THREAD)) {
     return;
   }
 
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
-
   JavaValue result(T_OBJECT);
-  JfrJavaArguments constructor_args(&result);
-  constructor_args.set_klass("jdk/jfr/internal/dcmd/DCmdStart", THREAD);
-  const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
-  Handle h_dcmd_instance(THREAD, dcmd);
-  assert(h_dcmd_instance.not_null(), "invariant");
-
-  jstring name = NULL;
-  if (_name.is_set() && _name.value() != NULL) {
-    name = JfrJavaSupport::new_string(_name.value(), CHECK);
+  JfrJavaArguments execute(&result, javaClass(), "execute", signature, CHECK);
+  jstring argument = JfrJavaSupport::new_string(_args, CHECK);
+  jstring s = NULL;
+  if (source == DCmd_Source_Internal) {
+    s = JfrJavaSupport::new_string("internal", CHECK);
   }
-
-  jstring filename = NULL;
-  if (_filename.is_set() && _filename.value() != NULL) {
-    filename = JfrJavaSupport::new_string(_filename.value(), CHECK);
+  if (source == DCmd_Source_MBean) {
+    s = JfrJavaSupport::new_string("mbean", CHECK);
   }
-
-  jobject maxage = NULL;
-  if (_maxage.is_set()) {
-    maxage = JfrJavaSupport::new_java_lang_Long(_maxage.value()._nanotime, CHECK);
+  if (source == DCmd_Source_AttachAPI) {
+    s = JfrJavaSupport::new_string("attach", CHECK);
   }
-
-  jobject maxsize = NULL;
-  if (_maxsize.is_set()) {
-    maxsize = JfrJavaSupport::new_java_lang_Long(_maxsize.value()._size, CHECK);
-  }
-
-  jobject flush_interval = NULL;
-  if (_flush_interval.is_set()) {
-    flush_interval = JfrJavaSupport::new_java_lang_Long(_flush_interval.value()._nanotime, CHECK);
-  }
-  jobject duration = NULL;
-  if (_duration.is_set()) {
-    duration = JfrJavaSupport::new_java_lang_Long(_duration.value()._nanotime, CHECK);
-  }
-
-  jobject delay = NULL;
-  if (_delay.is_set()) {
-    delay = JfrJavaSupport::new_java_lang_Long(_delay.value()._nanotime, CHECK);
-  }
-
-  jobject disk = NULL;
-  if (_disk.is_set()) {
-    disk = JfrJavaSupport::new_java_lang_Boolean(_disk.value(), CHECK);
-  }
-
-  jobject dump_on_exit = NULL;
-  if (_dump_on_exit.is_set()) {
-    dump_on_exit = JfrJavaSupport::new_java_lang_Boolean(_dump_on_exit.value(), CHECK);
-  }
-
-  jobject path_to_gc_roots = NULL;
-  if (_path_to_gc_roots.is_set()) {
-    path_to_gc_roots = JfrJavaSupport::new_java_lang_Boolean(_path_to_gc_roots.value(), CHECK);
-  }
-
-  jobjectArray settings = NULL;
-  if (_settings.is_set()) {
-    int length = _settings.value()->array()->length();
-    if (length == 1) {
-      const char* c_str = _settings.value()->array()->at(0);
-      if (strcmp(c_str, "none") == 0) {
-        length = 0;
-      }
-    }
-    settings = JfrJavaSupport::new_string_array(length, CHECK);
-    assert(settings != NULL, "invariant");
-    for (int i = 0; i < length; ++i) {
-      jobject element = JfrJavaSupport::new_string(_settings.value()->array()->at(i), CHECK);
-      assert(element != NULL, "invariant");
-      JfrJavaSupport::set_array_element(settings, element, i, CHECK);
-    }
-  } else {
-    settings = JfrJavaSupport::new_string_array(1, CHECK);
-    assert(settings != NULL, "invariant");
-    jobject element = JfrJavaSupport::new_string("default", CHECK);
-    assert(element != NULL, "invariant");
-    JfrJavaSupport::set_array_element(settings, element, 0, CHECK);
-  }
-
-  static const char klass[] = "jdk/jfr/internal/dcmd/DCmdStart";
-  static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;[Ljava/lang/String;Ljava/lang/Long;"
-    "Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/String;"
-    "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;)[Ljava/lang/String;";
-
-  JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
-  execute_args.set_receiver(h_dcmd_instance);
-
-  // arguments
-  execute_args.push_jobject(name);
-  execute_args.push_jobject(settings);
-  execute_args.push_jobject(delay);
-  execute_args.push_jobject(duration);
-  execute_args.push_jobject(disk);
-  execute_args.push_jobject(filename);
-  execute_args.push_jobject(maxage);
-  execute_args.push_jobject(maxsize);
-  execute_args.push_jobject(flush_interval);
-  execute_args.push_jobject(dump_on_exit);
-  execute_args.push_jobject(path_to_gc_roots);
-
-  JfrJavaSupport::call_virtual(&execute_args, THREAD);
+  execute.push_jobject(s);
+  execute.push_jobject(argument);
+  execute.push_int(_delimiter);
+  invoke(execute, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
-JfrStopFlightRecordingDCmd::JfrStopFlightRecordingDCmd(outputStream* output,
-                                                       bool heap) : DCmdWithParser(output, heap),
-  _name("name", "Recording text,.e.g \\\"My Recording\\\"", "STRING", true, NULL),
-  _filename("filename", "Copy recording data to file, e.g. \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", false, NULL) {
-  _dcmdparser.add_dcmd_option(&_name);
-  _dcmdparser.add_dcmd_option(&_filename);
-};
-
-int JfrStopFlightRecordingDCmd::num_arguments() {
-  ResourceMark rm;
-  JfrStopFlightRecordingDCmd* dcmd = new JfrStopFlightRecordingDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  }
-  return 0;
+void JfrDCmd::print_help(const char* name) const {
+  static const char signature[] = "()[Ljava/lang/String;";
+  JavaThread* thread = JavaThread::current();
+  JavaValue result(T_OBJECT);
+  JfrJavaArguments print_help(&result, javaClass(), "printHelp", signature, thread);
+  invoke(print_help, thread);
+  handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
 }
 
-void JfrStopFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
+  return new GrowableArray<DCmdArgumentInfo*>();
+}
 
-  if (invalid_state(output(), THREAD) || !is_recorder_instance_created(output())) {
-    return;
+GrowableArray<const char*>* JfrDCmd::argument_name_array() const {
+  GrowableArray<DCmdArgumentInfo*>* argument_infos = argument_info_array();
+  GrowableArray<const char*>* array = new GrowableArray<const char*>(argument_infos->length());
+  for (int i = 0; i < argument_infos->length(); i++) {
+    array->append(argument_infos->at(i)->name());
   }
-
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-  JNIHandleBlockManager jni_handle_management(THREAD);
-
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments constructor_args(&result);
-  constructor_args.set_klass("jdk/jfr/internal/dcmd/DCmdStop", CHECK);
-  const oop dcmd = construct_dcmd_instance(&constructor_args, CHECK);
-  Handle h_dcmd_instance(THREAD, dcmd);
-  assert(h_dcmd_instance.not_null(), "invariant");
-
-  jstring name = NULL;
-  if (_name.is_set() && _name.value()  != NULL) {
-    name = JfrJavaSupport::new_string(_name.value(), CHECK);
-  }
-
-  jstring filepath = NULL;
-  if (_filename.is_set() && _filename.value() != NULL) {
-    filepath = JfrJavaSupport::new_string(_filename.value(), CHECK);
-  }
-
-  static const char klass[] = "jdk/jfr/internal/dcmd/DCmdStop";
-  static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;";
-
-  JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
-  execute_args.set_receiver(h_dcmd_instance);
-
-  // arguments
-  execute_args.push_jobject(name);
-  execute_args.push_jobject(filepath);
-
-  JfrJavaSupport::call_virtual(&execute_args, THREAD);
-  handle_dcmd_result(output(), result.get_oop(), source, THREAD);
+  return array;
 }
 
 JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* output,
@@ -623,6 +311,64 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_max_chunk_size);
   _dcmdparser.add_dcmd_option(&_sample_threads);
 };
+
+void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
+  outputStream* out = output();
+              // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+  out->print_cr("Options:");
+  out->print_cr("");
+  out->print_cr("  globalbuffercount  (Optional) Number of global buffers. This option is a legacy");
+  out->print_cr("                     option: change the memorysize parameter to alter the number of");
+  out->print_cr("                     global buffers. This value cannot be changed once JFR has been");
+  out->print_cr("                     initalized. (STRING, default determined by the value for");
+  out->print_cr("                     memorysize)");
+  out->print_cr("");
+  out->print_cr("  globalbuffersize   (Optional) Size of the global buffers, in bytes. This option is a");
+  out->print_cr("                     legacy option: change the memorysize parameter to alter the size");
+  out->print_cr("                     of the global buffers. This value cannot be changed once JFR has");
+  out->print_cr("                     been initalized. (STRING, default determined by the value for");
+  out->print_cr("                     memorysize)");
+  out->print_cr("");
+  out->print_cr("   maxchunksize      (Optional) Maximum size of an individual data chunk in bytes if");
+  out->print_cr("                     one of the following suffixes is not used: 'm' or 'M' for");
+  out->print_cr("                     megabytes OR 'g' or 'G' for gigabytes. This value cannot be");
+  out->print_cr("                     changed once JFR has been initialized. (STRING, 12M)");
+  out->print_cr("");
+  out->print_cr("   memorysize        (Optional) Overall memory size, in bytes if one of the following");
+  out->print_cr("                     suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for");
+  out->print_cr("                     gigabytes. This value cannot be changed once JFR has been");
+  out->print_cr("                     initialized. (STRING, 10M)");
+  out->print_cr("");
+  out->print_cr("  repositorypath     (Optional) Path to the location where recordings are stored until");
+  out->print_cr("                     they are written to a permanent file. (STRING, The default");
+  out->print_cr("                     location is the temporary directory for the operating system. On");
+  out->print_cr("                     Linux operating systems, the temporary directory is /tmp. On");
+  out->print_cr("                     Windows, the temporary directory is specified by the TMP");
+  out->print_cr("                     environment variable.)");
+  out->print_cr("");
+  out->print_cr("  stackdepth         (Optional) Stack depth for stack traces. Setting this value");
+  out->print_cr("                     greater than the default of 64 may cause a performance");
+  out->print_cr("                     degradation. This value cannot be changed once JFR has been");
+  out->print_cr("                     initialized. (LONG, 64)");
+  out->print_cr("");
+  out->print_cr("  thread_buffer_size (Optional) Local buffer size for each thread in bytes if one of");
+  out->print_cr("                     the following suffixes is not used: 'k' or 'K' for kilobytes or");
+  out->print_cr("                     'm' or 'M' for megabytes. Overriding this parameter could reduce");
+  out->print_cr("                     performance and is not recommended. This value cannot be changed");
+  out->print_cr("                     once JFR has been initialized. (STRING, 8k)");
+  out->print_cr("");
+  out->print_cr("  samplethreads      (Optional) Flag for activating thread sampling. (BOOLEAN, true)");
+  out->print_cr("");
+  out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
+  out->print_cr("");
+  out->print_cr("Example usage:");
+  out->print_cr("");
+  out->print_cr(" $ jcmd <pid> JFR.configure");
+  out->print_cr(" $ jcmd <pid> JFR.configure repositorypath=/temporary");
+  out->print_cr(" $ jcmd <pid> JFR.configure stackdepth=256");
+  out->print_cr(" $ jcmd <pid> JFR.configure memorysize=100M");
+  out->print_cr("");
+}
 
 int JfrConfigureFlightRecorderDCmd::num_arguments() {
   ResourceMark rm;
@@ -720,14 +466,4 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);
-}
-
-bool register_jfr_dcmds() {
-  uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrCheckFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrDumpFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStartFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStopFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export, true, false));
-  return true;
 }

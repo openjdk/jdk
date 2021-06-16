@@ -395,4 +395,10 @@ public interface JavaLangAccess {
     Object classData(Class<?> c);
 
     long findNative(ClassLoader loader, String entry);
+
+    /**
+     * Direct access to Shutdown.exit to avoid security manager checks
+     * @param statusCode the status code
+     */
+    void exit(int statusCode);
 }

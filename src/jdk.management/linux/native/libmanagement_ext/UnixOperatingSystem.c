@@ -63,8 +63,13 @@ static struct perfbuf {
 #define DEC_64 "%"SCNd64
 #define NS_PER_SEC 1000000000
 
-static void next_line(FILE *f) {
-    while (fgetc(f) != '\n');
+static int next_line(FILE *f) {
+    int c;
+    do {
+        c = fgetc(f);
+    } while (c != '\n' && c != EOF);
+
+    return c;
 }
 
 /**
@@ -93,7 +98,10 @@ static int get_totalticks(int which, ticks *pticks) {
            &iowTicks, &irqTicks, &sirqTicks);
 
     // Move to next line
-    next_line(fh);
+    if (next_line(fh) == EOF) {
+        fclose(fh);
+        return -2;
+    }
 
     //find the line for requested cpu faster to just iterate linefeeds?
     if (which != -1) {
@@ -106,7 +114,10 @@ static int get_totalticks(int which, ticks *pticks) {
                 fclose(fh);
                 return -2;
             }
-            next_line(fh);
+            if (next_line(fh) == EOF) {
+                fclose(fh);
+                return -2;
+            }
         }
         n = fscanf(fh, "cpu%*d " DEC_64 " " DEC_64 " " DEC_64 " " DEC_64 " "
                        DEC_64 " " DEC_64 " " DEC_64 "\n",

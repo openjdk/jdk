@@ -210,9 +210,6 @@ private:
   // For a humongous region, region in which it starts.
   HeapRegion* _humongous_start_region;
 
-  // True iff an attempt to evacuate an object in the region failed.
-  volatile bool _evacuation_failed;
-
   static const uint InvalidCSetIndex = UINT_MAX;
 
   // The index in the optional regions array, if this region
@@ -497,15 +494,6 @@ public:
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
   void clear_cardtable();
-
-  // Returns the "evacuation_failed" property of the region.
-  inline bool evacuation_failed() const;
-
-  // Sets the "evacuation_failed" property of the region, returning true if this
-  // has been the first call, false otherwise.
-  inline bool set_evacuation_failed();
-
-  inline void reset_evacuation_failed();
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
