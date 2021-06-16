@@ -1539,13 +1539,11 @@ public:
     _list.sort(compare_by_loader);
     for (int i = 0; i < _list.length(); i++) {
       InstanceKlass* k = _list.at(i);
-      //log_warning(cds)("%p %p", k->class_loader_data(), k);
       bool i_am_first = SystemDictionaryShared::check_unique_unregistered_class(_thread, k);
       if (!i_am_first) {
         SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
-        SystemDictionaryShared::set_excluded(k);
+        SystemDictionaryShared::set_excluded_locked(k);
       }
-      //tty->cr();
     }
   }
 };
@@ -1582,6 +1580,15 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* p = find_or_allocate_info_for_locked(k);
   return (p == NULL) ? true : p->is_excluded();
+}
+
+void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for_locked(k);
+  if (info != NULL) {
+    info->set_excluded();
+  }
 }
 
 void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
