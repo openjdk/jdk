@@ -43,8 +43,12 @@ import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.spi.ToolProvider;
 
 public class TestLoadLibraryDeadlock {
+
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+            .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     private static final String KEYSTORE = "keystore.jks";
     private static final String STOREPASS = "changeit";
@@ -84,12 +88,15 @@ public class TestLoadLibraryDeadlock {
         );
     }
 
-    private static OutputAnalyzer createJar(String outputJar, String... classes) throws Throwable {
-        String jar = JDKToolFinder.getJDKTool("jar");
-        List<String> commands = new ArrayList<>();
-        Collections.addAll(commands, jar, "cvf", outputJar);
-        Collections.addAll(commands, classes);
-        return runCommandInTestClassPath(commands.toArray(new String[0]));
+    private static void createJar(String outputJar, String... classes) throws Throwable {
+        List<String> args = new ArrayList<>();
+        Collections.addAll(args, "cvf", Paths.get(testClassPath, outputJar).toString());
+        for (String c : classes) {
+            Collections.addAll(args, "-C", testClassPath, c);
+        }
+        if (JAR.run(System.out, System.err, args.toArray(new String[0])) != 0) {
+            throw new RuntimeException("jar operation failed");
+        }
     }
 
     private static OutputAnalyzer signJar(String jarToSign) throws Throwable {
@@ -175,16 +182,13 @@ public class TestLoadLibraryDeadlock {
         createJar("a.jar",
                 "LoadLibraryDeadlock.class",
                 "LoadLibraryDeadlock$1.class",
-                "LoadLibraryDeadlock$2.class")
-                .shouldHaveExitValue(0);
+                "LoadLibraryDeadlock$2.class");
 
         createJar("b.jar",
-                "Class1.class")
-                .shouldHaveExitValue(0);
+                "Class1.class");
 
         createJar("c.jar",
-                "p/Class2.class")
-                .shouldHaveExitValue(0);
+                "p/Class2.class");
 
         signJar("c.jar")
                 .shouldHaveExitValue(0);

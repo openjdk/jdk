@@ -64,7 +64,7 @@ public class LoadLibraryUnload {
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             synchronized (getClassLoadingLock(name)) {
-                Class clazz = findLoadedClass(name);
+                Class<?> clazz = findLoadedClass(name);
                 if (clazz == null) {
                     try {
                         clazz = findClass(name);
@@ -146,7 +146,7 @@ public class LoadLibraryUnload {
         Asserts.assertTrue(allAreUnsatisfiedLinkError,
                 "All errors have to be UnsatisfiedLinkError");
 
-        WeakReference<Class> wClass = new WeakReference<>(clazz);
+        WeakReference<Class<?>> wClass = new WeakReference<>(clazz);
 
         // release strong refs
         clazz = null;

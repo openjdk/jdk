@@ -34,10 +34,7 @@ public class Class1 {
 
     // method called from java threads
     public void loadLibrary() throws Exception {
-        try {
-            System.loadLibrary("loadLibraryUnload");
-            System.out.println("Native library loaded from Class1.");
-        } catch (Exception ignore) {
-        }
+        System.loadLibrary("loadLibraryUnload");
+        System.out.println("Native library loaded from Class1.");
     }
 }

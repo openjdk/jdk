@@ -41,7 +41,7 @@ public class LoadLibraryDeadlock {
             public void run() {
                 try {
                     // an instance of unsigned class that loads a native library
-                    Class c1 = Class.forName("Class1");
+                    Class<?> c1 = Class.forName("Class1");
                     Object o = c1.newInstance();
                 } catch (ClassNotFoundException |
                          InstantiationException |
@@ -55,7 +55,7 @@ public class LoadLibraryDeadlock {
             public void run() {
                 try {
                     // load a class from a signed jar, which locks the JarFile
-                    Class c2 = Class.forName("p.Class2");
+                    Class<?> c2 = Class.forName("p.Class2");
                     System.out.println("Signed jar loaded.");
                 } catch (ClassNotFoundException e) {
                     System.out.println("Class Class2 not found.");
