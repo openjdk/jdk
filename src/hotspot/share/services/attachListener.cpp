@@ -184,16 +184,10 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
   }
 
   // thread stacks
-  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info);
-  VMThread::execute(&op1);
-
   // JNI global handles
-  VM_PrintJNI op2(out);
-  VMThread::execute(&op2);
-
   // Deadlock detection
-  VM_FindDeadlocks op3(out);
-  VMThread::execute(&op3);
+  VM_ExtendedPrintThreads vm_op(out, print_concurrent_locks, print_extended_info);
+  VMThread::execute(&vm_op);
 
   return JNI_OK;
 }

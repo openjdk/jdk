@@ -270,6 +270,23 @@ class VM_PrintCompileQueue: public VM_Operation {
   void doit();
 };
 
+class VM_ExtendedPrintThreads: public VM_PrintThreads {
+ private:
+   VM_PrintJNI _print_jni;
+   VM_FindDeadlocks _find_dead_locks;
+
+ public:
+  VM_ExtendedPrintThreads() : VM_PrintThreads(), _print_jni(), _find_dead_locks(tty) {}
+  VM_ExtendedPrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
+    : VM_PrintThreads(out, print_concurrent_locks, print_extended_info),
+      _print_jni(out), _find_dead_locks(out) {}
+
+  VMOp_Type type() const {
+    return VMOp_ExtendedPrintThreads;
+  }
+  void doit();
+};
+
 #if INCLUDE_SERVICES
 class VM_PrintClassHierarchy: public VM_Operation {
  private:
