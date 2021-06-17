@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * HTTP request and response headers are represented by this class which
@@ -213,9 +214,10 @@ public class Headers implements Map<String,List<String>> {
             return map.remove(normalize((String)key));
         }
 
-        public void putAll(Map<? extends String,? extends List<String>> t)  {
-            map.putAll (t);
-        }
+    public void putAll(Map<? extends String,? extends List<String>> t)  {
+        var h = t;
+        h.forEach(this::put);
+    }
 
         public void clear() {map.clear();}
 
@@ -227,7 +229,18 @@ public class Headers implements Map<String,List<String>> {
             return map.entrySet();
         }
 
-        public boolean equals(Object o) {return map.equals(o);}
+    @Override
+    public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
+        var f = function.andThen(values -> {
+            values.forEach(Headers::checkValue);
+            return values;
+        });
+        Map.super.replaceAll(f);
+    }
+
+    public boolean equals(Object o) {
+        return o instanceof Headers h && map.equals(h);
+    }
 
         public int hashCode() {return map.hashCode();}
     }
