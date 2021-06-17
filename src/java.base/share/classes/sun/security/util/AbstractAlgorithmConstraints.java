@@ -32,9 +32,8 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -69,7 +68,7 @@ public abstract class AbstractAlgorithmConstraints
             }
             algorithmsInProperty = property.split(",");
             for (int i = 0; i < algorithmsInProperty.length; i++) {
-                algorithmsInProperty[i] = algorithmsInProperty[i].trim().toLowerCase(Locale.ENGLISH);
+                algorithmsInProperty[i] = algorithmsInProperty[i].trim();
             }
         }
 
@@ -77,7 +76,9 @@ public abstract class AbstractAlgorithmConstraints
         if (algorithmsInProperty == null) {
             return Collections.emptySet();
         }
-        return new HashSet<>(Arrays.asList(algorithmsInProperty));
+        Set<String> algorithmsInPropertySet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        algorithmsInPropertySet.addAll(Arrays.asList(algorithmsInProperty));
+        return algorithmsInPropertySet;
     }
 
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
@@ -87,7 +88,7 @@ public abstract class AbstractAlgorithmConstraints
         }
 
         Set<String> elements = null;
-        if (algorithms.contains(algorithm.toLowerCase())) {
+        if (algorithms.contains(algorithm)) {
             return false;
         }
 
@@ -97,9 +98,9 @@ public abstract class AbstractAlgorithmConstraints
         }
         // check the element of the elements
         for (String element : elements) {
-            if (algorithms.contains(element.toLowerCase())) {
-                 return false;
-             }
+            if (algorithms.contains(algorithm)) {
+                return false;
+            }
         }
 
         return true;
