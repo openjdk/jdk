@@ -2946,7 +2946,6 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
     return n;
   }
 
-  const TypePtr* adr_type = TypeKlassPtr::make(TypePtr::NotNull, C->env()->Object_klass(), Type::OffsetBot);
   Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass));
   Node* bol = _gvn.transform(new BoolNode(check, BoolTest::eq));
   IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
@@ -2958,23 +2957,30 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
 Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     float prob,
                                     Node* *casted_receiver) {
+  assert(!klass->is_interface(), "no exact type check on interfaces");
+
   const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
-  Node* cmp = _gvn.transform( new CmpPNode(recv_klass, want_klass) );
-  Node* bol = _gvn.transform( new BoolNode(cmp, BoolTest::eq) );
+  Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
   IfNode* iff = create_and_xform_if(control(), bol, prob, COUNT_UNKNOWN);
-  set_control( _gvn.transform( new IfTrueNode (iff) ));
-  Node* fail = _gvn.transform( new IfFalseNode(iff) );
+  set_control( _gvn.transform(new IfTrueNode (iff)));
+  Node* fail = _gvn.transform(new IfFalseNode(iff));
 
-  const TypeOopPtr* recv_xtype = tklass->as_instance_type();
-  assert(recv_xtype->klass_is_exact(), "");
+  if (!stopped()) {
+    const TypeOopPtr* receiver_type = _gvn.type(receiver)->isa_oopptr();
+    const TypeOopPtr* recvx_type = tklass->as_instance_type();
+    assert(recvx_type->klass_is_exact(), "");
 
-  // Subsume downstream occurrences of receiver with a cast to
-  // recv_xtype, since now we know what the type will be.
-  Node* cast = new CheckCastPPNode(control(), receiver, recv_xtype);
-  (*casted_receiver) = _gvn.transform(cast);
-  // (User must make the replace_in_map call.)
+    if (!receiver_type->higher_equal(recvx_type)) { // ignore redundant casts
+      // Subsume downstream occurrences of receiver with a cast to
+      // recv_xtype, since now we know what the type will be.
+      Node* cast = new CheckCastPPNode(control(), receiver, recvx_type);
+      (*casted_receiver) = _gvn.transform(cast);
+      // (User must make the replace_in_map call.)
+    }
+  }
 
   return fail;
 }
@@ -2987,10 +2993,15 @@ Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
 
-  // Cast receiver after successful check
-  const TypeOopPtr* recv_type = tklass->cast_to_exactness(false)->is_klassptr()->as_instance_type();
-  Node* cast = new CheckCastPPNode(control(), receiver, recv_type);
-  (*casted_receiver) = _gvn.transform(cast);
+  // Ignore interface type information until interface types are properly tracked.
+  if (!stopped() && !klass->is_interface()) {
+    const TypeOopPtr* receiver_type = _gvn.type(receiver)->isa_oopptr();
+    const TypeOopPtr* recv_type = tklass->cast_to_exactness(false)->is_klassptr()->as_instance_type();
+    if (!receiver_type->higher_equal(recv_type)) { // ignore redundant casts
+      Node* cast = new CheckCastPPNode(control(), receiver, recv_type);
+      (*casted_receiver) = _gvn.transform(cast);
+    }
+  }
 
   return slow_ctl;
 }
