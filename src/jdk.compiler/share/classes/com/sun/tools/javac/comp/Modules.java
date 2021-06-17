@@ -536,7 +536,7 @@ public class Modules extends JCTree.Visitor {
     private void checkSourceLocation(JCCompilationUnit tree, ModuleSymbol msym) {
         try {
             JavaFileObject fo = tree.sourcefile;
-            if (fileManager.contains(msym.sourceLocation, fo)) {
+            if (msym.sourceLocation != null && fileManager.contains(msym.sourceLocation, fo)) {
                 return;
             }
             if (msym.patchLocation != null && fileManager.contains(msym.patchLocation, fo)) {
