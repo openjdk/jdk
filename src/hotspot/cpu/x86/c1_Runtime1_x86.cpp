@@ -444,7 +444,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
 
 #ifdef ASSERT
       Label ok;
-      __ cmpw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::fpu_cntrl_wrd_std());
+      __ cmpw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::x86::fpu_cntrl_wrd_std());
       __ jccb(Assembler::equal, ok);
       __ stop("corrupted control word detected");
       __ bind(ok);
@@ -454,7 +454,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
       // since fstp_d can cause FPU stack underflow exceptions.  Write it
       // into the on stack copy and then reload that to make sure that the
       // current and future values are correct.
-      __ movw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::fpu_cntrl_wrd_std());
+      __ movw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::x86::fpu_cntrl_wrd_std());
       __ frstor(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size));
 
       // Save the FPU registers in de-opt-able form
@@ -723,7 +723,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   }
 
 #if !defined(_LP64) && defined(COMPILER2)
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
     // C2 can leave the fpu stack dirty
     __ empty_FPU_stack();
   }

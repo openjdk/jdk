@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
 #define SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
 
-#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/sparsePRT.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"

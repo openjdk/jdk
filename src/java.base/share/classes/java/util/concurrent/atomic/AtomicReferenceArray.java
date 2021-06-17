@@ -330,6 +330,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
             throw new java.io.InvalidObjectException("Not array type");
         if (a.getClass() != Object[].class)
             a = Arrays.copyOf((Object[])a, Array.getLength(a), Object[].class);
+        @SuppressWarnings("removal")
         Field arrayField = java.security.AccessController.doPrivileged(
             (java.security.PrivilegedAction<Field>) () -> {
                 try {

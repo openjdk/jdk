@@ -1530,8 +1530,16 @@ public:
 public:
 
   enum SIMD_Arrangement {
-    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
+    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
   };
+
+private:
+
+  static SIMD_Arrangement _esize2arrangement_table[9][2];
+
+public:
+
+  static SIMD_Arrangement esize2arrangement(int esize, bool isQ);
 
   enum SIMD_RegVariant {
     B, H, S, D, Q, INVALID
@@ -2404,10 +2412,13 @@ public:
   INSN(umlalv, 1, 0b100000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(maxv,   0, 0b011001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(minv,   0, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(cmeq,   1, 0b100011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmgt,   0, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmge,   0, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmhi,   1, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmhs,   1, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 

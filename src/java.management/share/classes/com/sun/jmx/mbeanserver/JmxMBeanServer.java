@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,7 @@ public final class JmxMBeanServer
      *        java.util.concurrent.locks.ReentrantReadWriteLock#ReentrantReadWriteLock(boolean)
      *        fair locking} policy.
      */
+    @SuppressWarnings("removal")
     JmxMBeanServer(String domain, MBeanServer outer,
                    MBeanServerDelegate    delegate,
                    MBeanInstantiator      instantiator,
@@ -1214,6 +1215,7 @@ public final class JmxMBeanServer
      * Initializes this MBeanServer, registering the MBeanServerDelegate.
      * <p>This method must be called once, before using the MBeanServer.
      **/
+    @SuppressWarnings("removal")
     private void initialize() {
         if (instantiator == null) throw new
             IllegalStateException("instantiator must not be null.");
@@ -1500,6 +1502,7 @@ public final class JmxMBeanServer
                                              ObjectName objectName,
                                              String actions)
         throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanPermission(classname,
@@ -1511,6 +1514,7 @@ public final class JmxMBeanServer
     }
 
     private static void checkNewMBeanServerPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanServerPermission("newMBeanServer");

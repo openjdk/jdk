@@ -29,8 +29,8 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
- * @run main RedefineLeak buildagent
- * @run main/othervm/timeout=6000  RedefineLeak runtest
+ * @run driver RedefineLeak buildagent
+ * @run driver/timeout=6000  RedefineLeak runtest
  */
 
 import java.io.FileNotFoundException;

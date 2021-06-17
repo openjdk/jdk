@@ -47,6 +47,7 @@ static void initTemplatePipelineDescriptors() {
     templateStencilPipelineDesc.sampleCount = 1;
     templateStencilPipelineDesc.vertexDescriptor = vertDesc;
     templateStencilPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatR8Uint; // A byte buffer format
+    templateStencilPipelineDesc.stencilAttachmentPixelFormat = MTLPixelFormatStencil8;
     templateStencilPipelineDesc.label = @"template_stencil";
 }
 
@@ -56,10 +57,13 @@ static void initTemplatePipelineDescriptors() {
     MTLContext* _mtlc;
     BMTLSDOps*  _dstOps;
     BOOL _stencilMaskGenerationInProgress;
+    BOOL _stencilMaskGenerationStarted;
     BOOL _clipReady;
     MTLOrigin _clipShapeOrigin;
     MTLSize _clipShapeSize;
 }
+
+@synthesize dstOps = _dstOps;
 
 - (id)init {
     self = [super init];
@@ -68,6 +72,7 @@ static void initTemplatePipelineDescriptors() {
         _mtlc = nil;
         _dstOps = NULL;
         _stencilMaskGenerationInProgress = NO;
+        _stencilMaskGenerationStarted = NO;
         _clipReady = NO;
     }
     return self;
@@ -143,7 +148,7 @@ static void initTemplatePipelineDescriptors() {
 
 - (void)beginShapeClip:(BMTLSDOps *)dstOps context:(MTLContext *)mtlc {
     _stencilMaskGenerationInProgress = YES;
-
+    _mtlc = mtlc;
     if ((dstOps == NULL) || (dstOps->pStencilData == NULL) || (dstOps->pStencilTexture == NULL)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLContext_beginShapeClip: stencil render target or stencil texture is NULL");
         return;
@@ -156,18 +161,9 @@ static void initTemplatePipelineDescriptors() {
         }
 
         _clipShapeSize = MTLSizeMake(0, 0, 1);
-        _clipShapeOrigin = MTLOriginMake(0, 0, 0);
-
-        MTLRenderPassDescriptor* clearPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-        // set color buffer properties
-        clearPassDescriptor.colorAttachments[0].texture = dstOps->pStencilData;
-        clearPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-        clearPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.0f, 0.0f,0.0f, 0.0f);
-
-        id<MTLCommandBuffer> commandBuf = [mtlc createCommandBuffer];
-        id <MTLRenderCommandEncoder> clearEncoder = [commandBuf renderCommandEncoderWithDescriptor:clearPassDescriptor];
-        [clearEncoder endEncoding];
-        [commandBuf commit];
+        // Use out of bounds origin to correctly calculate shape boundaries
+        _clipShapeOrigin = MTLOriginMake((NSUInteger) dstOps->width, (NSUInteger) dstOps->height, 0);
+        _dstOps = dstOps;
     }
 }
 
@@ -189,28 +185,8 @@ static void initTemplatePipelineDescriptors() {
     }];
 
     [commandBuffer commit];
-
-    // Now the stencil data is ready, this needs to be used while rendering further
-    @autoreleasepool {
-        if (_clipShapeSize.width > 0 && _clipShapeSize.height > 0) {
-            id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
-            [blitEncoder copyFromTexture:dstOps->pStencilData
-                             sourceSlice:0
-                             sourceLevel:0
-                            sourceOrigin:_clipShapeOrigin
-                              sourceSize:_clipShapeSize
-                                toBuffer:dstOps->pStencilDataBuf
-                       destinationOffset:0
-                  destinationBytesPerRow:_clipShapeSize.width
-                destinationBytesPerImage:_clipShapeSize.width*_clipShapeSize.height];
-            [blitEncoder endEncoding];
-            [cb commit];
-        }
-    }
-
-    _stencilMaskGenerationInProgress = JNI_FALSE;
-    _mtlc = mtlc;
+    _stencilMaskGenerationInProgress = NO;
+    _stencilMaskGenerationStarted = NO;
     _dstOps = dstOps;
     _clipType = SHAPE_CLIP;
     _clipReady = NO;
@@ -226,7 +202,8 @@ static void initTemplatePipelineDescriptors() {
     // A  PipelineState for rendering to a byte-buffered texture that will be used as a stencil
     id <MTLRenderPipelineState> pipelineState = [pipelineStateStorage getPipelineState:templateStencilPipelineDesc
                                                                          vertexShaderId:@"vert_stencil"
-                                                                       fragmentShaderId:@"frag_stencil"];
+                                                                       fragmentShaderId:@"frag_stencil"
+                                                                          stencilNeeded:YES];
     [encoder setRenderPipelineState:pipelineState];
 
     struct FrameUniforms uf; // color is ignored while writing to stencil buffer
@@ -238,6 +215,8 @@ static void initTemplatePipelineDescriptors() {
     _clipRect.width = dw;
     _clipRect.height = dh;
 
+    [encoder setDepthStencilState: _mtlc.stencilManager.genStencilState];
+    [encoder setStencilReferenceValue:255];
     [encoder setScissorRect:_clipRect]; // just for insurance (to reset possible clip from previous drawing)
 }
 
@@ -300,40 +279,7 @@ static void initTemplatePipelineDescriptors() {
 - (id<MTLTexture>) stencilTextureRef {
     if (_dstOps == NULL) return nil;
 
-    id <MTLTexture> _stencilTextureRef = _dstOps->pStencilTexture;
-
-    if (!_clipReady) {
-        @autoreleasepool {
-
-            MTLRenderPassDescriptor* clearPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-            // set color buffer properties
-            clearPassDescriptor.stencilAttachment.texture = _stencilTextureRef;
-            clearPassDescriptor.stencilAttachment.clearStencil = 0;
-            clearPassDescriptor.stencilAttachment.loadAction = MTLLoadActionClear;
-
-            id<MTLCommandBuffer> commandBuf = [_mtlc createCommandBuffer];
-            id <MTLRenderCommandEncoder> clearEncoder = [commandBuf renderCommandEncoderWithDescriptor:clearPassDescriptor];
-            [clearEncoder endEncoding];
-            [commandBuf commit];
-
-            id <MTLCommandBuffer> cb = [_mtlc createCommandBuffer];
-            id <MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];
-            id <MTLBuffer> _stencilDataBufRef = _dstOps->pStencilDataBuf;
-            [blitEncoder copyFromBuffer:_stencilDataBufRef
-                           sourceOffset:0
-                      sourceBytesPerRow:_clipShapeSize.width
-                    sourceBytesPerImage:_clipShapeSize.width * _clipShapeSize.height
-                             sourceSize:_clipShapeSize
-                              toTexture:_stencilTextureRef
-                       destinationSlice:0
-                       destinationLevel:0
-                      destinationOrigin:_clipShapeOrigin];
-            [blitEncoder endEncoding];
-            [cb commit];
-            _clipReady = YES;
-        }
-    }
-    return _stencilTextureRef;
+    return _dstOps->pStencilTexture;;
 }
 
 - (NSUInteger)shapeX {

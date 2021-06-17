@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,6 +45,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
@@ -57,6 +59,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
+ * @LastModified: May 2021
  */
 public class DocumentBuilderImpl extends DocumentBuilder
         implements JAXPConstants
@@ -99,7 +102,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** property identifier: access external dtd. */
     public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
@@ -186,9 +189,9 @@ public class DocumentBuilderImpl extends DocumentBuilder
                 Boolean temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
                 if (temp != null && temp) {
                     fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
-                            State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                     fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_SCHEMA,
-                            State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 }
             }
         }
@@ -296,7 +299,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
                   } else {
                      //check if the property is managed by security manager
                      if (fSecurityManager == null ||
-                             !fSecurityManager.setLimit(name, XMLSecurityManager.State.APIPROPERTY, val)) {
+                             !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, val)) {
                          //check if the property is managed by security property manager
                          if (fSecurityPropertyMgr == null ||
                                  !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, val)) {

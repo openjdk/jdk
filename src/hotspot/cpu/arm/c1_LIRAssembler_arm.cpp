@@ -1628,9 +1628,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_float(res, lreg, rreg); break;
       case lir_sub: __ sub_float(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_float(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_float(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -1643,9 +1641,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_double(res, lreg, rreg); break;
       case lir_sub: __ sub_double(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_double(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_double(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -2101,9 +2097,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   assert(src == R0 && src_pos == R1 && dst == R2 && dst_pos == R3, "code assumption");
 
-  __ resolve(ACCESS_READ, src);
-  __ resolve(ACCESS_WRITE, dst);
-
   CodeStub* stub = op->stub();
 
   int flags = op->flags();
@@ -2443,7 +2436,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());

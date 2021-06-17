@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -35,6 +36,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -188,6 +190,31 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
+bool G1CollectedHeap::evacuation_failed() const {
+  return num_regions_failed_evacuation() > 0;
+}
+
+bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
+  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
+
+  return Atomic::load(&_regions_failed_evacuation[region_idx]);
+}
+
+uint G1CollectedHeap::num_regions_failed_evacuation() const {
+  return Atomic::load(&_num_regions_failed_evacuation);
+}
+
+bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
+  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
+
+  volatile bool* region_failed_addr = &_regions_failed_evacuation[region_idx];
+  bool result = !Atomic::load(region_failed_addr) && !Atomic::cmpxchg(region_failed_addr, false, true, memory_order_relaxed);
+  if (result) {
+    Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
+  }
+  return result;
+}
+
 #ifndef PRODUCT
 // Support for G1EvacuationFailureALot
 
@@ -297,10 +324,6 @@ inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool v
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
-}
-
-inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
-  _has_humongous_reclaim_candidates = value;
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {

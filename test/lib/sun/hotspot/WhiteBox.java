@@ -55,6 +55,7 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
       sm.checkPermission(new WhiteBoxPermission("getInstance"));
@@ -231,7 +232,7 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
-  public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
@@ -250,7 +251,7 @@ public class WhiteBox {
     return isMethodCompiled0(method, isOsr);
   }
   public        boolean isMethodCompilable(Executable method) {
-    return isMethodCompilable(method, -2 /*any*/);
+    return isMethodCompilable(method, -1 /*any*/);
   }
   public        boolean isMethodCompilable(Executable method, int compLevel) {
     return isMethodCompilable(method, compLevel, false /*not osr*/);
@@ -298,7 +299,7 @@ public class WhiteBox {
     return deoptimizeMethod0(method, isOsr);
   }
   public        void    makeMethodNotCompilable(Executable method) {
-    makeMethodNotCompilable(method, -2 /*any*/);
+    makeMethodNotCompilable(method, -1 /*any*/);
   }
   public        void    makeMethodNotCompilable(Executable method, int compLevel) {
     makeMethodNotCompilable(method, compLevel, false /*not osr*/);
@@ -322,7 +323,7 @@ public class WhiteBox {
     return testSetDontInlineMethod0(method, value);
   }
   public        int     getCompileQueuesSize() {
-    return getCompileQueueSize(-2 /*any*/);
+    return getCompileQueueSize(-1 /*any*/);
   }
   public native int     getCompileQueueSize(int compLevel);
   private native boolean testSetForceInlineMethod0(Executable method, boolean value);
@@ -591,8 +592,8 @@ public class WhiteBox {
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
-  public native boolean isCDSIncludedInVmBuild();
-  public native boolean isJFRIncludedInVmBuild();
+  public native boolean isCDSIncluded();
+  public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
@@ -625,9 +626,6 @@ public class WhiteBox {
   // Protection Domain Table
   public native int protectionDomainRemovedCount();
 
-  // Number of loaded AOT libraries
-  public native int aotLibrariesCount();
-
   public native int getKlassMetadataSize(Class<?> c);
 
   // ThreadSMR GC safety check for threadObj
@@ -637,7 +635,7 @@ public class WhiteBox {
   public native String getLibcName();
 
   // Walk stack frames of current thread
-  public native void verifyFrames(boolean log);
+  public native void verifyFrames(boolean log, boolean updateRegisterMap);
 
   public native boolean isJVMTIIncluded();
 

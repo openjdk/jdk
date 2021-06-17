@@ -61,7 +61,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
@@ -2289,13 +2289,15 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.
+  // The collector and/or state might be NULL if JvmtiDynamicCodeEventCollector
+  // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
   JvmtiThreadState* state = JavaThread::current()->jvmti_thread_state();
-  // state can only be NULL if the current thread is exiting which
-  // should not happen since we're trying to post an event
-  guarantee(state != NULL, "attempt to register stub via an exiting thread");
-  JvmtiDynamicCodeEventCollector* collector = state->get_dynamic_code_event_collector();
-  guarantee(collector != NULL, "attempt to register stub without event collector");
-  collector->register_stub(name, code_begin, code_end);
+  if (state != NULL) {
+    JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
+    if (collector != NULL) {
+      collector->register_stub(name, code_begin, code_end);
+    }
+  }
 }
 
 // Collect all the vm internally allocated objects which are visible to java world
@@ -2687,7 +2689,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
-      JavaThread* THREAD = JavaThread::current();
+      JavaThread* THREAD = JavaThread::current(); // For exception macros.
       {
         extern struct JavaVM_ main_vm;
         JvmtiThreadEventMark jem(THREAD);

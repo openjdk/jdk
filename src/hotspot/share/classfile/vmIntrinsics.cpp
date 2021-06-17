@@ -88,11 +88,13 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
-  case vmIntrinsics::_checkIndex:
+  case vmIntrinsics::_Preconditions_checkIndex:
+  case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_Reference_get:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -153,6 +155,7 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;
@@ -465,11 +468,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_copyMemory:
     if (!InlineArrayCopy || !InlineUnsafeOps) return true;
     break;
-#ifdef COMPILER1
-  case vmIntrinsics::_checkIndex:
-    if (!InlineNIOCheckIndex) return true;
-    break;
-#endif // COMPILER1
 #ifdef COMPILER2
   case vmIntrinsics::_clone:
   case vmIntrinsics::_copyOf:

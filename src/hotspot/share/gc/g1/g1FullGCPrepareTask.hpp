@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 
@@ -64,7 +63,6 @@ protected:
     bool should_compact(HeapRegion* hr);
     void prepare_for_compaction(HeapRegion* hr);
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
-    void update_bot(HeapRegion* hr);
 
     void reset_region_metadata(HeapRegion* hr);
 

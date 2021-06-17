@@ -28,13 +28,15 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
-class AbstractRefProcTaskExecutor;
 class GCTimer;
 class ReferencePolicy;
 class ReferenceProcessorPhaseTimes;
+class RefProcTask;
+class RefProcProxyTask;
 
 // List of discovered references.
 class DiscoveredList {
@@ -204,7 +206,6 @@ private:
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
-  bool        _adjust_no_of_processing_threads; // allow dynamic adjustment of processing threads
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
@@ -235,33 +236,24 @@ private:
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
+  void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
+
   // Phase 1: Re-evaluate soft ref policy.
-  void process_soft_ref_reconsider(BoolObjectClosure* is_alive,
-                                   OopClosure* keep_alive,
-                                   VoidClosure* complete_gc,
-                                   AbstractRefProcTaskExecutor*  task_executor,
-                                   ReferenceProcessorPhaseTimes* phase_times);
+  void process_soft_ref_reconsider(RefProcProxyTask& proxy_task,
+                                   ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
-  void process_soft_weak_final_refs(BoolObjectClosure* is_alive,
-                                    OopClosure* keep_alive,
-                                    VoidClosure* complete_gc,
-                                    AbstractRefProcTaskExecutor*  task_executor,
-                                    ReferenceProcessorPhaseTimes* phase_times);
+  void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
+                                    ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 3: Keep alive followers of Final references, and enqueue.
-  void process_final_keep_alive(OopClosure* keep_alive,
-                                VoidClosure* complete_gc,
-                                AbstractRefProcTaskExecutor*  task_executor,
-                                ReferenceProcessorPhaseTimes* phase_times);
+  void process_final_keep_alive(RefProcProxyTask& proxy_task,
+                                ReferenceProcessorPhaseTimes& phase_times);
 
   // Phase 4: Drop and keep alive live Phantom references, or clear and enqueue if dead.
-  void process_phantom_refs(BoolObjectClosure* is_alive,
-                            OopClosure* keep_alive,
-                            VoidClosure* complete_gc,
-                            AbstractRefProcTaskExecutor*  task_executor,
-                            ReferenceProcessorPhaseTimes* phase_times);
+  void process_phantom_refs(RefProcProxyTask& proxy_task,
+                            ReferenceProcessorPhaseTimes& phase_times);
 
   // Work methods used by the process_* methods. All methods return the number of
   // removed elements.
@@ -375,8 +367,7 @@ public:
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL,
-                     bool adjust_no_of_processing_threads = false);
+                     BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -432,11 +423,8 @@ public:
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
-  process_discovered_references(BoolObjectClosure*            is_alive,
-                                OopClosure*                   keep_alive,
-                                VoidClosure*                  complete_gc,
-                                AbstractRefProcTaskExecutor*  task_executor,
-                                ReferenceProcessorPhaseTimes* phase_times);
+  process_discovered_references(RefProcProxyTask& proxy_task,
+                                ReferenceProcessorPhaseTimes& phase_times);
 
   // If a discovery is in process that is being superceded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
@@ -448,8 +436,6 @@ public:
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-
-  bool adjust_no_of_processing_threads() const { return _adjust_no_of_processing_threads; }
 };
 
 // A subject-to-discovery closure that uses a single memory span to determine the area that
@@ -596,42 +582,57 @@ class ReferenceProcessorAtomicMutator: StackObj {
   }
 };
 
-// This class is an interface used to implement task execution for the
-// reference processing.
-class AbstractRefProcTaskExecutor {
-public:
+enum class RefProcThreadModel { Multi, Single };
 
-  // Abstract tasks to execute.
-  class ProcessTask;
-
-  // Executes a task using worker threads.
-  virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
-};
-
-// Abstract reference processing task to execute.
-class AbstractRefProcTaskExecutor::ProcessTask {
+/*
+ * This is the (base) task that handles reference processing that does not depend on
+ * the chosen GC (Serial, Parallel or G1). This RefProcTask will be called from a subclass
+ * of RefProcProxyTask. The RefProcProxyTask will give the behaviour of the selected GC by
+ * calling rp_work with the gc-specific closures.
+ */
+class RefProcTask : StackObj {
 protected:
-  ReferenceProcessor&           _ref_processor;
-  // Indicates whether the phase could generate work that should be balanced across
-  // threads after execution.
-  bool                          _marks_oops_alive;
+  ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
 
-  ProcessTask(ReferenceProcessor& ref_processor,
-              bool marks_oops_alive,
+public:
+  RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)
     : _ref_processor(ref_processor),
-      _marks_oops_alive(marks_oops_alive),
-      _phase_times(phase_times)
-  { }
+      _phase_times(phase_times) {}
+
+  virtual void rp_work(uint worker_id,
+                       BoolObjectClosure* is_alive,
+                       OopClosure* keep_alive,
+                       VoidClosure* complete_gc) = 0;
+};
+
+/*
+ * This is the (base) task that handles reference processing that do depend on
+ * the chosen GC (Serial, Parallel or G1). This RefProcProxyTask will call a subclass
+ * of RefProcTask that will handle reference processing in a generic way for Serial,
+ * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
+ */
+class RefProcProxyTask : public AbstractGangTask {
+protected:
+  const uint _max_workers;
+  RefProcTask* _rp_task;
+  RefProcThreadModel _tm;
+  uint _queue_count;
+  bool _marks_oops_alive;
 
 public:
-  virtual void work(uint worker_id,
-                    BoolObjectClosure& is_alive,
-                    OopClosure& keep_alive,
-                    VoidClosure& complete_gc) = 0;
+  RefProcProxyTask(const char* name, uint max_workers) : AbstractGangTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
 
-  bool marks_oops_alive() const { return _marks_oops_alive; }
+  void prepare_run_task(RefProcTask& rp_task, uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
+    _rp_task = &rp_task;
+    _tm = tm;
+    _queue_count = queue_count;
+    _marks_oops_alive = marks_oops_alive;
+    prepare_run_task_hook();
+  }
+
+  virtual void prepare_run_task_hook() {}
 };
 
 // Temporarily change the number of workers based on given reference count.

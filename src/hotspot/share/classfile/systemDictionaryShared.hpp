@@ -25,10 +25,10 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/filemap.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "memory/filemap.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
 
@@ -111,6 +111,23 @@ class DumpTimeSharedClassTable;
 class LambdaProxyClassDictionary;
 class RunTimeSharedClassInfo;
 class RunTimeSharedDictionary;
+
+class SharedClassLoadingMark {
+ private:
+  Thread* THREAD;
+  InstanceKlass* _klass;
+ public:
+  SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
+  ~SharedClassLoadingMark() {
+    assert(THREAD != NULL, "Current thread is NULL");
+    assert(_klass != NULL, "InstanceKlass is NULL");
+    if (HAS_PENDING_EXCEPTION) {
+      if (_klass->is_shared()) {
+        _klass->set_shared_loading_failed();
+      }
+    }
+  }
+};
 
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
@@ -207,13 +224,15 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static void warn_excluded(InstanceKlass* k, const char* reason);
-  static bool should_be_excluded(InstanceKlass* k);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
+  static bool check_for_exclusion_impl(InstanceKlass* k);
+  static bool has_been_redefined(InstanceKlass* k);
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
@@ -304,6 +323,7 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static void check_excluded_classes();
+  static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);

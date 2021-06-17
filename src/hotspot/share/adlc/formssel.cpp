@@ -419,6 +419,8 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
+  if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
+  idx = 0;
   if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
   idx = 0;
 
@@ -764,6 +766,11 @@ int InstructForm::memory_operand(FormDict &globals) const {
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if (_matrule && _matrule->_rChild &&
       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastDD")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastFF")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastII")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
@@ -782,6 +789,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
 #endif
        !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
+       !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
        !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;

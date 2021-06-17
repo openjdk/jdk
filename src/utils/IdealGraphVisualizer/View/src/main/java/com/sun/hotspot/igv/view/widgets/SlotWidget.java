@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.graph.Slot;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
 import com.sun.hotspot.igv.view.DiagramScene;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -56,7 +57,9 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         this.diagramScene = scene;
         this.slot = slot;
         figureWidget = fw;
-        this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
+        if (!slot.getSource().getSourceNodes().isEmpty()) {
+            this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
+        }
         this.setCheckClipping(true);
         parent.addChild(this);
 
@@ -101,6 +104,9 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
             Font font = this.getSlot().getFigure().getDiagram().getSlotFont();
             if (this.getState().isSelected()) {
                 font = font.deriveFont(Font.BOLD);
+                g.setStroke(new BasicStroke(1.5f));
+            } else {
+                g.setStroke(new BasicStroke(1f));
             }
 
             if (getSlot().getShortName() != null && getSlot().getShortName().length() > 0) {

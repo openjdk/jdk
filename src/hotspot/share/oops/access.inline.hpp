@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_ACCESS_INLINE_HPP
 #define SHARE_OOPS_ACCESS_INLINE_HPP
 
+#include "oops/access.hpp"
+
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/barrierSetConfig.inline.hpp"
-#include "oops/access.hpp"
 #include "oops/accessBackend.inline.hpp"
 
 // This file outlines the last 2 steps of the template pipeline of accesses going through

@@ -834,10 +834,6 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp_thread);
 
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
 
@@ -1061,6 +1057,9 @@ public:
                enum operand_size size,
                bool acquire, bool release, bool weak,
                Register result);
+
+  // SIMD&FP comparison
+  void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1, FloatRegister src2, int cond, bool isQ);
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 
@@ -1084,7 +1083,7 @@ public:
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range || UseAOT;
+    return ReservedCodeCacheSize > branch_range;
   }
 
   // Jumps that can reach anywhere in the code cache.

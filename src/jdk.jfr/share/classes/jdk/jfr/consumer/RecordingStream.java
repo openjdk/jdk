@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.consumer;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
@@ -40,6 +42,7 @@ import jdk.jfr.Event;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
@@ -102,13 +105,21 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      */
     public RecordingStream() {
         Utils.checkAccessFlightRecorder();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
         this.creationTime = Instant.now();
         this.recording.setName("Recording Stream: " + creationTime);
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-            this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr, configurations());
+            this.directoryStream = new EventDirectoryStream(
+                acc,
+                null,
+                SecuritySupport.PRIVILEGED,
+                pr,
+                configurations(),
+                false
+            );
         } catch (IOException ioe) {
             this.recording.close();
             throw new IllegalStateException(ioe.getMessage());
@@ -392,6 +403,41 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         long startNanos = pr.start();
         updateOnCompleteHandler();
         directoryStream.startAsync(startNanos);
+    }
+
+    /**
+     * Writes recording data to a file.
+     * <p>
+     * The recording stream must be started, but not closed.
+     * <p>
+     * It's highly recommended that a max age or max size is set before
+     * starting the stream. Otherwise, the dump may not contain any events.
+     *
+     * @param destination the location where recording data is written, not
+     *        {@code null}
+     *
+     * @throws IOException if the recording data can't be copied to the specified
+     *         location, or if the stream is closed, or not started.
+     *
+     * @throws SecurityException if a security manager exists and the caller doesn't
+     *         have {@code FilePermission} to write to the destination path
+     *
+     * @see RecordingStream#setMaxAge(Duration)
+     * @see RecordingStream#setMaxSize(long)
+     */
+    public void dump(Path destination) throws IOException {
+        Objects.requireNonNull(destination);
+        Object recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        synchronized (recorder) {
+            RecordingState state = recording.getState();
+            if (state == RecordingState.CLOSED) {
+                throw new IOException("Recording stream has been closed, no content to write");
+            }
+            if (state == RecordingState.NEW) {
+                throw new IOException("Recording stream has not been started, no content to write");
+            }
+            recording.dump(destination);
+        }
     }
 
     @Override

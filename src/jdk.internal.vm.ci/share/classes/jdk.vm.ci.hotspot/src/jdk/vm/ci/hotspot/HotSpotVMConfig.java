@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
     final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
-    final int instanceKlassMiscIsUnsafeAnonymous = getConstant("InstanceKlass::_misc_is_unsafe_anonymous", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
     final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
@@ -255,6 +254,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmConstantMethodHandleInError = getConstant("JVM_CONSTANT_MethodHandleInError", Integer.class);
     final int jvmConstantMethodType = getConstant("JVM_CONSTANT_MethodType", Integer.class);
     final int jvmConstantMethodTypeInError = getConstant("JVM_CONSTANT_MethodTypeInError", Integer.class);
+    final int jvmConstantDynamic = getConstant("JVM_CONSTANT_Dynamic", Integer.class);
+    final int jvmConstantDynamicInError = getConstant("JVM_CONSTANT_DynamicInError", Integer.class);
     final int jvmConstantInvokeDynamic = getConstant("JVM_CONSTANT_InvokeDynamic", Integer.class);
 
     final int jvmConstantExternalMax = getConstant("JVM_CONSTANT_ExternalMax", Integer.class);
@@ -361,6 +362,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);
     final int codeInstallResultCacheFull = getConstant("JVMCI::cache_full", Integer.class);
     final int codeInstallResultCodeTooLarge = getConstant("JVMCI::code_too_large", Integer.class);
+    final int codeInstallResultNMethodReclaimed = getConstant("JVMCI::nmethod_reclaimed", Integer.class);
+    final int codeInstallResultFirstPermanentBailout = getConstant("JVMCI::first_permanent_bailout", Integer.class);
 
     String getCodeInstallResultDescription(int codeInstallResult) {
         if (codeInstallResult == codeInstallResultOk) {
@@ -374,6 +377,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (codeInstallResult == codeInstallResultCodeTooLarge) {
             return "code is too large";
+        }
+        if (codeInstallResult == codeInstallResultNMethodReclaimed) {
+            return "nmethod reclaimed";
         }
         assert false : codeInstallResult;
         return "unknown";

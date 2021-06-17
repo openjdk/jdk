@@ -61,6 +61,6 @@ class Bytes: AllStatic {
 
 
 // The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
-#include OS_CPU_HEADER_INLINE(bytes)
+#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_AARCH64_BYTES_AARCH64_HPP

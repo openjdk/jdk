@@ -29,6 +29,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compilerThread.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
@@ -235,9 +236,9 @@ class CompileBroker: AllStatic {
   };
 
   static Handle create_thread_oop(const char* name, TRAPS);
-  static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD);
+  static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_sweeper_threads();
-  static void possibly_add_compiler_threads(Thread* THREAD);
+  static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
@@ -295,7 +296,7 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
   }
-  static void compilation_init_phase1(Thread* THREAD);
+  static void compilation_init_phase1(JavaThread* THREAD);
   static void compilation_init_phase2();
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
