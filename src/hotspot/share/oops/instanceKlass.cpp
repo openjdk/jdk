@@ -1397,31 +1397,23 @@ objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
 }
 
 #if INCLUDE_JFR
-void InstanceKlass::clear_has_registered_finalizer() {
+bool InstanceKlass::is_finalizer_serialized() const {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  return _is_finalizer_serialized;
+}
+
+void InstanceKlass::set_is_finalizer_serialized() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(has_finalizer(), "invariant");
+  assert(!_is_finalizer_serialized, "invariant");
+  _is_finalizer_serialized = true;
+}
+
+void InstanceKlass::clear_is_finalizer_serialized() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(!Jfr::is_recording(), "invariant");
-  _has_registered_finalizer = false;
-}
-
-inline bool InstanceKlass::has_registered_finalizer() const {
-  return _has_registered_finalizer;
-}
-
-inline bool InstanceKlass::set_has_registered_finalizer() {
-  return Atomic::cmpxchg(&_has_registered_finalizer, false, true) == false;
-}
-
-static inline bool should_send_finalizer_registration_event(InstanceKlass* ik) {
-  return !has_registered_finalizer() && Jfr::is_recording() && ik->set_has_registered_finalizer();
-}
-
-static void send_finalizer_registration_event(instanceOop i) {
-  InstanceKlass* const ik = InstanceKlass::cast(i->klass());
-  assert(ik != NULL, "invariant");
-  if (should_send_finalizer_registration_event(ik)) {
-    EventFinalizerRegistration event;
-    event.set_finalizerClass(ik);
-    event.commit();
-  }
+  assert(has_finalizer(), "invariant");
+  _is_finalizer_serialized = false;
 }
 #endif // INCLUDE_JFR
 
@@ -1431,7 +1423,6 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
     i->print_value_on(tty);
     tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", p2i(i));
   }
-  JFR_ONLY(send_finalizer_registration_event(i);)
   instanceHandle h_i(THREAD, i);
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
   JavaValue result(T_VOID);

@@ -223,7 +223,7 @@ class InstanceKlass: public Klass {
   // _is_marked_dependent and _has_registered_finalizer can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
-  JFR_ONLY(bool   _has_registered_finalizer;) // for tracing of finalizer registrations
+  JFR_ONLY(bool   _is_finalizer_serialized;) // for reporting usage of finalizer methods
 
   // Class states are defined as ClassState (see above).
   // Place the _init_state here to utilize the unused 2-byte after
@@ -928,9 +928,9 @@ public:
 
   // Helper function
   static instanceOop register_finalizer(instanceOop i, TRAPS);
-  JFR_ONLY(bool has_registered_finalizer() const;)
-  JFR_ONLY(bool set_has_registered_finalizer();)
-  JFR_ONLY(void clear_has_registered_finalizer();)
+  JFR_ONLY(bool is_finalizer_serialized() const;)
+  JFR_ONLY(void set_is_finalizer_serialized();)
+  JFR_ONLY(void clear_is_finalizer_serialized();)
 
   // Check whether reflection/jni/jvm code is allowed to instantiate this class;
   // if not, throw either an Error or an Exception.
