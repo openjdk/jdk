@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class DuplicatedCustomApp {
         System.out.println("Class = " + c + ", loaded from " + (is_shared ? "CDS" : "Jar"));
         System.out.println("Loader = " + c.getClassLoader());
 
-        // [1] Check that CustomLoadee is defined by the correct loader
+        // [1] Check that the loaded class is defined by the correct loader
         if (c.getClassLoader() != urlClassLoader) {
             throw new RuntimeException("c.getClassLoader() == " + c.getClassLoader() +
                                        ", expected == " + urlClassLoader);

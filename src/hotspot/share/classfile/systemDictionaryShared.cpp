@@ -1317,8 +1317,7 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     // set it to NULL. This ensure no classes with the same name can be
     // added again.
     MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock);
-    Symbol* name = klass->name();
-    InstanceKlass** v = _unregistered_classes_table->get(name);
+    InstanceKlass** v = _unregistered_classes_table->get(klass->name());
     if (v != NULL) {
       *v = NULL;
     }
@@ -1526,7 +1525,7 @@ public:
     if (loader_a != loader_b) {
       return intx(loader_a) - intx(loader_b);
     } else {
-      return intx(a[0]) -intx(b[0]);
+      return intx(a[0]) - intx(b[0]);
     }
   }
 
