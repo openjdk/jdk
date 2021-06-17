@@ -1777,6 +1777,12 @@ public final class SSLSocketImpl
         }
 
         if (autoClose || !isLayered()) {
+            // Try to clear the kernel buffer to avoid TCP connection resets.
+            if (conContext.inputRecord instanceof SSLSocketInputRecord &&
+                isConnected) {
+                ((SSLSocketInputRecord)(conContext.inputRecord)).deplete(false);
+            }
+
             super.close();
         } else if (selfInitiated) {
             if (!conContext.isInboundClosed() && !isInputShutdown()) {
