@@ -60,7 +60,7 @@ class outputStream;
 // declared above. For example, logging with 'uptime, level, tags' decorators results in:
 // [0,943s][info   ][logging] message.
 class LogDecorators {
-  friend class PrimitiveConversions::Translate<LogDecorators>;
+  friend struct PrimitiveConversions::Translate<LogDecorators>;
 
  #ifdef ASSERT
   friend class LogFileStreamOutput;
