@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
+#include "runtime/atomic.hpp"
 #include "unittest.hpp"
 
 static LogDecorators::Decorator decorator_array[] = {
@@ -221,4 +222,38 @@ TEST(LogDecorators, is_empty) {
   LogDecorators def, none = LogDecorators::None;
   EXPECT_FALSE(def.is_empty());
   EXPECT_TRUE(none.is_empty());
+}
+
+TEST(LogDecorators, atomic_store_logDecorators) {
+  typedef PrimitiveConversions::Translate<LogDecorators> translate;
+  LogDecorators lhs = LogDecorators::None;
+  LogDecorators rhs; // default bitmask
+  uint bitmask = 0;
+
+  for (int i = 0; i < LogDecorators::Count; i++) {
+    LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);
+    if (rhs.is_decorator(decorator)) {
+      bitmask |= 1 << i;
+    }
+  }
+
+  EXPECT_TRUE(translate::value);
+  EXPECT_EQ((uint)0, translate::decay(lhs));
+  EXPECT_EQ(bitmask, translate::decay(rhs));
+
+  Atomic::store(&lhs, rhs); // lhs = rhs in atomic.
+  EXPECT_EQ(bitmask, translate::decay(rhs));
+
+  rhs = translate::recover(bitmask);
+  for (int i = 0; i < LogDecorators::Count; i++) {
+    LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);
+    if (rhs.is_decorator(decorator)) {
+      EXPECT_TRUE((bitmask & (1 << i)) != 0);
+    } else {
+      EXPECT_TRUE((bitmask & (1 << i)) == 0);
+    }
+  }
+
+  Atomic::store(&lhs, LogDecorators::None);
+  EXPECT_EQ((uint)0, translate::decay(lhs));
 }
