@@ -37,6 +37,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerOverrideEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
@@ -635,7 +636,6 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.commit();
 }
 
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
@@ -643,4 +643,8 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
     VMThread::execute(&op);
   }
 #endif
+}
+
+TRACE_REQUEST_FUNC(FinalizerOverride) {
+  JfrFinalizerOverrideEvent::generate_events();
 }
