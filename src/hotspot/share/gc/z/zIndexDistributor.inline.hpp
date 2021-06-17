@@ -55,7 +55,7 @@ public:
       _max_index(max_index),
       _claim_stripe(0),
       _mem() {
-    memset(_mem, 0, 4096 + ZCacheLineSize);
+    memset(_mem, 0, MemSize + ZCacheLineSize);
   }
 
   template <typename Function>
