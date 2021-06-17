@@ -177,10 +177,6 @@ void VM_PrintThreads::doit_epilogue() {
   }
 }
 
-void VM_PrintJNI::doit() {
-  JNIHandles::print_on(_out);
-}
-
 void VM_PrintMetadata::doit() {
   metaspace::MetaspaceReporter::print_report(_out, _scale, _flags);
 }
@@ -494,8 +490,11 @@ void VM_PrintCompileQueue::doit() {
 }
 
 void VM_ExtendedPrintThreads::doit() {
+  // thread stacks
   VM_PrintThreads::doit();
-  _print_jni.doit();
+  // JNI global handles
+  JNIHandles::print_on(_out);
+  // Deadlock detection
   _find_dead_locks.doit();
 }
 
