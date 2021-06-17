@@ -822,6 +822,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java        8263461 linux-x64
+jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
 
 ############################################################################
 
