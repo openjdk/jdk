@@ -93,7 +93,7 @@ public class DuplicatedCustomApp {
 
         if (is_running_with_dynamic_archive) {
             // There's only one copy of the shared class of <name> in the
-            // CDS archive. 
+            // CDS archive.
             if (i == 0) {
                 // The first time we must be able to load it from CDS.
                 if (!is_shared) {
