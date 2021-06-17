@@ -32,7 +32,9 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -48,7 +50,7 @@ public abstract class AbstractAlgorithmConstraints
     }
 
     // Get algorithm constraints from the specified security property.
-    static List<String> getAlgorithms(String propertyName) {
+    static Set<String> getAlgorithms(String propertyName) {
         @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
@@ -67,15 +69,15 @@ public abstract class AbstractAlgorithmConstraints
             }
             algorithmsInProperty = property.split(",");
             for (int i = 0; i < algorithmsInProperty.length; i++) {
-                algorithmsInProperty[i] = algorithmsInProperty[i].trim();
+                algorithmsInProperty[i] = algorithmsInProperty[i].trim().toLowerCase(Locale.ENGLISH);
             }
         }
 
         // map the disabled algorithms
         if (algorithmsInProperty == null) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
-        return new ArrayList<>(Arrays.asList(algorithmsInProperty));
+        return new HashSet<>(Arrays.asList(algorithmsInProperty));
     }
 
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,

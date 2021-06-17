@@ -46,14 +46,7 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public LegacyAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {
         super(decomposer);
-        List<String> legacyAlgorithmsList = getAlgorithms(propertyName);
-        legacyAlgorithms = new HashSet<String>();
-        for (String algorithm : legacyAlgorithmsList) {
-            if (algorithm == null || algorithm.isEmpty()) {
-                continue;
-            }
-            legacyAlgorithms.add(algorithm.toLowerCase());
-        }
+        legacyAlgorithms = getAlgorithms(propertyName);
     }
 
     @Override

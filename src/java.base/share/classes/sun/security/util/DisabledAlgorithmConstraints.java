@@ -127,34 +127,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public DisabledAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {
         super(decomposer);
-        List<String> disabledAlgorithmsList = getAlgorithms(propertyName);
+        disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        int ecindex = -1, i = 0;
-        for (String s : disabledAlgorithmsList) {
-            if (s.regionMatches(true, 0,"include ", 0, 8)) {
-                if (s.regionMatches(true, 8, PROPERTY_DISABLED_EC_CURVES, 0,
-                        PROPERTY_DISABLED_EC_CURVES.length())) {
-                    ecindex = i;
-                    break;
-                }
+        Pattern INCLUDE_PATTERN = Pattern.compile("include " + PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
+        Matcher matcher;
+        for (String s : disabledAlgorithms) {
+            if ((matcher = INCLUDE_PATTERN.matcher(s)).matches()) {
+                disabledAlgorithms.remove(matcher.group());
+                disabledAlgorithms.addAll(getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
+                break;
             }
-            i++;
         }
-        if (ecindex > -1) {
-            disabledAlgorithmsList.remove(ecindex);
-            disabledAlgorithmsList.addAll(ecindex,
-                    getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
-        }
-        algorithmConstraints = new Constraints(propertyName, disabledAlgorithmsList);
-
-        disabledAlgorithms = new HashSet<String>();
-        for (String algorithm : disabledAlgorithmsList) {
-            if (algorithm == null || algorithm.isEmpty()) {
-                continue;
-            }
-            disabledAlgorithms.add(algorithm.toLowerCase());
-        }
+        algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
 
     /*
@@ -337,10 +322,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         private static class Holder {
             private static final Pattern DENY_AFTER_PATTERN = Pattern.compile(
-                    "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
+                    "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})", Pattern.CASE_INSENSITIVE);
         }
 
-        public Constraints(String propertyName, List<String> constraintArray) {
+        public Constraints(String propertyName, Set<String> constraintArray) {
             for (String constraintEntry : constraintArray) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
@@ -388,13 +373,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     entry = entry.trim();
 
                     Matcher matcher;
-                    if (entry.startsWith("keySize")) {
+                    if (entry.regionMatches(true, 0, "keySize", 0, 7)) {
                         if (debug != null) {
                             debug.println("Constraints set to keySize: " +
                                     entry);
                         }
                         StringTokenizer tokens = new StringTokenizer(entry);
-                        if (!"keySize".equals(tokens.nextToken())) {
+                        if (!"keySize".equalsIgnoreCase(tokens.nextToken())) {
                             throw new IllegalArgumentException("Error in " +
                                     "security property. Constraint unknown: " +
                                     entry);
@@ -415,7 +400,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         c = new jdkCAConstraint(algorithm);
                         jdkCALimit = true;
 
-                    } else if (entry.startsWith("denyAfter") &&
+                    } else if (entry.regionMatches(true, 0, "denyAfter", 0, 8) &&
                             (matcher = Holder.DENY_AFTER_PATTERN.matcher(entry))
                                     .matches()) {
                         if (debug != null) {
@@ -432,7 +417,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         c = new DenyAfterConstraint(algorithm, year, month,
                                 day);
                         denyAfterLimit = true;
-                    } else if (entry.startsWith("usage")) {
+                    } else if (entry.regionMatches(true, 0, "usage", 0, 5)) {
                         String s[] = (entry.substring(5)).trim().split(" ");
                         c = new UsageConstraint(algorithm, s);
                         if (debug != null) {
