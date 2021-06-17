@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class TestWErrorOption extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, false,
-                "javadoc: error - warnings found and -Werror specified");
+                "error: warnings found and -Werror specified");
         checkOutput(Output.OUT, true,
                 "1 warning");
     }
@@ -74,9 +74,9 @@ public class TestWErrorOption extends JavadocTester {
                 "p");
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                "C.java:6: warning - @return tag cannot be used in method with void return type.",
+                "C.java:6: warning: @return tag cannot be used in method with void return type.",
                 """
-                    javadoc: error - warnings found and -Werror specified
+                    error: warnings found and -Werror specified
                     1 error
                     1 warning
                     """);

@@ -109,7 +109,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
     final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
-    final int instanceKlassMiscIsUnsafeAnonymous = getConstant("InstanceKlass::_misc_is_unsafe_anonymous", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
     final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
@@ -363,6 +362,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);
     final int codeInstallResultCacheFull = getConstant("JVMCI::cache_full", Integer.class);
     final int codeInstallResultCodeTooLarge = getConstant("JVMCI::code_too_large", Integer.class);
+    final int codeInstallResultNMethodReclaimed = getConstant("JVMCI::nmethod_reclaimed", Integer.class);
+    final int codeInstallResultFirstPermanentBailout = getConstant("JVMCI::first_permanent_bailout", Integer.class);
 
     String getCodeInstallResultDescription(int codeInstallResult) {
         if (codeInstallResult == codeInstallResultOk) {
@@ -376,6 +377,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (codeInstallResult == codeInstallResultCodeTooLarge) {
             return "code is too large";
+        }
+        if (codeInstallResult == codeInstallResultNMethodReclaimed) {
+            return "nmethod reclaimed";
         }
         assert false : codeInstallResult;
         return "unknown";

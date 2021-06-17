@@ -26,7 +26,7 @@
  * @bug 8001029
  * @summary Make sure that TimeZone.setDefault throws a SecurityException if the
  *          security manager doesn't permit.
- * @run main/othervm SetDefaultSecurityTest
+ * @run main/othervm -Djava.security.manager=allow SetDefaultSecurityTest
  */
 
 import java.util.SimpleTimeZone;

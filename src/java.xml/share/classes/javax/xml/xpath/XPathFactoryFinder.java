@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,7 @@ class XPathFactoryFinder  {
      * @param className Name of class to create.
      * @return Created class or <code>null</code>.
      */
+    @SuppressWarnings("removal")
     private Class<?> createClass(String className) {
         Class<?> clazz;
         // make sure we have access to restricted packages
@@ -302,6 +303,7 @@ class XPathFactoryFinder  {
     }
 
     // Call isObjectModelSupportedBy with initial context.
+    @SuppressWarnings("removal")
     private boolean isObjectModelSupportedBy(final XPathFactory factory,
             final String objectModel,
             AccessControlContext acc) {
@@ -321,6 +323,7 @@ class XPathFactoryFinder  {
      *         if none is found.
      * @throws XPathFactoryConfigurationException if a configuration error is found.
      */
+    @SuppressWarnings("removal")
     private XPathFactory findServiceProvider(final String objectModel)
             throws XPathFactoryConfigurationException {
 

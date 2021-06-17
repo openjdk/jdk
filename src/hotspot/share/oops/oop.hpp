@@ -257,7 +257,6 @@ class oopDesc {
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
-  inline oop forwardee_acquire() const;
 
   // Age of object during scavenge
   inline uint age() const;

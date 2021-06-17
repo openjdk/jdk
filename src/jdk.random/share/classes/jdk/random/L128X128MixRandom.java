@@ -136,7 +136,7 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
     private final long ah, al;
 
     /**
-     * The per-instance state: sh and sl for the LCG; x0 and x1 for the xorshift.
+     * The per-instance state: sh and sl for the LCG; x0 and x1 for the XBG.
      * At least one of x0 and x1 must be nonzero.
      */
     private long sh, sl, x0, x1;
@@ -152,8 +152,8 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
      * @param al low half of the additive parameter for the LCG
      * @param sh high half of the initial state for the LCG
      * @param sl low half of the initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
      */
     public L128X128MixRandom(long ah, long al, long sh, long sl, long x0, long x1) {
         // Force a to be odd.
@@ -262,7 +262,7 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
         if (Long.compareUnsigned(sl, u) < 0) ++sh;  // Handle the carry propagation from low half to high half.
 
         long q0 = x0, q1 = x1;
-       // Update the Xorshift subgenerator
+       // Update the XBG subgenerator
         {   // xoroshiro128v1_0
             q1 ^= q0;
             q0 = Long.rotateLeft(q0, 24);

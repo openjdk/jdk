@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARKSTACK_INLINE_HPP
 
 #include "gc/z/zMarkStack.hpp"
+
 #include "utilities/debug.hpp"
 #include "runtime/atomic.hpp"
 
@@ -154,6 +155,11 @@ inline T* ZStackList<T>::pop() {
     // Retry
     vstack = prev_vstack;
   }
+}
+
+template <typename T>
+inline void ZStackList<T>::clear() {
+  _head = encode_versioned_pointer(NULL, 0);
 }
 
 inline bool ZMarkStripe::is_empty() const {

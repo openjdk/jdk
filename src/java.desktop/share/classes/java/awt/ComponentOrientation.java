@@ -158,14 +158,10 @@ public final class ComponentOrientation implements java.io.Serializable
         // to find the appropriate orientation.  Until pluggable locales
         // are introduced however, the flexibility isn't really needed.
         // So we choose efficiency instead.
-        String lang = locale.getLanguage();
-        if( "iw".equals(lang) || "ar".equals(lang)
-            || "fa".equals(lang) || "ur".equals(lang) )
-        {
-            return RIGHT_TO_LEFT;
-        } else {
-            return LEFT_TO_RIGHT;
-        }
+        return switch (locale.getLanguage()) {
+            case "ar", "fa", "he", "iw", "ji", "ur", "yi" -> RIGHT_TO_LEFT;
+            default -> LEFT_TO_RIGHT;
+        };
     }
 
     /**

@@ -165,7 +165,7 @@ public class ElementsTable {
     private final List<Location> locations;
     private final Modules modules;
     private final ToolOptions options;
-    private final Messager messager;
+    private final JavadocLog log;
     private final JavaCompiler compiler;
 
     private final Map<String, Entry> entries = new LinkedHashMap<>();
@@ -210,7 +210,7 @@ public class ElementsTable {
         this.fm = toolEnv.fileManager;
         this.modules = Modules.instance(context);
         this.options = options;
-        this.messager = Messager.instance0(context);
+        this.log = JavadocLog.instance0(context);
         this.compiler = JavaCompiler.instance(context);
         Source source = Source.instance(context);
 
@@ -370,19 +370,19 @@ public class ElementsTable {
             return;
 
         if (moduleNames.size() > 1) {
-            String text = messager.getText("main.cannot_use_sourcepath_for_modules",
+            String text = log.getText("main.cannot_use_sourcepath_for_modules",
                     String.join(", ", moduleNames));
             throw new ToolException(CMDERR, text);
         }
 
         String foundModule = getModuleName(StandardLocation.SOURCE_PATH);
         if (foundModule == null) {
-            String text = messager.getText("main.module_not_found_on_sourcepath", moduleNames.get(0));
+            String text = log.getText("main.module_not_found_on_sourcepath", moduleNames.get(0));
             throw new ToolException(CMDERR, text);
         }
 
         if (!moduleNames.get(0).equals(foundModule)) {
-            String text = messager.getText("main.sourcepath_does_not_contain_module", moduleNames.get(0));
+            String text = log.getText("main.sourcepath_does_not_contain_module", moduleNames.get(0));
             throw new ToolException(CMDERR, text);
         }
     }
@@ -399,7 +399,7 @@ public class ElementsTable {
                 }
             }
         } catch (IOException ioe) {
-            String text = messager.getText("main.file.manager.list", location);
+            String text = log.getText("main.file.manager.list", location);
             throw new ToolException(SYSERR, text, ioe);
         }
         return null;
@@ -413,7 +413,7 @@ public class ElementsTable {
         for (String m : modules) {
             List<Location> moduleLocations = getModuleLocation(locations, m);
             if (moduleLocations.isEmpty()) {
-                String text = messager.getText("main.module_not_found", m);
+                String text = log.getText("main.module_not_found", m);
                 throw new ToolException(CMDERR, text);
             }
             if (moduleLocations.contains(StandardLocation.SOURCE_PATH)) {
@@ -520,7 +520,7 @@ public class ElementsTable {
         try {
             return fm.list(location, packagename, kinds, recurse);
         } catch (IOException ioe) {
-            String text = messager.getText("main.file.manager.list", packagename);
+            String text = log.getText("main.file.manager.list", packagename);
             throw new ToolException(SYSERR, text, ioe);
         }
     }
@@ -567,7 +567,7 @@ public class ElementsTable {
             if (!isMandated(mdle, rd) && onlyTransitive == rd.isTransitive()) {
                 if (!haveModuleSources(dep)) {
                     if (!warnedNoSources.contains(dep)) {
-                        messager.printWarning(dep, "main.module_source_not_found", dep.getQualifiedName());
+                        log.printWarningUsingKey(dep, "main.module_source_not_found", dep.getQualifiedName());
                         warnedNoSources.add(dep);
                     }
                 }
@@ -759,7 +759,7 @@ public class ElementsTable {
             if (pkg != null) {
                 packlist.add(pkg);
             } else {
-                messager.printWarningUsingKey("main.package_not_found", modpkg.toString());
+                log.printWarningUsingKey("main.package_not_found", modpkg.toString());
             }
         });
         specifiedPackageElements = Collections.unmodifiableSet(packlist);
@@ -780,7 +780,7 @@ public class ElementsTable {
         for (String className : classArgList) {
             TypeElement te = toolEnv.loadClass(className);
             if (te == null) {
-                String text = messager.getText("javadoc.class_not_found", className);
+                String text = log.getText("javadoc.class_not_found", className);
                 throw new ToolException(CMDERR, text);
             } else {
                 addAllClasses(classes, te, true);
@@ -796,7 +796,7 @@ public class ElementsTable {
             toolEnv.notice("main.Loading_source_files_for_package", modpkg.toString());
             List<JavaFileObject> files = getFiles(modpkg, recurse);
             if (files.isEmpty()) {
-                String text = messager.getText("main.no_source_files_for_package",
+                String text = log.getText("main.no_source_files_for_package",
                         modpkg.toString());
                 throw new ToolException(CMDERR, text);
             } else {
@@ -909,7 +909,7 @@ public class ElementsTable {
         try {
             return fm.getLocationForModule(location, msymName);
         } catch (IOException ioe) {
-            String text = messager.getText("main.doclet_could_not_get_location", msymName);
+            String text = log.getText("main.doclet_could_not_get_location", msymName);
             throw new ToolException(ERROR, text, ioe);
         }
     }
@@ -956,9 +956,9 @@ public class ElementsTable {
             }
         } catch (CompletionFailure e) {
             if (e.getMessage() != null)
-                messager.printWarning(e.getMessage());
+                log.printWarning(e.getMessage());
             else
-                messager.printWarningUsingKey("main.unexpected.exception", e);
+                log.printWarningUsingKey("main.unexpected.exception", e);
         }
     }
 
@@ -977,7 +977,6 @@ public class ElementsTable {
         return (xclasses || toolEnv.getFileKind(te) == SOURCE) && isSelected(te);
     }
 
-    @SuppressWarnings("preview")
     SimpleElementVisitor14<Boolean, Void> visibleElementVisitor = null;
     /**
      * Returns true if the element is selected, by applying
@@ -989,7 +988,6 @@ public class ElementsTable {
      * @param e the element to be checked
      * @return true if the element is visible
      */
-    @SuppressWarnings("preview")
     public boolean isSelected(Element e) {
         if (toolEnv.isSynthetic((Symbol) e)) {
             return false;
@@ -1029,7 +1027,6 @@ public class ElementsTable {
         return visibleElementVisitor.visit(e);
     }
 
-    @SuppressWarnings("preview")
     private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {
         private final Set<Element> includedCache;
 
@@ -1162,8 +1159,7 @@ public class ElementsTable {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ModulePackage) {
-                ModulePackage that = (ModulePackage)obj;
+            if (obj instanceof ModulePackage that) {
                 return this.toString().equals(that.toString());
             }
             return false;

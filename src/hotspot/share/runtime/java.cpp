@@ -34,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -462,6 +463,11 @@ void before_exit(JavaThread* thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
+  // Shut down string deduplication if running.
+  if (StringDedup::is_enabled()) {
+    StringDedup::stop();
+  }
+
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -504,7 +510,7 @@ void before_exit(JavaThread* thread) {
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
     ExceptionMark em(thread);
-    DynamicArchive::dump(thread);
+    DynamicArchive::dump();
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();
@@ -680,7 +686,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

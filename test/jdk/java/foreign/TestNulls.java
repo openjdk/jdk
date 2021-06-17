@@ -26,7 +26,9 @@
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules java.base/jdk.internal.ref
  *          jdk.incubator.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestNulls
+ * @run testng/othervm
+ *     --enable-native-access=ALL-UNNAMED
+ *     TestNulls
  */
 
 import jdk.incubator.foreign.*;
@@ -53,6 +55,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -81,22 +84,23 @@ public class TestNulls {
             ValueLayout.class,
             GroupLayout.class,
             Addressable.class,
+            SymbolLookup.class,
             MemoryAccess.class,
-            MappedMemorySegments.class,
             MemoryLayouts.class,
             MemoryHandles.class,
-            NativeScope.class,
             CLinker.class,
             CLinker.VaList.class,
             CLinker.VaList.Builder.class,
             FunctionDescriptor.class,
-            LibraryLookup.class
+            SegmentAllocator.class,
+            ResourceScope.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
             "jdk.incubator.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "jdk.incubator.foreign.MemoryAddress/asSegmentRestricted(long,java.lang.Runnable,java.lang.Object)/1/0",
-            "jdk.incubator.foreign.MemoryAddress/asSegmentRestricted(long,java.lang.Runnable,java.lang.Object)/2/0",
+            "jdk.incubator.foreign.MemoryAddress/asSegment(long,java.lang.Runnable,java.lang.Object)/1/0",
+            "jdk.incubator.foreign.MemoryAddress/asSegment(long,java.lang.Runnable,java.lang.Object)/2/0",
+            "jdk.incubator.foreign.MemoryAddress/asSegment(long,java.lang.Runnable,jdk.incubator.foreign.ResourceScope)/1/0",
             "jdk.incubator.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "jdk.incubator.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "jdk.incubator.foreign.GroupLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
@@ -122,6 +126,7 @@ public class TestNulls {
         addDefaultMapping(float.class, 0f);
         addDefaultMapping(long.class, 0L);
         addDefaultMapping(double.class, 0d);
+        addDefaultMapping(boolean.class, true);
         addDefaultMapping(ByteOrder.class, ByteOrder.nativeOrder());
         addDefaultMapping(Thread.class, Thread.currentThread());
         addDefaultMapping(Cleaner.class, CleanerFactory.cleaner());
@@ -140,19 +145,23 @@ public class TestNulls {
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(Consumer.class, x -> {});
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
-        addDefaultMapping(MemoryAddress.class, MemoryAddress.NULL);
-        addDefaultMapping(Addressable.class, MemoryAddress.NULL);
+        addDefaultMapping(MemoryAddress.class, MemoryAddress.ofLong(1));
+        addDefaultMapping(Addressable.class, MemoryAddress.ofLong(1));
         addDefaultMapping(MemoryLayout.class, MemoryLayouts.JAVA_INT);
         addDefaultMapping(ValueLayout.class, MemoryLayouts.JAVA_INT);
-        addDefaultMapping(GroupLayout.class, MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT));
-        addDefaultMapping(SequenceLayout.class, MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT));
+        addDefaultMapping(GroupLayout.class, MemoryLayout.structLayout(MemoryLayouts.JAVA_INT));
+        addDefaultMapping(SequenceLayout.class, MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT));
         addDefaultMapping(MemorySegment.class, MemorySegment.ofArray(new byte[10]));
-        addDefaultMapping(NativeScope.class, NativeScope.boundedScope(10));
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
         addDefaultMapping(CLinker.class, CLinker.getInstance());
         addDefaultMapping(CLinker.VaList.class, VaListHelper.vaList);
         addDefaultMapping(CLinker.VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(LibraryLookup.class, LibraryLookup.ofDefault());
+        addDefaultMapping(ResourceScope.class, ResourceScope.newImplicitScope());
+        addDefaultMapping(SegmentAllocator.class, (size, align) -> null);
+        addDefaultMapping(Supplier.class, () -> null);
+        addDefaultMapping(ResourceScope.Handle.class, ResourceScope.globalScope().acquire());
+        addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
+        addDefaultMapping(SymbolLookup.class, CLinker.systemLookup());
     }
 
     static class VaListHelper {
@@ -164,7 +173,7 @@ public class TestNulls {
             vaList = CLinker.VaList.make(b -> {
                 builderRef.set(b);
                 b.vargFromLong(CLinker.C_LONG_LONG, 42L);
-            });
+            }, ResourceScope.newImplicitScope());
             vaListBuilder = builderRef.get();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,41 +24,49 @@
 /**
  * @test
  * @bug 4962064
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm B4962064
  * @run main/othervm -Djava.net.preferIPv6Addresses=true B4962064
  * @summary Extend Authenticator to provide access to request URI and server/proxy
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
 
-public class B4962064 implements HttpCallback {
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+public class B4962064 implements HttpHandler {
 
     static int count = 0;
 
-    public void request (HttpTransaction req) {
+    public void handle (HttpExchange req) {
         try {
             switch (count) {
               case 0:
-                req.addResponseHeader ("Connection", "close");
-                req.addResponseHeader ("WWW-Authenticate", "Basic realm=\"foo\"");
-                req.sendResponse (401, "Unauthorized");
-                req.orderlyClose();
+                req.getResponseHeaders().set("Connection", "close");
+                req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"foo\"");
+                req.sendResponseHeaders(401, -1);
                 break;
               case 1:
               case 3:
-                req.setResponseEntityBody ("Hello .");
-                req.sendResponse (200, "Ok");
-                req.orderlyClose();
+                req.sendResponseHeaders(200, 0);
+                try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+                    pw.print("Hello .");
+                }
                 break;
               case 2:
-                req.addResponseHeader ("Connection", "close");
-                req.addResponseHeader ("Proxy-Authenticate", "Basic realm=\"foo\"");
-                req.sendResponse (407, "Proxy Authentication Required");
-                req.orderlyClose();
+                req.getResponseHeaders().set("Connection", "close");
+                req.getResponseHeaders().add("Proxy-Authenticate", "Basic realm=\"foo\"");
+                req.sendResponseHeaders(407, -1);
                 break;
             }
             count ++;
@@ -87,18 +95,22 @@ public class B4962064 implements HttpCallback {
         is.close();
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
     static URL urlsave;
 
     public static void main (String[] args) throws Exception {
+        B4962064 b4962064 = new B4962064();
         try {
             InetAddress address = InetAddress.getLoopbackAddress();
             InetAddress resolved = InetAddress.getByName(address.getHostName());
             System.out.println("Lookup: " + address + " -> \""
                                + address.getHostName() + "\" -> "
                                + resolved);
-            server = new TestHttpServer (new B4962064(), 1, 10, address, 0);
-            int port = server.getLocalPort();
+            server = HttpServer.create(new InetSocketAddress(address, 0), 10);
+            server.createContext("/", b4962064);
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            int port = server.getAddress().getPort();
             String proxyHost = address.equals(resolved)
                 ? address.getHostName()
                 : address.getHostAddress();
@@ -115,15 +127,15 @@ public class B4962064 implements HttpCallback {
             client (s);
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
-        server.terminate();
+        server.stop(1);
     }
 
     public static void except (String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException (s);
     }
 

@@ -57,6 +57,9 @@ protected:
   void record_work_item(uint worker_id, uint index, size_t count);
 
 public:
+  // Worker cost for "almost no work" to be done.
+  static constexpr double AlmostNoWork = 0.01;
+
   G1AbstractSubTask(G1GCPhaseTimes::GCParPhases tag) : _tag(tag) { }
   virtual ~G1AbstractSubTask() { }
 

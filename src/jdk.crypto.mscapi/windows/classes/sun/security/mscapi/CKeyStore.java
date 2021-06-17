@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,6 +199,7 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     CKeyStore(String storeName) {
         // Get the compatibility mode
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP));
 
@@ -696,6 +697,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         /*
          * Use the same security check as AuthProvider.login
          */
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SecurityPermission(

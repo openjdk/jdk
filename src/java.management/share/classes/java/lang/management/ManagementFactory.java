@@ -246,6 +246,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
+@SuppressWarnings("removal")
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};

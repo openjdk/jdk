@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
+@SuppressWarnings({"removal","serial"})  // serialVersionUID not constant
 public class DescriptorSupport
          implements javax.management.Descriptor
 {

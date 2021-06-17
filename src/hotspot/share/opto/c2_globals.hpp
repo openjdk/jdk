@@ -82,9 +82,10 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
-          "Partial inline size used for array copy acceleration.")          \
-          range(-1, 64)                                                     \
+  product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
+          "Partial inline size used for small array operations"             \
+          "(e.g. copy,cmp) acceleration.")                                  \
+          range(0, 64)                                                      \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -127,10 +128,6 @@
   notproduct(bool, PrintIdealNodeCount, false,                              \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
-  develop(bool, IdealizedNumerics, false,                                   \
-          "Check performance difference allowing FP "                       \
-          "associativity and commutativity...")                             \
-                                                                            \
   product_pd(bool, IdealizeClearArrayNode, DIAGNOSTIC,                      \
           "Replace ClearArrayNode by subgraph of basic operations.")        \
                                                                             \
@@ -157,9 +154,6 @@
                                                                             \
   develop_pd(bool, OptoPeephole,                                            \
           "Apply peephole optimizations after register allocation")         \
-                                                                            \
-  develop(bool, OptoRemoveUseless, true,                                    \
-          "Remove useless nodes after parsing")                             \
                                                                             \
   notproduct(bool, PrintFrameConverterAssembly, false,                      \
           "Print New compiler assembly output for frame converters")        \
@@ -727,6 +721,9 @@
                                                                             \
   product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
           "Enables aggressive reboxing of vectors")                         \
+                                                                            \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \

@@ -149,6 +149,7 @@ abstract class UnixFileSystem
         return new Iterable<>() {
             public Iterator<Path> iterator() {
                 try {
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkRead(rootDirectory.toString());
@@ -195,6 +196,7 @@ abstract class UnixFileSystem
                     continue;
 
                 // check permission to read mount point
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     try {
@@ -240,6 +242,7 @@ abstract class UnixFileSystem
 
     @Override
     public final Iterable<FileStore> getFileStores() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,6 +265,11 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     private static int maxSoftRefCnt = 10;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 FontManagerNativeLibrary.load();
@@ -305,6 +310,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     /* Initialise ptrs used by JNI methods */
     private static native void initIDs();
 
+    @SuppressWarnings("removal")
     protected SunFontManager() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -1111,6 +1117,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     private boolean haveCheckedUnreferencedFontFiles;
 
+    @SuppressWarnings("removal")
     private String[] getFontFilesFromPath(boolean noType1) {
         final FilenameFilter filter;
         if (noType1) {
@@ -1445,6 +1452,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return new HashMap<>(0);
     }
 
+    @SuppressWarnings("removal")
     Font2D findFontFromPlatformMap(String lcName, int style) {
         HashMap<String, FamilyDescription> platformFontMap = SunFontManager.platformFontMap;
         if (platformFontMap == null) {
@@ -1738,6 +1746,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         } else if (pathDirs.length==1) {
             return pathDirs[0] + File.separator + s;
         } else {
+            @SuppressWarnings("removal")
             String path = AccessController.doPrivileged(
                  new PrivilegedAction<String>() {
                      public String run() {
@@ -2203,6 +2212,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     private int createdFontCount = 0;
 
+    @SuppressWarnings("removal")
     public Font2D[] createFont2D(File fontFile, int fontFormat, boolean all,
                                  boolean isCopy, CreatedFontTracker tracker)
     throws FontFormatException {
@@ -2951,6 +2961,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return fontPath;
     }
 
+    @SuppressWarnings("removal")
     protected void loadFonts() {
         if (discoveredAllFonts) {
             return;
@@ -3068,6 +3079,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return defaultFontName;
     }
 
+    @SuppressWarnings("removal")
     public void loadFontFiles() {
         loadFonts();
         if (loadedAllFontFiles) {
@@ -3432,6 +3444,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     // Provides an aperture to add native font family names to the map
     protected void addNativeFontFamilyNames(TreeMap<String, String> familyNames, Locale requestedLocale) { }
 
+    @SuppressWarnings("removal")
     public void register1dot0Fonts() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -3471,6 +3484,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * on windows and uses that if set.
      */
     private static Locale systemLocale = null;
+    @SuppressWarnings("removal")
     private static Locale getSystemStartupLocale() {
         if (systemLocale == null) {
             systemLocale = AccessController.doPrivileged(new PrivilegedAction<Locale>() {

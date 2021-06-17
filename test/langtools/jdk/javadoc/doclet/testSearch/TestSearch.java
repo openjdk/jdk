@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
+ *      8266808
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -419,7 +420,7 @@ public class TestSearch extends JavadocTester {
                     loadScripts(document, 'script');""",
                 "<div class=\"nav-list-search\">",
                 """
-                    <label for="search">SEARCH:</label>
+                    <label for="search-input">SEARCH:</label>
                     <input type="text" id="search-input" value="search" disabled="disabled">
                     <input type="reset" id="reset-button" value="reset" disabled="disabled">
                     """);
@@ -539,8 +540,9 @@ public class TestSearch extends JavadocTester {
                     <dt><a href="../pkg/package-summary.html#SingleWord" class="search-tag-link">Sin\
                     gleWord</a> - Search tag in package pkg</dt>""",
                 """
-                    <br><a href="../allclasses-index.html">All&nbsp;Classes</a><span class="vertical\
-                    -separator">|</span><a href="../allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="../allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces\
+                    </a><span class="vertical-separator">|</span><a href="../allpackages-index.html"\
+                    >All&nbsp;Packages</a>""");
         checkOutput("index-files/index-10.html", true,
                 """
                     <dt><a href="../pkg/package-summary.html#phrasewithspaces" class="search-tag-lin\
@@ -672,10 +674,10 @@ public class TestSearch extends JavadocTester {
 
     void checkInvalidUsageIndexTag() {
         checkOutput(Output.OUT, true,
-                "AnotherClass.java:29: warning - invalid usage of tag {@index",
-                "AnotherClass.java:39: warning - invalid usage of tag {@index",
-                "AnotherClass.java:34: warning - invalid usage of tag {@index",
-                "AnotherClass.java:68: warning - invalid usage of tag {@index");
+                "AnotherClass.java:29: warning: invalid usage of tag {@index",
+                "AnotherClass.java:39: warning: invalid usage of tag {@index",
+                "AnotherClass.java:34: warning: invalid usage of tag {@index",
+                "AnotherClass.java:68: warning: invalid usage of tag {@index");
     }
 
     void checkJqueryAndImageFiles(boolean expectedOutput) {
@@ -806,31 +808,31 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
                     s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
                     ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
-                    l Classes</button>\
+                    l Classes and Interfaces</button>\
                     <button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">In\
-                    terface Summary</button>\
+                    terfaces</button>\
                     <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
-                    ass Summary</button>\
+                    asses</button>\
                     <button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">En\
-                    um Class Summary</button>\
-                    <button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-contro\
-                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Ex\
-                    ception Summary</button>\
+                    um Classes</button>\
                     <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Er\
-                    ror Summary</button>\
+                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Ex\
+                    ceptions</button>\
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
-                    notation Interfaces Summary</button>\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">Er\
+                    rors</button>\
+                    <button id="all-classes-table-tab7" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab7', 2)" class="table-tab">An\
+                    notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
@@ -845,13 +847,14 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
         checkOutput("package-search-index.js", true,
                 """
                     {"l":"All Packages","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
-                    """
-                        <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                        parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                """
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
+                    s</a><span class="vertical-separator">|</span><a href="allpackages-index.htm\
+                    l">All&nbsp;Packages</a>""");
     }
 }

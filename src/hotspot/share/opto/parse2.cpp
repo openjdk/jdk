@@ -218,17 +218,6 @@ IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float pro
   return iff;
 }
 
-// return Region node
-Node* Parse::jump_if_join(Node* iffalse, Node* iftrue) {
-  Node *region  = new RegionNode(3); // 2 results
-  record_for_igvn(region);
-  region->init_req(1, iffalse);
-  region->init_req(2, iftrue );
-  _gvn.set_type(region, Type::CONTROL);
-  region = _gvn.transform(region);
-  set_control (region);
-  return region;
-}
 
 // sentinel value for the target bci to mark never taken branches
 // (according to profiling)
@@ -485,7 +474,7 @@ void Parse::do_tableswitch() {
   }
 
   // Safepoint in case if backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints) {
+  if (makes_backward_branch) {
     add_safepoint();
   }
 
@@ -579,7 +568,7 @@ void Parse::do_lookupswitch() {
   }
 
   // Safepoint in case backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints) {
+  if (makes_backward_branch) {
     add_safepoint();
   }
 
@@ -1156,50 +1145,6 @@ void Parse::l2f() {
   Node* res = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
 
   push(res);
-}
-
-void Parse::do_irem() {
-  // Must keep both values on the expression-stack during null-check
-  zero_check_int(peek());
-  // Compile-time detect of null-exception?
-  if (stopped())  return;
-
-  Node* b = pop();
-  Node* a = pop();
-
-  const Type *t = _gvn.type(b);
-  if (t != Type::TOP) {
-    const TypeInt *ti = t->is_int();
-    if (ti->is_con()) {
-      int divisor = ti->get_con();
-      // check for positive power of 2
-      if (divisor > 0 &&
-          (divisor & ~(divisor-1)) == divisor) {
-        // yes !
-        Node *mask = _gvn.intcon((divisor - 1));
-        // Sigh, must handle negative dividends
-        Node *zero = _gvn.intcon(0);
-        IfNode *ifff = jump_if_fork_int(a, zero, BoolTest::lt, PROB_FAIR, COUNT_UNKNOWN);
-        Node *iff = _gvn.transform( new IfFalseNode(ifff) );
-        Node *ift = _gvn.transform( new IfTrueNode (ifff) );
-        Node *reg = jump_if_join(ift, iff);
-        Node *phi = PhiNode::make(reg, NULL, TypeInt::INT);
-        // Negative path; negate/and/negate
-        Node *neg = _gvn.transform( new SubINode(zero, a) );
-        Node *andn= _gvn.transform( new AndINode(neg, mask) );
-        Node *negn= _gvn.transform( new SubINode(zero, andn) );
-        phi->init_req(1, negn);
-        // Fast positive case
-        Node *andx = _gvn.transform( new AndINode(a, mask) );
-        phi->init_req(2, andx);
-        // Push the merge
-        push( _gvn.transform(phi) );
-        return;
-      }
-    }
-  }
-  // Default case
-  push( _gvn.transform( new ModINode(control(),a,b) ) );
 }
 
 // Handle jsr and jsr_w bytecode
@@ -2196,7 +2141,13 @@ void Parse::do_one_bytecode() {
     break;
 
   case Bytecodes::_irem:
-    do_irem();
+    // Must keep both values on the expression-stack during null-check
+    zero_check_int(peek());
+    // Compile-time detect of null-exception?
+    if (stopped())  return;
+    b = pop();
+    a = pop();
+    push(_gvn.transform(new ModINode(control(), a, b)));
     break;
   case Bytecodes::_idiv:
     // Must keep both values on the expression-stack during null-check
@@ -2555,8 +2506,7 @@ void Parse::do_one_bytecode() {
     // a SafePoint here and have it dominate and kill the safepoint added at a
     // following backwards branch.  At this point the JVM state merely holds 2
     // longs but not the 3-way value.
-    if( UseLoopSafepoints ) {
-      switch( iter().next_bc() ) {
+    switch (iter().next_bc()) {
       case Bytecodes::_ifgt:
       case Bytecodes::_iflt:
       case Bytecodes::_ifge:
@@ -2567,7 +2517,6 @@ void Parse::do_one_bytecode() {
         maybe_add_safepoint(iter().next_get_dest());
       default:
         break;
-      }
     }
     b = pop_pair();
     a = pop_pair();

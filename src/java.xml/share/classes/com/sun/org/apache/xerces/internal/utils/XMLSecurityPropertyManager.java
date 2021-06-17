@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package com.sun.org.apache.xerces.internal.utils;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -50,9 +50,9 @@ public final class XMLSecurityPropertyManager {
      */
     public static enum Property {
         ACCESS_EXTERNAL_DTD(XMLConstants.ACCESS_EXTERNAL_DTD,
-                Constants.EXTERNAL_ACCESS_DEFAULT),
+                JdkConstants.EXTERNAL_ACCESS_DEFAULT),
         ACCESS_EXTERNAL_SCHEMA(XMLConstants.ACCESS_EXTERNAL_SCHEMA,
-                Constants.EXTERNAL_ACCESS_DEFAULT);
+                JdkConstants.EXTERNAL_ACCESS_DEFAULT);
 
         final String name;
         final String defaultValue;
@@ -64,6 +64,10 @@ public final class XMLSecurityPropertyManager {
 
         public boolean equalsName(String propertyName) {
             return (propertyName == null) ? false : name.equals(propertyName);
+        }
+
+        public String propertyName() {
+            return name;
         }
 
         String defaultValue() {
@@ -92,6 +96,19 @@ public final class XMLSecurityPropertyManager {
         readSystemProperties();
     }
 
+    /**
+     * Finds the property with the given name.
+     * @param propertyName the property name specified
+     * @return the property name if found, null otherwise
+     */
+    public String find(String propertyName) {
+        for (Property property : Property.values()) {
+            if (property.equalsName(propertyName)) {
+                return property.propertyName();
+            }
+        }
+        return null;
+    }
 
     /**
      * Set limit by property name and state
@@ -194,9 +211,9 @@ public final class XMLSecurityPropertyManager {
      */
     private void readSystemProperties() {
         getSystemProperty(Property.ACCESS_EXTERNAL_DTD,
-                Constants.SP_ACCESS_EXTERNAL_DTD);
+                JdkConstants.SP_ACCESS_EXTERNAL_DTD);
         getSystemProperty(Property.ACCESS_EXTERNAL_SCHEMA,
-                Constants.SP_ACCESS_EXTERNAL_SCHEMA);
+                JdkConstants.SP_ACCESS_EXTERNAL_SCHEMA);
     }
 
     /**

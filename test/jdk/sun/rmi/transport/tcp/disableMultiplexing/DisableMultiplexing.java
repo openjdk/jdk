@@ -29,7 +29,7 @@
  * @author Peter Jones
  *
  * @build DisableMultiplexing_Stub
- * @run main/othervm DisableMultiplexing
+ * @run main/othervm -Djava.security.manager=allow DisableMultiplexing
  */
 
 import java.rmi.*;

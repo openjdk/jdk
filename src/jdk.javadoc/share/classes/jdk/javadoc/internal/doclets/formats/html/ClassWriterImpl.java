@@ -25,7 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -55,6 +57,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Generate the Class Information Page.
@@ -81,9 +84,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.Constable",
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
-
-    private static final Set<String> previewModifiers
-            = Set.of("sealed", "non-sealed");
 
     protected final TypeElement typeElement;
 
@@ -150,7 +150,17 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 contents.moduleLabel);
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(linkContent)
-                .setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
+                .setSubNavLinks(() -> {
+                    List<Content> list = new ArrayList<>();
+                    VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+                    Set<VisibleMemberTable.Kind> summarySet =
+                            VisibleMemberTable.Kind.forSummariesOf(element.getKind());
+                    for (VisibleMemberTable.Kind kind : summarySet) {
+                        list.add(links.createLink(HtmlIds.forMemberSummary(kind),
+                                contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind)));
+                    }
+                    return list;
+                });
     }
 
     @Override
@@ -184,29 +194,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         return typeElement;
     }
 
-    @Override @SuppressWarnings("preview")
-    public void addClassSignature(String modifiers, Content classInfoTree) {
-        ContentBuilder mods = new ContentBuilder();
-        String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) {
-            if (sep != null) {
-                mods.add(sep);
-            }
-            if (previewModifiers.contains(modifiersPart)) {
-                mods.add(modifiersPart);
-                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
-                                                       contents.previewMark)));
-            } else {
-                mods.add(modifiersPart);
-            }
-            sep = " ";
-        }
-        if (modifiers.endsWith(" ")) {
-            mods.add(" ");
-        }
+    @Override
+    public void addClassSignature(Content classInfoTree) {
         classInfoTree.add(new HtmlTree(TagName.HR));
         classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
-                .setModifiers(mods)
                 .toContent());
     }
 
@@ -458,9 +449,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 isFirst = false;
             }
             // TODO: should we simply split this method up to avoid instanceof ?
-            if (type instanceof TypeElement) {
+            if (type instanceof TypeElement te) {
                 Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, (TypeElement)(type)));
+                        new HtmlLinkInfo(configuration, context, te));
                 content.add(HtmlTree.CODE(link));
             } else {
                 Content link = getLink(

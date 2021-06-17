@@ -104,7 +104,7 @@ public class DoPrivAccompliceTest {
         ProcessTools.executeTestJava(commands)
                     .shouldHaveExitValue(0)
                     .shouldContain(userName)
-                    .stderrShouldBeEmptyIgnoreVMWarnings();
+                    .stderrShouldBeEmptyIgnoreWarnings();
 
         createPolicyFile(jarFile2, policy);
         System.out.println("Created policy for " + jarFile2);

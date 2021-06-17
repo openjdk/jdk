@@ -92,7 +92,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * Print all the classes in the file.
      */
     protected void buildAllClassesFile() throws DocFileIOException {
-        String label = resources.getText("doclet.All_Classes");
+        String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
@@ -115,13 +115,14 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
-                .setDefaultTab(resources.getText("doclet.All_Classes"))
-                .addTab(contents.interfaceSummary, utils::isInterface)
-                .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))
-                .addTab(contents.enumSummary, utils::isEnum)
-                .addTab(contents.exceptionSummary, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errorSummary, e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypeSummary, utils::isAnnotationType);
+                .setDefaultTab(contents.allClassesAndInterfacesLabel)
+                .addTab(contents.interfaces, utils::isInterface)
+                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.enums, utils::isEnum)
+                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptions, e -> utils.isException((TypeElement)e))
+                .addTab(contents.errors, e -> utils.isError((TypeElement)e))
+                .addTab(contents.annotationTypes, utils::isAnnotationType);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
@@ -130,7 +131,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 }
             }
         }
-        Content titleContent = contents.allClassesLabel;
+        Content titleContent = contents.allClassesAndInterfacesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);

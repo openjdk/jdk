@@ -70,7 +70,7 @@ JNIEXPORT
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 
 // Install a win32 structured exception handler around thread.
-void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   __try {
 
 #ifndef AMD64
@@ -533,7 +533,7 @@ juint os::cpu_microcode_revision() {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
+  int fpu_cntrl_word = StubRoutines::x86::fpu_cntrl_wrd_std();
   __asm fldcw fpu_cntrl_word;
 #endif // !AMD64
 }

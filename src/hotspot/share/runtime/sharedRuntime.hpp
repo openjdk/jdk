@@ -379,6 +379,10 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
+  static int vector_calling_convention(VMRegPair *regs,
+                                       uint num_bits,
+                                       uint total_args_passed);
+
   static size_t trampoline_size();
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
@@ -513,6 +517,12 @@ class SharedRuntime: AllStatic {
                                           const GrowableArray<VMReg>& output_registers);
 #endif
 
+  static void compute_move_order(const BasicType* in_sig_bt,
+                                 int total_in_args, const VMRegPair* in_regs,
+                                 int total_out_args, VMRegPair* out_regs,
+                                 GrowableArray<int>& arg_order,
+                                 VMRegPair tmp_vmreg);
+
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
@@ -620,6 +630,7 @@ class SharedRuntime: AllStatic {
 
 class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   friend class AdapterHandlerTable;
+  friend class AdapterHandlerLibrary;
 
  private:
   AdapterFingerPrint* _fingerprint;
@@ -642,7 +653,6 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
     _c2i_unverified_entry = c2i_unverified_entry;
     _c2i_no_clinit_check_entry = c2i_no_clinit_check_entry;
 #ifdef ASSERT
-    _saved_code = NULL;
     _saved_code_length = 0;
 #endif
   }
@@ -670,7 +680,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
 #ifdef ASSERT
   // Used to verify that code generated for shared adapters is equivalent
   void save_code   (unsigned char* code, int length);
-  bool compare_code(unsigned char* code, int length);
+  bool compare_code(AdapterHandlerEntry* other);
 #endif
 
   //virtual void print_on(outputStream* st) const;  DO NOT USE
@@ -678,13 +688,24 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
 };
 
 class AdapterHandlerLibrary: public AllStatic {
+  friend class SharedRuntime;
  private:
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static AdapterHandlerTable* _adapters;
   static AdapterHandlerEntry* _abstract_method_handler;
+  static AdapterHandlerEntry* _no_arg_handler;
+  static AdapterHandlerEntry* _int_arg_handler;
+  static AdapterHandlerEntry* _obj_arg_handler;
+  static AdapterHandlerEntry* _obj_int_arg_handler;
+  static AdapterHandlerEntry* _obj_obj_arg_handler;
+
   static BufferBlob* buffer_blob();
   static void initialize();
-
+  static AdapterHandlerEntry* create_adapter(AdapterBlob*& new_adapter,
+                                             int total_args_passed,
+                                             BasicType* sig_bt,
+                                             bool allocate_code_blob);
+  static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
  public:
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,

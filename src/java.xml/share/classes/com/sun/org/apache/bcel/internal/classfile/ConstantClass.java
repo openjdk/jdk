@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ConstantClass extends Constant implements ConstantObject {
 
-    private int name_index; // Identical to ConstantString except for the name
+    private int nameIndex; // Identical to ConstantString except for the name
 
 
     /**
@@ -58,12 +58,12 @@ public final class ConstantClass extends Constant implements ConstantObject {
 
 
     /**
-     * @param name_index Name index in constant pool.  Should refer to a
+     * @param nameIndex Name index in constant pool.  Should refer to a
      * ConstantUtf8.
      */
-    public ConstantClass(final int name_index) {
+    public ConstantClass(final int nameIndex) {
         super(Const.CONSTANT_Class);
-        this.name_index = name_index;
+        this.nameIndex = nameIndex;
     }
 
 
@@ -89,7 +89,7 @@ public final class ConstantClass extends Constant implements ConstantObject {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         file.writeByte(super.getTag());
-        file.writeShort(name_index);
+        file.writeShort(nameIndex);
     }
 
 
@@ -97,15 +97,15 @@ public final class ConstantClass extends Constant implements ConstantObject {
      * @return Name index in constant pool of class name.
      */
     public int getNameIndex() {
-        return name_index;
+        return nameIndex;
     }
 
 
     /**
-     * @param name_index the name index in the constant pool of this Constant Class
+     * @param nameIndex the name index in the constant pool of this Constant Class
      */
-    public void setNameIndex( final int name_index ) {
-        this.name_index = name_index;
+    public void setNameIndex( final int nameIndex ) {
+        this.nameIndex = nameIndex;
     }
 
 
@@ -113,7 +113,7 @@ public final class ConstantClass extends Constant implements ConstantObject {
      */
     @Override
     public Object getConstantValue( final ConstantPool cp ) {
-        final Constant c = cp.getConstant(name_index, Const.CONSTANT_Utf8);
+        final Constant c = cp.getConstant(nameIndex, Const.CONSTANT_Utf8);
         return ((ConstantUtf8) c).getBytes();
     }
 
@@ -130,6 +130,6 @@ public final class ConstantClass extends Constant implements ConstantObject {
      */
     @Override
     public String toString() {
-        return super.toString() + "(name_index = " + name_index + ")";
+        return super.toString() + "(nameIndex = " + nameIndex + ")";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ static const ZStatPhaseCycle      ZPhaseCycle("Garbage Collection Cycle");
 static const ZStatPhasePause      ZPhasePauseMarkStart("Pause Mark Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMark("Concurrent Mark");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinue("Concurrent Mark Continue");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFree("Concurrent Mark Free");
 static const ZStatPhasePause      ZPhasePauseMarkEnd("Pause Mark End");
 static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferences("Concurrent Process Non-Strong References");
 static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSet("Concurrent Reset Relocation Set");
@@ -52,6 +53,28 @@ static const ZStatPhasePause      ZPhasePauseRelocateStart("Pause Relocate Start
 static const ZStatPhaseConcurrent ZPhaseConcurrentRelocated("Concurrent Relocate");
 static const ZStatCriticalPhase   ZCriticalPhaseGCLockerStall("GC Locker Stall", false /* verbose */);
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
+
+ZDriverRequest::ZDriverRequest() :
+    ZDriverRequest(GCCause::_no_gc) {}
+
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause) :
+    ZDriverRequest(cause, ConcGCThreads) {}
+
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint nworkers) :
+    _cause(cause),
+    _nworkers(nworkers) {}
+
+bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
+  return _cause == other._cause;
+}
+
+GCCause::Cause ZDriverRequest::cause() const {
+  return _cause;
+}
+
+uint ZDriverRequest::nworkers() const {
+  return _nworkers;
+}
 
 class VM_ZOperation : public VM_Operation {
 private:
@@ -117,47 +140,6 @@ public:
   }
 };
 
-static bool should_clear_soft_references() {
-  // Clear if one or more allocations have stalled
-  const bool stalled = ZHeap::heap()->is_alloc_stalled();
-  if (stalled) {
-    // Clear
-    return true;
-  }
-
-  // Clear if implied by the GC cause
-  const GCCause::Cause cause = ZCollectedHeap::heap()->gc_cause();
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs) {
-    // Clear
-    return true;
-  }
-
-  // Don't clear
-  return false;
-}
-
-static bool should_boost_worker_threads() {
-  // Boost worker threads if one or more allocations have stalled
-  const bool stalled = ZHeap::heap()->is_alloc_stalled();
-  if (stalled) {
-    // Boost
-    return true;
-  }
-
-  // Boost worker threads if implied by the GC cause
-  const GCCause::Cause cause = ZCollectedHeap::heap()->gc_cause();
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_java_lang_system_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs) {
-    // Boost
-    return true;
-  }
-
-  // Don't boost
-  return false;
-}
-
 class VM_ZMarkStart : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
@@ -171,14 +153,6 @@ public:
   virtual bool do_operation() {
     ZStatTimer timer(ZPhasePauseMarkStart);
     ZServiceabilityPauseTracer tracer;
-
-    // Set up soft reference policy
-    const bool clear = should_clear_soft_references();
-    ZHeap::heap()->set_soft_reference_policy(clear);
-
-    // Set up boost mode
-    const bool boost = should_boost_worker_threads();
-    ZHeap::heap()->set_boost_worker_threads(boost);
 
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
 
@@ -240,8 +214,12 @@ ZDriver::ZDriver() :
   create_and_start();
 }
 
-void ZDriver::collect(GCCause::Cause cause) {
-  switch (cause) {
+bool ZDriver::is_busy() const {
+  return _gc_cycle_port.is_busy();
+}
+
+void ZDriver::collect(const ZDriverRequest& request) {
+  switch (request.cause()) {
   case GCCause::_wb_young_gc:
   case GCCause::_wb_conc_mark:
   case GCCause::_wb_full_gc:
@@ -252,7 +230,7 @@ void ZDriver::collect(GCCause::Cause cause) {
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
     // Start synchronous GC
-    _gc_cycle_port.send_sync(cause);
+    _gc_cycle_port.send_sync(request);
     break;
 
   case GCCause::_z_timer:
@@ -263,7 +241,7 @@ void ZDriver::collect(GCCause::Cause cause) {
   case GCCause::_z_high_usage:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
-    _gc_cycle_port.send_async(cause);
+    _gc_cycle_port.send_async(request);
     break;
 
   case GCCause::_gc_locker:
@@ -273,12 +251,12 @@ void ZDriver::collect(GCCause::Cause cause) {
 
   case GCCause::_wb_breakpoint:
     ZBreakpoint::start_gc();
-    _gc_cycle_port.send_async(cause);
+    _gc_cycle_port.send_async(request);
     break;
 
   default:
     // Other causes not supported
-    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(request.cause()));
     break;
   }
 }
@@ -322,6 +300,11 @@ void ZDriver::concurrent_mark_continue() {
   ZHeap::heap()->mark(false /* initial */);
 }
 
+void ZDriver::concurrent_mark_free() {
+  ZStatTimer timer(ZPhaseConcurrentMarkFree);
+  ZHeap::heap()->mark_free();
+}
+
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
   ZBreakpoint::at_after_reference_processing_started();
@@ -363,6 +346,50 @@ void ZDriver::check_out_of_memory() {
   ZHeap::heap()->check_out_of_memory();
 }
 
+static bool should_clear_soft_references(const ZDriverRequest& request) {
+  // Clear soft references if implied by the GC cause
+  if (request.cause() == GCCause::_wb_full_gc ||
+      request.cause() == GCCause::_metadata_GC_clear_soft_refs ||
+      request.cause() == GCCause::_z_allocation_stall) {
+    // Clear
+    return true;
+  }
+
+  // Don't clear
+  return false;
+}
+
+static uint select_active_worker_threads_dynamic(const ZDriverRequest& request) {
+  // Use requested number of worker threads
+  return request.nworkers();
+}
+
+static uint select_active_worker_threads_static(const ZDriverRequest& request) {
+  const GCCause::Cause cause = request.cause();
+  const uint nworkers = request.nworkers();
+
+  // Boost number of worker threads if implied by the GC cause
+  if (cause == GCCause::_wb_full_gc ||
+      cause == GCCause::_java_lang_system_gc ||
+      cause == GCCause::_metadata_GC_clear_soft_refs ||
+      cause == GCCause::_z_allocation_stall) {
+    // Boost
+    const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
+    return boosted_nworkers;
+  }
+
+  // Use requested number of worker threads
+  return nworkers;
+}
+
+static uint select_active_worker_threads(const ZDriverRequest& request) {
+  if (UseDynamicNumberOfGCThreads) {
+    return select_active_worker_threads_dynamic(request);
+  } else {
+    return select_active_worker_threads_static(request);
+  }
+}
+
 class ZDriverGCScope : public StackObj {
 private:
   GCIdMark                   _gc_id;
@@ -372,23 +399,27 @@ private:
   ZServiceabilityCycleTracer _tracer;
 
 public:
-  ZDriverGCScope(GCCause::Cause cause) :
+  ZDriverGCScope(const ZDriverRequest& request) :
       _gc_id(),
-      _gc_cause(cause),
-      _gc_cause_setter(ZCollectedHeap::heap(), cause),
+      _gc_cause(request.cause()),
+      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
       _timer(ZPhaseCycle),
       _tracer() {
     // Update statistics
     ZStatCycle::at_start();
+
+    // Set up soft reference policy
+    const bool clear = should_clear_soft_references(request);
+    ZHeap::heap()->set_soft_reference_policy(clear);
+
+    // Select number of worker threads to use
+    const uint nworkers = select_active_worker_threads(request);
+    ZHeap::heap()->set_active_workers(nworkers);
   }
 
   ~ZDriverGCScope() {
-    // Calculate boost factor
-    const double boost_factor = (double)ZHeap::heap()->nconcurrent_worker_threads() /
-                                (double)ZHeap::heap()->nconcurrent_no_boost_worker_threads();
-
     // Update statistics
-    ZStatCycle::at_end(_gc_cause, boost_factor);
+    ZStatCycle::at_end(_gc_cause, ZHeap::heap()->active_workers());
 
     // Update data used by soft reference policy
     Universe::heap()->update_capacity_and_used_at_gc();
@@ -411,8 +442,8 @@ public:
     }                                 \
   } while (false)
 
-void ZDriver::gc(GCCause::Cause cause) {
-  ZDriverGCScope scope(cause);
+void ZDriver::gc(const ZDriverRequest& request) {
+  ZDriverGCScope scope(request);
 
   // Phase 1: Pause Mark Start
   pause_mark_start();
@@ -426,22 +457,25 @@ void ZDriver::gc(GCCause::Cause cause) {
     concurrent(mark_continue);
   }
 
-  // Phase 4: Concurrent Process Non-Strong References
+  // Phase 4: Concurrent Mark Free
+  concurrent(mark_free);
+
+  // Phase 5: Concurrent Process Non-Strong References
   concurrent(process_non_strong_references);
 
-  // Phase 5: Concurrent Reset Relocation Set
+  // Phase 6: Concurrent Reset Relocation Set
   concurrent(reset_relocation_set);
 
-  // Phase 6: Pause Verify
+  // Phase 7: Pause Verify
   pause_verify();
 
-  // Phase 7: Concurrent Select Relocation Set
+  // Phase 8: Concurrent Select Relocation Set
   concurrent(select_relocation_set);
 
-  // Phase 8: Pause Relocate Start
+  // Phase 9: Pause Relocate Start
   pause_relocate_start();
 
-  // Phase 9: Concurrent Relocate
+  // Phase 10: Concurrent Relocate
   concurrent(relocate);
 }
 
@@ -449,15 +483,15 @@ void ZDriver::run_service() {
   // Main loop
   while (!should_terminate()) {
     // Wait for GC request
-    const GCCause::Cause cause = _gc_cycle_port.receive();
-    if (cause == GCCause::_no_gc) {
+    const ZDriverRequest request = _gc_cycle_port.receive();
+    if (request.cause() == GCCause::_no_gc) {
       continue;
     }
 
     ZBreakpoint::at_before_gc();
 
     // Run GC
-    gc(cause);
+    gc(request);
 
     // Notify GC completed
     _gc_cycle_port.ack();

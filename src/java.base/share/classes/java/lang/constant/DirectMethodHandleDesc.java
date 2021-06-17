@@ -46,14 +46,11 @@ import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
  * {@link MethodHandle}.  A {@linkplain DirectMethodHandleDesc} corresponds to
  * a {@code Constant_MethodHandle_info} entry in the constant pool of a classfile.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain DirectMethodHandleDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except
- * by explicitly permitted types.  Non-platform classes should not implement
- * {@linkplain DirectMethodHandleDesc} directly.
- *
  * @since 12
  */
-public interface DirectMethodHandleDesc extends MethodHandleDesc {
+public sealed interface DirectMethodHandleDesc
+        extends MethodHandleDesc
+        permits DirectMethodHandleDescImpl {
     /**
      * Kinds of method handles that can be described with {@linkplain DirectMethodHandleDesc}.
      *
