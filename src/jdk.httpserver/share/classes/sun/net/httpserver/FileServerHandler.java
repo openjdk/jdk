@@ -246,10 +246,11 @@ public final class FileServerHandler implements HttpHandler {
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
                 + "</h1>\n"
                 + "<ul>\n");
-        Files.list(path)
-                .filter(p -> !isHiddenOrSymLink(p))
-                .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
-                .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        try (var paths = Files.list(path)) {
+            paths.filter(p -> !isHiddenOrSymLink(p))
+                 .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
+                 .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        }
         sb.append("</ul>\n");
         sb.append(closeHTML);
 
