@@ -974,7 +974,7 @@ bool ZMark::try_complete() {
 
   // Use nconcurrent number of worker threads to maintain the
   // worker/stripe distribution used during concurrent mark.
-  ZMarkTask task(this, ZMarkCompleteTimeout * 1000);
+  ZMarkTask task(this, ZMarkCompleteTimeout);
   workers()->run_concurrent(&task);
 
   // Successful if all stripes are empty
