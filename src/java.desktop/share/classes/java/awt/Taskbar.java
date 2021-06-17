@@ -322,7 +322,7 @@ public class Taskbar {
     }
 
     /**
-     * Changes this application's icon to the provided image.
+     * Suggests the system to change this application's icon to the provided {@code image}.
      *
      * @param image to change
      * @throws SecurityException if a security manager exists and it denies the
