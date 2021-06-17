@@ -45,6 +45,7 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.ProxySelector;
 import java.net.URL;
 import java.security.KeyStore;
 import java.util.Optional;
@@ -85,8 +86,7 @@ public class B6216082 {
             startHttpServer();
             // https.proxyPort can only be set after the TunnelProxy has been
             // created as it will use an ephemeral port.
-            System.setProperty("https.proxyPort",
-                        Integer.toString(proxy.getLocalPort()));
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(firstNonLoAddress, proxy.getLocalPort())));
             makeHttpCall();
         } finally {
             if (proxy != null) {
@@ -181,9 +181,9 @@ public class B6216082 {
                             server.getAddress().getPort(), "/");
         HttpURLConnection uc = (HttpURLConnection)url.openConnection();
         System.out.println(uc.getResponseCode());
-        if(uc.getResponseCode() == 400) {
+        if(uc.getResponseCode() != 200) {
             uc.disconnect();
-            throw new RuntimeException("Test failed : bad http request");
+            throw new RuntimeException("Test failed : bad http request with response code : "+ uc.getResponseCode());
         }
         uc.disconnect();
     }
