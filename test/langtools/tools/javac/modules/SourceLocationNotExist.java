@@ -86,7 +86,7 @@ public class SourceLocationNotExist extends TestRunner {
 
     @Test
     public void testSourceLocationNotExist() throws Exception {
-        // compile TestUnnamedModule.java into package test
+        // Compile TestUnnamedModule.java into package test.
         Path rootPath = Paths.get(".");
         Path testPath = Paths.get("test");
         tb.writeJavaFiles(rootPath, libCode);
@@ -95,23 +95,23 @@ public class SourceLocationNotExist extends TestRunner {
                 .outdir(".")
                 .run();
 
-        // Update the last modified time of the file TestUnnamedModule.java
+        // Update the last modified time of the file TestUnnamedModule.java.
         FileTime classFileTime = Files.getLastModifiedTime(testPath.resolve("TestUnnamedModule.class"));
         FileTime javaFileTime = FileTime.fromMillis(classFileTime.toMillis() + 100000);
         Files.setLastModifiedTime(testPath.resolve("TestUnnamedModule.java"), javaFileTime);
 
-        // construct the jar file: test.jar
+        // Construct the jar file: test.jar.
         new JarTask(tb).run("cf", "test.jar",
                             testPath.resolve("TestUnnamedModule.class").toString(),
                             testPath.resolve("TestUnnamedModule.java").toString());
 
-        // construct the module `use` without requires
+        // Construct the module `use` without requires.
         Path usePath = Paths.get("use");
         tb.writeJavaFiles(usePath, testUseCode, moduleInfoWithoutRequires);
         List<Path> withoutRequires = Arrays.asList(tb.findJavaFiles(usePath));
 
-        // compile the module `use` without requires by using different options
-        // use `-classpath` instead of `--module-path`
+        // Compile the module `use` without requires by using different options.
+        // Use `-classpath` instead of `--module-path`.
         List<String> options = Arrays.asList("-classpath", "test.jar", "-d", "use", "-sourcepath", "use", "-XDrawDiagnostics");
         List<String> expected = Arrays.asList(
                 "TestUnnamedModule.java:1:1: compiler.err.file.sb.on.source.or.patch.path.for.module",
@@ -120,7 +120,7 @@ public class SourceLocationNotExist extends TestRunner {
         // Before patch JDK-8263926, this compilation make compiler crash with NPE.
         // After patch JDK-8263926, the compiler outputs the corresponding error messages.
         testCompileFail(withoutRequires, options, expected);
-        // use `--module-path` instead of `-classpath`
+        // Use `--module-path` instead of `-classpath`.
         options = Arrays.asList("--module-path", "test.jar", "-d", "use", "-sourcepath", "use", "-XDrawDiagnostics");
         expected = Arrays.asList(
                 "TestUse.java:1:8: compiler.err.package.not.visible: test, " +
@@ -128,20 +128,20 @@ public class SourceLocationNotExist extends TestRunner {
                 "1 error");
         testCompileFail(withoutRequires, options, expected);
 
-        // remove the module `use`
+        // Remove the module `use`.
         Files.walk(usePath).map(Path::toFile).forEach(File::delete);
 
-        // construct the module `use` with requires
+        // Construct the module `use` with requires.
         usePath = Paths.get("use");
         tb.writeJavaFiles(usePath, moduleInfoWithRequires, testUseCode);
         List<Path> withRequires = Arrays.asList(tb.findJavaFiles(usePath));
 
-        // compile the module `use` with requires by using different options
-        // use `-classpath` instead of `--module-path`
+        // Compile the module `use` with requires by using different options.
+        // Use `-classpath` instead of `--module-path`.
         options = Arrays.asList("-classpath", "test.jar", "-d", "use", "-sourcepath", "use", "-XDrawDiagnostics");
         expected = Arrays.asList("module-info.java:2:14: compiler.err.module.not.found: test", "1 error");
         testCompileFail(withRequires, options, expected);
-        // use `--module-path` instead of `-classpath`
+        // Use `--module-path` instead of `-classpath`.
         options = Arrays.asList("--module-path", "test.jar", "-d", "use", "-sourcepath", "use", "-XDrawDiagnostics");
         expected = Arrays.asList("");
         testCompileOK(withRequires, options, expected);
