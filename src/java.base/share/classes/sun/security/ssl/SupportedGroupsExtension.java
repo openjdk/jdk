@@ -346,7 +346,7 @@ final class SupportedGroupsExtension {
             }
 
             // Produce the extension.
-            List<NamedGroup> namedGroups =
+            ArrayList<NamedGroup> namedGroups =
                 new ArrayList<>(SupportedGroups.supportedNamedGroups.length);
             for (NamedGroup ng : SupportedGroups.supportedNamedGroups) {
                 if ((!SupportedGroups.enableFFDHE) &&
@@ -372,20 +372,19 @@ final class SupportedGroupsExtension {
                 return null;
             }
 
-            SupportedGroupsSpec spec = new SupportedGroupsSpec(namedGroups);
-            int vectorLen = spec.namedGroupsIds.length << 1;
+            int vectorLen = namedGroups.size() << 1;
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (int ngId : spec.namedGroupsIds) {
-                    Record.putInt16(m, ngId);
+            for (NamedGroup namedGroup : namedGroups) {
+                    Record.putInt16(m, namedGroup.id);
             }
 
-            namedGroups = namedGroups.stream().distinct().collect(Collectors.toList());
             // Update the context.
             chc.clientRequestedNamedGroups =
                     Collections.<NamedGroup>unmodifiableList(namedGroups);
-            chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS, spec);
+            chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS,
+                    new SupportedGroupsSpec(namedGroups));
 
             return extData;
         }

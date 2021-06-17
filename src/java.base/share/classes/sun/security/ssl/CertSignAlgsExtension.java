@@ -103,24 +103,22 @@ final class CertSignAlgsExtension {
                 chc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols).
-                            stream().distinct().collect(Collectors.toList());
+                            chc.algorithmConstraints, chc.activeProtocols);
             }
 
-            SignatureSchemesSpec spec =
-                    new SignatureSchemesSpec(chc.localSupportedSignAlgs);
             int vectorLen = SignatureScheme.sizeInRecord() *
-                    spec.signatureSchemes.length;
+                    chc.localSupportedSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (int ssId : spec.signatureSchemes) {
-                Record.putInt16(m, ssId);
+            for (SignatureScheme ss : chc.localSupportedSignAlgs) {
+                Record.putInt16(m, ss.id);
             }
 
             // Update the context.
             chc.handshakeExtensions.put(
-                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT, spec);
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT,
+                    new SignatureSchemesSpec(chc.localSupportedSignAlgs));
 
             return extData;
         }

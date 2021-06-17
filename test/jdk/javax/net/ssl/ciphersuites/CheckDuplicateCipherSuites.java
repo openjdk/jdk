@@ -36,7 +36,6 @@ import javax.net.ssl.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.io.IOException;
 
 public class CheckDuplicateCipherSuites {
     enum CipherSuite {
@@ -104,15 +103,15 @@ public class CheckDuplicateCipherSuites {
     }
 
     enum ProtocolVersion {
-        TLS13(0x0304, "TLSv1.3"),
-        TLS12(0x0303, "TLSv1.2"),
-        TLS11(0x0302, "TLSv1.1"),
-        TLS10(0x0301, "TLSv1"),
-        SSL30(0x0300, "SSLv3"),
-        SSL20Hello(0x0002, "SSLv2Hello"),
+        TLS13       (0x0304, "TLSv1.3"),
+        TLS12       (0x0303, "TLSv1.2"),
+        TLS11       (0x0302, "TLSv1.1"),
+        TLS10       (0x0301, "TLSv1"),
+        SSL30       (0x0300, "SSLv3"),
+        SSL20Hello  (0x0002, "SSLv2Hello"),
 
-        DTLS12(0xFEFD, "DTLSv1.2"),
-        DTLS10(0xFEFF, "DTLSv1.0");
+        DTLS12      (0xFEFD, "DTLSv1.2"),
+        DTLS10      (0xFEFF, "DTLSv1.0");
 
         final int id;
         final String name;
@@ -254,10 +253,10 @@ public class CheckDuplicateCipherSuites {
     }
 
     enum CompressionAlgorithm {
-        ZLIB(0x0001, "zlib"),
-        BROTLI(0x0002, "brotli"),
-        ZSTD(0x0003, "zstd"),
-        NO_COMPRESSION(0x0000, "no compression");
+        ZLIB            (0x0001, "zlib"),
+        BROTLI          (0x0002, "brotli"),
+        ZSTD            (0x0003, "zstd"),
+        NO_COMPRESSION  (0x0000, "compression_disabled");
 
         final int id;           // hash + signature
         final String name;      // literal name
@@ -325,6 +324,22 @@ public class CheckDuplicateCipherSuites {
     static final List<String> malfALPN = List.of("http/1.1", "spdy/2", "spdy/3",
             "stun.turn", "stun.nat-discovery", "h2c", "c-webrtc", "sunrpc",
             "irc", "http/1.1", "http/1.1", "http/1.1", "http/1.1");
+    /* Duplicate server names are illegal (RFC 6066), so a malformed server name
+    list causes an IllegalArgumentException to be thrown, so the duplicate
+    testing has been commented out but the code left for verification purposes.
+    static final List<SNIServerName> malfSN = List.of(
+            new SNIHostName("www.yahoo.com"),
+            new SNIHostName("www.oracle.com"),
+            new SNIHostName("duckduckgo.com"),
+            new SNIHostName("www.google.com"),
+            new SNIHostName("www.yahoo.com"),
+            new SNIHostName("www.oracle.com"),
+            new SNIHostName("duckduckgo.com"),
+            new SNIHostName("www.google.com"),
+            new SNIHostName("www.yahoo.com"),
+            new SNIHostName("www.oracle.com"),
+            new SNIHostName("duckduckgo.com"),
+            new SNIHostName("www.google.com"));*/
     static SSLContext defaultCtx;
 
     public static void main(String[] args) throws Exception {
@@ -334,8 +349,8 @@ public class CheckDuplicateCipherSuites {
     }
 
     /**
-     * Create an SSLEngine from the default context and initiate a
-     * ClientHello to be evaluated.
+     * Create an SSLEngine from the default context, modify the parameters to
+     * the various malformed lists, and initiate a ClientHello to be evaluated.
      */
     private static ByteBuffer clientHelloEnv() throws Exception {
         SSLEngine eng = defaultCtx.createSSLEngine();
@@ -343,6 +358,7 @@ public class CheckDuplicateCipherSuites {
                 CipherSuite.names(malfCS).toArray(new String[0]),
                 ProtocolVersion.names(malfPV).toArray(new String[0]));
         sslp.setApplicationProtocols(malfALPN.toArray(new String[0]));
+        /*sslp.setServerNames(malfSN);*/
         eng.setSSLParameters(sslp);
         eng.setUseClientMode(true);
         SSLSession session = eng.getSession();
@@ -428,7 +444,7 @@ public class CheckDuplicateCipherSuites {
         List<String> transitNmdGrps = new ArrayList<>();
         List<String> transitSigSchms = new ArrayList<>();
         List<String> transitCertSigAlgs = new ArrayList<>();
-        List<String> transitServNames = new ArrayList<>();
+        /*List<String> transitServNames = new ArrayList<>();*/
         while (data.hasRemaining()) {
             int extType = Short.toUnsignedInt(data.getShort());
             int extLen = Short.toUnsignedInt(data.getShort());
@@ -472,7 +488,7 @@ public class CheckDuplicateCipherSuites {
                                 Short.toUnsignedInt(data.getShort())));
                     }
                     break;
-                case HELLO_EXT_SERVER_NAMES:
+                /*case HELLO_EXT_SERVER_NAMES:
                     int servNameListLen = Short.toUnsignedInt(data.getShort());
                     while (servNameListLen > 0) {
                         byte[] servNameBytes = new
@@ -482,7 +498,7 @@ public class CheckDuplicateCipherSuites {
                                 StandardCharsets.UTF_8));
                         servNameListLen -= (2 + servNameBytes.length);
                     }
-                    break;
+                    break;*/
                 default:
                     data.position(data.position() + extLen);
                     break;
@@ -498,7 +514,7 @@ public class CheckDuplicateCipherSuites {
                 transitCertSigAlgs);
         System.out.println("Transmitted CompressionAlgorithms: " +
                 transitCmprsnAlgs);
-        System.out.println("Transmitted ServerNames: " + transitServNames);
+        /*System.out.println("Transmitted ServerNames: " + transitServNames);*/
 
         if (containsDuplicates(transitCSs)) {
             throw new RuntimeException("CipherSuite list contains duplicates");
@@ -519,13 +535,10 @@ public class CheckDuplicateCipherSuites {
             throw new RuntimeException("CertificateSignatureAlgorithm list " +
                     "contains duplicates");
         }
-        if (containsDuplicates(transitCmprsnAlgs)) {
+        /*if (containsDuplicates(transitCmprsnAlgs)) {
             throw new RuntimeException("CompressionAlgorithm list contains " +
                     "duplicates");
-        }
-        if (containsDuplicates(transitServNames)) {
-            throw new RuntimeException("ServerName list contains duplicates");
-        }
+        }*/
 
         // move ByteBuffer location back to the beginning point saved earlier
         data.reset();

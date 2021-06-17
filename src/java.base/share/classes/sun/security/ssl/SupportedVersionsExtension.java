@@ -190,19 +190,20 @@ final class SupportedVersionsExtension {
             // Produce the extension.
             //
             // The activated protocols are used as the supported versions.
-            CHSupportedVersionsSpec spec = new
-                    CHSupportedVersionsSpec(chc.activeProtocols);
-            int verLen = spec.requestedProtocols.length * 2;
+            int[] protocols = new int[chc.activeProtocols.size()];
+            int verLen = protocols.length * 2;
             byte[] extData = new byte[verLen + 1];      // 1: versions length
-            extData[0] = (byte) verLen;
-            int i = 1;
-            for (int pv : spec.requestedProtocols) {
-                extData[i++] = (byte)(pv >>> 8);
-                extData[i++] = (byte)pv;
+            extData[0] = (byte)(verLen & 0xFF);
+            int i = 0, j = 1;
+            for (ProtocolVersion pv : chc.activeProtocols) {
+                protocols[i++] = pv.id;
+                extData[j++] = pv.major;
+                extData[j++] = pv.minor;
             }
 
             // Update the context.
-            chc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS, spec);
+            chc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS,
+                    new CHSupportedVersionsSpec(protocols));
 
             return extData;
         }

@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
@@ -88,7 +89,8 @@ final class ServerNameExtension {
          * (see JDK-6323374).
          */
         private CHServerNamesSpec(List<SNIServerName> serverNames) {
-            this.serverNames = List.copyOf(serverNames);
+            this.serverNames = serverNames.stream().distinct().
+                    collect(Collectors.toList());
         }
 
         private CHServerNamesSpec(HandshakeContext hc,
