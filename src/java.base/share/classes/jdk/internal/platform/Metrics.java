@@ -353,6 +353,19 @@ public interface Metrics {
     public long getMemorySoftLimit();
 
     /*****************************************************************
+     * pids subsystem
+     ****************************************************************/
+
+    /**
+     * Returns the maximum number of tasks that may be created in the Isolation Group.
+     *
+     * @return The maximum number of tasks or -1 if the metric is not available.
+     *         Returns -3 if it is unlimited ("max")
+     *
+     */
+    public long getPidsMax();
+
+    /*****************************************************************
      * BlKIO Subsystem
      ****************************************************************/
 

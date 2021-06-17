@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,12 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     public long getMemorySoftLimit() {
         String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.low");
         return limitFromString(softLimitStr);
+    }
+
+    @Override
+    public long getPidsMax() {
+        String pidsMaxStr = CgroupSubsystemController.getStringValue(unified, "pids.max");
+        return limitFromString(pidsMaxStr);
     }
 
     @Override

@@ -79,6 +79,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong memory_max_usage_in_bytes();
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
+    jlong pids_max();
+
     const char * container_type() {
       return "cgroupv2";
     }

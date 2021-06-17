@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,5 +242,21 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   strncat(buf, cgroup_path, MAXPATHLEN-buflen);
   buf[MAXPATHLEN] = '\0';
   return os::strdup(buf);
+}
+
+jlong CgroupV2Subsystem::pids_max() {
+  // we have to handle the special "max" value
+  GET_CONTAINER_INFO(jlong, _unified, "/pids.max",
+                     "Maximum number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pidsmax);
+  // not a number -> could be "max"
+  if (pidsmax < 0) {
+    char myline[1024];
+    int err2;
+    err2 = subsystem_file_line_contents(_unified, "/pids.max", NULL, "%1023s", myline);
+    if (err2 != 0) {
+      if (strncmp(myline, "max", 3) == 0) return -3;
+    }
+  }
+  return pidsmax;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,4 +240,31 @@ int CgroupV1Subsystem::cpu_shares() {
   if (shares == 1024) return -1;
 
   return shares;
+}
+
+/* pids_max
+ *
+ * Return the maximum number of tasks available to the process
+ *
+ * return:
+ *    maximum number of tasks
+ *    -1 for no setup
+ *    -3 for "max" (special value)
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::pids_max() {
+  if (_pids == NULL) return OSCONTAINER_ERROR;
+
+  GET_CONTAINER_INFO(jlong, _pids, "/pids.max",
+                     "Maximum number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pidsmax);
+  if (pidsmax < 0) {
+    // check for potential special value
+    char myline[1024];
+    int err2;
+    err2 = subsystem_file_line_contents(_pids, "/pids.max", NULL, "%1023s", myline);
+    if (err2 != 0) {
+      if (strncmp(myline, "max", 3) == 0) return -3;
+    }
+  }
+  return pidsmax;
 }
