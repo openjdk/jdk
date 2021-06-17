@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,7 @@ public class FtpURLConnection extends URLConnection {
             /**
              * Do we have to use a proxy?
              */
+            @SuppressWarnings("removal")
             ProxySelector sel = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<ProxySelector>() {
                         public ProxySelector run() {

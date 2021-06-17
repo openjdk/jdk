@@ -26,11 +26,13 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "runtime/thread.hpp"
+
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"
@@ -39,7 +41,14 @@
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
-    size_t used_bytes = tlab().used_bytes();
+    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
+    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
+    if (top <= start) {
+      return allocated_bytes;
+    }
+    const size_t used_bytes = pointer_delta(top, start, 1);
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
       // Comparing used_bytes with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB

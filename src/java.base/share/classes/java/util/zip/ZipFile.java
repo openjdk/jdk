@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,7 @@ public class ZipFile implements ZipConstants, Closeable {
                                                Integer.toHexString(mode));
         }
         String name = file.getPath();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(name);
@@ -1218,8 +1219,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             public boolean equals(Object obj) {
-                if (obj instanceof Key) {
-                    Key key = (Key)obj;
+                if (obj instanceof Key key) {
                     if (key.utf8 != utf8) {
                         return false;
                     }

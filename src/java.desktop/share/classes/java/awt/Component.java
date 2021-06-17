@@ -505,6 +505,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /*
      * The component's AccessControlContext.
      */
+    @SuppressWarnings("removal")
     private transient volatile AccessControlContext acc =
         AccessController.getContext();
 
@@ -626,13 +627,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
             initIDs();
         }
 
+        @SuppressWarnings("removal")
         String s = java.security.AccessController.doPrivileged(
                                                                new GetPropertyAction("awt.image.incrementaldraw"));
         isInc = (s == null || s.equals("true"));
 
-        s = java.security.AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        String s2 = java.security.AccessController.doPrivileged(
                                                         new GetPropertyAction("awt.image.redrawrate"));
-        incRate = (s != null) ? Integer.parseInt(s) : 100;
+        incRate = (s2 != null) ? Integer.parseInt(s2) : 100;
     }
 
     /**
@@ -711,6 +714,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /*
      * Returns the acc this component was constructed with.
      */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException("Component is missing AccessControlContext");
@@ -973,6 +977,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 comp.processEvent(e);
             }
 
+            @SuppressWarnings("removal")
             public AccessControlContext getAccessControlContext(Component comp) {
                 return comp.getAccessControlContext();
             }
@@ -1426,6 +1431,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             throw new HeadlessException();
         }
 
+        @SuppressWarnings("removal")
         PointerInfo pi = java.security.AccessController.doPrivileged(
                                                                      new java.security.PrivilegedAction<PointerInfo>() {
                                                                          public PointerInfo run() {
@@ -6252,6 +6258,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
              }
 
              // Need to check non-bootstraps.
+             @SuppressWarnings("removal")
              Boolean enabled = java.security.AccessController.doPrivileged(
                  new java.security.PrivilegedAction<Boolean>() {
                      public Boolean run() {
@@ -8987,6 +8994,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @throws IOException if an I/O error occurs
      * @see #writeObject(ObjectOutputStream)
      */
+    @SuppressWarnings("removal")
     @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException

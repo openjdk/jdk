@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -193,12 +194,25 @@ bool G1CollectedHeap::evacuation_failed() const {
   return num_regions_failed_evacuation() > 0;
 }
 
+bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
+  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
+
+  return Atomic::load(&_regions_failed_evacuation[region_idx]);
+}
+
 uint G1CollectedHeap::num_regions_failed_evacuation() const {
   return Atomic::load(&_num_regions_failed_evacuation);
 }
 
-void G1CollectedHeap::notify_region_failed_evacuation() {
-  Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
+bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
+  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
+
+  volatile bool* region_failed_addr = &_regions_failed_evacuation[region_idx];
+  bool result = !Atomic::load(region_failed_addr) && !Atomic::cmpxchg(region_failed_addr, false, true, memory_order_relaxed);
+  if (result) {
+    Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
+  }
+  return result;
 }
 
 #ifndef PRODUCT

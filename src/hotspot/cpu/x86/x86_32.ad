@@ -688,7 +688,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
   // If method set FPU control word, restore to standard control word
   if (C->in_24_bit_fp_mode()) {
-    _masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    _masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   int framesize = C->output()->frame_size_in_bytes();
@@ -1398,6 +1398,16 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
+// Vector calling convention not supported.
+const bool Matcher::supports_vector_calling_convention() {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -1768,7 +1778,7 @@ encode %{
     debug_only(int off0 = cbuf.insts_size());
     if (ra_->C->in_24_bit_fp_mode()) {
       MacroAssembler _masm(&cbuf);
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
@@ -1782,7 +1792,7 @@ encode %{
     // If method sets FPU control word do it here also
     if (Compile::current()->in_24_bit_fp_mode()) {
       MacroAssembler masm(&cbuf);
-      masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     }
   %}
 
@@ -2335,7 +2345,7 @@ encode %{
   enc_class strictfp_bias1( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias1() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias1() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -2343,7 +2353,7 @@ encode %{
   enc_class strictfp_bias2( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias2() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias2() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -2878,7 +2888,7 @@ encode %{
     // invalid value Intel stores down in the corner cases.
     emit_opcode(cbuf,0xD9);            // FLDCW  trunc
     emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::addr_fpu_cntrl_wrd_trunc());
+    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
     emit_opcode(cbuf,0x83);            // SUB ESP,4
     emit_opcode(cbuf,0xEC);
@@ -2892,8 +2902,8 @@ encode %{
     emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
     emit_opcode(cbuf,0x2D);
     emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
-        ? (int)StubRoutines::addr_fpu_cntrl_wrd_24()
-        : (int)StubRoutines::addr_fpu_cntrl_wrd_std());
+        ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
+        : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
     emit_opcode(cbuf,0x58);       // POP EAX
@@ -2907,14 +2917,14 @@ encode %{
     // CALL directly to the runtime
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
   enc_class DPR2L_encoding( regDPR src ) %{
     emit_opcode(cbuf,0xD9);            // FLDCW  trunc
     emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::addr_fpu_cntrl_wrd_trunc());
+    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
     emit_opcode(cbuf,0x83);            // SUB ESP,8
     emit_opcode(cbuf,0xEC);
@@ -2928,8 +2938,8 @@ encode %{
     emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
     emit_opcode(cbuf,0x2D);
     emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
-        ? (int)StubRoutines::addr_fpu_cntrl_wrd_24()
-        : (int)StubRoutines::addr_fpu_cntrl_wrd_std());
+        ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
+        : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
     emit_opcode(cbuf,0x58);       // POP EAX
@@ -2949,7 +2959,7 @@ encode %{
     // CALL directly to the runtime
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -7178,6 +7188,22 @@ instruct castLL( eRegL dst ) %{
   ins_pipe( empty );
 %}
 
+instruct castFF( regF dst ) %{
+  match(Set dst (CastFF dst));
+  format %{ "#castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castDD( regD dst ) %{
+  match(Set dst (CastDD dst));
+  format %{ "#castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
 // Load-locked - same as a regular pointer load when used with compare-swap
 instruct loadPLocked(eRegP dst, memory mem) %{
   match(Set dst (LoadPLocked mem));
@@ -9777,15 +9803,15 @@ instruct mulDPR_reg(regDPR dst, regDPR src) %{
 // rescale product by 2^(15360)
 //
 instruct strictfp_mulDPR_reg(regDPR1 dst, regnotDPR1 src) %{
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   match(Set dst (MulD dst src));
-  ins_cost(1);   // Select this instruction for all strict FP double multiplies
+  ins_cost(1);   // Select this instruction for all FP double multiplies
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "DMULp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x1); /* DE C8+i or DE /1*/
   ins_encode( strictfp_bias1(dst),
@@ -9896,14 +9922,14 @@ instruct divDPR_reg(regDPR dst, regDPR src) %{
 instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
   predicate (UseSSE<=1);
   match(Set dst (DivD dst src));
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   ins_cost(01);
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "FDIVp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x7); /* DE F8+i or DE /7*/
   ins_encode( strictfp_bias1(dst),
@@ -9912,20 +9938,6 @@ instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
               strictfp_bias2(dst) );
   ins_pipe( fpu_reg_reg );
 %}
-
-instruct divDPR_reg_round(stackSlotD dst, regDPR src1, regDPR src2) %{
-  predicate( UseSSE<=1 && !(Compile::current()->has_method() && Compile::current()->method()->is_strict()) );
-  match(Set dst (RoundDouble (DivD src1 src2)));
-
-  format %{ "FLD    $src1\n\t"
-            "FDIV   ST,$src2\n\t"
-            "FSTP_D $dst\t# D-round" %}
-  opcode(0xD8, 0x6); /* D8 F0+i or D8 /6 */
-  ins_encode( Push_Reg_DPR(src1),
-              OpcP, RegOpc(src2), Pop_Mem_DPR(dst) );
-  ins_pipe( fpu_mem_reg_reg );
-%}
-
 
 instruct modDPR_reg(regDPR dst, regDPR src, eAXRegI rax, eFlagsReg cr) %{
   predicate(UseSSE<=1);
@@ -10778,7 +10790,7 @@ instruct convD2I_reg_reg( eAXRegI dst, eDXRegI tmp, regD src, eFlagsReg cr ) %{
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2i_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10834,13 +10846,13 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ subptr(rsp, 8);
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
     __ fistp_d(Address(rsp, 0));
     // Restore the rounding mode, mask the exception
     if (Compile::current()->in_24_bit_fp_mode()) {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     } else {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Load the converted long, adjust CPU stack
     __ pop(rax);
@@ -10853,7 +10865,7 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2l_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10908,7 +10920,7 @@ instruct convF2I_reg(eAXRegI dst, eDXRegI tmp, regF src, eFlagsReg cr ) %{
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2i_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10965,13 +10977,13 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ subptr(rsp, 8);
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
     __ fistp_d(Address(rsp, 0));
     // Restore the rounding mode, mask the exception
     if (Compile::current()->in_24_bit_fp_mode()) {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     } else {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Load the converted long, adjust CPU stack
     __ pop(rax);
@@ -10984,7 +10996,7 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2l_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );

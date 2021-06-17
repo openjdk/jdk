@@ -677,11 +677,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
-  product(bool, AlwaysLockClassLoader, false,                               \
-          "(Deprecated) Require the VM to acquire the class loader lock "   \
-          "before calling loadClass() even for class loaders registering "  \
-          "as parallel capable")                                            \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
@@ -1466,6 +1461,10 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
+  develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
+          "Force the class space to be allocated at this address or "       \
+          "fails VM initialization (requires -Xshare=off.")                 \
+                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
@@ -2016,6 +2015,11 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(size_t, AsyncLogBufferSize, 2*M,                                  \
+          "Memory budget (in bytes) for the buffer of Asynchronous "        \
+          "Logging (-Xlog:async).")                                         \
+          range(100*K, 50*M)                                                \
+                                                                            \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
@@ -2079,6 +2083,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 

@@ -376,9 +376,6 @@ protected:
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
-  static InstanceKlass* load_shared_boot_class(Symbol* class_name,
-                                               PackageEntry* pkg_entry,
-                                               TRAPS);
   static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,

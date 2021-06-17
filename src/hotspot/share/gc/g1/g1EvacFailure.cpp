@@ -237,7 +237,7 @@ public:
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
-    if (hr->evacuation_failed()) {
+    if (_g1h->evacuation_failed(hr->hrm_index())) {
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();

@@ -91,8 +91,43 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
-public:
 
+  // Returns whether the given humongous object defined by the start region index
+  // is reclaimable.
+  //
+  // At this point in the garbage collection, checking whether the humongous object
+  // is still a candidate is sufficient because:
+  //
+  // - if it has not been a candidate at the start of collection, it will never
+  // changed to be a candidate during the gc (and live).
+  // - any found outstanding (i.e. in the DCQ, or in its remembered set)
+  // references will set the candidate state to false.
+  // - there can be no references from within humongous starts regions referencing
+  // the object because we never allocate other objects into them.
+  // (I.e. there can be no intra-region references)
+  //
+  // It is not required to check whether the object has been found dead by marking
+  // or not, in fact it would prevent reclamation within a concurrent cycle, as
+  // all objects allocated during that time are considered live.
+  // SATB marking is even more conservative than the remembered set.
+  // So if at this point in the collection we did not find a reference during gc
+  // (or it had enough references to not be a candidate, having many remembered
+  // set entries), nobody has a reference to it.
+  // At the start of collection we flush all refinement logs, and remembered sets
+  // are completely up-to-date wrt to references to the humongous object.
+  //
+  // So there is no need to re-check remembered set size of the humongous region.
+  //
+  // Other implementation considerations:
+  // - never consider object arrays at this time because they would pose
+  // considerable effort for cleaning up the the remembered sets. This is
+  // required because stale remembered sets might reference locations that
+  // are currently allocated into.
+  bool is_reclaimable(uint region_idx) const {
+    return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(region_idx);
+  }
+
+public:
   G1FreeHumongousRegionClosure() :
     _humongous_objects_reclaimed(0),
     _humongous_regions_reclaimed(0),
@@ -104,70 +139,23 @@ public:
       return false;
     }
 
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-    oop obj = cast_to_oop(r->bottom());
-    G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
-
-    // The following checks whether the humongous object is live are sufficient.
-    // The main additional check (in addition to having a reference from the roots
-    // or the young gen) is whether the humongous object has a remembered set entry.
-    //
-    // A humongous object cannot be live if there is no remembered set for it
-    // because:
-    // - there can be no references from within humongous starts regions referencing
-    // the object because we never allocate other objects into them.
-    // (I.e. there are no intra-region references that may be missed by the
-    // remembered set)
-    // - as soon there is a remembered set entry to the humongous starts region
-    // (i.e. it has "escaped" to an old object) this remembered set entry will stay
-    // until the end of a concurrent mark.
-    //
-    // It is not required to check whether the object has been found dead by marking
-    // or not, in fact it would prevent reclamation within a concurrent cycle, as
-    // all objects allocated during that time are considered live.
-    // SATB marking is even more conservative than the remembered set.
-    // So if at this point in the collection there is no remembered set entry,
-    // nobody has a reference to it.
-    // At the start of collection we flush all refinement logs, and remembered sets
-    // are completely up-to-date wrt to references to the humongous object.
-    //
-    // Other implementation considerations:
-    // - never consider object arrays at this time because they would pose
-    // considerable effort for cleaning up the the remembered sets. This is
-    // required because stale remembered sets might reference locations that
-    // are currently allocated into.
     uint region_idx = r->hrm_index();
-    if (!g1h->is_humongous_reclaim_candidate(region_idx) ||
-        !r->rem_set()->is_empty()) {
-      log_debug(gc, humongous)("Live humongous region %u object size " SIZE_FORMAT " start " PTR_FORMAT "  with remset " SIZE_FORMAT " code roots " SIZE_FORMAT " is marked %d reclaim candidate %d type array %d",
-                               region_idx,
-                               (size_t)obj->size() * HeapWordSize,
-                               p2i(r->bottom()),
-                               r->rem_set()->occupied(),
-                               r->rem_set()->strong_code_roots_list_length(),
-                               next_bitmap->is_marked(r->bottom()),
-                               g1h->is_humongous_reclaim_candidate(region_idx),
-                               obj->is_typeArray()
-                              );
+    if (!is_reclaimable(region_idx)) {
       return false;
     }
 
+    oop obj = cast_to_oop(r->bottom());
     guarantee(obj->is_typeArray(),
               "Only eagerly reclaiming type arrays is supported, but the object "
               PTR_FORMAT " is not.", p2i(r->bottom()));
 
-    log_debug(gc, humongous)("Dead humongous region %u object size " SIZE_FORMAT " start " PTR_FORMAT " with remset " SIZE_FORMAT " code roots " SIZE_FORMAT " is marked %d reclaim candidate %d type array %d",
+    log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
                              region_idx,
                              (size_t)obj->size() * HeapWordSize,
-                             p2i(r->bottom()),
-                             r->rem_set()->occupied(),
-                             r->rem_set()->strong_code_roots_list_length(),
-                             next_bitmap->is_marked(r->bottom()),
-                             g1h->is_humongous_reclaim_candidate(region_idx),
-                             obj->is_typeArray()
+                             p2i(r->bottom())
                             );
 
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
     assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
@@ -277,9 +265,9 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   }
 
   bool will_become_free(HeapRegion* hr) const {
-    // A region will be freed by free_collection_set if the region is in the
+    // A region will be freed by during the FreeCollectionSet phase if the region is in the
     // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !hr->evacuation_failed();
+    return _g1h->is_in_cset(hr) && !_g1h->evacuation_failed(hr->hrm_index());
   }
 
  public:
@@ -391,8 +379,8 @@ public:
   }
 
   void account_evacuated_region(HeapRegion* r) {
-      size_t used = r->used();
-      assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
+    size_t used = r->used();
+    assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
     _before_used_bytes += used;
     _regions_freed += 1;
   }
@@ -443,7 +431,7 @@ class FreeCSetClosure : public HeapRegionClosure {
   Tickspan         _non_young_time;
   FreeCSetStats*   _stats;
 
-  void assert_in_cset(HeapRegion* r) {
+  void assert_tracks_surviving_words(HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
            (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
@@ -498,15 +486,14 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    _g1h->clear_region_attr(r);
     stats()->account_rs_length(r);
 
     if (r->is_young()) {
-      assert_in_cset(r);
+      assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
 
-    if (r->evacuation_failed()) {
+    if (_g1h->evacuation_failed(r->hrm_index())) {
       handle_failed_region(r);
     } else {
       handle_evacuated_region(r);

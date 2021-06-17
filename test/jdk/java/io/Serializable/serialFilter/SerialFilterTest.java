@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Constructor;
@@ -52,14 +53,15 @@ import org.testng.annotations.DataProvider;
 /* @test
  * @bug 8234836
  * @build SerialFilterTest
- * @run testng/othervm  SerialFilterTest
- * @run testng/othervm  -Djdk.serialSetFilterAfterRead=true SerialFilterTest
+ * @run testng/othervm -Djdk.serialFilterTrace=true SerialFilterTest
+ * @run testng/othervm -Djdk.serialSetFilterAfterRead=true -Djdk.serialFilterTrace=true SerialFilterTest
  *
- * @summary Test ObjectInputFilters
+ * @summary Test ObjectInputFilters using Builtin Filter Factory
  */
 @Test
 public class SerialFilterTest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -6999613679881262446L;
 
     /**
@@ -242,7 +244,7 @@ public class SerialFilterTest implements Serializable {
      * @throws IOException
      */
     @Test(dataProvider="Objects")
-    public static void t1(Object object,
+    void t1(Object object,
                           long count, long maxArray, long maxRefs, long maxDepth, long maxBytes,
                           List<Class<?>> classes) throws IOException {
         byte[] bytes = writeObjects(object);
@@ -267,7 +269,7 @@ public class SerialFilterTest implements Serializable {
      * @param pattern a pattern
      */
     @Test(dataProvider="Patterns")
-    static void testPatterns(String pattern) {
+    void testPatterns(String pattern) {
         evalPattern(pattern, (p, o, neg) -> testPatterns(p, o, neg));
     }
 
@@ -277,40 +279,41 @@ public class SerialFilterTest implements Serializable {
      * This test is agnostic the global filter being set or not.
      */
     @Test
-    static void nonResettableFilter() {
+    void nonResettableFilter() {
         Validator validator1 = new Validator();
         Validator validator2 = new Validator();
 
-        try {
-            byte[] bytes = writeObjects("text1");    // an object
+        Validator[] filterCases = {
+                validator1,     // setting filter to a non-null filter
+                null,           // setting stream-specific filter to null
+        };
 
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                 ObjectInputStream ois = new ObjectInputStream(bais)) {
-                // Check the initial filter is the global filter; may be null
-                ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
-                ObjectInputFilter initial = ois.getObjectInputFilter();
-                Assert.assertEquals(global, initial, "initial filter should be the global filter");
+        for (Validator validator : filterCases) {
+            try {
+                byte[] bytes = writeObjects("text1");    // an object
 
-                // Check if it can be set to null
-                ois.setObjectInputFilter(null);
-                ObjectInputFilter filter = ois.getObjectInputFilter();
-                Assert.assertNull(filter, "set to null should be null");
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes); ObjectInputStream ois = new ObjectInputStream(bais)) {
+                    // Check the initial filter is the global filter; may be null
+                    ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
+                    ObjectInputFilter initial = ois.getObjectInputFilter();
+                    Assert.assertEquals(global, initial, "initial filter should be the global filter");
 
-                ois.setObjectInputFilter(validator1);
-                Object o = ois.readObject();
-                try {
-                    ois.setObjectInputFilter(validator2);
-                    Assert.fail("Should not be able to set filter twice");
-                } catch (IllegalStateException ise) {
-                    // success, the exception was expected
+                    ois.setObjectInputFilter(validator);
+                    Object o = ois.readObject();
+                    try {
+                        ois.setObjectInputFilter(validator2);
+                        Assert.fail("Should not be able to set filter twice");
+                    } catch (IllegalStateException ise) {
+                        // success, the exception was expected
+                    }
+                } catch (EOFException eof) {
+                    Assert.fail("Should not reach end-of-file", eof);
+                } catch (ClassNotFoundException cnf) {
+                    Assert.fail("Deserializing", cnf);
                 }
-            } catch (EOFException eof) {
-                Assert.fail("Should not reach end-of-file", eof);
-            } catch (ClassNotFoundException cnf) {
-                Assert.fail("Deserializing", cnf);
+            } catch (IOException ex) {
+                Assert.fail("Unexpected IOException", ex);
             }
-        } catch (IOException ex) {
-            Assert.fail("Unexpected IOException", ex);
         }
     }
 
@@ -323,7 +326,7 @@ public class SerialFilterTest implements Serializable {
      * to revert to the old behavior but it re-enables the incorrect use.
      */
     @Test
-    static void testNonSettableAfterReadObject() throws IOException, ClassNotFoundException {
+    void testNonSettableAfterReadObject() throws IOException, ClassNotFoundException {
         String expected1 = "text1";
         String expected2 = "text2";
         byte[] bytes = writeObjects(expected1, expected2);
@@ -359,7 +362,7 @@ public class SerialFilterTest implements Serializable {
      * @throws IOException if an error occurs
      */
     @Test(dataProvider="Arrays")
-    static void testReadResolveToArray(Object array, int length) throws IOException {
+    void testReadResolveToArray(Object array, int length) throws IOException {
         ReadResolveToArray object = new ReadResolveToArray(array, length);
         byte[] bytes = writeObjects(object);
         Object o = validate(bytes, object);    // the object is its own filter
@@ -376,7 +379,7 @@ public class SerialFilterTest implements Serializable {
      * @param value a test value
      */
     @Test(dataProvider="Limits")
-    static void testLimits(String name, long value) {
+    void testLimits(String name, long value) {
         Class<?> arrayClass = new int[0].getClass();
         String pattern = String.format("%s=%d;%s=%d", name, value, name, value - 1);
         ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
@@ -396,7 +399,7 @@ public class SerialFilterTest implements Serializable {
      * @param pattern a pattern to test
      */
     @Test(dataProvider="InvalidLimits", expectedExceptions=java.lang.IllegalArgumentException.class)
-    static void testInvalidLimits(String pattern) {
+    void testInvalidLimits(String pattern) {
         try {
             ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
         } catch (IllegalArgumentException iae) {
@@ -409,7 +412,7 @@ public class SerialFilterTest implements Serializable {
      * Test that returning null from a filter causes deserialization to fail.
      */
     @Test(expectedExceptions=InvalidClassException.class)
-    static void testNullStatus() throws IOException {
+    void testNullStatus() throws IOException {
         byte[] bytes = writeObjects(0); // an Integer
         try {
             Object o = validate(bytes, new ObjectInputFilter() {
@@ -428,7 +431,7 @@ public class SerialFilterTest implements Serializable {
      * @param pattern pattern from the data source
      */
     @Test(dataProvider="InvalidPatterns", expectedExceptions=IllegalArgumentException.class)
-    static void testInvalidPatterns(String pattern) {
+    void testInvalidPatterns(String pattern) {
         try {
             ObjectInputFilter.Config.createFilter(pattern);
         } catch (IllegalArgumentException iae) {
@@ -441,7 +444,7 @@ public class SerialFilterTest implements Serializable {
      * Test that Config.create returns null if the argument does not contain any patterns or limits.
      */
     @Test()
-    static void testEmptyPattern() {
+    void testEmptyPattern() {
         ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("");
         Assert.assertNull(filter, "empty pattern did not return null");
 
@@ -773,6 +776,7 @@ public class SerialFilterTest implements Serializable {
      * the ObjectInputFilter to check that it has the expected length.
      */
     static class ReadResolveToArray implements Serializable, ObjectInputFilter {
+        @Serial
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial") /* Incorrect declarations are being tested */
@@ -784,6 +788,7 @@ public class SerialFilterTest implements Serializable {
             this.length = length;
         }
 
+        @Serial
         Object readResolve() {
             return array;
         }
@@ -844,21 +849,27 @@ public class SerialFilterTest implements Serializable {
 
     // Deeper superclass hierarchy
     static class A implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
     };
     static class B extends A {
+        @Serial
         private static final long serialVersionUID = 2L;
     }
     static class C extends B {
+        @Serial
         private static final long serialVersionUID = 3L;
     }
     static class D extends C {
+        @Serial
         private static final long serialVersionUID = 4L;
     }
     static class E extends D {
+        @Serial
         private static final long serialVersionUID = 5L;
     }
     static class F extends E {
+        @Serial
         private static final long serialVersionUID = 6L;
     }
 

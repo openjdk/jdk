@@ -170,20 +170,20 @@ JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
-                                         jstring invokedName,
-                                         jobject invokedType,
-                                         jobject methodType,
-                                         jobject implMethodMember,
-                                         jobject instantiatedMethodType,
+                                         jstring interfaceMethodName,
+                                         jobject factoryType,
+                                         jobject interfaceMethodType,
+                                         jobject implementationMember,
+                                         jobject dynamicMethodType,
                                          jclass lambdaProxyClass);
 
 JNIEXPORT jclass JNICALL
 JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
-                                      jstring invokedName,
-                                      jobject invokedType,
-                                      jobject methodType,
-                                      jobject implMethodMember,
-                                      jobject instantiatedMethodType);
+                                      jstring interfaceMethodName,
+                                      jobject factoryType,
+                                      jobject interfaceMethodType,
+                                      jobject implementationMember,
+                                      jobject dynamicMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);

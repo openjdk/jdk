@@ -948,4 +948,94 @@ public class Byte256VectorLoadStoreTests extends AbstractVectorTest {
             Assert.assertEquals(r, a);
        }
     }
+
+
+
+    static void assertArraysEquals(boolean[] r, byte[] a) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], (a[i] & 1) == 1);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], (a[i] & 1) == 1, "at index #" + i);
+        }
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] mask) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], mask[i % SPECIES.length()] && a[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], mask[i % SPECIES.length()] && a[i], "at index #" + i);
+        }
+    }
+
+    static boolean[] convertToBooleanArray(byte[] a) {
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            r[i] = (a[i] & 1) == 1;
+        }
+
+        return r;
+    }
+
+    @Test(dataProvider = "byteProvider")
+    static void loadByteStoreBooleanArray(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.intoBooleanArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a);
+    }
+
+    @Test(dataProvider = "byteProvider")
+    static void loadStoreBooleanArray(IntFunction<byte[]> fa) {
+        boolean[] a = convertToBooleanArray(fa.apply(SPECIES.length()));
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromBooleanArray(SPECIES, a, i);
+                av.intoBooleanArray(r, i);
+            }
+        }
+        Assert.assertEquals(r, a);
+    }
+
+    @Test(dataProvider = "byteMaskProvider")
+    static void loadStoreMaskBooleanArray(IntFunction<byte[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        boolean[] a = convertToBooleanArray(fa.apply(SPECIES.length()));
+        boolean[] r = new boolean[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromValues(SPECIES, mask);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromBooleanArray(SPECIES, a, i, vmask);
+                av.intoBooleanArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, mask);
+
+
+        r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromBooleanArray(SPECIES, a, i);
+                av.intoBooleanArray(r, i, vmask);
+            }
+        }
+        assertArraysEquals(r, a, mask);
+    }
 }

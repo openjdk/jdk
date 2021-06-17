@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,6 +334,7 @@ public abstract class URLConnection {
      * @since 1.2
      */
     public static void setFileNameMap(FileNameMap map) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkSetFactory();
         fileNameMap = map;
@@ -1264,6 +1265,7 @@ public abstract class URLConnection {
         if (factory != null) {
             throw new Error("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -1377,6 +1379,7 @@ public abstract class URLConnection {
         return UnknownContentHandler.INSTANCE;
     }
 
+    @SuppressWarnings("removal")
     private ContentHandler lookupContentHandlerViaProvider(String contentType) {
         return AccessController.doPrivileged(
                 new PrivilegedAction<>() {

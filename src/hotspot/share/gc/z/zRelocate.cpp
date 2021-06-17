@@ -415,5 +415,5 @@ public:
 
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   ZRelocateTask task(relocation_set);
-  _workers->run_concurrent(&task);
+  _workers->run(&task);
 }

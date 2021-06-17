@@ -365,6 +365,7 @@ public abstract class ClassLoader {
             throw new IllegalArgumentException("name must be non-empty or null");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkCreateClassLoader();
@@ -671,6 +672,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked by the VM after loading class with this loader.
+    @SuppressWarnings("removal")
     private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -1791,6 +1793,7 @@ public abstract class ClassLoader {
     public final ClassLoader getParent() {
         if (parent == null)
             return null;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Check access to the parent class loader
@@ -1834,6 +1837,7 @@ public abstract class ClassLoader {
      */
     @CallerSensitive
     public static ClassLoader getPlatformClassLoader() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         ClassLoader loader = getBuiltinPlatformClassLoader();
         if (sm != null) {
@@ -1933,6 +1937,7 @@ public abstract class ClassLoader {
             default:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     checkClassLoaderPermission(scl, Reflection.getCallerClass());
@@ -2041,6 +2046,7 @@ public abstract class ClassLoader {
      * is not the same as or an ancestor of the given cl argument.
      */
     static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // caller can be null if the VM is requesting it
@@ -2426,7 +2432,7 @@ public abstract class ClassLoader {
     /*
      * Invoked in the VM class linking code.
      */
-    private static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
         } else {

@@ -58,6 +58,7 @@ public @interface PreviewFeature {
          * This one can only be removed after JDK 17
          */
         SEALED_CLASSES,
+        SWITCH_PATTERN_MATCHING,
         SCOPE_LOCALS,
         /**
          * A key for testing.

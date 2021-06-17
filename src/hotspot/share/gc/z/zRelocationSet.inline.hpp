@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSET_INLINE_HPP
 #define SHARE_GC_Z_ZRELOCATIONSET_INLINE_HPP
 
-#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
+
+#include "gc/z/zArray.inline.hpp"
 
 template <bool Parallel>
 inline ZRelocationSetIteratorImpl<Parallel>::ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set) :

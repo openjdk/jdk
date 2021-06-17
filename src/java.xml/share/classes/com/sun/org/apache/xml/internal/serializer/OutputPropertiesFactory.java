@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 import java.util.Properties;
 import javax.xml.transform.OutputKeys;
 import jdk.xml.internal.SecuritySupport;
@@ -71,7 +70,7 @@ import jdk.xml.internal.SecuritySupport;
  * @see SerializerFactory
  * @see Method
  * @see Serializer
- * @LastModified: Feb 2021
+ * @LastModified: May 2021
  */
 public final class OutputPropertiesFactory
 {
@@ -166,33 +165,6 @@ public final class OutputPropertiesFactory
     public static final int S_BUILTIN_OLD_EXTENSIONS_UNIVERSAL_LEN =
         S_BUILTIN_OLD_EXTENSIONS_UNIVERSAL.length();
 
-    /**
-     * This non-standard, Oracle-impl only property key is used as if
-     * OutputKeys.STANDALONE is specified but without writing it out in the declaration;
-     * It can be used to reverse the change by Xalan patch 1495.
-     * Since Xalan patch 1495 can cause incompatible behavior, this property is
-     * added for application to neutralize the effect of Xalan patch 1495
-     */
-    /**
-     * <p>Is Standalone</p>
-     *
-     * <ul>
-     *   <li>
-     *     <code>yes</code> to indicate the output is intended to be used as standalone
-     *   </li>
-     *   <li>
-     *     <code>no</code> has no effect.
-     *   </li>
-     * </ul>
-     */
-    public static final String ORACLE_IS_STANDALONE = "http://www.oracle.com/xml/is-standalone";
-
-    // standardized property, refer to the definition in java.xml module-info
-    public static final String JDK_IS_STANDALONE = Constants.ORACLE_JAXP_PROPERTY_PREFIX +
-            "xsltcIsStandalone";
-
-    // Corresponding System property
-    public static final String SP_IS_STANDALONE = "jdk.xml.xsltcIsStandalone";
 
     //************************************************************
     //*  PRIVATE CONSTANTS
@@ -220,8 +192,7 @@ public final class OutputPropertiesFactory
         "media-type",
         "{http://xml.apache.org/xalan}indent-amount",
         "{http://xml.apache.org/xalan}content-handler",
-        "{http://xml.apache.org/xalan}entities",
-        JDK_IS_STANDALONE
+        "{http://xml.apache.org/xalan}entities"
     };
 
     private static final String[] PROP_XML_VALUE = {
@@ -234,8 +205,7 @@ public final class OutputPropertiesFactory
         "text/xml",
         "0",
         "com.sun.org.apache.xml.internal.serializer.ToXMLStream",
-        "com/sun/org/apache/xml/internal/serializer/XMLEntities",
-        "no"
+        "com/sun/org/apache/xml/internal/serializer/XMLEntities"
     };
 
     private static final String[] PROP_HTML = {
