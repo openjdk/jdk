@@ -39,14 +39,14 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
   // Query memory before...
   os::Linux::meminfo_t info1;
   os::Linux::meminfo_t info2;
-  bool have_info1 = os::Linux::query_memory_info(&info1);
+  bool have_info1 = os::Linux::query_process_memory_info(&info1);
 
   _output->print_cr("Attempting trim...");
   ::malloc_trim(0);
   _output->print_cr("Done.");
 
   // ...and after trim.
-  bool have_info2 = os::Linux::query_memory_info(&info2);
+  bool have_info2 = os::Linux::query_process_memory_info(&info2);
 
   // Print report both to output stream as well to UL
   if (have_info1 && have_info2) {

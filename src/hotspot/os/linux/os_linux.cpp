@@ -2137,7 +2137,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
-bool os::Linux::query_memory_info(os::Linux::meminfo_t* info) {
+bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
   FILE* f = ::fopen("/proc/self/status", "r");
   const int num_values = 8;
   int num_found = 0;
@@ -2172,7 +2172,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // Print virtual and resident set size; peak values; swap; and for
   //  rss its components if the kernel is recent enough.
   meminfo_t info;
-  if (query_memory_info(&info)) {
+  if (query_process_memory_info(&info)) {
     st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
     st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
