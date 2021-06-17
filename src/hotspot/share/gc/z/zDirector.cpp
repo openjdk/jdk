@@ -221,6 +221,11 @@ GCCause::Cause ZDirector::make_minor_gc_decision() const {
     return GCCause::_z_minor_timer;
   }
 
+  if (ZCollectionIntervalOnly) {
+    // The rest of the rules are turned off
+    return GCCause::_no_gc;
+  }
+
   // Rule 1: Allocation rate
   if (rule_minor_allocation_rate()) {
     log_debug(gc, director)("Rule Minor: Allocation Rate, Triggered");
@@ -241,6 +246,11 @@ GCCause::Cause ZDirector::make_major_gc_decision() const {
   if (rule_major_timer()) {
     log_debug(gc, director)("Rule Major: Timer, Triggered");
     return GCCause::_z_major_timer;
+  }
+
+  if (ZCollectionIntervalOnly) {
+    // The rest of the rules are turned off
+    return GCCause::_no_gc;
   }
 
   // Rule 1: Warmup

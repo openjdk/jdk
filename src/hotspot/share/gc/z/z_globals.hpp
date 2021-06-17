@@ -48,6 +48,9 @@
   product(double, ZCollectionIntervalMajor, -1,                             \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
+  product(bool, ZCollectionIntervalOnly, false,                             \
+          "Only use timers for GC heuristics")                              \
+                                                                            \
   product(bool, ZProactive, true,                                           \
           "Enable proactive GC cycles")                                     \
                                                                             \
