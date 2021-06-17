@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,16 +71,6 @@ public class CTextPipe implements TextPipe {
         sg2d.setRenderingHint(SunHints.KEY_ANTIALIASING, oldAliasingHint);
     }
 
-    private boolean hasSlotData(GlyphVector gv) {
-        int length = gv.getNumGlyphs();
-        for (int i = 0; i < length; i++) {
-            if ((gv.getGlyphCode(i) & CompositeGlyphMapper.SLOTMASK) != 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void drawString(final SunGraphics2D sg2d, final String s, final double x, final double y) {
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
@@ -96,7 +86,7 @@ public class CTextPipe implements TextPipe {
         sg2d.setFont(gV.getFont());
 
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
-        if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0 && !hasSlotData(gV)) {
+        if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
             final OSXSurfaceData surfaceData = (OSXSurfaceData)sg2d.getSurfaceData();
             surfaceData.drawGlyphs(this, sg2d, nativeStrikePtr, gV, x, y);
         } else {
