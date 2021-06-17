@@ -163,6 +163,13 @@ public class VM {
     private static final int PREVIEW_MINOR_VERSION = 65535;
 
     /**
+     * Returns the current class file format version the VM supports.
+     */
+    public static int classFileVersion() {
+        return classFileMajorVersion;
+    }
+
+    /**
      * Tests if the given version is a supported {@code class}
      * file version.
      *

@@ -198,8 +198,7 @@ public class ReflectionFactory {
             return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
         } else {
             if (!useDirectMethodHandle && noInflation
-                    && !method.getDeclaringClass().isHidden()
-                    && !ReflectUtil.isVMAnonymousClass(method.getDeclaringClass())) {
+                    && !method.getDeclaringClass().isHidden()) {
                 return generateMethodAccessor(method);
             } else {
                 NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
@@ -249,8 +248,7 @@ public class ReflectionFactory {
             return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
             if (noInflation
-                    && !c.getDeclaringClass().isHidden()
-                    && !ReflectUtil.isVMAnonymousClass(c.getDeclaringClass())) {
+                    && !c.getDeclaringClass().isHidden()) {
                 // Bootstrapping issue: since we use Class.newInstance() in
                 // the ConstructorAccessor generation process, we have to
                 // break the cycle here.

@@ -36,7 +36,6 @@ import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -48,6 +47,7 @@ import java.util.Set;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
@@ -57,7 +57,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = V17;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -230,7 +229,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         if (factoryType.parameterCount() == 0 && disableEagerInitialization) {
             try {
                 return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
-                        invokedType.returnType()));
+                                                                    factoryType.returnType()));
             } catch (ReflectiveOperationException e) {
                 throw new LambdaConversionException(
                         "Exception finding " + LAMBDA_INSTANCE_FIELD + " static field", e);

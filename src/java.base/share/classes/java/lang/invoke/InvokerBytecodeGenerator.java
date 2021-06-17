@@ -60,8 +60,6 @@ import static java.lang.invoke.MethodHandles.Lookup.*;
  * @author John Rose, JSR 292 EG
  */
 class InvokerBytecodeGenerator {
-    private static final int CLASSFILE_VERSION = Opcodes.V17;
-
     /** Define class names for convenience. */
     private static final String MH      = "java/lang/invoke/MethodHandle";
     private static final String MHI     = "java/lang/invoke/MethodHandleImpl";

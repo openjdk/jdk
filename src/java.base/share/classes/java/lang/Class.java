@@ -472,6 +472,7 @@ public final class Class<T> implements java.io.Serializable,
     private static Class<?> forName(String name, boolean initialize, ClassLoader loader, Class<?> caller)
             throws ClassNotFoundException
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Reflective call to get caller class is only needed if a security manager
@@ -552,6 +553,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Caller-sensitive adapter method for reflective invocation
+    @SuppressWarnings("removal")
     @CallerSensitiveAdapter
     private static Class<?> forName(Module module, String name, Class<?> caller) {
         Objects.requireNonNull(module);
