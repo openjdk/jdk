@@ -31,6 +31,8 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -71,11 +73,9 @@ final class SignatureAlgorithmsExtension {
 
         SignatureSchemesSpec(List<SignatureScheme> schemes) {
             if (schemes != null) {
-                signatureSchemes = new int[schemes.size()];
-                int i = 0;
-                for (SignatureScheme scheme : schemes) {
-                    signatureSchemes[i++] = scheme.id;
-                }
+                IntStream.Builder schBldr = IntStream.builder();
+                schemes.forEach(sch -> schBldr.accept(sch.id));
+                this.signatureSchemes = schBldr.build().distinct().toArray();
             } else {
                 this.signatureSchemes = new int[0];
             }
@@ -102,14 +102,14 @@ final class SignatureAlgorithmsExtension {
                     "Invalid signature_algorithms: incomplete data"));
             }
 
-            int[] schemes = new int[algs.length / 2];
+            IntStream.Builder schBldr = IntStream.builder();
             for (int i = 0, j = 0; i < algs.length;) {
                 byte hash = algs[i++];
                 byte sign = algs[i++];
-                schemes[j++] = ((hash & 0xFF) << 8) | (sign & 0xFF);
+                schBldr.accept( ((hash & 0xFF) << 8) | (sign & 0xFF) );
             }
 
-            this.signatureSchemes = schemes;
+            this.signatureSchemes = schBldr.build().distinct().toArray();
         }
 
         @Override
@@ -189,22 +189,24 @@ final class SignatureAlgorithmsExtension {
                 chc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols);
+                            chc.algorithmConstraints, chc.activeProtocols).
+                            stream().distinct().collect(Collectors.toList());
             }
 
+            SignatureSchemesSpec spec =
+                    new SignatureSchemesSpec(chc.localSupportedSignAlgs);
             int vectorLen = SignatureScheme.sizeInRecord() *
-                    chc.localSupportedSignAlgs.size();
+                    spec.signatureSchemes.length;
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : chc.localSupportedSignAlgs) {
-                Record.putInt16(m, ss.id);
+            for (int ssId : spec.signatureSchemes) {
+                Record.putInt16(m, ssId);
             }
 
             // Update the context.
             chc.handshakeExtensions.put(
-                    SSLExtension.CH_SIGNATURE_ALGORITHMS,
-                    new SignatureSchemesSpec(chc.localSupportedSignAlgs));
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS, spec);
 
             return extData;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
@@ -97,12 +98,12 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: incomplete data"));
             }
 
-            int[] ids = new int[ngs.length / 2];
+            IntStream.Builder ngBldr = IntStream.builder();
             for (int i = 0, j = 0; i < ngs.length;) {
-                ids[j++] = ((ngs[i++] & 0xFF) << 8) | (ngs[i++] & 0xFF);
+                ngBldr.accept( ((ngs[i++] & 0xFF) << 8) | (ngs[i++] & 0xFF) );
             }
 
-            this.namedGroupsIds = ids;
+            this.namedGroupsIds = ngBldr.build().distinct().toArray();
         }
 
         @Override
@@ -345,7 +346,7 @@ final class SupportedGroupsExtension {
             }
 
             // Produce the extension.
-            ArrayList<NamedGroup> namedGroups =
+            List<NamedGroup> namedGroups =
                 new ArrayList<>(SupportedGroups.supportedNamedGroups.length);
             for (NamedGroup ng : SupportedGroups.supportedNamedGroups) {
                 if ((!SupportedGroups.enableFFDHE) &&
@@ -371,19 +372,20 @@ final class SupportedGroupsExtension {
                 return null;
             }
 
-            int vectorLen = namedGroups.size() << 1;
+            SupportedGroupsSpec spec = new SupportedGroupsSpec(namedGroups);
+            int vectorLen = spec.namedGroupsIds.length << 1;
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (NamedGroup namedGroup : namedGroups) {
-                    Record.putInt16(m, namedGroup.id);
+            for (int ngId : spec.namedGroupsIds) {
+                    Record.putInt16(m, ngId);
             }
 
+            namedGroups = namedGroups.stream().distinct().collect(Collectors.toList());
             // Update the context.
             chc.clientRequestedNamedGroups =
                     Collections.<NamedGroup>unmodifiableList(namedGroups);
-            chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS,
-                    new SupportedGroupsSpec(namedGroups));
+            chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS, spec);
 
             return extData;
         }

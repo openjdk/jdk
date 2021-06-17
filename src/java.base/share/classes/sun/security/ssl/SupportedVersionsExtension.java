@@ -200,16 +200,6 @@ final class SupportedVersionsExtension {
                 extData[i++] = (byte)(pv >>> 8);
                 extData[i++] = (byte)pv;
             }
-            /*int[] protocols = new int[chc.activeProtocols.size()];
-            int verLen = protocols.length * 2;
-            byte[] extData = new byte[verLen + 1];      // 1: versions length
-            extData[0] = (byte)(verLen & 0xFF);
-            int i = 0, j = 1;
-            for (ProtocolVersion pv : chc.activeProtocols) {
-                protocols[i++] = pv.id;
-                extData[j++] = pv.major;
-                extData[j++] = pv.minor;
-            }*/
 
             // Update the context.
             chc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS, spec);

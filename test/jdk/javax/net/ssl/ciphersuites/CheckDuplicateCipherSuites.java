@@ -28,8 +28,9 @@
  * @summary Verify that setting multiple instances of the same cipher suite does
  * not result in extra reported suites
  * @run main/othervm CheckDuplicateCipherSuites
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe2048,secp256r1,ffdhe2048,secp256r1,ffdhe2048,secp256r1,ffdhe2048,secp256r1 CheckDuplicateCipherSuites
+ * @run main/othervm -Djdk.tls.client.SignatureSchemes=ecdsa_secp256r1_sha256,ed25519,ed448,ecdsa_secp256r1_sha256,ed25519,ed448,ecdsa_secp256r1_sha256,ed25519,ed448,rsa_pkcs1_sha256 CheckDuplicateCipherSuites
  */
-
 
 import javax.net.ssl.*;
 import java.nio.ByteBuffer;
@@ -157,10 +158,108 @@ public class CheckDuplicateCipherSuites {
         }
     }
 
-    static final int TLS_RECORD_HANDSHAKE = 22;
+    enum NamedGroup {
+        FFDHE_2048(0x0100, "ffdhe2048"),
+        SECP256_R1(0x0017, "secp256r1"),
+        X25519(0x001D, "x25519"),
+        X448(0x001E, "x448"),
+        SECP384_R1(0x0018, "secp384r1"),
+        SECP521_R1(0x0019, "secp521r1"),
+        FFDHE_3072(0x0101, "ffdhe3072"),
+        FFDHE_4096(0x0102, "ffdhe4096"),
+        FFDHE_6144(0x0103, "ffdhe6144"),
+        FFDHE_8192(0x0104, "ffdhe8192");
+
+        final int id;           // hash + signature
+        final String name;      // literal name
+
+        NamedGroup(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        private static List<String> names(List<NamedGroup> orig) {
+            List<String> names = new ArrayList<>();
+            orig.forEach(ng -> names.add(ng.name));
+            return names;
+        }
+
+        private static List<Integer> ids(List<NamedGroup> orig) {
+            List<Integer> ids = new ArrayList<>();
+            orig.forEach(ng -> ids.add(ng.id));
+            return ids;
+        }
+
+        private static String nameOf(int id) {
+            for (NamedGroup ng : NamedGroup.values()) {
+                if (ng.id == id) {
+                    return ng.name;
+                }
+            }
+            return "UNKNOWN-NAMED-GROUP(" + id + ")";
+        }
+    }
+
+    enum SignatureScheme {
+        ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256"),
+        ED25519                 (0x0807, "ed25519"),
+        ED448                   (0x0808, "ed448"),
+        RSA_PKCS1_SHA256        (0x0401, "rsa_pkcs1_sha256"),
+        ECDSA_SECP384R1_SHA384  (0x0503, "ecdsa_secp384r1_sha384"),
+        ECDSA_SECP521R1_SHA512  (0x0603, "ecdsa_secp521r1_sha512"),
+        RSA_PSS_RSAE_SHA256     (0x0804, "rsa_pss_rsae_sha256"),
+        RSA_PSS_RSAE_SHA384     (0x0805, "rsa_pss_rsae_sha384"),
+        RSA_PSS_RSAE_SHA512     (0x0806, "rsa_pss_rsae_sha512"),
+        RSA_PSS_PSS_SHA256      (0x0809, "rsa_pss_pss_sha256"),
+        RSA_PSS_PSS_SHA384      (0x080A, "rsa_pss_pss_sha384"),
+        RSA_PSS_PSS_SHA512      (0x080B, "rsa_pss_pss_sha512"),
+        RSA_PKCS1_SHA384        (0x0501, "rsa_pkcs1_sha384"),
+        RSA_PKCS1_SHA512        (0x0601, "rsa_pkcs1_sha512"),
+        DSA_SHA256              (0x0402, "dsa_sha256"),
+        ECDSA_SHA224            (0x0303, "ecdsa_sha224"),
+        RSA_SHA224              (0x0301, "rsa_sha224"),
+        DSA_SHA224              (0x0302, "dsa_sha224"),
+        ECDSA_SHA1              (0x0203, "ecdsa_sha1"),
+        RSA_PKCS1_SHA1          (0x0201, "rsa_pkcs1_sha1"),
+        DSA_SHA1                (0x0202, "dsa_sha1");
+
+        final int id;           // hash + signature
+        final String name;      // literal name
+
+        SignatureScheme(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        private static List<String> names(List<SignatureScheme> orig) {
+            List<String> names = new ArrayList<>();
+            orig.forEach(ss -> names.add(ss.name));
+            return names;
+        }
+
+        private static List<Integer> ids(List<SignatureScheme> orig) {
+            List<Integer> ids = new ArrayList<>();
+            orig.forEach(ss -> ids.add(ss.id));
+            return ids;
+        }
+
+        private static String nameOf(int id) {
+            for (SignatureScheme ss : SignatureScheme.values()) {
+                if (ss.id == id) {
+                    return ss.name;
+                }
+            }
+            return "UNKNOWN-SIGNATURE-SCHEME(" + id + ")";
+        }
+    }
+
     static final int TLS_HANDSHAKE_CLIHELLO = 1;
-    static final int HELLO_EXT_SUPP_VERS = 43;
+    static final int HELLO_EXT_SUPP_GROUPS = 10;
+    static final int HELLO_EXT_SIG_ALGS = 13;
     static final int HELLO_EXT_ALPN_NEGOT = 16;
+    static final int TLS_RECORD_HANDSHAKE = 22;
+    static final int HELLO_EXT_SUPP_VERS = 43;
+    static final int HELLO_EXT_SIG_ALG_CERTS = 50;
     static final List<CipherSuite> malfCS = List.of(
             CipherSuite.TLS_AES_256_GCM_SHA384,
             CipherSuite.TLS_AES_128_GCM_SHA256,
@@ -189,22 +288,10 @@ public class CheckDuplicateCipherSuites {
     static final List<String> malfALPN = List.of("http/1.1", "spdy/2", "spdy/3",
             "stun.turn", "stun.nat-discovery", "h2c", "c-webrtc", "sunrpc",
             "irc", "http/1.1", "http/1.1", "http/1.1", "http/1.1");
-    static final String[] malfCSNameArr =
-            CipherSuite.names(malfCS).toArray(new String[0]);
-    static final String[] cleanCSNameArr =
-            CipherSuite.names(clearDups(malfCS)).toArray(new String[0]);
-    static final String[] malfPVNameArr =
-            ProtocolVersion.names(malfPV).toArray(new String[0]);
-    static final String[] cleanPVNamerArr =
-            ProtocolVersion.names(clearDups(malfPV)).toArray(new String[0]);
-    static final String[] malfALPNNameArr = malfALPN.toArray(new String[0]);
     static SSLContext defaultCtx;
 
     public static void main(String[] args) throws Exception {
         defaultCtx = SSLContext.getDefault();
-        /*testEngine();
-        testSocket();
-        testParam();*/
         ByteBuffer transitData = clientHelloEnv();
         checkClientHello(transitData);
     }
@@ -215,8 +302,10 @@ public class CheckDuplicateCipherSuites {
      */
     private static ByteBuffer clientHelloEnv() throws Exception {
         SSLEngine eng = defaultCtx.createSSLEngine();
-        SSLParameters sslp = new SSLParameters(malfCSNameArr, malfPVNameArr);
-        sslp.setApplicationProtocols(malfALPNNameArr);
+        SSLParameters sslp = new SSLParameters(
+                CipherSuite.names(malfCS).toArray(new String[0]),
+                ProtocolVersion.names(malfPV).toArray(new String[0]));
+        sslp.setApplicationProtocols(malfALPN.toArray(new String[0]));
         eng.setSSLParameters(sslp);
         eng.setUseClientMode(true);
         SSLSession session = eng.getSession();
@@ -297,6 +386,9 @@ public class CheckDuplicateCipherSuites {
         int extsLen = Short.toUnsignedInt(data.getShort());
         List<String> transitPVs = new ArrayList<>();
         List<String> transitALPNs = new ArrayList<>();
+        List<String> transitNmdGrps = new ArrayList<>();
+        List<String> transitSigSchms = new ArrayList<>();
+        List<String> transitCertSigAlgs = new ArrayList<>();
         while (data.hasRemaining()) {
             int extType = Short.toUnsignedInt(data.getShort());
             int extLen = Short.toUnsignedInt(data.getShort());
@@ -317,41 +409,59 @@ public class CheckDuplicateCipherSuites {
                         alpnListLen -= (1 + alpnBytes.length);
                     }
                     break;
+                case HELLO_EXT_SUPP_GROUPS:
+                    int supGrpLen = Short.toUnsignedInt(data.getShort());
+                    for (int i=0; i<supGrpLen; i+=2) {
+                        transitNmdGrps.add(NamedGroup.nameOf(
+                                Short.toUnsignedInt(data.getShort())));
+                    }
+                    break;
+                case HELLO_EXT_SIG_ALGS:
+                    int sigAlgLen = Short.toUnsignedInt(data.getShort());
+                    for (int i=0; i<sigAlgLen; i+=2) {
+                        transitSigSchms.add(SignatureScheme.nameOf(
+                                Short.toUnsignedInt(data.getShort())));
+                    }
+                    break;
+                case HELLO_EXT_SIG_ALG_CERTS:
+                    int certSigAlgLen = Short.toUnsignedInt(data.getShort());
+                    for (int i=0; i<certSigAlgLen; i+=2) {
+                        transitCertSigAlgs.add(SignatureScheme.nameOf(
+                                Short.toUnsignedInt(data.getShort())));
+                    }
+                    break;
                 default:
                     data.position(data.position() + extLen);
                     break;
             }
         }
 
-        List<String> expectedCS = CipherSuite.names(clearDups(malfCS));
-        // For protocol versions, deprecated protocols will be automatically
-        // eliminated and ordering from highest to lowest enforced, so the
-        // expected output format is not just the input with duplicates removed
-        List<String> expectedPV = List.of("TLSv1.3", "TLSv1.2", "SSLv2Hello",
-                "DTLSv1.2", "DTLSv1.0");
-        List<String> expectedALPN = clearDups(malfALPN);
+        System.out.println("Transmitted CipherSuites: " + transitCSs);
+        System.out.println("Transmitted ProtocolVersions : " + transitPVs);
+        System.out.println("Transmitted ALPNs: " + transitALPNs);
+        System.out.println("Transmitted NamedGroups: " + transitNmdGrps);
+        System.out.println("Transmitted SignatureSchemes: " + transitSigSchms);
+        System.out.println("Transmitted CertificateSignatureAlgorithms: " +
+                transitCertSigAlgs);
 
-        System.out.println("Ciphersuites transmitted in ClientHello: "
-                + transitCSs);
-        System.out.println("Expected cipher suites: " + expectedCS);
-        System.out.println("Protocol versions transmitted in ClientHello: "
-                + transitPVs);
-        System.out.println("Expected protocols: " + expectedPV);
-        System.out.println("ALPNs transmitted in ClientHello: " + transitALPNs);
-        System.out.println("Expected ALPNs: " + expectedALPN);
-
-        if (!transitCSs.equals(expectedCS)) {
-            throw new RuntimeException("Expected and actual " +
-                    " ciphersuites differ");
+        if (containsDups(transitCSs)) {
+            throw new RuntimeException("CipherSuite list contains duplicates");
         }
-
-        if (!transitPVs.equals(expectedPV)) {
-            throw new RuntimeException("Expected and actual protocol versions"
-                    + " differ");
+        if (containsDups(transitPVs)) {
+            throw new RuntimeException("ProtocolVersion list contains duplicates");
         }
-
-        if (!transitALPNs.equals(expectedALPN)) {
-            throw new RuntimeException("Expected and actual ALPNs differ");
+        if (containsDups(transitALPNs)) {
+            throw new RuntimeException("ALPN list contains duplicates");
+        }
+        if (containsDups(transitNmdGrps)) {
+            throw new RuntimeException("NamedGroup list contains duplicates");
+        }
+        if (containsDups(transitSigSchms)) {
+            throw new RuntimeException("SignatureScheme list contains duplicates");
+        }
+        if (containsDups(transitCertSigAlgs)) {
+            throw new RuntimeException("CertificateSignatureAlgorithm list " +
+                    "contains duplicates");
         }
 
         // move ByteBuffer location back to the beginning point saved earlier
@@ -374,74 +484,21 @@ public class CheckDuplicateCipherSuites {
     }
 
     /**
-     * Creates an SSLEngine from the default context, sets its cipher suites
-     * and protocol versions to the malformed arrays, then queries the
-     * engine for its ciphersuites and protocol versions.
+     * Check if a generic list contains duplicates. Set.add(...) returns true
+     * if the element is not present in the set, and false otherwise, so the
+     * return value is reversed.
      *
-     * @throws RuntimeException if the engine's cipher suites or protocol
-     * versions do not match the expected flattened array.
-     */
-    static void testEngine() throws IOException{
-        SSLEngine sslEng  = defaultCtx.createSSLEngine();
-        sslEng.setEnabledCipherSuites(malfCSNameArr);
-        sslEng.setEnabledProtocols(malfPVNameArr);
-
-        if (!Arrays.equals(sslEng.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLEngine: getEnabledCipherSuites " +
-                    "does not return expected output");
-        }
-
-        if (!Arrays.equals(sslEng.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLEngine: getEnabledProtocols " +
-                    "does not return expected output");
-        }
-    }
-
-    /**
-     * Functions the same as testEngine but uses an SSLSocket
+     * @param src list to be checked
      *
-     * @throws IOException if the socket's cipher suites or protocol versions
-     * do not match the expected flattened array
+     * @return true if duplicates are found, false otherwise
      */
-    static void testSocket() throws IOException {
-        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
-        SSLSocket sslSoc = (SSLSocket) sslSF.createSocket();
-        sslSoc.setEnabledCipherSuites(malfCSNameArr);
-        sslSoc.setEnabledProtocols(malfPVNameArr);
-
-        if (!Arrays.equals(sslSoc.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledCipherSuites " +
-                    "does not return expected output");
+    private static <T> boolean containsDups(List<T> src) {
+        Set<T> setVers = new LinkedHashSet<>();
+        for (T entry : src) {
+            if (!setVers.add(entry)) {
+                return true;
+            }
         }
-
-        if (!Arrays.equals(sslSoc.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
-                    "does not return expected output");
-        }
-    }
-
-    /**
-     * Functions the same as testEngine but uses a socket that has been
-     * modified via the SSLParamaters
-     *
-     * @throws RuntimeException if the socket's cipher suites or protocol
-     * versions do not match the expected flattened array.
-     */
-    static void testParam() throws IOException {
-        SSLParameters modParams =
-                new SSLParameters(malfCSNameArr, malfPVNameArr);
-        SSLSocketFactory sslSF = defaultCtx.getSocketFactory();
-        SSLSocket modSSLS = (SSLSocket) sslSF.createSocket();
-        modSSLS.setSSLParameters(modParams);
-
-        if (!Arrays.equals(modSSLS.getEnabledCipherSuites(), cleanCSNameArr)) {
-            throw new RuntimeException("SSLSocket modified via parameters: " +
-                    "getEnabledCipherSuites does not return expected output");
-        }
-
-        if (!Arrays.equals(modSSLS.getEnabledProtocols(), cleanPVNamerArr)) {
-            throw new RuntimeException("SSLSocket: getEnabledProtocols " +
-                    "does not return expected output");
-        }
+        return false;
     }
 }
