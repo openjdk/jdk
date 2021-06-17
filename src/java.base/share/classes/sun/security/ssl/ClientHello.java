@@ -193,32 +193,18 @@ final class ClientHello {
             }
             this.cipherSuiteIds = csBldr.build().distinct().toArray();
             this.cipherSuites = getCipherSuites(this.cipherSuiteIds);
-            /*Stream.Builder<CipherSuite> sb = Stream.builder();
-            for (int i=0; i < csLen; i+=2) {
-                CipherSuite cs = CipherSuite.valueOf(
-                        Short.toUnsignedInt(m.getShort()));
-                if (cs != null) {
-                    sb.accept(cs);
-                }
+            int cmpLen = Byte.toUnsignedInt(m.get());
+            IntStream.Builder cmpBldr = IntStream.builder();
+            for (int i=0; i<cmpLen; i+=2) {
+                cmpBldr.accept(Byte.toUnsignedInt(m.get()));
             }
-            this.cipherSuites = sb.build().distinct().
-                    collect(Collectors.toList());
-            this.cipherSuiteIds = getCipherSuiteIds(this.cipherSuites);
-            byte[] encodedIds = Record.getBytes16(m);
-            if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
-                throw handshakeContext.conContext.fatal(
-                        Alert.ILLEGAL_PARAMETER,
-                        "Invalid ClientHello message");
+            IntStream cmps = cmpBldr.build().distinct();
+            this.compressionMethod = new byte[(int)cmps.count()];
+            int i=0;
+            for (int cmp : cmps.toArray()) {
+                this.compressionMethod[i++] = (byte)cmp;
             }
-
-            this.cipherSuiteIds = new int[encodedIds.length >> 1];
-            for (int i = 0, j = 0; i < encodedIds.length; i++, j++) {
-                cipherSuiteIds[j] =
-                    ((encodedIds[i++] & 0xFF) << 8) | (encodedIds[i] & 0xFF);
-            }
-            this.cipherSuites = getCipherSuites(cipherSuiteIds);
-            */
-            this.compressionMethod = Record.getBytes8(m);
+            //this.compressionMethod = Record.getBytes8(m);
             // In TLS 1.3, use of certain extensions is mandatory.
             if (m.hasRemaining()) {
                 this.extensions =

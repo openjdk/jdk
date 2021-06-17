@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
@@ -101,22 +103,24 @@ final class CertSignAlgsExtension {
                 chc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols);
+                            chc.algorithmConstraints, chc.activeProtocols).
+                            stream().distinct().collect(Collectors.toList());
             }
 
+            SignatureSchemesSpec spec =
+                    new SignatureSchemesSpec(chc.localSupportedSignAlgs);
             int vectorLen = SignatureScheme.sizeInRecord() *
-                    chc.localSupportedSignAlgs.size();
+                    spec.signatureSchemes.length;
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : chc.localSupportedSignAlgs) {
-                Record.putInt16(m, ss.id);
+            for (int ssId : spec.signatureSchemes) {
+                Record.putInt16(m, ssId);
             }
 
             // Update the context.
             chc.handshakeExtensions.put(
-                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT,
-                    new SignatureSchemesSpec(chc.localSupportedSignAlgs));
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT, spec);
 
             return extData;
         }

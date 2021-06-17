@@ -253,6 +253,43 @@ public class CheckDuplicateCipherSuites {
         }
     }
 
+    enum CompressionAlgorithm {
+        ZLIB(0x0001, "zlib"),
+        BROTLI(0x0002, "brotli"),
+        ZSTD(0x0003, "zstd"),
+        NO_COMPRESSION(0x0000, "no compression");
+
+        final int id;           // hash + signature
+        final String name;      // literal name
+
+        CompressionAlgorithm(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        private static List<String> names(List<CompressionAlgorithm> orig) {
+            List<String> names = new ArrayList<>();
+            orig.forEach(cm -> names.add(cm.name));
+            return names;
+        }
+
+        private static List<Integer> ids(List<CompressionAlgorithm> orig) {
+            List<Integer> ids = new ArrayList<>();
+            orig.forEach(cm -> ids.add(cm.id));
+            return ids;
+        }
+
+        private static String nameOf(int id) {
+            for (CompressionAlgorithm cm : CompressionAlgorithm.values()) {
+                if (cm.id == id) {
+                    return cm.name;
+                }
+            }
+            return "UNKNOWN-COMPRESSION-ALGORITHM(" + id + ")";
+        }
+    }
+
+    static final int HELLO_EXT_SERVER_NAMES = 0;
     static final int TLS_HANDSHAKE_CLIHELLO = 1;
     static final int HELLO_EXT_SUPP_GROUPS = 10;
     static final int HELLO_EXT_SIG_ALGS = 13;
@@ -375,10 +412,12 @@ public class CheckDuplicateCipherSuites {
                     CipherSuite.nameOf(Short.toUnsignedInt(data.getShort())));
         }
 
-        // Jump past compression algorithms
+        // Extract the compression algorithms
+        List<String> transitCmprsnAlgs = new ArrayList<>();
         int compLen = Byte.toUnsignedInt(data.get());
-        if (compLen != 0) {
-            data.position(data.position() + compLen);
+        for (int i=0; i<compLen; i+=2) {
+            transitCmprsnAlgs.add(CompressionAlgorithm.nameOf(
+                    Byte.toUnsignedInt(data.get())));
         }
 
         // Go through the extensions and look for supported_versions and ALPNs,
@@ -389,6 +428,7 @@ public class CheckDuplicateCipherSuites {
         List<String> transitNmdGrps = new ArrayList<>();
         List<String> transitSigSchms = new ArrayList<>();
         List<String> transitCertSigAlgs = new ArrayList<>();
+        List<String> transitServNames = new ArrayList<>();
         while (data.hasRemaining()) {
             int extType = Short.toUnsignedInt(data.getShort());
             int extLen = Short.toUnsignedInt(data.getShort());
@@ -403,9 +443,11 @@ public class CheckDuplicateCipherSuites {
                 case HELLO_EXT_ALPN_NEGOT:
                     int alpnListLen = Short.toUnsignedInt(data.getShort());
                     while (alpnListLen > 0) {
-                        byte[] alpnBytes = new byte[Byte.toUnsignedInt(data.get())];
+                        byte[] alpnBytes = new
+                                byte[Byte.toUnsignedInt(data.get())];
                         data.get(alpnBytes);
-                        transitALPNs.add(new String(alpnBytes, StandardCharsets.UTF_8));
+                        transitALPNs.add(new String(alpnBytes,
+                                StandardCharsets.UTF_8));
                         alpnListLen -= (1 + alpnBytes.length);
                     }
                     break;
@@ -430,6 +472,17 @@ public class CheckDuplicateCipherSuites {
                                 Short.toUnsignedInt(data.getShort())));
                     }
                     break;
+                case HELLO_EXT_SERVER_NAMES:
+                    int servNameListLen = Short.toUnsignedInt(data.getShort());
+                    while (servNameListLen > 0) {
+                        byte[] servNameBytes = new
+                                byte[Short.toUnsignedInt(data.getShort())];
+                        data.get(servNameBytes);
+                        transitServNames.add(new String(servNameBytes,
+                                StandardCharsets.UTF_8));
+                        servNameListLen -= (2 + servNameBytes.length);
+                    }
+                    break;
                 default:
                     data.position(data.position() + extLen);
                     break;
@@ -443,25 +496,35 @@ public class CheckDuplicateCipherSuites {
         System.out.println("Transmitted SignatureSchemes: " + transitSigSchms);
         System.out.println("Transmitted CertificateSignatureAlgorithms: " +
                 transitCertSigAlgs);
+        System.out.println("Transmitted CompressionAlgorithms: " +
+                transitCmprsnAlgs);
+        System.out.println("Transmitted ServerNames: " + transitServNames);
 
-        if (containsDups(transitCSs)) {
+        if (containsDuplicates(transitCSs)) {
             throw new RuntimeException("CipherSuite list contains duplicates");
         }
-        if (containsDups(transitPVs)) {
+        if (containsDuplicates(transitPVs)) {
             throw new RuntimeException("ProtocolVersion list contains duplicates");
         }
-        if (containsDups(transitALPNs)) {
+        if (containsDuplicates(transitALPNs)) {
             throw new RuntimeException("ALPN list contains duplicates");
         }
-        if (containsDups(transitNmdGrps)) {
+        if (containsDuplicates(transitNmdGrps)) {
             throw new RuntimeException("NamedGroup list contains duplicates");
         }
-        if (containsDups(transitSigSchms)) {
+        if (containsDuplicates(transitSigSchms)) {
             throw new RuntimeException("SignatureScheme list contains duplicates");
         }
-        if (containsDups(transitCertSigAlgs)) {
+        if (containsDuplicates(transitCertSigAlgs)) {
             throw new RuntimeException("CertificateSignatureAlgorithm list " +
                     "contains duplicates");
+        }
+        if (containsDuplicates(transitCmprsnAlgs)) {
+            throw new RuntimeException("CompressionAlgorithm list contains " +
+                    "duplicates");
+        }
+        if (containsDuplicates(transitServNames)) {
+            throw new RuntimeException("ServerName list contains duplicates");
         }
 
         // move ByteBuffer location back to the beginning point saved earlier
@@ -475,7 +538,7 @@ public class CheckDuplicateCipherSuites {
      *
      * @return a list with the same elements and order, but without duplicates
      */
-    private static <T> List<T> clearDups(List<T> src) {
+    private static <T> List<T> clearDuplicates(List<T> src) {
         Set<T> setVers = new LinkedHashSet<>();
         setVers.addAll(src);
         List<T> clean = new ArrayList<>(setVers);
@@ -492,7 +555,7 @@ public class CheckDuplicateCipherSuites {
      *
      * @return true if duplicates are found, false otherwise
      */
-    private static <T> boolean containsDups(List<T> src) {
+    private static <T> boolean containsDuplicates(List<T> src) {
         Set<T> setVers = new LinkedHashSet<>();
         for (T entry : src) {
             if (!setVers.add(entry)) {
