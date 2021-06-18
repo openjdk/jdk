@@ -29,17 +29,13 @@
 
 template<
     typename K, typename V,
-    // xlC does not compile this:
-    // http://stackoverflow.com/questions/8532961/template-argument-of-type-that-is-defined-by-inner-typedef-from-other-template-c
-    //typename ResourceHashtableFns<K>::hash_fn   HASH   = primitive_hash<K>,
-    //typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
-    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
-    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
-    unsigned SIZE = 256,
-    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal
+    unsigned (*HASH)  (K const&),
+    bool     (*EQUALS)(K const&, K const&),
+    unsigned SIZE,
+    ResourceObj::allocation_type ALLOC_TYPE,
+    MEMFLAGS MEM_TYPE
     >
-class ResourceHashtable : public ResourceObj {
+class ResourceHashtableBase : public ResourceObj {
  private:
 
   class Node : public ResourceObj {
@@ -58,7 +54,7 @@ class ResourceHashtable : public ResourceObj {
 
   };
 
-  Node* _table[SIZE];
+  Node** _table;
 
   // Returns a pointer to where the node where the value would reside if
   // it's in the table.
@@ -77,13 +73,20 @@ class ResourceHashtable : public ResourceObj {
 
   Node const** lookup_node(unsigned hash, K const& key) const {
     return const_cast<Node const**>(
-        const_cast<ResourceHashtable*>(this)->lookup_node(hash, key));
+        const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
   }
 
  public:
-  ResourceHashtable() { memset(_table, 0, SIZE * sizeof(Node*)); }
+  ResourceHashtableBase() {
+    if (ALLOC_TYPE == C_HEAP) {
+      _table = NEW_C_HEAP_ARRAY(Node*, SIZE, MEM_TYPE);
+    } else {
+      _table = NEW_RESOURCE_ARRAY(Node*, SIZE);
+    }
+    memset(_table, 0, SIZE * sizeof(Node*));
+  }
 
-  ~ResourceHashtable() {
+  ~ResourceHashtableBase() {
     if (ALLOC_TYPE == C_HEAP) {
       Node* const* bucket = _table;
       while (bucket < &_table[SIZE]) {
@@ -197,5 +200,22 @@ class ResourceHashtable : public ResourceObj {
   }
 };
 
+
+template<
+    typename K, typename V,
+    // xlC does not compile this:
+    // http://stackoverflow.com/questions/8532961/template-argument-of-type-that-is-defined-by-inner-typedef-from-other-template-c
+    //typename ResourceHashtableFns<K>::hash_fn   HASH   = primitive_hash<K>,
+    //typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
+    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
+    unsigned SIZE = 256,
+    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    MEMFLAGS MEM_TYPE = mtInternal
+    >
+class ResourceHashtable : public ResourceHashtableBase<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE> {
+public:
+  ResourceHashtable() : ResourceHashtableBase<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE>() {}
+};
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP
