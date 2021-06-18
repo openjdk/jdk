@@ -643,11 +643,11 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);
-    InstanceKlass** old_ptr = table()->lookup(id);
+    InstanceKlass** old_ptr = id2klass_table()->get(id);
     if (old_ptr != NULL) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    table()->add(id, ik);
+    id2klass_table()->put(id, ik); // FIXME - maybe_grow
   }
 
   return klass;
@@ -658,7 +658,7 @@ bool ClassListParser::is_loading_from_source() {
 }
 
 InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
-  InstanceKlass** klass_ptr = table()->lookup(id);
+  InstanceKlass** klass_ptr = id2klass_table()->get(id);
   if (klass_ptr == NULL) {
     error("Class ID %d has not been defined", id);
   }
@@ -707,16 +707,4 @@ InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* inter
         interface_name->as_klass_external_name(), _class_name);
   ShouldNotReachHere();
   return NULL;
-}
-
-// has to be CHEAP allocated -- don't want nested resource allocations ...
-typedef ResizeableResourceHashtable<int, InstanceKlass*, ResourceObj::C_HEAP, mtInternal> NewID2KlassTable;
-
-void foofoo() {
-  NewID2KlassTable new_table(1234);
-
-  new_table.put(0, NULL);
-  new_table.put(1, NULL);
-  new_table.put(2, NULL);
-
 }
