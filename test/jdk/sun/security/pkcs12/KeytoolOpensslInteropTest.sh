@@ -21,8 +21,33 @@
 # questions.
 #
 
-# Use OpenSSL 1.1.0i or above versions, earlier versions may generate different
-# info and test fail.
+# @test
+# @bug 8266182
+# @library /test/lib
+# @modules java.base/sun.security.pkcs
+#          java.base/sun.security.util
+# @summary This is java keytool <-> openssl interop test.
+#          ParamsTest.java does some operation on pre-generated openssl
+#          keystores and generate some new JDK keystores under scratch
+#          directory. The KeytoolOpensslInterop.sh performs some openssl
+#          command on JDK generated kestores.
+#
+#          Steps: 
+#          1) Install OpenSSL 1.1.* version
+#          2) Add installed openssl in to system PATH variable
+#             Eg: export PATH=<path to openssl>:$PATH
+#             and make sure desired version installed properly by checking
+#             output of 'openssl version'.
+#          3) Run this test using jtreg command, include -e:PATH option in the
+#             jtreg command to take updated PATH by jtreg 
+#
+#          Success Criteria : jtreg test should pass, and make sure text
+#          'Succeed!!!' is present in the jtreg log STDOUT: section.
+#
+# @run main/manual/othervm ParamsTest
+# @run shell/manual KeytoolOpensslInteropTest.sh
+
+echo "DEBUG - openssl version :" $(openssl version)
 openssl pkcs12 -in ksnormal -passin pass:changeit -info -nokeys -nocerts 2> t2 || exit 20
 grep "MAC: sha256, Iteration 10000" t2 || exit 21
 grep "Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC, Iteration 10000, PRF hmacWithSHA256" t2 || exit 23
@@ -50,4 +75,4 @@ grep "PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC, Iteration 6666, PRF hmac
 openssl pkcs12 -in ksnewicdup -passin pass:changeit -info -nokeys -nocerts 2> t44 || exit 46
 diff t4 t44 || exit 47
 
-echo Succeed
+echo Succeed!!!
