@@ -833,6 +833,8 @@ jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-
 
 # jdk_jpackage
 
+tools/jpackage/windows/WinInstallerIconTest.java 8268404 windows-x64
+
 ############################################################################
 
 # Client manual tests
