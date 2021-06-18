@@ -21,13 +21,13 @@
  * questions.
  */
 
-import java.io.BufferedReader;
+package transform;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.InputStream;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -42,87 +42,55 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static jaxp.library.JAXPTestUtilities.compareStringWithGold;
+import org.testng.Assert;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+
 /*
  * @test
  * @bug 8268457
+ * @library /javax/xml/jaxp/libs
+ * @run testng transform.SurrogateTest
  * @summary XML Transformer outputs Unicode supplementary character incorrectly to HTML
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class SurrogateTest {
 
     final static String TEST_SRC = System.getProperty("test.src", ".");
-    static File baseDir = new File(TEST_SRC + File.separator + "testdata");
 
-    public static void main(String[] args) throws Exception {
-        case01();
-        case02();
-    }
+    @Test
+    public void toHTMLTest() throws Exception {
+        String out = "SurrogateTest1out.html";
+        String expected = TEST_SRC + File.separator + "SurrogateTest1.html";
+        String xsl = TEST_SRC + File.separator + "SurrogateTest1.xsl";
 
-    private static void case01() throws Exception {
-        File out = new File("case01out.html");
-        File expected = new File(baseDir, "case01ok.html");
-        FileInputStream tFis = null;
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
+        try (FileInputStream tFis = new FileInputStream(xsl);
+            InputStream fis = this.getClass().getResourceAsStream("SurrogateTest1.xml");
+            FileOutputStream fos = new FileOutputStream(out)) {
 
-        try {
-            tFis = new FileInputStream(new File(baseDir, "case01.xslt"));
             Source tSrc = new StreamSource(tFis);
-
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer t = tf.newTransformer(tSrc);
             t.setOutputProperty("method", "html");
 
-            fis = new FileInputStream(new File(baseDir, "case01.xml"));
-            fos = new FileOutputStream(out);
-
             Source src = new StreamSource(fis);
             Result res = new StreamResult(fos);
-
             t.transform(src, res);
-
-        } finally {
-            try {
-                if (tFis != null) {
-                    tFis.close();
-                }
-            } finally {
-                try {
-                    if (fis != null) {
-                        fis.close();
-                    }
-                } finally {
-                    if (fos != null) {
-                        fos.flush();
-                        fos.close();
-                    }
-                }
-            }
         }
-        verify(out, expected);
+        compareWithGold(expected, out);
     }
 
-    private static void case02() throws Exception {
-        File xmlFile = new File(baseDir, "case02.xml");
+    @Test
+    public void handlerTest() throws Exception {
+        File xmlFile = new File(TEST_SRC, "SurrogateTest2.xml");
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
         SAXParser sp = spf.newSAXParser();
-
         TestHandler th = new TestHandler();
         sp.parse(xmlFile, th);
-
-        File out = new File("case02out.txt");
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(out);
-            OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-            osw.write(th.sb.toString());
-            osw.flush();
-        } finally {
-            if (fos != null) {
-                fos.close();
-            }
-        }
-        verify(out, new File(baseDir, "case02ok.txt"));
+        compareStringWithGold(TEST_SRC + File.separator + "SurrogateTest2.txt", th.sb.toString());
     }
 
     private static class TestHandler extends DefaultHandler {
@@ -131,29 +99,6 @@ public class SurrogateTest {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             sb.append( localName + "@attr:" + attributes.getValue("attr") + '\n');
-        }
-    }
-
-    /*
-     * Compare output of test run to expected output.
-     * Throw an Error if they don't match.
-     */
-    public static void verify(File outputFile, File expectedOutputFile) throws IOException {
-        BufferedReader thisRun =
-            new BufferedReader(new FileReader(outputFile));
-        BufferedReader expected =
-            new BufferedReader(new FileReader(expectedOutputFile));
-
-        for (int lineNum = 1; true; lineNum++) {
-            String line1 = thisRun.readLine();
-            String line2 = expected.readLine();
-            if (line1 == null && line2 == null) {
-                return;         // EOF with all lines matching
-            }
-            if (line1 == null || !line1.trim().equals(line2.trim())) {
-                throw new Error(outputFile + ":" + lineNum +
-                                ": output doesn't match");
-            }
         }
     }
 }

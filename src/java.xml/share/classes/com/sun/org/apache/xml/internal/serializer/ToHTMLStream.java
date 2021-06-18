@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +41,7 @@ import javax.xml.transform.ErrorListener;
  * because it is used from another package.
  *
  * @xsl.usage internal
- * @LastModified: Aug 2019
+ * @LastModified: June 2021
  */
 public final class ToHTMLStream extends ToStream
 {
@@ -1451,7 +1451,6 @@ public final class ToHTMLStream extends ToStream
                     {
                     writer.write(ch);  // no escaping in this case
                     }
-                    else
                     */
                     else
                     {
