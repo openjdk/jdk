@@ -135,14 +135,11 @@ public:
 
   void reset();
 
-  void add(G1CardSetCoarsenStats& other);
   void subtract_from(G1CardSetCoarsenStats& other);
 
   // Record a coarsening for the given tag/category. Collision should be true if
   // this coarsening lost the race to do the coarsening of that category.
   void record_coarsening(uint tag, bool collision);
-
-  size_t num_coarsening(uint tag) const { return Atomic::load(&_coarsen_from[tag]); }
 
   void print_on(outputStream* out);
 };

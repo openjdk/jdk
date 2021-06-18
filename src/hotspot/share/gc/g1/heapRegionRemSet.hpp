@@ -66,7 +66,7 @@ public:
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
-    return (strong_code_roots_list_length() == 0) && _card_set.occupied() <= occ;
+    return (strong_code_roots_list_length() == 0) && _card_set.occupancy_less_or_equal_to(occ);
   }
 
   // Iterate the card based remembered set for merging them into the card table.
@@ -81,8 +81,6 @@ public:
 
   // Coarsening statistics since VM start.
   static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }
-
-  G1CardSetConfiguration* config() const { return _card_set.config(); }
 
 private:
   enum RemSetState {
@@ -134,10 +132,6 @@ public:
   static size_t static_mem_size() {
     return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
   }
-
-  // Returns the memory occupancy of all free_list data structures associated
-  // with remembered sets.
-  static size_t free_list_mem_size();
 
   static void print_static_mem_size(outputStream* out);
 

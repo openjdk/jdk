@@ -136,14 +136,6 @@ void G1CardSetCoarsenStats::reset() {
   }
 }
 
-void G1CardSetCoarsenStats::add(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
-  for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
-    _coarsen_from[i] += other._coarsen_from[i];
-    _coarsen_collision[i] += other._coarsen_collision[i];
-  }
-}
-
 void G1CardSetCoarsenStats::subtract_from(G1CardSetCoarsenStats& other) {
   STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
