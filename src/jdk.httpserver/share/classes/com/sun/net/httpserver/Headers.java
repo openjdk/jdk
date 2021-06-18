@@ -265,24 +265,29 @@ public class Headers implements Map<String,List<String>> {
 
     public int hashCode() {return map.hashCode();}
 
+    private static final Headers EMPTY = new UnmodifiableHeaders(new Headers());
+
     /**
      * Returns an immutable {@code Headers} with the given name value pairs as
      * its set of headers.
      *
      * <p> The supplied {@code String} instances must alternate as header names
      * and header values. To add several values to the same name, the same name
-     * must be supplied with each new value.
+     * must be supplied with each new value. If the supplied {@code headers} is
+     * empty, then an empty {@code Headers} is returned.
      *
      * @param headers the list of name value pairs
      * @return an immutable headers with the given name value pairs
      * @throws NullPointerException     if {@code headers} or any of its
      *                                  elements are null
-     * @throws IllegalArgumentException if the number of supplied strings is
-     *                                  zero or odd
+     * @throws IllegalArgumentException if the number of supplied strings is odd
      */
     public static Headers of(String... headers) {
         Objects.requireNonNull(headers);
-        if (headers.length == 0 || headers.length % 2 != 0) {
+        if (headers.length == 0) {
+            return EMPTY;
+        }
+        if (headers.length % 2 != 0) {
             throw new IllegalArgumentException("wrong number, %d, of elements"
                     .formatted(headers.length));
         }

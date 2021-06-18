@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpHandlers;
@@ -77,29 +78,22 @@ public final class FileServerHandler implements HttpHandler {
         this.mimeTable = mimeTable;
     }
 
+    private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
+            HttpHandlers.of(501, Headers.of(), "");
+
+    private static final HttpHandler METHOD_NOT_ALLOWED_HANDLER =
+            HttpHandlers.of(405, Headers.of("Allow", "HEAD, GET"), "");
+
     public static HttpHandler create(Path root, UnaryOperator<String> mimeTable)
         throws IOException
     {
-        var fallbackHandler =
-                HttpHandlers.handleOrElse(r -> UNSUPPORTED_METHODS.contains(r.getRequestMethod()),
-                FileServerHandler::handleNotAllowed, FileServerHandler::handleNotImplemented);
-        return HttpHandlers.handleOrElse(r -> SUPPORTED_METHODS.contains(r.getRequestMethod()),
+        var fallbackHandler = HttpHandlers.handleOrElse(
+                r -> UNSUPPORTED_METHODS.contains(r.getRequestMethod()),
+                METHOD_NOT_ALLOWED_HANDLER,
+                NOT_IMPLEMENTED_HANDLER);
+        return HttpHandlers.handleOrElse(
+                r -> SUPPORTED_METHODS.contains(r.getRequestMethod()),
                 new FileServerHandler(root, mimeTable), fallbackHandler);
-    }
-
-    static void handleNotImplemented(HttpExchange exchange) throws IOException {
-        try (exchange) {
-            discardRequestBody(exchange);
-            exchange.sendResponseHeaders(501, -1);
-        }
-    }
-
-    static void handleNotAllowed(HttpExchange exchange) throws IOException {
-        try (exchange) {
-            discardRequestBody(exchange);
-            exchange.getResponseHeaders().set("Allow", "HEAD, GET");
-            exchange.sendResponseHeaders(405, -1);
-        }
     }
 
     void handleHEAD(HttpExchange exchange, Path path) throws IOException {
@@ -113,7 +107,7 @@ public final class FileServerHandler implements HttpHandler {
     void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException {
         if (Files.isSymbolicLink(path)) {
-            handleNotFound(exchange);
+            throw new AssertionError("Unexpected symlink:" + path);
         }
         if (Files.isDirectory(path)) {
             if (testMissingSlash(exchange)) {
@@ -300,16 +294,17 @@ public final class FileServerHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        assert List.of("GET", "HEAD").contains(exchange.getRequestMethod());
         try (exchange) {
             discardRequestBody(exchange);
             Path path = mapToPath(exchange, root);
             if (path != null) {
                 exchange.setAttribute("request-path", path);  // store for OutputFilter
-                if (!Files.exists(path) || isHiddenOrSymLink(path))
+                if (!Files.exists(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                else if (!path.startsWith(root) || !Files.isReadable(path))
+                } else if (!path.startsWith(root) || !Files.isReadable(path)) {
                     handleForbidden(exchange);
-                else if (exchange.getRequestMethod().equals("HEAD")) {
+                } else if (exchange.getRequestMethod().equals("HEAD")) {
                     handleHEAD(exchange, path);
                 } else {
                     handleGET(exchange, path);

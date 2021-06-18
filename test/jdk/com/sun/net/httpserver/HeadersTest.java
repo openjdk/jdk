@@ -202,8 +202,15 @@ public class HeadersTest {
     }
 
     @Test
+    public static void testOfEmpty() {
+        for (var h : List.of(Headers.of(), Headers.of(new String[] { }))) {
+            assertEquals(h.size(), 0);
+            assertTrue(h.isEmpty());
+        }
+    }
+
+    @Test
     public static void testOfNumberOfElements() {
-        assertThrows(IAE, () -> Headers.of(new String[] {}));
         assertThrows(IAE, () -> Headers.of("a"));
         assertThrows(IAE, () -> Headers.of("a", "1", "b"));
     }
