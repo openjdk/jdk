@@ -139,7 +139,7 @@ public class HttpHandlers {
         Objects.requireNonNull(headers);
         Objects.requireNonNull(body);
 
-        final var headersCopy = new UnmodifiableHeaders(headers);
+        final var headersCopy = Headers.of(headers);
         final var bytes = body.getBytes(StandardCharsets.UTF_8);
 
         return exchange -> {
