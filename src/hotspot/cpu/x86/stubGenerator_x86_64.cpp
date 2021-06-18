@@ -5974,7 +5974,7 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister mask = xmm0;
     const XMMRegister invalid_b64 = xmm1;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL;
+    Label L_process256, L_process64, L_process64Loop, L_exit, L_processdata, L_loadURL;
     Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
     Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
 
@@ -6054,7 +6054,7 @@ address generate_avx_ghash_processBlocks() {
       __ evmovdquq(errorvec, t0, Assembler::AVX_512bit);
       __ vpternlogd(errorvec, 0xfe, t1, t2, Assembler::AVX_512bit);
 
-      // Check if there was an error - if so, try 64-byte chunks - may be MIME
+      // Check if there was an error - if so, try 64-byte chunks
       __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
       __ kortestql(k3, k3);
       __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
@@ -6103,11 +6103,15 @@ address generate_avx_ghash_processBlocks() {
       //
       // Note that this will be the path for MIME-encoded strings.
 
+      __ BIND(L_process64);
+
+      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
       __ align(32);
-      __ BIND(L_process64);
+      __ BIND(L_process64Loop);
 
       // Handle first 64-byte block
 
@@ -6122,8 +6126,7 @@ address generate_avx_ghash_processBlocks() {
       __ kortestql(k3, k3);
       __ jcc(Assembler::notZero, L_exit);
 
-      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
-
+      // Pack output register, selecting correct byte ordering
       __ vpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
@@ -6135,13 +6138,13 @@ address generate_avx_ghash_processBlocks() {
       __ addptr(dest, 48);
 
       __ cmpl(length, 64);
-      __ jcc(Assembler::greaterEqual, L_process64);
+      __ jcc(Assembler::greaterEqual, L_process64Loop);
 
       __ cmpl(length, 0);
       __ jcc(Assembler::lessEqual, L_exit);
 
       __ BIND(L_finalBit);
-      // Now have < 64 bytes left to decode
+      // Now have 1 to 63 bytes left to decode
 
       // I was going to let Java take care of the final fragment
       // however it will repeatedly call this routine for every 4 bytes
@@ -6151,25 +6154,30 @@ address generate_avx_ghash_processBlocks() {
       __ movq(rax, -1);
       __ shrxq(rax, rax, output_size);    // Input mask in rax
 
-      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
-
       __ movl(output_size, length);
       __ shrl(output_size, 2);   // Find (len / 4) * 3 (output length)
       __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
       // output_size in r13
 
+      // Strip pad characters, if any, and adjust length and mask
       __ cmpb(Address(source, length, Address::times_1, -1), '=');
       __ jcc(Assembler::equal, L_padding);
 
       __ BIND(L_donePadding);
 
+      // Output size is (64 - output_size), output mask is (all 1s >> output_size).
       __ movq(output_mask, -1);
       __ kmovql(input_mask, rax);
       __ movq(rax, 64);
       __ subq(rax, output_size);
       __ shrxq(output_mask, output_mask, rax);
+
+      // Load initial input with all valid base64 characters.  Will be used
+      // in merging source bytes to avoid masking when determining if an error occurred.
       __ movl(rax, 0x61616161);
       __ evpbroadcastd(input_initial_valid_b64, rax, Assembler::AVX_512bit);
+
+      // A register containing all invalid base64 decoded values
       __ movl(rax, 0x80808080);
       __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
 
@@ -6187,17 +6195,23 @@ address generate_avx_ghash_processBlocks() {
       // zmm8 - 0x61616161
       // zmm9 - 0x80808080
 
+      // Load only the bytes from source, merging into our "fully-valid" register
       __ evmovdqub(input_initial_valid_b64, input_mask, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
 
+      // Decode all bytes within our merged input
       __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
       __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
       __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
-      // Check for error
+      // Check for error.  Compare (decoded | initial) to all invalid.
+      // If any bytes have their high-order bit set, then we have an error.
       __ evptestmb(k2, mask, invalid_b64, Assembler::AVX_512bit);
       __ kortestql(k2, k2);
-      __ jcc(Assembler::notZero, L_exit);
 
+      // If we have an error, use the brute force loop to decode what we can (4-byte chunks).
+      __ jcc(Assembler::notZero, L_bruteForce);
+
+      // Shuffle output bytes
       __ vpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
       __ vpmaddwd(tmp, tmp, pack32_op, Assembler::AVX_512bit);
 
@@ -6267,18 +6281,12 @@ address generate_avx_ghash_processBlocks() {
     const Register out_byte_count = rbx;
     const Register byte1 = r13;
     const Register byte2 = r15;
-    const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r8);
-    const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(rsi);
+    const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(rdx);
+    const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(r9);
 
     __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit_no_vzero);
-
-    // Set up src and dst pointers properly
-    __ addptr(source, start_offset);     // Initial offset
-    __ addptr(dest, dp);
-    __ pop(byte2);    // Clear old dest from stack
-    __ push(dest);
 
     __ shll(isURL, 8);    // index into decode table based on isURL
     __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
@@ -6297,23 +6305,23 @@ address generate_avx_ghash_processBlocks() {
 
     __ addptr(source, 4);
 
-    __ movb(Address(dest, 2), byte1);
+    __ movb(Address(dest, dp, Address::times_1, 2), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, 1), byte1);
+    __ movb(Address(dest, dp, Address::times_1, 1), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, 0), byte1);
+    __ movb(Address(dest, dp, Address::times_1, 0), byte1);
 
     __ addptr(dest, 3);
     __ decrementl(length, 1);
     __ jcc(Assembler::zero, L_exit_no_vzero);
 
     __ BIND(L_bottomLoop);
-    __ load_signed_byte(byte1, Address(source, 0));
-    __ load_signed_byte(byte2, Address(source, 1));
+    __ load_signed_byte(byte1, Address(source, start_offset, Address::times_1, 0x00));
+    __ load_signed_byte(byte2, Address(source, start_offset, Address::times_1, 0x01));
     __ load_signed_byte(byte1, Address(decode_table, byte1));
     __ load_signed_byte(byte2, Address(decode_table, byte2));
-    __ load_signed_byte(byte3, Address(source, 2));
-    __ load_signed_byte(byte4, Address(source, 3));
+    __ load_signed_byte(byte3, Address(source, start_offset, Address::times_1, 0x02));
+    __ load_signed_byte(byte4, Address(source, start_offset, Address::times_1, 0x03));
     __ load_signed_byte(byte3, Address(decode_table, byte3));
     __ load_signed_byte(byte4, Address(decode_table, byte4));
 
