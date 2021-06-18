@@ -184,7 +184,7 @@ public final class SSLLogger {
     }
 
     private static void log(Level level, String msg, Object... params) {
-        if (logger.isLoggable(level)) {
+        if (logger != null && logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
             } else {

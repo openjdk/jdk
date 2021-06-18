@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -37,6 +38,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.text.MessageFormat;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -214,10 +216,19 @@ final class ECDHServerKeyExchange {
             }
 
             try {
-                sslCredentials = namedGroup.decodeCredentials(
-                    publicPoint, handshakeContext.algorithmConstraints,
-                     s -> chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
-                     "ServerKeyExchange " + namedGroup + ": " + (s)));
+                sslCredentials =
+                        namedGroup.decodeCredentials(publicPoint);
+                if (handshakeContext.algorithmConstraints != null &&
+                        sslCredentials instanceof
+                                NamedGroupCredentials namedGroupCredentials) {
+                    if (!handshakeContext.algorithmConstraints.permits(
+                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            namedGroupCredentials.getPublicKey())) {
+                        chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                            "ServerKeyExchange for " + namedGroup +
+                            " does not comply with algorithm constraints");
+                    }
+                }
             } catch (GeneralSecurityException ex) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Cannot decode named group: " +
