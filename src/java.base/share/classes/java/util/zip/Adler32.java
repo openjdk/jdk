@@ -74,7 +74,8 @@ public class Adler32 implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, (xa, xb) -> new ArrayIndexOutOfBoundsException());
+        Preconditions.checkFromIndexSize(len, off, b.length,
+            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
         adler = updateBytes(adler, b, off, len);
     }
 

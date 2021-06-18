@@ -149,7 +149,8 @@ public final class CRC32C implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, (xa, xb) -> new ArrayIndexOutOfBoundsException());
+        Preconditions.checkFromIndexSize(len, off, b.length,
+            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
         crc = updateBytes(crc, b, off, (off + len));
     }
 

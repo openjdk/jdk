@@ -28,12 +28,10 @@ package java.lang;
 import jdk.internal.math.FloatingDecimal;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.UTF16;
@@ -441,7 +439,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * {@code beginIndex} is larger than {@code endIndex}.
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        checkRange(beginIndex, endIndex, count);
+        if (beginIndex < 0 || endIndex > count || beginIndex > endIndex) {
+            throw new IndexOutOfBoundsException();
+        }
         if (isLatin1()) {
             return endIndex - beginIndex;
         }
@@ -468,7 +468,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *   {@code codePointOffset} code points.
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
-        checkOffset(index, count);
+        if (index < 0 || index > count) {
+            throw new IndexOutOfBoundsException();
+        }
         return Character.offsetByCodePoints(this,
                                             index, codePointOffset);
     }
