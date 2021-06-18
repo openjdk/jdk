@@ -114,9 +114,9 @@ public class SourceLocationNotExist extends TestRunner {
         // Use `-classpath` instead of `--module-path`.
         List<String> options = Arrays.asList("-classpath", "test.jar", "-d", "use", "-sourcepath", "use", "-XDrawDiagnostics");
         List<String> expected = Arrays.asList(
-                "TestUnnamedModule.java:1:1: compiler.err.file.sb.on.source.or.patch.path.for.module",
-                "TestUse.java:1:12: compiler.err.doesnt.exist: test",
-                "2 errors");
+                "TestUse.java:1:8: compiler.err.package.not.visible: test, " +
+                        "(compiler.misc.not.def.access.does.not.read.unnamed: test, use)",
+                "1 error");
         // Before patch JDK-8263926, this compilation make compiler crash with NPE.
         // After patch JDK-8263926, the compiler outputs the corresponding error messages.
         testCompileFail(withoutRequires, options, expected);
