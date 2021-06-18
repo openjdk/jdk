@@ -108,8 +108,7 @@
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)                   \
-  template(ExtendedPrintThreads)
+  template(JvmtiPostObjectFree)
 
 class Thread;
 class outputStream;

@@ -535,7 +535,7 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
 
 void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   // thread stacks and JNI global handles
-  VM_PrintThreads op1(output(), _locks.value(), _extended.value(), true);
+  VM_PrintThreads op1(output(), _locks.value(), _extended.value(), true /* print JNI handle info */);
   VMThread::execute(&op1);
 
   // Deadlock detection

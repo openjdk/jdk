@@ -143,14 +143,14 @@ class VM_PrintThreads: public VM_Operation {
   outputStream* _out;
   bool _print_concurrent_locks;
   bool _print_extended_info;
-  bool _print_jni;
+  bool _print_jni_handle_info;
  public:
   VM_PrintThreads()
-    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni(false)
+    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni_handle_info(false)
   {}
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni = false)
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni_handle_info = false)
     : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info),
-      _print_jni(print_jni)
+      _print_jni_handle_info(print_jni_handle_info)
   {}
   VMOp_Type type() const {
     return VMOp_PrintThreads;
