@@ -67,14 +67,15 @@ final class SupportedGroupsExtension {
         final int[] namedGroupsIds;
 
         private SupportedGroupsSpec(int[] namedGroupsIds) {
-            this.namedGroupsIds =
-                    Arrays.stream(namedGroupsIds).distinct().toArray();
+            this.namedGroupsIds = namedGroupsIds;
         }
 
         private SupportedGroupsSpec(List<NamedGroup> namedGroups) {
-            IntStream.Builder ngBldr = IntStream.builder();
-            namedGroups.forEach(ng -> ngBldr.accept(ng.id));
-            this.namedGroupsIds = ngBldr.build().distinct().toArray();
+            this.namedGroupsIds = new int[namedGroups.size()];
+            int i = 0;
+            for (NamedGroup ng : namedGroups) {
+                namedGroupsIds[i++] = ng.id;
+            }
         }
 
         private SupportedGroupsSpec(HandshakeContext hc,
@@ -85,22 +86,22 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: insufficient data"));
             }
 
-            byte[] ngs = Record.getBytes16(m);
+            int ngLen = Record.getInt16(m);
+            if ((ngLen == 0) || (ngLen % 2 != 0)) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid supported_groups extension: incomplete data"));
+            }
+
+            IntStream.Builder ngBldr = IntStream.builder();
+            for (int i = 0; i < ngLen; i += 2) {
+                ngBldr.accept(Short.toUnsignedInt(m.getShort()));
+            }
+
             if (m.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_groups extension: unknown extra data"));
-            }
-
-            if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid supported_groups extension: incomplete data"));
-            }
-
-            IntStream.Builder ngBldr = IntStream.builder();
-            for (int i = 0, j = 0; i < ngs.length;) {
-                ngBldr.accept( ((ngs[i++] & 0xFF) << 8) | (ngs[i++] & 0xFF) );
             }
 
             this.namedGroupsIds = ngBldr.build().distinct().toArray();

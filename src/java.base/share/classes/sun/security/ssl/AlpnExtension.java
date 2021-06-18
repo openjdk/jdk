@@ -88,8 +88,7 @@ final class AlpnExtension {
         final List<String> applicationProtocols;
 
         private AlpnSpec(String[] applicationProtocols) {
-            this.applicationProtocols = Arrays.stream(applicationProtocols).
-                    distinct().collect(Collectors.toList());
+            this.applicationProtocols = List.of(applicationProtocols);
         }
 
         private AlpnSpec(HandshakeContext hc,
@@ -122,8 +121,7 @@ final class AlpnExtension {
                         "extension: empty application protocol name"));
                 }
 
-                String appProtocol = new String(bytes, alpnCharset);
-                alpnNames.accept(appProtocol);
+                alpnNames.accept(new String(bytes, alpnCharset));
             }
 
             this.applicationProtocols =

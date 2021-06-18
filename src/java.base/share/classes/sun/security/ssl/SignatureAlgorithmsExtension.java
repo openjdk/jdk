@@ -73,9 +73,11 @@ final class SignatureAlgorithmsExtension {
 
         SignatureSchemesSpec(List<SignatureScheme> schemes) {
             if (schemes != null) {
-                IntStream.Builder schBldr = IntStream.builder();
-                schemes.forEach(sch -> schBldr.accept(sch.id));
-                this.signatureSchemes = schBldr.build().distinct().toArray();
+                signatureSchemes = new int[schemes.size()];
+                int i = 0;
+                for (SignatureScheme scheme : schemes) {
+                    signatureSchemes[i++] = scheme.id;
+                }
             } else {
                 this.signatureSchemes = new int[0];
             }
@@ -89,24 +91,22 @@ final class SignatureAlgorithmsExtension {
                     "Invalid signature_algorithms: insufficient data"));
             }
 
-            byte[] algs = Record.getBytes16(buffer);
+            int algsLen = Record.getInt16(buffer);
+            if (algsLen == 0 || (algsLen & 0x01) != 0) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid signature_algorithms: incomplete data"));
+            }
+
+            IntStream.Builder schBldr = IntStream.builder();
+            for (int i = 0; i < algsLen; i += 2) {
+                schBldr.accept(Short.toUnsignedInt(buffer.getShort()));
+            }
+
             if (buffer.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid signature_algorithms: unknown extra data"));
-            }
-
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid signature_algorithms: incomplete data"));
-            }
-
-            IntStream.Builder schBldr = IntStream.builder();
-            for (int i = 0, j = 0; i < algs.length;) {
-                byte hash = algs[i++];
-                byte sign = algs[i++];
-                schBldr.accept( ((hash & 0xFF) << 8) | (sign & 0xFF) );
             }
 
             this.signatureSchemes = schBldr.build().distinct().toArray();

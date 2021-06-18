@@ -89,8 +89,7 @@ final class ServerNameExtension {
          * (see JDK-6323374).
          */
         private CHServerNamesSpec(List<SNIServerName> serverNames) {
-            this.serverNames = serverNames.stream().distinct().
-                    collect(Collectors.toList());
+            this.serverNames = List.copyOf(serverNames);
         }
 
         private CHServerNamesSpec(HandshakeContext hc,

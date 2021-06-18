@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -100,9 +101,8 @@ final class ClientHello {
                 this.cookie = null;
             }
 
-            this.cipherSuites = cipherSuites.stream().distinct().
-                    collect(Collectors.toList());
-            this.cipherSuiteIds = getCipherSuiteIds(this.cipherSuites);
+            this.cipherSuites = cipherSuites;
+            this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
             this.extensions = new SSLExtensions(this);
 
             // Don't support compression.
@@ -188,23 +188,20 @@ final class ClientHello {
                         "Invalid ClientHello message");
             }
             IntStream.Builder csBldr = IntStream.builder();
-            for (int i=0; i < csLen; i+=2) {
+            for (int i = 0; i < csLen; i += 2) {
                 csBldr.accept(Short.toUnsignedInt(m.getShort()));
             }
             this.cipherSuiteIds = csBldr.build().distinct().toArray();
             this.cipherSuites = getCipherSuites(this.cipherSuiteIds);
+
             int cmpLen = Byte.toUnsignedInt(m.get());
-            IntStream.Builder cmpBldr = IntStream.builder();
-            for (int i=0; i<cmpLen; i+=2) {
-                cmpBldr.accept(Byte.toUnsignedInt(m.get()));
+            Stream.Builder<Byte> bbldr = Stream.builder();
+            for (int i = 0; i < cmpLen; i += 2) {
+                bbldr.accept(m.get());
             }
-            IntStream cmps = cmpBldr.build().distinct();
-            this.compressionMethod = new byte[(int)cmps.count()];
-            int i=0;
-            for (int cmp : cmps.toArray()) {
-                this.compressionMethod[i++] = (byte)cmp;
-            }
-            //this.compressionMethod = Record.getBytes8(m);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bbldr.build().distinct().forEach(bVal -> bos.write(bVal));
+            this.compressionMethod = bos.toByteArray();
             // In TLS 1.3, use of certain extensions is mandatory.
             if (m.hasRemaining()) {
                 this.extensions =

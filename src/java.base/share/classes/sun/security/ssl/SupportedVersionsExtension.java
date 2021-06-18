@@ -74,14 +74,7 @@ final class SupportedVersionsExtension {
         final int[] requestedProtocols;
 
         private CHSupportedVersionsSpec(int[] requestedProtocols) {
-            this.requestedProtocols =
-                    Arrays.stream(requestedProtocols).distinct().toArray();
-        }
-
-        private CHSupportedVersionsSpec(List<ProtocolVersion> requestedProtocols) {
-            IntStream.Builder pvBldr = IntStream.builder();
-            requestedProtocols.forEach(pv -> pvBldr.accept(pv.id));
-            this.requestedProtocols = pvBldr.build().distinct().toArray();
+            this.requestedProtocols = requestedProtocols;
         }
 
         private CHSupportedVersionsSpec(HandshakeContext hc,
@@ -93,24 +86,22 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: insufficient data"));
             }
 
-            byte[] vbs = Record.getBytes8(m);   // Get the version bytes.
+            int versLen = Record.getInt16(m);   // Get the version bytes.
+            if (versLen == 0 || (versLen & 0x01) != 0) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid supported_versions extension: incomplete data"));
+            }
+
+            IntStream.Builder pvBldr = IntStream.builder();
+            for (int i = 0; i < versLen; i += 2) {
+                pvBldr.accept(Short.toUnsignedInt(m.getShort()));
+            }
+
             if (m.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_versions extension: unknown extra data"));
-            }
-
-            if (vbs == null || vbs.length == 0 || (vbs.length & 0x01) != 0) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid supported_versions extension: incomplete data"));
-            }
-
-            IntStream.Builder pvBldr = IntStream.builder();
-            for (int i = 0, j = 0; i < vbs.length;) {
-                byte major = vbs[i++];
-                byte minor = vbs[i++];
-                pvBldr.accept(((major & 0xFF) << 8) | (minor & 0xFF));
             }
 
             this.requestedProtocols = pvBldr.build().distinct().toArray();
