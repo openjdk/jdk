@@ -51,6 +51,18 @@ public class NameAndTypeSig {
                 throw new RuntimeException("Wrong ClassFormatError exception: " + e.getMessage());
             }
         }
+
+        // Test that a NameAndType with a valid name and invalid signature throws a
+        // ClassFormatError exception with a message containing the name <init> and
+        // the bad signature.
+        try {
+            Class newClass2 = Class.forName("voidInitBadSig");
+            throw new RuntimeException("Expected ClassFormatError exception not thrown");
+        } catch (java.lang.ClassFormatError e) {
+            if (!e.getMessage().contains("Method \"<init>\" in class voidInitBadSig has illegal signature \"()))V\"")) {
+                throw new RuntimeException("Wrong ClassFormatError exception: " + e.getMessage());
+            }
+        }
         System.out.println("Test NameAndTypeSig passed.");
     }
 }

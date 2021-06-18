@@ -461,6 +461,7 @@ class ClassFileParser {
                                     TRAPS) const;
   int  verify_legal_method_signature(const Symbol* methodname,
                                      const Symbol* signature,
+                                     bool check_compatibility,
                                      TRAPS) const;
 
   void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS);

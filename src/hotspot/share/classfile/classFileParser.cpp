@@ -639,9 +639,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           if (Signature::is_method(sig)) {
             // Format check method name and signature
             verify_legal_method_name(name, CHECK);
-            // Pass no_name so method name doesn't affect check for legal signature.
-            const Symbol* const no_name = vmSymbols::type_name(); // place holder
-            verify_legal_method_signature(no_name, sig, CHECK);
+            verify_legal_method_signature(name, sig, false, CHECK);
           } else {
             // Format check field name and signature
             verify_legal_field_name(name, CHECK);
@@ -754,7 +752,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_MethodType: {
         const Symbol* const no_name = vmSymbols::type_name(); // place holder
         const Symbol* const signature = cp->method_type_signature_at(index);
-        verify_legal_method_signature(no_name, signature, CHECK);
+        verify_legal_method_signature(no_name, signature, false, CHECK);
         break;
       }
       case JVM_CONSTANT_Utf8: {
@@ -2300,7 +2298,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   int args_size = -1;  // only used when _need_verify is true
   if (_need_verify) {
     args_size = ((flags & JVM_ACC_STATIC) ? 0 : 1) +
-                 verify_legal_method_signature(name, signature, CHECK_NULL);
+                 verify_legal_method_signature(name, signature, true, CHECK_NULL);
     if (args_size > MAX_ARGS_SIZE) {
       classfile_parse_error("Too many arguments in method signature in class file %s", THREAD);
       return NULL;
@@ -5049,9 +5047,12 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
 }
 
 // Checks if signature is a legal method signature.
+// If check_compatibility is true, then check that the signature is compatible
+// with the method name.  For example, check that <init> has a void signature.
 // Returns number of parameters
 int ClassFileParser::verify_legal_method_signature(const Symbol* name,
                                                    const Symbol* signature,
+                                                   bool check_compatibility,
                                                    TRAPS) const {
   if (!_need_verify) {
     // make sure caller's args_size will be less than 0 even for non-static
@@ -5060,7 +5061,7 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
   }
 
   // Class initializers cannot have args for class format version >= 51.
-  if (name == vmSymbols::class_initializer_name() &&
+  if (check_compatibility && name == vmSymbols::class_initializer_name() &&
       signature != vmSymbols::void_method_signature() &&
       _major_version >= JAVA_7_VERSION) {
     throwIllegalSignature("Method", name, signature, CHECK_0);
@@ -5089,7 +5090,8 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
+      if (check_compatibility && name->utf8_length() > 0 &&
+          name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
         // All internal methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
