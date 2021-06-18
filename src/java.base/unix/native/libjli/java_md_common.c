@@ -49,16 +49,16 @@ static char* findLastPathComponent(char *buffer, const char *comp) {
  * truncated resulting buffer will contain "/foo".
  */
 static jboolean
-TruncatePath(char *buf)
+TruncatePath(char *buf, jboolean pathisso)
 {
     // try bin directory, maybe an executable
-    char *p = findLastPathComponent(buf, "/bin/");
+    char *p = findLastPathComponent(buf, pathisso ? "/lib/" : "/bin/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
     }
     // try lib directory, maybe a library
-    p = findLastPathComponent(buf, "/lib/");
+    p = findLastPathComponent(buf, pathisso ? "/bin/" : "/lib/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
@@ -80,7 +80,7 @@ GetApplicationHome(char *buf, jint bufsize)
     } else {
         return JNI_FALSE;
     }
-    return TruncatePath(buf);
+    return TruncatePath(buf, JNI_FALSE);
 }
 
 /*
@@ -95,7 +95,7 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     if (dladdr((void*)&GetApplicationHomeFromDll, &info) != 0) {
         char *path = realpath(info.dli_fname, buf);
         if (path == buf) {
-            return TruncatePath(buf);
+            return TruncatePath(buf, JNI_TRUE);
         }
     }
     return JNI_FALSE;
