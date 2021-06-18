@@ -1437,7 +1437,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         if (exec_mode == Unpack_none) {
           if (mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
             // With exec_mode == Unpack_none obj may be thread local and locked in
-            // a callee frame. // Make the lock in the callee a recursive lock and restore the displaced header.
+            // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
             markWord dmw = mark.displaced_mark_helper();
             mark.locker()->set_displaced_header(markWord::encode((BasicLock*) NULL));
             obj->set_mark(dmw);
