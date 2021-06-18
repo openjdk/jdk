@@ -242,6 +242,11 @@ protected:
     return (KVHashtableEntry*)BasicHashtable<F>::bucket(i);
   }
 
+  // The following method is not MT-safe and must be done under lock.
+  KVHashtableEntry** bucket_addr(int i) {
+    return (KVHashtableEntry**)BasicHashtable<F>::bucket_addr(i);
+  }
+
   KVHashtableEntry* new_entry(unsigned int hashValue, K key, V value) {
     KVHashtableEntry* entry = (KVHashtableEntry*)BasicHashtable<F>::new_entry(hashValue);
     entry->_key   = key;
@@ -249,8 +254,23 @@ protected:
     return entry;
   }
 
+  void free_entry(KVHashtableEntry* entry) {
+    BasicHashtable<F>::free_entry(entry);
+  }
+
 public:
   KVHashtable(int table_size) : BasicHashtable<F>(table_size, sizeof(KVHashtableEntry)) {}
+  ~KVHashtable() {
+    KVHashtableEntry* probe = NULL;
+    for (int index = 0; index < table_size(); index++) {
+      for (KVHashtableEntry** p = bucket_addr(index); *p != NULL; ) {
+        probe = *p;
+        *p = probe->next();
+        free_entry(probe);
+      }
+    }
+    assert(BasicHashtable<F>::number_of_entries() == 0, "should have removed all entries");
+  }
 
   V* add(K key, V value) {
     unsigned int hash = HASH(key);
