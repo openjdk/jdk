@@ -148,7 +148,7 @@ class VM_PrintThreads: public VM_Operation {
   VM_PrintThreads()
     : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni_handle_info(false)
   {}
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni_handle_info = false)
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni_handle_info)
     : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info),
       _print_jni_handle_info(print_jni_handle_info)
   {}
