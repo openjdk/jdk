@@ -279,7 +279,6 @@ public:
   }
 
   void grow() {
-    // Just double for now.
     size_t new_limit = _table.get_size_log2(Thread::current()) + 1;
     _table.grow(Thread::current(), new_limit);
   }
@@ -454,7 +453,7 @@ G1AddCardResult G1CardSet::add_to_howl(CardSetPtr parent_card_set,
     if (add_result != Overflow) {
       break;
     }
-    // Card set has overflown. Coarsen and retry.
+    // Card set has overflown. Coarsen or retry.
     bool coarsened = coarsen_card_set(bucket_entry, card_set, card_in_region, true /* within_howl */);
     _coarsen_stats.record_coarsening(card_set_type(card_set) + G1CardSetCoarsenStats::CoarsenHowlOffset, !coarsened);
     if (coarsened) {
@@ -576,10 +575,7 @@ public:
 void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, CardSetPtr source_card_set, uint card_region) {
   assert(source_card_set != FullCardSet, "Should not need to transfer from full");
   // Need to transfer old entries unless there is a Full card set in place now, i.e.
-  // the old type has been CardSetBitMap.
-
-  // We only need to transfer from anything below CardSetHowl. "Full" contains
-  // all elements anyway.
+  // the old type has been CardSetBitMap. "Full" contains all elements anyway.
   if (card_set_type(source_card_set) != CardSetHowl) {
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_card_set, iter);
@@ -678,7 +674,7 @@ G1AddCardResult G1CardSet::add_card(uint card_region, uint card_in_region, bool 
     if (add_result != Overflow) {
       break;
     }
-    // Card set has overflown. Coarsen and retry.
+    // Card set has overflown. Coarsen or retry.
     bool coarsened = coarsen_card_set(&table_entry->_card_set, card_set, card_in_region);
     _coarsen_stats.record_coarsening(card_set_type(card_set), !coarsened);
     if (coarsened) {
