@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpHandlers;
@@ -52,12 +52,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * served, content types are supported on a best-guess basis.
  */
 public final class FileServerHandler implements HttpHandler {
-    private final Path root;
-    private final Function<String, String> mimeTable;
+
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
     private static final List<String> UNSUPPORTED_METHODS = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
 
-    private FileServerHandler(Path root, Function<String, String> mimeTable) {
+    private final Path root;
+    private final UnaryOperator<String> mimeTable;
+
+    private FileServerHandler(Path root, UnaryOperator<String> mimeTable) {
         root = root.normalize();
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
@@ -75,7 +77,7 @@ public final class FileServerHandler implements HttpHandler {
         this.mimeTable = mimeTable;
     }
 
-    public static HttpHandler create(Path root, Function<String, String> mimeTable)
+    public static HttpHandler create(Path root, UnaryOperator<String> mimeTable)
         throws IOException
     {
         var fallbackHandler =
@@ -246,10 +248,11 @@ public final class FileServerHandler implements HttpHandler {
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
                 + "</h1>\n"
                 + "<ul>\n");
-        Files.list(path)
-                .filter(p -> !isHiddenOrSymLink(p))
-                .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
-                .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        try (var paths = Files.list(path)) {
+            paths.filter(p -> !isHiddenOrSymLink(p))
+                 .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
+                 .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        }
         sb.append("</ul>\n");
         sb.append(closeHTML);
 
@@ -273,10 +276,12 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
+    // default for unknown content types, as per RFC 2046
+    private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+
     String mediaType(String file) {
         String type = mimeTable.apply(file);
-        return type != null ? type : "application/octet-stream";
-        // default for unknown content types, as per rfc2046
+        return type != null ? type : DEFAULT_CONTENT_TYPE;
     }
 
     static final BiFunction<String, HashMap<Integer, String>, String> sanitize =

@@ -32,8 +32,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import sun.net.httpserver.FileServerHandler;
 import sun.net.httpserver.OutputFilter;
 
@@ -121,14 +121,16 @@ import sun.net.httpserver.OutputFilter;
  */
 public final class SimpleFileServer {
 
-    private static final Function<String, String> MIME_TABLE =
-            s -> URLConnection.getFileNameMap().getContentTypeFor(s);
+    private static final UnaryOperator<String> MIME_TABLE =
+            URLConnection.getFileNameMap()::getContentTypeFor;
 
     private SimpleFileServer() { }
 
     /**
      * Describes the log message output level produced by the server when
      * processing exchanges.
+     *
+     * @since 18
      */
     public enum OutputLevel {
         /**
