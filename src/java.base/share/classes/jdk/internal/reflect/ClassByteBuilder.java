@@ -34,12 +34,13 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.misc.VM;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static java.lang.invoke.MethodType.*;
 
 public class ClassByteBuilder extends ClassWriter {
-    private static final int CLASSFILE_VERSION = V17;
+    private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String OBJECT_CLS = "java/lang/Object";
     private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
     private static final String MH_CLS = "java/lang/invoke/MethodHandle";

@@ -247,13 +247,11 @@ public class ReflectionFactory {
             }
             return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
-            if (noInflation
-                    && !c.getDeclaringClass().isHidden()) {
+            if (noInflation && !c.getDeclaringClass().isHidden()) {
                 // Bootstrapping issue: since we use Class.newInstance() in
                 // the ConstructorAccessor generation process, we have to
                 // break the cycle here.
-                if (Reflection.isSubclassOf(declaringClass,
-                        ConstructorAccessorImpl.class)) {
+                if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
                     return new BootstrapConstructorAccessorImpl(c);
                 }
                 return new MethodAccessorGenerator().generateConstructor(c.getDeclaringClass(),

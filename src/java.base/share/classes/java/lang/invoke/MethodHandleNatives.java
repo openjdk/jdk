@@ -247,9 +247,7 @@ class MethodHandleNatives {
     }
     static {
         VM.setJavaLangInvokeInited();
-        // Workaround JDK-8265605: CDS causes BootLoader that can't be used
-        // until initPhase2
-        // assert(verifyConstants());
+        assert(verifyConstants());
     }
 
     // Up-calls from the JVM.
