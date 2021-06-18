@@ -29,6 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
 #define LAMBDA_FORM_TAG  "@lambda-form-invoker"

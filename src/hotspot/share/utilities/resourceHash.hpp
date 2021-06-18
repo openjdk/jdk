@@ -28,10 +28,10 @@
 #include "memory/allocation.hpp"
 
 template<
+    typename TABLE_IMPL,
     typename K, typename V,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&),
-    unsigned SIZE,
     ResourceObj::allocation_type ALLOC_TYPE,
     MEMFLAGS MEM_TYPE
     >
@@ -59,7 +59,7 @@ class ResourceHashtableBase : public ResourceObj {
   // Returns a pointer to where the node where the value would reside if
   // it's in the table.
   Node** lookup_node(unsigned hash, K const& key) {
-    unsigned index = hash % SIZE;
+    unsigned index = hash % size();
     Node** ptr = &_table[index];
     while (*ptr != NULL) {
       Node* node = *ptr;
@@ -76,20 +76,25 @@ class ResourceHashtableBase : public ResourceObj {
         const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
   }
 
+  unsigned size() const { return static_cast<const TABLE_IMPL*>(this)->size_impl(); }
+
  public:
-  ResourceHashtableBase() {
+  ResourceHashtableBase(unsigned size) {
+    // Don't call size() yet as the TABLE_IMPL constructor
+    // hasn't been called yet.
     if (ALLOC_TYPE == C_HEAP) {
-      _table = NEW_C_HEAP_ARRAY(Node*, SIZE, MEM_TYPE);
+      _table = NEW_C_HEAP_ARRAY(Node*, size, MEM_TYPE);
     } else {
-      _table = NEW_RESOURCE_ARRAY(Node*, SIZE);
+      _table = NEW_RESOURCE_ARRAY(Node*, size);
     }
-    memset(_table, 0, SIZE * sizeof(Node*));
+    memset(_table, 0, size * sizeof(Node*));
   }
 
   ~ResourceHashtableBase() {
     if (ALLOC_TYPE == C_HEAP) {
       Node* const* bucket = _table;
-      while (bucket < &_table[SIZE]) {
+      const unsigned sz = size();
+      while (bucket < &_table[sz]) {
         Node* node = *bucket;
         while (node != NULL) {
           Node* cur = node;
@@ -188,7 +193,8 @@ class ResourceHashtableBase : public ResourceObj {
   template<class ITER>
   void iterate(ITER* iter) const {
     Node* const* bucket = _table;
-    while (bucket < &_table[SIZE]) {
+    const unsigned sz = size();
+    while (bucket < &_table[sz]) {
       Node* node = *bucket;
       while (node != NULL) {
         bool cont = iter->do_entry(node->_key, node->_value);
@@ -199,7 +205,6 @@ class ResourceHashtableBase : public ResourceObj {
     }
   }
 };
-
 
 template<
     typename K, typename V,
@@ -213,9 +218,12 @@ template<
     ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal
     >
-class ResourceHashtable : public ResourceHashtableBase<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE> {
+class ResourceHashtable : public ResourceHashtableBase<
+    ResourceHashtable<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE>,
+    K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
 public:
-  ResourceHashtable() : ResourceHashtableBase<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE>() {}
+  ResourceHashtable() : ResourceHashtableBase<ResourceHashtable, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>(SIZE) {}
+  constexpr unsigned size_impl() const { return SIZE; }
 };
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP

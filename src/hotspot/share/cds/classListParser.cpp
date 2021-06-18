@@ -708,3 +708,15 @@ InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* inter
   ShouldNotReachHere();
   return NULL;
 }
+
+// has to be CHEAP allocated -- don't want nested resource allocations ...
+typedef ResizeableResourceHashtable<int, InstanceKlass*, ResourceObj::C_HEAP, mtInternal> NewID2KlassTable;
+
+void foofoo() {
+  NewID2KlassTable new_table(1234);
+
+  new_table.put(0, NULL);
+  new_table.put(1, NULL);
+  new_table.put(2, NULL);
+
+}
