@@ -62,8 +62,6 @@ public class Int64VectorTests extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
 
-    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * (64 / 8));
-
     interface FUnOp {
         int apply(int a);
     }
@@ -967,36 +965,6 @@ public class Int64VectorTests extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
-
-    @DataProvider
-    public Object[][] intUnaryOpIndexProvider() {
-        return INT_INDEX_GENERATORS.stream().
-                flatMap(fs -> INT_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fs};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] intUnaryMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            INT_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fm, fs};
-            }))).
-            toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] scatterMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            INT_GENERATORS.stream().flatMap(fn ->
-              INT_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fn, fm, fs};
-            })))).
-            toArray(Object[][]::new);
-    }
 
     static final List<IntFunction<int[]>> INT_COMPARE_GENERATORS = List.of(
             withToString("int[i]", (int s) -> {
@@ -4886,122 +4854,6 @@ public class Int64VectorTests extends AbstractVectorTest {
 
 
 
-
-    static int[] gather(int a[], int ix, int[] b, int iy) {
-        int[] res = new int[SPECIES.length()];
-        for (int i = 0; i < SPECIES.length(); i++) {
-            int bi = iy + i;
-            res[i] = a[b[bi] + ix];
-        }
-        return res;
-    }
-
-    @Test(dataProvider = "intUnaryOpIndexProvider")
-    static void gatherInt64VectorTests(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs) {
-        int[] a = fa.apply(SPECIES.length());
-        int[] b    = fs.apply(a.length, SPECIES.length());
-        int[] r = new int[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i, b, i);
-                av.intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, Int64VectorTests::gather);
-    }
-    static int[] gatherMasked(int a[], int ix, boolean[] mask, int[] b, int iy) {
-        int[] res = new int[SPECIES.length()];
-        for (int i = 0; i < SPECIES.length(); i++) {
-            int bi = iy + i;
-            if (mask[i]) {
-              res[i] = a[b[bi] + ix];
-            }
-        }
-        return res;
-    }
-
-    @Test(dataProvider = "intUnaryMaskedOpIndexProvider")
-    static void gatherMaskedInt64VectorTests(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
-        int[] a = fa.apply(SPECIES.length());
-        int[] b    = fs.apply(a.length, SPECIES.length());
-        int[] r = new int[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i, b, i, vmask);
-                av.intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::gatherMasked);
-    }
-
-    static int[] scatter(int a[], int ix, int[] b, int iy) {
-      int[] res = new int[SPECIES.length()];
-      for (int i = 0; i < SPECIES.length(); i++) {
-        int bi = iy + i;
-        res[b[bi]] = a[i + ix];
-      }
-      return res;
-    }
-
-    @Test(dataProvider = "intUnaryOpIndexProvider")
-    static void scatterInt64VectorTests(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs) {
-        int[] a = fa.apply(SPECIES.length());
-        int[] b = fs.apply(a.length, SPECIES.length());
-        int[] r = new int[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.intoArray(r, i, b, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, Int64VectorTests::scatter);
-    }
-
-    static int[] scatterMasked(int r[], int a[], int ix, boolean[] mask, int[] b, int iy) {
-      // First, gather r.
-      int[] oldVal = gather(r, ix, b, iy);
-      int[] newVal = new int[SPECIES.length()];
-
-      // Second, blending it with a.
-      for (int i = 0; i < SPECIES.length(); i++) {
-        newVal[i] = blend(oldVal[i], a[i+ix], mask[i]);
-      }
-
-      // Third, scatter: copy old value of r, and scatter it manually.
-      int[] res = Arrays.copyOfRange(r, ix, ix+SPECIES.length());
-      for (int i = 0; i < SPECIES.length(); i++) {
-        int bi = iy + i;
-        res[b[bi]] = newVal[i];
-      }
-
-      return res;
-    }
-
-    @Test(dataProvider = "scatterMaskedOpIndexProvider")
-    static void scatterMaskedInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
-        int[] a = fa.apply(SPECIES.length());
-        int[] b = fs.apply(a.length, SPECIES.length());
-        int[] r = fb.apply(SPECIES.length());
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.intoArray(r, i, b, i, vmask);
-            }
-        }
-
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::scatterMasked);
-    }
 
 
     @Test(dataProvider = "intCompareOpProvider")

@@ -2933,7 +2933,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 }
 
 Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
-  if (ExpandSubTypeCheckAtParseTime) {
+  bool expand_subtype_check = C->post_loop_opts_phase() ||   // macro node expansion is over
+                              ExpandSubTypeCheckAtParseTime; // forced expansion
+  if (expand_subtype_check) {
     MergeMemNode* mem = merged_memory();
     Node* ctrl = control();
     Node* subklass = obj_or_subklass;
