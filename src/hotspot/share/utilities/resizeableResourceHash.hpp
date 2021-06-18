@@ -39,11 +39,29 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
     ResizeableResourceHashtable<K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>,
     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
   unsigned _size;
+  unsigned _max_size;
+
+  using BASE = ResourceHashtableBase<ResizeableResourceHashtable, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
+
 public:
-  ResizeableResourceHashtable(unsigned size)
+  ResizeableResourceHashtable(unsigned size, unsigned max_size = 0)
   : ResourceHashtableBase<ResizeableResourceHashtable, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>(size),
-    _size(size) {}
+    _size(size), _max_size(max_size) {}
   unsigned size_impl() const { return _size; }
+
+  bool maybe_grow(int load_factor = 8) {
+    if (_size >= _max_size) {
+      return false;
+    }
+    if (BASE::number_of_entries() / int(_size) > load_factor) {
+      int new_size = MIN2<int>(_size * 2, _max_size);
+      BASE::resize(new_size);
+      _size = new_size;
+      return true;
+    } else {
+      return false;
+    }
+  }
 };
 
 #endif // SHARE_UTILITIES_RESIZEABLERESOURCEHASH_HPP

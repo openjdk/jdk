@@ -69,7 +69,7 @@ public:
 class ClassListParser : public StackObj {
   // Must be CHEAP allocated -- we don't want nested resource allocations.
   typedef ResizeableResourceHashtable<int, InstanceKlass*,
-                                      ResourceObj::C_HEAP, mtInternal> ID2KlassTable;
+                                      ResourceObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
     _unspecified      = -999,
@@ -83,7 +83,9 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
-  static const int INITIAL_TABLE_SIZE = 1987;
+  // Use a small initial size in debug build to test resizing logic
+  static const int INITIAL_TABLE_SIZE = DEBUG_ONLY(17) NOT_DEBUG(1987);
+  static const int MAX_TABLE_SIZE = 61333;
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
@@ -164,7 +166,7 @@ public:
     return _super;
   }
   void check_already_loaded(const char* which, int id) {
-    if (!_id2klass_table.contains(id)) {
+    if (!id2klass_table()->contains(id)) {
       error("%s id %d is not yet loaded", which, id);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ class ResourceHashtableBase : public ResourceObj {
 
   };
 
+  int _number_of_entries;
   Node** _table;
 
   // Returns a pointer to where the node where the value would reside if
@@ -76,18 +77,22 @@ class ResourceHashtableBase : public ResourceObj {
         const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
   }
 
-  unsigned size() const { return static_cast<const TABLE_IMPL*>(this)->size_impl(); }
+  Node** alloc_table(unsigned size) {
+    Node** table;
+    if (ALLOC_TYPE == C_HEAP) {
+      table = NEW_C_HEAP_ARRAY(Node*, size, MEM_TYPE);
+    } else {
+      table = NEW_RESOURCE_ARRAY(Node*, size);
+    }
+    memset(table, 0, size * sizeof(Node*));
+    return table;
+  }
 
  public:
-  ResourceHashtableBase(unsigned size) {
+  ResourceHashtableBase(unsigned size) : _number_of_entries(0) {
     // Don't call size() yet as the TABLE_IMPL constructor
     // hasn't been called yet.
-    if (ALLOC_TYPE == C_HEAP) {
-      _table = NEW_C_HEAP_ARRAY(Node*, size, MEM_TYPE);
-    } else {
-      _table = NEW_RESOURCE_ARRAY(Node*, size);
-    }
-    memset(_table, 0, size * sizeof(Node*));
+    _table = alloc_table(size);
   }
 
   ~ResourceHashtableBase() {
@@ -103,8 +108,12 @@ class ResourceHashtableBase : public ResourceObj {
         }
         ++bucket;
       }
+      FREE_C_HEAP_ARRAY(Node*, _table);
     }
   }
+
+  unsigned size() const { return static_cast<const TABLE_IMPL*>(this)->size_impl(); }
+  int number_of_entries() const { return _number_of_entries; }
 
   bool contains(K const& key) const {
     return get(key) != NULL;
@@ -133,6 +142,7 @@ class ResourceHashtableBase : public ResourceObj {
       return false;
     } else {
       *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      _number_of_entries ++;
       return true;
     }
   }
@@ -148,6 +158,7 @@ class ResourceHashtableBase : public ResourceObj {
     if (*ptr == NULL) {
       *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key);
       *p_created = true;
+      _number_of_entries ++;
     } else {
       *p_created = false;
     }
@@ -165,6 +176,7 @@ class ResourceHashtableBase : public ResourceObj {
     if (*ptr == NULL) {
       *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
       *p_created = true;
+      _number_of_entries ++;
     } else {
       *p_created = false;
     }
@@ -182,6 +194,7 @@ class ResourceHashtableBase : public ResourceObj {
       if (ALLOC_TYPE == C_HEAP) {
         delete node;
       }
+      _number_of_entries --;
       return true;
     }
     return false;
@@ -203,6 +216,31 @@ class ResourceHashtableBase : public ResourceObj {
       }
       ++bucket;
     }
+  }
+
+ protected:
+  void resize(unsigned new_size) {
+    Node** old_table = _table;
+    _table = alloc_table(new_size);
+
+    Node* const* bucket = old_table;
+    const unsigned old_size = size();
+    while (bucket < &old_table[old_size]) {
+      Node* node = *bucket;
+      while (node != NULL) {
+        Node* next = node->_next;
+        unsigned hash = HASH(node->_key);
+        unsigned index = hash % new_size;
+
+        node->_next = _table[index];
+        _table[index] = node;
+
+        node = next;
+      }
+      ++bucket;
+    }
+
+    FREE_C_HEAP_ARRAY(Node*, old_table);
   }
 };
 

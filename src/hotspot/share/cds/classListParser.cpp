@@ -54,7 +54,7 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -648,6 +648,9 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
     id2klass_table()->put(id, ik); // FIXME - maybe_grow
+    if (id2klass_table()->maybe_grow()) {
+      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->size());
+    }
   }
 
   return klass;
