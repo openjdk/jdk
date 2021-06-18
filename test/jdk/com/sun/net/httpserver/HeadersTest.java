@@ -113,6 +113,7 @@ public class HeadersTest {
 
     @Test(dataProvider = "headerPairs")
     public static void testEqualsAndHashCode(Headers h1, Headers h2) {
+        // testng's asserts(Map, Map) do not call Headers.equals
         assertTrue(h1.equals(h2), "Headers differ");
         assertEquals(h1.hashCode(), h2.hashCode(), "hashCode differ for "
                 + List.of(h1, h2));
@@ -121,9 +122,16 @@ public class HeadersTest {
     @Test
     public static void testEqualsMap() {
         final var h = new Headers();
-        final var m = new HashMap<String, List<String>> ();
+        final var m = new HashMap<String, List<String>>();
         assertFalse(h.equals(m), "Map instance cannot be equal to Headers");
-        // assertEquals(h, m) does not call Headers.equals
         assertTrue(m.equals(h));
+    }
+
+    @Test
+    public static void testToString() {
+        final var h = new Headers();
+        h.put("Accept-Encoding", List.of("gzip, deflate"));
+        assertTrue(h.toString().startsWith("com.sun.net.httpserver.Headers"));
+        assertTrue(h.toString().endsWith(" { {Accept-encoding=[gzip, deflate]} }"));
     }
 }

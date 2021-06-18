@@ -227,7 +227,6 @@ public class Headers implements Map<String,List<String>> {
         return map.entrySet();
     }
 
-    @Override
     public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
         var f = function.andThen(values -> {
             values.forEach(Headers::checkValue);
@@ -241,4 +240,12 @@ public class Headers implements Map<String,List<String>> {
     }
 
     public int hashCode() {return map.hashCode();}
+
+    public String toString() {
+        final var sb = new StringBuilder(super.toString());
+        sb.append(" { ");
+        sb.append(map.toString());
+        sb.append(" }");
+        return sb.toString();
+    }
 }
