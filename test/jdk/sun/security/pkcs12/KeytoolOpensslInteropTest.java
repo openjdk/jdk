@@ -27,11 +27,18 @@
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
- * @summary Keytool <-> openssl interop test. Follow the step 2 descibed in
-            test/jdk/sun/security/pkcs12/params/README afther running this
-            test.
+ * @summary This is java keytool <-> openssl interop test.
+ *          ParamsTest.java does some operation on pre-generated openssl
+ *          keystores and generate some new JDK keystores under scratch
+ *          directory. The KeytoolOpensslInterop.sh perform some openssl
+ *          command on JDK generated kestores.
+ *
+ *          Prerequisite: Install OpenSSL 1.1.0i or above versions, earlier
+ *          versions may generate different info and test fail.
+ *
  * @run main/manual/othervm ParamsTest
+ * @run shell/manual KeytoolOpensslInterop.sh
  */
 
-public class KeytoolOpensslInterop {
+public class KeytoolOpensslInteropTest {
 }
