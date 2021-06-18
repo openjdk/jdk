@@ -230,8 +230,8 @@ private:
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool warn_excluded(InstanceKlass* k, const char* reason);
   static bool check_for_exclusion_impl(InstanceKlass* k);
+  static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
   static bool _dump_in_progress;
@@ -265,12 +265,12 @@ public:
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);
 
-  static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
-  static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
@@ -322,11 +322,14 @@ public:
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
+  static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static void check_excluded_classes();
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
+  static void set_excluded_locked(InstanceKlass* k);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);

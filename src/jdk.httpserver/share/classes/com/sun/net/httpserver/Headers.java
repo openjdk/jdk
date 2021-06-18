@@ -90,7 +90,7 @@ public class Headers implements Map<String,List<String>> {
     HashMap<String,List<String>> map;
 
     /**
-     * Creates a mutable empty {@code Headers}.
+     * Creates an empty instance of {@code Headers}.
      */
     public Headers() {map = new HashMap<>(32);}
 
@@ -147,7 +147,7 @@ public class Headers implements Map<String,List<String>> {
         if (!(key instanceof String)) {
             return false;
         }
-        return map.containsKey (normalize((String)key));
+        return map.containsKey(normalize((String)key));
     }
 
     public boolean containsValue(Object value) {
@@ -176,7 +176,7 @@ public class Headers implements Map<String,List<String>> {
     public List<String> put(String key, List<String> value) {
         for (String v : value)
             checkValue(v);
-        return map.put (normalize(key), value);
+        return map.put(normalize(key), value);
     }
 
     /**
@@ -191,10 +191,10 @@ public class Headers implements Map<String,List<String>> {
         String k = normalize(key);
         List<String> l = map.get(k);
         if (l == null) {
-            l = new LinkedList<String>();
+            l = new LinkedList<>();
             map.put(k,l);
         }
-        l.add (value);
+        l.add(value);
     }
 
     private static void checkValue(String value) {
@@ -229,19 +229,17 @@ public class Headers implements Map<String,List<String>> {
      * @param value the header value to set
      */
     public void set(String key, String value) {
-        LinkedList<String> l = new LinkedList<String>();
-        l.add (value);
-        put (key, l);
+        LinkedList<String> l = new LinkedList<>();
+        l.add(value);
+        put(key, l);
     }
-
 
     public List<String> remove(Object key) {
         return map.remove(normalize((String)key));
     }
 
     public void putAll(Map<? extends String,? extends List<String>> t)  {
-        var h = t;
-        h.forEach(this::put);
+        t.forEach(this::put);
     }
 
     public void clear() {map.clear();}

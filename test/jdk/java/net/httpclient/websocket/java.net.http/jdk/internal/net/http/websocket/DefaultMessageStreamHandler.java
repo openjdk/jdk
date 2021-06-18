@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,28 @@
  * questions.
  */
 
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
+package jdk.internal.net.http.websocket;
 
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.doclet.DocletEnvironment;
+import java.nio.ByteBuffer;
 
-public class X {
-    public static boolean run(DocletEnvironment root) {
-        System.out.println("X.start");
-        return true;
-    }
-    public Set<Doclet.Option> getSupportedOptions() {
-        return Collections.emptySet();
-    }
+/**
+ * No implementation provided for onInit() because that must always be
+ * implemented by user
+ */
+abstract class DefaultMessageStreamHandler implements MessageStreamHandler {
 
-    public void init(Locale locale, Reporter reporter) {
-        return;
-    }
+    public void onText(CharSequence data, boolean last) {}
+
+    public void onBinary(ByteBuffer data, boolean last) {}
+
+    public void onPing(ByteBuffer data) {}
+
+    public void onPong(ByteBuffer data) {}
+
+    public void onClose(int statusCode, CharSequence reason) {}
+
+    public void onComplete() {}
+
+    public void onError(Throwable e) {}
 }
+
