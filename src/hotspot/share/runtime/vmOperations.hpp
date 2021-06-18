@@ -139,17 +139,18 @@ class VM_ZombieAll: public VM_Operation {
 #endif // PRODUCT
 
 class VM_PrintThreads: public VM_Operation {
- protected:
-  outputStream* _out;
  private:
+  outputStream* _out;
   bool _print_concurrent_locks;
   bool _print_extended_info;
+  bool _print_jni;
  public:
   VM_PrintThreads()
-    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false)
+    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni(false)
   {}
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
-    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info)
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni = false)
+    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info),
+      _print_jni(print_jni)
   {}
   VMOp_Type type() const {
     return VMOp_PrintThreads;
@@ -258,18 +259,6 @@ class VM_PrintCompileQueue: public VM_Operation {
  public:
   VM_PrintCompileQueue(outputStream* st) : _out(st) {}
   VMOp_Type type() const { return VMOp_PrintCompileQueue; }
-  void doit();
-};
-
-class VM_ExtendedPrintThreads: public VM_PrintThreads {
- public:
-  VM_ExtendedPrintThreads() : VM_PrintThreads() {}
-  VM_ExtendedPrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
-    : VM_PrintThreads(out, print_concurrent_locks, print_extended_info) {}
-
-  VMOp_Type type() const {
-    return VMOp_ExtendedPrintThreads;
-  }
   void doit();
 };
 

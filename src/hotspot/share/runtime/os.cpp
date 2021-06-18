@@ -399,7 +399,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         // Any SIGBREAK operations added here should make sure to flush
         // the output stream (e.g. tty->flush()) after output.  See 4803766.
         // Each module also prints an extra carriage return after its output.
-        VM_ExtendedPrintThreads op;
+        VM_PrintThreads op(tty, PrintConcurrentLocks, false, true);
         VMThread::execute(&op);
         VM_FindDeadlocks op1(tty);
         VMThread::execute(&op1);

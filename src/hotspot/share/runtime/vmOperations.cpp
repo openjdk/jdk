@@ -168,6 +168,9 @@ bool VM_PrintThreads::doit_prologue() {
 
 void VM_PrintThreads::doit() {
   Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
+  if (_print_jni) {
+    JNIHandles::print_on(_out);
+  }
 }
 
 void VM_PrintThreads::doit_epilogue() {
@@ -487,13 +490,6 @@ void VM_Exit::wait_if_vm_exited() {
 
 void VM_PrintCompileQueue::doit() {
   CompileBroker::print_compile_queues(_out);
-}
-
-void VM_ExtendedPrintThreads::doit() {
-  // thread stacks
-  VM_PrintThreads::doit();
-  // JNI global handles
-  JNIHandles::print_on(_out);
 }
 
 #if INCLUDE_SERVICES
