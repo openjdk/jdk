@@ -262,14 +262,10 @@ class VM_PrintCompileQueue: public VM_Operation {
 };
 
 class VM_ExtendedPrintThreads: public VM_PrintThreads {
- private:
-   VM_FindDeadlocks _find_dead_locks;
-
  public:
-  VM_ExtendedPrintThreads() : VM_PrintThreads(), _find_dead_locks(tty) {}
+  VM_ExtendedPrintThreads() : VM_PrintThreads() {}
   VM_ExtendedPrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
-    : VM_PrintThreads(out, print_concurrent_locks, print_extended_info),
-      _find_dead_locks(out) {}
+    : VM_PrintThreads(out, print_concurrent_locks, print_extended_info) {}
 
   VMOp_Type type() const {
     return VMOp_ExtendedPrintThreads;

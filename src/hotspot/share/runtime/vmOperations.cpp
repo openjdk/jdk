@@ -494,8 +494,6 @@ void VM_ExtendedPrintThreads::doit() {
   VM_PrintThreads::doit();
   // JNI global handles
   JNIHandles::print_on(_out);
-  // Deadlock detection
-  _find_dead_locks.doit();
 }
 
 #if INCLUDE_SERVICES

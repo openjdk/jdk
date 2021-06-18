@@ -534,8 +534,13 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
 }
 
 void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
-  VM_ExtendedPrintThreads op(output(), _locks.value(), _extended.value());
-  VMThread::execute(&op);
+  // thread stacks and JNI global handles
+  VM_ExtendedPrintThreads op1(output(), _locks.value(), _extended.value());
+  VMThread::execute(&op1);
+
+  // Deadlock detection
+  VM_FindDeadlocks op2(output());
+  VMThread::execute(&op2);
 }
 
 // Enhanced JMX Agent support

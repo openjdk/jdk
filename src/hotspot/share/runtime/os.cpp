@@ -401,6 +401,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         // Each module also prints an extra carriage return after its output.
         VM_ExtendedPrintThreads op;
         VMThread::execute(&op);
+        VM_FindDeadlocks op1(tty);
+        VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
           VM_GC_HeapInspection op1(tty, true /* force full GC before heap inspection */);
