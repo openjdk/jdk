@@ -378,7 +378,7 @@ void VM_Version::initialize() {
 
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
-    // If CPU or OS do not support TM:
+    // If CPU or OS do not support RTM:
     if (PowerArchitecturePPC64 < 8) {
       vm_exit_during_initialization("RTM instructions are not available on this CPU.");
     }
