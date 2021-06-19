@@ -535,12 +535,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     private void init(int opmode, Key key, byte[] newNonce)
             throws InvalidKeyException {
+        // Cipher.init() already checks opmode to be:
+        // ENCRYPT_MODE/DECRYPT_MODE/WRAP_MODE/UNWRAP_MODE
         if ((opmode == Cipher.WRAP_MODE) || (opmode == Cipher.UNWRAP_MODE)) {
             throw new UnsupportedOperationException(
                     "WRAP_MODE and UNWRAP_MODE are not currently supported");
-        } else if ((opmode != Cipher.ENCRYPT_MODE) &&
-                (opmode != Cipher.DECRYPT_MODE)) {
-            throw new InvalidKeyException("Unknown opmode: " + opmode);
         }
 
         // Make sure that the provided key and nonce are unique before

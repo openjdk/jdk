@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,9 @@ public class WSHandshakeExceptionTest {
     String httpsURI;
     String httpNonUtf8URI;
     String httpsNonUtf8URI;
+    HttpClient sharedClient;
 
-    static final int ITERATION_COUNT = 10;
+    static final int ITERATION_COUNT = 4;
     // a shared executor helps reduce the amount of threads created by the test
     static final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -106,11 +107,16 @@ public class WSHandshakeExceptionTest {
 
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) {
-        HttpClient client = null;
+        HttpClient client = sharedClient;
+        boolean pause;
         for (int i = 0; i < ITERATION_COUNT; i++) {
             System.out.printf("iteration %s%n", i);
-            if (!sameClient || client == null)
+            if (!sameClient || client == null) {
+                pause = client != null;
                 client = newHttpClient();
+                if (pause) gc(10); // give some time to gc
+            }
+            if (sharedClient == null) sharedClient = client;
 
             try {
                 client.newWebSocketBuilder()
@@ -143,6 +149,15 @@ public class WSHandshakeExceptionTest {
         }
     }
 
+    static void gc(long ms) {
+        System.gc();
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException x) {
+            // OK
+        }
+    }
+
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
@@ -168,6 +183,8 @@ public class WSHandshakeExceptionTest {
 
     @AfterTest
     public void teardown() {
+        sharedClient = null;
+        gc(100);
         httpTestServer.stop(0);
         httpsTestServer.stop(0);
         executor.shutdownNow();

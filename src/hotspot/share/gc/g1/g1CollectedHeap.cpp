@@ -1477,7 +1477,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cr(NULL),
   _task_queues(NULL),
   _num_regions_failed_evacuation(0),
-  _regions_failed_evacuation(NULL),
+  _regions_failed_evacuation(mtGC),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -1770,7 +1770,7 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  _regions_failed_evacuation = NEW_C_HEAP_ARRAY(volatile bool, max_regions(), mtGC);
+  _regions_failed_evacuation.resize(max_regions());
 
   G1InitLogger::print();
 
@@ -3470,7 +3470,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   _expand_heap_after_alloc_failure = true;
   Atomic::store(&_num_regions_failed_evacuation, 0u);
 
-  memset((void*)_regions_failed_evacuation, false, sizeof(bool) * max_regions());
+  _regions_failed_evacuation.clear();
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();
