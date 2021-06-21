@@ -88,8 +88,8 @@ private:
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
-  void increase_used(size_t size, ZCycle* cycle);
-  void decrease_used(size_t size, ZCycle* cycle);
+  void increase_used(size_t size, ZCycle* cycle, ZGenerationId generation);
+  void decrease_used(size_t size, ZCycle* cycle, ZGenerationId generation);
 
   bool commit_page(ZPage* page);
   void uncommit_page(ZPage* page);

@@ -45,6 +45,7 @@ private:
   bool rule_major_warmup() const;
   bool rule_major_proactive() const;
   bool rule_major_high_usage() const;
+  bool rule_major_allocation_rate() const;
 
   GCCause::Cause make_minor_gc_decision() const;
   GCCause::Cause make_major_gc_decision() const;

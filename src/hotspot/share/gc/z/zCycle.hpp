@@ -169,6 +169,7 @@ private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
+  int                 _total_collections_at_end;
 
 public:
   ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -188,6 +189,8 @@ public:
   void relocate_start();
   void relocate();
   void roots_remap();
+
+  int total_collections_at_end() const;
 };
 
 #endif // SHARE_GC_Z_ZCYCLE_HPP

@@ -33,12 +33,18 @@
 class ZGeneration {
 protected:
   ZGenerationId    _generation_id;
+  size_t           _used;
   ZObjectAllocator _object_allocator;
 
 public:
   ZGeneration(ZGenerationId generation_id, ZPageAge age);
 
   ZGenerationId generation_id() const;
+
+  void increase_used(size_t size);
+  void decrease_used(size_t size);
+
+  size_t used_total() const;
 
   bool is_young() const;
   bool is_old() const;

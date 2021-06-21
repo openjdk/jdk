@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCycle.inline.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
@@ -411,13 +412,16 @@ void ZMinorCycle::relocate() {
 void ZMinorCycle::promote(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
   _relocation_set.register_promoted_page(old_page);
+  ZHeap::heap()->young_generation()->decrease_used(old_page->size());
+  ZHeap::heap()->old_generation()->increase_used(old_page->size());
 }
 
 ZMajorCycle::ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator) :
   ZCycle(ZCycleId::_major, page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
-  _unload(&_workers) {}
+  _unload(&_workers),
+  _total_collections_at_end(0) {}
 
 void ZMajorCycle::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
@@ -564,6 +568,7 @@ void ZMajorCycle::relocate() {
 
   // Update statistics
   stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->old_generation()->relocated());
+  _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 
 class ZRemapOopClosure : public OopClosure {
@@ -680,4 +685,8 @@ void ZMajorCycle::roots_remap() {
 
   ZRemapRootsTask task;
   workers()->run_concurrent(&task);
+}
+
+int ZMajorCycle::total_collections_at_end() const {
+  return _total_collections_at_end;
 }

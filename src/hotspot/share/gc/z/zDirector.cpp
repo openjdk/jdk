@@ -112,6 +112,68 @@ bool ZDirector::rule_minor_allocation_rate() const {
   return time_until_gc <= 0;
 }
 
+bool ZDirector::rule_major_allocation_rate() const {
+  if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_normalized_duration_trustable()) {
+    // Rule disabled
+    return false;
+  }
+
+  // Perform GC if the estimated max allocation rate indicates that we
+  // will run out of memory. The estimated max allocation rate is based
+  // on the moving average of the sampled allocation rate plus a safety
+  // margin based on variations in the allocation rate and unforeseen
+  // allocation spikes.
+
+  // Calculate amount of free memory available. Note that we take the
+  // relocation headroom into account to avoid in-place relocation.
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  const size_t used = ZHeap::heap()->used();
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, _relocation_headroom);
+  const size_t old_live_for_last_gc = ZHeap::heap()->major_cycle()->stat_heap()->live_at_mark_end();
+  const size_t young_live_for_last_gc = ZHeap::heap()->minor_cycle()->stat_heap()->live_at_mark_end();
+  const size_t old_used = ZHeap::heap()->old_generation()->used_total();
+  const size_t old_garbage = old_used - old_live_for_last_gc;
+  const size_t young_used = ZHeap::heap()->young_generation()->used_total();
+  const size_t young_available = young_used + free;
+  const size_t young_freeable_per_cycle = young_available - young_live_for_last_gc;
+
+  // Calculate max duration of a GC cycle. The duration of GC is a moving
+  // average, we add ~3.3 sigma to account for the GC duration variance.
+  const AbsSeq& duration_of_minor_gc = ZHeap::heap()->minor_cycle()->stat_cycle()->normalized_duration();
+  const double duration_of_minor_gc_avg = duration_of_minor_gc.avg();
+  const AbsSeq& duration_of_major_gc = ZHeap::heap()->major_cycle()->stat_cycle()->normalized_duration();
+  const double duration_of_major_gc_avg = duration_of_major_gc.avg();
+
+  const double current_minor_gc_seconds_per_bytes_freed = double(duration_of_minor_gc_avg) / double(young_freeable_per_cycle);
+  const double potential_minor_gc_seconds_per_bytes_freed = double(duration_of_minor_gc_avg) / double(young_freeable_per_cycle + old_garbage);
+
+  const double extra_gc_seconds_per_bytes_freed = current_minor_gc_seconds_per_bytes_freed - potential_minor_gc_seconds_per_bytes_freed;
+  const double extra_gc_seconds_per_potentially_young_available_bytes = extra_gc_seconds_per_bytes_freed * (young_freeable_per_cycle + old_garbage);
+
+  int lookahead = ZCollectedHeap::heap()->total_collections() - ZHeap::heap()->major_cycle()->total_collections_at_end();
+
+  double extra_minor_gc_seconds_for_lookahead = extra_gc_seconds_per_potentially_young_available_bytes * lookahead;
+
+  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraGCSecondsPerMinor: %.3fs, MajorGCTime: %.3fs, Lookahead: %d, ExtraGCSecondsForLookahead: %.3fs",
+                          extra_gc_seconds_per_potentially_young_available_bytes, duration_of_major_gc_avg, lookahead, extra_minor_gc_seconds_for_lookahead);
+
+
+  if (extra_minor_gc_seconds_for_lookahead > duration_of_major_gc_avg) {
+    // If we continue doing as many minor collections as we already did since the
+    // last major collection (N), without doing a major collection, then the minor
+    // GC effort of freeing up memory for another N cycles, plus the effort of doing,
+    // a major GC combined, is lower compared to the extra GC overhead per minor
+    // collection, freeing an equal amount of memory, at a higher GC frequency.
+    // In other words, the cost for minor collections of not doing a major collection
+    // will seemingly be greater than the cost of doing a major collection and getting
+    // cheaper minor collections for a time to come.
+    return true;
+  }
+
+  return false;
+}
+
 bool ZDirector::rule_major_timer() const {
   if (ZCollectionIntervalMajor <= 0) {
     // Rule disabled
@@ -259,11 +321,11 @@ GCCause::Cause ZDirector::make_major_gc_decision() const {
     return GCCause::_z_major_warmup;
   }
 
-  //// Rule 2: Allocation rate
-  //if (rule_major_allocation_rate()) {
-  //  log_debug(gc, director)("Rule Major: Allocation Rate, Triggered");
-  //  return GCCause::_z_major_allocation_rate;
-  //}
+  // Rule 2: Allocation rate
+  if (rule_major_allocation_rate()) {
+    log_debug(gc, director)("Rule Major: Allocation Rate, Triggered");
+    return GCCause::_z_major_allocation_rate;
+  }
 
   // Rule 3: Proactive
   if (rule_major_proactive()) {

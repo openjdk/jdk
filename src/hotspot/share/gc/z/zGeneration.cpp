@@ -26,7 +26,22 @@
 
 ZGeneration::ZGeneration(ZGenerationId generation_id, ZPageAge age) :
     _generation_id(generation_id),
+    _used(0),
     _object_allocator(generation_id, age) {
+}
+
+void ZGeneration::increase_used(size_t size) {
+  // Update atomically since we have concurrent readers
+  Atomic::add(&_used, size);
+}
+
+void ZGeneration::decrease_used(size_t size) {
+  // Update atomically since we have concurrent readers
+  Atomic::sub(&_used, size);
+}
+
+size_t ZGeneration::used_total() const {
+  return Atomic::load(&_used);
 }
 
 ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
