@@ -380,7 +380,7 @@ public:
   Category category() const;
 
   static const char* str(const Type* t);
-#endif
+#endif // !PRODUCT
   void typerr(const Type *t) const; // Mixing types error
 
   // Create basic type
