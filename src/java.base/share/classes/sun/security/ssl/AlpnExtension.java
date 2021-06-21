@@ -109,7 +109,6 @@ final class AlpnExtension {
                     "incorrect list length (length=" + listLen + ")"));
             }
 
-            //List<String> protocolNames = new LinkedList<>();
             Stream.Builder<String> alpnNames = Stream.builder();
             while (buffer.hasRemaining()) {
                 // opaque ProtocolName<1..2^8-1>, RFC 7301.

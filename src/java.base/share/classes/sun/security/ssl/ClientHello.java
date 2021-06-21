@@ -196,7 +196,7 @@ final class ClientHello {
 
             int cmpLen = Byte.toUnsignedInt(m.get());
             Stream.Builder<Byte> bbldr = Stream.builder();
-            for (int i = 0; i < cmpLen; i += 2) {
+            for (int i = 0; i < cmpLen; i++) {
                 bbldr.accept(m.get());
             }
             ByteArrayOutputStream bos = new ByteArrayOutputStream();

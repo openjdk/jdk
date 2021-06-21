@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;

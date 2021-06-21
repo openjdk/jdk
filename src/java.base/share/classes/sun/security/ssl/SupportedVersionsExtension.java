@@ -86,7 +86,7 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: insufficient data"));
             }
 
-            int versLen = Record.getInt16(m);   // Get the version bytes.
+            int versLen = Record.getInt8(m);   // Get the version bytes.
             if (versLen == 0 || (versLen & 0x01) != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
