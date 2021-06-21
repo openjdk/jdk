@@ -58,7 +58,7 @@ public class CheckSegmentedCodeCache {
                 out.shouldContain(NON_METHOD);
             } catch (RuntimeException e) {
                 // Check if TieredCompilation is disabled (in a client VM)
-                if (!out.getOutput().contains("-XX:+TieredCompilation not supported in this VM")) {
+                if (WHITE_BOX.isC2OrJVMCIIncluded() && !out.getOutput().contains("-XX:+TieredCompilation not supported in this VM")) {
                     // Code cache is not segmented
                     throw new RuntimeException("No code cache segmentation.");
                 }
