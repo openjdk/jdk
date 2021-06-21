@@ -25,17 +25,36 @@
  * @test
  * @bug 8251496 8268960
  * @summary Tests for methods in Headers class
- * @run testng HeadersTest
+ * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @library /test/lib
+ * @build jdk.test.lib.net.URIBuilder
+ * @run testng/othervm HeadersTest
  */
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
@@ -45,11 +64,129 @@ public class HeadersTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<IOException> IOE = IOException.class;
 
     @Test
     public static void testDefaultConstructor() {
         var headers = new Headers();
         assertTrue(headers.isEmpty());
+    }
+
+    @Test
+    public static void testNull() {
+        final Headers h = new Headers();
+        h.put("Foo", List.of("Bar"));
+
+        new Headers().add(null, "Bar");
+        new Headers().set(null, "Bar");
+        new Headers().put(null, List.of());
+
+        final var map = new HashMap<String, List<String>>();
+        map.put(null, List.of("Bar"));
+        new Headers().putAll(map);
+
+        // expected to throw NPE
+        final var list = new LinkedList<String>();
+        list.add(null);
+
+        assertThrows(NPE, () -> new Headers().add("Foo", null));
+        assertThrows(NPE, () -> new Headers().set("Foo", null));
+        assertThrows(NPE, () -> new Headers().put("Foo", list));
+
+        // compute
+        h.compute(null, (k, v) -> List.of(""))
+        // computeIfAbsent
+        // computeIfPresent
+
+        // containsKey
+        // containsValue
+
+        // copyof
+        // entry
+        // entrySet
+        // keySet
+
+
+        // equals
+
+        // get
+        // getOrDefault
+
+        // merge
+
+        // ofs ?
+
+        // put
+        // putAll
+        // putIfAbsent
+
+        // remove 1
+        // remove 2
+
+        // replace 2
+        // replace 3
+        // replaceAll
+
+
+
+
+
+
+    }
+
+    @DataProvider
+    public Object[][] respHeadersWithNull() {
+        return new Object[][] {
+                {"Foo", null},
+                {null, "Bar"}
+        };
+    }
+
+    @Test(dataProvider = "respHeadersWithNull")
+    public void testNullResponseHeaders(String headerKey, String headerVal)
+            throws Exception {
+        var handler = new Handler(headerKey, headerVal);
+        var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/", handler);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private class Handler implements HttpHandler {
+        private String headerKey;
+        private String headerVal;
+
+        public Handler(String key, String val) {
+            headerKey = key;
+            headerVal = val;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                is.readAllBytes();
+                var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set(headerKey, headerVal);
+                exchange.sendResponseHeaders(200, resp.length);
+                os.write(resp);
+            }
+        }
+    }
+
+    private static URI uri(HttpServer server, String path) {
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 
     @Test
