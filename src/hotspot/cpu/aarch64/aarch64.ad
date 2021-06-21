@@ -2552,10 +2552,13 @@ bool Matcher::is_spillable_arg(int reg)
 
 uint Matcher::int_pressure_limit()
 {
-  // 8183543: on AArch64 C2 compilation often fails
-  // with "failed spill-split-recycle sanity check".
-  // A call is considered a high register pressure area
-  // and force spilling around the call.
+  // JDK-8183543: Take the number of available registers as int register
+  // pressure threshold, the jtreg test:
+  // test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+  // failed due to C2 compilation failure with
+  // "COMPILE SKIPPED: failed spill-split-recycle sanity check".
+  // Lowering the default value to (_NO_SPECIAL_REG32_mask.Size() minus 1)
+  // fixes this bug. See JDK-8183543.
   uint int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
   return (INTPRESSURE == -1) ? int_pressure_threshold : INTPRESSURE;
 }

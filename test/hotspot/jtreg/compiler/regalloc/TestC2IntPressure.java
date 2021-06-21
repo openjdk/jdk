@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8183543
- * @summary C2 compilation often fails with "failed spill-split-recycle sanity check"
+ * @summary C2 compilation often fails on aarch64 with "failed spill-split-recycle sanity check"
  *
  * @library /test/lib
  *
@@ -36,39 +36,38 @@
  * @run main/othervm -Xbatch
  *                   -XX:-Inline
  *                   -XX:-TieredCompilation
+ *                   -XX:+PreserveFramePointer
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   compiler.c2.Test8183543
+ *                   compiler.regalloc.TestC2IntPressure
  */
 
-package compiler.c2;
+package compiler.regalloc;
 
 import sun.hotspot.WhiteBox;
 
-public class Test8183543 {
+public class TestC2IntPressure {
 
   static volatile int vol_f;
 
-  static int test(Test8183543 arg) {
-    Test8183543 a = arg;
+  static void not_inlined() {
+    // Do nothing
+  }
+
+  static int test(TestC2IntPressure arg) {
+    TestC2IntPressure a = arg;
     int res = 0;
     not_inlined();
     res = a.vol_f;
     return res;
   }
 
-  static void not_inlined() {
-    for (int i = 0; i < 5000; i++) {
-      vol_f += 2;
-    }
-  }
-
   public static void main(String args[]) {
-    Test8183543 arg = new Test8183543();
+    TestC2IntPressure arg = new TestC2IntPressure();
     for (int i = 0; i < 10000; i++) {
-      Test8183543.test(arg);
+      test(arg);
     }
     try {
-      var method = Test8183543.class.getDeclaredMethod("test", Test8183543.class);
+      var method = TestC2IntPressure.class.getDeclaredMethod("test", TestC2IntPressure.class);
       if (!WhiteBox.getWhiteBox().isMethodCompiled(method)) {
         throw new Error("test method didn't get compiled");
       }
@@ -77,3 +76,4 @@ public class Test8183543 {
     }
   }
 }
+

@@ -1771,7 +1771,10 @@ uint Matcher::int_pressure_limit()
 
 uint Matcher::float_pressure_limit()
 {
-  return (FLOATPRESSURE == -1) ? (_FLOAT_REG_mask.Size() - 2) : FLOATPRESSURE;
+  // The following default threshold works best for LCM's register pressure
+  // scheduling on x64.
+  uint default_float_pressure_threshold = _FLOAT_REG_mask.Size() - 2;
+  return (FLOATPRESSURE == -1) ? default_float_pressure_threshold : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
