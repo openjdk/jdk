@@ -639,7 +639,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           if (Signature::is_method(sig)) {
             // Format check method name and signature
             verify_legal_method_name(name, CHECK);
-            verify_legal_method_signature(name, sig, false, CHECK);
+            verify_legal_method_signature(name, sig, CHECK);
           } else {
             // Format check field name and signature
             verify_legal_field_name(name, CHECK);
@@ -752,7 +752,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_MethodType: {
         const Symbol* const no_name = vmSymbols::type_name(); // place holder
         const Symbol* const signature = cp->method_type_signature_at(index);
-        verify_legal_method_signature(no_name, signature, false, CHECK);
+        verify_legal_method_signature(no_name, signature, CHECK);
         break;
       }
       case JVM_CONSTANT_Utf8: {
@@ -2297,8 +2297,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   int args_size = -1;  // only used when _need_verify is true
   if (_need_verify) {
+    verify_legal_name_with_signature(name, signature, CHECK_NULL);
     args_size = ((flags & JVM_ACC_STATIC) ? 0 : 1) +
-                 verify_legal_method_signature(name, signature, true, CHECK_NULL);
+                 verify_legal_method_signature(name, signature, CHECK_NULL);
     if (args_size > MAX_ARGS_SIZE) {
       classfile_parse_error("Too many arguments in method signature in class file %s", THREAD);
       return NULL;
@@ -5046,26 +5047,43 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
   }
 }
 
+// Check that the signature is compatible with the method name.  For example,
+// check that <init> has a void signature.
+void ClassFileParser::verify_legal_name_with_signature(const Symbol* name,
+                                                       const Symbol* signature,
+                                                       TRAPS) const {
+  if (!_need_verify) {
+    // make sure caller's args_size will be less than 0 even for non-static
+    // method so it will be recomputed in compute_size_of_parameters().
+    return;
+  }
+
+  // Class initializers cannot have args for class format version >= 51.
+  if (name == vmSymbols::class_initializer_name() &&
+      signature != vmSymbols::void_method_signature() &&
+      _major_version >= JAVA_7_VERSION) {
+    throwIllegalSignature("Method", name, signature, THREAD);
+    return;
+  }
+
+  int sig_length = signature->utf8_length();
+  if (name->utf8_length() > 0 &&
+      name->char_at(0) == JVM_SIGNATURE_SPECIAL &&
+      sig_length > 0 &&
+      signature->char_at(sig_length - 1) != JVM_SIGNATURE_VOID) {
+    throwIllegalSignature("Method", name, signature, THREAD);
+  }
+}
+
 // Checks if signature is a legal method signature.
-// If check_compatibility is true, then check that the signature is compatible
-// with the method name.  For example, check that <init> has a void signature.
 // Returns number of parameters
 int ClassFileParser::verify_legal_method_signature(const Symbol* name,
                                                    const Symbol* signature,
-                                                   bool check_compatibility,
                                                    TRAPS) const {
   if (!_need_verify) {
     // make sure caller's args_size will be less than 0 even for non-static
     // method so it will be recomputed in compute_size_of_parameters().
     return -2;
-  }
-
-  // Class initializers cannot have args for class format version >= 51.
-  if (check_compatibility && name == vmSymbols::class_initializer_name() &&
-      signature != vmSymbols::void_method_signature() &&
-      _major_version >= JAVA_7_VERSION) {
-    throwIllegalSignature("Method", name, signature, CHECK_0);
-    return 0;
   }
 
   unsigned int args_size = 0;
@@ -5090,23 +5108,15 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (check_compatibility && name->utf8_length() > 0 &&
-          name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
-        // All internal methods must return void
-        if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
-          return args_size;
-        }
-      } else {
-        // Now we better just have a return value
-        nextp = skip_over_field_signature(p, true, length, CHECK_0);
-        if (nextp && ((int)length == (nextp - p))) {
-          return args_size;
-        }
+      // Now we better just have a return value
+      nextp = skip_over_field_signature(p, true, length, CHECK_0);
+      if (nextp && ((int)length == (nextp - p))) {
+        return args_size;
       }
     }
   }
   // Report error
-  throwIllegalSignature("Method", name, signature, CHECK_0);
+  throwIllegalSignature("Method", name, signature, THREAD);
   return 0;
 }
 
