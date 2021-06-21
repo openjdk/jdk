@@ -40,9 +40,14 @@ private:
   ZPageTable* const _page_table;
   ZPageAllocator* const _page_allocator;
 
-  void scan_forwarded(ZForwarding* forwarding) const;
-  void scan_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array) const;
+  template <typename Function>
+  void oops_do_forwarded(ZForwarding* forwarding, Function function) const;
+
+  template <typename Function>
+  void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array, Function function) const;
+
   void scan_page(ZPage* page) const;
+  void scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:
   ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator);

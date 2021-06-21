@@ -49,7 +49,8 @@ void ZRemember::flip() const {
   ZRememberSet::flip();
 }
 
-void ZRemember::scan_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array) const {
+template <typename Function>
+void ZRemember::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array, Function function) const {
   // The array contains duplicated from_addr values. Cache expensive operations.
   zaddress_unsafe from_addr = zaddress_unsafe::null;
   zaddress to_addr = zaddress::null;
@@ -75,16 +76,17 @@ void ZRemember::scan_forwarded_via_containing(GrowableArrayView<ZRememberSetCont
       // Calculate the corresponding address in the to-object
       const zaddress to_addr_field = to_addr + field_offset;
 
-      mark_and_remember((volatile zpointer*)untype(to_addr_field));
+      function((volatile zpointer*)untype(to_addr_field));
     }
   }
 }
 
-void ZRemember::scan_forwarded(ZForwarding* forwarding) const {
+template <typename Function>
+void ZRemember::oops_do_forwarded(ZForwarding* forwarding, Function function) const {
   // All objects have been forwarded, and the page could have been detached.
   // Visit all objects via the forwarding table.
   forwarding->oops_do_in_forwarded_via_table([&](volatile zpointer* p) {
-    mark_and_remember(p);
+    function(p);
   });
 }
 
@@ -119,6 +121,33 @@ static void fill_containing(GrowableArrayCHeap<ZRememberSetContaining, mtGC>* ar
   }
 }
 
+void ZRemember::scan_forwarding(ZForwarding* forwarding, void* context) const {
+  if (forwarding->get_and_set_remset_scanned()) {
+    // Scanned last minor cycle; implies that the to-space objects
+    // are going to be found in the page table scan
+    return;
+  }
+
+  if (forwarding->retain_page()) {
+    // Collect all remset info while the page is retained
+    GrowableArrayCHeap<ZRememberSetContaining, mtGC>* array = (GrowableArrayCHeap<ZRememberSetContaining, mtGC>*)context;
+    array->clear();
+    fill_containing(array, forwarding->page());
+    forwarding->release_page();
+
+    // Relocate (and mark) while page is released, to prevent
+    // retain deadlock when relocation threads in-place relocate.
+    oops_do_forwarded_via_containing(array, [&](volatile zpointer* p) {
+      mark_and_remember(p);
+    });
+
+  } else {
+    oops_do_forwarded(forwarding, [&](volatile zpointer* p) {
+      mark_and_remember(p);
+    });
+  }
+}
+
 class ZRememberScanForwardingTask : public ZTask {
 private:
   ZForwardingTableParallelIterator _iterator;
@@ -134,24 +163,7 @@ public:
     GrowableArrayCHeap<ZRememberSetContaining, mtGC> containing_array;
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
-      if (forwarding->get_and_set_remset_scanned()) {
-        // Scanned last minor cycle; implies that the to-space objects
-        // are going to be found in the page table scan
-        return;
-      }
-
-      if (forwarding->retain_page()) {
-        // Collect all remset info while the page is retained
-        containing_array.clear();
-        fill_containing(&containing_array, forwarding->page());
-        forwarding->release_page();
-
-        // Relocate (and mark) while page is released, to prevent
-        // retain deadlock when relocation threads in-place relocate.
-        _remember.scan_forwarded_via_containing(&containing_array);
-      } else {
-        _remember.scan_forwarded(forwarding);
-      }
+      _remember.scan_forwarding(forwarding, &containing_array);
     });
   }
 };
