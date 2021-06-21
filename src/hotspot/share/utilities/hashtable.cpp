@@ -278,6 +278,7 @@ template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
 template class BasicHashtable<mtTracing>;
+template class BasicHashtable<mtTest>;
 template class BasicHashtable<mtServiceability>;
 template class BasicHashtable<mtLogging>;
 

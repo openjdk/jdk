@@ -159,6 +159,11 @@ void AsyncLogWriter::run() {
   }
 }
 
+void AsyncLogWriter::remove(LogOutput* output) {
+  AsyncLogLocker locker;
+  _stats.remove(static_cast<LogFileOutput* >(output));
+}
+
 AsyncLogWriter* AsyncLogWriter::_instance = nullptr;
 
 void AsyncLogWriter::initialize() {

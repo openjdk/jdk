@@ -170,6 +170,7 @@ class AsyncLogWriter : public NonJavaThread {
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  void remove(LogOutput* output);
 
   static AsyncLogWriter* instance();
   static void initialize();

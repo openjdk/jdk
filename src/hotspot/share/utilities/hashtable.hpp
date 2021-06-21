@@ -311,11 +311,36 @@ public:
     return &(entry->_value);
   }
 
+  bool remove(K key) {
+    unsigned int hash = HASH(key);
+    int index = BasicHashtable<F>::hash_to_index(hash);
+    BasicHashtableEntry<F>* p = NULL;
+    KVHashtableEntry* e = bucket(index);
+
+    for (; e != NULL; p = e, e = e->next()) {
+      if (e->hash() == hash && EQUALS(e->_key, key)) {
+        break;
+      }
+    }
+
+    if (e != NULL) {
+      if (p == NULL) {
+        *(bucket_addr(index)) = e->next();
+      } else {
+        *(p->next_addr()) = e->next();
+      }
+      free_entry(e);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   int table_size() const {
     return BasicHashtable<F>::table_size();
   }
 
-  // ITER contains bool do_entry(K, V const&), which will be
+  // ITER contains bool do_entry(K, V*), which will be
   // called for each entry in the table.  If do_entry() returns false,
   // the iteration is cancelled.
   template<class ITER>

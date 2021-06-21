@@ -205,6 +205,12 @@ void LogConfiguration::delete_output(size_t idx) {
          "idx must be in range 1 < idx < _n_outputs, but idx = " SIZE_FORMAT
          " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
+
+  AsyncLogWriter* asynclog = AsyncLogWriter::instance();
+  if (asynclog!= nullptr) {
+    asynclog->remove(output);
+  }
+
   // Swap places with the last output and shrink the array
   _outputs[idx] = _outputs[--_n_outputs];
   _outputs = REALLOC_C_HEAP_ARRAY(LogOutput*, _outputs, _n_outputs, mtLogging);
