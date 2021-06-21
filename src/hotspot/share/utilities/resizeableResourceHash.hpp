@@ -27,7 +27,6 @@
 
 #include "utilities/resourceHash.hpp"
 
-// FIXME: the parameter order of ResourceHashtableBase<> should be fixed. See JDK-XXXXXXX
 template<
     typename K, typename V,
     ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
@@ -45,7 +44,7 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
 
 public:
   ResizeableResourceHashtable(unsigned size, unsigned max_size = 0)
-  : ResourceHashtableBase<ResizeableResourceHashtable, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>(size),
+  : BASE(size),
     _size(size), _max_size(max_size) {}
   unsigned size_impl() const { return _size; }
 

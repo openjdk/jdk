@@ -643,11 +643,11 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);
-    InstanceKlass** old_ptr = id2klass_table()->get(id);
-    if (old_ptr != NULL) {
+    bool created;
+    id2klass_table()->put_if_absent(id, ik, &created);
+    if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    id2klass_table()->put(id, ik); // FIXME - maybe_grow
     if (id2klass_table()->maybe_grow()) {
       log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->size());
     }
