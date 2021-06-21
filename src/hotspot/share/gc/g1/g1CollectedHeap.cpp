@@ -2851,6 +2851,9 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
 }
 
 void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType type) {
+  if (evacuation_failed()) {
+    type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
+  }
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets after GC]");
     VerifyRegionRemSetClosure v_cl;

@@ -93,6 +93,8 @@ void G1Arguments::parse_verification_type(const char* type) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyConcurrentStart);
   } else if (strcmp(type, "mixed") == 0) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyMixed);
+  } else if (strcmp(type, "young-evac-fail") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyYoungEvacFail);
   } else if (strcmp(type, "remark") == 0) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyRemark);
   } else if (strcmp(type, "cleanup") == 0) {
@@ -101,7 +103,7 @@ void G1Arguments::parse_verification_type(const char* type) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyFull);
   } else {
     log_warning(gc, verify)("VerifyGCType: '%s' is unknown. Available types are: "
-                            "young-normal, concurrent-start, mixed, remark, cleanup and full", type);
+                            "young-normal, young-evac-fail, concurrent-start, mixed, remark, cleanup and full", type);
   }
 }
 
