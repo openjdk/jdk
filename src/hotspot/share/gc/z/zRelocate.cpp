@@ -790,25 +790,35 @@ inline void ZPage::object_iterate(Function function) {
 }
 
 void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
-  const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
   SuspendibleThreadSetJoiner sts_joiner;
+
+  const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
+
   // TODO: Make multi-threaded
   for (int i = 0; i < pages->length(); i++) {
     ZPage* prev_page = pages->at(i);
     ZPageAge age_from = prev_page->age();
     ZPageAge age_to = ZForwarding::compute_age_to(age_from, promote_all);
     assert(age_from != ZPageAge::old, "invalid age for a minor cycle");
-    ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
-    bool promotion = age_to == ZPageAge::old;
-    ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
+
+    // Figure out if this is proper promotion
+    const ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+    const bool promotion = age_to == ZPageAge::old;
+
+    // Logging
     prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
+
+    // Setup to-space page
+    ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
     new_page->reset(generation_to, age_to, true /* flip */, false /* in_place */);
+
     if (promotion) {
       ZHeap::heap()->minor_cycle()->promote(prev_page, new_page);
       prev_page->object_iterate([&](oop obj) {
         z_basic_oop_iterate(obj, ZRelocate::add_remset);
       });
     }
+
     SuspendibleThreadSet::yield();
   }
 }
