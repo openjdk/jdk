@@ -105,9 +105,18 @@ final class JceSecurityManager {
         PrivilegedAction<StackWalker> pa =
                 () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
         @SuppressWarnings("removal")
-        List<StackFrame> stack =
-                AccessController.doPrivileged(pa).walk(Stream::toList);
+Intermediate state, switching tasks.
+        StackWalker walker = AccessController.doPrivileged(pa);
+        URL callerCodeBase = walker.walk(
+                s -> {
+                    return s.map(f -> JceSecurity.getCodeBase(
+                            f.getDeclaringClass()))
+                            .filter(cb -> cb != null)
+                            .findFirst().get();
+                }
+                );
 
+/*
         URL callerCodeBase = null;
         for (StackFrame stackFrame : stack) {
             Class<?> cls = stackFrame.getDeclaringClass();
@@ -123,7 +132,7 @@ final class JceSecurityManager {
                 return defaultPerm;
             }
         }
-
+*/
         if (callerCodeBase == null) {
             return defaultPerm;
         }
