@@ -231,8 +231,7 @@ public class Deflater {
      * @see Deflater#needsInput
      */
     public void setInput(byte[] input, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, input.length,
-            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
+        Preconditions.checkFromIndexSize(len, off, input.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             this.input = null;
             this.inputArray = input;
@@ -297,8 +296,7 @@ public class Deflater {
      * @see Inflater#getAdler
      */
     public void setDictionary(byte[] dictionary, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, dictionary.length,
-            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
+        Preconditions.checkFromIndexSize(len, off, dictionary.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             setDictionary(zsRef.address(), dictionary, off, len);
@@ -555,8 +553,7 @@ public class Deflater {
      * @since 1.7
      */
     public int deflate(byte[] output, int off, int len, int flush) {
-        Preconditions.checkFromIndexSize(len, off, output.length,
-            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
+        Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
         if (flush != NO_FLUSH && flush != SYNC_FLUSH && flush != FULL_FLUSH) {
             throw new IllegalArgumentException();
         }

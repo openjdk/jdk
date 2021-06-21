@@ -37,6 +37,48 @@ import java.util.function.Function;
 public class Preconditions {
 
     /**
+     * Utility classes for creating the desired exception which can be used
+     * for {@code outOfBoundsExceptionFormatter}
+     *
+     * @implNote They can be syntactically replaced by lambda expression or
+     * method reference, but it's not feasible in practices, because
+     * {@code Preconditions} is used in many fundamental classes such as
+     * java.lang.String, lambda expressions or method references exercise
+     * many other code at VM startup, this could lead an {@code StackOverflowError}.
+     * That's the reason why these utility classes are created.
+     */
+    static class StringIndexOutOfBoundsExceptionProducer implements Function<String, StringIndexOutOfBoundsException> {
+        @Override
+        public StringIndexOutOfBoundsException apply(String s) {
+            return new StringIndexOutOfBoundsException(s);
+        }
+    }
+
+    static class ArrayIndexOutOfBoundsExceptionProducer implements Function<String, ArrayIndexOutOfBoundsException> {
+        @Override
+        public ArrayIndexOutOfBoundsException apply(String s) {
+            return new ArrayIndexOutOfBoundsException(s);
+        }
+    }
+
+    static class IndexOutOfBoundsExceptionProducer implements Function<String, IndexOutOfBoundsException> {
+        @Override
+        public IndexOutOfBoundsException apply(String s) {
+            return new IndexOutOfBoundsException(s);
+        }
+    }
+
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> SIOOBE_FORMATTER
+            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
+
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> AIOOBE_FORMATTER
+            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
+
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> IOOBE_FORMATTER
+            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
+
+
+    /**
      * Maps out-of-bounds values to a runtime exception.
      *
      * @param checkKind the kind of bounds check, whose name may correspond

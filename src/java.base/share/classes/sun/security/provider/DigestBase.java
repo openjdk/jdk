@@ -106,8 +106,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         if (len == 0) {
             return;
         }
-        Preconditions.checkFromIndexSize(ofs, len, b.length,
-            Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
+        Preconditions.checkFromIndexSize(ofs, len, b.length, Preconditions.AIOOBE_FORMATTER);
         if (bytesProcessed < 0) {
             engineReset();
         }

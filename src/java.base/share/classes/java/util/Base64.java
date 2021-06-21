@@ -931,8 +931,7 @@ public class Base64 {
         public void write(byte[] b, int off, int len) throws IOException {
             if (closed)
                 throw new IOException("Stream is closed");
-            Preconditions.checkFromIndexSize(len, off, b.length,
-                Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new));
+            Preconditions.checkFromIndexSize(len, off, b.length, Preconditions.AIOOBE_FORMATTER);
             if (len == 0)
                 return;
             if (leftover != 0) {
