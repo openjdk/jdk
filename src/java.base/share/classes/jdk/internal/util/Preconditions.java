@@ -38,30 +38,34 @@ public class Preconditions {
 
     /**
      * Utility classes for creating the desired exception which can be used
-     * for {@code outOfBoundsExceptionFormatter}
+     * for {@code outOfBoundsExceptionFormatter}.
      *
-     * @implNote They can be syntactically replaced by lambda expression or
-     * method reference, but it's not feasible in practices, because
-     * {@code Preconditions} is used in many fundamental classes such as
-     * java.lang.String, lambda expressions or method references exercise
-     * many other code at VM startup, this could lead an {@code StackOverflowError}.
-     * That's the reason why these utility classes are created.
+     * @implNote These inner classes can be syntactically replaced by lambda
+     * expression or method reference, but it's not feasible in practices,
+     * because {@code Preconditions} is used in many fundamental classes such
+     * as {@code java.lang.String}, lambda expressions or method references
+     * exercise many other code at VM startup, this could lead a recursive
+     * calls when fundamental classes is used in lambda expressions or method
+     * references.
      */
-    static class StringIndexOutOfBoundsExceptionProducer implements Function<String, StringIndexOutOfBoundsException> {
+    private static class StringIndexOutOfBoundsExceptionProducer implements
+                    Function<String, StringIndexOutOfBoundsException> {
         @Override
         public StringIndexOutOfBoundsException apply(String s) {
             return new StringIndexOutOfBoundsException(s);
         }
     }
 
-    static class ArrayIndexOutOfBoundsExceptionProducer implements Function<String, ArrayIndexOutOfBoundsException> {
+    private static class ArrayIndexOutOfBoundsExceptionProducer implements
+                    Function<String, ArrayIndexOutOfBoundsException> {
         @Override
         public ArrayIndexOutOfBoundsException apply(String s) {
             return new ArrayIndexOutOfBoundsException(s);
         }
     }
 
-    static class IndexOutOfBoundsExceptionProducer implements Function<String, IndexOutOfBoundsException> {
+    private static class IndexOutOfBoundsExceptionProducer implements
+                    Function<String, IndexOutOfBoundsException> {
         @Override
         public IndexOutOfBoundsException apply(String s) {
             return new IndexOutOfBoundsException(s);
@@ -76,7 +80,6 @@ public class Preconditions {
 
     public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> IOOBE_FORMATTER
             = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
-
 
     /**
      * Maps out-of-bounds values to a runtime exception.
