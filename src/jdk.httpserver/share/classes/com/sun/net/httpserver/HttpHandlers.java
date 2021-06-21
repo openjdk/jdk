@@ -89,15 +89,12 @@ public class HttpHandlers {
      * @param handler a conditional handler
      * @param fallbackHandler a fallback handler
      * @return a handler
-     * @throws IOException          if an I/O error occurs
      * @throws NullPointerException if any argument is null
      * @since 18
      */
     public static HttpHandler handleOrElse(Predicate<Request> handlerTest,
-                                    HttpHandler handler,
-                                    HttpHandler fallbackHandler)
-            throws IOException
-    {
+                                           HttpHandler handler,
+                                           HttpHandler fallbackHandler) {
         Objects.requireNonNull(handlerTest);
         Objects.requireNonNull(handler);
         Objects.requireNonNull(fallbackHandler);
