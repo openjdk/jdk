@@ -41,7 +41,6 @@ import sun.lwawt.LWWindowPeer;
 
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLLayer;
-import sun.lwawt.macosx.CFLayer;
 
 public class CPlatformView extends CFRetainedResource {
     private native long nativeCreateView(int x, int y, int width, int height, long windowLayerPtr);
@@ -133,6 +132,10 @@ public class CPlatformView extends CFRetainedResource {
             ref.set(nativeIsViewUnderMouse(ptr));
         });
         return ref.get();
+    }
+
+    public void setWindowLayerOpaque(boolean opaque) {
+        windowLayer.setOpaque(opaque);
     }
 
     public GraphicsDevice getGraphicsDevice() {
