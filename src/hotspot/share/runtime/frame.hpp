@@ -342,6 +342,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
+  bool optimized_entry_frame_is_first() const;
 
   // Safepoints
 
