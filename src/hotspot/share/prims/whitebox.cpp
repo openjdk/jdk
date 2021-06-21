@@ -99,7 +99,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
