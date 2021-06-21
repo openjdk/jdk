@@ -210,7 +210,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
          */
         public final Names names;
 
-        Table(Names names) {
+        protected Table(Names names) {
             this.names = names;
         }
 
