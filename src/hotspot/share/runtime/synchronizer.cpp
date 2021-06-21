@@ -127,7 +127,7 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
 
     if (current->is_Java_thread()) {
       // A JavaThread must check for a safepoint/handshake and honor it.
-      ObjectSynchronizer::chk_for_block_req(current->as_Java_thread(), "unlinking",
+      ObjectSynchronizer::chk_for_block_req(JavaThread::cast(current), "unlinking",
                                             "unlinked_count", unlinked_count,
                                             ls, timer_p);
     }
@@ -859,7 +859,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       if (SafepointSynchronize::is_at_safepoint()) {
         BiasedLocking::revoke_at_safepoint(hobj);
       } else {
-        BiasedLocking::revoke(current->as_Java_thread(), hobj);
+        BiasedLocking::revoke(JavaThread::cast(current), hobj);
       }
       obj = hobj();
       assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -1417,7 +1417,7 @@ size_t ObjectSynchronizer::deflate_monitor_list(Thread* current, LogStream* ls,
 
     if (current->is_Java_thread()) {
       // A JavaThread must check for a safepoint/handshake and honor it.
-      chk_for_block_req(current->as_Java_thread(), "deflation", "deflated_count",
+      chk_for_block_req(JavaThread::cast(current), "deflation", "deflated_count",
                         deflated_count, ls, timer_p);
     }
   }
@@ -1507,7 +1507,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
       if (current->is_Java_thread()) {
         // A JavaThread must check for a safepoint/handshake and honor it.
-        chk_for_block_req(current->as_Java_thread(), "deletion", "deleted_count",
+        chk_for_block_req(JavaThread::cast(current), "deletion", "deleted_count",
                           deleted_count, ls, &timer);
       }
     }

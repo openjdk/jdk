@@ -1750,7 +1750,7 @@ bool ShenandoahHeap::try_cancel_gc() {
     if (thread->is_Java_thread()) {
       // We need to provide a safepoint here, otherwise we might
       // spin forever if a SP is pending.
-      ThreadBlockInVM sp(thread->as_Java_thread());
+      ThreadBlockInVM sp(JavaThread::cast(thread));
       SpinPause();
     }
   }

@@ -201,7 +201,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
  public:
   EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
-    JavaThread* jt = th->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(th);
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     // Set up the current stack depth for later tracking

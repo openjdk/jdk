@@ -236,7 +236,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
 
   int ret = M_OK;
   if (self->is_Java_thread()) {
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     guarantee(jt->thread_state() == _thread_in_native, "invariant");
     {
       // This transition must be after we exited the monitor.
@@ -326,7 +326,7 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   if (!self->is_Java_thread()) {
     simple_enter(self);
   } else {
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     guarantee(jt->thread_state() == _thread_in_native, "invariant");
     ThreadInVMfromNative tivmfn(jt);
     for (;;) {
@@ -379,7 +379,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   // Now we need to re-enter the monitor. For JavaThreads
   // we need to manage suspend requests.
   if (self->is_Java_thread()) { // JavaThread re-enter
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     ThreadInVMfromNative tivmfn(jt);
     for (;;) {
       ExitOnSuspend eos(this);

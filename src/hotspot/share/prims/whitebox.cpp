@@ -2022,7 +2022,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
 
       jt->print_on(tty);
@@ -2058,7 +2058,7 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
       // AsynchHandshake handshakes are only executed by target.
       assert(_self == th, "Must be");
       assert(Thread::current() == th, "Must be");
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
       jt->print_on(tty);
       jt->print_stack_on(tty);

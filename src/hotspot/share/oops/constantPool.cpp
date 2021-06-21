@@ -586,7 +586,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != NULL && current->is_Java_thread()) {
       // Make sure that resolving is legal
-      JavaThread* THREAD = current->as_Java_thread(); // For exception macros.
+      JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
       ExceptionMark em(THREAD);
       // return NULL if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
