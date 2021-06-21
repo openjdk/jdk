@@ -62,9 +62,9 @@ import static org.testng.Assert.assertTrue;
 
 public class HeadersTest {
 
-    static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     static final Class<IOException> IOE = IOException.class;
+    static final Class<NullPointerException> NPE = NullPointerException.class;
 
     @Test
     public static void testDefaultConstructor() {
@@ -77,61 +77,74 @@ public class HeadersTest {
         final Headers h = new Headers();
         h.put("Foo", List.of("Bar"));
 
-        new Headers().add(null, "Bar");
-        new Headers().set(null, "Bar");
-        new Headers().put(null, List.of());
+        final var mapNullKey = new HashMap<String, List<String>>();
+        mapNullKey.put(null, List.of("Bar"));
 
-        final var map = new HashMap<String, List<String>>();
-        map.put(null, List.of("Bar"));
-        new Headers().putAll(map);
+        final var mapNullList = new HashMap<String, List<String>>();
+        mapNullList.put("Foo", null);
 
-        // expected to throw NPE
-        final var list = new LinkedList<String>();
-        list.add(null);
+        final var listWithNull = new LinkedList<String>();
+        listWithNull.add(null);
 
-        assertThrows(NPE, () -> new Headers().add("Foo", null));
-        assertThrows(NPE, () -> new Headers().set("Foo", null));
-        assertThrows(NPE, () -> new Headers().put("Foo", list));
+        final var mapNullInList = new HashMap<String, List<String>>();
+        mapNullInList.put("Foo", listWithNull);
 
-        // compute
-        h.compute(null, (k, v) -> List.of(""))
-        // computeIfAbsent
-        // computeIfPresent
+        assertThrows(NPE, () -> h.add(null, "Bar"));
+        assertThrows(NPE, () -> h.add("Foo", null));
 
-        // containsKey
-        // containsValue
+        assertThrows(NPE, () -> h.compute(null, (k, v) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.compute("Foo", (k, v) -> listWithNull));
 
-        // copyof
-        // entry
-        // entrySet
-        // keySet
+        assertThrows(NPE, () -> h.computeIfAbsent(null, (k) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.computeIfAbsent("Foo-foo", (k) -> listWithNull));
 
+        assertThrows(NPE, () -> h.computeIfPresent(null, (k, v) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.computeIfPresent("Foo", (k, v) -> listWithNull));
 
-        // equals
+        assertThrows(NPE, () -> h.containsKey(null));
 
-        // get
-        // getOrDefault
+        assertThrows(NPE, () -> h.containsValue(null));
 
-        // merge
+        assertThrows(NPE, () -> h.get(null));
 
-        // ofs ?
+        assertThrows(NPE, () -> h.getFirst(null));
 
-        // put
-        // putAll
-        // putIfAbsent
+        assertThrows(NPE, () -> h.getOrDefault(null, List.of("Bar")));
 
-        // remove 1
-        // remove 2
+        assertThrows(NPE, () -> h.merge(null, List.of("Bar"), (k, v) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.merge("Foo-foo", null, (k, v) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.merge("Foo-foo", listWithNull, (k, v) -> List.of("Bar")));
+        assertThrows(NPE, () -> h.merge("Foo", List.of("Bar"), (k, v) -> listWithNull));
 
-        // replace 2
-        // replace 3
-        // replaceAll
+        assertThrows(NPE, () -> h.put(null, List.of("Bar")));
+        assertThrows(NPE, () -> h.put("Foo", null));
+        assertThrows(NPE, () -> h.put("Foo", listWithNull));
 
+        assertThrows(NPE, () -> h.putAll(mapNullKey));
+        assertThrows(NPE, () -> h.putAll(mapNullList));
+        assertThrows(NPE, () -> h.putAll(mapNullInList));
 
+        assertThrows(NPE, () -> h.putIfAbsent(null, List.of("Bar")));
+        assertThrows(NPE, () -> h.putIfAbsent("Foo-foo", null));
+        assertThrows(NPE, () -> h.putIfAbsent("Foo-foo", listWithNull));
 
+        assertThrows(NPE, () -> h.remove(null));
 
+        assertThrows(NPE, () -> h.remove(null, List.of("Bar")));
 
+        assertThrows(NPE, () -> h.replace(null, List.of("Bar")));
+        assertThrows(NPE, () -> h.replace("Foo", null));
+        assertThrows(NPE, () -> h.replace("Foo", listWithNull));
 
+        assertThrows(NPE, () -> h.replace(null, List.of("Bar"), List.of("Bar")));
+        assertThrows(NPE, () -> h.replace("Foo", List.of("Bar"), null));
+        assertThrows(NPE, () -> h.replace("Foo", List.of("Bar"), listWithNull));
+
+        assertThrows(NPE, () -> h.replaceAll((k, v) -> listWithNull));
+        assertThrows(NPE, () -> h.replaceAll((k, v) -> null));
+
+        assertThrows(NPE, () -> h.set(null, "Bar"));
+        assertThrows(NPE, () -> h.set("Foo", null));
     }
 
     @DataProvider
@@ -142,6 +155,9 @@ public class HeadersTest {
         };
     }
 
+    /**
+     * Confirms exchange fails if response headers contain a null key or value.
+     */
     @Test(dataProvider = "respHeadersWithNull")
     public void testNullResponseHeaders(String headerKey, String headerVal)
             throws Exception {
@@ -152,7 +168,7 @@ public class HeadersTest {
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertThrows(IOE, () -> client.send(request, HttpResponse.BodyHandlers.ofString()));
         } finally {
             server.stop(0);
         }
@@ -189,6 +205,50 @@ public class HeadersTest {
                 .buildUnchecked();
     }
 
+    @DataProvider
+    public static Object[][] headerPairs() {
+        final var h1 = new Headers();
+        final var h2 = new Headers();
+        final var h3 = new Headers();
+        final var h4 = new Headers();
+        final var h5 = new Headers();
+        h1.put("Accept-Encoding", List.of("gzip, deflate"));
+        h2.put("accept-encoding", List.of("gzip, deflate"));
+        h3.put("AccePT-ENCoding", List.of("gzip, deflate"));
+        h4.put("ACCept-EncodING", List.of("gzip, deflate"));
+        h5.put("ACCEPT-ENCODING", List.of("gzip, deflate"));
+
+        final var headers = List.of(h1, h2, h3, h4, h5);
+        return headers.stream()  // cartesian product of headers
+                .flatMap(header1 -> headers.stream().map(header2 -> new Headers[] { header1, header2 }))
+                .toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "headerPairs")
+    public static void testEqualsAndHashCode(Headers h1, Headers h2) {
+        // avoid testng's asserts(Map, Map) as they don't call Headers::equals
+        assertTrue(h1.equals(h2), "Headers differ");
+        assertEquals(h1.hashCode(), h2.hashCode(), "hashCode differ for "
+                + List.of(h1, h2));
+    }
+
+    @Test
+    public static void testEqualsMap() {
+        final var h = new Headers();
+        final var m = new HashMap<String, List<String>>();
+        assertFalse(h.equals(m), "Map instance cannot be equal to Headers");
+        assertFalse(h.equals(null), "null cannot be equal to Headers");
+        assertTrue(m.equals(h));
+    }
+
+    @Test
+    public static void testToString() {
+        final var h = new Headers();
+        h.put("Accept-Encoding", List.of("gzip, deflate"));
+        assertTrue(h.toString().startsWith("com.sun.net.httpserver.Headers"));
+        assertTrue(h.toString().endsWith(" { {Accept-encoding=[gzip, deflate]} }"));
+    }
+
     @Test
     public static void testPutAll() {
         final var h0 = new Headers();
@@ -206,7 +266,7 @@ public class HeadersTest {
         h1.put("b", List.of("2"));
         final var h2 = new Headers();
         h2.putAll(Map.of("a", List.of("1"), "b", List.of("2")));
-        assertEquals(h1, h2);
+        assertTrue(h1.equals(h2));
     }
 
     @Test
@@ -226,49 +286,6 @@ public class HeadersTest {
         final var h2 = new Headers();
         h2.put("a", List.of("11"));
         h2.put("b", List.of("22"));
-        assertEquals(h1, h2);
-    }
-
-    @DataProvider
-    public static Object[][] headerPairs() {
-        final var h1 = new Headers();
-        final var h2 = new Headers();
-        final var h3 = new Headers();
-        final var h4 = new Headers();
-        final var h5 = new Headers();
-        h1.put("Accept-Encoding", List.of("gzip, deflate"));
-        h2.put("accept-encoding", List.of("gzip, deflate"));
-        h3.put("AccePT-ENCoding", List.of("gzip, deflate"));
-        h4.put("ACCept-EncodING", List.of("gzip, deflate"));
-        h5.put("ACCEPT-ENCODING", List.of("gzip, deflate"));
-
-        final var headers = List.of(h1, h2, h3, h4, h5);
-        return headers.stream()
-                .flatMap(header1 -> headers.stream().map(header2 -> new Headers[] { header1, header2 }))
-                .toArray(Object[][]::new);
-    }
-
-    @Test(dataProvider = "headerPairs")
-    public static void testEqualsAndHashCode(Headers h1, Headers h2) {
-        // testng's asserts(Map, Map) do not call Headers.equals
-        assertTrue(h1.equals(h2), "Headers differ");
-        assertEquals(h1.hashCode(), h2.hashCode(), "hashCode differ for "
-                + List.of(h1, h2));
-    }
-
-    @Test
-    public static void testEqualsMap() {
-        final var h = new Headers();
-        final var m = new HashMap<String, List<String>>();
-        assertFalse(h.equals(m), "Map instance cannot be equal to Headers");
-        assertTrue(m.equals(h));
-    }
-
-    @Test
-    public static void testToString() {
-        final var h = new Headers();
-        h.put("Accept-Encoding", List.of("gzip, deflate"));
-        assertTrue(h.toString().startsWith("com.sun.net.httpserver.Headers"));
-        assertTrue(h.toString().endsWith(" { {Accept-encoding=[gzip, deflate]} }"));
+        assertTrue(h1.equals(h2));
     }
 }

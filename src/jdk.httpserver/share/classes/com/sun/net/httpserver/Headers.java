@@ -67,7 +67,6 @@ import java.util.function.BiFunction;
  *
  * <p> All methods in this class reject {@code null} values for keys and values.
  * {@code null} keys will never be present in HTTP request or response headers.
- *         >>>some more wording needed to explain the change?<<<
  * @since 1.6
  */
 public class Headers implements Map<String,List<String>> {
