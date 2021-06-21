@@ -49,6 +49,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
+static const ZStatSubPhase ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted("Concurrent Minor Relocate Remset FPP");
+
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),
     _queue(),
@@ -595,11 +597,11 @@ private:
                      _forwarding->age_to() == ZPageAge::old;
     // Promotions happen through a new cloned page
     ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
-    new_page->reset(new_generation, new_age, false /* flip */, true /* in_place */);
+    new_page->reset(new_generation, new_age, ZPage::InPlaceReset);
 
     if (promotion) {
       // Register the the promotion
-      ZHeap::heap()->minor_cycle()->promote(prev_page, new_page);
+      ZHeap::heap()->minor_cycle()->promote_reloc(prev_page, new_page);
     }
 
     return new_page;
@@ -766,11 +768,75 @@ public:
   }
 };
 
+class ZRelocateAddRemsetForInPlacePromoted : public ZTask {
+private:
+  ZArrayParallelIterator<ZPage*> _iter;
+
+public:
+  ZRelocateAddRemsetForInPlacePromoted(ZArray<ZPage*>* pages) :
+      ZTask("ZRelocateAddRemsetForInPlacePromoted"),
+      _iter(pages) {}
+
+  static void maybe_add_remset(volatile zpointer* p) {
+    const zpointer ptr = Atomic::load(p);
+
+    if (ZPointer::is_store_good(ptr)) {
+      // Already has a remset entry
+      return;
+    }
+
+    // Remset entries are used for two reasons:
+    // 1) Minor marking old-to-young pointer roots
+    // 2) Deferred remapping of stale old-to-young pointers
+    //
+    // This load barrier will up-front perform the remapping of (2),
+    // and the code below only has to make sure we register up-to-date
+    // old-to-young pointers for (1).
+    const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(p, ptr);
+
+    if (is_null(addr)) {
+      // No need for remset entries for NULL pointers
+      return;
+    }
+
+    if (ZHeap::heap()->is_old(addr)) {
+      // No need for remset entries for pointers to old gen
+      return;
+    }
+
+    ZRelocate::add_remset(p);
+  }
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+
+    for (ZPage* page; _iter.next(&page);) {
+      page->object_iterate([&](oop obj) {
+        z_basic_oop_iterate(obj, maybe_add_remset);
+      });
+
+      SuspendibleThreadSet::yield();
+    }
+  }
+};
+
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
-  ZFixStoreBufferTask buffer_task;
-  ZRelocateTask relocate_task(relocation_set, &_queue);
-  workers()->run_concurrent(&buffer_task);
-  workers()->run_concurrent(&relocate_task);
+  {
+    ZFixStoreBufferTask buffer_task;
+    workers()->run_concurrent(&buffer_task);
+  }
+
+  {
+    ZRelocateTask relocate_task(relocation_set, &_queue);
+    workers()->run_concurrent(&relocate_task);
+  }
+
+  if (relocation_set->cycle()->is_minor()) {
+    ZStatTimerMinor timer(ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted);
+    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flip_pages());
+    workers()->run_concurrent(&task);
+  }
+
   _queue.clear();
 }
 
@@ -810,13 +876,10 @@ void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
 
     // Setup to-space page
     ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
-    new_page->reset(generation_to, age_to, true /* flip */, false /* in_place */);
+    new_page->reset(generation_to, age_to, ZPage::FlipReset);
 
     if (promotion) {
-      ZHeap::heap()->minor_cycle()->promote(prev_page, new_page);
-      prev_page->object_iterate([&](oop obj) {
-        z_basic_oop_iterate(obj, ZRelocate::add_remset);
-      });
+      ZHeap::heap()->minor_cycle()->promote_flip(prev_page, new_page);
     }
 
     SuspendibleThreadSet::yield();

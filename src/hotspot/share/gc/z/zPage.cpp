@@ -81,19 +81,19 @@ void ZPage::reset_seqnum(ZGenerationId generation_id) {
   Atomic::store(&_seqnum_other, ZHeap::heap()->get_cycle(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::reset(ZGenerationId generation_id, ZPageAge age, bool flip, bool in_place) {
+void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPage::ZPageResetType type) {
   ZPageAge prev_age = _age;
-  _generation_id = generation_id;
   _age = age;
   _last_used = 0;
+  _generation_id = generation_id;
   reset_seqnum(_generation_id);
 
-  if (!flip) {
+  if (type != FlipReset) {
     _top = start();
   }
 
   if (is_old()) {
-    if (in_place && prev_age == ZPageAge::old) {
+    if (type == InPlaceReset && prev_age == ZPageAge::old) {
       // Current bits are needed to copy the remset incrementally. It will get
       // cleared later on.
       _remember_set.clear_previous();
@@ -102,9 +102,9 @@ void ZPage::reset(ZGenerationId generation_id, ZPageAge age, bool flip, bool in_
     }
   }
 
-  if (!in_place || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
-    // Promoted in-place relocations also reset the live map, because they clone
-    // the page.
+  if (type != InPlaceReset || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
+    // Promoted in-place relocations reset the live map,
+    // because they clone the page.
     _livemap.reset();
   }
 }

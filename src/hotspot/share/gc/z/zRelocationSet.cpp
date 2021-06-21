@@ -119,7 +119,8 @@ ZRelocationSet::ZRelocationSet(ZCycle* cycle) :
     _forwardings(NULL),
     _nforwardings(0),
     _promotion_lock(),
-    _promoted_pages() {}
+    _promote_flip_pages(),
+    _promote_reloc_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
   return _cycle->workers();
@@ -129,8 +130,12 @@ ZCycle* ZRelocationSet::cycle() const {
   return _cycle;
 }
 
-ZArray<ZPage*>* ZRelocationSet::promoted_pages() {
-  return &_promoted_pages;
+ZArray<ZPage*>* ZRelocationSet::promote_flip_pages() {
+  return &_promote_flip_pages;
+}
+
+ZArray<ZPage*>* ZRelocationSet::promote_reloc_pages() {
+  return &_promote_reloc_pages;
 }
 
 void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
@@ -145,6 +150,14 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   _cycle->stat_relocation()->set_at_install_relocation_set(_allocator.size());
 }
 
+static void destroy_and_clear(ZArray<ZPage*>* array) {
+  for (int i = 0; i < array->length(); i++) {
+    // Delete non-relocating promoted pages from last cycle
+    ZPage* page = array->at(i);
+    ZHeap::heap()->safe_destroy_page(page);
+  }
+  array->clear();
+}
 void ZRelocationSet::reset() {
   // Destroy forwardings
   ZRelocationSetIterator iter(this);
@@ -154,17 +167,18 @@ void ZRelocationSet::reset() {
 
   _nforwardings = 0;
 
-  for (int i = 0; i < _promoted_pages.length(); i++) {
-    // Delete non-relocating promoted pages from last cycle
-    ZPage* page = _promoted_pages.at(i);
-    ZHeap::heap()->safe_destroy_page(page);
-  }
-
-  _promoted_pages.clear();
+  destroy_and_clear(&_promote_reloc_pages);
+  destroy_and_clear(&_promote_flip_pages);
 }
 
-void ZRelocationSet::register_promoted_page(ZPage* page) {
+void ZRelocationSet::register_promote_reloc_page(ZPage* page) {
   ZLocker<ZLock> locker(&_promotion_lock);
-  assert(!_promoted_pages.contains(page), "no duplicates allowed");
-  _promoted_pages.append(page);
+  assert(!_promote_reloc_pages.contains(page), "no duplicates allowed");
+  _promote_reloc_pages.append(page);
+}
+
+void ZRelocationSet::register_promote_flip_page(ZPage* page) {
+  ZLocker<ZLock> locker(&_promotion_lock);
+  assert(!_promote_flip_pages.contains(page), "no duplicates allowed");
+  _promote_flip_pages.append(page);
 }

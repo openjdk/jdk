@@ -161,7 +161,8 @@ public:
   void relocate_start();
   void relocate();
 
-  void promote(ZPage* page, ZPage* new_page);
+  void promote_flip(ZPage* page, ZPage* new_page);
+  void promote_reloc(ZPage* page, ZPage* new_page);
 };
 
 class ZMajorCycle : public ZCycle {

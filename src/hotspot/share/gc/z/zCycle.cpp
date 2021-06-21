@@ -409,9 +409,18 @@ void ZMinorCycle::relocate() {
   stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->young_generation()->relocated());
 }
 
-void ZMinorCycle::promote(ZPage* old_page, ZPage* new_page) {
+void ZMinorCycle::promote_flip(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
-  _relocation_set.register_promoted_page(old_page);
+  _relocation_set.register_promote_flip_page(old_page);
+
+  ZHeap::heap()->young_generation()->decrease_used(old_page->size());
+  ZHeap::heap()->old_generation()->increase_used(old_page->size());
+}
+
+void ZMinorCycle::promote_reloc(ZPage* old_page, ZPage* new_page) {
+  _page_table->replace(old_page, new_page);
+  _relocation_set.register_promote_reloc_page(old_page);
+
   ZHeap::heap()->young_generation()->decrease_used(old_page->size());
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
 }

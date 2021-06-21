@@ -43,7 +43,8 @@ private:
   ZForwarding**        _forwardings;
   size_t               _nforwardings;
   ZLock                _promotion_lock;
-  ZArray<ZPage*>       _promoted_pages;
+  ZArray<ZPage*>       _promote_flip_pages;
+  ZArray<ZPage*>       _promote_reloc_pages;
 
   ZWorkers* workers() const;
 
@@ -53,9 +54,11 @@ public:
   void install(const ZRelocationSetSelector* selector);
   void reset();
   ZCycle* cycle() const;
-  ZArray<ZPage*>* promoted_pages();
+  ZArray<ZPage*>* promote_flip_pages();
+  ZArray<ZPage*>* promote_reloc_pages();
 
-  void register_promoted_page(ZPage* page);
+  void register_promote_flip_page(ZPage* page);
+  void register_promote_reloc_page(ZPage* page);
 };
 
 template <bool Parallel>

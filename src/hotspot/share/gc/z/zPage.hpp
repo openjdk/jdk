@@ -104,7 +104,13 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  void reset(ZGenerationId generation_id, ZPageAge age, bool flip, bool in_place);
+  enum ZPageResetType {
+    NormalReset,
+    InPlaceReset,
+    FlipReset
+  };
+
+  void reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type);
 
   void finalize_reset_for_in_place_relocation();
 
