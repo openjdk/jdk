@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
+
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -136,9 +138,7 @@ public final class SHA extends DigestBase {
         // Checks similar to those performed by the method 'b2iBig64'
         // are sufficient for the case when the method 'implCompress0' is
         // replaced with a compiler intrinsic.
-        if (ofs < 0 || (buf.length - ofs) < 64) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(ofs, 64, buf.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     // The method 'implCompress0 seems not to use its parameters.
