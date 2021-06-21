@@ -2306,6 +2306,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
     tty_token = ttyLocker::hold_tty();
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
   }
+  ResourceMark rm; // for verify
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {

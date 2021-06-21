@@ -367,6 +367,11 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return nullptr;
 }
 
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   ShouldNotCallThis();
   return {};
