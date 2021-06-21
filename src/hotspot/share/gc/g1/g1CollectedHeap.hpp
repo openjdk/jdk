@@ -27,6 +27,8 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -55,6 +57,7 @@
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/memRegion.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -65,6 +68,7 @@
 // Forward declarations
 class HeapRegion;
 class GenerationSpec;
+class G1CardSetFreeMemoryTask;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
@@ -157,6 +161,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
+  G1CardSetFreeMemoryTask* _free_card_set_memory_task;
 
   WorkGang* _workers;
   G1CardTable* _card_table;
@@ -171,6 +176,11 @@ private:
   HeapRegionSet _old_set;
   HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
+
+  // Young gen memory statistics before GC.
+  G1CardSetMemoryStats _young_gen_card_set_stats;
+  // Collection set candidates memory statistics after GC.
+  G1CardSetMemoryStats _collection_set_candidates_card_set_stats;
 
   void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
@@ -265,6 +275,9 @@ public:
   bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
 
   bool should_do_eager_reclaim() const;
+
+  bool should_sample_collection_set_candidates() const;
+  void set_collection_set_candidates_stats(G1CardSetMemoryStats& stats);
 
 private:
 
@@ -839,6 +852,8 @@ public:
 
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
+  // Global card set configuration
+  G1CardSetConfiguration _card_set_config;
 
   void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
                                G1RedirtyCardsQueueSet* rdcqs);
@@ -868,7 +883,7 @@ public:
   // Number of regions evacuation failed in the current collection.
   volatile uint _num_regions_failed_evacuation;
   // Records for every region on the heap whether evacuation failed for it.
-  volatile bool* _regions_failed_evacuation;
+  CHeapBitMap _regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 

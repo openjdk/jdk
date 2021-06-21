@@ -383,11 +383,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                 }
             }
-        }
 
-        // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
-            env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            // check for self closing tags, such as <a id="name"/>
+            if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
+                env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            }
         }
 
         try {

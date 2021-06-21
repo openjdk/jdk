@@ -1180,8 +1180,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // -2- test (hdr - SP) if the low two bits are 0
     __ sub(Rtemp, mark, SP, eq);
     __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK: set displaced header to 0
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ b(lock_done, eq);
     __ b(slow_lock);
 
