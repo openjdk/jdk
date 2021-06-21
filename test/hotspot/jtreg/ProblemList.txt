@@ -104,11 +104,7 @@ runtime/os/TestTracePageSizes.java#with-Serial 8267460 linux-aarch64
 
 # :hotspot_serviceability
 
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8268570 generic-all
-serviceability/attach/RemovingUnixDomainSocketTest.java 8268570 generic-all
-serviceability/sa/TestJhsdbJstackLock.java 8268570 generic-all
-serviceability/sa/JhsdbThreadInfoTest.java 8268570 generic-all
-
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
