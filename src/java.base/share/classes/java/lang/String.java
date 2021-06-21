@@ -1572,9 +1572,7 @@ public final class String
      */
     public int codePointBefore(int index) {
         int i = index - 1;
-        if (i < 0 || i >= length()) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
+        checkIndex(i, length());
         if (isLatin1()) {
             return (value[i] & 0xff);
         }
