@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Basic tests for the file-server handler
- * @run testng/othervm FileServerHandlerTest
+ * @run testng FileServerHandlerTest
  */
 
 import java.io.InputStream;
@@ -47,12 +47,12 @@ public class FileServerHandlerTest {
     static final Path CWD = Path.of(".").toAbsolutePath();
 
     @DataProvider
-    public Object[][] requestMethods() {
-        var l = List.of("POST", "PUT");
+    public Object[][] notAllowedMethods() {
+        var l = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "requestMethods")
+    @Test(dataProvider = "notAllowedMethods")
     public void testNotAllowedRequestMethod(String requestMethod) throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
         var exchange = new MethodHttpExchange(requestMethod);
@@ -61,10 +61,16 @@ public class FileServerHandlerTest {
         assertEquals(exchange.getResponseHeaders().getFirst("allow"), "HEAD, GET");
     }
 
-    @Test
-    public void testNotImplementedRequestMethod() throws Exception {
+    @DataProvider
+    public Object[][] notImplementedMethods() {
+        var l = List.of("GARBAGE", "RUBBISH", "TRASH", "FOO", "BAR");
+        return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "notImplementedMethods")
+    public void testNotImplementedRequestMethod(String requestMethod) throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
-        var exchange = new MethodHttpExchange("GARBAGE");
+        var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
         assertEquals(exchange.rCode, 501);
     }
