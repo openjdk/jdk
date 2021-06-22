@@ -23,6 +23,7 @@
 
 package jdk.jfr.event.gc.detailed;
 
+import java.lang.ref.Reference;
 import java.util.List;
 
 import jdk.jfr.Recording;
@@ -69,7 +70,7 @@ public class TestEvacuationFailedEvent {
         // Guarantee one young gc.
         WhiteBox.getWhiteBox().youngGC();
         // Keep alive data.
-        System.out.println(data);
+        Reference.reachabilityFence(data);
 
         recording.stop();
 
