@@ -352,8 +352,8 @@ public final class HijrahDate
             if (isSupported(field)) {
                 ChronoField f = (ChronoField) field;
                 return switch (f) {
-                    case DAY_OF_MONTH          -> ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR           -> ValueRange.of(1, lengthOfYear());
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
                     case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5); // TODO
                     // TODO does the limited range of valid years cause years to
                     // start/end part way through? that would affect range

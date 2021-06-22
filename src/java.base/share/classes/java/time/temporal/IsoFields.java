@@ -706,8 +706,8 @@ public final class IsoFields {
             return switch (this) {
                 case WEEK_BASED_YEARS -> (R) temporal.with(WEEK_BASED_YEAR,
                                           Math.addExact(temporal.get(WEEK_BASED_YEAR), amount));
-                case QUARTER_YEARS    -> (R) temporal.plus(amount / 4, YEARS)
-                                          .plus((amount % 4) * 3, MONTHS);
+                case QUARTER_YEARS -> (R) temporal.plus(amount / 4, YEARS)
+                                       .plus((amount % 4) * 3, MONTHS);
                 default -> throw new IllegalStateException("Unreachable");
             };
         }
@@ -720,7 +720,7 @@ public final class IsoFields {
             return switch (this) {
                 case WEEK_BASED_YEARS -> Math.subtractExact(temporal2Exclusive.getLong(WEEK_BASED_YEAR),
                                           temporal1Inclusive.getLong(WEEK_BASED_YEAR));
-                case QUARTER_YEARS    -> temporal1Inclusive.until(temporal2Exclusive, MONTHS) / 3;
+                case QUARTER_YEARS -> temporal1Inclusive.until(temporal2Exclusive, MONTHS) / 3;
                 default -> throw new IllegalStateException("Unreachable");
             };
         }

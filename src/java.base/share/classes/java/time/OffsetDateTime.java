@@ -600,7 +600,7 @@ public final class OffsetDateTime
             return switch (chronoField) {
                 case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field " +
                                          "'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS  -> getOffset().getTotalSeconds();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
                 default -> dateTime.get(field);
             };
         }
@@ -635,7 +635,7 @@ public final class OffsetDateTime
         if (field instanceof ChronoField chronoField) {
             return switch (chronoField) {
                 case INSTANT_SECONDS -> toEpochSecond();
-                case OFFSET_SECONDS  -> getOffset().getTotalSeconds();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
                 default -> dateTime.getLong(field);
             };
         }

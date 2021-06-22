@@ -604,14 +604,13 @@ public final class LocalDate
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
             if (chronoField.isDateBased()) {
-                int n = switch (chronoField) {
-                    case DAY_OF_MONTH -> lengthOfMonth();
-                    case DAY_OF_YEAR -> lengthOfYear();
-                    case ALIGNED_WEEK_OF_MONTH -> getMonth() == Month.FEBRUARY && !isLeapYear() ? 4 : 5;
-                    case YEAR_OF_ERA -> Year.MAX_VALUE + (getYear() <= 0 ?  1 : 0);
-                    default -> -1;
+                return switch (chronoField) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, getMonth() == Month.FEBRUARY && !isLeapYear() ? 4 : 5);
+                    case YEAR_OF_ERA -> (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
+                    default -> field.range();
                 };
-                return (n == -1) ? field.range() : ValueRange.of(1, n);
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }

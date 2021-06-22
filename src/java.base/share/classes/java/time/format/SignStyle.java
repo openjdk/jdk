@@ -124,9 +124,9 @@ public enum SignStyle {
      */
     boolean parse(boolean positive, boolean strict, boolean fixedWidth) {
         return switch (ordinal()) {
-            case 0    -> !positive || !strict; // NORMAL - valid if negative or (positive and lenient)
+            case 0 -> !positive || !strict; // NORMAL - valid if negative or (positive and lenient)
             case 1, 4 -> true; // ALWAYS, EXCEEDS_PAD
-            default   -> !strict && !fixedWidth; // valid if lenient and not fixed width
+            default -> !strict && !fixedWidth; // valid if lenient and not fixed width
         };
     }
 

@@ -721,9 +721,9 @@ public final class Duration
         }
         if (unit instanceof ChronoUnit chronoUnit) {
             return switch (chronoUnit) {
-                case NANOS   -> plusNanos(amountToAdd);
-                case MICROS  -> plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
-                case MILLIS  -> plusMillis(amountToAdd);
+                case NANOS -> plusNanos(amountToAdd);
+                case MICROS -> plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
+                case MILLIS -> plusMillis(amountToAdd);
                 case SECONDS -> plusSeconds(amountToAdd);
                 default -> plusSeconds(Math.multiplyExact(unit.getDuration().seconds, amountToAdd));
             };

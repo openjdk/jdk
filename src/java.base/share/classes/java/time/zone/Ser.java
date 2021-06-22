@@ -192,8 +192,8 @@ final class Ser implements Externalizable {
     private static Serializable readInternal(byte type, DataInput in)
             throws IOException, ClassNotFoundException {
         return switch (type) {
-            case ZRULES  -> ZoneRules.readExternal(in);
-            case ZOT     -> ZoneOffsetTransition.readExternal(in);
+            case ZRULES -> ZoneRules.readExternal(in);
+            case ZOT -> ZoneOffsetTransition.readExternal(in);
             case ZOTRULE -> ZoneOffsetTransitionRule.readExternal(in);
             default -> throw new StreamCorruptedException("Unknown serialized type");
         };

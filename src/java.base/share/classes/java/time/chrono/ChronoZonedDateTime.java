@@ -212,7 +212,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
         if (field instanceof ChronoField chronoField) {
             return switch (chronoField) {
                 case INSTANT_SECONDS -> toEpochSecond();
-                case OFFSET_SECONDS  -> getOffset().getTotalSeconds();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
                 default -> toLocalDateTime().getLong(field);
             };
         }

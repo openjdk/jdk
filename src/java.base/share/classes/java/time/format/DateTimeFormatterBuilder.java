@@ -2788,9 +2788,9 @@ public final class DateTimeFormatterBuilder {
             } else {
                 switch (signStyle) {
                     case NORMAL, EXCEEDS_PAD, ALWAYS -> buf.append(decimalStyle.getNegativeSign());
-                    case NOT_NEGATIVE                -> throw new DateTimeException("Field " + field +
-                                                            " cannot be printed as the value " + value +
-                                                            " cannot be negative according to the SignStyle");
+                    case NOT_NEGATIVE -> throw new DateTimeException("Field " + field +
+                                             " cannot be printed as the value " + value +
+                                             " cannot be negative according to the SignStyle");
                 }
             }
             for (int i = 0; i < minWidth - str.length(); i++) {
