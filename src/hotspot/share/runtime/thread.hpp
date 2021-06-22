@@ -1416,17 +1416,17 @@ class JavaThread: public Thread {
 
  public:
   // Returns the running thread as a JavaThread
-  static inline JavaThread* current() {
+  static JavaThread* current() {
     return JavaThread::cast(Thread::current());
   }
 
   // Casts
-  static inline JavaThread* cast(Thread* t) {
+  static JavaThread* cast(Thread* t) {
     assert(t->is_Java_thread(), "incorrect cast to JavaThread");
     return static_cast<JavaThread*>(t);
   }
 
-  static inline const JavaThread* cast(const Thread* t) {
+  static const JavaThread* cast(const Thread* t) {
     assert(t->is_Java_thread(), "incorrect cast to const JavaThread");
     return static_cast<const JavaThread*>(t);
   }
