@@ -340,7 +340,7 @@
           "percentage of the currently used memory.")                       \
           range(0.0, 1.0)                                                   \
                                                                             \
-  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                      \
+  product(bool, G1UsePreventiveGC, true, DIAGNOSTIC,                        \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
            section of the heap.")
