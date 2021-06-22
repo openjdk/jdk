@@ -447,17 +447,17 @@ public final class JapaneseDate
         if (field instanceof ChronoField) {
             if (isSupported(field)) {
                 ChronoField f = (ChronoField) field;
-                switch (f) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case YEAR_OF_ERA: {
+                return switch (f) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case YEAR_OF_ERA -> {
                         Calendar jcal = Calendar.getInstance(JapaneseChronology.LOCALE);
                         jcal.set(Calendar.ERA, era.getValue() + JapaneseEra.ERA_OFFSET);
                         jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
-                        return ValueRange.of(1, jcal.getActualMaximum(Calendar.YEAR));
+                        yield ValueRange.of(1, jcal.getActualMaximum(Calendar.YEAR));
                     }
-                }
-                return getChronology().range(f);
+                    default -> getChronology().range(f);
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }

@@ -167,50 +167,21 @@ final class Ser implements Externalizable {
     static void writeInternal(byte type, Object object, ObjectOutput out) throws IOException {
         out.writeByte(type);
         switch (type) {
-            case DURATION_TYPE:
-                ((Duration) object).writeExternal(out);
-                break;
-            case INSTANT_TYPE:
-                ((Instant) object).writeExternal(out);
-                break;
-            case LOCAL_DATE_TYPE:
-                ((LocalDate) object).writeExternal(out);
-                break;
-            case LOCAL_DATE_TIME_TYPE:
-                ((LocalDateTime) object).writeExternal(out);
-                break;
-            case LOCAL_TIME_TYPE:
-                ((LocalTime) object).writeExternal(out);
-                break;
-            case ZONE_REGION_TYPE:
-                ((ZoneRegion) object).writeExternal(out);
-                break;
-            case ZONE_OFFSET_TYPE:
-                ((ZoneOffset) object).writeExternal(out);
-                break;
-            case ZONE_DATE_TIME_TYPE:
-                ((ZonedDateTime) object).writeExternal(out);
-                break;
-            case OFFSET_TIME_TYPE:
-                ((OffsetTime) object).writeExternal(out);
-                break;
-            case OFFSET_DATE_TIME_TYPE:
-                ((OffsetDateTime) object).writeExternal(out);
-                break;
-            case YEAR_TYPE:
-                ((Year) object).writeExternal(out);
-                break;
-            case YEAR_MONTH_TYPE:
-                ((YearMonth) object).writeExternal(out);
-                break;
-            case MONTH_DAY_TYPE:
-                ((MonthDay) object).writeExternal(out);
-                break;
-            case PERIOD_TYPE:
-                ((Period) object).writeExternal(out);
-                break;
-            default:
-                throw new InvalidClassException("Unknown serialized type");
+            case DURATION_TYPE         -> ((Duration) object).writeExternal(out);
+            case INSTANT_TYPE          -> ((Instant) object).writeExternal(out);
+            case LOCAL_DATE_TYPE       -> ((LocalDate) object).writeExternal(out);
+            case LOCAL_DATE_TIME_TYPE  -> ((LocalDateTime) object).writeExternal(out);
+            case LOCAL_TIME_TYPE       -> ((LocalTime) object).writeExternal(out);
+            case ZONE_REGION_TYPE      -> ((ZoneRegion) object).writeExternal(out);
+            case ZONE_OFFSET_TYPE      -> ((ZoneOffset) object).writeExternal(out);
+            case ZONE_DATE_TIME_TYPE   -> ((ZonedDateTime) object).writeExternal(out);
+            case OFFSET_TIME_TYPE      -> ((OffsetTime) object).writeExternal(out);
+            case OFFSET_DATE_TIME_TYPE -> ((OffsetDateTime) object).writeExternal(out);
+            case YEAR_TYPE             -> ((Year) object).writeExternal(out);
+            case YEAR_MONTH_TYPE       -> ((YearMonth) object).writeExternal(out);
+            case MONTH_DAY_TYPE        -> ((MonthDay) object).writeExternal(out);
+            case PERIOD_TYPE           -> ((Period) object).writeExternal(out);
+            default -> throw new InvalidClassException("Unknown serialized type");
         }
     }
 
