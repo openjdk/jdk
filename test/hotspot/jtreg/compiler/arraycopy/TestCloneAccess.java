@@ -25,6 +25,8 @@
  * @test
  * @bug 8248791
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) where loads are wrongly replaced by zero.
+ * @requires vm.compiler2.enabled | vm.graal.enabled
+ *
  * @run main/othervm -XX:-ReduceBulkZeroing
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccess::*
  *                   compiler.arraycopy.TestCloneAccess

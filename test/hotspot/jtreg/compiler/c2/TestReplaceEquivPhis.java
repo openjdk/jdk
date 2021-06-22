@@ -25,6 +25,7 @@
  * @test
  * @bug 8243670
  * @summary Unexpected test result caused by C2 MergeMemNode::Ideal
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xcomp -XX:-SplitIfBlocks
  *      -XX:CompileOnly=compiler.c2.TestReplaceEquivPhis::test

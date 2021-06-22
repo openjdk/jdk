@@ -27,6 +27,7 @@
  * @bug 8235332 8248226
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) fields with StressGCM
  * @library /
+ * @requires vm.compiler2.enabled | vm.graal.enabled
  *
  * @run main/othervm -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccessStressGCM::test

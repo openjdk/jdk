@@ -25,6 +25,8 @@
  * @test
  * @bug 8229855 8238812
  * @summary Test jump table with key value that gets out of bounds after loop unrolling.
+ * @requires vm.compiler2.enabled
+ *
  * @run main/othervm -XX:CompileCommand=dontinline,compiler.c2.TestJumpTable::test*
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:-UseSwitchProfiling
  *                   compiler.c2.TestJumpTable
