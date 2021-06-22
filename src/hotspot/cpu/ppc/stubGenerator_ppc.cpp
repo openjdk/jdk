@@ -3775,8 +3775,6 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister  vec_special_case_char   = VR3;
     VectorRegister  pack_rshift             = VR4;
     VectorRegister  pack_lshift             = VR5;
-    // P10+
-    VectorRegister  vec_0x3fs               = VR4; // safe to reuse pack_rshift's register
 
     // VSR Constants
     VectorSRegister offsetLUT               = VSR0;
@@ -3838,15 +3836,11 @@ class StubGenerator: public StubCodeGenerator {
     // Load constant vec registers that need to be loaded from memory
     __ load_const_optimized(const_ptr, (address)&bitposLUT_val, tmp_reg);
     __ lxv(bitposLUT, 0, const_ptr);
-    if (PowerArchitecturePPC64 >= 10) {
-        __ load_const_optimized(const_ptr, (address)&p10_pack_permute_val, tmp_reg);
-    } else {
-        __ load_const_optimized(const_ptr, (address)&pack_rshift_val, tmp_reg);
-        __ lxv(pack_rshift->to_vsr(), 0, const_ptr);
-        __ load_const_optimized(const_ptr, (address)&pack_lshift_val, tmp_reg);
-        __ lxv(pack_lshift->to_vsr(), 0, const_ptr);
-        __ load_const_optimized(const_ptr, (address)&pack_permute_val, tmp_reg);
-    }
+    __ load_const_optimized(const_ptr, (address)&pack_rshift_val, tmp_reg);
+    __ lxv(pack_rshift->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&pack_lshift_val, tmp_reg);
+    __ lxv(pack_lshift->to_vsr(), 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&pack_permute_val, tmp_reg);
     __ lxv(pack_permute, 0, const_ptr);
 
     // Splat the constants that can use xxspltib
@@ -3854,9 +3848,6 @@ class StubGenerator: public StubCodeGenerator {
     __ xxspltib(vec_4s->to_vsr(), 4);
     __ xxspltib(vec_8s->to_vsr(), 8);
     __ xxspltib(vec_0xfs, 0xf);
-    if (PowerArchitecturePPC64 >= 10) {
-        __ xxspltib(vec_0x3fs->to_vsr(), 0x3f);
-    }
 
     // The rest of the constants use different values depending on the
     // setting of isURL
@@ -3955,100 +3946,63 @@ class StubGenerator: public StubCodeGenerator {
         // * Strings of 0's are a field of zeros with the shown length, and
         //   likewise for strings of 1's.
 
-        if (PowerArchitecturePPC64 >= 10) {
-            // Note that only e8..e15 are shown here because the extract bit
-            // pattern is the same in e0..e7.
-            //
-            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
-            // |    Vector     |     e8      |          e9          |         e10          |     e11     |     e12     |         e13          |         e14          |     e15     |
-            // |    Element    |             |                      |                      |             |             |                      |                      |             |
-            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
-            // | after vaddudb |  00hhhhhh   |       00gggggg       |       00ffffff       |  00eeeeee   |  00dddddd   |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
-            // |               | 00||b5:2..7 | 00||b4:4..7||b5:0..1 | 00||b3:6..7||b4:0..3 | 00||b3:0..5 | 00||b2:2..7 | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
-            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
-            // |  after xxbrd  |  00aaaaaa   |       00bbbbbb       |       00cccccc       |  00dddddd   |  00eeeeee   |       00ffffff       |       00gggggg       |  00hhhhhh   |
-            // |               | 00||b0:0..5 | 00||b0:6..7||b1:0..3 | 00||b1:4..7||b2:0..1 | 00||b2:2..7 | 00||b3:0..5 | 00||b3:6..7||b4:0..3 | 00||b4:4..7||b5:0..1 | 00||b5:2..7 |
-            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
-            // |   vec_0x3fs   |  00111111   |       00111111       |       00111111       |  00111111   |  00111111   |       00111111       |       00111111       |  00111111   |
-            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
-            // | after vpextd  |  00000000   |       00000000       |       aaaaaabb       |  bbbbcccc   |  ccdddddd   |       eeeeeeff       |       ffffgggg       |  gghhhhhh   |
-            // |               |  00000000   |       00000000       |       b0:0..7        |   b1:0..7   |   b2:0..7   |       b3:0..7        |       b4:0..7        |   b5:0..7   |
-            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
+        // Note that only e12..e15 are shown here because the shifting
+        // and OR'ing pattern replicates for e8..e11, e4..7, and
+        // e0..e3.
+        //
+        // +======================+=================+======================+======================+=============+
+        // |        Vector        |       e12       |         e13          |         e14          |     e15     |
+        // |       Element        |                 |                      |                      |             |
+        // +======================+=================+======================+======================+=============+
+        // |    after vaddubm     |    00dddddd     |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
+        // |                      |   00||b2:2..7   | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // |     pack_lshift      |                 |         << 6         |         << 4         |    << 2     |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // |     l after vslb     |    00dddddd     |       cc000000       |       bbbb0000       |  aaaaaa00   |
+        // |                      |   00||b2:2..7   |   b2:0..1||000000    |    b1:0..3||0000     | b0:0..5||00 |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // |     l after vslo     |    cc000000     |       bbbb0000       |       aaaaaa00       |  00000000   |
+        // |                      | b2:0..1||000000 |    b1:0..3||0000     |     b0:0..5||00      |  00000000   |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // |     pack_rshift      |                 |         >> 2         |         >> 4         |             |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // |     r after vsrb     |    00dddddd     |       0000cccc       |       000000bb       |  00aaaaaa   |
+        // |                      |   00||b2:2..7   |    0000||b1:4..7     |   000000||b0:6..7    | 00||b0:0..5 |
+        // +----------------------+-----------------+----------------------+----------------------+-------------+
+        // | gathered after xxlor |    ccdddddd     |       bbbbcccc       |       aaaaaabb       |  00aaaaaa   |
+        // |                      |     b2:0..7     |       b1:0..7        |       b0:0..7        | 00||b0:0..5 |
+        // +======================+=================+======================+======================+=============+
+        //
+        // Note: there is a typo in the above-linked paper that shows the result of the gathering process is:
+        // [ddddddcc|bbbbcccc|aaaaaabb]
+        // but should be:
+        // [ccdddddd|bbbbcccc|aaaaaabb]
+        //
+        __ vslb(l, input, pack_lshift);
+        // vslo of vec_8s shifts the vector by one octet toward lower
+        // element numbers, discarding element 0.  This means it actually
+        // shifts to the right (not left) according to the order of the
+        // table above.
+        __ vslo(l, l, vec_8s);
+        __ vsrb(r, input, pack_rshift);
+        __ xxlor(gathered->to_vsr(), l->to_vsr(), r->to_vsr());
 
-            __ xxbrd(input->to_vsr(), input->to_vsr());
-            __ vpextd(gathered, input, vec_0x3fs);
-
-            // Final rearrangement of bytes into their correct positions.
-            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
-            // |      Vector      | e0 | e1 | e2 | e3 | e4  | e5  | e6  | e7  | e8 | e9 | e10 | e11 | e12 | e13 | e14 | e15 |
-            // |     Elements     |    |    |    |    |     |     |     |     |    |    |     |     |     |     |     |     |
-            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
-            // |   after vpextd   | 0  | 0  | b6 | b7 | b8  | b9  | b10 | b11 | 0  | 0  | b0  | b1  | b2  | b3  | b4  | b5  |
-            // +------------------+----+----+----+----+-----+-----+-----+-----+----+----+-----+-----+-----+-----+-----+-----+
-            // | p10_pack_permute | 0  | 0  | 0  | 0  |  7  |  6  |  5  |  4  | 3  | 2  | 15  | 14  | 13  | 12  | 11  | 10  |
-            // +------------------+----+----+----+----+-----+-----+-----+-----+----+----+-----+-----+-----+-----+-----+-----+
-            // |   after xxperm   | 0  | 0  | 0  | 0  | b11 | b10 | b9  | b8  | b7 | b6 | b5  | b4  | b3  | b2  | b1  | b0  |
-            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
-
-        } else {
-            // Note that only e12..e15 are shown here because the shifting
-            // and OR'ing pattern replicates for e8..e11, e4..7, and
-            // e0..e3.
-            //
-            // +======================+=================+======================+======================+=============+
-            // |        Vector        |       e12       |         e13          |         e14          |     e15     |
-            // |       Element        |                 |                      |                      |             |
-            // +======================+=================+======================+======================+=============+
-            // |    after vaddubm     |    00dddddd     |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
-            // |                      |   00||b2:2..7   | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // |     pack_lshift      |                 |         << 6         |         << 4         |    << 2     |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // |     l after vslb     |    00dddddd     |       cc000000       |       bbbb0000       |  aaaaaa00   |
-            // |                      |   00||b2:2..7   |   b2:0..1||000000    |    b1:0..3||0000     | b0:0..5||00 |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // |     l after vslo     |    cc000000     |       bbbb0000       |       aaaaaa00       |  00000000   |
-            // |                      | b2:0..1||000000 |    b1:0..3||0000     |     b0:0..5||00      |  00000000   |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // |     pack_rshift      |                 |         >> 2         |         >> 4         |             |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // |     r after vsrb     |    00dddddd     |       0000cccc       |       000000bb       |  00aaaaaa   |
-            // |                      |   00||b2:2..7   |    0000||b1:4..7     |   000000||b0:6..7    | 00||b0:0..5 |
-            // +----------------------+-----------------+----------------------+----------------------+-------------+
-            // | gathered after xxlor |    ccdddddd     |       bbbbcccc       |       aaaaaabb       |  00aaaaaa   |
-            // |                      |     b2:0..7     |       b1:0..7        |       b0:0..7        | 00||b0:0..5 |
-            // +======================+=================+======================+======================+=============+
-            //
-            // Note: there is a typo in the above-linked paper that shows the result of the gathering process is:
-            // [ddddddcc|bbbbcccc|aaaaaabb]
-            // but should be:
-            // [ccdddddd|bbbbcccc|aaaaaabb]
-            //
-            __ vslb(l, input, pack_lshift);
-            // vslo of vec_8s shifts the vector by one octet toward lower
-            // element numbers, discarding element 0.  This means it actually
-            // shifts to the right (not left) according to the order of the
-            // table above.
-            __ vslo(l, l, vec_8s);
-            __ vsrb(r, input, pack_rshift);
-            __ xxlor(gathered->to_vsr(), l->to_vsr(), r->to_vsr());
-
-            // Final rearrangement of bytes into their correct positions.
-            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
-            // |    Vector    |  e0  |  e1  |  e2  |  e3  | e4  | e5  | e6 | e7 | e8 | e9 | e10 | e11 | e12 | e13 | e14 | e15 |
-            // |   Elements   |      |      |      |      |     |     |    |    |    |    |     |     |     |     |     |     |
-            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
-            // | after xxlor  | b11  | b10  |  b9  |  xx  | b8  | b7  | b6 | xx | b5 | b4 | b3  | xx  | b2  | b1  | b0  | xx  |
-            // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
-            // | pack_permute |  0   |  0   |  0   |  0   |  0  |  1  | 2  | 4  | 5  | 6  |  8  |  9  | 10  | 12  | 13  | 14  |
-            // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
-            // | after xxperm | b11* | b11* | b11* | b11* | b11 | b10 | b9 | b8 | b7 | b6 | b5  | b4  | b3  | b2  | b1  | b0  |
-            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
-            // xx bytes are not used to form the final data
-            // b0..b15 are the decoded and reassembled 8-bit bytes of data
-            // b11 with asterisk is a "don't care", because these bytes will be
-            // overwritten on the next iteration.
-        }
+        // Final rearrangement of bytes into their correct positions.
+        // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+        // |    Vector    |  e0  |  e1  |  e2  |  e3  | e4  | e5  | e6 | e7 | e8 | e9 | e10 | e11 | e12 | e13 | e14 | e15 |
+        // |   Elements   |      |      |      |      |     |     |    |    |    |    |     |     |     |     |     |     |
+        // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+        // | after xxlor  | b11  | b10  |  b9  |  xx  | b8  | b7  | b6 | xx | b5 | b4 | b3  | xx  | b2  | b1  | b0  | xx  |
+        // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
+        // | pack_permute |  0   |  0   |  0   |  0   |  0  |  1  | 2  | 4  | 5  | 6  |  8  |  9  | 10  | 12  | 13  | 14  |
+        // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
+        // | after xxperm | b11* | b11* | b11* | b11* | b11 | b10 | b9 | b8 | b7 | b6 | b5  | b4  | b3  | b2  | b1  | b0  |
+        // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+        // xx bytes are not used to form the final data
+        // b0..b15 are the decoded and reassembled 8-bit bytes of data
+        // b11 with asterisk is a "don't care", because these bytes will be
+        // overwritten on the next iteration.
         __ xxperm(gathered->to_vsr(), gathered->to_vsr(), pack_permute);
 
         // We cannot use a static displacement on the store, since it's a
