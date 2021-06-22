@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.JDWP;
 import jdk.test.lib.process.ProcessTools;
 
 public class RunToExit {
@@ -95,16 +95,12 @@ public class RunToExit {
         return p;
     }
 
-    /* warm-up predicate for debuggee */
-    private static Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(.+)\\b");
-
     private static boolean isTransportListening(String line) {
-        Matcher m = listenRegexp.matcher(line);
-        if (!m.matches()) {
+        JDWP.ListenAddress addr = JDWP.parseListenAddress(line);
+        if (addr == null) {
             return false;
         }
-        // address is 2nd group
-        address = m.group(2);
+        address = addr.address();
         return true;
     }
 
