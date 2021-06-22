@@ -708,14 +708,14 @@ public final class Year
     @Override
     public Year plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
+            return switch (chronoUnit) {
                 case YEARS     -> plusYears(amountToAdd);
                 case DECADES   -> plusYears(Math.multiplyExact(amountToAdd, 10));
                 case CENTURIES -> plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA -> plusYears(Math.multiplyExact(amountToAdd, 1000));
                 case ERAS      -> with(ERA, Math.addExact(getLong(ERA), amountToAdd));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
