@@ -25,7 +25,6 @@
 #define SHARE_LOGGING_LOGDECORATORS_HPP
 
 #include "utilities/globalDefinitions.hpp"
-#include "metaprogramming/primitiveConversions.hpp"
 
 class outputStream;
 
@@ -60,11 +59,6 @@ class outputStream;
 // declared above. For example, logging with 'uptime, level, tags' decorators results in:
 // [0,943s][info   ][logging] message.
 class LogDecorators {
-  friend class PrimitiveConversions::Translate<LogDecorators>;
-
- #ifdef ASSERT
-  friend class LogFileStreamOutput;
- #endif
  public:
   enum Decorator {
 #define DECORATOR(name, abbr) name##_decorator,
@@ -120,16 +114,6 @@ class LogDecorators {
   }
 
   bool parse(const char* decorator_args, outputStream* errstream = NULL);
-};
-
-// to support Atomic::store
-template<>
-struct PrimitiveConversions::Translate<LogDecorators> : public std::true_type {
-  typedef LogDecorators Value;
-  typedef uint Decayed;
-
-  static Decayed decay(Value x) { return x._decorators; }
-  static Value recover(Decayed x) { return Value(x); }
 };
 
 #endif // SHARE_LOGGING_LOGDECORATORS_HPP

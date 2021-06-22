@@ -264,9 +264,10 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   // buffer see the new tags and decorators. It's worth noting that the synchronization happens even level does not
   // change.
   //
-  // LogDecorators is a set of decorators represented in a uint. We use Atomic::load/store to ensure atomicity and
-  // memory orders. ts->update_decorators(decorators) above is a union of the current decorators and new_decorators.
-  // It's safe to do output->set_decorators(decorators) below because new_decorators is a subset of relevant
+  // LogDecorator is a set of decorators represented in a uint. sizeof(uint) is not greater than a machine word,
+  // so store of it is atomic on the mainstream processors. I.e. readers see either its older value or new value.
+  // ts->update_decorators(decorators) above is a union operation of the existing decorators at different levels.
+  // It's safe to do output->set_decorators(decorators) below because the new decorators is a subset of relevant
   // tagsets decorators. After updating output's decorators, it is still safe to shrink all decorators of tagsets.
   //
   // Async logging is treated as an extention of synchronous log. Enqueuing instead of writing is still under
@@ -281,6 +282,8 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
 
   // It is now safe to set the new decorators for the actual output
   output->set_decorators(decorators);
+
+  OrderAccess::storestore();
 
   // Update the decorators on all tagsets to get rid of unused decorators
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {

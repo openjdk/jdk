@@ -31,14 +31,9 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/atomic.hpp"
 
 LogOutput::~LogOutput() {
   os::free(_config_string);
-}
-
-void LogOutput::set_decorators(const LogDecorators& decorators) {
-  Atomic::release_store_fence(&_decorators, decorators);
 }
 
 void LogOutput::describe(outputStream *out) {

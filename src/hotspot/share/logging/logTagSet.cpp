@@ -32,7 +32,6 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 
 LogTagSet*  LogTagSet::_list      = NULL;
@@ -61,7 +60,7 @@ void LogTagSet::update_decorators(const LogDecorators& decorator) {
   for (LogOutputList::Iterator it = _output_list.iterator(); it != _output_list.end(); it++) {
     new_decorators.combine_with((*it)->decorators());
   }
-  Atomic::release_store(&_decorators, new_decorators);
+  _decorators = new_decorators;
 }
 
 bool LogTagSet::has_output(const LogOutput* output) {
@@ -80,8 +79,7 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   // synchronizes _decorations as well. The order is guaranteed by
   // the implied memory order of Atomic::add().
   LogOutputList::Iterator it = _output_list.iterator(level);
-  LogDecorators decorators = Atomic::load_acquire(&_decorators);
-  LogDecorations decorations(level, *this, decorators);
+  LogDecorations decorations(level, *this, _decorators);
 
   for (; it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
@@ -90,8 +88,7 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
 
 void LogTagSet::log(const LogMessageBuffer& msg) {
   LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level());
-  LogDecorators decorators = Atomic::load_acquire(&_decorators);
-  LogDecorations decorations(LogLevel::Invalid, *this, decorators);
+  LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
 
   for (; it != _output_list.end(); it++) {
     (*it)->write(msg.iterator(it.level(), decorations));

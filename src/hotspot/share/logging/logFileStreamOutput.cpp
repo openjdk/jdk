@@ -55,10 +55,9 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
   char buf[LogDecorations::max_decoration_size + 1];
 
-  LogDecorators decorators = Atomic::load_acquire(&_decorators);
   for (uint i = 0; i < LogDecorators::Count; i++) {
     LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);
-    if (!decorators.is_decorator(decorator)) {
+    if (!_decorators.is_decorator(decorator)) {
       continue;
     }
 
@@ -124,14 +123,6 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
   int written = 0;
   FileLocker flocker(_stream);
   if (use_decorations) {
-#ifdef ASSERT
-    // sanity check, it will emit more information if assertion fails
-    // LogOutput::_decorators must always be subset of LogDecorations::_decorators.
-    uint bitmask = (_decorators._decorators) & (decorations._decorators._decorators);
-    vmassert(bitmask == _decorators._decorators, "LogOutput: " UINT32_FORMAT " decorations: " UINT32_FORMAT " message = %s",
-            _decorators._decorators, decorations._decorators._decorators, msg);
-#endif
-
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }

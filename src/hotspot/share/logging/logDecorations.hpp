@@ -36,9 +36,6 @@ class outputStream;
 // in the context of asynchronous logging. Therefore size of this object matters.
 class LogDecorations {
 
-#ifdef ASSERT
-  friend class LogFileStreamOutput; // just for debug purpose.
-#endif
   const jlong _millis;            // for "time", "utctime", "timemillis"
   const jlong _nanos;             // for "timenanos"
   const double _elapsed_seconds;  // for "uptime", "uptimemillis", "uptimenanos"
