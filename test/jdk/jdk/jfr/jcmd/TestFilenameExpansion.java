@@ -34,39 +34,44 @@ import jdk.test.lib.jfr.FileHelper;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jcmd.TestFilenameExpansion
+ * @run main/othervm -XX:StartFlightRecording=name=test,filename=output_%p.jfr jdk.jfr.jcmd.TestFilenameExpansion
  */
 public class TestFilenameExpansion {
 
     public static void main(String[] args) throws Exception {
         String pid = Long.toString(ProcessHandle.current().pid());
-        test("output.jfr", "output.jfr");
-        test("output_%p.jfr", "output_" + pid + ".jfr");
-        test("%p_output_%p.jfr", pid + "_output_" + pid + ".jfr");
-        test("%%_output_%p.jfr", "%_output_" + pid + ".jfr");
-        test("%a_output_%%", "%a_output_%");
+
+        JcmdHelper.jcmd("JFR.stop name=test");
+        checkFileAndDelete("output_" + pid + ".jfr");
+
+        testJcmd("output.jfr", "output.jfr");
+        testJcmd("output_%p.jfr", "output_" + pid + ".jfr");
+        testJcmd("%p_output_%p.jfr", pid + "_output_" + pid + ".jfr");
+        testJcmd("%%_output_%p.jfr", "%_output_" + pid + ".jfr");
+        testJcmd("%a_output_%%", "%a_output_%");
     }
 
-    private static void test(String name, String finalName) throws Exception {
-        File file = new File(finalName);
-
+    private static void testJcmd(String name, String finalName) throws Exception {
         // set when JFR.start
         JcmdHelper.jcmd("JFR.start name=test filename=" + name);
         JcmdHelper.jcmd("JFR.dump name=test");
-        checkFileAndDelete(file);
+        checkFileAndDelete(finalName);
+        JcmdHelper.jcmd("JFR.stop name=test");
 
         // set when JFR.dump
         JcmdHelper.jcmd("JFR.start name=test");
         JcmdHelper.jcmd("JFR.dump name=test filename=" + name);
-        checkFileAndDelete(file);
+        checkFileAndDelete(finalName);
+        JcmdHelper.jcmd("JFR.stop name=test");
 
         // set when JFR.stop
         JcmdHelper.jcmd("JFR.start name=test");
         JcmdHelper.jcmd("JFR.stop name=test filename=" + name);
-        checkFileAndDelete(file);
+        checkFileAndDelete(finalName);
     }
 
-    private static void checkFileAndDelete(File file) {
+    private static void checkFileAndDelete(String filename) {
+        File file = new File(filename);
         Asserts.assertTrue(file.exists(), file.getAbsolutePath() + " does not exist");
         Asserts.assertTrue(file.isFile(), file.getAbsolutePath() + " is not a file");
         Asserts.assertTrue(file.delete(), "Delete " + file.getAbsolutePath() + " failed");
