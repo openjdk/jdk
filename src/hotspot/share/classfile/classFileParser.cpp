@@ -5053,8 +5053,6 @@ void ClassFileParser::verify_legal_name_with_signature(const Symbol* name,
                                                        const Symbol* signature,
                                                        TRAPS) const {
   if (!_need_verify) {
-    // make sure caller's args_size will be less than 0 even for non-static
-    // method so it will be recomputed in compute_size_of_parameters().
     return;
   }
 
