@@ -37,10 +37,10 @@ import java.util.function.Function;
 public class Preconditions {
 
     /**
-     * Utility classes for creating the desired exception which can be used
-     * for {@code outOfBoundsExceptionFormatter}.
+     * Utility exception formatters which can be used in {@code Preconditions}
+     * check functions below.
      *
-     * @implNote These inner classes can be syntactically replaced by lambda
+     * These anonymous inner classes can be syntactically replaced by lambda
      * expression or method reference, but it's not feasible in practices,
      * because {@code Preconditions} is used in many fundamental classes such
      * as {@code java.lang.String}, lambda expressions or method references
@@ -48,38 +48,29 @@ public class Preconditions {
      * calls when fundamental classes is used in lambda expressions or method
      * references.
      */
-    private static class StringIndexOutOfBoundsExceptionProducer implements
-                    Function<String, StringIndexOutOfBoundsException> {
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException>
+            SIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
         @Override
         public StringIndexOutOfBoundsException apply(String s) {
             return new StringIndexOutOfBoundsException(s);
         }
-    }
+    });
 
-    private static class ArrayIndexOutOfBoundsExceptionProducer implements
-                    Function<String, ArrayIndexOutOfBoundsException> {
+    public static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
+            AIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
         @Override
         public ArrayIndexOutOfBoundsException apply(String s) {
             return new ArrayIndexOutOfBoundsException(s);
         }
-    }
+    });
 
-    private static class IndexOutOfBoundsExceptionProducer implements
-                    Function<String, IndexOutOfBoundsException> {
+    public static final BiFunction<String,List<Number>, IndexOutOfBoundsException>
+            IOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
         @Override
         public IndexOutOfBoundsException apply(String s) {
             return new IndexOutOfBoundsException(s);
         }
-    }
-
-    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> SIOOBE_FORMATTER
-            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
-
-    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> AIOOBE_FORMATTER
-            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
-
-    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException> IOOBE_FORMATTER
-            = Preconditions.outOfBoundsExceptionFormatter(new StringIndexOutOfBoundsExceptionProducer());
+    });
 
     /**
      * Maps out-of-bounds values to a runtime exception.
