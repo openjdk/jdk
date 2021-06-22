@@ -3645,6 +3645,8 @@ class StubGenerator: public StubCodeGenerator {
 
 #define VEC_ALIGN __attribute__ ((aligned(16)))
 
+#define BLK_OFFSETOF(x) (offsetof(constant_block, x))
+
 // In little-endian mode, the lxv instruction loads the element at EA into
 // element 15 of the the vector register, EA+1 goes into element 14, and so
 // on.
@@ -3660,67 +3662,76 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "base64_decodeBlock");
     address start   = __ function_entry();
 
-    static const signed char VEC_ALIGN offsetLUT_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      0,   0, PLS, DIG,  UC,  UC,  LC,  LC,
-      0,   0,   0,   0,   0,   0,   0,   0 ) };
+    typedef struct {
+      signed char offsetLUT_val[16];
+      signed char offsetLUT_URL_val[16];
+      unsigned char maskLUT_val[16];
+      unsigned char maskLUT_URL_val[16];
+      unsigned char bitposLUT_val[16];
+      unsigned char pack_lshift_val[16];
+      unsigned char pack_rshift_val[16];
+      unsigned char pack_permute_val[16];
+    } constant_block;
 
-    static const signed char VEC_ALIGN offsetLUT_URL_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      0,   0, HYP, DIG,  UC,  UC,  LC,  LC,
-      0,   0,   0,   0,   0,   0,   0,   0 ) };
+    static const constant_block VEC_ALIGN const_block = {
 
-    static const unsigned char VEC_ALIGN maskLUT_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      /* 0        */ (unsigned char)0b10101000,
-      /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
-                     (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
-                     (unsigned char)0b11111000,
-      /* 10       */ (unsigned char)0b11110000,
-      /* 11       */ (unsigned char)0b01010100,
-      /* 12 .. 14 */ (unsigned char)0b01010000, (unsigned char)0b01010000, (unsigned char)0b01010000,
-      /* 15       */ (unsigned char)0b01010100 ) };
+      .offsetLUT_val = {
+        ARRAY_TO_LXV_ORDER(
+        0,   0, PLS, DIG,  UC,  UC,  LC,  LC,
+        0,   0,   0,   0,   0,   0,   0,   0 ) },
 
-    static const unsigned char VEC_ALIGN maskLUT_URL_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      /* 0        */ (unsigned char)0b10101000,
-      /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
-                     (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
-                     (unsigned char)0b11111000,
-      /* 10       */ (unsigned char)0b11110000,
-      /* 11 .. 12 */ (unsigned char)0b01010000, (unsigned char)0b01010000,
-      /* 13       */ (unsigned char)0b01010100,
-      /* 14       */ (unsigned char)0b01010000,
-      /* 15       */ (unsigned char)0b01110000 ) };
+      .offsetLUT_URL_val = {
+        ARRAY_TO_LXV_ORDER(
+        0,   0, HYP, DIG,  UC,  UC,  LC,  LC,
+        0,   0,   0,   0,   0,   0,   0,   0 ) },
 
-    static const unsigned char VEC_ALIGN bitposLUT_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (unsigned char)0x80,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ) };
+      .maskLUT_val = {
+        ARRAY_TO_LXV_ORDER(
+        /* 0        */ (unsigned char)0b10101000,
+        /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                       (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                       (unsigned char)0b11111000,
+        /* 10       */ (unsigned char)0b11110000,
+        /* 11       */ (unsigned char)0b01010100,
+        /* 12 .. 14 */ (unsigned char)0b01010000, (unsigned char)0b01010000, (unsigned char)0b01010000,
+        /* 15       */ (unsigned char)0b01010100 ) },
 
-    static const unsigned char VEC_ALIGN pack_lshift_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2 ) };
+      .maskLUT_URL_val = {
+        ARRAY_TO_LXV_ORDER(
+        /* 0        */ (unsigned char)0b10101000,
+        /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                       (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                       (unsigned char)0b11111000,
+        /* 10       */ (unsigned char)0b11110000,
+        /* 11 .. 12 */ (unsigned char)0b01010000, (unsigned char)0b01010000,
+        /* 13       */ (unsigned char)0b01010100,
+        /* 14       */ (unsigned char)0b01010000,
+        /* 15       */ (unsigned char)0b01110000 ) },
 
-    static const unsigned char VEC_ALIGN pack_rshift_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-      0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0 ) };
+      .bitposLUT_val = {
+        ARRAY_TO_LXV_ORDER(
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (unsigned char)0x80,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ) },
 
-    // The first 4 index values are "don't care" because
-    // we only use the first 12 bytes of the vector,
-    // which are decoded from 16 bytes of Base64 characters.
-    static const unsigned char VEC_ALIGN pack_permute_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-       0, 0, 0, 0,
-       0,  1,  2,
-       4,  5,  6,
-       8,  9, 10,
-      12, 13, 14 ) };
+      .pack_lshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2 ) },
 
-    static const unsigned char VEC_ALIGN p10_pack_permute_val[16] = {
-      ARRAY_TO_LXV_ORDER(
-       0,  0,  0,  0,  7,  6,  5,  4,
-       3,  2, 15, 14, 13, 12, 11, 10 ) };
+      .pack_rshift_val = {
+        ARRAY_TO_LXV_ORDER(
+        0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0 ) },
+
+      // The first 4 index values are "don't care" because
+      // we only use the first 12 bytes of the vector,
+      // which are decoded from 16 bytes of Base64 characters.
+      .pack_permute_val = {
+        ARRAY_TO_LXV_ORDER(
+         0, 0, 0, 0,
+         0,  1,  2,
+         4,  5,  6,
+         8,  9, 10,
+        12, 13, 14 ) }
+    };
 
     // loop_unrolls needs to be a power of two so that the rounding can be
     // done using a mask.
@@ -3834,14 +3845,11 @@ class StubGenerator: public StubCodeGenerator {
     __ clrldi(dp, dp, 32);
 
     // Load constant vec registers that need to be loaded from memory
-    __ load_const_optimized(const_ptr, (address)&bitposLUT_val, tmp_reg);
-    __ lxv(bitposLUT, 0, const_ptr);
-    __ load_const_optimized(const_ptr, (address)&pack_rshift_val, tmp_reg);
-    __ lxv(pack_rshift->to_vsr(), 0, const_ptr);
-    __ load_const_optimized(const_ptr, (address)&pack_lshift_val, tmp_reg);
-    __ lxv(pack_lshift->to_vsr(), 0, const_ptr);
-    __ load_const_optimized(const_ptr, (address)&pack_permute_val, tmp_reg);
-    __ lxv(pack_permute, 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&const_block, tmp_reg);
+    __ lxv(bitposLUT, BLK_OFFSETOF(bitposLUT_val), const_ptr);
+    __ lxv(pack_rshift->to_vsr(), BLK_OFFSETOF(pack_rshift_val), const_ptr);
+    __ lxv(pack_lshift->to_vsr(), BLK_OFFSETOF(pack_lshift_val), const_ptr);
+    __ lxv(pack_permute, BLK_OFFSETOF(pack_permute_val), const_ptr);
 
     // Splat the constants that can use xxspltib
     __ xxspltib(vec_0s->to_vsr(), 0);
@@ -3855,20 +3863,16 @@ class StubGenerator: public StubCodeGenerator {
     __ beq(CCR0, not_URL);
 
     // isURL != 0 (true)
-    __ load_const_optimized(const_ptr, (address)&offsetLUT_URL_val, tmp_reg);
-    __ lxv(offsetLUT, 0, const_ptr);
-    __ load_const_optimized(const_ptr, (address)&maskLUT_URL_val, tmp_reg);
-    __ lxv(maskLUT, 0, const_ptr);
+    __ lxv(offsetLUT, BLK_OFFSETOF(offsetLUT_URL_val), const_ptr);
+    __ lxv(maskLUT, BLK_OFFSETOF(maskLUT_URL_val), const_ptr);
     __ xxspltib(vec_special_case_char->to_vsr(), '_');
     __ xxspltib(vec_special_case_offset, (unsigned char)US);
     __ b(calculate_size);
 
     // isURL = 0 (false)
     __ bind(not_URL);
-    __ load_const_optimized(const_ptr, (address)&offsetLUT_val, tmp_reg);
-    __ lxv(offsetLUT, 0, const_ptr);
-    __ load_const_optimized(const_ptr, (address)&maskLUT_val, tmp_reg);
-    __ lxv(maskLUT, 0, const_ptr);
+    __ lxv(offsetLUT, BLK_OFFSETOF(offsetLUT_val), const_ptr);
+    __ lxv(maskLUT, BLK_OFFSETOF(maskLUT_val), const_ptr);
     __ xxspltib(vec_special_case_char->to_vsr(), '/');
     __ xxspltib(vec_special_case_offset, (unsigned char)SLS);
 
@@ -4237,7 +4241,6 @@ class StubGenerator: public StubCodeGenerator {
         ARRAY_TO_LXV_ORDER(
         'w','x','y','z','0','1','2','3','4','5','6','7','8','9','-','_' ) }
     };
-    #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
     // Number of bytes to process in each pass through the main loop.
     // 12 of the 16 bytes from each lxv are encoded to 16 Base64 bytes.
