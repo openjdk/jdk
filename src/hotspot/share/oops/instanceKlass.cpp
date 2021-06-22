@@ -683,7 +683,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_annotations(NULL);
 
   if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(this);
+    SystemDictionaryShared::handle_class_unloading(this);
   }
 }
 
@@ -2403,8 +2403,8 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 void InstanceKlass::remove_unshareable_info() {
 
   if (can_be_verified_at_dumptime()) {
-    // Set the old class bit.
-    set_is_shared_old_klass();
+    // Remember this so we can avoid walking the hierarchy at runtime.
+    set_verified_at_dump_time();
   }
 
   Klass::remove_unshareable_info();
@@ -2549,19 +2549,19 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
-    return true;
+    return false;
   }
-  if (java_super() != NULL && java_super()->can_be_verified_at_dumptime()) {
-    return true;
+  if (java_super() != NULL && !java_super()->can_be_verified_at_dumptime()) {
+    return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    if (interfaces->at(i)->can_be_verified_at_dumptime()) {
-      return true;
+    if (!interfaces->at(i)->can_be_verified_at_dumptime()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
 void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
@@ -2613,7 +2613,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
   ClassLoadingService::notify_class_unloaded(ik);
 
   if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(ik);
+    SystemDictionaryShared::handle_class_unloading(ik);
   }
 
   if (log_is_enabled(Info, class, unload)) {

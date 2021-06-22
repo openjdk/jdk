@@ -441,8 +441,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
             // blocked permanently. We record this as a deadlock.
             num_deadlocks++;
 
-            cycle->set_deadlock(true);
-
             // add this cycle to the deadlocks list
             if (deadlocks == NULL) {
               deadlocks = cycle;
@@ -483,8 +481,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else {
         // We have a (new) cycle
         num_deadlocks++;
-
-        cycle->set_deadlock(true);
 
         // add this cycle to the deadlocks list
         if (deadlocks == NULL) {
@@ -955,7 +951,6 @@ void ThreadSnapshot::metadata_do(void f(Metadata*)) {
 
 
 DeadlockCycle::DeadlockCycle() {
-  _is_deadlock = false;
   _threads = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _next = NULL;
 }

@@ -58,7 +58,10 @@ abstract class AbstractDCmd {
     // Called by native
     public abstract String[] printHelp();
 
-    // Called by native
+    // Called by native. The number of arguments for each command is
+    // reported to the DCmdFramework as a hardcoded number in native.
+    // This is to avoid an upcall as part of DcmdFramework enumerating existing commands.
+    // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
     // Called by native

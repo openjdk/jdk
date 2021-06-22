@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -50,16 +52,17 @@ void G1Arguments::initialize_alignments() {
   // around this we use the unaligned values for the heap.
   HeapRegion::setup_heap_region_size(MaxHeapSize);
 
-  // The remembered set needs the heap regions set up.
-  HeapRegionRemSet::setup_remset_size();
+  SpaceAlignment = HeapRegion::GrainBytes;
+  HeapAlignment = calculate_heap_alignment(SpaceAlignment);
+
+  // We need to initialize card set configuration as soon as heap region size is
+  // known as it depends on it and is used really early.
+  initialize_card_set_configuration();
   // Needs remembered set initialization as the ergonomics are based
   // on it.
   if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
-    FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RSetSparseRegionEntries);
+    FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RemSetArrayOfCardsEntries);
   }
-
-  SpaceAlignment = HeapRegion::GrainBytes;
-  HeapAlignment = calculate_heap_alignment(SpaceAlignment);
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
@@ -90,6 +93,8 @@ void G1Arguments::parse_verification_type(const char* type) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyConcurrentStart);
   } else if (strcmp(type, "mixed") == 0) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyMixed);
+  } else if (strcmp(type, "young-evac-fail") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyYoungEvacFail);
   } else if (strcmp(type, "remark") == 0) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyRemark);
   } else if (strcmp(type, "cleanup") == 0) {
@@ -98,7 +103,7 @@ void G1Arguments::parse_verification_type(const char* type) {
     G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyFull);
   } else {
     log_warning(gc, verify)("VerifyGCType: '%s' is unknown. Available types are: "
-                            "young-normal, concurrent-start, mixed, remark, cleanup and full", type);
+                            "young-normal, young-evac-fail, concurrent-start, mixed, remark, cleanup and full", type);
   }
 }
 
@@ -117,6 +122,40 @@ void G1Arguments::initialize_mark_stack_size() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
+}
+
+
+void G1Arguments::initialize_card_set_configuration() {
+  assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
+  // Array of Cards card set container globals.
+  const int LOG_M = 20;
+  uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
+
+  if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
+    uint num_cards_in_inline_ptr = G1CardSetConfiguration::num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
+    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr * 2,
+                                                    G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
+  }
+
+  // Round to next 8 byte boundary for array to maximize space usage.
+  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
+  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
+                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::BufferAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
+
+  // Howl card set container globals.
+  if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
+    FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(HeapRegion::CardsPerRegion,
+                                                                     G1RemSetArrayOfCardsEntries,
+                                                                     G1RemSetHowlMaxNumBuckets));
+  }
+
+  if (FLAG_IS_DEFAULT(G1RemSetHowlMaxNumBuckets)) {
+    FLAG_SET_ERGO(G1RemSetHowlMaxNumBuckets, MAX2(G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets));
+  } else if (G1RemSetHowlMaxNumBuckets < G1RemSetHowlNumBuckets) {
+    FormatBuffer<> buf("Maximum Howl card set container bucket size %u smaller than requested bucket size %u",
+                       G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets);
+    vm_exit_during_initialization(buf);
+  }
 }
 
 void G1Arguments::initialize() {
@@ -196,6 +235,14 @@ void G1Arguments::initialize() {
 
   initialize_mark_stack_size();
   initialize_verification_types();
+
+  // Verify that the maximum parallelism isn't too high to eventually overflow
+  // the refcount in G1CardSetContainer.
+  uint max_parallel_refinement_threads = G1ConcRefinementThreads + G1DirtyCardQueueSet::num_par_ids();
+  uint const divisor = 3;  // Safe divisor; we increment by 2 for each claim, but there is a small initial value.
+  if (max_parallel_refinement_threads > UINTPTR_MAX / divisor) {
+    vm_exit_during_initialization("Too large parallelism for remembered sets.");
+  }
 }
 
 void G1Arguments::initialize_heap_flags_and_sizes() {
