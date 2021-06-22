@@ -42,6 +42,7 @@ import javax.security.auth.callback.PasswordCallback;
 
 import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
 
+import jdk.internal.misc.InnocuousThread;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -912,10 +913,6 @@ public final class SunPKCS11 extends AuthProvider {
         private volatile boolean enabled;
 
         private TokenPoller(SunPKCS11 provider) {
-            super((ThreadGroup)null, "Poller-" + provider.getName());
-            setContextClassLoader(null);
-            setDaemon(true);
-            setPriority(Thread.MIN_PRIORITY);
             this.provider = provider;
             enabled = true;
         }
@@ -944,12 +941,23 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     // create the poller thread, if not already active
+    @SuppressWarnings("removal")
     private void createPoller() {
         if (poller != null) {
             return;
         }
         poller = new TokenPoller(this);
-        poller.start();
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Thread t = InnocuousThread.newSystemThread(
+                    "Poller " + getName(),
+                    poller);
+            assert t.getContextClassLoader() == null;
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY);
+            t.start();
+            return null;
+        });
+
     }
 
     // destroy the poller thread, if active
@@ -972,17 +980,10 @@ public final class SunPKCS11 extends AuthProvider {
         return (token != null) && token.isValid();
     }
 
-    private class NativeResourceCleaner extends Thread {
+    private class NativeResourceCleaner implements Runnable {
         private long sleepMillis = config.getResourceCleanerShortInterval();
         private int count = 0;
         boolean keyRefFound, sessRefFound;
-
-        private NativeResourceCleaner() {
-            super((ThreadGroup)null, "Cleanup-SunPKCS11");
-            setContextClassLoader(null);
-            setDaemon(true);
-            setPriority(Thread.MIN_PRIORITY);
-        }
 
         /*
          * The cleaner.shortInterval and cleaner.longInterval properties
@@ -1001,7 +1002,7 @@ public final class SunPKCS11 extends AuthProvider {
         public void run() {
             while (true) {
                 try {
-                    sleep(sleepMillis);
+                    Thread.sleep(sleepMillis);
                 } catch (InterruptedException ie) {
                     break;
                 }
@@ -1020,6 +1021,25 @@ public final class SunPKCS11 extends AuthProvider {
                 }
             }
         }
+    }
+
+    // create the cleaner thread, if not already active
+    @SuppressWarnings("removal")
+    private void createCleaner() {
+        if (cleaner != null) {
+            return;
+        }
+        cleaner = new NativeResourceCleaner();
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Thread t = InnocuousThread.newSystemThread(
+                    "Cleanup-SunPKCS11",
+                    cleaner);
+            assert t.getContextClassLoader() == null;
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY);
+            t.start();
+            return null;
+        });
     }
 
     // destroy the token. Called if we detect that it has been removed
@@ -1190,8 +1210,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         this.token = token;
         if (cleaner == null) {
-            cleaner = new NativeResourceCleaner();
-            cleaner.start();
+            createCleaner();
         }
     }
 
