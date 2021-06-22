@@ -222,6 +222,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
       [the toolchain type (or family) to use, use '--help' to show possible values @<:@platform dependent@:>@])])
 
   # Linux x86_64 needs higher binutils after 8265783
+  # (this really is a dependency on as version, but we take ld as a check for a general binutils version)
   if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
     TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.25"
   fi
