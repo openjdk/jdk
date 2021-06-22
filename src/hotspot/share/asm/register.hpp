@@ -45,8 +45,28 @@ class AbstractRegisterImpl {
   int value() const                              { return (int)(intx)this; }
 };
 
+#define AS_REGISTER(type,name)         ((type)name##_##type##EnumValue)
 
+#ifndef USE_EXTERN_CONST_FOR_REGISTER_DEFINITIONS
+
+// JDK-8269122: The use of "extern const" for Register definitions
+// generates poor code.
 //
+// The use of "extern const" for Register definitions is a historical
+// artefact that leads to excessive code size for class Assembler. The
+// old definitions for CONSTANT_REGISTER_DECLARATION et al are left
+// here in case some platform needs them.
+
+#define CONSTANT_REGISTER_DECLARATION(type, name, value)        \
+const type name = ((type)value)
+
+#define REGISTER_DECLARATION(type, name, value)                 \
+const type name = ((type)value)
+
+#define REGISTER_DEFINITION(type, name)
+
+#else
+
 // Macros for use in defining Register instances.  We'd like to be
 // able to simply define const instances of the RegisterImpl* for each
 // of the registers needed on a system in a header file.  However many
@@ -82,8 +102,6 @@ class AbstractRegisterImpl {
 // const Register G0 = ( ( Register ) G0_RegisterEnumValue ) ;
 //
 
-#define AS_REGISTER(type,name)         ((type)name##_##type##EnumValue)
-
 #define CONSTANT_REGISTER_DECLARATION(type, name, value) \
 extern const type name;                                  \
 enum { name##_##type##EnumValue = (value) }
@@ -94,6 +112,8 @@ enum { name##_##type##EnumValue = value##_##type##EnumValue }
 
 #define REGISTER_DEFINITION(type, name) \
 const type name = ((type)name##_##type##EnumValue)
+
+#endif // USE_EXTERN_CONST_FOR_REGISTER_DEFINITIONS
 
 #include CPU_HEADER(register)
 
