@@ -332,7 +332,7 @@ final class DCmdStart extends AbstractDCmd {
                                  hours, 0s)
 
                  filename        (Optional) Name of the file to which the flight recording data is
-                                 written when the recording is stopped. The string '%p' in the
+                                 written when the recording is stopped. The string '%%p' in the
                                  filename will be replaced with the PID. If no filename is given,
                                  a filename is generated from the PID and the current date and is
                                  placed in the directory where the process was started. The

@@ -227,7 +227,7 @@ final class DCmdDump extends AbstractDCmd {
                                  For example, "-12h", "-15m" or "-30s"
 
                  filename        (Optional) Name of the file to which the flight recording data is
-                                 dumped. The string '%p' in the filename will be replaced with the
+                                 dumped. The string '%%p' in the filename will be replaced with the
                                  PID. If no filename is given, a filename is generated from the PID
                                  and the current date. The filename may also be a directory in which
                                  case, the filename is generated from the PID and the current date in
