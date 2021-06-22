@@ -199,9 +199,12 @@ class G1CardSetAllocator {
   // G1CardSetContainer node management within the G1CardSetBuffers allocated
   // by this allocator.
 
+  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node);
+  typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> NodeStack;
+
   volatile bool _transfer_lock;
-  G1CardSetContainer::NodeStack _free_nodes_list;
-  G1CardSetContainer::NodeStack _pending_nodes_list;
+  NodeStack _free_nodes_list;
+  NodeStack _pending_nodes_list;
 
   volatile uint _num_pending_nodes;   // Number of nodes in the pending list.
   volatile uint _num_free_nodes;      // Number of nodes in the free list.
