@@ -37,6 +37,10 @@
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
 
+#if ! defined(_ALLBSD_SOURCE)
+void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel);
+#endif
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
@@ -78,25 +82,7 @@ Java_sun_nio_fs_UnixCopyFile_transfer
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-#if defined(_ALLBSD_SOURCE)
-    copyfile_state_t state;
-    if (cancel != NULL) {
-        state = copyfile_state_alloc();
-        copyfile_state_set(state, COPYFILE_STATE_STATUS_CB, fcopyfile_callback);
-        copyfile_state_set(state, COPYFILE_STATE_STATUS_CTX, (void*)cancel);
-    } else {
-        state = NULL;
-    }
-    if (fcopyfile(src, dst, state, COPYFILE_DATA) < 0) {
-        int errno_fcopyfile = errno;
-        if (state != NULL)
-            copyfile_state_free(state);
-        throwUnixException(env, errno_fcopyfile);
-        return;
-    }
-    if (state != NULL)
-        copyfile_state_free(state);
-#elif defined(__linux__)
+#if defined(__linux__)
     // Transfer within the kernel
     const size_t count = cancel != NULL ?
         1048576 :   // 1 MB to give cancellation a chance
@@ -117,9 +103,36 @@ Java_sun_nio_fs_UnixCopyFile_transfer
             return;
         }
     } while (bytes_sent > 0);
+
+    transfer(env, dst, src, cancel);
+#elif defined(_ALLBSD_SOURCE)
+    copyfile_state_t state;
+    if (cancel != NULL) {
+        state = copyfile_state_alloc();
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CB, fcopyfile_callback);
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CTX, (void*)cancel);
+    } else {
+        state = NULL;
+    }
+    if (fcopyfile(src, dst, state, COPYFILE_DATA) < 0) {
+        int errno_fcopyfile = errno;
+        if (state != NULL)
+            copyfile_state_free(state);
+        throwUnixException(env, errno_fcopyfile);
+        return;
+    }
+    if (state != NULL)
+        copyfile_state_free(state);
+#else
+    transfer(env, dst, src, cancel);
 #endif
-#if !defined(_ALLBSD_SOURCE)
-    // Transfer via user-space buffers
+}
+
+
+#if ! defined(_ALLBSD_SOURCE)
+// Transfer via user-space buffers
+void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
+{
     char buf[8192];
 
     for (;;) {
@@ -148,5 +161,5 @@ Java_sun_nio_fs_UnixCopyFile_transfer
             len -= n;
         } while (len > 0);
     }
-#endif
 }
+#endif
