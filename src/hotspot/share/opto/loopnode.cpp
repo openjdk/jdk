@@ -1771,34 +1771,6 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     Node* sfpt = outer_le->in(0);
     assert(sfpt->Opcode() == Op_SafePoint, "where's the safepoint?");
     Node* inner_out = sfpt->in(0);
-    if (inner_out->outcnt() != 1) {
-      ResourceMark rm;
-      Unique_Node_List wq;
-
-      for (DUIterator_Fast imax, i = inner_out->fast_outs(imax); i < imax; i++) {
-        Node* u = inner_out->fast_out(i);
-        if (u == sfpt) {
-          continue;
-        }
-        wq.clear();
-        wq.push(u);
-        bool found_sfpt = false;
-        for (uint next = 0; next < wq.size() && !found_sfpt; next++) {
-          Node* n = wq.at(next);
-          for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax && !found_sfpt; i++) {
-            Node* u = n->fast_out(i);
-            if (u == sfpt) {
-              found_sfpt = true;
-            }
-            if (!u->is_CFG()) {
-              wq.push(u);
-            }
-          }
-        }
-        assert(found_sfpt, "no node in loop that's not input to safepoint");
-      }
-    }
-
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
     assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;

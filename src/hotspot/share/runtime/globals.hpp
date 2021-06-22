@@ -677,11 +677,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
-  product(bool, AlwaysLockClassLoader, false,                               \
-          "(Deprecated) Require the VM to acquire the class loader lock "   \
-          "before calling loadClass() even for class loaders registering "  \
-          "as parallel capable")                                            \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
@@ -1466,6 +1461,10 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
+  develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
+          "Force the class space to be allocated at this address or "       \
+          "fails VM initialization (requires -Xshare=off.")                 \
+                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
@@ -2080,6 +2079,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 

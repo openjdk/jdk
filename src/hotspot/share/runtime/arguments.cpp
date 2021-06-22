@@ -309,6 +309,8 @@ bool needs_module_property_warning = false;
 #define PATH_LEN 4
 #define UPGRADE_PATH "upgrade.path"
 #define UPGRADE_PATH_LEN 12
+#define ENABLE_NATIVE_ACCESS "enable.native.access"
+#define ENABLE_NATIVE_ACCESS_LEN 20
 
 void Arguments::add_init_library(const char* name, char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, NULL));
@@ -347,7 +349,8 @@ bool Arguments::is_internal_module_property(const char* property) {
         matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
-        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN)) {
+        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
+        matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
       return true;
     }
   }
@@ -522,8 +525,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
-  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+
+  // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
+
+  // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -534,17 +542,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-
-  // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
-
-  // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
-  { "TraceSuspendWaitFailures",     JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 #ifdef ASSERT
-  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
+  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
@@ -1964,6 +1963,7 @@ unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
 unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
+unsigned int enable_native_access_count = 0;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
@@ -2404,6 +2404,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addmods", tail, addmods_count++)) {
+        return JNI_ENOMEM;
+      }
+    } else if (match_option(option, "--enable-native-access=", &tail)) {
+      if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--limit-modules=", &tail)) {
@@ -4096,6 +4100,11 @@ jint Arguments::apply_ergo() {
       }
     }
     FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
+
+    if (!FLAG_IS_DEFAULT(UseVectorStubs) && UseVectorStubs) {
+      warning("Disabling UseVectorStubs since EnableVectorSupport is turned off.");
+    }
+    FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
 #endif // COMPILER2
 

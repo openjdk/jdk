@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * The value is only false when the property is present
      * and is equal to "false".
      */
+    @SuppressWarnings("removal")
     private static final boolean useCodebaseOnlyProperty =
         ! java.security.AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(
@@ -197,7 +198,7 @@ public class MarshalInputStream extends ObjectInputStream {
         try {
             return RMIClassLoader.loadClass(codebase, className,
                                             defaultLoader);
-        } catch (AccessControlException e) {
+        } catch (@SuppressWarnings("removal") AccessControlException e) {
             return checkSunClass(className, e);
         } catch (ClassNotFoundException e) {
             /*
@@ -253,6 +254,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * Fix for 4179055: Need to assist resolving sun stubs; resolve
      * class locally if it is a "permitted" sun class
      */
+    @SuppressWarnings("removal")
     private Class<?> checkSunClass(String className, AccessControlException e)
         throws AccessControlException
     {

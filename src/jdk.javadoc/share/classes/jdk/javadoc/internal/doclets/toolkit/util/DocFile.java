@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.util.MissingResourceException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,6 +64,11 @@ public abstract class DocFile {
 
     /** Create a DocFile for a file that will be opened for reading. */
     public static DocFile createFileForInput(BaseConfiguration configuration, String file) {
+        return DocFileFactory.getFactory(configuration).createFileForInput(file);
+    }
+
+    /** Create a DocFile for a file that will be opened for reading. */
+    public static DocFile createFileForInput(BaseConfiguration configuration, Path file) {
         return DocFileFactory.getFactory(configuration).createFileForInput(file);
     }
 

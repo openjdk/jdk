@@ -959,4 +959,7 @@ public class Double64VectorLoadStoreTests extends AbstractVectorTest {
             Assert.assertEquals(r, a);
        }
     }
+
+
+
 }

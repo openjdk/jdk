@@ -212,9 +212,7 @@ void LIR_Op2::verify() const {
     case lir_add:
     case lir_sub:
     case lir_mul:
-    case lir_mul_strictfp:
     case lir_div:
-    case lir_div_strictfp:
     case lir_rem:
     case lir_logic_and:
     case lir_logic_or:
@@ -564,8 +562,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_cmp_fd2i:
     case lir_add:
     case lir_sub:
-    case lir_mul:
-    case lir_div:
     case lir_rem:
     case lir_sqrt:
     case lir_abs:
@@ -623,8 +619,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     // vspecial handling for strict operations: register input operands
     // as temp to guarantee that they do not overlap with other
     // registers
-    case lir_mul_strictfp:
-    case lir_div_strictfp:
+    case lir_mul:
+    case lir_div:
     {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
@@ -1675,9 +1671,7 @@ const char * LIR_Op::name() const {
      case lir_add:                   s = "add";           break;
      case lir_sub:                   s = "sub";           break;
      case lir_mul:                   s = "mul";           break;
-     case lir_mul_strictfp:          s = "mul_strictfp";  break;
      case lir_div:                   s = "div";           break;
-     case lir_div_strictfp:          s = "div_strictfp";  break;
      case lir_rem:                   s = "rem";           break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;

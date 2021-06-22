@@ -54,9 +54,8 @@ public class GetTask_DiagListenerTest extends APITest {
     /**
      * Verify that a diagnostic listener can be specified.
      * Note that messages from the tool and doclet are imperfectly modeled
-     * because the DocErrorReporter API works in terms of localized strings
-     * and file:line positions. Therefore, messages reported via DocErrorReporter
-     * and simply wrapped and passed through.
+     * because the Reporter API works in terms of localized strings.
+     * Therefore, messages reported via Reporter are simply wrapped and passed through.
      */
     @Test
     public void testDiagListener() throws Exception {
@@ -77,7 +76,6 @@ public class GetTask_DiagListenerTest extends APITest {
                     diagCodes.add(d.getCode());
                 }
                 List<String> expect = Arrays.asList(
-                        "javadoc.note.message",     // Loading source file
                         "compiler.err.expected4",   // class, interface, enum, or record expected
                         "javadoc.note.message");    // 1 error
                 if (!diagCodes.equals(expect))
