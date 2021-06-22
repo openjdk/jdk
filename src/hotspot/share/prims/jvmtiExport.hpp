@@ -187,13 +187,6 @@ class JvmtiExport : public AllStatic {
   inline static void increment_redefinition_count() {
     JVMTI_ONLY(_redefinition_count++;)
   }
-  // Flag to indicate if the compiler has recorded all dependencies. When the
-  // can_redefine_classes capability is enabled in the OnLoad phase then the compiler
-  // records all dependencies from startup. However if the capability is first
-  // enabled some time later then the dependencies recorded by the compiler
-  // are incomplete. This flag is used by RedefineClasses to know if the
-  // dependency information is complete or not.
-  static bool _all_dependencies_are_recorded;
 
   static void post_method_exit_inner(JavaThread* thread,
                                      methodHandle& mh,
@@ -212,14 +205,6 @@ class JvmtiExport : public AllStatic {
   inline static uint64_t redefinition_count() {
     JVMTI_ONLY(return _redefinition_count);
     NOT_JVMTI(return 0);
-  }
-
-  inline static bool all_dependencies_are_recorded() {
-    return _all_dependencies_are_recorded;
-  }
-
-  inline static void set_all_dependencies_are_recorded(bool on) {
-    _all_dependencies_are_recorded = (on != 0);
   }
 
   // Add read edges to the unnamed modules of the bootstrap and app class loaders
