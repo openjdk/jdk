@@ -124,6 +124,11 @@ private:
 public:
   G1CardSetContainer() : _ref_count(3) { }
 
+  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node) {
+    return node.next_addr();
+  }
+  typedef LockFreeStack<G1CardSetContainer, &next_ptr> NodeStack;
+
   uintptr_t refcount() const { return Atomic::load_acquire(&_ref_count); }
 
   bool try_increment_refcount();

@@ -33,11 +33,6 @@
 #include "utilities/globalCounter.inline.hpp"
 
 template <class Elem>
-G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContainer& node) {
-  return node.next_addr();
-}
-
-template <class Elem>
 G1CardSetBuffer* G1CardSetAllocator<Elem>::create_new_buffer(G1CardSetBuffer* const prev) {
 
   // Take an existing buffer if available.
