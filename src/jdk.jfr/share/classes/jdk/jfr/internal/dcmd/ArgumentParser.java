@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jdk.jfr.internal.JVM;
+
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
     private final Map<String, Object> extendedOptions = new HashMap<>();
@@ -60,6 +62,9 @@ final class ArgumentParser {
             }
             if (!atEnd() && !accept(delimiter)) { // must be followed by delimiter
                 throw new IllegalArgumentException("Expected delimiter, but found " + currentChar());
+            }
+            if (key.equals("filename") && value != null && value.contains("%p")) {
+                value = value.replaceFirst("%p", "pid" + JVM.getJVM().getPid());
             }
             addOption(key, value);
             eatDelimiter();
