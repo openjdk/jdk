@@ -154,7 +154,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
   DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
-                        sizeof(volatile jlong));
+                        sizeof(volatile uintptr_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.

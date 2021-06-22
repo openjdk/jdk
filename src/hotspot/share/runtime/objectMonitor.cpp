@@ -545,7 +545,7 @@ bool ObjectMonitor::deflate_monitor() {
     // Java threads. The GC already broke the association with the object.
     set_owner_from(NULL, DEFLATER_MARKER);
     assert(contentions() >= 0, "must be non-negative: contentions=%d", contentions());
-    _contentions = INT32_MIN; // minimum negative int
+    _contentions = INT_MIN; // minimum negative int
   } else {
     // Attempt async deflation protocol.
 
@@ -572,7 +572,7 @@ bool ObjectMonitor::deflate_monitor() {
 
     // Make a zero contentions field negative to force any contending threads
     // to retry. This is the second part of the async deflation dance.
-    if (Atomic::cmpxchg(&_contentions, (int)0, INT32_MIN) != 0) {
+    if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
       // ObjectMonitor is now busy. Restore owner to NULL if it is
       // still DEFLATER_MARKER:
