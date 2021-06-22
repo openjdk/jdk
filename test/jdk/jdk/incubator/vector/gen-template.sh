@@ -74,10 +74,6 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
-gather_template="Gather-op"
-gather_masked_template="Gather-Masked-op"
-scatter_template="Scatter-op"
-scatter_masked_template="Scatter-Masked-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
 broadcast_template="Broadcast"
@@ -481,12 +477,19 @@ gen_op_tmpl $test_template "IS_NAN" "\$Boxtype\$.isNaN(a)" "FP"
 gen_op_tmpl $test_template "IS_INFINITE" "\$Boxtype\$.isInfinite(a)" "FP"
 
 # Compares
-gen_compare_op "LT+lt" "<"
-gen_compare_op "GT" ">"
-gen_compare_op "EQ+eq" "=="
-gen_compare_op "NE" "!="
-gen_compare_op "LE" "<="
-gen_compare_op "GE" ">="
+gen_compare_op "LT+lt" "lt"
+gen_compare_op "GT" "gt"
+gen_compare_op "EQ+eq" "eq"
+gen_compare_op "NE" "neq"
+gen_compare_op "LE" "le"
+gen_compare_op "GE" "ge"
+
+gen_compare_op "UNSIGNED_LT" "ult" "BITWISE"
+gen_compare_op "UNSIGNED_GT" "ugt" "BITWISE"
+gen_compare_op "UNSIGNED_LE" "ule" "BITWISE"
+gen_compare_op "UNSIGNED_GE" "uge" "BITWISE"
+
+
 gen_compare_bcst_op "LT" "<"
 gen_compare_bcst_op "EQ" "=="
 
@@ -550,12 +553,6 @@ gen_unary_alu_op "ABS+abs" "Math.abs((\$type\$)a)"
 gen_unary_alu_op "NOT+not" "~((\$type\$)a)" "BITWISE"
 gen_unary_alu_op "ZOMO" "(a==0?0:-1)" "BITWISE"
 gen_unary_alu_op "SQRT+sqrt" "Math.sqrt((double)a)" "FP"
-
-# Gather Scatter operations.
-gen_op_tmpl $gather_template "gather" ""
-gen_op_tmpl $gather_masked_template "gather" ""
-gen_op_tmpl $scatter_template "scatter" ""
-gen_op_tmpl $scatter_masked_template "scatter" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

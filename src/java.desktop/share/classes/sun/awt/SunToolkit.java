@@ -113,7 +113,6 @@ import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 
-@SuppressWarnings("removal")
 public abstract class SunToolkit extends Toolkit
     implements ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
@@ -121,6 +120,11 @@ public abstract class SunToolkit extends Toolkit
 
     /* Load debug settings for native code */
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.nativedebug"))) {
             DebugSettings.init();
         }
@@ -668,6 +672,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.noerasebackground" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static boolean getSunAwtNoerasebackground() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.noerasebackground"));
     }
@@ -676,6 +681,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.erasebackgroundonresize" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static boolean getSunAwtErasebackgroundonresize() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.erasebackgroundonresize"));
     }
@@ -895,6 +901,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
     private static void checkPermissions(String filename) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(filename);
@@ -902,6 +909,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
     private static void checkPermissions(URL url) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -1109,6 +1117,7 @@ public abstract class SunToolkit extends Toolkit
     public boolean canPopupOverlapTaskBar() {
         boolean result = true;
         try {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
@@ -1149,6 +1158,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns the locale in which the runtime was started.
      */
+    @SuppressWarnings("removal")
     public static Locale getStartupLocale() {
         if (startupLocale == null) {
             String language, region, country, variant;
@@ -1192,6 +1202,7 @@ public abstract class SunToolkit extends Toolkit
      * @return {@code true}, if XEmbed is needed, {@code false} otherwise
      */
     public static boolean needsXEmbed() {
+        @SuppressWarnings("removal")
         String noxembed = AccessController.
             doPrivileged(new GetPropertyAction("sun.awt.noxembed", "false"));
         if ("true".equals(noxembed)) {
@@ -1225,6 +1236,7 @@ public abstract class SunToolkit extends Toolkit
      * developer.  If true, Toolkit should return an
      * XEmbed-server-enabled CanvasPeer instead of the ordinary CanvasPeer.
      */
+    @SuppressWarnings("removal")
     protected final boolean isXEmbedServerRequested() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.xembedserver"));
     }
@@ -1745,6 +1757,7 @@ public abstract class SunToolkit extends Toolkit
      * to be inapplicable in that case. In that headless case although
      * this method will return "true" the toolkit will return a null map.
      */
+    @SuppressWarnings("removal")
     private static boolean useSystemAAFontSettings() {
         if (!checkedSystemAAFontSettings) {
             useSystemAAFontSettings = true; /* initially set this true */
@@ -1848,6 +1861,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.disableMixing" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static synchronized boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
             sunAwtDisableMixing = AccessController.doPrivileged(

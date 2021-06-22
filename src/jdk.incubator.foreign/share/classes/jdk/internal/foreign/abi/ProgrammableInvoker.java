@@ -90,11 +90,7 @@ public class ProgrammableInvoker {
                     methodType(Object.class, Addressable.class, SegmentAllocator.class, Object[].class, MethodHandle.class, Map.class, Map.class));
             MH_WRAP_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofAllocator",
                     methodType(Binding.Context.class, SegmentAllocator.class));
-            MethodHandle MH_Addressable_address = lookup.findVirtual(Addressable.class, "address",
-                    methodType(MemoryAddress.class));
-            MethodHandle MH_MemoryAddress_toRawLongValue = lookup.findVirtual(MemoryAddress.class, "toRawLongValue",
-                    methodType(long.class));
-            MH_ADDR_TO_LONG = filterArguments(MH_MemoryAddress_toRawLongValue, 0, MH_Addressable_address);
+            MH_ADDR_TO_LONG = lookup.findStatic(ProgrammableInvoker.class, "unboxTargetAddress", methodType(long.class, Addressable.class));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -174,6 +170,11 @@ public class ProgrammableInvoker {
          }
 
         return handle;
+    }
+
+    private static long unboxTargetAddress(Addressable addr) {
+        MemoryAddress ma = SharedUtils.checkSymbol(addr);
+        return ma.toRawLongValue();
     }
 
     // Funnel from type to Object[]

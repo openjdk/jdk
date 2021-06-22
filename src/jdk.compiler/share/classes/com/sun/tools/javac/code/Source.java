@@ -112,7 +112,12 @@ public enum Source {
     /**
       * 17, tbd
       */
-    JDK17("17");
+    JDK17("17"),
+
+    /**
+      * 18, tbd
+      */
+    JDK18("18");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -164,6 +169,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK18  -> Target.JDK1_18;
         case JDK17  -> Target.JDK1_17;
         case JDK16  -> Target.JDK1_16;
         case JDK15  -> Target.JDK1_15;
@@ -224,6 +230,8 @@ public enum Source {
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
         RECORDS(JDK16, Fragments.FeatureRecords, DiagKind.PLURAL),
         SEALED_CLASSES(JDK17, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
+        CASE_NULL(JDK17, Fragments.FeatureCaseNull, DiagKind.NORMAL),
+        PATTERN_SWITCH(JDK17, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
         ;
 
@@ -304,6 +312,7 @@ public enum Source {
         case JDK15  -> RELEASE_15;
         case JDK16  -> RELEASE_16;
         case JDK17  -> RELEASE_17;
+        case JDK18  -> RELEASE_18;
         default     -> null;
         };
     }

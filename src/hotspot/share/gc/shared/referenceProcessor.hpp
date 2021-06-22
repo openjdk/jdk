@@ -206,7 +206,6 @@ private:
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
-  bool        _adjust_no_of_processing_threads; // allow dynamic adjustment of processing threads
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
@@ -368,8 +367,7 @@ public:
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL,
-                     bool adjust_no_of_processing_threads = false);
+                     BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -399,7 +397,6 @@ public:
 
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
-  void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
@@ -438,8 +435,6 @@ public:
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-
-  bool adjust_no_of_processing_threads() const { return _adjust_no_of_processing_threads; }
 };
 
 // A subject-to-discovery closure that uses a single memory span to determine the area that
@@ -562,27 +557,6 @@ class ReferenceProcessorIsAliveMutator: StackObj {
 
   ~ReferenceProcessorIsAliveMutator() {
     _rp->set_is_alive_non_header(_saved_cl);
-  }
-};
-
-// A utility class to temporarily change the disposition
-// of the "discovery_is_atomic" field of the
-// given ReferenceProcessor in the scope that contains it.
-class ReferenceProcessorAtomicMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool                _saved_atomic_discovery;
-
- public:
-  ReferenceProcessorAtomicMutator(ReferenceProcessor* rp,
-                                  bool atomic):
-    _rp(rp) {
-    _saved_atomic_discovery = _rp->discovery_is_atomic();
-    _rp->set_atomic_discovery(atomic);
-  }
-
-  ~ReferenceProcessorAtomicMutator() {
-    _rp->set_atomic_discovery(_saved_atomic_discovery);
   }
 };
 

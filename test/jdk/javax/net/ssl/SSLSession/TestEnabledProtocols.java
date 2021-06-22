@@ -38,6 +38,7 @@
  * @author Ram Marti
  */
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
@@ -136,13 +137,13 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
                 e.printStackTrace(System.out);
                 System.out.println("** Success **");
             }
-        } catch (SSLException ssle) {
+        } catch (SSLException | SocketException se) {
             // The server side may have closed the socket.
-            if (isConnectionReset(ssle)) {
-                System.out.println("Client SSLException:");
-                ssle.printStackTrace(System.out);
+            if (isConnectionReset(se)) {
+                System.out.println("Client SocketException:");
+                se.printStackTrace(System.out);
             } else {
-                failTest(ssle, "Client got UNEXPECTED SSLException:");
+                failTest(se, "Client got UNEXPECTED Exception:");
             }
 
         } catch (Exception e) {
@@ -150,8 +151,8 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
         }
     }
 
-    private boolean isConnectionReset(SSLException ssle) {
-        Throwable cause = ssle.getCause();
+    private boolean isConnectionReset(IOException ioe) {
+        Throwable cause = ioe instanceof SSLException se ? se.getCause() : ioe;
         return cause instanceof SocketException
                 && "Connection reset".equals(cause.getMessage());
     }

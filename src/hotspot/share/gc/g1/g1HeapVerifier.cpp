@@ -467,7 +467,7 @@ void G1HeapVerifier::enable_verification_type(G1VerifyType type) {
 }
 
 bool G1HeapVerifier::should_verify(G1VerifyType type) {
-  return (_enabled_verification_types & type) == type;
+  return (_enabled_verification_types & type) != 0;
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
