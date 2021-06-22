@@ -308,9 +308,8 @@ protected:
                        bool   clear_all_soft_refs,
                        size_t size,
                        bool   is_tlab);
-  HeapWord* expand_and_allocate(size_t size,
-                                bool is_tlab,
-                                bool parallel = false);
+
+  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1REMSETSUMMARY_HPP
 #define SHARE_GC_G1_G1REMSETSUMMARY_HPP
 
+#include "gc/g1/g1CardSet.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -33,7 +34,7 @@ class G1RemSet;
 // A G1RemSetSummary manages statistical information about the G1RemSet
 
 class G1RemSetSummary {
-  size_t _num_coarsenings;
+  G1CardSetCoarsenStats _coarsenings;
 
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
@@ -64,10 +65,6 @@ public:
 
   double sampling_task_vtime() const {
     return _sampling_task_vtime;
-  }
-
-  size_t num_coarsenings() const {
-    return _num_coarsenings;
   }
 };
 
