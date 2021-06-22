@@ -25,12 +25,8 @@
 
 package sun.security.ssl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
 import static sun.security.ssl.CipherSuite.HashAlg.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 import static sun.security.ssl.CipherSuite.MacAlg.*;
@@ -857,6 +853,20 @@ enum CipherSuite {
 
     final boolean exportable;
 
+    private static final HashMap<Integer, CipherSuite> maps_id = new HashMap<>();
+    private static final HashMap<String, CipherSuite> maps_name = new HashMap<>();
+    private static final CipherSuite[] ciphers = CipherSuite.values();
+
+    static {
+        for(CipherSuite cs : ciphers) {
+            maps_id.put(cs.id, cs);
+            maps_name.put(cs.name, cs);
+            for (String alias : cs.aliases) {
+                maps_name.put(alias, cs);
+            }
+        }
+    }
+
     // known but unsupported cipher suite
     private CipherSuite(String name, int id) {
         this(id, false, name, "",
@@ -894,31 +904,16 @@ enum CipherSuite {
     }
 
     static CipherSuite nameOf(String ciperSuiteName) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.name.equals(ciperSuiteName) ||
-                    cs.aliases.contains(ciperSuiteName)) {
-                return cs;
-            }
-        }
-
-        return null;
+        return maps_name.get(ciperSuiteName);
     }
 
     static CipherSuite valueOf(int id) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.id == id) {
-                return cs;
-            }
-        }
-
-        return null;
+        return maps_id.get(id);
     }
 
     static String nameOf(int id) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.id == id) {
-                return cs.name;
-            }
+        if (maps_id.containsKey(id)) {
+            return maps_id.get(id).name;
         }
 
         return "UNKNOWN-CIPHER-SUITE(" + Utilities.byte16HexString(id) + ")";
@@ -926,7 +921,7 @@ enum CipherSuite {
 
     static Collection<CipherSuite> allowedCipherSuites() {
         Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : CipherSuite.values()) {
+        for (CipherSuite cs : ciphers) {
             if (!cs.supportedProtocols.isEmpty()) {
                 cipherSuites.add(cs);
             } else {
@@ -940,7 +935,7 @@ enum CipherSuite {
 
     static Collection<CipherSuite> defaultCipherSuites() {
         Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : CipherSuite.values()) {
+        for (CipherSuite cs : ciphers) {
             if (cs.isDefaultEnabled) {
                 cipherSuites.add(cs);
             } else {
@@ -972,7 +967,7 @@ enum CipherSuite {
             }
 
             boolean found = false;
-            for (CipherSuite cs : CipherSuite.values()) {
+            for (CipherSuite cs : ciphers) {
                 if (!cs.supportedProtocols.isEmpty()) {
                     if (cs.name.equals(name) ||
                             cs.aliases.contains(name)) {
