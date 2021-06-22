@@ -107,6 +107,10 @@ public:
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
+  // Cleans the card table from temporary duplicate detection information.
+  void cleanup_after_scan_heap_roots();
+  // Print coarsening stats.
+  void print_coarsen_stats();
   // Creates a gang task for cleaining up temporary data structures and the
   // card table, removing temporary duplicate detection information.
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();

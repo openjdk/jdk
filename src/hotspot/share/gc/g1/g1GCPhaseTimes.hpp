@@ -75,6 +75,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     YoungFreeCSet,
     NonYoungFreeCSet,
     RebuildFreeList,
+    SampleCollectionSetCandidates,
     MergePSS,
     RemoveSelfForwardingPtr,
     ClearCardTable,
@@ -97,12 +98,23 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return GCParPhases(StrongOopStorageSetRoots + index);
   }
 
-  enum GCMergeRSWorkTimes {
-    MergeRSMergedSparse,
-    MergeRSMergedFine,
-    MergeRSMergedCoarse,
-    MergeRSDirtyCards
+  enum GCMergeRSWorkItems : uint {
+    MergeRSMergedInline = 0,
+    MergeRSMergedArrayOfCards,
+    MergeRSMergedHowl,
+    MergeRSMergedFull,
+    MergeRSHowlInline,
+    MergeRSHowlArrayOfCards,
+    MergeRSHowlBitmap,
+    MergeRSHowlFull,
+    MergeRSDirtyCards,
+    MergeRSContainersSentinel
   };
+
+  static constexpr const char* GCMergeRSWorkItemsStrings[MergeRSContainersSentinel] =
+    { "Merged Inline", "Merged ArrayOfCards", "Merged Howl", "Merged Full",
+      "Merged Howl Inline", "Merged Howl ArrayOfCards", "Merged Howl BitMap", "Merged Howl Full",
+      "Dirty Cards" };
 
   enum GCScanHRWorkItems {
     ScanHRScannedCards,
@@ -172,6 +184,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
+
+  double _recorded_sample_collection_set_candidates_time_ms;
 
   double _recorded_preserve_cm_referents_time_ms;
 
@@ -327,6 +341,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_sample_collection_set_candidates_time_ms(double time_ms) {
+    _recorded_sample_collection_set_candidates_time_ms = time_ms;
   }
 
   void record_preserve_cm_referents_time_ms(double time_ms) {

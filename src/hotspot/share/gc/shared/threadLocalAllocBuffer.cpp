@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -472,4 +473,12 @@ void ThreadLocalAllocStats::publish() {
 size_t ThreadLocalAllocBuffer::end_reserve() {
   size_t reserve_size = Universe::heap()->tlab_alloc_reserve();
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
+}
+
+const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
+  return Atomic::load(&_start);
+}
+
+const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
+  return Atomic::load(&_top);
 }

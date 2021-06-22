@@ -492,15 +492,14 @@ class InvokerBytecodeGenerator {
     }
 
     private int loadInsnOpcode(BasicType type) throws InternalError {
-        switch (type) {
-            case I_TYPE: return Opcodes.ILOAD;
-            case J_TYPE: return Opcodes.LLOAD;
-            case F_TYPE: return Opcodes.FLOAD;
-            case D_TYPE: return Opcodes.DLOAD;
-            case L_TYPE: return Opcodes.ALOAD;
-            default:
-                throw new InternalError("unknown type: " + type);
-        }
+        return switch (type) {
+            case I_TYPE -> Opcodes.ILOAD;
+            case J_TYPE -> Opcodes.LLOAD;
+            case F_TYPE -> Opcodes.FLOAD;
+            case D_TYPE -> Opcodes.DLOAD;
+            case L_TYPE -> Opcodes.ALOAD;
+            default -> throw new InternalError("unknown type: " + type);
+        };
     }
     private void emitAloadInsn(int index) {
         emitLoadInsn(L_TYPE, index);
@@ -512,50 +511,48 @@ class InvokerBytecodeGenerator {
     }
 
     private int storeInsnOpcode(BasicType type) throws InternalError {
-        switch (type) {
-            case I_TYPE: return Opcodes.ISTORE;
-            case J_TYPE: return Opcodes.LSTORE;
-            case F_TYPE: return Opcodes.FSTORE;
-            case D_TYPE: return Opcodes.DSTORE;
-            case L_TYPE: return Opcodes.ASTORE;
-            default:
-                throw new InternalError("unknown type: " + type);
-        }
+        return switch (type) {
+            case I_TYPE -> Opcodes.ISTORE;
+            case J_TYPE -> Opcodes.LSTORE;
+            case F_TYPE -> Opcodes.FSTORE;
+            case D_TYPE -> Opcodes.DSTORE;
+            case L_TYPE -> Opcodes.ASTORE;
+            default -> throw new InternalError("unknown type: " + type);
+        };
     }
     private void emitAstoreInsn(int index) {
         emitStoreInsn(L_TYPE, index);
     }
 
     private byte arrayTypeCode(Wrapper elementType) {
-        switch (elementType) {
-            case BOOLEAN: return Opcodes.T_BOOLEAN;
-            case BYTE:    return Opcodes.T_BYTE;
-            case CHAR:    return Opcodes.T_CHAR;
-            case SHORT:   return Opcodes.T_SHORT;
-            case INT:     return Opcodes.T_INT;
-            case LONG:    return Opcodes.T_LONG;
-            case FLOAT:   return Opcodes.T_FLOAT;
-            case DOUBLE:  return Opcodes.T_DOUBLE;
-            case OBJECT:  return 0; // in place of Opcodes.T_OBJECT
-            default:      throw new InternalError();
-        }
+        return (byte) switch (elementType) {
+            case BOOLEAN -> Opcodes.T_BOOLEAN;
+            case BYTE    -> Opcodes.T_BYTE;
+            case CHAR    -> Opcodes.T_CHAR;
+            case SHORT   -> Opcodes.T_SHORT;
+            case INT     -> Opcodes.T_INT;
+            case LONG    -> Opcodes.T_LONG;
+            case FLOAT   -> Opcodes.T_FLOAT;
+            case DOUBLE  -> Opcodes.T_DOUBLE;
+            case OBJECT  -> 0; // in place of Opcodes.T_OBJECT
+            default -> throw new InternalError();
+        };
     }
 
     private int arrayInsnOpcode(byte tcode, int aaop) throws InternalError {
         assert(aaop == Opcodes.AASTORE || aaop == Opcodes.AALOAD);
-        int xas;
-        switch (tcode) {
-            case Opcodes.T_BOOLEAN: xas = Opcodes.BASTORE; break;
-            case Opcodes.T_BYTE:    xas = Opcodes.BASTORE; break;
-            case Opcodes.T_CHAR:    xas = Opcodes.CASTORE; break;
-            case Opcodes.T_SHORT:   xas = Opcodes.SASTORE; break;
-            case Opcodes.T_INT:     xas = Opcodes.IASTORE; break;
-            case Opcodes.T_LONG:    xas = Opcodes.LASTORE; break;
-            case Opcodes.T_FLOAT:   xas = Opcodes.FASTORE; break;
-            case Opcodes.T_DOUBLE:  xas = Opcodes.DASTORE; break;
-            case 0:                 xas = Opcodes.AASTORE; break;
-            default:      throw new InternalError();
-        }
+        int xas = switch (tcode) {
+            case Opcodes.T_BOOLEAN -> Opcodes.BASTORE;
+            case Opcodes.T_BYTE    -> Opcodes.BASTORE;
+            case Opcodes.T_CHAR    -> Opcodes.CASTORE;
+            case Opcodes.T_SHORT   -> Opcodes.SASTORE;
+            case Opcodes.T_INT     -> Opcodes.IASTORE;
+            case Opcodes.T_LONG    -> Opcodes.LASTORE;
+            case Opcodes.T_FLOAT   -> Opcodes.FASTORE;
+            case Opcodes.T_DOUBLE  -> Opcodes.DASTORE;
+            case 0                 -> Opcodes.AASTORE;
+            default -> throw new InternalError();
+        };
         return xas - Opcodes.AASTORE + aaop;
     }
 
@@ -1383,17 +1380,11 @@ class InvokerBytecodeGenerator {
     }
 
     private static int popInsnOpcode(BasicType type) {
-        switch (type) {
-            case I_TYPE:
-            case F_TYPE:
-            case L_TYPE:
-                return Opcodes.POP;
-            case J_TYPE:
-            case D_TYPE:
-                return Opcodes.POP2;
-            default:
-                throw new InternalError("unknown type: " + type);
-        }
+        return switch (type) {
+            case I_TYPE, F_TYPE, L_TYPE -> Opcodes.POP;
+            case J_TYPE, D_TYPE         -> Opcodes.POP2;
+            default -> throw new InternalError("unknown type: " + type);
+        };
     }
 
     private Name emitTableSwitch(int pos, int numCases) {
@@ -1663,14 +1654,14 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitZero(BasicType type) {
-        switch (type) {
-            case I_TYPE: mv.visitInsn(Opcodes.ICONST_0); break;
-            case J_TYPE: mv.visitInsn(Opcodes.LCONST_0); break;
-            case F_TYPE: mv.visitInsn(Opcodes.FCONST_0); break;
-            case D_TYPE: mv.visitInsn(Opcodes.DCONST_0); break;
-            case L_TYPE: mv.visitInsn(Opcodes.ACONST_NULL); break;
-            default: throw new InternalError("unknown type: " + type);
-        }
+        mv.visitInsn(switch (type) {
+            case I_TYPE -> Opcodes.ICONST_0;
+            case J_TYPE -> Opcodes.LCONST_0;
+            case F_TYPE -> Opcodes.FCONST_0;
+            case D_TYPE -> Opcodes.DCONST_0;
+            case L_TYPE -> Opcodes.ACONST_NULL;
+            default -> throw new InternalError("unknown type: " + type);
+        });
     }
 
     private void emitPushArguments(Name args, int start) {
@@ -1778,30 +1769,28 @@ class InvokerBytecodeGenerator {
                 // cast to {long,float,double} - this is verbose
                 boolean error = false;
                 switch (from) {
-                case LONG:
-                    switch (to) {
-                    case FLOAT:   mv.visitInsn(Opcodes.L2F);  break;
-                    case DOUBLE:  mv.visitInsn(Opcodes.L2D);  break;
-                    default:      error = true;               break;
+                    case LONG -> {
+                        switch (to) {
+                            case FLOAT  -> mv.visitInsn(Opcodes.L2F);
+                            case DOUBLE -> mv.visitInsn(Opcodes.L2D);
+                            default -> error = true;
+                        }
                     }
-                    break;
-                case FLOAT:
-                    switch (to) {
-                    case LONG :   mv.visitInsn(Opcodes.F2L);  break;
-                    case DOUBLE:  mv.visitInsn(Opcodes.F2D);  break;
-                    default:      error = true;               break;
+                    case FLOAT -> {
+                        switch (to) {
+                            case LONG   -> mv.visitInsn(Opcodes.F2L);
+                            case DOUBLE -> mv.visitInsn(Opcodes.F2D);
+                            default -> error = true;
+                        }
                     }
-                    break;
-                case DOUBLE:
-                    switch (to) {
-                    case LONG :   mv.visitInsn(Opcodes.D2L);  break;
-                    case FLOAT:   mv.visitInsn(Opcodes.D2F);  break;
-                    default:      error = true;               break;
+                    case DOUBLE -> {
+                        switch (to) {
+                            case LONG  -> mv.visitInsn(Opcodes.D2L);
+                            case FLOAT -> mv.visitInsn(Opcodes.D2F);
+                            default -> error = true;
+                        }
                     }
-                    break;
-                default:
-                    error = true;
-                    break;
+                    default -> error = true;
                 }
                 if (error) {
                     throw new IllegalStateException("unhandled prim cast: " + from + "2" + to);
