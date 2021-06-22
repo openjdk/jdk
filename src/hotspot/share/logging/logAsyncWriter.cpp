@@ -28,23 +28,17 @@
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
 
-Semaphore AsyncLogWriter::_sem(0);
-Semaphore AsyncLogWriter::_io_sem(1);
-
-class AsyncLogLocker : public StackObj {
- private:
-  static Semaphore _lock;
+class AsyncLogWriter::AsyncLogLocker : public StackObj {
  public:
   AsyncLogLocker() {
-    _lock.wait();
+    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
+    _instance->_lock.wait();
   }
 
   ~AsyncLogLocker() {
-    _lock.signal();
+    _instance->_lock.signal();
   }
 };
-
-Semaphore AsyncLogLocker::_lock(1);
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   if (_buffer.size() >= _buffer_max_size)  {
@@ -64,7 +58,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
   AsyncLogMessage m(output, decorations, os::strdup(msg));
 
   { // critical area
-    AsyncLogLocker lock;
+    AsyncLogLocker locker;
     enqueue_locked(m);
   }
 }
@@ -72,7 +66,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // The lock here guarantees its integrity.
 void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker lock;
+  AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
@@ -81,7 +75,8 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator m
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _initialized(false),
+  : _lock(1), _sem(0), _io_sem(1),
+    _initialized(false),
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
@@ -125,7 +120,7 @@ void AsyncLogWriter::write() {
   bool own_io = false;
 
   { // critical region
-    AsyncLogLocker lock;
+    AsyncLogLocker locker;
 
     _buffer.pop_all(&logs);
     // append meta-messages of dropped counters

@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @compile RedefineSealedClass.java
  * @run driver RedefineSealedClass buildagent
  * @run driver/timeout=6000 RedefineSealedClass runtest

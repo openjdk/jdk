@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,13 @@
  * questions.
  */
 
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
-
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.doclet.DocletEnvironment;
-
-public class X {
-    public static boolean run(DocletEnvironment root) {
-        System.out.println("X.start");
-        return true;
-    }
-    public Set<Doclet.Option> getSupportedOptions() {
-        return Collections.emptySet();
-    }
-
-    public void init(Locale locale, Reporter reporter) {
-        return;
-    }
-}
+/*
+ * @test
+ * @bug 8268294
+ * @modules java.net.http/jdk.internal.net.http.websocket:open jdk.httpserver
+ * @run main/othervm
+ *      --add-reads java.net.http=ALL-UNNAMED
+ *      --add-reads java.net.http=jdk.httpserver
+ *      java.net.http/jdk.internal.net.http.websocket.WebSocketAndHttpTest
+ */
+public final class WebSocketServerDriver { }

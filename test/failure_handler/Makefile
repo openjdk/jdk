@@ -53,18 +53,9 @@ SRC_DIR := $(shell cygpath -m "${SRC_DIR}")
 JAVA_HOME := $(shell cygpath -m "${JAVA_HOME}")
 JTREG_HOME := $(shell cygpath -m "${JTREG_HOME}")
 CLASSPATH := $(shell cygpath -pm "${CLASSPATH}")
-CC := "cl.exe"
 endif
 
 all: clean test
-
-native: require_env
-ifeq ("${OS_NAME}", "Cygwin")
-	"${CC}" src/windows/native/jdk/test/failurehandler/jtreg/*.c        \
-	-I"$(shell cygpath -w "${JAVA_HOME}/include")"                        \
-	-I"$(shell cygpath -w "${JAVA_HOME}/include/win32")"                  \
-	/link /DLL /OUT:timeoutHandler.dll
-endif
 
 check_defined = $(foreach 1,$1,$(__check_defined))
 __check_defined = $(if $(value $1),, $(error $1 is not set))
@@ -112,7 +103,7 @@ require_env:
 clean:
 	rm -rf "${BUILD_DIR}" "${RUN_DIR}"
 
-build: classes native
+build: classes
 
-.PHONY: all build classes native test require_env clean
+.PHONY: all build classes test require_env clean
 .DEFAULT: all

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,28 @@
  * questions.
  */
 
-#include <jni.h>
-#include <windows.h>
+package jdk.internal.net.http.websocket;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+import java.nio.ByteBuffer;
 
-JNIEXPORT jlong JNICALL Java_jdk_test_failurehandler_jtreg_GatherProcessInfoTimeoutHandler_getWin32Pid
-        (JNIEnv* env, jobject o, jlong handle) {
-    return GetProcessId((HANDLE) handle);
+/**
+ * No implementation provided for onInit() because that must always be
+ * implemented by user
+ */
+abstract class DefaultMessageStreamHandler implements MessageStreamHandler {
+
+    public void onText(CharSequence data, boolean last) {}
+
+    public void onBinary(ByteBuffer data, boolean last) {}
+
+    public void onPing(ByteBuffer data) {}
+
+    public void onPong(ByteBuffer data) {}
+
+    public void onClose(int statusCode, CharSequence reason) {}
+
+    public void onComplete() {}
+
+    public void onError(Throwable e) {}
 }
-#ifdef __cplusplus
-}
-#endif
+
