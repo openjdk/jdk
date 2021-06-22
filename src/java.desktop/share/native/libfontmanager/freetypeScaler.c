@@ -46,6 +46,12 @@
 
 #include "fontscaler.h"
 
+#define CHECK_EXCEPTION(env)            \
+    if ((*(env))->ExceptionCheck(env)) { \
+        (*(env))->ExceptionDescribe(env);\
+        (*(env))->ExceptionClear(env);   \
+    }
+
 #define  ftFixed1  (FT_Fixed) (1 << 16)
 #define  FloatToFTFixed(f) (FT_Fixed)((f) * (float)(ftFixed1))
 #define  FTFixedToFloat(x) ((x) / (float)(ftFixed1))
@@ -137,6 +143,8 @@ static void invalidateJavaScaler(JNIEnv *env,
                                  FTScalerInfo* scalerInfo) {
     freeNativeResources(env, scalerInfo);
     (*env)->CallVoidMethod(env, scaler, invalidateScalerMID);
+    // NB: Exceptions must not be cleared (and therefore no JNI calls performed) after calling this method
+    //     because it intentionally leaves an exception pending.
 }
 
 /******************* I/O handlers ***************************/
@@ -187,6 +195,8 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                           scalerInfo->font2D,
                                           sunFontIDs.ttReadBlockMID,
                                           bBuffer, offset, numBytes);
+            // This is a callback, we are not returning immediately to Java and better report exceptions now
+            CHECK_EXCEPTION(env);
             if (bread < 0) {
                 return 0;
             } else {
@@ -206,7 +216,9 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
             (*env)->CallObjectMethod(env, scalerInfo->font2D,
                                      sunFontIDs.ttReadBytesMID,
                                      offset, numBytes);
-            /* If there's an OutofMemoryError then byteArray will be null */
+            // This is a callback, we are not returning immediately to Java and better report exceptions now
+            CHECK_EXCEPTION(env);
+            /* If there's an OutOfMemoryError then byteArray will be null */
             if (byteArray == NULL) {
                 return 0;
             } else {
@@ -239,6 +251,8 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                       sunFontIDs.ttReadBlockMID,
                                       bBuffer, offset,
                                       scalerInfo->fontDataLength);
+        // This is a callback, we are not returning immediately to Java and better report exceptions now
+        CHECK_EXCEPTION(env);
         if (bread <= 0) {
             return 0;
         } else if ((unsigned long)bread < numBytes) {
