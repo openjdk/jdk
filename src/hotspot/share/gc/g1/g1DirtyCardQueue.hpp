@@ -32,7 +32,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "utilities/lockFreeQueue.hpp"
+#include "utilities/nonblockingQueue.hpp"
 
 class G1ConcurrentRefineThread;
 class G1DirtyCardQueueSet;
@@ -164,9 +164,9 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  // LockFreeQueue has inner padding of one cache line.
-  LockFreeQueue<BufferNode, &BufferNode::next_ptr> _completed;
-  // Add a trailer padding after LockFreeQueue.
+  // NonblockingQueue has inner padding of one cache line.
+  NonblockingQueue<BufferNode, &BufferNode::next_ptr> _completed;
+  // Add a trailer padding after NonblockingQueue.
   DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
   // PausedBuffers has inner padding, including trailer.
