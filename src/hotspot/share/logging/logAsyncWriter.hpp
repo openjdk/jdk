@@ -91,18 +91,18 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 };
 
 class AsyncLogMessage {
-  LogFileOutput& _output;
+  LogFileOutput* _output;
   const LogDecorations _decorations;
   char* _message;
 
 public:
-  AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, char* msg)
+  AsyncLogMessage(LogFileOutput* output, const LogDecorations& decorations, char* msg)
     : _output(output), _decorations(decorations), _message(msg) {}
 
   // placeholder for LinkedListImpl.
   bool equals(const AsyncLogMessage& o) const { return false; }
 
-  LogFileOutput* output() const { return &_output; }
+  LogFileOutput* output() const { return _output; }
   const LogDecorations& decorations() const { return _decorations; }
   char* message() const { return _message; }
 };
@@ -124,14 +124,13 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // instance() is MT-safe and returns the pointer of the singleton instance if and only if async logging is enabled and has well
 // initialized. Clients can use its return value to determine async logging is established or not.
 //
-// The basic operation of AsyncLogWriter is enqueue(). 2 overloading versions of it are provided to match LogOutput::write().
+// enqueue() is the basic operation of AsyncLogWriter. 2 overloading versions of it are provided to match LogOutput::write().
 // They are both MT-safe and non-blocking. Derived classes of LogOutput can invoke the corresponding enqueue() in write() and
 // return 0. AsyncLogWriter is responsible of copying neccessary data.
 //
-// The static member function flush() is designated to flush out all pending messages when JVM is terminating.
-// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). flush() is MT-safe and can be invoked arbitrary
-// times. It is no-op if async logging is not established.
-//
+// flush() is designated to flush out all pending messages. MT-safety is not provided. It is no-op if async logging is not in use.
+// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). When the users change logging configurrations
+// via jcmd, LogConfiguration::configure_output() invokes it with the protection of ConfigurationLock.
 class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
 
@@ -141,8 +140,7 @@ class AsyncLogWriter : public NonJavaThread {
   // _sem is a semaphore whose value denotes how many messages have been enqueued.
   // It decreases in AsyncLogWriter::run()
   Semaphore _sem;
-  // A lock of IO
-  Semaphore _io_sem;
+  Semaphore _flush_sem;
 
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
