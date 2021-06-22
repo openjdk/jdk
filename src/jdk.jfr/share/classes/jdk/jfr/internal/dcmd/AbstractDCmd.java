@@ -269,4 +269,31 @@ abstract class AbstractDCmd {
             return "/directory/recordings";
         }
     }
+
+    static String expandFilename(String filename) {
+        if (filename == null) {
+            return null;
+        }
+
+        String pid = JVM.getJVM().getPid();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < filename.length(); i++) {
+            char c = filename.charAt(i);
+            if (c == '%' && i < filename.length() - 1) {
+                char nc = filename.charAt(i + 1);
+                if (nc == '%') { // %% ==> %
+                    sb.append(c);
+                    i++;
+                } else if (nc == 'p') {
+                    sb.append(pid);
+                    i++;
+                } else {
+                    sb.append('%');
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
 }

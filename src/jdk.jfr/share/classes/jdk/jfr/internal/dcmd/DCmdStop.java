@@ -42,7 +42,7 @@ final class DCmdStop extends AbstractDCmd {
     protected void execute(ArgumentParser parser)  throws DCmdException {
         parser.checkUnknownArguments();
         String name = parser.getOption("name");
-        String filename = parser.getOption("filename");
+        String filename = expandFilename(parser.getOption("filename"));
         try {
             SafePath safePath = null;
             Recording recording = findRecording(name);
@@ -76,8 +76,9 @@ final class DCmdStop extends AbstractDCmd {
                Options:
 
                  filename  (Optional) Name of the file to which the recording is written when the
-                           recording is stopped. If no path is provided, the data from the recording
-                           is discarded. (STRING, no default value)
+                           recording is stopped. The string '%p' in the filename will be replaced
+                           with the PID. If no path is provided, the data from the recording is
+                           discarded. (STRING, no default value)
 
                  name      Name of the recording (STRING, no default value)
 
