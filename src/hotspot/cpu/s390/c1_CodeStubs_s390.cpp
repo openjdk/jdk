@@ -454,8 +454,10 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(info());
 
 #ifndef PRODUCT
-  __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_arraycopy_slowcase_cnt);
-  __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
+  if (PrintC1Statistics) {
+    __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_arraycopy_slowcase_cnt);
+    __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
+  }
 #endif
 
   __ branch_optimized(Assembler::bcondAlways, _continuation);
