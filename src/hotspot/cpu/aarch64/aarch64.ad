@@ -2552,15 +2552,21 @@ bool Matcher::is_spillable_arg(int reg)
 
 uint Matcher::int_pressure_limit()
 {
-  // JDK-8183543: Take the number of available registers as int register
-  // pressure threshold, the jtreg test:
+  // JDK-8183543: When taking the number of available registers as int
+  // register pressure threshold, the jtreg test:
   // test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
   // failed due to C2 compilation failure with
   // "COMPILE SKIPPED: failed spill-split-recycle sanity check".
-  // Lowering the default value to (_NO_SPECIAL_REG32_mask.Size() minus 1)
-  // fixes this bug. See JDK-8183543.
-  uint int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
-  return (INTPRESSURE == -1) ? int_pressure_threshold : INTPRESSURE;
+  //
+  // A derived pointer is live at CallNode and then is flagged by RA
+  // as a spilled LRG. Spilling heuristics(Spill-USE) explicitly skip
+  // derived pointers and lastly fail to spill after reaching maximum
+  // number of iterations. Lowering the default pressure threshold to
+  // (_NO_SPECIAL_REG32_mask.Size() minus 1) forces CallNode to become
+  // a high register pressure area of the code so that split_DEF can
+  // generate DefinitionSpillCopy for the derived pointer.
+  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  return (INTPRESSURE == -1) ? default_int_pressure_threshold : INTPRESSURE;
 }
 
 uint Matcher::float_pressure_limit()
