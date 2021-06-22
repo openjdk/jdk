@@ -46,7 +46,7 @@ template <typename T>
 inline T ZFuture<T>::get() {
   // Wait for notification
   Thread* const thread = Thread::current();
-  if (JavaThread::cast(thread)) {
+  if (thread->is_Java_thread()) {
     _sema.wait_with_safepoint_check(JavaThread::cast(thread));
   } else {
     _sema.wait();
