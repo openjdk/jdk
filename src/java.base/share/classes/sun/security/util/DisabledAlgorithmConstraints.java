@@ -85,6 +85,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
+    private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
+            PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
+
     private static class CertPathHolder {
         static final DisabledAlgorithmConstraints CONSTRAINTS =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS);
@@ -130,13 +133,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        Pattern INCLUDE_PATTERN = Pattern.compile(
-                "include " + PROPERTY_DISABLED_EC_CURVES);
         for (String s : disabledAlgorithms) {
-            Matcher matcher;
-            if ((matcher = INCLUDE_PATTERN.matcher(s)).matches()) {
+            Matcher matcher = INCLUDE_PATTERN.matcher(s);
+            if (matcher.matches()) {
                 disabledAlgorithms.remove(matcher.group());
-                disabledAlgorithms.addAll(getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
+                disabledAlgorithms.addAll(
+                        getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
                 break;
             }
         }
