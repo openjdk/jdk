@@ -45,9 +45,10 @@ public:
     G1VerifyYoungNormal     =  1, // -XX:VerifyGCType=young-normal
     G1VerifyConcurrentStart =  2, // -XX:VerifyGCType=concurrent-start
     G1VerifyMixed           =  4, // -XX:VerifyGCType=mixed
-    G1VerifyRemark          =  8, // -XX:VerifyGCType=remark
-    G1VerifyCleanup         = 16, // -XX:VerifyGCType=cleanup
-    G1VerifyFull            = 32, // -XX:VerifyGCType=full
+    G1VerifyYoungEvacFail   =  8, // -XX:VerifyGCType=young-evac-fail
+    G1VerifyRemark          = 16, // -XX:VerifyGCType=remark
+    G1VerifyCleanup         = 32, // -XX:VerifyGCType=cleanup
+    G1VerifyFull            = 64, // -XX:VerifyGCType=full
     G1VerifyAll             = -1
   };
 

@@ -43,8 +43,7 @@ package gc;
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseG1GC gc.TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
- * @run main/othervm -XX:+UseLargePages gc.TestSystemGC
-  */
+ */
 
 /*
  * @test TestSystemGCShenandoah
@@ -53,6 +52,13 @@ package gc;
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.TestSystemGC
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
  */
+
+/*
+ * @test TestSystemGCLargePages
+ * @summary Runs System.gc() with different flags.
+ * @run main/othervm -XX:+UseLargePages gc.TestSystemGC
+ */
+
 public class TestSystemGC {
   public static void main(String args[]) throws Exception {
     System.gc();

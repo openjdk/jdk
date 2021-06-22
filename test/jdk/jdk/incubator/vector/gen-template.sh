@@ -74,10 +74,6 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
-gather_template="Gather-op"
-gather_masked_template="Gather-Masked-op"
-scatter_template="Scatter-op"
-scatter_masked_template="Scatter-Masked-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
 broadcast_template="Broadcast"
@@ -557,12 +553,6 @@ gen_unary_alu_op "ABS+abs" "Math.abs((\$type\$)a)"
 gen_unary_alu_op "NOT+not" "~((\$type\$)a)" "BITWISE"
 gen_unary_alu_op "ZOMO" "(a==0?0:-1)" "BITWISE"
 gen_unary_alu_op "SQRT+sqrt" "Math.sqrt((double)a)" "FP"
-
-# Gather Scatter operations.
-gen_op_tmpl $gather_template "gather" ""
-gen_op_tmpl $gather_masked_template "gather" ""
-gen_op_tmpl $scatter_template "scatter" ""
-gen_op_tmpl $scatter_masked_template "scatter" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

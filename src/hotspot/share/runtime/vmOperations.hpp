@@ -143,12 +143,14 @@ class VM_PrintThreads: public VM_Operation {
   outputStream* _out;
   bool _print_concurrent_locks;
   bool _print_extended_info;
+  bool _print_jni_handle_info;
  public:
   VM_PrintThreads()
-    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false)
+    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni_handle_info(false)
   {}
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
-    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info)
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni_handle_info)
+    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info),
+      _print_jni_handle_info(print_jni_handle_info)
   {}
   VMOp_Type type() const {
     return VMOp_PrintThreads;
@@ -156,16 +158,6 @@ class VM_PrintThreads: public VM_Operation {
   void doit();
   bool doit_prologue();
   void doit_epilogue();
-};
-
-class VM_PrintJNI: public VM_Operation {
- private:
-  outputStream* _out;
- public:
-  VM_PrintJNI()                         { _out = tty; }
-  VM_PrintJNI(outputStream* out)        { _out = out; }
-  VMOp_Type type() const                { return VMOp_PrintJNI; }
-  void doit();
 };
 
 class VM_PrintMetadata : public VM_Operation {

@@ -124,6 +124,7 @@ class AllocatedObj {
   f(mtThreadStack,    "Thread Stack")                                                \
   f(mtCode,           "Code")        /* generated code                            */ \
   f(mtGC,             "GC")                                                          \
+  f(mtGCCardSet,      "GCCardSet")   /* G1 card set remembered set                */ \
   f(mtCompiler,       "Compiler")                                                    \
   f(mtJVMCI,          "JVMCI")                                                       \
   f(mtInternal,       "Internal")    /* memory used by VM, but does not belong to */ \

@@ -51,11 +51,6 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
 }
 
 G1FullGCScope::~G1FullGCScope() {
-  // We must call G1MonitoringSupport::update_sizes() in the same scoping level
-  // as an active TraceMemoryManagerStats object (i.e. before the destructor for the
-  // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
-  // before any GC notifications are raised.
-  _g1h->g1mm()->update_sizes();
   _g1h->trace_heap_after_gc(&_tracer);
   _g1h->post_full_gc_dump(&_timer);
   _timer.register_gc_end();

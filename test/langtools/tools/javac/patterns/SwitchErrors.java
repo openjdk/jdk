@@ -190,4 +190,16 @@ public class SwitchErrors {
     }
     sealed class SealedNonAbstract permits A {}
     final class A extends SealedNonAbstract {}
+    Object guardWithMatchingStatement(Object o1, Object o2) {
+        switch (o1) {
+            case String s && s.isEmpty() || o2 instanceof Number n: return n;
+            default: return null;
+        }
+    }
+    Object guardWithMatchingExpression(Object o1, Object o2) {
+        return switch (o1) {
+            case String s && s.isEmpty() || o2 instanceof Number n -> n;
+            default -> null;
+        };
+    }
 }
