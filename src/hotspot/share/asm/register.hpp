@@ -58,7 +58,8 @@ class AbstractRegisterImpl {
 // here in case some platform needs them.
 
 #define CONSTANT_REGISTER_DECLARATION(type, name, value)        \
-const type name = ((type)value)
+const type name = ((type)value);                                \
+enum { name##_##type##EnumValue = (value) }
 
 #define REGISTER_DECLARATION(type, name, value)                 \
 const type name = ((type)value)
