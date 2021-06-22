@@ -1308,7 +1308,8 @@ public final class ZonedDateTime
                     yield resolveOffset(offset);
                 }
                 default -> resolveLocal(dateTime.with(field, newValue));
-        };
+            };
+        }
         return field.adjustInto(this, newValue);
     }
 

@@ -849,7 +849,7 @@ public final class Instant
     @Override
     public Instant plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+            return switch ((ChronoUnit) unit) {
                 case NANOS     -> plusNanos(amountToAdd);
                 case MICROS    -> plus(amountToAdd / 1000_000, (amountToAdd % 1000_000) * 1000);
                 case MILLIS    -> plusMillis(amountToAdd);
@@ -858,8 +858,8 @@ public final class Instant
                 case HOURS     -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_HOUR));
                 case HALF_DAYS -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
                 case DAYS      -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
