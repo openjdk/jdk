@@ -130,9 +130,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        Pattern INCLUDE_PATTERN = Pattern.compile("include " + PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
-        Matcher matcher;
+        Pattern INCLUDE_PATTERN = Pattern.compile(
+                "include " + PROPERTY_DISABLED_EC_CURVES);
         for (String s : disabledAlgorithms) {
+            Matcher matcher;
             if ((matcher = INCLUDE_PATTERN.matcher(s)).matches()) {
                 disabledAlgorithms.remove(matcher.group());
                 disabledAlgorithms.addAll(getAlgorithms(PROPERTY_DISABLED_EC_CURVES));

@@ -87,18 +87,16 @@ public abstract class AbstractAlgorithmConstraints
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        Set<String> elements = null;
         if (algorithms.contains(algorithm)) {
             return false;
         }
 
         // decompose the algorithm into sub-elements
-        if (elements == null) {
-            elements = decomposer.decompose(algorithm);
-        }
+        Set<String> elements = decomposer.decompose(algorithm);
+
         // check the element of the elements
         for (String element : elements) {
-            if (algorithms.contains(algorithm)) {
+            if (algorithms.contains(element)) {
                 return false;
             }
         }
