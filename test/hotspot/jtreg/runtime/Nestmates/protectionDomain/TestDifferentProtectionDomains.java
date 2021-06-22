@@ -110,9 +110,16 @@ public class TestDifferentProtectionDomains {
 
         // Force the constructor to compile, which then triggers the nestmate
         // access check in the compiler thread, which leads to the original bug.
-        wb.enqueueMethodForCompilation(cons,  CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        while (!wb.isMethodCompiled(cons)) {
+        int optimizationLevel = CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
+        if (!wb.isC2OrJVMCIIncluded()) {
+            optimizationLevel = CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE;
+        }
+        wb.enqueueMethodForCompilation(cons,  optimizationLevel);
+        for (int i = 0; i < 300 && !wb.isMethodCompiled(cons); ++i) {
             Thread.sleep(100);
+        }
+        if (!wb.isMethodCompiled(cons)) {
+            throw new RuntimeException("Timeout");
         }
 
         // Just for good measure call the compiled constructor.
