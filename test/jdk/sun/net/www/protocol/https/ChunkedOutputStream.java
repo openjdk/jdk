@@ -86,6 +86,7 @@ public class ChunkedOutputStream implements HttpHandler {
         if (hostaddr.indexOf(':') > -1) hostaddr = "[" + hostaddr + "]";
         return hostaddr + ":" + server.getAddress().getPort();
     }
+
     public void handle(HttpExchange req) throws IOException {
         // this is needed (count++ doesn't work), 'cause we
         // are doing concurrent tests
@@ -150,6 +151,9 @@ public class ChunkedOutputStream implements HttpHandler {
                 }
                 break;
             case 3: /* test 6 */
+                if (path.equals("/d6")) {
+                    reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
+                }
                 req.getResponseHeaders().set("Location", "https://foo.bar/");
                 req.getResponseHeaders().set("Connection", "close");
                 req.sendResponseHeaders(307, -1);
@@ -168,6 +172,7 @@ public class ChunkedOutputStream implements HttpHandler {
                 req.sendResponseHeaders(404, -1);
                 break;
         }
+        req.close();
     }
 
     static void readAndCompare(InputStream is, String cmp) throws IOException {
