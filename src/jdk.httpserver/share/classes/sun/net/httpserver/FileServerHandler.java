@@ -55,7 +55,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class FileServerHandler implements HttpHandler {
 
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
-    private static final List<String> UNSUPPORTED_METHODS = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
+    private static final List<String> UNSUPPORTED_METHODS = List.of("CONNECT", "DELETE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
@@ -106,9 +106,6 @@ public final class FileServerHandler implements HttpHandler {
 
     void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException {
-        if (Files.isSymbolicLink(path)) {
-            throw new AssertionError("Unexpected symlink:" + path);
-        }
         if (Files.isDirectory(path)) {
             if (testMissingSlash(exchange)) {
                 handleMovedPermanently(exchange);
