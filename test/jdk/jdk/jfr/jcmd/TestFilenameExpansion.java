@@ -24,9 +24,12 @@
 package jdk.jfr.jcmd;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.FileHelper;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
@@ -34,47 +37,20 @@ import jdk.test.lib.jfr.FileHelper;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:StartFlightRecording=name=test,filename=output_%p.jfr jdk.jfr.jcmd.TestFilenameExpansion
+ * @run main/othervm jdk.jfr.jcmd.TestFilenameExpansion
  */
 public class TestFilenameExpansion {
 
     public static void main(String[] args) throws Exception {
         String pid = Long.toString(ProcessHandle.current().pid());
+        String name = "output_%p_%t_%%.jfr";
+        String pattern = "output_" + pid + "_" + "\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}" + "_%\\.jfr";
 
-        JcmdHelper.jcmd("JFR.stop name=test");
-        checkFileAndDelete("output_" + pid + ".jfr");
-
-        testJcmd("output.jfr", "output.jfr");
-        testJcmd("output_%p.jfr", "output_" + pid + ".jfr");
-        testJcmd("%p_output_%p.jfr", pid + "_output_" + pid + ".jfr");
-        testJcmd("%%_output_%p.jfr", "%_output_" + pid + ".jfr");
-        testJcmd("%a_output_%%", "%a_output_%");
-    }
-
-    private static void testJcmd(String name, String finalName) throws Exception {
-        // set when JFR.start
-        JcmdHelper.jcmd("JFR.start name=test filename=" + name);
-        JcmdHelper.jcmd("JFR.dump name=test");
-        checkFileAndDelete(finalName);
-        JcmdHelper.jcmd("JFR.stop name=test");
-
-        // set when JFR.dump
         JcmdHelper.jcmd("JFR.start name=test");
-        JcmdHelper.jcmd("JFR.dump name=test filename=" + name);
-        checkFileAndDelete(finalName);
-        JcmdHelper.jcmd("JFR.stop name=test");
-
-        // set when JFR.stop
-        JcmdHelper.jcmd("JFR.start name=test");
-        JcmdHelper.jcmd("JFR.stop name=test filename=" + name);
-        checkFileAndDelete(finalName);
-    }
-
-    private static void checkFileAndDelete(String filename) {
+        String filename = JcmdHelper.readFilename(JcmdHelper.jcmd("JFR.dump name=test filename=" + name));
         File file = new File(filename);
         Asserts.assertTrue(file.exists(), file.getAbsolutePath() + " does not exist");
         Asserts.assertTrue(file.isFile(), file.getAbsolutePath() + " is not a file");
-        Asserts.assertTrue(file.delete(), "Delete " + file.getAbsolutePath() + " failed");
-        Asserts.assertFalse(file.exists(), file.getAbsolutePath() + " should be deleted");
+        Asserts.assertTrue(Pattern.compile(pattern).matcher(filename).find());
     }
 }

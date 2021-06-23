@@ -29,10 +29,12 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 import jdk.jfr.FlightRecorder;
@@ -271,22 +273,32 @@ abstract class AbstractDCmd {
     }
 
     static String expandFilename(String filename) {
-        if (filename == null) {
-            return null;
+        if (filename == null || filename.indexOf('%') == -1) {
+            return filename;
         }
 
-        String pid = JVM.getJVM().getPid();
+        String pid = null;
+        String time = null;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < filename.length(); i++) {
             char c = filename.charAt(i);
             if (c == '%' && i < filename.length() - 1) {
                 char nc = filename.charAt(i + 1);
                 if (nc == '%') { // %% ==> %
-                    sb.append(c);
+                    sb.append('%');
                     i++;
                 } else if (nc == 'p') {
+                    if (pid == null) {
+                      pid = JVM.getJVM().getPid();
+                    }
                     sb.append(pid);
                     i++;
+                } else if (nc == 't') {
+                   if (time == null) {
+                       time = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+                   }
+                   sb.append(time);
+                   i++;
                 } else {
                     sb.append('%');
                 }
