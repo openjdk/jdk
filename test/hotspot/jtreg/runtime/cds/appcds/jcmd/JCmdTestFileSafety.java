@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8265465
+ * @bug 8265465 8267075
  * @summary Test jcmd to dump static shared archive.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
@@ -44,16 +44,16 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class JCmdTestFileSafety extends JCmdTestDumpBase {
-    static final String promtStdout = "please check stdout file";
-    static final String promtStderr = "or stderr file";
+    static final String promptStdout = "please check stdout file";
+    static final String promptStderr = "or stderr file";
 
     static void checkContainAbsoluteLogPath(OutputAnalyzer output) throws Exception {
        String stdText = output.getOutput();
-       if (stdText.contains(promtStdout) &&
-           stdText.contains(promtStderr)) {
-           int a = stdText.indexOf(promtStdout);
-           int b = stdText.indexOf(promtStderr);
-           String stdOutFileName = stdText.substring(a + promtStdout.length() + 1, b - 1).trim();
+       if (stdText.contains(promptStdout) &&
+           stdText.contains(promptStderr)) {
+           int a = stdText.indexOf(promptStdout);
+           int b = stdText.indexOf(promptStderr);
+           String stdOutFileName = stdText.substring(a + promptStdout.length() + 1, b - 1).trim();
            File   stdOutFile = new File(stdOutFileName);
            if (!stdOutFile.isAbsolute()) {
                throw new RuntimeException("Failed to set file name in absolute for prompting message");
