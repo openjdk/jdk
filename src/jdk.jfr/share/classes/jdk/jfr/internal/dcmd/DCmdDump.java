@@ -234,7 +234,7 @@ final class DCmdDump extends AbstractDCmd {
 
                                  Note: If a filename is given, '%%p' in the filename will be
                                  replaced by the PID, and '%%t' will be replaced by the time in
-                                 'yyyy-MM-dd_HH-mm-ss' format.
+                                 'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage          (Optional) Length of time for dumping the flight recording data to a
                                  file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for

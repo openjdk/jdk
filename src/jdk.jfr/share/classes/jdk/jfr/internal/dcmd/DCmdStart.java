@@ -341,7 +341,7 @@ final class DCmdStart extends AbstractDCmd {
 
                                  Note: If a filename is given, '%%p' in the filename will be
                                  replaced by the PID, and '%%t' will be replaced by the time in
-                                 'yyyy-MM-dd_HH-mm-ss' format.
+                                 'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage          (Optional) Maximum time to keep the recorded data on disk. This
                                  parameter is valid only when the disk parameter is set to true.

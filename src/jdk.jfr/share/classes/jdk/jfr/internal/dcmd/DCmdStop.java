@@ -80,7 +80,7 @@ final class DCmdStop extends AbstractDCmd {
                            is discarded. (STRING, no default value)
 
                            Note: If a path is given, '%%p' in the path will be replaced by the PID,
-                           and '%%t' will be replaced by the time in 'yyyy-MM-dd_HH-mm-ss' format.
+                           and '%%t' will be replaced by the time in 'yyyy_MM_dd_HH_mm_ss' format.
 
                  name      Name of the recording (STRING, no default value)
 
