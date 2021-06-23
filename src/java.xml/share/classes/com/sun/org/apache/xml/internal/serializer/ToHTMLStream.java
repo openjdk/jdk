@@ -1441,17 +1441,6 @@ public final class ToHTMLStream extends ToStream
                             }
                         }
                     }
-
-                    // The next is kind of a hack to keep from escaping in the case
-                    // of Shift_JIS and the like.
-
-                    /*
-                    else if ((ch < m_maxCharacter) && (m_maxCharacter == 0xFFFF)
-                    && (ch != 160))
-                    {
-                    writer.write(ch);  // no escaping in this case
-                    }
-                    */
                     else
                     {
                         String outputStringForChar = m_charInfo.getOutputStringForChar(ch);
