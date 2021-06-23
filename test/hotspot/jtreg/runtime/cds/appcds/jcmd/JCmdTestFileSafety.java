@@ -41,8 +41,25 @@ import java.io.IOException;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class JCmdTestFileSafety extends JCmdTestDumpBase {
+    static final String promtStdout = "please check stdout file";
+    static final String promtStderr = "or stderr file";
+
+    static void checkContainAbsoluteLogPath(OutputAnalyzer output) throws Exception {
+       String stdText = output.getOutput();
+       if (stdText.contains(promtStdout) &&
+           stdText.contains(promtStderr)) {
+           int a = stdText.indexOf(promtStdout);
+           int b = stdText.indexOf(promtStderr);
+           String stdOutFileName = stdText.substring(a + promtStdout.length() + 1, b - 1).trim();
+           File   stdOutFile = new File(stdOutFileName);
+           if (!stdOutFile.isAbsolute()) {
+               throw new RuntimeException("Failed to set file name in absolute for prompting message");
+           }
+        }
+    }
 
     static void test() throws Exception {
         buildJars();
@@ -67,9 +84,15 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         test(localFileName, pid, noBoot,  EXPECT_PASS);
         outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
-        app.stopApp();
         outputDirFile.setWritable(true);
         checkFileExistence(localFileName, true/*exist*/);
+
+        // Illegal character in file name
+        localFileName = "mystatic:.jsa";
+        OutputAnalyzer output = test(localFileName, pid, noBoot,  EXPECT_FAIL);
+        checkFileExistence(localFileName, false/*exist*/);
+        checkContainAbsoluteLogPath(output);
+        app.stopApp();
 
         setIsStatic(false/*dynamic*/);
         //  Set target dir not writable, do dynamic dump
