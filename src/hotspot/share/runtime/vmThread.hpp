@@ -130,6 +130,9 @@ class VMThread: public NamedThread {
 
   static void wait_until_executed(VM_Operation* op);
 
+  // Printing
+  const char* type_name() const { return "VMThread"; }
+
  private:
   // VM_Operation support
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
