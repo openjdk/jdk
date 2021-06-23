@@ -202,14 +202,13 @@ class SystemDictionary : AllStatic {
   // Initialization
   static void initialize(TRAPS);
 
-protected:
-  // Returns the class loader data to be used when looking up/updating the
-  // system dictionary.
-  static ClassLoaderData *class_loader_data(Handle class_loader);
-
 public:
   // Returns java system loader
   static oop java_system_loader();
+
+  // Returns the class loader data to be used when looking up/updating the
+  // system dictionary.
+  static ClassLoaderData *class_loader_data(Handle class_loader);
 
   // Returns java platform loader
   static oop java_platform_loader();
@@ -220,7 +219,6 @@ public:
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
 
-public:
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method);
 

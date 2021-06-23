@@ -32,6 +32,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -246,7 +247,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
   if (UseSharedSpaces) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
-      SystemDictionaryShared::allocate_shared_data_arrays(size, CHECK);
+      CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
       if (!DynamicDumpSharedSpaces) {
         FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
@@ -700,7 +701,7 @@ void MetaspaceShared::preload_classes(TRAPS) {
   // Exercise the manifest processing code to ensure classes used by CDS at runtime
   // are always archived
   const char* dummy = "Manifest-Version: 1.0\n";
-  SystemDictionaryShared::create_jar_manifest(dummy, strlen(dummy), CHECK);
+  CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
   log_info(cds)("Loading classes to share: done.");
   log_info(cds)("Shared spaces: preloaded %d classes", class_count);

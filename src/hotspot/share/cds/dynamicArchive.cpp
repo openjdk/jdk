@@ -319,7 +319,7 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (SystemDictionaryShared::empty_dumptime_table()) {
+    if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
       return;
     }
