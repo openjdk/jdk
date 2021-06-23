@@ -190,16 +190,16 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles(Iterable) getJavaFileObjectsFromFiles}.
+     * {@code IllegalArgumentException} will be thrown
+     * if any of the paths cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
      * @throws IllegalArgumentException if the list of paths includes
      * a directory or if this file manager does not support any of the
-     * given paths.
+     * given paths
      *
      * @since 13
      */
@@ -212,10 +212,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromPaths(Collection) getJavaFileObjectsFromPaths}.
+     * {@code IllegalArgumentException} will be thrown
+     * if any of the paths cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
@@ -248,7 +248,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @param files an array of files
      * @return a list of file objects
      * @throws IllegalArgumentException if the array of files includes
-     * a directory
+     * a directory or if this file manager does not support any of the
+     * given paths
      * @throws NullPointerException if the given array contains null
      * elements
      */
@@ -262,10 +263,15 @@ public interface StandardJavaFileManager extends JavaFileManager {
      *     getJavaFileObjectsFromPaths({@linkplain java.util.Arrays#asList Arrays.asList}(paths))
      * </pre>
      *
+     * @implSpec
+     * The default implementation will only throw {@code NullPointerException}
+     * if {@linkplain #getJavaFileObjectsFromPaths(Collection)} throws it.
+     *
      * @param paths an array of paths
      * @return a list of file objects
      * @throws IllegalArgumentException if the array of files includes
-     * a directory
+     * a directory or if this file manager does not support any of the
+     * given paths
      * @throws NullPointerException if the given array contains null
      * elements
      *
@@ -332,10 +338,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * will be cancelled.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * {@linkplain IllegalArgumentException IllegalArgumentException}
-     * will be thrown if any of the paths cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #setLocation setLocation}.
+     * {@code IllegalArgumentException} will be thrown if any of the paths cannot
+     * be converted to a file at the point the conversion happens.
      *
      * @param location a location
      * @param paths a list of paths, if {@code null} use the default
