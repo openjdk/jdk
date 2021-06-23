@@ -2983,7 +2983,7 @@ const TypeRawPtr *TypeRawPtr::make( address bits ) {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const Type *TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
+const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for NULL" );
   assert( _bits==0, "Why cast a constant address?");
@@ -3195,7 +3195,7 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
 
 
 //------------------------------cast_to_ptr_type-------------------------------
-const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
+const TypeOopPtr* TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _offset, _instance_id, _speculative, _inline_depth);
@@ -3684,7 +3684,7 @@ const Type* TypeInstPtr::get_const_boxed_value() const {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const Type *TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
+const TypeInstPtr *TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   // Reconstruct _sig info here since not a problem with later lazy
   // construction, _sig will show up on demand.
@@ -4229,7 +4229,7 @@ const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciK
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const Type *TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
+const TypeAryPtr* TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
@@ -4914,7 +4914,7 @@ intptr_t TypeMetadataPtr::get_con() const {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const Type *TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
+const TypeMetadataPtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, metadata(), _offset);
 }
@@ -5569,9 +5569,6 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
 const TypeOopPtr* TypeAryKlassPtr::as_instance_type() const {
   ciKlass* k = klass();
   bool    xk = klass_is_exact();
-  const TypeOopPtr* toop = TypeOopPtr::make_from_klass_raw(k);
-  guarantee(toop != NULL, "need type for given klass");
-  toop = toop->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
   const Type* el = elem()->isa_klassptr() ? elem()->is_klassptr()->as_instance_type()->is_oopptr()->cast_to_exactness(false) : elem();
   return TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(el, TypeInt::POS), k, xk, 0);
 }

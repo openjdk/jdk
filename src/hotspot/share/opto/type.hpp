@@ -1019,7 +1019,7 @@ public:
   static const TypeRawPtr *make( address bits );
 
   // Return a 'ptr' version of this type
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual intptr_t get_con() const;
 
@@ -1118,7 +1118,7 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeOopPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1202,7 +1202,7 @@ class TypeInstPtr : public TypeOopPtr {
   // be a TypeInstPtr, but may also be a TypeInt::INT for int.class, etc.
   ciType* java_mirror_type() const;
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeInstPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1288,7 +1288,7 @@ public:
                                 int inline_depth = InlineDepthBottom, bool is_autobox_cache = false);
 
   // Return a 'ptr' version of this type
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeAryPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1367,7 +1367,7 @@ public:
 
   ciMetadata* metadata() const { return _metadata; }
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeMetadataPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
 
