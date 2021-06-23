@@ -203,24 +203,6 @@ jlong CgroupV2Subsystem::read_memory_limit_in_bytes() {
   return limit;
 }
 
-jlong CgroupV2Subsystem::limit_from_str(char* limit_str) {
-  if (limit_str == NULL) {
-    return OSCONTAINER_ERROR;
-  }
-  // Unlimited memory in Cgroups V2 is the literal string 'max'
-  if (strcmp("max", limit_str) == 0) {
-    os::free(limit_str);
-    return (jlong)-1;
-  }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    os::free(limit_str);
-    return OSCONTAINER_ERROR;
-  }
-  os::free(limit_str);
-  return (jlong)limit;
-}
-
 char* CgroupV2Subsystem::mem_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.max",
                          "Raw value for memory limit is: %s", "%s", mem_limit_str, 1024);
@@ -244,19 +226,27 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   return os::strdup(buf);
 }
 
-jlong CgroupV2Subsystem::pids_max() {
-  // we have to handle the special "max" value
-  GET_CONTAINER_INFO(jlong, _unified, "/pids.max",
-                     "Maximum number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pidsmax);
-  // not a number -> could be "max"
-  if (pidsmax < 0) {
-    char myline[1024];
-    int err2;
-    err2 = subsystem_file_line_contents(_unified, "/pids.max", NULL, "%1023s", myline);
-    if (err2 != 0) {
-      if (strncmp(myline, "max", 3) == 0) return -3;
-    }
+char* CgroupV2Subsystem::pids_max_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
+                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+  if (pidsmax == NULL) {
+    return NULL;
   }
+  return os::strdup(pidsmax);
+}
+
+/* pids_max
+ *
+ * Return the maximum number of tasks available to the process
+ *
+ * return:
+ *    maximum number of tasks
+ *    -1 for unlimited
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV2Subsystem::pids_max() {
+  char * pidsmax_str = pids_max_val();
+  jlong pidsmax = limit_from_str(pidsmax_str);
   return pidsmax;
 }
 

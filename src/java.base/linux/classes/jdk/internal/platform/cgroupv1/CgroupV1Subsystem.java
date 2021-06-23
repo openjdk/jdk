@@ -412,7 +412,8 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      *  pids subsystem
      ****************************************************************/
     public long getPidsMax() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(pids, "pids.max"));
+        String pidsMaxStr = CgroupSubsystemController.getStringValue(pids, "pids.max");
+        return CgroupSubsystem.limitFromString(pidsMaxStr);
     }
 
     /*****************************************************************

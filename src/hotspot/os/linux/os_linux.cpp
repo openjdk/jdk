@@ -2313,11 +2313,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
   } else {
-    if (j == -3) {
-      st->print_cr("max");
-    } else {
-      st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-    }
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
   return true;

@@ -60,7 +60,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char *mem_swp_limit_val();
     char *mem_soft_limit_val();
     char *cpu_quota_val();
-    jlong limit_from_str(char* limit_str);
+    char *pids_max_val();
 
   public:
     CgroupV2Subsystem(CgroupController * unified) {

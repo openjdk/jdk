@@ -239,6 +239,7 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
+    jlong limit_from_str(char* limit_str);
 
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;

@@ -169,7 +169,7 @@ public class CgroupSubsystemFactory {
             "perf_event  4   1   1\n" +
             "net_prio    5   1   1\n" +
             "hugetlb 6   1   1\n" +
-            "pids    9   80  1";  //  the 3 did not match 9
+            "pids    9   80  1";  // hierarchy has to match procSelfCgroupHybridContent
     private String mntInfoCgroupsV2Only =
             "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate";
     private String mntInfoCgroupsV1SystemdOnly =

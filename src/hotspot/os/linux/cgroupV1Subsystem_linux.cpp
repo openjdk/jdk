@@ -242,29 +242,28 @@ int CgroupV1Subsystem::cpu_shares() {
   return shares;
 }
 
+
+char* CgroupV1Subsystem::pids_max_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.max",
+                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+  if (pidsmax == NULL) {
+    return NULL;
+  }
+  return os::strdup(pidsmax);
+}
+
 /* pids_max
  *
  * Return the maximum number of tasks available to the process
  *
  * return:
  *    maximum number of tasks
- *    -1 for no setup
- *    -3 for "max" (special value)
+ *    -1 for unlimited
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1Subsystem::pids_max() {
   if (_pids == NULL) return OSCONTAINER_ERROR;
-
-  GET_CONTAINER_INFO(jlong, _pids, "/pids.max",
-                     "Maximum number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pidsmax);
-  if (pidsmax < 0) {
-    // check for potential special value
-    char myline[1024];
-    int err2;
-    err2 = subsystem_file_line_contents(_pids, "/pids.max", NULL, "%1023s", myline);
-    if (err2 != 0) {
-      if (strncmp(myline, "max", 3) == 0) return -3;
-    }
-  }
+  char * pidsmax_str = pids_max_val();
+  jlong pidsmax = limit_from_str(pidsmax_str);
   return pidsmax;
 }

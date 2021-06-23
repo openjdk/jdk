@@ -133,7 +133,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   char buf[MAXPATHLEN+1];
   char *p;
   bool is_cgroupsV2;
-  // true iff all required controllers, memory, cpu, cpuset, cpuacct enabled
+  // true iff all required controllers, memory, cpu, cpuset, cpuacct are enabled
   // at the kernel level.
   // pids might not be enabled on older Linux distros (SLES 12.1, RHEL 7.1)
   bool all_required_controllers_enabled;
@@ -190,12 +190,12 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   is_cgroupsV2 = true;
   all_required_controllers_enabled = true;
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    // the pids controller is not there on older Linux distros
+    // pids controller is optional. All other controllers are required
     if (i != PIDS_IDX) {
       is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
       all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
     }
-    if (! cg_infos[i]._enabled) {
+    if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
       log_debug(os, container)("controller %s is not enabled\n", cg_controller_name[i]);
     }
   }
@@ -421,7 +421,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     *flags = INVALID_CGROUPS_V1;
     return false;
   }
-  if (!cg_infos[PIDS_IDX]._data_complete) {
+  if (log_is_enabled(Debug, os, container) && !cg_infos[PIDS_IDX]._data_complete) {
     log_debug(os, container)("Optional cgroup v1 pids subsystem not found");
     // keep the other controller info, pids is optional
   }
@@ -550,4 +550,23 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;
+}
+
+jlong CgroupSubsystem::limit_from_str(char* limit_str) {
+  if (limit_str == NULL) {
+    return OSCONTAINER_ERROR;
+  }
+  // Unlimited memory in Cgroups V2 is the literal string 'max'
+  // it is also found in the pids controller
+  if (strcmp("max", limit_str) == 0) {
+    os::free(limit_str);
+    return (jlong)-1;
+  }
+  julong limit;
+  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
+    os::free(limit_str);
+    return OSCONTAINER_ERROR;
+  }
+  os::free(limit_str);
+  return (jlong)limit;
 }
