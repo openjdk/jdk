@@ -3624,7 +3624,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       Thread* current = Thread::current();
       Klass* caller = current->is_Java_thread() ?
-        current->as_Java_thread()->security_get_caller_class(1):
+        JavaThread::cast(current)->security_get_caller_class(1):
         NULL;
       // caller can be NULL, for example, during a JVMTI VM_Init hook
       if (caller != NULL) {

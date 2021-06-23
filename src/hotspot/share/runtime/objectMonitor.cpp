@@ -252,7 +252,7 @@ static void check_object_context() {
   Thread* self = Thread::current();
   if (self->is_Java_thread()) {
     // Mostly called from JavaThreads so sanity check the thread state.
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     switch (jt->thread_state()) {
     case _thread_in_vm:    // the usual case
     case _thread_in_Java:  // during deopt
