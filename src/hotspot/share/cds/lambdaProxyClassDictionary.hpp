@@ -24,9 +24,13 @@
 
 #ifndef SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
 #define SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
-#include "cds/sharedClassInfo.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/resourceHash.hpp"
+
+class InstanceKlass;
+class Method;
+class Symbol;
 
 class LambdaProxyClassKey {
   InstanceKlass* _caller_ik;
@@ -147,11 +151,6 @@ public:
   }
 };
 
-class LambdaProxyClassDictionary : public OffsetCompactHashtable<
-  LambdaProxyClassKey*,
-  const RunTimeLambdaProxyClassInfo*,
-  RunTimeLambdaProxyClassInfo::EQUALS> {};
-
 class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
@@ -162,5 +161,10 @@ class DumpTimeLambdaProxyClassDictionary
 public:
   int _count;
 };
+
+class LambdaProxyClassDictionary : public OffsetCompactHashtable<
+  LambdaProxyClassKey*,
+  const RunTimeLambdaProxyClassInfo*,
+  RunTimeLambdaProxyClassInfo::EQUALS> {};
 
 #endif // SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP

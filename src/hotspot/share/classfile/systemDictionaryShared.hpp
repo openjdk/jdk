@@ -26,8 +26,9 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/filemap.hpp"
-#include "cds/sharedClassInfo.hpp"
-#include "cds/lambdaProxyClassInfo.hpp"
+#include "cds/dumpTimeSharedClassInfo.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/runTimeSharedClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"

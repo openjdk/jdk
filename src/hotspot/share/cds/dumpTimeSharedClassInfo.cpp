@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/sharedClassInfo.hpp"
-#include "cds/lambdaProxyClassInfo.hpp"
+#include "cds/dumpTimeSharedClassInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -156,69 +155,4 @@ void DumpTimeSharedClassTable::update_counts() {
   _unregistered_count = 0;
   CountClassByCategory counter(this);
   iterate(&counter);
-}
-
-size_t RunTimeSharedClassInfo::crc_size(InstanceKlass* klass) {
-  if (!SystemDictionaryShared::is_builtin(klass)) {
-    return sizeof(CrcInfo);
-  } else {
-    return 0;
-  }
-}
-
-void RunTimeSharedClassInfo::init(DumpTimeSharedClassInfo& info) {
-  ArchiveBuilder* builder = ArchiveBuilder::current();
-  assert(builder->is_in_buffer_space(info._klass), "must be");
-  _klass = info._klass;
-  if (!SystemDictionaryShared::is_builtin(_klass)) {
-    CrcInfo* c = crc();
-    c->_clsfile_size = info._clsfile_size;
-    c->_clsfile_crc32 = info._clsfile_crc32;
-  }
-  _num_verifier_constraints = info.num_verifier_constraints();
-  _num_loader_constraints   = info.num_loader_constraints();
-  int i;
-  if (_num_verifier_constraints > 0) {
-    RTVerifierConstraint* vf_constraints = verifier_constraints();
-    char* flags = verifier_constraint_flags();
-    for (i = 0; i < _num_verifier_constraints; i++) {
-      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i)._name);
-      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i)._from_name);
-    }
-    for (i = 0; i < _num_verifier_constraints; i++) {
-      flags[i] = info._verifier_constraint_flags->at(i);
-    }
-  }
-
-  if (_num_loader_constraints > 0) {
-    RTLoaderConstraint* ld_constraints = loader_constraints();
-    for (i = 0; i < _num_loader_constraints; i++) {
-      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i)._name);
-      ld_constraints[i]._loader_type1 = info._loader_constraints->at(i)._loader_type1;
-      ld_constraints[i]._loader_type2 = info._loader_constraints->at(i)._loader_type2;
-    }
-  }
-
-  if (_klass->is_hidden()) {
-    InstanceKlass* n_h = info.nest_host();
-    set_nest_host(n_h);
-  }
-  ArchivePtrMarker::mark_pointer(&_klass);
-}
-
-void LambdaProxyClassKey::mark_pointers() {
-  ArchivePtrMarker::mark_pointer(&_caller_ik);
-  ArchivePtrMarker::mark_pointer(&_instantiated_method_type);
-  ArchivePtrMarker::mark_pointer(&_invoked_name);
-  ArchivePtrMarker::mark_pointer(&_invoked_type);
-  ArchivePtrMarker::mark_pointer(&_member_method);
-  ArchivePtrMarker::mark_pointer(&_method_type);
-}
-
-unsigned int LambdaProxyClassKey::hash() const {
-  return SystemDictionaryShared::hash_for_shared_dictionary((address)_caller_ik) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_name) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_method_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_instantiated_method_type);
 }
