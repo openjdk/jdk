@@ -591,6 +591,13 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             height = Math.abs(height);
         }
 
+        if (metadata.compression == BI_RGB) {
+            long imageDataSize = (width * height * (bitsPerPixel / 8));
+            if (imageDataSize > (bitmapFileSize - bitmapOffset)) {
+                throw new IIOException(I18N.getString("BMPImageReader9"));
+            }
+        }
+
         // Reset Image Layout so there's only one tile.
         //Define the color space
         ColorSpace colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
