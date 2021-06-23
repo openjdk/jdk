@@ -76,9 +76,11 @@ final class DCmdStop extends AbstractDCmd {
                Options:
 
                  filename  (Optional) Name of the file to which the recording is written when the
-                           recording is stopped. The string '%%p' in the filename will be replaced
-                           with the PID. If no path is provided, the data from the recording is
-                           discarded. (STRING, no default value)
+                           recording is stopped. If no path is provided, the data from the recording
+                           is discarded. (STRING, no default value)
+
+                           Note: If a path is given, '%%p' in the path will be replaced by the PID,
+                           and '%%t' will be replaced by the time in 'yyyy-MM-dd_HH-mm-ss' format.
 
                  name      Name of the recording (STRING, no default value)
 

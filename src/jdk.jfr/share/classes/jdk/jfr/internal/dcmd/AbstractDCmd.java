@@ -289,16 +289,16 @@ abstract class AbstractDCmd {
                     i++;
                 } else if (nc == 'p') {
                     if (pid == null) {
-                      pid = JVM.getJVM().getPid();
+                        pid = JVM.getJVM().getPid();
                     }
                     sb.append(pid);
                     i++;
                 } else if (nc == 't') {
-                   if (time == null) {
-                       time = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-                   }
-                   sb.append(time);
-                   i++;
+                    if (time == null) {
+                        time = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+                    }
+                    sb.append(time);
+                    i++;
                 } else {
                     sb.append('%');
                 }

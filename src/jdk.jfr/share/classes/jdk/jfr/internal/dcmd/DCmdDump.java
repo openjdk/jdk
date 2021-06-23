@@ -227,11 +227,14 @@ final class DCmdDump extends AbstractDCmd {
                                  For example, "-12h", "-15m" or "-30s"
 
                  filename        (Optional) Name of the file to which the flight recording data is
-                                 dumped. The string '%%p' in the filename will be replaced with the
-                                 PID. If no filename is given, a filename is generated from the PID
+                                 dumped. If no filename is given, a filename is generated from the PID
                                  and the current date. The filename may also be a directory in which
                                  case, the filename is generated from the PID and the current date in
                                  the specified directory. (STRING, no default value)
+
+                                 Note: If a filename is given, '%%p' in the filename will be
+                                 replaced by the PID, and '%%t' will be replaced by the time in
+                                 'yyyy-MM-dd_HH-mm-ss' format.
 
                  maxage          (Optional) Length of time for dumping the flight recording data to a
                                  file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for

@@ -332,13 +332,16 @@ final class DCmdStart extends AbstractDCmd {
                                  hours, 0s)
 
                  filename        (Optional) Name of the file to which the flight recording data is
-                                 written when the recording is stopped. The string '%%p' in the
-                                 filename will be replaced with the PID. If no filename is given,
-                                 a filename is generated from the PID and the current date and is
+                                 written when the recording is stopped. If no filename is given, a
+                                 filename is generated from the PID and the current date and is
                                  placed in the directory where the process was started. The
                                  filename may also be a directory in which case, the filename is
                                  generated from the PID and the current date in the specified
                                  directory. (STRING, no default value)
+
+                                 Note: If a filename is given, '%%p' in the filename will be
+                                 replaced by the PID, and '%%t' will be replaced by the time in
+                                 'yyyy-MM-dd_HH-mm-ss' format.
 
                  maxage          (Optional) Maximum time to keep the recorded data on disk. This
                                  parameter is valid only when the disk parameter is set to true.
