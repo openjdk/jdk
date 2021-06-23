@@ -4068,17 +4068,56 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
 }
 
-// Deoptimize all compiled code that depends on the classes redefined.
+// Deoptimize all compiled code that depends on this class.
+//
+// If the can_redefine_classes capability is obtained in the onload
+// phase then the compiler has recorded all dependencies from startup.
+// In that case we need only deoptimize and throw away all compiled code
+// that depends on the class.
+//
+// If can_redefine_classes is obtained sometime after the onload
+// phase then the dependency information may be incomplete. In that case
+// the first call to RedefineClasses causes all compiled code to be
+// thrown away. As can_redefine_classes has been obtained then
+// all future compilations will record dependencies so second and
+// subsequent calls to RedefineClasses need only throw away code
+// that depends on the class.
+//
+
+// First step is to walk the code cache for each class redefined and mark
+// dependent methods.  Wait until all classes are processed to deoptimize everything.
+void VM_RedefineClasses::mark_dependent_code(InstanceKlass* ik) {
+  assert_locked_or_safepoint(Compile_lock);
+
+  // All dependencies have been recorded from startup or this is a second or
+  // subsequent use of RedefineClasses
+  if (JvmtiExport::all_dependencies_are_recorded()) {
+    CodeCache::mark_for_evol_deoptimization(ik);
+  }
+}
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
 
-  int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-  log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
+  bool deopt_needed;
 
-  if (deopt != 0) {
+  // This is the first redefinition, mark all the nmethods for deoptimization
+  if (!JvmtiExport::all_dependencies_are_recorded()) {
+    log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
+    CodeCache::mark_all_nmethods_for_evol_deoptimization();
+    deopt_needed = true;
+  } else {
+    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
+    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
+    deopt_needed = (deopt != 0);
+  }
+
+  if (deopt_needed) {
     CodeCache::flush_evol_dependents();
   }
+
+  // From now on we know that the dependency information is complete
+  JvmtiExport::set_all_dependencies_are_recorded(true);
 }
 
 void VM_RedefineClasses::compute_added_deleted_matching_methods() {
@@ -4181,6 +4220,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class);
+
+  // Mark all compiled code that depends on this class
+  mark_dependent_code(the_class);
 
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();
