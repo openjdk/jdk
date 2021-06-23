@@ -52,7 +52,7 @@ inline void ObjectMonitor::set_header(markWord hdr) {
   Atomic::store(&_header, hdr);
 }
 
-inline jint ObjectMonitor::waiters() const {
+inline int ObjectMonitor::waiters() const {
   return _waiters;
 }
 
@@ -79,12 +79,12 @@ inline bool ObjectMonitor::is_being_async_deflated() {
 }
 
 // Return number of threads contending for this monitor.
-inline jint ObjectMonitor::contentions() const {
+inline int ObjectMonitor::contentions() const {
   return Atomic::load(&_contentions);
 }
 
 // Add value to the contentions field.
-inline void ObjectMonitor::add_to_contentions(jint value) {
+inline void ObjectMonitor::add_to_contentions(int value) {
   Atomic::add(&_contentions, value);
 }
 
