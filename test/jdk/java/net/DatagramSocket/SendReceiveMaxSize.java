@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@
  * @run testng/othervm SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  */
 
 import jdk.test.lib.RandomFactory;

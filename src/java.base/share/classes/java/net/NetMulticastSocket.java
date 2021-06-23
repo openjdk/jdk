@@ -136,8 +136,7 @@ final class NetMulticastSocket extends MulticastSocket {
             bind(new InetSocketAddress(0));
 
         // old impls do not support connect/disconnect
-        if (oldImpl || (impl instanceof AbstractPlainDatagramSocketImpl &&
-                ((AbstractPlainDatagramSocketImpl) impl).nativeConnectDisabled())) {
+        if (oldImpl) {
             connectState = ST_CONNECTED_NO_IMPL;
         } else {
             try {

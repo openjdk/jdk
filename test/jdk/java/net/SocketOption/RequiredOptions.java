@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import static java.net.StandardSocketOptions.*;
  * @bug 8235141
  * @summary verifies that our implementation supports the set
  *          of SocketOptions that are required by the API documentation.
- * @run testng/othervm -Djdk.net.usePlainSocketImpl RequiredOptions
  * @run testng/othervm RequiredOptions
  */
 public class RequiredOptions {

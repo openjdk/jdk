@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * NIO based SocketImpl.
  *
- * This implementation attempts to be compatible with legacy PlainSocketImpl,
- * including behavior and exceptions that are not specified by SocketImpl.
+ * This implementation attempts to be compatible with legacy PlainSocketImpl
+ * (removed in JDK18), including behavior and exceptions that are not specified by
+ * SocketImpl.
  *
  * The underlying socket used by this SocketImpl is initially configured
  * blocking. If the connect method is used to establish a connection with a
@@ -642,7 +643,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             NetHooks.beforeTcpBind(fd, host, port);
             Net.bind(fd, host, port);
             // set the address field to the given host address to keep
-            // compatibility with PlainSocketImpl. When binding to 0.0.0.0
+            // compatibility with SocketImpl. When binding to 0.0.0.0
             // then the actual local address will be ::0 when IPv6 is enabled.
             address = host;
             localport = Net.localAddress(fd).getPort();
