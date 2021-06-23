@@ -25,7 +25,7 @@
  * @test
  * @bug 8251496 8268960
  * @summary Tests for methods in Headers class
- * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @modules jdk.httpserver/com.sun.net.httpserver:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run testng/othervm HeadersTest
@@ -42,10 +42,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -148,18 +150,22 @@ public class HeadersTest {
     }
 
     @DataProvider
-    public Object[][] respHeadersWithNull() {
+    public Object[][] responseHeaders() {
+        final var listWithNull = new LinkedList<String>();
+        listWithNull.add(null);
         return new Object[][] {
+                {null,  List.of("Bar")},
                 {"Foo", null},
-                {null, "Bar"}
+                {"Foo", listWithNull}
         };
     }
 
     /**
-     * Confirms exchange fails if response headers contain a null key or value.
+     * Confirms HttpExchange::sendResponseHeaders throws NPE if response headers
+     * contain a null key or value.
      */
-    @Test(dataProvider = "respHeadersWithNull")
-    public void testNullResponseHeaders(String headerKey, String headerVal)
+    @Test(dataProvider = "responseHeaders")
+    public void testNullResponseHeaders(String headerKey, List<String> headerVal)
             throws Exception {
         var handler = new Handler(headerKey, headerVal);
         var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
@@ -169,19 +175,18 @@ public class HeadersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             assertThrows(IOE, () -> client.send(request, HttpResponse.BodyHandlers.ofString()));
+            assertEquals(throwable.get().getClass(), NPE);
+            assertTrue(Arrays.stream(throwable.get().getStackTrace())
+                    .anyMatch(e -> e.getClassName().equals("sun.net.httpserver.HttpExchangeImpl")
+                            || e.getMethodName().equals("sendResponseHeaders")));
         } finally {
             server.stop(0);
         }
     }
 
-    private class Handler implements HttpHandler {
-        private String headerKey;
-        private String headerVal;
+    private static CompletableFuture<Throwable> throwable = new CompletableFuture<>();
 
-        public Handler(String key, String val) {
-            headerKey = key;
-            headerVal = val;
-        }
+    private record Handler(String headerKey, List<String> headerVal) implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -189,8 +194,13 @@ public class HeadersTest {
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
                 var resp = "hello world".getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().set(headerKey, headerVal);
-                exchange.sendResponseHeaders(200, resp.length);
+                putHeaders(exchange.getResponseHeaders(), headerKey, headerVal);
+                try {
+                    exchange.sendResponseHeaders(200, resp.length);
+                } catch (Throwable t) {  // expect NPE
+                    throwable.complete(t);
+                    throw t;
+                }
                 os.write(resp);
             }
         }
@@ -203,6 +213,23 @@ public class HeadersTest {
                 .scheme("http")
                 .path("/" + path)
                 .buildUnchecked();
+    }
+
+    /**
+     * Sets headers reflectively to be able to set a null key or value.
+     */
+    private static void putHeaders(Headers headers,
+                                   String headerKey,
+                                   List<String> headerVal) {
+        try {
+            final var map = new HashMap<String, List<String>>();
+            map.put(headerKey, headerVal);
+            var mapField = Headers.class.getDeclaredField("map");
+            mapField.setAccessible(true);
+            mapField.set(headers, map);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not set headers reflectively", e);
+        }
     }
 
     @DataProvider

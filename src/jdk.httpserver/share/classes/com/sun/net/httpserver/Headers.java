@@ -134,12 +134,12 @@ public class Headers implements Map<String,List<String>> {
      *
      * @param key the key to search for
      * @return    the first {@code String} value associated with the key,
-     *            or {@code null} is no mapping for the key exists
+     *            or {@code null} if no mapping for the key exists
      * @throws NullPointerException if key is null
      */
     public String getFirst(String key) {
         List<String> l = map.get(normalize(key));
-        if (l == null) {  // no mapping exists
+        if (l == null || l.size() == 0) {  // no mapping exists
             return null;
         }
         return l.get(0);
