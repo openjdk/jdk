@@ -39,7 +39,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>arab</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<currencies>
 			<currency type="BND">
 				<symbol alt="narrow" draft="contributed">$</symbol>

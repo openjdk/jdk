@@ -1142,8 +1142,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Kaian; ?; ? } => { Kaian; Latin; Unknown Region }-->
 		<likelySubtag from="kde" to="kde_Latn_TZ"/>
 		<!--{ Makonde; ?; ? } => { Makonde; Latin; Tanzania }-->
-		<likelySubtag from="kdh" to="kdh_Arab_TG"/>
-		<!--{ Tem; ?; ? } => { Tem; Arabic; Togo }-->
+		<likelySubtag from="kdh" to="kdh_Latn_TG"/>
+		<!--{ Tem; ?; ? } => { Tem; Latin; Togo }-->
 		<likelySubtag from="kdl" to="kdl_Latn_ZZ"/>
 		<!--{ Tsikimba; ?; ? } => { Tsikimba; Latin; Unknown Region }-->
 		<likelySubtag from="kdt" to="kdt_Thai_TH"/>
@@ -3382,6 +3382,10 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Chorasmian; ? } => { Chorasmian; Chorasmian; Uzbekistan }-->
 		<likelySubtag from="und_Copt" to="cop_Copt_EG"/>
 		<!--{ ?; Coptic; ? } => { Coptic; Coptic; Egypt }-->
+		<likelySubtag from="und_Cpmn" to="und_Cpmn_CY"/>
+		<!--{ ?; Cypro-Minoan; ? } => { ?; Cypro-Minoan; Cyprus }-->
+		<likelySubtag from="und_Cpmn_CY" to="und_Cpmn_CY"/>
+		<!--{ ?; Cypro-Minoan; Cyprus } => { ?; Cypro-Minoan; Cyprus }-->
 		<likelySubtag from="und_Cprt" to="grc_Cprt_CY"/>
 		<!--{ ?; Cypriot; ? } => { Ancient Greek; Cypriot; Cyprus }-->
 		<likelySubtag from="und_Cyrl" to="ru_Cyrl_RU"/>

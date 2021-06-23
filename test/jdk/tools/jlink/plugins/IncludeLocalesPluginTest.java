@@ -41,7 +41,7 @@ import tests.Result;
 /*
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
- *      8179071 8202537 8221432 8222098 8251317 8258794
+ *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -148,13 +148,13 @@ public class IncludeLocalesPluginTest {
             List.of(
                 "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "en_001", "en_150", "en_AG", "en_AI",
                 "en_AT", "en_AU", "en_BB", "en_BE", "en_BM", "en_BS", "en_BW", "en_BZ",
-                "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
+                "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
                 "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
                 "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GY", "en_HK",
                 "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM", "en_KE",
                 "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG", "en_MO",
                 "en_MS", "en_MT", "en_MU", "en_MW", "en_MY", "en_NA", "en_NF", "en_NG",
-                "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PH", "en_PK", "en_PN",
+                "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PK", "en_PN",
                 "en_PW", "en_RW", "en_SB", "en_SC", "en_SD", "en_SE", "en_SG", "en_SH",
                 "en_SI", "en_SL", "en_SS", "en_SX", "en_SZ", "en_TC", "en_TK", "en_TO",
                 "en_TT", "en_TV", "en_TZ", "en_UG", "en_VC", "en_VG", "en_VU", "en_WS",

@@ -513,6 +513,7 @@ annotations.
 			<language type="sdc">Sassarese Sardinian</language>
 			<language type="sdh">Southern Kurdish</language>
 			<language type="se">Northern Sami</language>
+			<language type="se" alt="menu">Sami, Northern</language>
 			<language type="see">Seneca</language>
 			<language type="seh">Sena</language>
 			<language type="sei">Seri</language>
@@ -533,9 +534,13 @@ annotations.
 			<language type="sly">Selayar</language>
 			<language type="sm">Samoan</language>
 			<language type="sma">Southern Sami</language>
+			<language type="sma" alt="menu">Sami, Southern</language>
 			<language type="smj">Lule Sami</language>
+			<language type="smj" alt="menu">Sami, Lule</language>
 			<language type="smn">Inari Sami</language>
+			<language type="smn" alt="menu">Sami, Inari</language>
 			<language type="sms">Skolt Sami</language>
+			<language type="sms" alt="menu">Sami, Skolt</language>
 			<language type="sn">Shona</language>
 			<language type="snk">Soninke</language>
 			<language type="so">Somali</language>
@@ -1525,6 +1530,7 @@ annotations.
 			<type key="numbers" type="thai">Thai Digits</type>
 			<type key="numbers" type="tibt">Tibetan Digits</type>
 			<type key="numbers" type="tirh">Tirhuta Digits</type>
+			<type key="numbers" type="tnsa">Tangsa Digits</type>
 			<type key="numbers" type="traditional">Traditional Numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
@@ -2732,7 +2738,7 @@ annotations.
 			<calendar type="roc">
 				<eras>
 					<eraAbbr>
-						<era type="0">Before R.O.C.</era>
+						<era type="0">B.R.O.C.</era>
 						<era type="1">Minguo</era>
 					</eraAbbr>
 				</eras>
@@ -6112,7 +6118,7 @@ annotations.
 				<unitPattern count="other">{0} meters per second squared</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>revolution</displayName>
+				<displayName>revolutions</displayName>
 				<unitPattern count="one">{0} revolution</unitPattern>
 				<unitPattern count="other">{0} revolutions</unitPattern>
 			</unit>
@@ -6454,7 +6460,7 @@ annotations.
 				<unitPattern count="other">{0} newtons</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>kilowatt-hour per 100 kilometers</displayName>
+				<displayName>kilowatt-hours per 100 kilometers</displayName>
 				<unitPattern count="one">{0} kilowatt-hour per 100 kilometers</unitPattern>
 				<unitPattern count="other">{0} kilowatt-hours per 100 kilometers</unitPattern>
 			</unit>
@@ -6479,7 +6485,7 @@ annotations.
 				<unitPattern count="other">{0} hertz</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<displayName>typographic em</displayName>
+				<displayName>typographic ems</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
 				<unitPattern count="other">{0} ems</unitPattern>
 			</unit>
@@ -6514,9 +6520,9 @@ annotations.
 				<unitPattern count="other">{0} dots per inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dot</displayName>
+				<displayName>dots</displayName>
 				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dot</unitPattern>
+				<unitPattern count="other">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>earth radius</displayName>
@@ -6619,7 +6625,7 @@ annotations.
 				<unitPattern count="other">{0} nautical miles</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName>mile-scandinavian</displayName>
+				<displayName>miles-scandinavian</displayName>
 				<unitPattern count="one">{0} mile-scandinavian</unitPattern>
 				<unitPattern count="other">{0} miles-scandinavian</unitPattern>
 			</unit>
@@ -6728,9 +6734,9 @@ annotations.
 				<unitPattern count="other">{0} solar masses</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName>grain</displayName>
+				<displayName>grains</displayName>
 				<unitPattern count="one">{0} grain</unitPattern>
-				<unitPattern count="other">{0} grain</unitPattern>
+				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatts</displayName>
@@ -6852,7 +6858,7 @@ annotations.
 				<unitPattern count="other">{0} kelvins</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>pound-feet</displayName>
+				<displayName>pound-force-feet</displayName>
 				<unitPattern count="one">{0} pound-force-foot</unitPattern>
 				<unitPattern count="other">{0} pound-force-feet</unitPattern>
 			</unit>
@@ -7002,39 +7008,39 @@ annotations.
 				<unitPattern count="other">{0} barrels</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName>dessert spoon</displayName>
+				<displayName>dessert spoons</displayName>
 				<unitPattern count="one">{0} dessert spoon</unitPattern>
-				<unitPattern count="other">{0} dessert spoon</unitPattern>
+				<unitPattern count="other">{0} dessert spoons</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName>Imp. dessert spoon</displayName>
+				<displayName>Imp. dessert spoons</displayName>
 				<unitPattern count="one">{0} Imp. dessert spoon</unitPattern>
-				<unitPattern count="other">{0} Imp. dessert spoon</unitPattern>
+				<unitPattern count="other">{0} Imp. dessert spoons</unitPattern>
 			</unit>
 			<unit type="volume-drop">
-				<displayName>drop</displayName>
+				<displayName>drops</displayName>
 				<unitPattern count="one">{0} drop</unitPattern>
-				<unitPattern count="other">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drops</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName>dram</displayName>
+				<displayName>drams</displayName>
 				<unitPattern count="one">{0} dram</unitPattern>
-				<unitPattern count="other">{0} dram</unitPattern>
+				<unitPattern count="other">{0} drams</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<displayName>jigger</displayName>
+				<displayName>jiggers</displayName>
 				<unitPattern count="one">{0} jigger</unitPattern>
-				<unitPattern count="other">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jiggers</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<displayName>pinch</displayName>
+				<displayName>pinches</displayName>
 				<unitPattern count="one">{0} pinch</unitPattern>
-				<unitPattern count="other">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinches</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<displayName>Imp. quart</displayName>
+				<displayName>Imp. quarts</displayName>
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
-				<unitPattern count="other">{0} Imp. quart</unitPattern>
+				<unitPattern count="other">{0} Imp. quarts</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>cardinal direction</displayName>
@@ -7156,7 +7162,7 @@ annotations.
 			<unit type="concentr-item">
 				<displayName>item</displayName>
 				<unitPattern count="one">{0} item</unitPattern>
-				<unitPattern count="other">{0} item</unitPattern>
+				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>parts/million</displayName>
@@ -8030,7 +8036,7 @@ annotations.
 			<unit type="concentr-item">
 				<displayName>item</displayName>
 				<unitPattern count="one">{0}item</unitPattern>
-				<unitPattern count="other">{0}item</unitPattern>
+				<unitPattern count="other">{0}items</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>

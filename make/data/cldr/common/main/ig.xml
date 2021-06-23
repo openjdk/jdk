@@ -2353,10 +2353,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Okpomọkụ Yekaterinburg</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Oge Yukon</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
 			<decimal>٫</decimal>
 			<group>٬</group>
@@ -2689,7 +2694,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<displayName>Yen Japan</displayName>
 				<displayName count="other">Yen Japan</displayName>
-				<symbol draft="contributed">¥</symbol>
+				<symbol>¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Ego Shilling obodo Kenya</displayName>
@@ -2731,6 +2736,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LRD">
 				<displayName>Ego Dollar obodo Liberia</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>This is not a translation</displayName>
+				<displayName count="other">This is not a translation</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Ego Dinar obodo Libya</displayName>
@@ -2931,7 +2940,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="USD">
 				<displayName>Dollar US</displayName>
 				<displayName count="other">Dollars US</displayName>
-				<symbol draft="contributed">$</symbol>
+				<symbol>$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>Ego Peso obodo Uruguay</displayName>
@@ -2990,7 +2999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">ubochi {0}</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">ubochi {0}</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Si uzo aka nri {0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

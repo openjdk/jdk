@@ -408,6 +408,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year">
 				<displayName>ᱥᱮᱨᱢᱟ/ᱵᱚᱪᱷᱚᱞᱨ</displayName>
 			</field>
+			<field type="year-short">
+				<displayName>ᱥᱮᱨᱢᱟ</displayName>
+			</field>
 			<field type="quarter">
 				<displayName>ᱯᱮᱪᱟᱸᱫᱚ</displayName>
 			</field>
@@ -460,7 +463,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᱴᱤᱯᱤᱡ</displayName>
 			</field>
 			<field type="second">
-				<displayName>ᱴᱤᱡ</displayName>
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
 			</field>
 			<field type="zone">
 				<displayName>ᱴᱚᱴᱷᱟ</displayName>
@@ -606,6 +615,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 	</numbers>
+	<units>
+		<unitLength type="narrow">
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="two">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+		</unitLength>
+		<durationUnit type="hm">
+			<durationUnitPattern>h:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>m:ss</durationUnitPattern>
+		</durationUnit>
+	</units>
 	<posix>
 		<messages>
 			<yesstr>ᱦᱚᱸᱺᱦ</yesstr>

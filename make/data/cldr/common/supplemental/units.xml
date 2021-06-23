@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!--
+Copyright © 1991-2013 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+
+<supplementalData>
+    <version number="$Revision$"/>
+    <unitConstants>
+        <unitConstant constant="lb_to_kg" value="0.45359237"/>
+        <unitConstant constant="ft_to_m" value="0.3048"/>
+        <unitConstant constant="ft2_to_m2" value="ft_to_m*ft_to_m"/>
+        <unitConstant constant="ft3_to_m3" value="ft_to_m*ft_to_m*ft_to_m"/>
+        <unitConstant constant="in3_to_m3" value="ft3_to_m3/12*12*12"/>
+        <unitConstant constant="gal_to_m3" value="231*in3_to_m3"/>
+        <unitConstant constant="gal_imp_to_m3" value="0.00454609"/>
+        <unitConstant constant="glucose_molar_mass" value="180.1557" description="derivation from the mean atomic weights according to STANDARD ATOMIC WEIGHTS 2019 on https://ciaaw.org/atomic-weights.htm"/>
+        <unitConstant constant="item_per_mole" value="6.02214076E+23"/>
+        
+        
+        <unitConstant constant="gravity" value="9.80665"/>
+        <unitConstant constant="PI" value="411557987 / 131002976" status='approximate'/>
+        <unitConstant constant="G" value="6.67408E-11" status='approximate'/>   <!-- https://arxiv.org/pdf/1510.07674.pdf see 2014 CODATA -->
+    </unitConstants>
+    <unitQuantities> 
+        <!-- NB: quantity ordering is used in canonical order of derived units. -->
+        
+        <!-- SI Base Units -->
+        
+        <unitQuantity baseUnit='candela' quantity='luminous-intensity' status='simple'/>
+        <unitQuantity baseUnit='candela-per-square-meter' quantity='illuminance'/>
+        <unitQuantity baseUnit='candela-square-meter-per-square-meter' quantity='luminous-flux'/>
+        
+        <unitQuantity baseUnit='kilogram' quantity='mass' status='simple'/>
+        <unitQuantity baseUnit='kilogram-per-kilogram' quantity='mass-fraction'/>
+        <unitQuantity baseUnit='kilogram-per-cubic-meter' quantity='mass-density'/>
+        <unitQuantity baseUnit='kilogram-per-meter-square-second' quantity='pressure'/>
+        <unitQuantity baseUnit='kilogram-per-square-second-ampere' quantity='magnetic-induction'/>
+        <unitQuantity baseUnit='kilogram-meter-per-square-second' quantity='force'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-cubic-second' quantity='power'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-cubic-second-ampere' quantity='voltage'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-cubic-second-square-ampere' quantity='electric-resistance'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-square-second' quantity='energy'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-square-second-ampere' quantity='magnetic-flux'/>
+        <unitQuantity baseUnit='kilogram-square-meter-per-square-second-square-ampere' quantity='electric-inductance'/>
+        
+        <unitQuantity baseUnit='cubic-meter' quantity='volume'/>
+        <unitQuantity baseUnit='cubic-meter-per-kilogram' quantity='specific-volume'/>
+        <unitQuantity baseUnit='cubic-meter-per-meter' quantity='consumption'/>
+        <unitQuantity baseUnit='square-meter' quantity='area'/>
+        <unitQuantity baseUnit='square-meter-per-square-second' quantity='dose'/>
+        <unitQuantity baseUnit='meter' quantity='length' status='simple'/>
+        <unitQuantity baseUnit='meter-per-second' quantity='speed'/>
+        <unitQuantity baseUnit='meter-per-square-second' quantity='acceleration'/>
+        
+        <unitQuantity baseUnit='kilogram-per-square-meter-square-second' quantity='pressure-per-length'/> <!-- special ordering for ofhg -->
+        
+        <unitQuantity baseUnit='pow4-second-square-ampere-per-kilogram-square-meter' quantity='electric-capacitance'/>
+        <unitQuantity baseUnit='cubic-second-square-ampere-per-kilogram-square-meter' quantity='electric-conductance'/>
+        <unitQuantity baseUnit='second' quantity='duration' status='simple'/> <!-- use duration because 'time' can mean absolute time -->
+        <unitQuantity baseUnit='second-ampere' quantity='electric-charge'/>
+
+        <unitQuantity baseUnit='year' quantity='year-duration' status='simple'/> <!-- non-SI but here for ordering -->
+        
+        <unitQuantity baseUnit='ampere' quantity='electric-current' status='simple'/>
+        <unitQuantity baseUnit='ampere-per-square-meter' quantity='current-density'/>
+        <unitQuantity baseUnit='ampere-per-meter' quantity='magnetic-field-strength'/>
+
+        <unitQuantity baseUnit='kelvin' quantity='temperature' status='simple'/>
+        
+        <!-- Non-SI base units -->
+        
+        <unitQuantity baseUnit='square-revolution' quantity='solid-angle'/>
+        <unitQuantity baseUnit='revolution' quantity='angle' status='simple'/> <!-- = circle, cycle for base instead of radian -->
+        <unitQuantity baseUnit='revolution-per-meter' quantity='wave-number'/>
+        <unitQuantity baseUnit='revolution-per-second' quantity='frequency'/>
+
+        <unitQuantity baseUnit='item' quantity='substance-amount' status='simple'/> <!-- use instead of mole -->
+        <unitQuantity baseUnit='item-per-kilogram' quantity='concentration-mass'/>
+        <unitQuantity baseUnit='item-per-cubic-meter' quantity='concentration'/>
+
+        <unitQuantity baseUnit='portion' quantity='portion' status='simple'/>
+        
+        <unitQuantity baseUnit='bit' quantity='digital' status='simple'/>
+        
+        <unitQuantity baseUnit='pixel' quantity='graphics' status='simple'/>
+
+        <unitQuantity baseUnit='pixel-per-meter' quantity='resolution'/>
+
+        <unitQuantity baseUnit='em' quantity='typewidth' status='simple'/>
+        
+    </unitQuantities>    
+    <convertUnits>
+        <!-- Values where possible from:
+        a) NIST Special Publication 1038 
+        https://www.govinfo.gov/content/pkg/GOVPUB-C13-f10c2ff9e7af2091314396a2d53213e4/pdf/GOVPUB-C13-f10c2ff9e7af2091314396a2d53213e4.pdf
+        b) https://arxiv.org/pdf/1510.07674.pdf
+        See also https://www.nist.gov/pml/special-publication-811/nist-guide-si-chapter-4-two-classes-si-units-and-si-prefixes
+         -->
+
+        <!-- luminous-intensity -->
+        <convertUnit source='candela' baseUnit='candela' systems="metric si"/>
+        
+        <!-- mass -->
+        <convertUnit source='grain' baseUnit='kilogram' factor='lb_to_kg/7000' systems="ussystem uksystem"/>
+        <convertUnit source='carat' baseUnit='kilogram' factor='0.0002' systems="metric"/>
+        <convertUnit source='gram' baseUnit='kilogram' factor='0.001' systems="metric si"/>
+        <convertUnit source='ounce' baseUnit='kilogram' factor='lb_to_kg/16' systems="ussystem uksystem"/>
+        <convertUnit source='ounce-troy' baseUnit='kilogram' factor='0.03110348' systems="ussystem uksystem"/>
+        <convertUnit source='pound' baseUnit='kilogram' factor='lb_to_kg' systems="ussystem uksystem"/>
+        <convertUnit source='kilogram' baseUnit='kilogram' systems="metric si"/>
+        <convertUnit source='stone' baseUnit='kilogram' factor='lb_to_kg*14' systems="uksystem"/>
+        <convertUnit source='ton' baseUnit='kilogram' factor='lb_to_kg*2000' systems="ussystem uksystem"/>
+        <convertUnit source='metric-ton' baseUnit='kilogram' factor='1000' systems="metric"/>
+        <convertUnit source='earth-mass' baseUnit='kilogram' factor='5.9722E+24'/>
+        <convertUnit source='solar-mass' baseUnit='kilogram' factor='1.98847E+30'/>
+        
+        <!-- volume -->
+        <convertUnit source='drop' baseUnit='cubic-meter' factor='gal_to_m3/128*576' systems="ussystem"/>
+        <convertUnit source='pinch' baseUnit='cubic-meter' factor='gal_to_m3/128*128' systems="ussystem"/>
+        <convertUnit source='dessert-spoon' baseUnit='cubic-meter' factor='gal_to_m3/16*128' systems="ussystem"/>
+        <convertUnit source='dessert-spoon-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3/16*128' systems="uksystem"/>
+        <convertUnit source='dram' baseUnit='cubic-meter' factor='gal_to_m3/128*8' systems="ussystem"/>
+        <convertUnit source='teaspoon' baseUnit='cubic-meter' factor='gal_to_m3/16*48' systems="ussystem"/>
+        <convertUnit source='tablespoon' baseUnit='cubic-meter' factor='gal_to_m3/256' systems="ussystem"/>
+        <convertUnit source='fluid-ounce-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3/160' systems="uksystem"/>
+        <convertUnit source='fluid-ounce' baseUnit='cubic-meter' factor='gal_to_m3/128' systems="ussystem"/>
+        <convertUnit source='jigger' baseUnit='cubic-meter' factor='gal_to_m3*3/128*2' systems="ussystem"/>
+        <convertUnit source='cup' baseUnit='cubic-meter' factor='gal_to_m3/16' systems="ussystem"/>
+        <convertUnit source='cup-metric' baseUnit='cubic-meter' factor='0.00025' systems="metric"/>
+        <convertUnit source='pint' baseUnit='cubic-meter' factor='gal_to_m3/8' systems="ussystem"/>
+        <convertUnit source='pint-metric' baseUnit='cubic-meter' factor='0.0005' systems="metric"/>
+        <convertUnit source='quart' baseUnit='cubic-meter' factor='gal_to_m3/4' systems="ussystem"/>
+        <convertUnit source='liter' baseUnit='cubic-meter' factor='0.001' systems="metric"/>
+        <convertUnit source='quart-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3/4' systems="uksystem"/>
+        <convertUnit source='gallon' baseUnit='cubic-meter' factor='gal_to_m3' systems="ussystem"/>
+        <convertUnit source='gallon-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3' systems="uksystem"/>
+        <convertUnit source='bushel' baseUnit='cubic-meter' factor='2150.42*in3_to_m3' systems="ussystem"/>
+        <convertUnit source='barrel' baseUnit='cubic-meter' factor='42*gal_to_m3' systems="ussystem"/> <!-- oil -->
+        
+        <!-- area -->
+        <convertUnit source='dunam' baseUnit='square-meter' factor='1000'/>
+        <convertUnit source='acre' baseUnit='square-meter' factor='ft2_to_m2 * 43560' systems="ussystem uksystem"/>
+        <convertUnit source='hectare' baseUnit='square-meter' factor='10000' systems="metric"/>
+        
+        <!-- length -->
+        <convertUnit source='point' baseUnit='meter' factor='ft_to_m/864' systems="ussystem uksystem"/>
+        <convertUnit source='inch' baseUnit='meter' factor='ft_to_m/12' systems="ussystem uksystem"/>
+        <convertUnit source='foot' baseUnit='meter' factor='ft_to_m' systems="ussystem uksystem"/>
+        <convertUnit source='yard' baseUnit='meter' factor='ft_to_m*3' systems="ussystem uksystem"/>
+        <convertUnit source='meter' baseUnit='meter' systems="metric si"/>
+        <convertUnit source='fathom' baseUnit='meter' factor='ft_to_m * 6' systems="ussystem uksystem"/>
+        <convertUnit source='furlong' baseUnit='meter' factor='ft_to_m*660' systems="ussystem uksystem"/>
+        <convertUnit source='mile' baseUnit='meter' factor='ft_to_m*5280' systems="ussystem uksystem"/>
+        <convertUnit source='nautical-mile' baseUnit='meter' factor='1852' systems="ussystem uksystem"/>
+        <convertUnit source='mile-scandinavian' baseUnit='meter' factor='10000' systems="metric"/>
+        <convertUnit source='100-kilometer' baseUnit='meter' factor='100000' systems="metric"/>
+        <convertUnit source='earth-radius' baseUnit='meter' factor='6.3781E6'/>
+        <convertUnit source='solar-radius' baseUnit='meter' factor='695700000'/>
+        <convertUnit source='astronomical-unit' baseUnit='meter' factor='149597900000'/>
+        <convertUnit source='light-year' baseUnit='meter' factor='9460730000000000'/>
+        <convertUnit source='parsec' baseUnit='meter' factor='30856780000000000'/>
+        
+        <!-- time -->
+        <convertUnit source='second' baseUnit='second' systems="si metric ussystem uksystem"/>
+        <convertUnit source='minute' baseUnit='second' factor='60' systems="metric ussystem uksystem"/>
+        <convertUnit source='hour' baseUnit='second' factor='3600' systems="metric ussystem uksystem"/>
+        <convertUnit source='day' baseUnit='second' factor='86400' systems="metric ussystem uksystem"/>
+        <convertUnit source='day-person' baseUnit='second' factor='86400' systems="metric ussystem uksystem"/>
+        <convertUnit source='week' baseUnit='second' factor='604800'/>
+        <convertUnit source='week-person' baseUnit='second' factor='604800'/>
+        
+        <!-- year-duration -->
+        <convertUnit source='month' baseUnit='year' factor='1/12'/>
+        <convertUnit source='month-person' baseUnit='year' factor='1/12'/>
+        <convertUnit source='year' baseUnit='year'/>
+        <convertUnit source='year-person' baseUnit='year'/>
+        <convertUnit source='decade' baseUnit='year' factor='10'/>
+        <convertUnit source='century' baseUnit='year' factor='100'/>
+        
+        <!-- electric-current -->
+        <convertUnit source='ampere' baseUnit='ampere' systems="metric si"/>
+        
+        <!-- temperature -->
+        <convertUnit source='fahrenheit' baseUnit='kelvin' factor='5/9' offset='2298.35/9' systems="ussystem uksystem"/>
+        <convertUnit source='kelvin' baseUnit='kelvin' systems="metric si"/>
+        <convertUnit source='celsius' baseUnit='kelvin' offset='273.15' systems="metric"/>
+        
+        <!-- angle -->
+        <convertUnit source='arc-second' baseUnit='revolution' factor='1/360*60*60'/>
+        <convertUnit source='arc-minute' baseUnit='revolution' factor='1/360*60'/>
+        <convertUnit source='degree' baseUnit='revolution' factor='1/360'/>
+        <convertUnit source='radian' baseUnit='revolution' factor='1/2*PI' systems="metric si"/>
+        <convertUnit source='revolution' baseUnit='revolution'/>
+        
+        <!-- substance-amount -->
+        <convertUnit source='item' baseUnit='item'/>
+        <convertUnit source='mole' baseUnit='item' factor='item_per_mole' systems="metric si"/>
+        
+        <!-- portion -->
+        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000'/>
+        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000'/>
+        <convertUnit source='permille' baseUnit='portion' factor='1/1000'/>
+        <convertUnit source='percent' baseUnit='portion' factor='1/100'/>
+        <convertUnit source='karat' baseUnit='portion' factor='1/24'/>
+        <convertUnit source='portion' baseUnit='portion'/>
+        
+        <!-- digital -->
+        <convertUnit source='bit' baseUnit='bit'/>
+        <convertUnit source='byte' baseUnit='bit' factor='8'/>
+        
+        <!-- graphics -->
+        <convertUnit source='dot' baseUnit='pixel'/>
+        <convertUnit source='pixel' baseUnit='pixel'/>
+        
+        <!-- typewidth -->
+        <convertUnit source='em' baseUnit='em'/>
+        
+        <!-- frequency -->
+        <convertUnit source='hertz' baseUnit='revolution-per-second' systems="metric si"/>
+        
+        <!-- force -->
+        <convertUnit source='newton' baseUnit='kilogram-meter-per-square-second' systems="metric si"/>
+        <convertUnit source='pound-force' baseUnit='kilogram-meter-per-square-second' factor='lb_to_kg * gravity' systems="ussystem uksystem"/>
+        
+        <!-- pressure -->
+        <convertUnit source='pascal' baseUnit='kilogram-per-meter-square-second' systems="metric si"/>
+        <convertUnit source='bar' baseUnit='kilogram-per-meter-square-second' factor='100000' systems="metric"/>
+        <convertUnit source='atmosphere' baseUnit='kilogram-per-meter-square-second' factor='101325'/>
+
+        <!-- pressure-per-length -->
+        <convertUnit source='ofhg' baseUnit='kilogram-per-square-meter-square-second' factor='13595.1*gravity'/>
+
+        <!-- energy -->
+        <convertUnit source='electronvolt' baseUnit='kilogram-square-meter-per-square-second' factor='1.602177E-19'/>
+        <convertUnit source='dalton' baseUnit='kilogram-square-meter-per-square-second' factor='1.49241808560E-10'/>
+        <convertUnit source='joule' baseUnit='kilogram-square-meter-per-square-second' systems="metric si"/>
+        <convertUnit source='calorie' baseUnit='kilogram-square-meter-per-square-second' factor='4.184'/> <!-- th -->
+        <convertUnit source='british-thermal-unit' baseUnit='kilogram-square-meter-per-square-second' factor='4.184*2267.96185/9' systems="ussystem uksystem"/> <!-- th -->
+        <convertUnit source='foodcalorie' baseUnit='kilogram-square-meter-per-square-second' factor='4184' systems="ussystem uksystem"/> <!-- th -->
+        <convertUnit source='therm-us' baseUnit='kilogram-square-meter-per-square-second' factor='105480400' systems="ussystem"/>
+
+        <!-- power -->
+        <convertUnit source='watt' baseUnit='kilogram-square-meter-per-cubic-second' systems="metric si"/>
+        <convertUnit source='horsepower' baseUnit='kilogram-square-meter-per-cubic-second' factor='ft_to_m * lb_to_kg * gravity * 550' systems="ussystem uksystem"/>
+        <convertUnit source='solar-luminosity' baseUnit='kilogram-square-meter-per-cubic-second' factor='3.828E+26'/>
+        
+        <!-- voltage -->
+        <convertUnit source='volt' baseUnit='kilogram-square-meter-per-cubic-second-ampere' systems="metric si"/>
+        
+        <!-- electric-resistance -->
+        <convertUnit source='ohm' baseUnit='kilogram-square-meter-per-cubic-second-square-ampere' systems="metric si"/>
+        
+        <!-- speed -->
+        <convertUnit source='knot' baseUnit='meter-per-second' factor='1852/3600' systems="ussystem uksystem"/>
+        
+        <!-- acceleration -->
+        <convertUnit source='g-force' baseUnit='meter-per-square-second' factor='gravity'/>
+        
+        <!-- luminance -->
+        <convertUnit source='lux' baseUnit='candela-per-square-meter' systems="metric si"/>
+
+        <!-- luminous-flux -->
+        <convertUnit source='lumen' baseUnit='candela-square-meter-per-square-meter' systems="metric si"/>
+        
+        <!-- concentration-mass -->
+        <convertUnit source='ofglucose' baseUnit='item-per-kilogram' factor='1000*item_per_mole/glucose_molar_mass'/>
+        
+    </convertUnits>
+    <unitPreferenceData draft="contributed">
+        <unitPreferences category="area" usage="default">
+            <unitPreference regions="001">square-kilometer</unitPreference>
+            <unitPreference regions="001">hectare</unitPreference>
+            <unitPreference regions="001">square-meter</unitPreference>
+            <unitPreference regions="001">square-centimeter</unitPreference>
+            <unitPreference regions="US GB">square-mile</unitPreference>
+            <unitPreference regions="US GB">acre</unitPreference>
+            <unitPreference regions="US GB">square-foot</unitPreference>
+            <unitPreference regions="US GB">square-inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="area" usage="geograph">
+            <unitPreference regions="001">square-kilometer</unitPreference>
+            <unitPreference regions="US GB">square-mile</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="area" usage="land">
+            <unitPreference regions="001">hectare</unitPreference>
+            <unitPreference regions="US GB">acre</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="concentration" usage="blood-glucose">
+            <unitPreference regions="AG AI AO AU BA BG BH BM BN BW BY CA CH CM CN CZ DK DM EE FI FJ GB GD HK HR HU IE IM IS KE KN KW KZ LC LI LT LU LV ME MG MK MO MS MT MU MY MZ NA NL NO NZ OM PG RS RU SE SG SI SK TC TO UA UG VC VG VN VU ZA">millimole-per-liter</unitPreference>
+            <unitPreference regions="001">milligram-ofglucose-per-deciliter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="concentration" usage="default">
+            <unitPreference regions="001">item-per-cubic-meter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="consumption" usage="default">
+            <unitPreference regions="001">liter-per-100-kilometer</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="consumption" usage="vehicle-fuel">
+            <unitPreference regions="001">liter-per-100-kilometer</unitPreference>
+            <unitPreference regions="BR IT JP KR MX MY NL TH TR">liter-per-kilometer</unitPreference>
+            <unitPreference regions="US">mile-per-gallon</unitPreference>
+            <unitPreference regions="CA GB">mile-per-gallon-imperial</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="duration" usage="default">
+            <unitPreference regions="001">day</unitPreference>
+            <unitPreference regions="001">hour</unitPreference>
+            <unitPreference regions="001">minute</unitPreference>
+            <unitPreference regions="001">second</unitPreference>
+            <unitPreference regions="001">millisecond</unitPreference>
+            <unitPreference regions="001">microsecond</unitPreference>
+            <unitPreference regions="001">nanosecond</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="duration" usage="media">
+            <unitPreference regions="001">minute-and-second</unitPreference>
+            <unitPreference regions="001">second</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="energy" usage="default">
+            <unitPreference regions="001">kilowatt-hour</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="energy" usage="food">
+            <unitPreference regions="US">foodcalorie</unitPreference>
+            <unitPreference regions="001">kilocalorie</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="default">
+            <unitPreference regions="001">kilometer</unitPreference>
+            <unitPreference regions="001">meter</unitPreference>
+            <unitPreference regions="001">centimeter</unitPreference>
+            <unitPreference regions="US GB">mile</unitPreference>
+            <unitPreference regions="US GB">foot</unitPreference>
+            <unitPreference regions="US GB">inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="focal-length">
+            <unitPreference regions="001">millimeter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="person">
+            <unitPreference regions="001">centimeter</unitPreference>
+            <unitPreference regions="CA GB IN US">inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="person-height">
+            <unitPreference regions="001">centimeter</unitPreference>
+            <unitPreference regions="CA GB IN US" geq="3.0">foot-and-inch</unitPreference>
+            <unitPreference regions="CA GB IN US">inch</unitPreference>
+            <unitPreference regions="AT BE DZ EG ES FR HK ID IL IT JO MY SA SE TR VN">meter-and-centimeter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="rainfall">
+            <unitPreference regions="BR">centimeter</unitPreference>
+            <unitPreference regions="US">inch</unitPreference>
+            <unitPreference regions="001">millimeter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="road">
+            <unitPreference regions="001" geq="0.9">kilometer</unitPreference>
+            <unitPreference regions="001" geq="300.0" skeleton="precision-increment/50">meter</unitPreference>
+            <unitPreference regions="001" geq="10" skeleton="precision-increment/10">meter</unitPreference>
+            <unitPreference regions="001" skeleton="precision-increment/1">meter</unitPreference>
+            <unitPreference regions="US" geq="0.5">mile</unitPreference>
+            <unitPreference regions="US" geq="100.0" skeleton="precision-increment/50">foot</unitPreference>
+            <unitPreference regions="US" geq="10" skeleton="precision-increment/10">foot</unitPreference>
+            <unitPreference regions="US" skeleton="precision-increment/1">foot</unitPreference>
+            <unitPreference regions="GB" geq="0.5">mile</unitPreference>
+            <unitPreference regions="GB" geq="100.0" skeleton="precision-increment/50">yard</unitPreference>
+            <unitPreference regions="GB" geq="10" skeleton="precision-increment/10">yard</unitPreference>
+            <unitPreference regions="GB" skeleton="precision-increment/1">yard</unitPreference>
+            <unitPreference regions="SE">mile-scandinavian</unitPreference>
+            <unitPreference regions="SE">kilometer</unitPreference>
+            <unitPreference regions="SE" geq="300.0" skeleton="precision-increment/50">meter</unitPreference>
+            <unitPreference regions="SE" geq="10" skeleton="precision-increment/10">meter</unitPreference>
+            <unitPreference regions="SE" skeleton="precision-increment/1">meter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="snowfall">
+            <unitPreference regions="001">centimeter</unitPreference>
+            <unitPreference regions="US">inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="vehicle">
+            <unitPreference regions="GB US">foot-and-inch</unitPreference>
+            <unitPreference regions="001">meter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="length" usage="visiblty">
+            <unitPreference regions="001" geq="0.1">kilometer</unitPreference>
+            <unitPreference regions="001">meter</unitPreference>
+            <unitPreference regions="DE NL">meter</unitPreference>
+            <unitPreference regions="GB US">mile</unitPreference>
+            <unitPreference regions="GB US">foot</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="mass" usage="default">
+            <unitPreference regions="001">metric-ton</unitPreference>
+            <unitPreference regions="001">kilogram</unitPreference>
+            <unitPreference regions="001">gram</unitPreference>
+            <unitPreference regions="001">milligram</unitPreference>
+            <unitPreference regions="001">microgram</unitPreference>
+            <unitPreference regions="US GB">ton</unitPreference>
+            <unitPreference regions="US GB">pound</unitPreference>
+            <unitPreference regions="US GB">ounce</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="mass" usage="person">
+            <unitPreference regions="001">kilogram</unitPreference>
+            <unitPreference regions="001">gram</unitPreference>
+            <unitPreference regions="US">pound</unitPreference>
+            <unitPreference regions="US">pound-and-ounce</unitPreference>
+            <unitPreference regions="GB">stone-and-pound</unitPreference>
+            <unitPreference regions="GB">pound-and-ounce</unitPreference>
+            <unitPreference regions="HK">pound-and-ounce</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="mass-density" usage="default">
+            <unitPreference regions="001">kilogram-per-cubic-meter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="power" usage="default">
+            <unitPreference regions="001">gigawatt</unitPreference>
+            <unitPreference regions="001">megawatt</unitPreference>
+            <unitPreference regions="001">kilowatt</unitPreference>
+            <unitPreference regions="001">watt</unitPreference>
+            <unitPreference regions="001">milliwatt</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="power" usage="engine">
+            <unitPreference regions="001">kilowatt</unitPreference>
+            <unitPreference regions="US GB">horsepower</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="pressure" usage="baromtrc">
+            <unitPreference regions="001">hectopascal</unitPreference>
+            <unitPreference regions="IN US">inch-ofhg</unitPreference>
+            <unitPreference regions="BR EG GB IL TH">millibar</unitPreference>
+            <unitPreference regions="MX RU">millimeter-ofhg</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="pressure" usage="default">
+            <unitPreference regions="001">megapascal</unitPreference>
+            <unitPreference regions="001">pascal</unitPreference>
+            <unitPreference regions="US GB">pound-force-per-square-inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="speed" usage="default">
+            <unitPreference regions="001">kilometer-per-hour</unitPreference>
+            <unitPreference regions="GB US">mile-per-hour</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="speed" usage="wind">
+            <unitPreference regions="001">kilometer-per-hour</unitPreference>
+            <unitPreference regions="FI KR NO PL RU SE">meter-per-second</unitPreference>
+            <unitPreference regions="US">mile-per-hour</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="temperature" usage="default">
+            <unitPreference regions="001">celsius</unitPreference>
+            <unitPreference regions="US">fahrenheit</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="temperature" usage="weather">
+            <unitPreference regions="001">celsius</unitPreference>
+            <unitPreference regions="BS BZ KY PR PW US">fahrenheit</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="volume" usage="default">
+            <unitPreference regions="001">cubic-meter</unitPreference>
+            <unitPreference regions="001">cubic-centimeter</unitPreference>
+            <unitPreference regions="US GB">cubic-foot</unitPreference>
+            <unitPreference regions="US GB">cubic-inch</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="volume" usage="fluid">
+            <unitPreference regions="001">liter</unitPreference>
+            <unitPreference regions="001">milliliter</unitPreference>
+            <unitPreference regions="US">gallon</unitPreference>
+            <unitPreference regions="US">quart</unitPreference>
+            <unitPreference regions="US">pint</unitPreference>
+            <unitPreference regions="US">cup</unitPreference>
+            <unitPreference regions="US">fluid-ounce</unitPreference>
+            <unitPreference regions="US">tablespoon</unitPreference>
+            <unitPreference regions="US">teaspoon</unitPreference>
+            <unitPreference regions="GB">gallon-imperial</unitPreference>
+            <unitPreference regions="GB">fluid-ounce-imperial</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="volume" usage="oil">
+            <unitPreference regions="001">barrel</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="volume" usage="vehicle">
+            <unitPreference regions="US">gallon</unitPreference>
+            <unitPreference regions="001">liter</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="year-duration" usage="default">
+            <unitPreference regions="001">year</unitPreference>
+            <unitPreference regions="001">month</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="year-duration" usage="person-age">
+            <unitPreference regions="001" geq="2.5">year-person</unitPreference>
+            <unitPreference regions="001">year-person-and-month-person</unitPreference>
+            <unitPreference regions="001">month-person</unitPreference>
+        </unitPreferences>
+    </unitPreferenceData>
+    <metadata>
+        <alias>
+            <unitAlias type="inch-hg" replacement="inch-ofhg" reason="deprecated"/>
+            <unitAlias type="liter-per-100kilometers" replacement="liter-per-100-kilometer" reason="deprecated"/>
+            <unitAlias type="meter-per-second-squared" replacement="meter-per-square-second" reason="deprecated"/>
+            <unitAlias type="millimeter-of-mercury" replacement="millimeter-ofhg" reason="deprecated"/>
+            <unitAlias type="part-per-million" replacement="permillion" reason="deprecated"/>
+            <unitAlias type="pound-foot" replacement="pound-force-foot" reason="deprecated"/>
+            <unitAlias type="pound-per-square-inch" replacement="pound-force-per-square-inch" reason="deprecated"/>
+            <unitAlias type="milligram-per-deciliter" replacement="milligram-ofglucose-per-deciliter" reason="deprecated"/>
+            <usageAlias type="music-track" replacement="media" reason="deprecated"/>
+            <usageAlias type="tv-program" replacement="media" reason="deprecated"/>
+       </alias>
+    </metadata>
+</supplementalData>

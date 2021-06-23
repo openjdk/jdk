@@ -15923,8 +15923,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</listPatterns>
 	<posix>
 		<messages>
-			<yesstr>y</yesstr>
-			<nostr>n</nostr>
+			<yesstr>ya:y</yesstr>
+			<nostr>ket:k</nostr>
 		</messages>
 	</posix>
 	<characterLabels>

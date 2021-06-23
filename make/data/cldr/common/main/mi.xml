@@ -37,9 +37,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="it">Ītariana</language>
 			<language type="ja">Hapanihi</language>
 			<language type="mi">te reo Māori</language>
-			<language type="pt">Pōtikī</language>
-			<language type="pt_BR">Pōtikī Parahi</language>
-			<language type="pt_PT">Pōtikī Uropi</language>
+			<language type="pt">Pōtukīhi</language>
+			<language type="pt_BR">Pōtukīhi Parahi</language>
+			<language type="pt_PT">Pōtukīhi Uropi</language>
 			<language type="ru">Ruhiana</language>
 			<language type="und">Reo Tē Mōhiotia</language>
 			<language type="zh">Hainamana</language>

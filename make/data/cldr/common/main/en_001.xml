@@ -981,9 +981,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dot per centimetre</unitPattern>
 				<unitPattern count="other">{0} dots per centimetre</unitPattern>
 			</unit>
-			<unit type="graphics-dot">
-				<unitPattern count="other">{0} dots</unitPattern>
-			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="other">{0} earth radii</unitPattern>
 			</unit>
@@ -1050,9 +1047,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stone</displayName>
 				<unitPattern count="one">{0} stone</unitPattern>
 				<unitPattern count="other">{0} stone</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimetres of mercury</displayName>
@@ -1161,18 +1155,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dessertspoon</displayName>
 				<unitPattern count="one">{0} dessertspoon</unitPattern>
 				<unitPattern count="other">{0} dessertspoons</unitPattern>
-			</unit>
-			<unit type="volume-drop">
-				<unitPattern count="other">{0} drops</unitPattern>
-			</unit>
-			<unit type="volume-dram">
-				<unitPattern count="other">{0} drams</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<unitPattern count="other">{0} jiggers</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<unitPattern count="other">{0} pinches</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>quart</displayName>

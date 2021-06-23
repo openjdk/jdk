@@ -2436,7 +2436,7 @@ $Revision$
 <!ELEMENT unitPattern ( #PCDATA ) >
 <!ATTLIST unitPattern count (0 | 1 | zero | one | two | few | many | other) #REQUIRED >
 <!ATTLIST unitPattern case NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, prepositional, sociative, vocative-->
+    <!--@MATCH:literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, prepositional, sociative, vocative, elative, illative, partitive, terminative, translative-->
 <!ATTLIST unitPattern alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST unitPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -2516,7 +2516,7 @@ $Revision$
 
 <!ELEMENT caseMinimalPairs ( #PCDATA ) >
 <!ATTLIST caseMinimalPairs case NMTOKEN #REQUIRED >
-    <!--@MATCH:literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, prepositional, sociative, vocative-->
+    <!--@MATCH:literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, prepositional, sociative, vocative, elative, illative, partitive, terminative, translative-->
 <!ATTLIST caseMinimalPairs alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST caseMinimalPairs draft (approved | contributed | provisional | unconfirmed) #IMPLIED >

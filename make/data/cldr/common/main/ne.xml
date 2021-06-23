@@ -460,6 +460,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">राजस्थानी</language>
 			<language type="rap">रापानुई</language>
 			<language type="rar">रारोटोङ्गान</language>
+			<language type="rhg">रोहिङ्ग्या</language>
 			<language type="rm">रोमानिस</language>
 			<language type="rn">रुन्डी</language>
 			<language type="ro">रोमानियाली</language>
@@ -1227,6 +1228,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -1705,6 +1707,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -4683,6 +4686,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>येकाटेरिनबर्ग ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>युकोनको समय</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -5420,6 +5428,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">लिबेरियाली डलर</displayName>
 				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>लेसोथो लोटी</displayName>
+				<displayName count="one">लेसोथो लोटी</displayName>
+				<displayName count="other">लेसोथो लोटिस</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>लिथुनियाली लिटास</displayName>
@@ -6159,6 +6172,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्तुहरू</displayName>
+				<unitPattern count="one">{0} वस्तु</unitPattern>
+				<unitPattern count="other">{0} वटा वस्तुहरू</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -6400,6 +6418,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>न्युटन</displayName>
 				<unitPattern count="one">{0} न्युटन</unitPattern>
 				<unitPattern count="other">{0} न्युटन</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किलोवाट-घण्टा प्रति १०० किलोमिटर</displayName>
+				<unitPattern count="one">{0} किलोवाट-घण्टा प्रति १०० किलोमिटर</unitPattern>
+				<unitPattern count="other">{0} किलोवाट घण्टा प्रति १०० किलोमिटर</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>गिगाहर्ज</displayName>
@@ -7187,6 +7210,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्तु</displayName>
+				<unitPattern count="one">{0} वस्तु</unitPattern>
+				<unitPattern count="other">{0} वस्तु</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -7426,6 +7454,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>न्युटन</displayName>
 				<unitPattern count="one">{0} न्युटन</unitPattern>
 				<unitPattern count="other">{0} न्युटन</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/१०० किमी</displayName>
+				<unitPattern count="one">{0} kWh/१०० किमी</unitPattern>
+				<unitPattern count="other">{0} kWh/१०० किमी</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -8131,6 +8164,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ब.फु.</unitPattern>
 				<unitPattern count="other">{0} ब.फु.</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्तु</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>प्रतिशत</displayName>
 				<unitPattern count="one">{0}प्रतिशत</unitPattern>
@@ -8224,6 +8260,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} ly</unitPattern>
 				<unitPattern count="other">{0} ly</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="one">{0}L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>किलो</displayName>

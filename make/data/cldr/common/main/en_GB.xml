@@ -280,6 +280,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="MMMEd">
@@ -1522,6 +1523,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="concentr-karat">
+				<displayName>carats</displayName>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kilowatt-hour per 100 kilometres</displayName>
+				<unitPattern count="one">{0} kilowatt-hour per 100 kilometres</unitPattern>
+				<unitPattern count="other">{0} kilowatt-hours per 100 kilometres</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>fluid ounces</displayName>
 				<unitPattern count="one">{0} fluid ounce</unitPattern>
@@ -1537,6 +1546,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-jigger">
 				<unitPattern count="one">{0} jigger</unitPattern>
 				<unitPattern count="other">{0} jiggers</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="concentr-karat">
+				<displayName>carat</displayName>
+				<unitPattern count="one">{0}ct</unitPattern>
+				<unitPattern count="other">{0}ct</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>US dsp</displayName>
+				<unitPattern count="one">{0}US dsp</unitPattern>
+				<unitPattern count="other">{0}US dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0}jigger</unitPattern>
+				<unitPattern count="other">{0}jiggers</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0}qt</unitPattern>
+				<unitPattern count="other">{0}qt</unitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">

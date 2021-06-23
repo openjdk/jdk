@@ -6367,8 +6367,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-minute">
 				<displayName>aɖabaƒoƒowo</displayName>
-				<unitPattern count="one">aɖabaƒoƒo {0}</unitPattern>
-				<unitPattern count="other">aɖabaƒoƒo {0}</unitPattern>
+				<unitPattern count="one">a {0}</unitPattern>
+				<unitPattern count="other">a {0}</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<unitPattern count="one">sekend {0}</unitPattern>
