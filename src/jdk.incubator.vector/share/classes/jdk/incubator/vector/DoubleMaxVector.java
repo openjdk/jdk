@@ -565,18 +565,10 @@ final class DoubleMaxVector extends DoubleVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new ByteMaxVector.ByteMaxMask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new ShortMaxVector.ShortMaxMask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new IntMaxVector.IntMaxMask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new LongMaxVector.LongMaxMask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new FloatMaxVector.FloatMaxMask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new DoubleMaxVector.DoubleMaxMask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -747,24 +739,7 @@ final class DoubleMaxVector extends DoubleVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new ByteMaxVector.ByteMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new ShortMaxVector.ShortMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new IntMaxVector.IntMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new LongMaxVector.LongMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new FloatMaxVector.FloatMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new DoubleMaxVector.DoubleMaxShuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
