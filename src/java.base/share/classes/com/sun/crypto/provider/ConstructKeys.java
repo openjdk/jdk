@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.access.SharedSecrets;
+
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
@@ -48,24 +50,18 @@ import javax.crypto.spec.SecretKeySpec;
  */
 
 final class ConstructKeys {
-    /**
-     * Construct a public key from its encoding.
-     *
-     * @param encodedKey the encoding of a public key.
-     *
-     * @param encodedKeyAlgorithm the algorithm the encodedKey is for.
-     *
-     * @return a public key constructed from the encodedKey.
-     */
+
     private static final PublicKey constructPublicKey(byte[] encodedKey,
-            String encodedKeyAlgorithm)
+            int ofs, int len, String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         PublicKey key = null;
+        byte[] keyBytes = (ofs == 0 && encodedKey.length == len)
+                ? encodedKey : Arrays.copyOfRange(encodedKey, ofs, ofs + len);
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
         try {
             KeyFactory keyFactory =
                 KeyFactory.getInstance(encodedKeyAlgorithm,
                     SunJCE.getInstance());
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
             key = keyFactory.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
             // Try to see whether there is another
@@ -73,8 +69,6 @@ final class ConstructKeys {
             try {
                 KeyFactory keyFactory =
                     KeyFactory.getInstance(encodedKeyAlgorithm);
-                X509EncodedKeySpec keySpec =
-                    new X509EncodedKeySpec(encodedKey);
                 key = keyFactory.generatePublic(keySpec);
             } catch (NoSuchAlgorithmException nsae2) {
                 throw new NoSuchAlgorithmException("No installed providers " +
@@ -97,25 +91,17 @@ final class ConstructKeys {
         return key;
     }
 
-    /**
-     * Construct a private key from its encoding.
-     *
-     * @param encodedKey the encoding of a private key.
-     *
-     * @param encodedKeyAlgorithm the algorithm the wrapped key is for.
-     *
-     * @return a private key constructed from the encodedKey.
-     */
     private static final PrivateKey constructPrivateKey(byte[] encodedKey,
-            String encodedKeyAlgorithm)
+            int ofs, int len, String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         PrivateKey key = null;
-
+        byte[] keyBytes = (ofs == 0 && encodedKey.length == len)
+                ? encodedKey : Arrays.copyOfRange(encodedKey, ofs, ofs + len);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
         try {
             KeyFactory keyFactory =
                 KeyFactory.getInstance(encodedKeyAlgorithm,
                     SunJCE.getInstance());
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encodedKey);
             return keyFactory.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
             // Try to see whether there is another
@@ -123,8 +109,6 @@ final class ConstructKeys {
             try {
                 KeyFactory keyFactory =
                     KeyFactory.getInstance(encodedKeyAlgorithm);
-                PKCS8EncodedKeySpec keySpec =
-                    new PKCS8EncodedKeySpec(encodedKey);
                 key = keyFactory.generatePrivate(keySpec);
             } catch (NoSuchAlgorithmException nsae2) {
                 throw new NoSuchAlgorithmException("No installed providers " +
@@ -142,20 +126,16 @@ final class ConstructKeys {
                 new InvalidKeyException("Cannot construct private key");
             ike.initCause(ikse);
             throw ike;
+        } finally {
+            SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(keySpec);
+            if (keyBytes != encodedKey) {
+                Arrays.fill(keyBytes, (byte)0);
+            }
         }
 
         return key;
     }
 
-    /**
-     * Construct a secret key from its encoding.
-     *
-     * @param encodedKey the encoding of a secret key.
-     *
-     * @param encodedKeyAlgorithm the algorithm the secret key is for.
-     *
-     * @return a secret key constructed from the encodedKey.
-     */
     private static final SecretKey constructSecretKey(byte[] encodedKey,
             int ofs, int len, String encodedKeyAlgorithm) {
         return (new SecretKeySpec(encodedKey, ofs, len, encodedKeyAlgorithm));
@@ -170,35 +150,14 @@ final class ConstructKeys {
     static final Key constructKey(byte[] encoding, int ofs, int len,
             String keyAlgorithm, int keyType)
             throws InvalidKeyException, NoSuchAlgorithmException {
-        switch (keyType) {
-        case Cipher.SECRET_KEY:
-            try {
-                return ConstructKeys.constructSecretKey(encoding, ofs, len,
-                        keyAlgorithm);
-            } finally {
-                Arrays.fill(encoding, ofs, len, (byte)0);
-            }
-        case Cipher.PRIVATE_KEY:
-            byte[] encoding2 = encoding;
-            try {
-                if (ofs != 0 || len != encoding.length) {
-                    encoding2 = Arrays.copyOfRange(encoding, ofs, ofs + len);
-                }
-                return ConstructKeys.constructPrivateKey(encoding2,
-                        keyAlgorithm);
-            } finally {
-                Arrays.fill(encoding, ofs, len, (byte)0);
-                if (encoding2 != encoding) {
-                    Arrays.fill(encoding2, (byte)0);
-                }
-            }
-        case Cipher.PUBLIC_KEY:
-            if (ofs != 0 || len != encoding.length) {
-                encoding = Arrays.copyOfRange(encoding, ofs, ofs + len);
-            }
-            return ConstructKeys.constructPublicKey(encoding, keyAlgorithm);
-        default:
-            throw new NoSuchAlgorithmException("Unsupported key type");
-        }
+        return switch (keyType) {
+            case Cipher.SECRET_KEY -> ConstructKeys.constructSecretKey(
+                    encoding, ofs, len, keyAlgorithm);
+            case Cipher.PRIVATE_KEY -> ConstructKeys.constructPrivateKey(
+                    encoding, ofs, len, keyAlgorithm);
+            case Cipher.PUBLIC_KEY -> ConstructKeys.constructPublicKey(
+                    encoding, ofs, len, keyAlgorithm);
+            default -> throw new NoSuchAlgorithmException("Unsupported key type");
+        };
     }
 }

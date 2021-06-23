@@ -129,6 +129,7 @@ tier1_compiler_2 = \
 tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
+  compiler/locks/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \

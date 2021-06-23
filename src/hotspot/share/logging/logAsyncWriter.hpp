@@ -133,12 +133,16 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // times. It is no-op if async logging is not established.
 //
 class AsyncLogWriter : public NonJavaThread {
+  class AsyncLogLocker;
+
   static AsyncLogWriter* _instance;
+  // _lock(1) denotes a critional region.
+  Semaphore _lock;
   // _sem is a semaphore whose value denotes how many messages have been enqueued.
   // It decreases in AsyncLogWriter::run()
-  static Semaphore _sem;
+  Semaphore _sem;
   // A lock of IO
-  static Semaphore _io_sem;
+  Semaphore _io_sem;
 
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
@@ -157,7 +161,6 @@ class AsyncLogWriter : public NonJavaThread {
     log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
   }
   char* name() const override { return (char*)"AsyncLog Thread"; }
-  bool is_Named_thread() const override { return true; }
   void print_on(outputStream* st) const override {
     st->print("\"%s\" ", name());
     Thread::print_on(st);

@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
+#include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
@@ -41,6 +43,9 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
 {
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask());
+  if (SampleCollectionSetCandidatesTask::should_execute()) {
+    add_serial_task(new SampleCollectionSetCandidatesTask());
+  }
   if (RemoveSelfForwardPtrsTask::should_execute()) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
   }
@@ -62,6 +67,32 @@ double G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::worker_cost
 
 void G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::do_work(uint worker_id) {
   G1CollectedHeap::heap()->update_used_after_gc();
+}
+
+bool G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::should_execute() {
+  return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
+}
+
+double G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::worker_cost() const {
+  return should_execute() ? 1.0 : AlmostNoWork;
+}
+
+class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
+public:
+  G1CardSetMemoryStats _total;
+
+  bool do_heap_region(HeapRegion* r) override {
+    _total.add(r->rem_set()->card_set_memory_stats());
+    return false;
+  }
+};
+
+void G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::do_work(uint worker_id) {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+  G1SampleCollectionSetCandidatesClosure cl;
+  g1h->collection_set()->candidates()->iterate(&cl);
+  g1h->set_collection_set_candidates_stats(cl._total);
 }
 
 bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_execute() {
@@ -265,9 +296,9 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   }
 
   bool will_become_free(HeapRegion* hr) const {
-    // A region will be freed by free_collection_set if the region is in the
+    // A region will be freed by during the FreeCollectionSet phase if the region is in the
     // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !hr->evacuation_failed();
+    return _g1h->is_in_cset(hr) && !_g1h->evacuation_failed(hr->hrm_index());
   }
 
  public:
@@ -379,8 +410,8 @@ public:
   }
 
   void account_evacuated_region(HeapRegion* r) {
-      size_t used = r->used();
-      assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
+    size_t used = r->used();
+    assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
     _before_used_bytes += used;
     _regions_freed += 1;
   }
@@ -431,7 +462,7 @@ class FreeCSetClosure : public HeapRegionClosure {
   Tickspan         _non_young_time;
   FreeCSetStats*   _stats;
 
-  void assert_in_cset(HeapRegion* r) {
+  void assert_tracks_surviving_words(HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
            (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
@@ -486,15 +517,14 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    _g1h->clear_region_attr(r);
     stats()->account_rs_length(r);
 
     if (r->is_young()) {
-      assert_in_cset(r);
+      assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
 
-    if (r->evacuation_failed()) {
+    if (_g1h->evacuation_failed(r->hrm_index())) {
       handle_failed_region(r);
     } else {
       handle_evacuated_region(r);

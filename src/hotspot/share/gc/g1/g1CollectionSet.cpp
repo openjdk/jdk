@@ -31,7 +31,7 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
@@ -109,6 +109,10 @@ void G1CollectionSet::free_optional_regions() {
 void G1CollectionSet::clear_candidates() {
   delete _candidates;
   _candidates = NULL;
+}
+
+bool G1CollectionSet::has_candidates() {
+  return _candidates != NULL && !_candidates->is_empty();
 }
 
 void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {

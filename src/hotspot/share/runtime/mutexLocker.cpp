@@ -154,6 +154,7 @@ Mutex*   DumpTimeTable_lock           = NULL;
 Mutex*   CDSLambda_lock               = NULL;
 Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
+Mutex*   UnregisteredClassesTable_lock= NULL;
 Mutex*   LambdaFormInvokers_lock      = NULL;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = NULL;

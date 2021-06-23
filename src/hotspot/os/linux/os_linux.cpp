@@ -672,7 +672,8 @@ static void *thread_native_entry(Thread *thread) {
   // and we did not see any degradation in performance without `alloca()`.
   static int counter = 0;
   int pid = os::current_process_id();
-  void *stackmem = alloca(((pid ^ counter++) & 7) * 128);
+  int random = ((pid ^ counter++) & 7) * 128;
+  void *stackmem = alloca(random != 0 ? random : 1); // ensure we allocate > 0
   // Ensure the alloca result is used in a way that prevents the compiler from eliding it.
   *(char *)stackmem = 1;
 #endif
@@ -683,9 +684,6 @@ static void *thread_native_entry(Thread *thread) {
   Monitor* sync = osthread->startThread_lock();
 
   osthread->set_thread_id(os::current_thread_id());
-
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -712,6 +710,9 @@ static void *thread_native_entry(Thread *thread) {
       sync->wait_without_safepoint_check();
     }
   }
+
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
 

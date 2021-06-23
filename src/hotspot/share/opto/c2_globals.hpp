@@ -767,6 +767,9 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
+          "Verify receiver types at runtime")                               \
 
 // end of C2_FLAGS
 
