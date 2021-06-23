@@ -46,6 +46,9 @@ public class Guards {
         runIfTrue(this::typeGuardIfTrueIfStatement);
         runIfTrue(this::typeGuardIfTrueSwitchExpression);
         runIfTrue(this::typeGuardIfTrueSwitchStatement);
+        runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchStatement);
+        runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchExpression);
+        runIfTrue(this::typeGuardAfterParenthesizedTrueIfStatement);
     }
 
     void run(Function<Object, String> convert) {
@@ -116,6 +119,32 @@ public class Guards {
         if (o != null && o instanceof (Integer i && i == 0 && i < 1) && (o = i) != null && o2 instanceof String s) {
             return s != null ? "true" : null;
         } else if (o != null && o instanceof (Integer i && i == 0 || i > 1) && (o = i) != null) {
+            return "second";
+        } else {
+            return "any";
+        }
+    }
+
+    String typeGuardAfterParenthesizedTrueSwitchStatement(Object o) {
+        switch (o) {
+            case (Integer i) && i == 0: o = String.valueOf(i); return "true";
+            case ((Integer i) && i == 2): o = String.valueOf(i); return "second";
+            case Object x: return "any";
+        }
+    }
+
+    String typeGuardAfterParenthesizedTrueSwitchExpression(Object o) {
+        return switch (o) {
+            case (Integer i) && i == 0: o = String.valueOf(i); yield "true";
+            case ((Integer i) && i == 2): o = String.valueOf(i); yield "second";
+            case Object x: yield "any";
+        };
+    }
+
+    String typeGuardAfterParenthesizedTrueIfStatement(Object o) {
+        if (o != null && o instanceof ((Integer i) && i == 0)) {
+            return "true";
+        } else if (o != null && o instanceof (((Integer i) && i == 2)) && (o = i) != null) {
             return "second";
         } else {
             return "any";
