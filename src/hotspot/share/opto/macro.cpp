@@ -1909,15 +1909,15 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
 void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->as_BoxLock()->is_eliminated())
+  if (oldbox->as_BoxLock()->is_eliminated()) {
     return; // This BoxLock node was processed already.
-
+  }
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
   // (for example, OSR compilation of nested loop inside locked scope).
   if (EliminateNestedLocks ||
-      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
+      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj, NULL)) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
     oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
@@ -2089,11 +2089,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 
 #ifndef PRODUCT
   if (PrintEliminateLocks) {
-    if (alock->is_Lock()) {
-      tty->print_cr("++++ Eliminated: %d Lock", alock->_idx);
-    } else {
-      tty->print_cr("++++ Eliminated: %d Unlock", alock->_idx);
-    }
+    tty->print_cr("++++ Eliminated: %d %s '%s'", alock->_idx, (alock->is_Lock() ? "Lock" : "Unlock"), alock->kind_as_string());
   }
 #endif
 
@@ -2502,16 +2498,21 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
 
-  // First, attempt to eliminate locks
+  // Before elimination may re-mark (change to Nested or NonEscObj)
+  // all associated (same box and obj) lock and unlock nodes.
   int cnt = C->macro_count();
   for (int i=0; i < cnt; i++) {
     Node *n = C->macro_node(i);
     if (n->is_AbstractLock()) { // Lock and Unlock nodes
-      // Before elimination mark all associated (same box and obj)
-      // lock and unlock nodes.
       mark_eliminated_locking_nodes(n->as_AbstractLock());
     }
   }
+  // Re-marking may break consistency of Coarsened locks.
+  if (!C->coarsened_locks_consistent()) {
+    return; // recompile without Coarsened locks if broken
+  }
+
+  // First, attempt to eliminate locks
   bool progress = true;
   while (progress) {
     progress = false;
@@ -2574,6 +2575,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 bool PhaseMacroExpand::expand_macro_nodes() {
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
+  if (C->failing())  return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;

@@ -560,7 +560,8 @@ public class Start {
         // We're done.
         if (options.verbose()) {
             long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
-            log.noticeUsingKey("main.done_in", Long.toString(elapsedMillis));
+            JavadocLog.printRawLines(log.getDiagnosticWriter(),
+                    log.getText("main.done_in", Long.toString(elapsedMillis)));
         }
 
         return returnStatus;

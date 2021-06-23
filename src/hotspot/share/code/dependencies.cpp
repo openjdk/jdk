@@ -51,7 +51,7 @@
 static bool must_be_in_vm() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    return thread->as_Java_thread()->thread_state() == _thread_in_vm;
+    return JavaThread::cast(thread)->thread_state() == _thread_in_vm;
   } else {
     return true;  // Could be VMThread or GC thread
   }

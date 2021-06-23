@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,74 +27,86 @@
 
 #include "gc/g1/heapRegionRemSet.hpp"
 
+#include "gc/g1/g1CardSet.inline.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/sparsePRT.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-template <class Closure>
-inline void HeapRegionRemSet::iterate_prts(Closure& cl) {
-  _other_regions.iterate(cl);
+void HeapRegionRemSet::set_state_empty() {
+  guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
+            "Should only set to Untracked during safepoint but is %s.", get_state_str());
+  if (_state == Untracked) {
+    return;
+  }
+  clear_fcc();
+  _state = Untracked;
 }
 
-inline bool PerRegionTable::add_card(CardIdx_t from_card_index) {
-  if (_bm.par_set_bit(from_card_index)) {
-    Atomic::inc(&_occupied, memory_order_relaxed);
-    return true;
-  }
-  return false;
+void HeapRegionRemSet::set_state_updating() {
+  guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
+            "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
+  clear_fcc();
+  _state = Updating;
 }
 
-inline bool PerRegionTable::add_reference(OopOrNarrowOopStar from) {
-  // Must make this robust in case "from" is not in "_hr", because of
-  // concurrency.
-
-  HeapRegion* loc_hr = hr();
-  // If the test below fails, then this table was reused concurrently
-  // with this operation.  This is OK, since the old table was coarsened,
-  // and adding a bit to the new table is never incorrect.
-  if (loc_hr->is_in_reserved(from)) {
-    CardIdx_t from_card = OtherRegionsTable::card_within_region(from, loc_hr);
-    return add_card(from_card);
-  }
-  return false;
+void HeapRegionRemSet::set_state_complete() {
+  clear_fcc();
+  _state = Complete;
 }
 
-inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
-  if (clear_links_to_all_list) {
-    set_next(NULL);
-  }
-  _collision_list_next = NULL;
-  _occupied = 0;
-  _bm.clear();
-  // Make sure that the bitmap clearing above has been finished before publishing
-  // this PRT to concurrent threads.
-  Atomic::release_store(&_hr, hr);
+
+template <class CardOrRangeVisitor>
+inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
+  _card_set.iterate_for_merge(cl);
 }
 
-template <class Closure>
-void OtherRegionsTable::iterate(Closure& cl) {
-  if (Atomic::load(&_has_coarse_entries)) {
-    BitMap::idx_t cur = _coarse_map.get_next_one_offset(0);
-    while (cur != _coarse_map.size()) {
-      cl.next_coarse_prt((uint)cur);
-      cur = _coarse_map.get_next_one_offset(cur + 1);
-    }
+void HeapRegionRemSet::split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const {
+  HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(from);
+  card_region = hr->hrm_index();
+  card_within_region = (uint)(pointer_delta((HeapWord*)from, hr->bottom()) >> (CardTable::card_shift - LogHeapWordSize));
+}
+
+void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
+  RemSetState state = _state;
+  if (state == Untracked) {
+    return;
   }
-  {
-    PerRegionTable* cur = _first_all_fine_prts;
-    while (cur != NULL) {
-      cl.next_fine_prt(cur->hr()->hrm_index(), cur->bm());
-      cur = cur->next();
-    }
+
+  uint cur_idx = _hr->hrm_index();
+  uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift;
+
+  if (G1FromCardCache::contains_or_replace(tid, cur_idx, from_card)) {
+    // We can't check whether the card is in the remembered set - the card container
+    // may be coarsened just now.
+    //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
+   return;
   }
-  {
-    SparsePRTBucketIter iter(&_sparse_table);
-    SparsePRTEntry* cur;
-    while (iter.has_next(cur)) {
-      cl.next_sparse_prt(cur->r_ind(), cur->cards(), cur->num_valid_cards());
-    }
-  }
+
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  _card_set.add_card(card_region, card_within_region);
+}
+
+bool HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  return _card_set.contains_card(card_region, card_within_region);
+}
+
+void HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  _card_set.print_info(st, card_region, card_within_region);
 }
 
 #endif // SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP

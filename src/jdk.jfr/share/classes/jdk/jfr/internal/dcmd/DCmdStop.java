@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 /**
@@ -41,25 +38,11 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 // Instantiated by native
 final class DCmdStop extends AbstractDCmd {
 
-    /**
-     * Execute JFR.stop
-     *
-     * Requires that either {@code name} or {@code id} is set.
-     *
-     * @param name name or id of the recording to stop.
-     *
-     * @param filename file path where data should be written after recording has
-     *        been stopped, or {@code null} if recording shouldn't be written
-     *        to disk.
-     * @return result text
-     *
-     * @throws DCmdException if recording could not be stopped
-     */
-    public String[] execute(String name, String filename) throws DCmdException {
-        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
-            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdStart: name=" + name + ", filename=" + filename);
-        }
-
+    @Override
+    protected void execute(ArgumentParser parser)  throws DCmdException {
+        parser.checkUnknownArguments();
+        String name = parser.getOption("name");
+        String filename = parser.getOption("filename");
         try {
             SafePath safePath = null;
             Recording recording = findRecording(name);
@@ -76,12 +59,49 @@ final class DCmdStop extends AbstractDCmd {
             recording.stop();
             reportOperationComplete("Stopped", recording.getName(), safePath);
             recording.close();
-            return getResult();
         } catch (InvalidPathException | DCmdException e) {
             if (filename != null) {
                 throw new DCmdException("Could not write recording \"%s\" to file. %s", name, e.getMessage());
             }
             throw new DCmdException(e, "Could not stop recording \"%s\".", name, e.getMessage());
         }
+    }
+
+    @Override
+    public String[] printHelp() {
+            // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+        return """
+               Syntax : JFR.stop [options]
+
+               Options:
+
+                 filename  (Optional) Name of the file to which the recording is written when the
+                           recording is stopped. If no path is provided, the data from the recording
+                           is discarded. (STRING, no default value)
+
+                 name      Name of the recording (STRING, no default value)
+
+               Options must be specified using the <key> or <key>=<value> syntax.
+
+               Example usage:
+
+                $ jcmd <pid> JFR.stop name=1
+                $ jcmd <pid> JFR.stop name=benchmark filename=%s
+                $ jcmd <pid> JFR.stop name=5 filename=recording.jfr
+
+               """.formatted(exampleDirectory()).
+               lines().toArray(String[]::new);
+    }
+
+    @Override
+    public Argument[] getArgumentInfos() {
+        return new Argument[] {
+            new Argument("name",
+                "Recording text,.e.g \\\"My Recording\\\"",
+                "STRING", true, null, false),
+            new Argument("filename",
+                "Copy recording data to file, e.g. \\\"" + exampleFilename() +  "\\\"",
+                "STRING", false, null, false)
+        };
     }
 }

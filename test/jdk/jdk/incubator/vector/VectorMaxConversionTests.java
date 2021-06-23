@@ -22,11 +22,15 @@
  */
 
 import jdk.incubator.vector.VectorShape;
+import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorSpecies;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.Assert;
 
 import java.util.function.IntFunction;
+import java.util.List;
 
 /**
  * @test
@@ -51,6 +55,16 @@ public class VectorMaxConversionTests extends AbstractVectorConversionTest {
         return fixedShapeXShapeSpeciesArgs(SHAPE);
     }
 
+    @DataProvider
+    public Object[][] fixedShapeXSegmentedLegalCastSpecies() {
+        return fixedShapeXSegmentedCastSpeciesArgs(SHAPE, true);
+    }
+
+    @DataProvider
+    public Object[][] fixedShapeXSegmentedIllegalCastSpecies() {
+        return fixedShapeXSegmentedCastSpeciesArgs(SHAPE, false);
+    }
+
     @Test(dataProvider = "fixedShapeXfixedShape")
     static <I, O> void convert(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
         Object a = fa.apply(1024);
@@ -73,5 +87,25 @@ public class VectorMaxConversionTests extends AbstractVectorConversionTest {
     static <I, O> void reinterpret(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
         Object a = fa.apply(1024);
         reinterpret_kernel(src, dst, a);
+    }
+
+    @Test(dataProvider = "fixedShapeXSegmentedLegalCastSpecies")
+    static <E,F> void shuffleCast(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        legal_shuffle_cast_kernel(src, dst);
+    }
+
+    @Test(dataProvider = "fixedShapeXSegmentedIllegalCastSpecies")
+    static <E,F> void shuffleCastNeg(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        illegal_shuffle_cast_kernel(src, dst);
+    }
+
+    @Test(dataProvider = "fixedShapeXSegmentedLegalCastSpecies")
+    static <E,F> void maskCast(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        legal_mask_cast_kernel(src, dst);
+    }
+
+    @Test(dataProvider = "fixedShapeXSegmentedIllegalCastSpecies")
+    static <E,F> void maskCastNeg(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        illegal_mask_cast_kernel(src, dst);
     }
 }

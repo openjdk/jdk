@@ -28,7 +28,7 @@
 #include "jni.h"
 #include "code/debugInfo.hpp"
 #include "memory/allocation.hpp"
-#include "oops/typeArrayOop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/exceptions.hpp"
 

@@ -869,7 +869,7 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
  public:
   DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     jt->deoptimize_marked_methods();
   }
 };
@@ -1957,7 +1957,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     ScopeDesc*      trap_scope  = cvf->scope();
 
-    if (TraceDeoptimization) {
+    bool is_receiver_constraint_failure = COMPILER2_PRESENT(VerifyReceiverTypes &&) (reason == Deoptimization::Reason_receiver_constraint);
+
+    if (TraceDeoptimization || is_receiver_constraint_failure) {
       ttyLocker ttyl;
       tty->print_cr("  bci=%d pc=" INTPTR_FORMAT ", relative_pc=" INTPTR_FORMAT ", method=%s" JVMCI_ONLY(", debug_id=%d"), trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin(), trap_scope->method()->name_and_sig_as_C_string()
 #if INCLUDE_JVMCI
@@ -2016,7 +2018,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
                               trap_method->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
 
     // Print a bunch of diagnostics, if requested.
-    if (TraceDeoptimization || LogCompilation) {
+    if (TraceDeoptimization || LogCompilation || is_receiver_constraint_failure) {
       ResourceMark rm;
       ttyLocker ttyl;
       char buf[100];
@@ -2108,6 +2110,10 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       }
     }
     // (End diagnostic printout.)
+
+    if (is_receiver_constraint_failure) {
+      fatal("missing receiver type check");
+    }
 
     // Load class if necessary
     if (unloaded_class_index >= 0) {
@@ -2598,6 +2604,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",
+  "receiver_constraint",
 #if INCLUDE_JVMCI
   "aliasing",
   "transfer_to_interpreter",

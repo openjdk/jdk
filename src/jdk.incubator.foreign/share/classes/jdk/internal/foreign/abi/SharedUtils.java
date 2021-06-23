@@ -37,6 +37,8 @@ import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.ValueLayout;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.foreign.Utils;
@@ -51,6 +53,8 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +77,8 @@ import static jdk.incubator.foreign.CLinker.*;
 
 public class SharedUtils {
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     private static final MethodHandle MH_ALLOC_BUFFER;
     private static final MethodHandle MH_BASEADDRESS;
     private static final MethodHandle MH_BUFFER_COPY;
@@ -80,6 +86,7 @@ public class SharedUtils {
     private static final MethodHandle MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR;
     private static final MethodHandle MH_CLOSE_CONTEXT;
     private static final MethodHandle MH_REACHBILITY_FENCE;
+    private static final MethodHandle MH_HANDLE_UNCAUGHT_EXCEPTION;
 
     static {
         try {
@@ -98,6 +105,8 @@ public class SharedUtils {
                     methodType(void.class));
             MH_REACHBILITY_FENCE = lookup.findStatic(Reference.class, "reachabilityFence",
                     methodType(void.class, Object.class));
+            MH_HANDLE_UNCAUGHT_EXCEPTION = lookup.findStatic(SharedUtils.class, "handleUncaughtException",
+                    methodType(void.class, Throwable.class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
@@ -275,12 +284,12 @@ public class SharedUtils {
         };
     }
 
-    public static String toJavaStringInternal(MemorySegment segment, long start, Charset charset) {
+    public static String toJavaStringInternal(MemorySegment segment, long start) {
         int len = strlen(segment, start);
         byte[] bytes = new byte[len];
         MemorySegment.ofArray(bytes)
                 .copyFrom(segment.asSlice(start, len));
-        return new String(bytes, charset);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private static int strlen(MemorySegment segment, long start) {
@@ -361,6 +370,13 @@ public class SharedUtils {
         return MH_REACHBILITY_FENCE.asType(MethodType.methodType(void.class, type));
     }
 
+    static void handleUncaughtException(Throwable t) {
+        if (t != null) {
+            t.printStackTrace();
+            JLA.exit(1);
+        }
+    }
+
     static MethodHandle wrapWithAllocator(MethodHandle specializedHandle,
                                           int allocatorPos, long bufferCopySize,
                                           boolean upcall) {
@@ -368,7 +384,11 @@ public class SharedUtils {
         MethodHandle closer;
         int insertPos;
         if (specializedHandle.type().returnType() == void.class) {
-            closer = empty(methodType(void.class, Throwable.class)); // (Throwable) -> void
+            if (!upcall) {
+                closer = empty(methodType(void.class, Throwable.class)); // (Throwable) -> void
+            } else {
+                closer = MH_HANDLE_UNCAUGHT_EXCEPTION;
+            }
             insertPos = 1;
         } else {
             closer = identity(specializedHandle.type().returnType()); // (V) -> V
@@ -429,6 +449,14 @@ public class SharedUtils {
     }
 
     public static MemoryAddress checkSymbol(Addressable symbol) {
+        return checkAddressable(symbol, "Symbol is NULL");
+    }
+
+    public static MemoryAddress checkAddress(MemoryAddress address) {
+        return checkAddressable(address, "Address is NULL");
+    }
+
+    private static MemoryAddress checkAddressable(Addressable symbol, String msg) {
         Objects.requireNonNull(symbol);
         MemoryAddress symbolAddr = symbol.address();
         if (symbolAddr.equals(MemoryAddress.NULL))

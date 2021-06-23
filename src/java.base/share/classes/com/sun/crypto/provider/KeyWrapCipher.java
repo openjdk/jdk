@@ -161,6 +161,7 @@ abstract class KeyWrapCipher extends CipherSpi {
     }
 
     // internal cipher object which does the real work.
+    // AESKeyWrap for KW, AESKeyWrapPadded for KWP
     private final FeedbackCipher cipher;
 
     // internal padding object; null if NoPadding
@@ -279,13 +280,15 @@ abstract class KeyWrapCipher extends CipherSpi {
     }
 
     /**
-     * Returns the initialization vector (IV).
+     * Returns the initialization vector (IV) in a new buffer.
      *
-     * @return the user-specified iv or null if default iv is used.
+     * @return the user-specified iv, or null if the underlying algorithm does
+     * not use an IV, or if the IV has not yet been set.
      */
     @Override
     protected byte[] engineGetIV() {
-        return cipher.getIV().clone();
+        byte[] iv = cipher.getIV();
+        return (iv == null? null : iv.clone());
     }
 
     // actual impl for various engineInit(...) methods
@@ -472,7 +475,11 @@ abstract class KeyWrapCipher extends CipherSpi {
             int outLen = engineDoFinal(in, inOfs, inLen, out, 0);
 
             if (outLen < estOutLen) {
-                return Arrays.copyOf(out, outLen);
+                try {
+                    return Arrays.copyOf(out, outLen);
+                } finally {
+                    Arrays.fill(out, (byte)0);
+                }
             } else {
                 return out;
             }
@@ -529,6 +536,9 @@ abstract class KeyWrapCipher extends CipherSpi {
                 return outLen;
             }
         } finally {
+            if (dataBuf != null) {
+                Arrays.fill(dataBuf, (byte)0);
+            }
             dataBuf = null;
             dataIdx = 0;
         }
@@ -559,8 +569,14 @@ abstract class KeyWrapCipher extends CipherSpi {
             len += inLen;
         }
 
-        return (opmode == Cipher.ENCRYPT_MODE?
-                helperEncrypt(out, len) : helperDecrypt(out, len));
+        try {
+            return (opmode == Cipher.ENCRYPT_MODE ?
+                    helperEncrypt(out, len) : helperDecrypt(out, len));
+        } finally {
+            if (dataBuf != null && dataBuf != out) {
+                Arrays.fill(dataBuf, (byte)0);
+            }
+        }
     }
 
     // helper routine for in-place encryption.
@@ -610,13 +626,18 @@ abstract class KeyWrapCipher extends CipherSpi {
     /**
      * Returns the parameters used with this cipher.
      *
-     * @return AlgorithmParameters object containing IV.
+     * @return AlgorithmParameters object containing IV, or null if this cipher
+     * does not use any parameters.
      */
     @Override
     protected AlgorithmParameters engineGetParameters() {
         AlgorithmParameters params = null;
 
         byte[] iv = cipher.getIV();
+        if (iv == null) {
+            iv = (cipher instanceof AESKeyWrap?
+                    AESKeyWrap.ICV1 : AESKeyWrapPadded.ICV2);
+        }
         try {
             params = AlgorithmParameters.getInstance("AES");
             params.init(new IvParameterSpec(iv));

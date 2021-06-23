@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,22 +192,25 @@ public class TestResourceScope {
         AtomicInteger lockCount = new AtomicInteger();
         for (int i = 0 ; i < N_THREADS ; i++) {
             new Thread(() -> {
-                lockCount.incrementAndGet();
                 try {
-                    ResourceScope.Handle handle = scope.acquire();
+                    ResourceScope.Handle handle = scope.acquire(); // this can throw if segment has been closed
+                    lockCount.incrementAndGet();
                     waitSomeTime();
-                    scope.release(handle);
-                    scope.release(handle); // make sure it's idempotent
-                    scope.release(handle); // make sure it's idempotent
+                    lockCount.decrementAndGet();
+                    scope.release(handle); // cannot throw (acquired segments cannot be closed)
+                    scope.release(handle); // cannot throw (idempotent)
+                    scope.release(handle); // cannot throw (idempotent)
                 } catch (IllegalStateException ex) {
                     // might be already closed - do nothing
-                } finally {
-                    lockCount.decrementAndGet();
                 }
             }).start();
         }
 
-        while (lockCount.get() > 0) {
+        while (lockCount.get() == 0) {
+            waitSomeTime(); // make sure some thread gets scheduled
+        }
+
+        while (true) {
             try {
                 scope.close();
                 assertEquals(lockCount.get(), 0);

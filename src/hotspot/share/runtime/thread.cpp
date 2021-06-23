@@ -349,7 +349,7 @@ void Thread::record_stack_base_and_size() {
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
-    as_Java_thread()->stack_overflow_state()->initialize(stack_base(), stack_end());
+    JavaThread::cast(this)->stack_overflow_state()->initialize(stack_base(), stack_end());
   }
 }
 
@@ -461,10 +461,10 @@ Thread::~Thread() {
 // the current thread, it is not on a ThreadsList, or not at safepoint.
 void Thread::check_for_dangling_thread_pointer(Thread *thread) {
   assert(!thread->is_Java_thread() ||
-         thread->as_Java_thread()->is_handshake_safe_for(Thread::current()) ||
-         !thread->as_Java_thread()->on_thread_list() ||
+         JavaThread::cast(thread)->is_handshake_safe_for(Thread::current()) ||
+         !JavaThread::cast(thread)->on_thread_list() ||
          SafepointSynchronize::is_at_safepoint() ||
-         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(thread->as_Java_thread()),
+         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread::cast(thread)),
          "possibility of dangling Thread pointer");
 }
 #endif
@@ -536,7 +536,7 @@ void Thread::start(Thread* thread) {
     // Can not set it after the thread started because we do not know the
     // exact thread state at that time. It could be in MONITOR_WAIT or
     // in SLEEPING or some other state.
-    java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
+    java_lang_Thread::set_thread_status(JavaThread::cast(thread)->threadObj(),
                                         JavaThreadStatus::RUNNABLE);
   }
   os::start_thread(thread);
@@ -646,7 +646,9 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   else if (is_GC_task_thread())       { st->print("GCTaskThread"); }
   else if (is_Watcher_thread())       { st->print("WatcherThread"); }
   else if (is_ConcurrentGC_thread())  { st->print("ConcurrentGCThread"); }
-  else                                { st->print("Thread"); }
+  else if (this == AsyncLogWriter::instance()) {
+    st->print("%s", this->name());
+  } else                                { st->print("Thread"); }
 
   if (is_Named_thread()) {
     st->print(" \"%s\"", name());
@@ -703,7 +705,7 @@ bool Thread::set_as_starting_thread() {
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
   // NOTE: this must be called inside the main thread.
   DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread(this->as_Java_thread());
+  return os::create_main_thread(JavaThread::cast(this));
 }
 
 static void initialize_class(Symbol* class_name, TRAPS) {
@@ -1545,11 +1547,11 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
 JavaThread* JavaThread::active() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    return thread->as_Java_thread();
+    return JavaThread::cast(thread);
   } else {
     assert(thread->is_VM_thread(), "this must be a vm thread");
     VM_Operation* op = ((VMThread*) thread)->vm_operation();
-    JavaThread *ret = op == NULL ? NULL : op->calling_thread()->as_Java_thread();
+    JavaThread *ret = op == NULL ? NULL : JavaThread::cast(op->calling_thread());
     return ret;
   }
 }
@@ -1707,7 +1709,7 @@ public:
   InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
 
   void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
+    JavaThread* target = JavaThread::cast(thr);
     // Note that this now allows multiple ThreadDeath exceptions to be
     // thrown at a thread.
     // The target thread has run and has not exited yet.

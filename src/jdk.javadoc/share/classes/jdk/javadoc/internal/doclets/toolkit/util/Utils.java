@@ -2158,7 +2158,7 @@ public class Utils {
 
                 @Override
                 public String visitType(TypeElement e, Void p) {
-                    StringBuilder sb = new StringBuilder(e.getSimpleName());
+                    StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
                             && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
