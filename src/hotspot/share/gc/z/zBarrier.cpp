@@ -68,6 +68,10 @@ zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle) {
   return cycle->relocate_or_remap_object(addr);
 }
 
+zaddress ZBarrier::remap(zaddress_unsafe addr, ZCycle* cycle) {
+  return cycle->remap_object(addr);
+}
+
 template <bool follow, bool finalizable, bool publish>
 static void mark(zaddress addr) {
   // FIXME: Maybe rely on earlier null-filtering

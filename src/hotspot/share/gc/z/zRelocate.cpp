@@ -50,6 +50,7 @@
 #include "utilities/debug.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted("Concurrent Minor Relocate Remset FPP");
+static const ZStatSubPhase ZSubPhaseConcurrentMinorRelocateRemsetNormalPromoted("Concurrent Minor Relocate Remset NP");
 
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),
@@ -501,7 +502,7 @@ private:
     return to_addr;
   }
 
-  void update_remset_for_fields_from_old(zaddress from_addr, zaddress to_addr) const {
+  void update_remset_old_to_old(zaddress from_addr, zaddress to_addr) const {
     // Old-to-old relocation - move existing remset bits
 
     // If this is called for an in-place relocated page, then this code has the
@@ -546,7 +547,7 @@ private:
       // Add remset entry in the to-page
       const uintptr_t offset = field_local_offset - from_local_offset;
       const zaddress to_field = to_addr + offset;
-      log_debug(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
+      log_trace(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
       to_page->remember((volatile zpointer*)to_field);
     }
 
@@ -556,20 +557,94 @@ private:
     }
   }
 
-  void update_remset_for_fields_from_young(zaddress from_addr, zaddress to_addr) const {
-    // Promoted object - add remset entries for all fields
+  void update_remset_promoted_all(zaddress to_addr) const {
     ZRelocate::add_remset_for_fields(to_addr);
+  }
+
+  static bool add_remset_if_young(volatile zpointer* p, zaddress addr) {
+    if (ZHeap::heap()->is_young(addr)) {
+      ZRelocate::add_remset(p);
+      return true;
+    }
+
+    return false;
+  }
+
+  static void update_remset_promoted_filter_and_remap_per_field(volatile zpointer* p) {
+    const zpointer ptr = Atomic::load(p);
+
+    assert(ZPointer::is_major_load_good(ptr), "Should be at least major load good: " PTR_FORMAT, untype(ptr));
+
+    if (ZPointer::is_store_good(ptr)) {
+      // Already has a remset entry
+      return;
+    }
+
+    if (ZPointer::is_load_good(ptr)) {
+      if (!is_null_any(ptr)) {
+        const zaddress addr = ZPointer::uncolor(ptr);
+        add_remset_if_young(p, addr);
+      }
+      // No need to remap it is already load good
+      return;
+    }
+
+    if (is_null_any(ptr)) {
+      // Eagerly remap to skip adding a remset entry just to get deferred remapping
+      ZBarrier::remap_minor_relocated(p, ptr);
+      return;
+    }
+
+    zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
+    ZForwarding* forwarding = ZHeap::heap()->minor_cycle()->forwarding(addr_unsafe);
+
+    if (forwarding == NULL) {
+      // Object isn't being relocated
+      zaddress addr = safe(addr_unsafe);
+      if (!add_remset_if_young(p, addr)) {
+        // Not young - eagerly remap to skip adding a remset entry just to get deferred remapping
+        ZBarrier::remap_minor_relocated(p, ptr);
+      }
+      return;
+    }
+
+    zaddress addr = forwarding->find(addr_unsafe);
+
+    if (!is_null(addr)) {
+      // Object has already been relocated
+      if (!add_remset_if_young(p, addr)) {
+        // Not young - eagerly remap to skip adding a remset entry just to get deferred remapping
+        ZBarrier::remap_minor_relocated(p, ptr);
+      }
+      return;
+    }
+
+    // Object has not been relocated yet
+    // Don't want to eagerly relocate objects, so just add a remset
+    ZRelocate::add_remset(p);
+    return;
+  }
+
+  void update_remset_promoted_filter_and_remap(zaddress to_addr) const {
+    z_basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
+  }
+
+  void update_remset_promoted(zaddress to_addr) const {
+    switch (ZRelocateRemsetStrategy) {
+    case 0: update_remset_promoted_all(to_addr); break;
+    case 1: update_remset_promoted_filter_and_remap(to_addr); break;
+    case 2: /* Handled after relocation is done */ break;
+    default: fatal("Unsupported ZRelocateRemsetStrategy"); break;
+    };
   }
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
     if (_forwarding->age_to() == ZPageAge::old) {
       // Need to deal with remset when moving stuff to old
       if (_forwarding->age_from() == ZPageAge::old) {
-        // Old page
-        update_remset_for_fields_from_old(from_addr, to_addr);
+        update_remset_old_to_old(from_addr, to_addr);
       } else {
-        // Young page
-        update_remset_for_fields_from_young(from_addr, to_addr);
+        update_remset_promoted(to_addr);
       }
     }
   }
@@ -768,6 +843,36 @@ public:
   }
 };
 
+static void remap_and_maybe_add_remset(volatile zpointer* p) {
+  const zpointer ptr = Atomic::load(p);
+
+  if (ZPointer::is_store_good(ptr)) {
+    // Already has a remset entry
+    return;
+  }
+
+  // Remset entries are used for two reasons:
+  // 1) Minor marking old-to-young pointer roots
+  // 2) Deferred remapping of stale old-to-young pointers
+  //
+  // This load barrier will up-front perform the remapping of (2),
+  // and the code below only has to make sure we register up-to-date
+  // old-to-young pointers for (1).
+  const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(p, ptr);
+
+  if (is_null(addr)) {
+    // No need for remset entries for NULL pointers
+    return;
+  }
+
+  if (ZHeap::heap()->is_old(addr)) {
+    // No need for remset entries for pointers to old gen
+    return;
+  }
+
+  ZRelocate::add_remset(p);
+}
+
 class ZRelocateAddRemsetForInPlacePromoted : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
@@ -777,42 +882,12 @@ public:
       ZTask("ZRelocateAddRemsetForInPlacePromoted"),
       _iter(pages) {}
 
-  static void maybe_add_remset(volatile zpointer* p) {
-    const zpointer ptr = Atomic::load(p);
-
-    if (ZPointer::is_store_good(ptr)) {
-      // Already has a remset entry
-      return;
-    }
-
-    // Remset entries are used for two reasons:
-    // 1) Minor marking old-to-young pointer roots
-    // 2) Deferred remapping of stale old-to-young pointers
-    //
-    // This load barrier will up-front perform the remapping of (2),
-    // and the code below only has to make sure we register up-to-date
-    // old-to-young pointers for (1).
-    const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(p, ptr);
-
-    if (is_null(addr)) {
-      // No need for remset entries for NULL pointers
-      return;
-    }
-
-    if (ZHeap::heap()->is_old(addr)) {
-      // No need for remset entries for pointers to old gen
-      return;
-    }
-
-    ZRelocate::add_remset(p);
-  }
-
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
 
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
-        z_basic_oop_iterate(obj, maybe_add_remset);
+        z_basic_oop_iterate(obj, remap_and_maybe_add_remset);
       });
 
       SuspendibleThreadSet::yield();
@@ -820,6 +895,25 @@ public:
   }
 };
 
+class ZRelocateAddRemsetForNormalPromoted : public ZTask {
+private:
+  ZForwardingTableParallelIterator _iter;
+
+public:
+  ZRelocateAddRemsetForNormalPromoted() :
+      ZTask("ZRelocateAddRemsetForNormalPromoted"),
+      _iter(ZHeap::heap()->minor_cycle()->forwarding_table()) {}
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+
+    _iter.do_forwardings([](ZForwarding* forwarding) {
+      forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
+
+      SuspendibleThreadSet::yield();
+    });
+  }
+};
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   {
     ZFixStoreBufferTask buffer_task;
@@ -834,6 +928,12 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   if (relocation_set->cycle()->is_minor()) {
     ZStatTimerMinor timer(ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted);
     ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flip_pages());
+    workers()->run_concurrent(&task);
+  }
+
+  if (relocation_set->cycle()->is_minor() && ZRelocateRemsetStrategy == 2) {
+    ZStatTimerMinor timer(ZSubPhaseConcurrentMinorRelocateRemsetNormalPromoted);
+    ZRelocateAddRemsetForNormalPromoted task;
     workers()->run_concurrent(&task);
   }
 

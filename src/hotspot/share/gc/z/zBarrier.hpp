@@ -78,7 +78,9 @@ private:
   static zaddress barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path, ZBarrierColor color, volatile zpointer* p, zpointer o, bool allow_null = false);
 
   static zaddress make_load_good(zpointer ptr);
+  static zaddress make_load_good_no_relocate(zpointer ptr);
   static zaddress relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle);
+  static zaddress remap(zaddress_unsafe addr, ZCycle* cycle);
   static void keep_alive(zaddress addr);
   static void remember(volatile zpointer* p);
   static void keep_alive_and_remember(volatile zpointer* p, zaddress addr);
@@ -121,6 +123,9 @@ private:
 
 public:
   static zpointer load_atomic(volatile zpointer* p);
+
+  // Helper for relocation
+  static void remap_minor_relocated(volatile zpointer* p, zpointer o);
 
   // Load barrier
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);

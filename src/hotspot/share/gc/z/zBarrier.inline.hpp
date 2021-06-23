@@ -154,6 +154,19 @@ inline zaddress ZBarrier::make_load_good(zpointer o) {
   return relocate_or_remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
 }
 
+inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
+  if (is_null_any(o)) {
+    return zaddress::null;
+  }
+
+  if (ZPointer::is_load_good_or_null(o)) {
+    return ZPointer::uncolor(o);
+  }
+
+  return remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
+}
+
+
 #define z_assert_is_barrier_safe()                                                                                                  \
   assert(!Thread::current()->is_ConcurrentGC_thread() ||                           /* Need extra checks for ConcurrentGCThreads */  \
          Thread::current()->is_suspendible_thread() ||                             /* Thread prevents safepoints */                 \
@@ -187,6 +200,21 @@ inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath s
   }
 
   return good_addr;
+}
+
+inline void ZBarrier::remap_minor_relocated(volatile zpointer* p, zpointer o) {
+  assert(ZPointer::is_major_load_good(o), "Should be load good");
+  assert(!ZPointer::is_minor_load_good(o), "Should be load good");
+
+  // Make load good
+  const zaddress load_good_addr = make_load_good_no_relocate(o);
+
+  // Color
+  const zpointer good_ptr = ZAddress::load_good(load_good_addr,  o);
+
+  assert(!is_null(good_ptr), "Always block raw null");
+
+  self_heal(is_load_good_fast_path, p, o, good_ptr, false /* allow_null */);
 }
 
 inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {

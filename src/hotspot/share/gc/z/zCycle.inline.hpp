@@ -96,6 +96,17 @@ inline zaddress ZCycle::relocate_or_remap_object(zaddress_unsafe addr) {
   return _relocate.relocate_object(forwarding, addr);
 }
 
+inline zaddress ZCycle::remap_object(zaddress_unsafe addr) {
+  ZForwarding* const forwarding = _forwarding_table.get(addr);
+  if (forwarding == NULL) {
+    // Not forwarding
+    return safe(addr);
+  }
+
+  // Remap object
+  return _relocate.forward_object(forwarding, addr);
+}
+
 inline ReferenceDiscoverer* ZMajorCycle::reference_discoverer() {
   return &_reference_processor;
 }

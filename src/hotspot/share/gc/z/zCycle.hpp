@@ -134,6 +134,7 @@ public:
   void synchronize_relocation();
   void desynchronize_relocation();
   zaddress relocate_or_remap_object(zaddress_unsafe addr);
+  zaddress remap_object(zaddress_unsafe addr);
 
   // Threads
   void threads_do(ThreadClosure* tc) const;
