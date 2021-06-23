@@ -1265,7 +1265,7 @@ VM_GetThreadListStackTraces::doit() {
 
 void
 GetSingleStackTraceClosure::do_thread(Thread *target) {
-  JavaThread *jt = target->as_Java_thread();
+  JavaThread *jt = JavaThread::cast(target);
   oop thread_oop = jt->threadObj();
 
   if (!jt->is_exiting() && thread_oop != NULL) {
@@ -1389,7 +1389,7 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
 
 void
 SetForceEarlyReturn::doit(Thread *target, bool self) {
-  JavaThread* java_thread = target->as_Java_thread();
+  JavaThread* java_thread = JavaThread::cast(target);
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
 
@@ -1524,7 +1524,7 @@ void
 UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
-  JavaThread* java_thread = target->as_Java_thread();
+  JavaThread* java_thread = JavaThread::cast(target);
   assert(java_thread == _state->get_thread(), "Must be");
 
   if (!self && !java_thread->is_suspended()) {
@@ -1614,7 +1614,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
 void
 SetFramePopClosure::doit(Thread *target, bool self) {
   ResourceMark rm;
-  JavaThread* java_thread = target->as_Java_thread();
+  JavaThread* java_thread = JavaThread::cast(target);
 
   assert(_state->get_thread() == java_thread, "Must be");
 
@@ -1645,7 +1645,7 @@ SetFramePopClosure::doit(Thread *target, bool self) {
 
 void
 GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  JavaThread *jt = target->as_Java_thread();
+  JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
     _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
                                                          jt,
@@ -1655,7 +1655,7 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 
 void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
-  JavaThread *jt = target->as_Java_thread();
+  JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
     _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,
                                                                     jt,
@@ -1665,7 +1665,7 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 
 void
 GetStackTraceClosure::do_thread(Thread *target) {
-  JavaThread *jt = target->as_Java_thread();
+  JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && jt->threadObj() != NULL) {
     _result = ((JvmtiEnvBase *)_env)->get_stack_trace(jt,
                                                       _start_depth, _max_count,
@@ -1684,7 +1684,7 @@ GetFrameCountClosure::do_thread(Thread *target) {
 
 void
 GetFrameLocationClosure::do_thread(Thread *target) {
-  JavaThread *jt = target->as_Java_thread();
+  JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && jt->threadObj() != NULL) {
     _result = ((JvmtiEnvBase*)_env)->get_frame_location(jt, _depth,
                                                         _method_ptr, _location_ptr);

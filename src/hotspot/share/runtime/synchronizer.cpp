@@ -126,7 +126,7 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
 
     if (current->is_Java_thread()) {
       // A JavaThread must check for a safepoint/handshake and honor it.
-      ObjectSynchronizer::chk_for_block_req(current->as_Java_thread(), "unlinking",
+      ObjectSynchronizer::chk_for_block_req(JavaThread::cast(current), "unlinking",
                                             "unlinked_count", unlinked_count,
                                             ls, timer_p);
     }
@@ -798,7 +798,7 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
 }
 
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
-
+  
   while (true) {
     ObjectMonitor* monitor = NULL;
     markWord temp, test;
@@ -1331,7 +1331,7 @@ size_t ObjectSynchronizer::deflate_monitor_list(Thread* current, LogStream* ls,
 
     if (current->is_Java_thread()) {
       // A JavaThread must check for a safepoint/handshake and honor it.
-      chk_for_block_req(current->as_Java_thread(), "deflation", "deflated_count",
+      chk_for_block_req(JavaThread::cast(current), "deflation", "deflated_count",
                         deflated_count, ls, timer_p);
     }
   }
@@ -1421,7 +1421,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
       if (current->is_Java_thread()) {
         // A JavaThread must check for a safepoint/handshake and honor it.
-        chk_for_block_req(current->as_Java_thread(), "deletion", "deleted_count",
+        chk_for_block_req(JavaThread::cast(current), "deletion", "deleted_count",
                           deleted_count, ls, &timer);
       }
     }

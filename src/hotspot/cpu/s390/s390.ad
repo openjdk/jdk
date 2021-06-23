@@ -1554,10 +1554,6 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   return OptoRegPair(0, 0);
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
-}
-
 //----------SUPERWORD HELPERS----------------------------------------
 
 // Vector width in bytes.
@@ -1663,6 +1659,17 @@ bool Matcher::can_be_java_arg(int reg) {
 
 bool Matcher::is_spillable_arg(int reg) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  // Medium size register set, 6 special purpose regs, 3 SOE regs.
+  return (INTPRESSURE == -1) ? 10 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {

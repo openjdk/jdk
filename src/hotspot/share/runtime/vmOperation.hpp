@@ -47,7 +47,6 @@
   template(DeoptimizeAll)                         \
   template(ZombieAll)                             \
   template(Verify)                                \
-  template(PrintJNI)                              \
   template(HeapDumper)                            \
   template(DeoptimizeTheWorld)                    \
   template(CollectForMetadataAllocation)          \

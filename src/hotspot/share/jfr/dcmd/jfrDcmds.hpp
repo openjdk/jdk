@@ -65,6 +65,9 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdStart";
   }
+  static int num_arguments() {
+    return 11;
+  }
 };
 
 class JfrDumpFlightRecordingDCmd : public JfrDCmd {
@@ -86,6 +89,9 @@ class JfrDumpFlightRecordingDCmd : public JfrDCmd {
   }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdDump";
+  }
+  static int num_arguments() {
+    return 7;
   }
 };
 
@@ -109,6 +115,9 @@ class JfrCheckFlightRecordingDCmd : public JfrDCmd {
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdCheck";
   }
+  static int num_arguments() {
+    return 2;
+  }
 };
 
 class JfrStopFlightRecordingDCmd : public JfrDCmd {
@@ -130,6 +139,9 @@ class JfrStopFlightRecordingDCmd : public JfrDCmd {
   }
   virtual const char* javaClass() const {
     return "jdk/jfr/internal/dcmd/DCmdStop";
+  }
+  static int num_arguments() {
+    return 2;
   }
 };
 

@@ -1001,10 +1001,6 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   return OptoRegPair(0, 0);
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
-}
-
 // Vector width in bytes
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   return MaxVectorSize;
@@ -1098,6 +1094,16 @@ bool Matcher::can_be_java_arg( int reg ) {
 
 bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 12 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {

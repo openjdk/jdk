@@ -172,7 +172,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
-  _thread->as_Java_thread()->check_for_valid_safepoint_state();
+  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
 }
 #endif
 
