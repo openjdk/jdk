@@ -105,7 +105,6 @@ runtime/os/TestTracePageSizes.java#with-Serial 8267460 linux-aarch64
 
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
-resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
