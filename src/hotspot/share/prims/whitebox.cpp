@@ -2022,7 +2022,7 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
     jboolean _executed;
 
     void do_thread(Thread* th) {
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
 
       GrowableArray<MonitorInfo*>* info = new GrowableArray<MonitorInfo*>();
