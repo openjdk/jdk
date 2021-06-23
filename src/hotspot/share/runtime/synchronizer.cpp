@@ -798,7 +798,7 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
 }
 
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
-  
+
   while (true) {
     ObjectMonitor* monitor = NULL;
     markWord temp, test;
