@@ -191,7 +191,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void print(String s, Object... args) {
-        currentLine.append(String.format(s, args));
+        currentLine.append(args.length > 0 ? String.format(s, args) : s);
     }
 
     protected final void println(String s, Object... args) {
