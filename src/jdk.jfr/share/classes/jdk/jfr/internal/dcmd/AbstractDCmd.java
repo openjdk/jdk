@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -295,7 +296,7 @@ abstract class AbstractDCmd {
                     i++;
                 } else if (nc == 't') {
                     if (time == null) {
-                        time = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+                        time = Utils.formatDateTime(LocalDateTime.now());
                     }
                     sb.append(time);
                     i++;

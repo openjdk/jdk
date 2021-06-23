@@ -44,7 +44,7 @@ public class TestFilenameExpansion {
     public static void main(String[] args) throws Exception {
         String pid = Long.toString(ProcessHandle.current().pid());
         String name = "output_%p_%t_%%.jfr";
-        String pattern = "output_" + pid + "_" + "\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}" + "_%\\.jfr";
+        String pattern = "output_" + pid + "_" + "\\d{4}_\\d{2}_\\d{2}_\\d{2}_\\d{2}_\\d{2}" + "_%\\.jfr";
 
         JcmdHelper.jcmd("JFR.start name=test");
         String filename = JcmdHelper.readFilename(JcmdHelper.jcmd("JFR.dump name=test filename=" + name));
