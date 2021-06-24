@@ -1342,6 +1342,9 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     assert( false, "ShouldNotReachHere();");
   }
 
+  for (int i = 0; i <= max_position; i++) {
+    fprintf(fp, "        inst%d->set_removed();\n", i);
+  }
   // Return the new sub-tree
   fprintf(fp, "        deleted = %d;\n", max_position+1 /*zero to one based*/);
   fprintf(fp, "        return root;  // return new root;\n");
