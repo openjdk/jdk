@@ -736,8 +736,13 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  LogTarget(Debug, gc, phases, start) log;
-  log_start(log, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Debug, gc, phases, thread, start) log;
+    log_start(log, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases, start) log;
+    log_start(log, false /* thread */);
+  }
 }
 
 void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
@@ -750,8 +755,13 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  LogTarget(Debug, gc, phases) log;
-  log_end(log, duration, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Debug, gc, phases, thread) log;
+    log_end(log, duration, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases) log;
+    log_end(log, duration, false /* thread */);
+  }
 }
 
 ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
