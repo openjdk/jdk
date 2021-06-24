@@ -39,9 +39,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestJcmdStopWithoutFilename {
 
     public static void main(String[] args) throws Exception {
+
+        JcmdHelper.jcmd("JFR.start name=test");
+        OutputAnalyzer output = JcmdHelper.jcmd("JFR.stop name=test");
+        output.shouldNotContain("written to");
+
         String filename = "output.jfr";
         JcmdHelper.jcmd("JFR.start name=test filename=" + filename);
-        OutputAnalyzer output = JcmdHelper.jcmd("JFR.stop name=test");
+        output = JcmdHelper.jcmd("JFR.stop name=test");
         output.shouldContain("written to").shouldContain(filename);
     }
 }
