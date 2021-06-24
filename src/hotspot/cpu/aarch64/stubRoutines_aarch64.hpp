@@ -61,6 +61,7 @@ class aarch64 {
   static address _has_negatives;
   static address _has_negatives_long;
   static address _large_array_equals;
+  static address _long_string_equals;
   static address _compare_long_string_LL;
   static address _compare_long_string_LU;
   static address _compare_long_string_UL;
@@ -139,6 +140,10 @@ class aarch64 {
 
   static address large_array_equals() {
       return _large_array_equals;
+  }
+
+  static address long_string_equals() {
+      return _long_string_equals;
   }
 
   static address compare_long_string_LL() {

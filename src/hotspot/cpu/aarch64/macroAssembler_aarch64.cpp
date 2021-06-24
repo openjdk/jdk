@@ -4755,18 +4755,13 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
 // elem_size is the element size in bytes: either 1 or 2.
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
-
 void MacroAssembler::string_equals(Register a1, Register a2,
                                    Register result, Register cnt1, int elem_size)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD, MEDIUM, NEXT_TWO_WORDS;
+  Label SAME, DONE, SHORT;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
+  int stubBytesThreshold = 64 - wordSize;
 
   assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
@@ -4782,52 +4777,63 @@ void MacroAssembler::string_equals(Register a1, Register a2,
 
   mov(result, false);
 
-  // Check for short strings, i.e. smaller than wordSize * 2.
-  subs(cnt1, cnt1, wordSize * 2);
-  br(Assembler::LT, MEDIUM);
-  // Main 16 byte comparison loop.
-  bind(NEXT_TWO_WORDS); {
-    ldr(v0, Q, Address(post(a1, wordSize * 2)));
-    ldr(v1, Q, Address(post(a2, wordSize * 2)));
-    subs(cnt1, cnt1, wordSize * 2);
-    eor(v0, T16B, v0, v1);
-    mov(tmp1, v0, T2D, 0);
-    cbnz(tmp1, DONE);
-    mov(tmp2, v0, T2D, 1);
-    cbnz(tmp2, DONE);
-  } br(GT, NEXT_TWO_WORDS);
-  // Same as MEDIUM
-  ldr(v0, Q, Address(a1, cnt1));
-  ldr(v1, Q, Address(a2, cnt1));
-  eor(v0, T16B, v0, v1);
-  mov(tmp1, v0, T2D, 0);
-  cbnz(tmp1, DONE);
-  mov(tmp2, v0, T2D, 1);
-  cbnz(tmp2, DONE);
-  b(SAME);
-
   // Check for short strings, i.e. smaller than wordSize.
-  bind(MEDIUM);
-  adds(cnt1, cnt1, wordSize);
-  br(Assembler::LT, SHORT);
-  // Main 8 byte comparison loop.
-  bind(NEXT_WORD); {
-    ldr(tmp1, Address(post(a1, wordSize)));
-    ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, wordSize);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DONE);
-  } br(GT, NEXT_WORD);
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  ldr(tmp1, Address(a1, cnt1));
-  ldr(tmp2, Address(a2, cnt1));
-  eor(tmp2, tmp1, tmp2);
-  cbnz(tmp2, DONE);
-  b(SAME);
+  subs(cnt1, cnt1, wordSize);
+  br(LT, SHORT);
+
+  if (!UseSimpleStringEquals) {
+    Label STUB, LOOP;
+    subs(zr, cnt1, stubBytesThreshold);
+    br(GE, STUB);
+
+    bind(LOOP); {
+      ldr(tmp1, Address(post(a1, wordSize)));
+      ldr(tmp2, Address(post(a2, wordSize)));
+      subs(cnt1, cnt1, wordSize);
+      eor(tmp1, tmp1, tmp2);
+      cbnz(tmp1, DONE);
+      br(LT, SHORT);
+
+      ldr(tmp1, Address(post(a1, wordSize)));
+      ldr(tmp2, Address(post(a2, wordSize)));
+      subs(cnt1, cnt1, wordSize);
+      eor(tmp1, tmp1, tmp2);
+      cbnz(tmp1, DONE);
+    } br(GE, LOOP);
+    b(SHORT);
+
+    bind(STUB);
+    RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::long_string_equals());
+    assert(stub.target() != NULL, "string_equals_long stub has not been generated");
+    address tpc = trampoline_call(stub);
+    if (tpc == NULL) {
+      DEBUG_ONLY(reset_labels(SHORT, SAME, DONE));
+      postcond(pc() == badAddress);
+      return;
+    }
+    b(DONE);
+  } else {
+    Label NEXT_WORD;
+
+    // Main 8 byte comparison loop.
+    bind(NEXT_WORD); {
+      ldr(tmp1, Address(post(a1, wordSize)));
+      ldr(tmp2, Address(post(a2, wordSize)));
+      subs(cnt1, cnt1, wordSize);
+      eor(tmp1, tmp1, tmp2);
+      cbnz(tmp1, DONE);
+    } br(GT, NEXT_WORD);
+    // Last longword.  In the case where length == 4 we compare the
+    // same longword twice, but that's still faster than another
+    // conditional branch.
+    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+    // length == 4.
+    ldr(tmp1, Address(a1, cnt1));
+    ldr(tmp2, Address(a2, cnt1));
+    eor(tmp2, tmp1, tmp2);
+    cbnz(tmp2, DONE);
+    b(SAME);
+  }
 
   bind(SHORT);
   Label TAIL03, TAIL01;

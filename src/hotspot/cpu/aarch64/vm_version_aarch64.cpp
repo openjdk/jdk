@@ -156,6 +156,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
+    if (FLAG_IS_DEFAULT(UseSimpleStringEquals)) {
+      FLAG_SET_DEFAULT(UseSimpleStringEquals, false);
+    }
   }
 
   // Cortex A53

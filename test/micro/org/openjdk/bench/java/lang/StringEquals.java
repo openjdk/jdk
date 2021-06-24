@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.*;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /*
@@ -32,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 public class StringEquals {
+    @Param({"8", "16", "32", "64", "128"})
+    int size;
 
     public String test = new String("0123456789");
     public String test2 = new String("tgntogjnrognagronagroangroarngorngaorng");
@@ -41,34 +45,102 @@ public class StringEquals {
     public String test6 = new String("0123456780");
     public String test7 = new String("0123\u01FE");
 
-    @Benchmark
+    public String str;
+    public String strh;
+    public String strt;
+
+    @Setup()
+    public void init() {
+        str = newString(size, 'c', -1, 'a');
+        strh = newString(size, 'c', size / 3, 'a');
+        strt = newString(size, 'c', size - 1 - size / 3, 'a');
+    }
+
+    public String newString(int size, char charToFill, int pos, char charDiff) {
+        if (size > 0) {
+            char[] array = new char[size];
+            Arrays.fill(array, charToFill);
+            if (pos >= 0) {
+                array[pos] = charDiff;
+            }
+            return new String(array);
+        }
+        return "";
+    }
+
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean different_simple() {
+        return test.equals(test2);
+    }
+
     public boolean different() {
         return test.equals(test2);
     }
 
-    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean equal_simple() {
+        return test.equals(test3);
+    }
+
     public boolean equal() {
         return test.equals(test3);
     }
 
-    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean almostEqual_simple() {
+        return test.equals(test6);
+    }
+
     public boolean almostEqual() {
         return test.equals(test6);
     }
 
-    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean almostEqualUTF16_simple() {
+        return test4.equals(test7);
+    }
+
     public boolean almostEqualUTF16() {
         return test4.equals(test7);
     }
 
-    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean differentCoders_simple() {
+        return test.equals(test4);
+    }
+
     public boolean differentCoders() {
         return test.equals(test4);
     }
 
-    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean equalsUTF16_simple() {
+        return test5.equals(test4);
+    }
+
     public boolean equalsUTF16() {
         return test5.equals(test4);
     }
-}
 
+    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean equalsLenH_simple() {
+        return str.equals(strh);
+    }
+
+    @Benchmark
+    public boolean equalsLenH() {
+        return str.equals(strh);
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
+    public boolean equalsLenT_simple() {
+        return str.equals(strt);
+    }
+
+    @Benchmark
+    public boolean equalsLenT() {
+        return str.equals(strt);
+    }
+}
