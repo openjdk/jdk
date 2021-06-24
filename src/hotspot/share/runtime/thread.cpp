@@ -162,7 +162,7 @@ void universe_post_module_init();  // must happen after call_initPhase2
     {                                                                      \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
-      const char* name = (javathread)->get_thread_name();                  \
+      const char* name = (javathread)->name();                             \
       len = strlen(name);                                                  \
       HOTSPOT_THREAD_PROBE_##probe(/* probe = start, stop */               \
         (char *) name, len,                                                \
@@ -609,17 +609,7 @@ void Thread::print() const { print_on(tty); }
 void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   assert(!(is_Compiler_thread() || is_Java_thread()), "Can't call name() here if it allocates");
 
-  if (is_VM_thread())                 { st->print("VMThread"); }
-  else if (is_GC_task_thread())       { st->print("GCTaskThread"); }
-  else if (is_Watcher_thread())       { st->print("WatcherThread"); }
-  else if (is_ConcurrentGC_thread())  { st->print("ConcurrentGCThread"); }
-  else if (this == AsyncLogWriter::instance()) {
-    st->print("%s", this->name());
-  } else                                { st->print("Thread"); }
-
-  if (is_Named_thread()) {
-    st->print(" \"%s\"", name());
-  }
+  st->print("%s \"%s\"", type_name(), name());
 
   OSThread* os_thr = osthread();
   if (os_thr != NULL) {
@@ -1272,7 +1262,7 @@ void JavaThread::thread_main_inner() {
       !java_lang_Thread::is_stillborn(this->threadObj())) {
     {
       ResourceMark rm(this);
-      this->set_native_thread_name(this->get_thread_name());
+      this->set_native_thread_name(this->name());
     }
     HandleMark hm(this);
     this->entry_point()(this, this);
@@ -1351,7 +1341,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
                     "\nException: %s thrown from the UncaughtExceptionHandler"
                     " in thread \"%s\"\n",
                     pending_exception()->klass()->external_name(),
-                    get_thread_name());
+                    name());
         CLEAR_PENDING_EXCEPTION;
       }
     }
@@ -1456,7 +1446,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   char* thread_name = NULL;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
-    thread_name = os::strdup(get_thread_name());
+    thread_name = os::strdup(name());
   }
 
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
@@ -2053,7 +2043,7 @@ void JavaThread::print_thread_state_on(outputStream *st) const {
 // Called by Threads::print() for VM_PrintThreads operation
 void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_raw("\"");
-  st->print_raw(get_thread_name());
+  st->print_raw(name());
   st->print_raw("\" ");
   oop thread_oop = threadObj();
   if (thread_oop != NULL) {
@@ -2091,7 +2081,7 @@ void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) co
 // Called by fatal error handler. The difference between this and
 // JavaThread::print() is that we can't grab lock or allocate memory.
 void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
-  st->print("JavaThread \"%s\"", get_thread_name_string(buf, buflen));
+  st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
   oop thread_obj = threadObj();
   if (thread_obj != NULL) {
     if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
@@ -2139,7 +2129,7 @@ void JavaThread::verify() {
 // seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
-const char* JavaThread::get_thread_name() const {
+const char* JavaThread::name() const  {
   if (Thread::is_JavaThread_protected(this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
     return get_thread_name_string();
@@ -2165,7 +2155,7 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";
     } else {
-      name_str = Thread::name();
+      name_str = "<un-named>";
     }
   } else {
     name_str = Thread::name();

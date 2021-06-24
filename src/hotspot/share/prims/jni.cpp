@@ -576,7 +576,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
       if (thread != NULL && thread->threadObj() != NULL) {
         ResourceMark rm(THREAD);
         jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->get_thread_name());
+        "in thread \"%s\" ", thread->name());
       }
       if (ex->is_a(vmClasses::Throwable_klass())) {
         JavaValue result(T_VOID);

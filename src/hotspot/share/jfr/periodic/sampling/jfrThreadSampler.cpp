@@ -343,7 +343,8 @@ class JfrThreadSampler : public NonJavaThread {
  protected:
   virtual void post_run();
  public:
-  virtual char* name() const { return (char*)"JFR Thread Sampler"; }
+  virtual const char* name() const { return "JFR Thread Sampler"; }
+  virtual const char* type_name() const { return "JfrThreadSampler"; }
   bool is_JfrSampler_thread() const { return true; }
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }

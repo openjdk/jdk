@@ -49,6 +49,9 @@ public:
 
   bool should_terminate() const;
   bool has_terminated() const;
+
+  // Printing
+  const char* type_name() const { return "ConcurrentGCThread"; }
 };
 
 #endif // SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
