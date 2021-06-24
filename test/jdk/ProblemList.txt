@@ -526,6 +526,7 @@ java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 
 ############################################################################
 
