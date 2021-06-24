@@ -1339,14 +1339,6 @@ public class DatagramSocket implements java.io.Closeable {
 
     // Temporary solution until JDK-8237352 is addressed
     private static final SocketAddress NO_DELEGATE = new SocketAddress() {};
-    private static final boolean USE_PLAINDATAGRAMSOCKET = usePlainDatagramSocketImpl();
-
-    private static boolean usePlainDatagramSocketImpl() {
-        PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainDatagramSocketImpl");
-        @SuppressWarnings("removal")
-        String s = AccessController.doPrivileged(pa);
-        return (s != null) && (s.isEmpty() || s.equalsIgnoreCase("true"));
-    }
 
     /**
      * Best effort to convert an {@link IOException}

@@ -265,13 +265,6 @@ dbgsysNetworkToHostLong(uint32_t netlong) {
     return (uint32_t)ntohl((u_long)netlong);
 }
 
-/*
- * Below Adapted from PlainSocketImpl.c (removed in JDK18), win32 version 1.18.
- * Changed exception throws to returns of SYS_ERR; we should improve the error
- * codes eventually. Changed java objects to values the debugger back end can
- * more easily deal with.
- */
-
 int
 dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value)
 {

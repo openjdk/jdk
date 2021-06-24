@@ -64,10 +64,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * NIO based SocketImpl.
  *
- * This implementation attempts to be compatible with legacy PlainSocketImpl
- * (removed in JDK18), including behavior and exceptions that are not specified by
- * SocketImpl.
- *
  * The underlying socket used by this SocketImpl is initially configured
  * blocking. If the connect method is used to establish a connection with a
  * timeout then the socket is configured non-blocking for the connect attempt,
@@ -642,8 +638,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 throw new SocketException("Already bound");
             NetHooks.beforeTcpBind(fd, host, port);
             Net.bind(fd, host, port);
-            // set the address field to the given host address to keep
-            // compatibility with SocketImpl. When binding to 0.0.0.0
+            // set the address field to the given host address to
+            // maintain long standing behavior. When binding to 0.0.0.0
             // then the actual local address will be ::0 when IPv6 is enabled.
             address = host;
             localport = Net.localAddress(fd).getPort();
