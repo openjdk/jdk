@@ -271,7 +271,7 @@ public final class PrettyWriter extends EventPrintWriter {
             return;
         }
         println("[");
-        List<RecordedContextEntry> entries = context.getContextEntries();
+        List<RecordedContextEntry> entries = context.getEntries();
         indent();
         int i = 0;
         while (i < entries.size()) {

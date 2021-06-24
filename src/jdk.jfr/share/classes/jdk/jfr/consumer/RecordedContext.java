@@ -48,7 +48,7 @@ public final class RecordedContext extends RecordedObject {
      * @return a list of Java stack frames, not {@code null}
      */
     @SuppressWarnings("unchecked")
-    public List<RecordedContextEntry> getContextEntries() {
+    public List<RecordedContextEntry> getEntries() {
         Object[] array = getTyped("entries", Object[].class, null);
         if (array == null) {
             return new ArrayList<>(0);
