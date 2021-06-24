@@ -5345,12 +5345,11 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (do_partial_inline) {
     assert(elem_bt != T_ILLEGAL, "sanity");
 
-    const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
-
     if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
         Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
         Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
 
+      const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
       Node* cmp_length = _gvn.transform(new CmpINode(length, intcon(inline_limit)));
       Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
 

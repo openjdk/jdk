@@ -70,7 +70,6 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 
-compiler/intrinsics/VectorizedMismatchTest.java 8268482 windows-x64
 
 #############################################################################
 
