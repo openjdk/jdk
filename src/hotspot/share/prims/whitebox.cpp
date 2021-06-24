@@ -2022,7 +2022,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
 
       jt->print_on(tty);
@@ -2058,7 +2058,7 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
       // AsynchHandshake handshakes are only executed by target.
       assert(_self == th, "Must be");
       assert(Thread::current() == th, "Must be");
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
       jt->print_on(tty);
       jt->print_stack_on(tty);
@@ -2306,6 +2306,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
     tty_token = ttyLocker::hold_tty();
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
   }
+  ResourceMark rm; // for verify
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {

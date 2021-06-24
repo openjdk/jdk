@@ -869,7 +869,7 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
  public:
   DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     jt->deoptimize_marked_methods();
   }
 };
@@ -1957,7 +1957,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     ScopeDesc*      trap_scope  = cvf->scope();
 
-    bool is_receiver_constraint_failure = VerifyReceiverTypes && (reason == Deoptimization::Reason_receiver_constraint);
+    bool is_receiver_constraint_failure = COMPILER2_PRESENT(VerifyReceiverTypes &&) (reason == Deoptimization::Reason_receiver_constraint);
 
     if (TraceDeoptimization || is_receiver_constraint_failure) {
       ttyLocker ttyl;

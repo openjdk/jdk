@@ -148,7 +148,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
     assert(allow_null, "npe");
     return NULL;
   }
-  return thread->as_Java_thread();
+  return JavaThread::cast(thread);
 }
 
 // Entry to native method implementation that transitions

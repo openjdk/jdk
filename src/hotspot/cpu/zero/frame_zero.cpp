@@ -61,6 +61,11 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return frame(zeroframe()->next(), sender_sp());
 }
 
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
@@ -95,7 +100,7 @@ void frame::patch_pc(Thread* thread, address pc) {
     // We borrow this call to set the thread pointer in the interpreter
     // state; the hook to set up deoptimized frames isn't supplied it.
     assert(pc == NULL, "should be");
-    get_interpreterState()->set_thread(thread->as_Java_thread());
+    get_interpreterState()->set_thread(JavaThread::cast(thread));
   }
 }
 

@@ -178,7 +178,7 @@ class ThreadInVMfromUnknown {
   ThreadInVMfromUnknown() : _thread(NULL) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
-      JavaThread* t2 = t->as_Java_thread();
+      JavaThread* t2 = JavaThread::cast(t);
       if (t2->thread_state() == _thread_in_native) {
         _thread = t2;
         ThreadStateTransition::transition_from_native(t2, _thread_in_vm);

@@ -856,8 +856,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
     move_exception_node_up(block, first_inst, last_inst);
 
-    Pressure int_pressure(last_inst + 1, INTPRESSURE);
-    Pressure float_pressure(last_inst + 1, FLOATPRESSURE);
+    Pressure int_pressure(last_inst + 1, Matcher::int_pressure_limit());
+    Pressure float_pressure(last_inst + 1, Matcher::float_pressure_limit());
     block->_reg_pressure = 0;
     block->_freg_pressure = 0;
 

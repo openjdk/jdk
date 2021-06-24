@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8268672
+ * @summary C2: assert(!loop->is_member(u_loop)) failed: can be in outer loop or out of both loops only
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestPinnedNodeInInnerLoop TestPinnedNodeInInnerLoop
  *
  */
 
-#ifndef SHARE_GC_G1_SPARSEPRT_INLINE_HPP
-#define SHARE_GC_G1_SPARSEPRT_INLINE_HPP
+public class TestPinnedNodeInInnerLoop {
+    boolean b;
+    double d;
+    int iArr[];
 
-#include "gc/g1/sparsePRT.hpp"
+    public static void main(String[] args) {
+        TestPinnedNodeInInnerLoop t = new TestPinnedNodeInInnerLoop();
+        for (int i = 0; i < 10; i++) {
+            t.test();
+        }
+    }
 
-#include "gc/g1/g1CollectedHeap.hpp"
+    void test() {
+        int e = 4, f = -51874, g = 7, h = 0;
 
-inline bool SparsePRT::contains_card(RegionIdx_t region_id, CardIdx_t card_index) const {
-  return _table->contains_card(region_id, card_index);
+        for (; f < 3; ++f) {
+        }
+        while (++g < 2) {
+            if (b) {
+                d = h;
+            } else {
+                iArr[g] = e;
+            }
+        }
+        System.out.println(g);
+    }
 }
-
-
-#endif // SHARE_GC_G1_SPARSEPRT_INLINE_HPP

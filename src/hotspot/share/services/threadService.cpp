@@ -427,7 +427,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         Thread* owner = waitingToLockRawMonitor->owner();
         if (owner != NULL && // the raw monitor could be released at any time
             owner->is_Java_thread()) {
-          currentThread = owner->as_Java_thread();
+          currentThread = JavaThread::cast(owner);
         }
       } else if (waitingToLockMonitor != NULL) {
         address currentOwner = (address)waitingToLockMonitor->owner();
@@ -440,8 +440,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
             // if it is not findable, then the previous currentThread is
             // blocked permanently. We record this as a deadlock.
             num_deadlocks++;
-
-            cycle->set_deadlock(true);
 
             // add this cycle to the deadlocks list
             if (deadlocks == NULL) {
@@ -483,8 +481,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else {
         // We have a (new) cycle
         num_deadlocks++;
-
-        cycle->set_deadlock(true);
 
         // add this cycle to the deadlocks list
         if (deadlocks == NULL) {
@@ -955,7 +951,6 @@ void ThreadSnapshot::metadata_do(void f(Metadata*)) {
 
 
 DeadlockCycle::DeadlockCycle() {
-  _is_deadlock = false;
   _threads = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _next = NULL;
 }
@@ -991,7 +986,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       // Could be NULL as the raw monitor could be released at any time if held by non-JavaThread
       if (owner != NULL) {
         if (owner->is_Java_thread()) {
-          currentThread = owner->as_Java_thread();
+          currentThread = JavaThread::cast(owner);
           st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
         } else {
           st->print_cr(",\n  which has now been released");
