@@ -4022,96 +4022,24 @@ By default, this option is disabled.
 .RE
 .SH REMOVED JAVA OPTIONS
 .PP
-These \f[CB]java\f[R] options have been removed in JDK 17 and using them
-results in an error of:
-.RS
-.PP
-\f[CB]Unrecognized\ VM\ option\f[R] \f[I]option\-name\f[R]
-.RE
-.TP
-.B \f[CB]\-XX:+UseMembar\f[R]
-Enabled issuing membars on thread\-state transitions.
-This option was disabled by default on all platforms except ARM servers,
-where it was enabled.
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:MaxPermSize=\f[R]\f[I]size\f[R]
-Sets the maximum permanent generation space size (in bytes).
-This option was deprecated in JDK 8 and superseded by the
-\f[CB]\-XX:MaxMetaspaceSize\f[R] option.
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:PermSize=\f[R]\f[I]size\f[R]
-Sets the space (in bytes) allocated to the permanent generation that
-triggers a garbage collection if it\[aq]s exceeded.
-This option was deprecated in JDK 8 and superseded by the
-\f[CB]\-XX:MetaspaceSize\f[R] option.
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:+TraceClassLoading\f[R]
-Enables tracing of classes as they are loaded.
-By default, this option is disabled and classes aren\[aq]t traced.
-.RS
-.PP
-The replacement Unified Logging syntax is
-\f[CB]\-Xlog:class+load=\f[R]\f[I]level\f[R].
-See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R]
-.PP
-Use \f[I]level\f[R]=\f[CB]info\f[R] for regular information, or
-\f[I]level\f[R]=\f[CB]debug\f[R] for additional information.
-In Unified Logging syntax, \f[CB]\-verbose:class\f[R] equals
-\f[CB]\-Xlog:class+load=info,class+unload=info\f[R].
-.RE
-.TP
-.B \f[CB]\-XX:+TraceClassLoadingPreorder\f[R]
-Enables tracing of all loaded classes in the order in which they\[aq]re
-referenced.
-By default, this option is disabled and classes aren\[aq]t traced.
-.RS
-.PP
-The replacement Unified Logging syntax is
-\f[CB]\-Xlog:class+preorder=debug\f[R].
-See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R].
-.RE
-.TP
-.B \f[CB]\-XX:+TraceClassResolution\f[R]
-Enables tracing of constant pool resolutions.
-By default, this option is disabled and constant pool resolutions
-aren\[aq]t traced.
-.RS
-.PP
-The replacement Unified Logging syntax is
-\f[CB]\-Xlog:class+resolve=debug\f[R].
-See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R].
-.RE
-.TP
-.B \f[CB]\-XX:+TraceLoaderConstraints\f[R]
-Enables tracing of the loader constraints recording.
-By default, this option is disabled and loader constraints recording
-isn\[aq]t traced.
-.RS
-.PP
-The replacement Unified Logging syntax is
-\f[CB]\-Xlog:class+loader+constraints=info\f[R].
-See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R].
-.RE
+No documented \f[CB]java\f[R] options have been removed in JDK 18.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
 .IP \[bu] 2
-\f[B]Java Platform, Standard Edition Tools Reference, Release 16\f[R]
+\f[B]The \f[BC]java\f[B] Command, Release 17\f[R]
+[https://docs.oracle.com/en/java/javase/17/docs/specs/man/java.html]
+.IP \[bu] 2
+\f[B]The \f[BC]java\f[B] Command, Release 16\f[R]
 [https://docs.oracle.com/en/java/javase/16/docs/specs/man/java.html]
 .IP \[bu] 2
-\f[B]Java Platform, Standard Edition Tools Reference, Release 15\f[R]
+\f[B]The \f[BC]java\f[B] Command, Release 15\f[R]
 [https://docs.oracle.com/en/java/javase/15/docs/specs/man/java.html]
 .IP \[bu] 2
-\f[B]Java Platform, Standard Edition Tools Reference, Release 14\f[R]
+\f[B]The \f[BC]java\f[B] Command, Release 14\f[R]
 [https://docs.oracle.com/en/java/javase/14/docs/specs/man/java.html]
 .IP \[bu] 2
-\f[B]Java Platform, Standard Edition Tools Reference, Release 13\f[R]
+\f[B]The \f[BC]java\f[B] Command, Release 13\f[R]
 [https://docs.oracle.com/en/java/javase/13/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]Java Platform, Standard Edition Tools Reference, Release 12\f[R]
