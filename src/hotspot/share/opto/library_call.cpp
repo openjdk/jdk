@@ -1032,16 +1032,17 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  if (stopped()) {
+    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return success
+    return true;
+  }
+
   // length is now known postive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
   Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
-
-  if (stopped()) {
-    return false;
-  }
 
   // Use an unsigned comparison for the range check itself
   Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
@@ -1061,7 +1062,8 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   if (stopped()) {
-    return false;
+    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return success
+    return true;
   }
 
   // index is now known to be >= 0 and < length, cast it

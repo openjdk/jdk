@@ -46,6 +46,7 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
     uint32_t* counter = _stats.add_if_absent(msg.output(), 0, &p_created);
     *counter = *counter + 1;
     // drop the enqueueing message.
+    os::free(msg.message());
     return;
   }
 
