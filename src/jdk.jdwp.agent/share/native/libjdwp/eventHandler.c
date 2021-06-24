@@ -1239,6 +1239,10 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
         EXIT_ERROR(error,"Can't clear event callbacks on vm death");
     }
 
+    /* Setting this flag is needed for a very special case. See the reference in findThread(). */
+    gdata->handlingVMDeath = JNI_TRUE;
+
+
     /* Now that no new callbacks will be made, we need to wait for the ones
      *   that are still active to complete.
      *   The BEGIN_CALLBACK/END_CALLBACK macros implement the VM_DEATH
@@ -1292,6 +1296,8 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
      */
     commandLoop_sync();
     debugLoop_sync();
+
+    gdata->handlingVMDeath = JNI_FALSE;
 
     LOG_MISC(("END cbVMDeath"));
 }

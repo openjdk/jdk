@@ -133,8 +133,11 @@ typedef struct {
     int           objectsByIDsize;
     int           objectsByIDcount;
 
-     /* Indication that the agent has been loaded */
-     jboolean isLoaded;
+    /* Indication that the agent has been loaded */
+    jboolean isLoaded;
+
+    /* Indication that we are currently handling VM_DEATH event. */
+    jboolean handlingVMDeath;
 
 } BackendGlobalData;
 
