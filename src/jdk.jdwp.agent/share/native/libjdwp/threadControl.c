@@ -262,7 +262,7 @@ findThread(ThreadList *list, jthread thread)
          * avoid this situation of having a thread in runningThreads, but with no TLS.
          *
          * However... there is one exception to this. While handling VM_DEATH, the first thing
-         * the debug agent does is clear all the callbacks. This means we will no long
+         * the debug agent does is clear all the callbacks. This means we will no longer
          * get THREAD_END events as threads exit. This means we might find threads on
          * runningThreads with no TLS during VM_DEATH. Essentially the THREAD_END that
          * would normally have resulted in removing the thread from runningThreads is
