@@ -76,7 +76,6 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
@@ -184,37 +183,13 @@ THREAD_LOCAL Thread* Thread::_thr_current = NULL;
 #endif
 
 // ======= Thread ========
-// Support for forcing alignment of thread objects for biased locking
 void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
-  if (UseBiasedLocking) {
-    const size_t alignment = markWord::biased_lock_alignment;
-    size_t aligned_size = size + (alignment - sizeof(intptr_t));
-    void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
-                                          : AllocateHeap(aligned_size, flags, CURRENT_PC,
-                                                         AllocFailStrategy::RETURN_NULL);
-    void* aligned_addr     = align_up(real_malloc_addr, alignment);
-    assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
-           ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
-           "JavaThread alignment code overflowed allocated storage");
-    if (aligned_addr != real_malloc_addr) {
-      log_info(biasedlocking)("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                              p2i(real_malloc_addr),
-                              p2i(aligned_addr));
-    }
-    ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
-    return aligned_addr;
-  } else {
-    return throw_excpt? AllocateHeap(size, flags, CURRENT_PC)
+  return throw_excpt ? AllocateHeap(size, flags, CURRENT_PC)
                        : AllocateHeap(size, flags, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  }
 }
 
 void Thread::operator delete(void* p) {
-  if (UseBiasedLocking) {
-    FreeHeap(((Thread*) p)->_real_malloc_address);
-  } else {
-    FreeHeap(p);
-  }
+  FreeHeap(p);
 }
 
 void JavaThread::smr_delete() {
@@ -288,14 +263,6 @@ Thread::Thread() {
     _unhandled_oops = new UnhandledOops(this);
   }
 #endif // CHECK_UNHANDLED_OOPS
-#ifdef ASSERT
-  if (UseBiasedLocking) {
-    assert(is_aligned(this, markWord::biased_lock_alignment), "forced alignment of thread object failed");
-    assert(this == _real_malloc_address ||
-           this == align_up(_real_malloc_address, markWord::biased_lock_alignment),
-           "bug in forced alignment of thread objects");
-  }
-#endif // ASSERT
 
   // Notify the barrier set that a thread is being created. The initial
   // thread is created before the barrier set is available.  The call to
@@ -1081,7 +1048,6 @@ JavaThread::JavaThread() :
   _thread_stat(new ThreadStatistics()),
 
   _parker(),
-  _cached_monitor_info(nullptr),
 
   _class_to_be_initialized(nullptr),
 
@@ -3049,8 +3015,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
-
-  BiasedLocking::init();
 
 #if INCLUDE_RTM_OPT
   RTMLockingCounters::init();

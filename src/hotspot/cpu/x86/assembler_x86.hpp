@@ -28,8 +28,6 @@
 #include "asm/register.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class BiasedLockingCounters;
-
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention

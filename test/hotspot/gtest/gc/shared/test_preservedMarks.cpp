@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,6 @@
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 
-class ScopedDisabledBiasedLocking {
-  bool _orig;
-public:
-  ScopedDisabledBiasedLocking() : _orig(UseBiasedLocking) { UseBiasedLocking = false; }
-  ~ScopedDisabledBiasedLocking() { UseBiasedLocking = _orig; }
-};
-
 // Class to create a "fake" oop with a mark that will
 // return true for calls to must_be_preserved().
 class FakeOop {
@@ -56,10 +49,6 @@ public:
 #define ASSERT_MARK_WORD_EQ(a, b) ASSERT_EQ((a).value(), (b).value())
 
 TEST_VM(PreservedMarks, iterate_and_restore) {
-  // Need to disable biased locking to easily
-  // create oops that "must_be_preseved"
-  ScopedDisabledBiasedLocking dbl;
-
   PreservedMarks pm;
   FakeOop o1;
   FakeOop o2;

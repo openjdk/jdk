@@ -33,12 +33,11 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register scratch, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
@@ -61,11 +60,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     jcc(Assembler::notZero, slow_case);
   }
 
-  if (UseBiasedLocking) {
-    assert(scratch != noreg, "should have scratch register at this point");
-    biased_locking_enter(disp_hdr, obj, hdr, scratch, rklass_decode_tmp, false, done, &slow_case);
-  }
-
   // Load object header
   movptr(hdr, Address(obj, hdr_offset));
   // and mark it as unlocked
@@ -78,10 +72,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   MacroAssembler::lock(); // must be immediately before cmpxchg!
   cmpxchgptr(disp_hdr, Address(obj, hdr_offset));
   // if the object header was the same, we're done
-  if (PrintBiasedLockingStatistics) {
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)BiasedLocking::fast_path_entry_count_addr()));
-  }
   jcc(Assembler::equal, done);
   // if the object header was not the same, it is now in the hdr register
   // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
@@ -116,22 +106,15 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
   Label done;
 
-  if (UseBiasedLocking) {
-    // load object
-    movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    biased_locking_exit(obj, hdr, done);
-  }
-
   // load displaced header
   movptr(hdr, Address(disp_hdr, 0));
   // if the loaded hdr is NULL we had recursive locking
   testptr(hdr, hdr);
   // if we had recursive locking, we are done
   jcc(Assembler::zero, done);
-  if (!UseBiasedLocking) {
-    // load object
-    movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-  }
+  // load object
+  movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+
   verify_oop(obj);
   // test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object - if the object header is not pointing to
@@ -159,14 +142,8 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
   Register tmp_encode_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  if (UseBiasedLocking && !len->is_valid()) {
-    assert_different_registers(obj, klass, len, t1, t2);
-    movptr(t1, Address(klass, Klass::prototype_header_offset()));
-    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
-  } else {
-    // This assumes that all prototype bits fit in an int32_t
-    movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markWord::prototype().value());
-  }
+  // This assumes that all prototype bits fit in an int32_t
+  movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markWord::prototype().value());
 #ifdef _LP64
   if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(t1, klass);

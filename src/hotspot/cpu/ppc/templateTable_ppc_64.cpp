@@ -3793,11 +3793,7 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    if (UseBiasedLocking) {
-      __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
-    } else {
-      __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-    }
+    __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
     __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
 
     // Init klass.

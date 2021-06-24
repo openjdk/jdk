@@ -137,8 +137,6 @@ void HeapShared::fixup_mapped_heap_regions() {
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {
-  assert(!p->mark().has_bias_pattern(),
-         "this object should never have been locked");  // so identity_hash won't safepoin
   unsigned hash = (unsigned)p->identity_hash();
   return hash;
 }
@@ -416,11 +414,7 @@ void HeapShared::copy_roots() {
   memset(mem, 0, size * BytesPerWord);
   {
     // This is copied from MemAllocator::finish
-    if (UseBiasedLocking) {
-      oopDesc::set_mark(mem, k->prototype_header());
-    } else {
-      oopDesc::set_mark(mem, markWord::prototype());
-    }
+    oopDesc::set_mark(mem, markWord::prototype());
     oopDesc::release_set_klass(mem, k);
   }
   {

@@ -356,8 +356,6 @@ class MacroAssembler: public Assembler {
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
-  void load_prototype_header(Register dst, Register src, Register tmp);
-
 #ifdef _LP64
   void store_klass_gap(Register dst, Register src);
 
@@ -672,21 +670,6 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
 
   void verify_tlab();
-
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg must be rax, and is killed.
-  // tmp_reg is optional. If it is supplied (i.e., != noreg) it will
-  // be killed; if not supplied, push/pop will be used internally to
-  // allocate a temporary (inefficient, avoid if possible).
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            Register tmp_reg2, bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
 
   Condition negate_condition(Condition cond);
 

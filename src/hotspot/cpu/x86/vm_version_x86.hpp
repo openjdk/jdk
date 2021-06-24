@@ -747,9 +747,6 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // Override Abstract_VM_Version implementation
-  static bool use_biased_locking();
-
   // Asserts
   static void assert_is_initialized() {
     assert(_cpuid_info.std_cpuid1_eax.bits.family != 0, "VM_Version not initialized");

@@ -40,7 +40,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -890,11 +889,6 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
       b(slow_case, ne);
     }
 
-    if (UseBiasedLocking) {
-      biased_locking_enter(Robj, Rmark/*scratched*/, R0, false, Rtemp, done, slow_case);
-    }
-
-
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
     // That would be acceptable as ether CAS or slow case path is taken in that case.
     // Exception to that is if the object is locked by the calling thread, then the recursive test will pass (guaranteed as
@@ -911,12 +905,6 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     str(Rmark, Address(Rlock, mark_offset));
 
     cas_for_lock_acquire(Rmark, Rlock, Robj, Rtemp, slow_case);
-
-#ifndef PRODUCT
-    if (PrintBiasedLockingStatistics) {
-      cond_atomic_inc32(al, BiasedLocking::fast_path_entry_count_addr());
-    }
-#endif //!PRODUCT
 
     b(done);
 
@@ -962,13 +950,6 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     // If still 'eq' then recursive locking OK: store 0 into lock record
     str(R0, Address(Rlock, mark_offset), eq);
 
-
-#ifndef PRODUCT
-    if (PrintBiasedLockingStatistics) {
-      cond_atomic_inc32(eq, BiasedLocking::fast_path_entry_count_addr());
-    }
-#endif // !PRODUCT
-
     b(done, eq);
 
     bind(slow_case);
@@ -1009,10 +990,6 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
 
     // Free entry
     str(Rzero, Address(Rlock, obj_offset));
-
-    if (UseBiasedLocking) {
-      biased_locking_exit(Robj, Rmark, done);
-    }
 
     // Load the old header from BasicLock structure
     ldr(Rmark, Address(Rlock, mark_offset));

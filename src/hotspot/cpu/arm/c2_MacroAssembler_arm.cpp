@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   // mov(result_reg, 1);  //equal
 }
 
-void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2, Register scratch3) {
+void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2) {
   assert(VM_Version::supports_ldrex(), "unsupported, yet?");
 
   Register Rmark      = Rscratch2;
@@ -96,14 +96,6 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     tst(Rscratch, JVM_ACC_IS_VALUE_BASED_CLASS);
     b(done, ne);
   }
-
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    assert(scratch3 != noreg, "need extra temporary for -XX:-UseOptoBiasInlining");
-    biased_locking_enter(Roop, Rmark, Rscratch, false, scratch3, done, done);
-    // Fall through if lock not biased otherwise branch to done
-  }
-
-  // Invariant: Rmark loaded below does not contain biased lock pattern
 
   ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
   tst(Rmark, markWord::unlocked_value);
@@ -147,10 +139,6 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   assert(Rbox != Rmark, "");
 
   Label done;
-
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_exit(Roop, Rscratch, done);
-  }
 
   ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
   // If hdr is NULL, we've got recursive locking and there's nothing more to do

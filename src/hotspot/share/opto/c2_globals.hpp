@@ -452,10 +452,6 @@
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  product(bool, PrintPreciseBiasedLockingStatistics, false, DIAGNOSTIC,     \
-          "(Deprecated) Print per-lock-site statistics of biased locking "  \
-          "in JVM")                                                         \
-                                                                            \
   product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
                                                                             \
@@ -510,9 +506,6 @@
                                                                             \
   notproduct(bool, VerifyConnectionGraph , true,                            \
           "Verify Connection Graph construction in Escape Analysis")        \
-                                                                            \
-  product(bool, UseOptoBiasInlining, true,                                  \
-          "(Deprecated) Generate biased locking code in C2 ideal graph")    \
                                                                             \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \

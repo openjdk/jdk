@@ -233,7 +233,6 @@ class oopDesc {
   // locking operations
   inline bool is_locked()   const;
   inline bool is_unlocked() const;
-  inline bool has_bias_pattern() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj, bool ignore_mark_word = false);
@@ -283,8 +282,6 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  // NOTE with the introduction of UseBiasedLocking that identity_hash() might reach a
-  // safepoint if called on a biased object. Calling code must be aware of that.
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
 

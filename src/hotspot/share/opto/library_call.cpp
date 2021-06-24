@@ -3810,7 +3810,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
-  Node *lock_mask      = _gvn.MakeConX(markWord::biased_lock_mask_in_place);
+  Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
   Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
   Node *unlocked_val   = _gvn.MakeConX(markWord::unlocked_value);
   Node *chk_unlocked   = _gvn.transform(new CmpXNode( lmasked_header, unlocked_val));
