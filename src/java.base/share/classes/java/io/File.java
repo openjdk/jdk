@@ -2110,12 +2110,12 @@ public class File
      * is invoked, but programmatic changes to this property are not guaranteed
      * to have any effect upon the temporary directory used by this method.
      *
-     * <p> If the {@code directory} argument is not {@code null}, then if its
-     * abstract pathname is valid and denotes an existing directory, then the
-     * file will be created in that directory; otherwise, the file will not
-     * be created and an {@code IOException} will be thrown.  In no case will
-     * a directory be created at the location specified by the {@code directory}
-     * argument.
+     * <p> If the {@code directory} argument is not {@code null} and its
+     * abstract pathname is valid and denotes an existing, writable directory,
+     * then the file will be created in that directory. Otherwise the file will
+     * not be created and an {@code IOException} will be thrown.  Under no
+     * circumstances will a directory be created at the location specified by
+     * the {@code directory} argument.
      *
      * @param  prefix     The prefix string to be used in generating the file's
      *                    name; must be at least three characters long
