@@ -186,12 +186,14 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T' N$temp = E; N$temp instanceof typeof($pattern) && <desugared $pattern>)
             //note the pattern desugaring performs binding variable assignments
-            Symbol exprSym = TreeInfo.symbol(tree.expr);
             Type tempType = tree.expr.type.hasTag(BOT) ?
                     syms.objectType
                     : tree.expr.type;
             VarSymbol prevCurrentValue = currentValue;
             try {
+                JCExpression translatedExpr = translate(tree.expr);
+                Symbol exprSym = TreeInfo.symbol(translatedExpr);
+
                 if (exprSym != null &&
                     exprSym.kind == Kind.VAR &&
                     exprSym.owner.kind.matches(Kinds.KindSelector.VAL_MTH)) {
@@ -203,7 +205,6 @@ public class TransPatterns extends TreeTranslator {
                             currentMethodSym);
                 }
 
-                JCExpression translatedExpr = translate(tree.expr);
                 Type principalType = principalType((JCPattern) tree.pattern);
                 result = makeBinary(Tag.AND,
                                     makeTypeTest(make.Ident(currentValue), make.Type(principalType)),
