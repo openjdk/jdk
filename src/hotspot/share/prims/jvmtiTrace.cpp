@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
-  oop threadObj = thread->as_Java_thread()->threadObj();
+  oop threadObj = JavaThread::cast(thread)->threadObj();
   if (threadObj == NULL) {
     return "NULL";
   }

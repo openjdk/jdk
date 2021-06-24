@@ -869,7 +869,7 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
  public:
   DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     jt->deoptimize_marked_methods();
   }
 };

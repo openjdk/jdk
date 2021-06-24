@@ -1076,11 +1076,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   if (OptoRegScheduling && block_size_threshold_ok) {
     // To stage register pressure calculations we need to examine the live set variables
     // breaking them up by register class to compartmentalize the calculations.
-    uint float_pressure = Matcher::float_pressure(FLOATPRESSURE);
-    _regalloc->_sched_int_pressure.init(INTPRESSURE);
-    _regalloc->_sched_float_pressure.init(float_pressure);
-    _regalloc->_scratch_int_pressure.init(INTPRESSURE);
-    _regalloc->_scratch_float_pressure.init(float_pressure);
+    _regalloc->_sched_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_sched_float_pressure.init(Matcher::float_pressure_limit());
+    _regalloc->_scratch_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_scratch_float_pressure.init(Matcher::float_pressure_limit());
 
     _regalloc->compute_entry_block_pressure(block);
   }

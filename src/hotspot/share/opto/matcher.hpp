@@ -233,6 +233,10 @@ public:
   // Maps from machine register to boolean; true if machine register holds
   // a spillable argument.
   static bool is_spillable_arg( int reg );
+  // Number of integer live ranges that constitute high register pressure
+  static uint int_pressure_limit();
+  // Number of float live ranges that constitute high register pressure
+  static uint float_pressure_limit();
 
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
@@ -327,9 +331,6 @@ public:
 
   static const RegMask* predicate_reg_mask(void);
   static const TypeVect* predicate_reg_type(const Type* elemTy, int length);
-
-  // Some uarchs have different sized float register resources
-  static const int float_pressure(int default_pressure_threshold);
 
   // Vector width in bytes
   static const int vector_width_in_bytes(BasicType bt);
