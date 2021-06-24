@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ jfieldID fos_fd; /* id for jobject 'fd' in java.io.FileOutputStream */
  */
 
 JNIEXPORT void JNICALL
-Java_java_io_FileOutputStream_initIDs(JNIEnv *env, jclass fdClass) {
-    fos_fd = (*env)->GetFieldID(env, fdClass, "fd", "Ljava/io/FileDescriptor;");
+Java_java_io_FileOutputStream_initIDs(JNIEnv *env, jclass fosClass) {
+    fos_fd = (*env)->GetFieldID(env, fosClass, "fd", "Ljava/io/FileDescriptor;");
 }
 
 /**************************************************************
