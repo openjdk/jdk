@@ -55,8 +55,7 @@ public class TargetDirectory {
         // Make target directory read-only
         if (Files.getFileStore(dir).supportsFileAttributeView("posix")) {
             PosixFileAttributeView view =
-                (PosixFileAttributeView)Files.getFileAttributeView(dir,
-                    PosixFileAttributeView.class);
+                Files.getFileAttributeView(dir, PosixFileAttributeView.class);
             Set<PosixFilePermission> perms = new HashSet<>();
             perms.add(PosixFilePermission.valueOf("OWNER_READ"));
             view.setPermissions(perms);
@@ -80,7 +79,7 @@ public class TargetDirectory {
         // Target directory exists but is read-only
         try {
             File.createTempFile("readonly", null, target);
-            throw new RuntimeException("Exception not thrown");
+            throw new RuntimeException("Exception not thrown for read-only target directory");
         } catch (IOException expected) {
         } finally {
             target.delete();
@@ -89,7 +88,7 @@ public class TargetDirectory {
         // Target directory does not exist
         try {
             File.createTempFile("nonexistent", null, new File("void"));
-            throw new RuntimeException("Exception not thrown");
+            throw new RuntimeException("Exception not thrown for non-existent target directory");
         } catch (IOException expected) {
         }
 
@@ -97,7 +96,7 @@ public class TargetDirectory {
         target = Files.createFile(Path.of("file")).toFile();
         try {
             File.createTempFile("file", null, target);
-            throw new RuntimeException("Exception not thrown");
+            throw new RuntimeException("Exception not thrown for file target");
         } catch (IOException expected) {
         } finally {
             target.delete();
