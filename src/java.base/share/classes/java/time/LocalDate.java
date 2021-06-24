@@ -1625,8 +1625,8 @@ public final class LocalDate
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalDate end = LocalDate.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
-            return switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
                 case DAYS      -> daysUntil(end);
                 case WEEKS     -> daysUntil(end) / 7;
                 case MONTHS    -> monthsUntil(end);

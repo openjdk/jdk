@@ -444,10 +444,9 @@ public final class JapaneseDate
 
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
+        if (field instanceof ChronoField chronoField) {
             if (isSupported(field)) {
-                ChronoField f = (ChronoField) field;
-                return switch (f) {
+                return switch (chronoField) {
                     case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
                     case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
                     case YEAR_OF_ERA -> {
@@ -456,7 +455,7 @@ public final class JapaneseDate
                         jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
                         yield ValueRange.of(1, jcal.getActualMaximum(Calendar.YEAR));
                     }
-                    default -> getChronology().range(f);
+                    default -> getChronology().range(chronoField);
                 };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);

@@ -558,8 +558,8 @@ public final class Instant
      */
     @Override  // override for Javadoc and performance
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            return switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
                 case NANO_OF_SECOND -> nanos;
                 case MICRO_OF_SECOND -> nanos / 1000;
                 case MILLI_OF_SECOND -> nanos / 1000_000;
@@ -594,8 +594,8 @@ public final class Instant
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            return switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
                 case NANO_OF_SECOND -> nanos;
                 case MICRO_OF_SECOND -> nanos / 1000;
                 case MILLI_OF_SECOND -> nanos / 1000_000;
@@ -848,8 +848,8 @@ public final class Instant
      */
     @Override
     public Instant plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            return switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
                 case NANOS     -> plusNanos(amountToAdd);
                 case MICROS    -> plus(amountToAdd / 1000_000, (amountToAdd % 1000_000) * 1000);
                 case MILLIS    -> plusMillis(amountToAdd);
