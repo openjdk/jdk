@@ -125,10 +125,9 @@ LOG_TRACE(tstrings::any() << "version: " << version);
         tstring searchpath = CfgFile::asString(*searchpathProp);
         places = tstrings::split(searchpath, _T(","));
     } else {
-        places = SysInfo::getJavaSearchPaths();
+        JP_THROW(tstrings::any() << "No runtime in app image and "
+                        << "no runtime serch path given in cfg file.");
     }
-
-
 
     if (FileUtils::isFileExists(
             FileUtils::mkpath() << runtimePath << _T("/lib"))) {

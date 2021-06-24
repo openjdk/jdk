@@ -36,9 +36,22 @@ public class SplitRuntime {
 
     private String name;
     private String versionSpec;
-    private Path releasePath;
     private String installDir;
+    private String icon;
+    private String searchPath;
 
+    /*
+     * The format of the split-runtime arg (like add-launcher) is:
+     * --split-runtime <name>=<property file path>
+     * Valid properties are "version", "icon", and "install-dir"
+     * The version spec will default to the version being (with "+", meaning
+     * any later update in this family.
+     * The icon will default to jpackage default icon (not the app's icon).
+     * The install-dir will default to the installer name given.
+     *
+     * Possible additional properties not implemented:
+     * "search-path" - app or enterprise specific places to look for runtime
+     */
     public SplitRuntime(String name, String propFile) {
         this.name = name;
         Properties props = new Properties();
@@ -49,7 +62,9 @@ public class SplitRuntime {
                 // ignore - treat as no properties
             }
             versionSpec = props.getProperty("version");
+            icon = props.getProperty("icon");
             installDir = props.getProperty("install-dir");
+            searchPath = props.getProperty("search-path");
         }
         // if property file doesn't exist, or just doesn't have the needed entries,
         // provide defaults:
@@ -70,13 +85,22 @@ public class SplitRuntime {
         return versionSpec;
     }
 
+    public String getIcon() {
+        return icon;
+    }
+
     public String getInstallDir() {
         return installDir;
     }
 
+    public String getSearchPath() {
+        return searchPath;
+    }
+
     public String toString() {
-        return "SplitRuntime: " + name + " version spec: "
-                + versionSpec + " installDir: " + installDir;
+        return "SplitRuntime: " + name + " version spec: " + versionSpec +
+                " icon: " + icon + " installDir: " + installDir +
+                " searchPath: " + searchPath;
     }
 
 }

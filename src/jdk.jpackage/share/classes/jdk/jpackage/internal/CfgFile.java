@@ -93,11 +93,13 @@ final class CfgFile {
                     splitRuntime.getVersionSpec()));
             content.add(Map.entry("runtime.release",
                     "$APPDIR" + File.separator + RELEASE_FILE_NAME));
-            String installDir = splitRuntime.getInstallDir();
-            String searchpath = runtimeSearchPath(installDir);
-            if (installDir != null) {
-                content.add(Map.entry("runtime.searchpath", searchpath));
-            }
+
+            String sp = splitRuntime.getSearchPath();
+           
+            String searchPath = splitRuntime.getInstallDir() + ","
+                    + ((sp == null) ? "" : sp + ",") + getDefaultSearchPath();
+
+            content.add(Map.entry("runtime.searchpath", searchPath));
         }
 
         ApplicationLayout appImagelayout = appLayout.resolveAt(appImage);
@@ -154,23 +156,17 @@ final class CfgFile {
         return appCfgLayout;
     }
 
-    private String runtimeSearchPath(String installDir) {
+    private String getDefaultSearchPath() {
         if (Platform.isWindows()) {
             Path pf = ("x86".equals(System.getProperty("os.arch")) ?
                    getWinSystemDir("ProgramFiles(x86)","\\Program Files (x86)") :
                    getWinSystemDir("ProgramFiles", "\\Program Files"));
-            if (installDir != null) {
-                return pf.resolve(installDir).toString() + "," +
-                        pf.resolve("Java").toString();
-            } else {
-                return pf.resolve("Java").toString();
-            }
+            return pf.resolve("Java").toString();
         } else if (Platform.isMac()) {
-            return installDir + "," +
-                    "/Library/Internet Plug-ins/JavaAppletPlugin.plugin" + ","
+            return "/Library/Internet Plug-ins/JavaAppletPlugin.plugin" + ","
                     + "/Library/Java/JavaVirtualMachines";
         } else {
-            return installDir + "," + "/usr/jdk" ;
+            return "/usr/lib/jvm" + "," + "/usr/lib/jdk" ;
         }
     }
 

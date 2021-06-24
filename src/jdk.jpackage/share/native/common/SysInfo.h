@@ -93,8 +93,6 @@ namespace SysInfo {
      */
     bool isEnvVariableSet(const tstring& name);
 
-    tstring_array getJavaSearchPaths();
-
     tstring getLibPath();
 }
 

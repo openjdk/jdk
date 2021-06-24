@@ -709,10 +709,9 @@ public class Arguments {
                 localParams = new HashMap<>(params);
                 // here we have created a runtime in tempRoot/runtime
                 if (deployParams.isTargetAppImage()) {
-                    // what to do with split runtime and app-image ? error ?
-                    Log.info("Warning: split runtime of type app-image");
+                    // what to do with split runtime and app-image ? warning ?
+                    Log.info(I18N.getString("warning.split.app-image"));
                 } else {
-Log.info("------------- cleanup with true");
                     bundler.cleanup(localParams, false);
 
                     // remove LauncherData from map so it will be re-computed
@@ -728,15 +727,14 @@ Log.info("------------- cleanup with true");
                     localParams.put(CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId(),
                         tempRoot.resolve("runtime"));
 
-                    // different name, and install-dir from SplitRuntime (version ?)
+                    // different name, icon, and install-dir from SplitRuntime (version ?)
                     localParams.put(CLIOptions.INSTALL_DIR.getId(),
                             spr.getInstallDir());
+                    localParams.put(CLIOptions.ICON.getId(), spr.getIcon());
                     localParams.put(CLIOptions.NAME.getId(), spr.getName());
 
                     bundler.validate(localParams);
-Log.info("------- running localParams: " + localParams);
                     result = bundler.execute(localParams, deployParams.outdir);
-Log.info("------ result: " + result);
                     if (result == null) {
                         throw new PackagerException("MSG_BundlerFailed",
                                 bundler.getID(), bundler.getName());

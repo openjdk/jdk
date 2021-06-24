@@ -162,32 +162,39 @@ class AppImageBundler extends AbstractBundler {
             Path outputDirectory) throws PackagerException, IOException,
             ConfigException {
 
-        Path rootDirectory = createRoot(params, outputDirectory);
-        AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
+        Path rootDir = createRoot(params, outputDirectory);
+        AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDir);
         ApplicationLayout layout = appBuilder.getAppLayout();
         Path runtimeTarget = layout.runtimeHomeDirectory();
         Path runtimeSource = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
         SplitRuntime splitRuntime = SPLIT_RUNTIME.fetchFrom(params);
         if (splitRuntime.getName() != null) {
             runtimeTarget = RUNTIME_ROOT.fetchFrom(params);
+/*
+ * The following causes --split-runtime to imply --runtime-image=$JAVA_HOME
+ * that is, we would always create a "full" runtime image (if not given
+ * another --runtime-image arg.)
+ * Since either way it is possible to create full or minimal runtime, we will
+ * leave the default alone
+ *
             if (runtimeSource == null) {
                 runtimeSource = Path.of(System.getProperty("java.home"));
             }
+ *
+ */
         }
         if (runtimeSource == null ) {
             JLinkBundlerHelper.execute(params, runtimeTarget);
         } else {
-Log.info("----- copyRuntime from: " + runtimeSource + " to: " + runtimeTarget);
             StandardBundlerParam.copyPredefinedRuntimeImage(params,
                     runtimeSource, runtimeTarget, layout.appModsDirectory());
         }
         if (splitRuntime.getName() != null) {
-Log.info("--- copy release file from: " + runtimeTarget.resolve("release"));
             IOUtils.copyFile(runtimeTarget.resolve("release"),
                     layout.appDirectory().resolve(CfgFile.RELEASE_FILE_NAME));
         }
         appBuilder.prepareApplicationFiles(params);
-        return rootDirectory;
+        return rootDir;
     }
 
     private boolean dependentTask;

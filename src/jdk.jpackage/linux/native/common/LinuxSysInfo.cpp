@@ -54,12 +54,6 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
 tstring getAppDataPath() {
     return "~/.config";
 }
-tstring_array getJavaSearchPaths() {
-    tstring_array result;
-    result.push_back("/usr/lib/jvm");
-    result.push_back("/usr/lib/jdk");
-    return result;
-}
 
 tstring getLibPath() {
     return getEnvVariable(_T("LD_LIBRARY_PATH"));
