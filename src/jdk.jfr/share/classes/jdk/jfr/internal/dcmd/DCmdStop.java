@@ -26,7 +26,6 @@ package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
