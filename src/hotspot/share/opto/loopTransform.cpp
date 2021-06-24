@@ -2851,6 +2851,16 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
     register_new_node(main_cmp, main_cle->in(0));
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
+  assert(main_limit == cl->limit() || get_ctrl(main_limit) == pre_ctrl, "wrong control for added limit");
+  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->is_int();
+  bool upward = cl->stride_con() > 0;
+  // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
+  // The expression that computes the new limit may be too complicated and the computed type of the new limit
+  // may be too pessimistic. A CastII here guarantees it's not lost.
+  main_limit = new CastIINode(main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
+                                                        upward ? orig_limit_t->_hi : max_jint, Type::WidenMax));
+  main_limit->init_req(0, pre_ctrl);
+  register_new_node(main_limit, pre_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
   // The OpaqueNode is unshared by design

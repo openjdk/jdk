@@ -990,7 +990,7 @@ JRT_END
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
-      oop obj = thread->as_Java_thread()->threadObj();
+      oop obj = JavaThread::cast(thread)->threadObj();
       return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
     }
   }

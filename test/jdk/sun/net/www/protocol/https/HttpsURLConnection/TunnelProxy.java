@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,27 @@
  *
  */
 
-import java.net.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
+
 import sun.net.www.MessageHeader;
-import java.util.*;
 
 public class TunnelProxy {
 
@@ -43,7 +58,6 @@ public class TunnelProxy {
      * Create a <code>TunnelProxy<code> instance with the specified callback object
      * for handling requests. One thread is created to handle requests,
      * and up to ten TCP connections will be handled simultaneously.
-     * @param cb the callback object which is invoked to handle each
      *  incoming request
      */
 
@@ -55,8 +69,6 @@ public class TunnelProxy {
      * Create a <code>TunnelProxy<code> instance with the specified number of
      * threads and maximum number of connections per thread. This functions
      * the same as the 4 arg constructor, where the port argument is set to zero.
-     * @param cb the callback object which is invoked to handle each
-     *     incoming request
      * @param threads the number of threads to create to handle requests
      *     in parallel
      * @param cperthread the number of simultaneous TCP connections to
@@ -74,8 +86,6 @@ public class TunnelProxy {
      * the specified port. The specified number of threads are created to
      * handle incoming requests, and each thread is allowed
      * to handle a number of simultaneous TCP connections.
-     * @param cb the callback object which is invoked to handle
-     *  each incoming request
      * @param threads the number of threads to create to handle
      *  requests in parallel
      * @param cperthread the number of simultaneous TCP connections
@@ -95,8 +105,6 @@ public class TunnelProxy {
      * the specified port. The specified number of threads are created to
      * handle incoming requests, and each thread is allowed
      * to handle a number of simultaneous TCP connections.
-     * @param cb the callback object which is invoked to handle
-     *  each incoming request
      * @param threads the number of threads to create to handle
      *  requests in parallel
      * @param cperthread the number of simultaneous TCP connections
@@ -249,7 +257,6 @@ public class TunnelProxy {
         /* return true if the connection is closed, false otherwise */
 
         private boolean read (SocketChannel chan, SelectionKey key) {
-            HttpTransaction msg;
             boolean res;
             try {
                 InputStream is = new BufferedInputStream (new NioInputStream (chan));
