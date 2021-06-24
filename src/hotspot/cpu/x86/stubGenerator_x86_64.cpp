@@ -6260,8 +6260,8 @@ address generate_avx_ghash_processBlocks() {
     const Register out_byte_count = rbx;
     const Register byte1 = r13;
     const Register byte2 = r15;
-    const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(rdx);
-    const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(r9);
+    const Register byte3 = WINDOWS_ONLY(r8) NOT_WINDOWS(rdx);
+    const Register byte4 = WINDOWS_ONLY(r10) NOT_WINDOWS(r9);
 
     __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
     __ cmpl(length, 0);
