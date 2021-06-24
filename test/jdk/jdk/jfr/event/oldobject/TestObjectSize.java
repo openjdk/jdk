@@ -49,12 +49,15 @@ public class TestObjectSize {
     private interface Leak {
     }
     private static class Leak1 implements Leak {
-        private byte field1;
+        private long field1;
     }
     private static class Leak2 implements Leak {
-        private int field2;
+        private long field1;
+        private long field2;
     }
     private static class Leak3 implements Leak {
+        private long field1;
+        private long field2;
         private long field3;
     }
 
@@ -63,28 +66,58 @@ public class TestObjectSize {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        try (Recording recording = new Recording()) {
-            leak.clear();
-            recording.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-            recording.start();
+        final Random rand = new Random(1L);
 
-            for (int i = 0; i < 300; i++) {
-                leak.add(new Leak1());
-                leak.add(new Leak2());
-                leak.add(new Leak3());
-            }
+        long sizeLeak1, sizeLeak2, sizeLeak3;
 
-            recording.stop();
+        do {
+            sizeLeak1 = -1;
+            sizeLeak2 = -1;
+            sizeLeak3 = -1;
 
-            List<RecordedEvent> events = Events.fromRecording(recording);
-            Events.hasEvents(events);
-            for (RecordedEvent e : events) {
-                RecordedObject object = e.getValue("object");
-                RecordedClass type = object.getValue("type");
-                if (e.getLong("objectSize") <= 0) {
-                    throw new Exception("Object size for " + type.getName() + " is lower or equal to 0");
+            try (Recording recording = new Recording()) {
+                leak.clear();
+                recording.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+                recording.start();
+
+                for (int i = 0; i < 1000; i++) {
+                    switch (rand.nextInt(3)) {
+                    case 0: leak.add(new Leak1()); break;
+                    case 1: leak.add(new Leak2()); break;
+                    case 2: leak.add(new Leak3()); break;
+                    }
+                }
+
+                recording.stop();
+
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Events.hasEvents(events);
+                for (RecordedEvent e : events) {
+                    RecordedObject object = e.getValue("object");
+                    RecordedClass type = object.getValue("type");
+                    long objectSize = e.getLong("objectSize");
+                    System.err.println("type = " + type.getName() + ", objectSize = " + e.getLong("objectSize"));
+                    if (objectSize <= 0) {
+                        throw new Exception("Object size for " + type.getName() + " is lower or equal to 0");
+                    }
+                    if (type.getName().equals(Leak1.class.getName())) {
+                        sizeLeak1 = objectSize;
+                    }
+                    if (type.getName().equals(Leak2.class.getName())) {
+                        sizeLeak2 = objectSize;
+                    }
+                    if (type.getName().equals(Leak3.class.getName())) {
+                        sizeLeak3 = objectSize;
+                    }
                 }
             }
+        } while (sizeLeak1 == -1 || sizeLeak2 == -1 || sizeLeak3 == -1);
+
+        if (sizeLeak3 <= sizeLeak2) {
+            throw new Exception("Object size for " + Leak3.class.getName() + " is lower or equal to size for" + Leak2.class.getName());
+        }
+        if (sizeLeak2 <= sizeLeak1) {
+            throw new Exception("Object size for " + Leak2.class.getName() + " is lower or equal to size for" + Leak1.class.getName());
         }
     }
 }
