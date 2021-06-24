@@ -136,8 +136,8 @@ typedef struct {
     /* Indication that the agent has been loaded */
     jboolean isLoaded;
 
-    /* Indication that we are currently handling VM_DEATH event. */
-    jboolean handlingVMDeath;
+    /* Indication that VM_DEATH has been recieved and the JVMTI callbacks have been cleared. */
+    volatile jboolean jvmtiCallBacksCleared;
 
 } BackendGlobalData;
 

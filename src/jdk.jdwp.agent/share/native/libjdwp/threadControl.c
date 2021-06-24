@@ -268,11 +268,12 @@ findThread(ThreadList *list, jthread thread)
          * would normally have resulted in removing the thread from runningThreads is
          * missed, so the thread remains on runningThreads.
          *
-         * The end result of all this is that if the TLS lookup failed, we still need to
-         * check if the thread is on runningThreads, but only if we are handling VM_DEATH.
+         * The end result of all this is that if the TLS lookup failed, we still need to check
+         * if the thread is on runningThreads, but only if JVMTI callbacks have been cleared.
+         * Otherwise the thread should not be on the runningThreads.
          */
-        if ( !gdata->handlingVMDeath ) {
-            /* The thread better not be on runningThreads is the TLS lookup failed. */
+        if ( !gdata->jvmtiCallBacksCleared ) {
+            /* The thread better not be on runningThreads if the TLS lookup failed. */
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
         } else {
             /*
