@@ -43,6 +43,7 @@ class JfrContextRepository : public JfrCHeapObj {
   friend class ContextBlobInstaller;
   friend class ContextRepository;
 
+
  private:
   static const u4 TABLE_SIZE = 2053;
   JfrContext* _table[TABLE_SIZE];

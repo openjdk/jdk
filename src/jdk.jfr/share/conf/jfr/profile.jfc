@@ -55,6 +55,7 @@
     <event name="jdk.ThreadStart">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ThreadEnd">
@@ -64,81 +65,95 @@
     <event name="jdk.ThreadSleep">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.ThreadPark">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorEnter">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorWait">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorInflate">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="locking-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.SyncOnValueBasedClass">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.BiasedLockRevocation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.BiasedLockSelfRevocation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.BiasedLockClassRevocation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.ReservedStackActivation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ClassLoad">
       <setting name="enabled" control="class-loading">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.ClassDefine">
       <setting name="enabled" control="class-loading">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.RedefineClasses">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.RetransformClasses">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -203,6 +218,7 @@
     <event name="jdk.Shutdown">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ThreadDump">
@@ -330,11 +346,13 @@
     <event name="jdk.MetaspaceAllocationFailure">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.MetaspaceOOM">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.MetaspaceChunkFreeListSummary">
@@ -350,6 +368,7 @@
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
       <setting name="stackTrace">true</setting> 
+      <setting name="context">true</setting> 
     </event>
 
     <event name="jdk.ParallelOldGarbageCollection">
@@ -463,6 +482,7 @@
     <event name="jdk.AllocationRequiringGC">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.TenuringDistribution">
@@ -490,6 +510,7 @@
     <event name="jdk.OldObjectSample">
       <setting name="enabled" control="old-objects-enabled">true</setting>
       <setting name="stackTrace" control="old-objects-stack-trace">true</setting>
+      <setting name="context" control="old-objects-context">true</setting>
       <setting name="cutoff" control="old-objects-cutoff">0 ns</setting>
     </event>
 
@@ -618,6 +639,7 @@
     <event name="jdk.ProcessStart">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.NetworkUtilization">
@@ -638,17 +660,20 @@
     <event name="jdk.ObjectAllocationInNewTLAB">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationOutsideTLAB">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ObjectAllocationSample">
       <setting name="enabled" control="object-allocation-enabled">true</setting>
       <setting name="throttle" control="allocation-profiling">300/s</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.NativeLibrary">
@@ -669,66 +694,78 @@
     <event name="jdk.FileForce">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="file-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.FileRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="file-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.FileWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="file-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.SocketRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="socket-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.SocketWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold" control="socket-threshold">10 ms</setting>
     </event>
 
     <event name="jdk.Deserialization">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
+       <setting name="context">true</setting>
     </event>
 
     <event name="jdk.SecurityPropertyModification">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
+       <setting name="context">true</setting>
     </event>
 
     <event name="jdk.TLSHandshake">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.X509Validation">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
+       <setting name="context">true</setting>
     </event>
 
     <event name="jdk.X509Certificate">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
+       <setting name="context">true</setting>
     </event>
 
     <event name="jdk.JavaExceptionThrow">
       <setting name="enabled" control="enable-exceptions">false</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.JavaErrorThrow">
       <setting name="enabled" control="enable-errors">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.ExceptionStatistics">
@@ -765,6 +802,7 @@
     <event name="jdk.ZPageAllocation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
       <setting name="threshold">1 ms</setting>
     </event>
 
@@ -806,12 +844,14 @@
     <event name="jdk.Deoptimization">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.HeapDump">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ns</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
     <event name="jdk.DirectBufferStatistics">
@@ -823,6 +863,7 @@
       <setting name="enabled">true</setting>
       <setting name="threshold">100 ms</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="context">true</setting>
     </event>
 
 
@@ -1034,6 +1075,13 @@
       <condition name="old-objects-stack-trace" true="true" false="false">
         <or>
           <test name="memory-leaks" operator="equal" value="stack-traces"/>
+          <test name="memory-leaks" operator="equal" value="gc-roots"/>
+        </or>
+      </condition>
+
+      <condition name="old-objects-context" true="true" false="false">
+        <or>
+          <test name="memory-leaks" operator="equal" value="contexts"/>
           <test name="memory-leaks" operator="equal" value="gc-roots"/>
         </or>
       </condition>

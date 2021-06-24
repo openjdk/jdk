@@ -87,6 +87,7 @@ public final class TestActiveSettingEvent {
             assertSetting(events, type, "threshold", "0 ns");
             assertSetting(events, type, "enabled", "true");
             assertSetting(events, type, "stackTrace", "true");
+            assertSetting(events, type, "context", "true");
         }
         // Register unregistered
         FlightRecorder.unregister(MyEvent.class);
@@ -102,6 +103,7 @@ public final class TestActiveSettingEvent {
             assertSetting(events, type, "threshold", "0 ns");
             assertSetting(events, type, "enabled", "true");
             assertSetting(events, type, "stackTrace", "true");
+            assertSetting(events, type, "context", "true");
         }
     }
 
@@ -120,6 +122,7 @@ public final class TestActiveSettingEvent {
             assertNotSetting(events, type, "threshold", "0 ns");
             assertNotSetting(events, type, "enabled", "true");
             assertNotSetting(events, type, "stackTrace", "true");
+            assertNotSetting(events, type, "context", "true");
         }
     }
 
@@ -136,6 +139,7 @@ public final class TestActiveSettingEvent {
             assertSetting(events, type, "threshold", "0 ns");
             assertSetting(events, type, "enabled", "true");
             assertSetting(events, type, "stackTrace", "true");
+            assertSetting(events, type, "context", "true");
             assertNotSetting(events, type, "period", "everyChunk");
         }
     }
@@ -194,8 +198,10 @@ public final class TestActiveSettingEvent {
         // are not useful to configure. They are however needed to make the test
         // pass.
         settingValues.put(EventNames.ActiveSetting + "#stackTrace", "false");
+        settingValues.put(EventNames.ActiveSetting + "#context", "false");
         settingValues.put(EventNames.ActiveSetting + "#threshold", "0 ns");
         settingValues.put(EventNames.ActiveRecording + "#stackTrace", "false");
+        settingValues.put(EventNames.ActiveRecording + "#context", "false");
         settingValues.put(EventNames.ActiveRecording + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaExceptionThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaErrorThrow + "#threshold", "0 ns");

@@ -130,6 +130,7 @@ public class Application {
         long t = System.currentTimeMillis();
         while (true) {
             if (!process.isAlive()) {
+                System.out.println("Process not alive");
                 String std = new String(process.getInputStream().readAllBytes());
                 System.out.println("========= Application: " + id + " Process std out ==========");
                 System.out.println(std);

@@ -32,7 +32,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Event annotation, determines whether an event by default has a stack trace
+ * Event annotation, determines whether an event by default has a context
  * or not.
  *
  * @since 17
@@ -43,14 +43,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Context {
     /**
-     * Settings name {@code "context"} to be used for enabling event stack traces.
+     * Settings name {@code "context"} to be used for enabling event contexts.
      */
     public static final String NAME = "context";
 
     /**
-     * Returns if the stack trace from the {@code Event#commit()} method should be recorded.
+     * Returns if the context from the {@code Event#commit()} method should be recorded.
      *
-     * @return {@code true} if the stack trace should be recorded, {@code false}
+     * @return {@code true} if the context should be recorded, {@code false}
      *         otherwise
      */
     boolean value() default true;

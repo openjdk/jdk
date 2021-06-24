@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.jfr.AnnotationElement;
+import jdk.jfr.Context;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Period;
@@ -76,6 +77,7 @@ public final class MetadataRepository {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
                 pEventType.setHasDuration(eventType.getAnnotation(Threshold.class) != null);
                 pEventType.setHasStackTrace(eventType.getAnnotation(StackTrace.class) != null);
+                pEventType.setHasContext(eventType.getAnnotation(Context.class) != null);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
                 pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);

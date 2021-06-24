@@ -89,14 +89,14 @@ public class TestSettingsAvailability {
 
     private static void testKnownSettings() throws Exception {
         testSetting(EventNames.JVMInformation, "enabled", "period");
-        testSetting(EventNames.FileRead, "enabled", "threshold", "stackTrace");
-        testSetting(EventNames.FileWrite, "enabled", "threshold","stackTrace");
+        testSetting(EventNames.FileRead, "enabled", "threshold", "stackTrace", "context");
+        testSetting(EventNames.FileWrite, "enabled", "threshold","stackTrace", "context");
         testSetting(EventNames.ExceptionStatistics, "enabled", "period");
-        testSetting(EventNames.SocketRead, "enabled", "threshold", "stackTrace");
-        testSetting(EventNames.SocketWrite, "enabled", "threshold", "stackTrace");
-        testSetting(EventNames.ActiveRecording, "enabled", "threshold", "stackTrace");
-        testSetting(EventNames.ActiveSetting, "enabled", "threshold", "stackTrace");
-        testSetting(EventNames.JavaExceptionThrow, "enabled", "threshold", "stackTrace");
+        testSetting(EventNames.SocketRead, "enabled", "threshold", "stackTrace", "context");
+        testSetting(EventNames.SocketWrite, "enabled", "threshold", "stackTrace", "context");
+        testSetting(EventNames.ActiveRecording, "enabled", "threshold", "stackTrace", "context");
+        testSetting(EventNames.ActiveSetting, "enabled", "threshold", "stackTrace", "context");
+        testSetting(EventNames.JavaExceptionThrow, "enabled", "threshold", "stackTrace", "context");
     }
 
     private static void testSetting(String eventName, String... settingNames) throws Exception {

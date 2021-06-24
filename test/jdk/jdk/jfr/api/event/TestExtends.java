@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.Events;
 
 public class TestExtends {
 
-    private static final int DEFAULT_FIELD_COUNT = 4;
+    private static final int DEFAULT_FIELD_COUNT = 5;
 
     @SuppressWarnings("unused")
     private static class GrandpaEvent extends Event {

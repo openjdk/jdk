@@ -59,7 +59,6 @@ public @interface PreviewFeature {
          */
         SEALED_CLASSES,
         SWITCH_PATTERN_MATCHING,
-        SCOPE_LOCALS,
         /**
          * A key for testing.
          */

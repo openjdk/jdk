@@ -106,6 +106,7 @@ public final class EventControl {
         remove(eventType, aes, Period.class);
         remove(eventType, aes, Enabled.class);
         remove(eventType, aes, StackTrace.class);
+        remove(eventType, aes, Context.class);
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
         eventType.setAnnotations(aes);

@@ -42,7 +42,7 @@ public class TestGetSettings {
     public static void main(String[] args) throws Throwable {
         EventType eventType = EventType.getEventType(EventWithCustomSettings.class);
         List<SettingDescriptor> settings = eventType.getSettingDescriptors();
-        Asserts.assertEquals(settings.size(), 5, "Wrong number of settings");
+        Asserts.assertEquals(settings.size(), 6, "Wrong number of settings");
 
         // test immutability
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,41 @@
  * questions.
  */
 
-package jdk.jfr.events;
+package jdk.jfr.internal;
 
-import jdk.jfr.Category;
-import jdk.jfr.Context;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
-import jdk.jfr.internal.Type;
+import java.util.Objects;
+import jdk.jfr.RecordingContextKey;
 
-@Name(Type.EVENT_NAME_PREFIX + "ActiveSetting")
-@Label("Recording Setting")
-@Category("Flight Recorder")
-@StackTrace(false)
-@Context(false)
-public final class ActiveSettingEvent extends AbstractJDKEvent {
+/**
+ * @since 17
+ */
+public final class RecordingContextEntry {
+    final RecordingContextKey key;
+    final String value;
 
-    public static final ThreadLocal<ActiveSettingEvent> EVENT = new ThreadLocal<ActiveSettingEvent>() {
-        @Override
-        protected ActiveSettingEvent initialValue() {
-            return new ActiveSettingEvent();
-        }
-    };
+    public RecordingContextEntry(RecordingContextKey key, String value) {
+        this.key = Objects.requireNonNull(key);
+        this.value = value;
+    }
 
-    @Label("Event Id")
-    public long id;
+    public RecordingContextKey getKey() {
+        return key;
+    }
 
-    @Label("Setting Name")
-    public String name;
+    public String getValue() {
+        return value;
+    }
 
-    @Label("Setting Value")
-    public String value;
+    @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof RecordingContextEntry that)) return false;
+        return that.key.equals(this.key);
+    }
 }

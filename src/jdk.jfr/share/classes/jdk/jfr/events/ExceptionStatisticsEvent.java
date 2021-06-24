@@ -26,6 +26,7 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
+import jdk.jfr.Context;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
@@ -37,6 +38,7 @@ import jdk.jfr.internal.Type;
 @Category({ "Java Application", "Statistics" })
 @Description("Number of objects derived from java.lang.Throwable that have been created")
 @StackTrace(false)
+@Context(false)
 public final class ExceptionStatisticsEvent extends AbstractJDKEvent {
 
     @Label("Exceptions Created")

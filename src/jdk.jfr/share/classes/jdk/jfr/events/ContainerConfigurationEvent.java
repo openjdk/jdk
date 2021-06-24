@@ -26,6 +26,7 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
+import jdk.jfr.Context;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Description;
 import jdk.jfr.Enabled;

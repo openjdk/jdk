@@ -196,9 +196,33 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   return id;
 NO_TRANSITION_END
 
-NO_TRANSITION(void, jfr_invoke_walk_snapshot_callback(JNIEnv * env, jobject jvm, jlong callback, jlong name, jlong value))
-  JfrContext::walk_snapshot_callback(callback, name, value);
+NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jlongArray entries))
+  jsize entries_len = env->GetArrayLength(entries);
+  jlong* entries_content = (jlong*)env->GetPrimitiveArrayCritical(entries, NULL);
+  JfrContextBinding* binding = new JfrContextBinding(JfrContextBinding::find(prev_id), entries_content, entries_len);
+  assert(binding != NULL, "invariant");
+  env->ReleasePrimitiveArrayCritical(entries, entries_content, 0);
+  return binding->id();
 NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong id))
+  JfrContextBinding* binding = JfrContextBinding::find(id);
+  assert(binding != NULL, "invariant");
+  delete binding;
+NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id, jboolean is_inheritable))
+  JfrContextBinding::set_current(JfrContextBinding::find(id), is_inheritable);
+NO_TRANSITION_END
+
+// NO_TRANSITION(jboolean, jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong id, jstring key))
+//   JfrContextBinding* binding = JfrContextBinding::find(id);
+//   assert(binding != NULL, "invariant");
+//   const char* key_name = env->GetStringUTFChars(key, NULL);
+//   jboolean res = binding->contains_key(key);
+//   env->ReleaseStringUTFChars(key, key_name);
+//   return res;
+// NO_TRANSITION_END
 
 /*
  * JVM_ENTRY_NO_ENV entries

@@ -127,6 +127,7 @@ Monitor* Zip_lock                     = NULL;
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = NULL;
 Mutex*   JfrContext_lock              = NULL;
+Mutex*   JfrContextBinding_lock       = NULL;
 Monitor* JfrMsg_lock                  = NULL;
 Mutex*   JfrBuffer_lock               = NULL;
 Mutex*   JfrStream_lock               = NULL;
@@ -323,6 +324,7 @@ void mutex_init() {
   def(JfrStream_lock               , PaddedMutex  , nonleaf + 1, false, _safepoint_check_never);
   def(JfrStacktrace_lock           , PaddedMutex  , tty-2,       true,  _safepoint_check_never);
   def(JfrContext_lock              , PaddedMutex  , tty-2,       true,  _safepoint_check_never);
+  def(JfrContextBinding_lock       , PaddedMutex  , tty-2,       true,  _safepoint_check_never);
   def(JfrThreadSampler_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 #endif
 

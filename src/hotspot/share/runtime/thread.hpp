@@ -51,6 +51,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
+#include "jfr/recorder/context/jfrContextBinding.hpp"
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
@@ -781,6 +782,27 @@ class JavaThread: public Thread {
                                               // allocated during deoptimization
                                               // and by JNI_MonitorEnter/Exit
 
+#if INCLUDE_JFR
+  // JFR Recording Context support
+ private:
+  JfrContextBinding* _inheritable_jfr_context_binding;
+  JfrContextBinding* _noninheritable_jfr_context_binding;
+ public:
+  JfrContextBinding* jfr_context_binding(bool is_inheritable) {
+    return is_inheritable ?
+      _inheritable_jfr_context_binding :
+      _noninheritable_jfr_context_binding;
+  }
+  void set_jfr_context_binding(JfrContextBinding* context, bool is_inheritable) {
+    if (is_inheritable) {
+      _inheritable_jfr_context_binding = context;
+    } else {
+      _noninheritable_jfr_context_binding = context;
+    }
+  }
+#endif
+
+ private:
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077

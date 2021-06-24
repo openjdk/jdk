@@ -29,6 +29,7 @@ import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
+import jdk.jfr.RecordingContextKey;
 import jdk.jfr.internal.handlers.EventHandler;
 
 /**
@@ -630,9 +631,35 @@ public final class JVM {
     /**
      * 
      *
-     * @param callback the native pointer to the callback object, passed by native
-     * @param name the name of the RecordingContext
-     * @param value the value of the RecordingContext
+     * @param prev the previous recording context binding
+     * @param entries the entries in the current recording context binding
+     * @param isInheritable whether the current recording context is inheritable
      */
-    public native void invokeWalkSnapshotCallback(long callback, long name, long value);
+    public native long recordingContextNew(long prevId, long[] entries);
+
+    /**
+     * 
+     *
+     * @param prev the previous recording context binding
+     * @param isInheritable whether the current recording context is inheritable
+     */
+    public native void recordingContextDelete(long id);
+
+    /**
+     * 
+     *
+     * @param context the context binding
+     * @param isInheritable whether the recording context is inheritable
+     */
+    public native void recordingContextSet(long id, boolean isInheritable);
+
+    /**
+     * 
+     *
+     * @param key the key to the recording context entry
+     * @param isInheritable whether the current recording context is inheritable
+     *
+     * @return whether the current context contains the given key
+     */
+    // public native boolean recordingContextContainsKey(long id, String key);
 }

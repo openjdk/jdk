@@ -158,7 +158,14 @@ jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobjec
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
 
-void JNICALL jfr_invoke_walk_snapshot_callback(JNIEnv* env, jobject jvm, jlong callback, jlong name, jlong value);
+jlong JNICALL jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jlongArray entries);
+
+void JNICALL jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong id);
+
+void JNICALL jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id, jboolean is_inheritable);
+
+// jboolean JNICALL jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong context, jstring key, jboolean is_inheritable);
+
 
 #ifdef __cplusplus
 }

@@ -61,6 +61,7 @@ import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.settings.ContextSetting;
 import jdk.jfr.internal.handlers.EventHandler;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
@@ -614,6 +615,9 @@ public final class Utils {
         if (c.isType(StackTraceSetting.class)) {
             return !hasEventHook;
         }
+        if (c.isType(ContextSetting.class)) {
+            return !hasEventHook;
+        }
         return true;
     }
 
@@ -625,6 +629,9 @@ public final class Utils {
             return hasEventHook;
         }
         if (StackTraceSetting.isType(typeId)) {
+            return !hasEventHook;
+        }
+        if (ContextSetting.isType(typeId)) {
             return !hasEventHook;
         }
         return true;

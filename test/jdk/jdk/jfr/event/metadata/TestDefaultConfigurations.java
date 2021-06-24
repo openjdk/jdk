@@ -166,8 +166,10 @@ public class TestDefaultConfigurations {
         // are not useful to configure. They are however needed to make the test
         // pass.
         insertSetting(doc, EventNames.ActiveSetting, "stackTrace", "false");
+        insertSetting(doc, EventNames.ActiveSetting, "context", "false");
         insertSetting(doc, EventNames.ActiveSetting, "threshold", "0 ns");
         insertSetting(doc, EventNames.ActiveRecording, "stackTrace", "false");
+        insertSetting(doc, EventNames.ActiveRecording, "context", "false");
         insertSetting(doc, EventNames.ActiveRecording, "threshold", "0 ns");
         insertSetting(doc, EventNames.JavaExceptionThrow, "threshold", "0 ns");
         insertSetting(doc, EventNames.JavaErrorThrow, "threshold", "0 ns");

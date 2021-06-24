@@ -63,9 +63,10 @@ public class TestGetDefaultValues {
         assertDefaultValue(customEventType, "setting2", "none");
 
         FlightRecorder.removePeriodicEvent(hook);
-        Asserts.assertEquals(customEventType.getSettingDescriptors().size(), 5, "Wrong number of settings");
+        Asserts.assertEquals(customEventType.getSettingDescriptors().size(), 6, "Wrong number of settings");
         assertDefaultValue(customEventType, "threshold", "100 ms");
         assertDefaultValue(customEventType, "stackTrace", "true");
+        assertDefaultValue(customEventType, "context", "true");
         assertDefaultValue(customEventType, "enabled", "false");
         assertDefaultValue(customEventType, "setting1", "none");
         assertDefaultValue(customEventType, "setting2", "none");
@@ -74,19 +75,21 @@ public class TestGetDefaultValues {
 
     private static void testCustomEvent() {
         EventType customizedEventType = EventType.getEventType(EventWithCustomSettings.class);
-        Asserts.assertEquals(customizedEventType.getSettingDescriptors().size(), 5, "Wrong number of default values");
+        Asserts.assertEquals(customizedEventType.getSettingDescriptors().size(), 6, "Wrong number of default values");
         assertDefaultValue(customizedEventType, "setting1", "none");
         assertDefaultValue(customizedEventType, "setting2", "none");
         assertDefaultValue(customizedEventType, "threshold", "100 ms");
         assertDefaultValue(customizedEventType, "stackTrace", "true");
+        assertDefaultValue(customizedEventType, "context", "true");
         assertDefaultValue(customizedEventType, "enabled", "false");
     }
 
     private static void testDefaultEvent() {
         EventType defaultEventType = EventType.getEventType(DefaultEvent.class);
-        Asserts.assertEquals(defaultEventType.getSettingDescriptors().size(), 3, "Wrong number of default values");
+        Asserts.assertEquals(defaultEventType.getSettingDescriptors().size(), 4, "Wrong number of default values");
         assertDefaultValue(defaultEventType, "threshold", "0 ns");
         assertDefaultValue(defaultEventType, "stackTrace", "true");
+        assertDefaultValue(defaultEventType, "context", "true");
         assertDefaultValue(defaultEventType, "enabled", "true");
     }
 

@@ -26,14 +26,14 @@
 package jdk.jfr;
 
 import java.util.Objects;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.StringPool;
-
-import static jdk.internal.javac.PreviewFeature.Feature.SCOPE_LOCALS;
+import jdk.jfr.internal.InheritableRecordingContextBinding;
+import jdk.jfr.internal.NonInheritableRecordingContextBinding;
+import jdk.jfr.internal.RecordingContextBinding;
+import jdk.jfr.internal.RecordingContextEntry;
 
 /**
  * Provide a RecordingContext to store variables that are passed around synchronous
@@ -41,139 +41,91 @@ import static jdk.internal.javac.PreviewFeature.Feature.SCOPE_LOCALS;
  *
  * @since 17
  */
-@jdk.internal.javac.PreviewFeature(feature=SCOPE_LOCALS)
-public final class RecordingContext {
+public final class RecordingContext implements AutoCloseable {
 
-    // final static StringPool stringPool = new StringPool();
+    final RecordingContextBinding inheritableBinding;
+    final RecordingContextBinding noninheritableBinding;
 
-    final String name;
-    final ScopeLocal<Entry> local;
-
-    private RecordingContext(String name, boolean isInheritable) {
-        this.name = name;
-        this.local = isInheritable ? ScopeLocal.inheritableForType(Entry.class) : ScopeLocal.forType(Entry.class);
+    RecordingContext(RecordingContextBinding inheritableBinding, RecordingContextBinding noninheritableBinding) {
+        this.inheritableBinding = inheritableBinding;
+        this.noninheritableBinding = noninheritableBinding;
     }
 
-    public final int hashCode() { return local.hashCode(); }
-
-    private static class Entry {
-        public final String name;
-        public final String value;
-
-        public Entry(String name, String value) {
-            this.name = name;
-            this.value = value;
-        }
-    }
-
+    // snapshot + run
     public static class Snapshot {
+        final InheritableRecordingContextBinding inheritableRecordingContextBindings;
 
-        final ScopeLocal.Snapshot snapshot;
-
-        Snapshot(ScopeLocal.Snapshot snapshot) {
-            this.snapshot = Objects.requireNonNull(snapshot);
+        Snapshot() {
+            this.inheritableRecordingContextBindings = InheritableRecordingContextBinding.current();
         }
-
-        public final void foreach(BiConsumer<String, String> consumer) {
-            snapshot.foreach((v) -> {
-                if (v instanceof Entry) {
-                    Entry entry = (Entry)v;
-                    consumer.accept(entry.name, entry.value);
-                }
-            });
-        }
-    }
-
-    public static final class Carrier {
-
-        final ScopeLocal.Carrier carrier;
-
-        Carrier(ScopeLocal.Carrier carrier) {
-            this.carrier = carrier;
-        }
-
-        public final Carrier where(RecordingContext key, String value) {
-            return new Carrier(carrier.where(key.local, new Entry(key.name, value)));
-        }
-
-        public final String get(RecordingContext key) {
-            return carrier.get(key.local).value;
-        }
-
-        public final <R> R call(Callable<R> op) throws Exception {
-            return carrier.call(op);
-        }
-
-        public final <R> R callOrElse(Callable<R> op,
-                                      Function<? super Exception, ? extends R> handler) {
-            return carrier.callOrElse(op, handler);
-        }
-
-        public final void run(Runnable op) {
-            carrier.run(op);
-        }
-    }
-
-    public static Carrier where(RecordingContext key, String value) {
-        return new Carrier(ScopeLocal.where(key.local, new Entry(key.name, value)));
-    }
-
-    public static <U> U where(RecordingContext key, String value, Callable<U> op) throws Exception {
-        return ScopeLocal.where(key.local, new Entry(key.name, value), op);
-    }
-
-    public static void where(RecordingContext key, String value, Runnable op) {
-        ScopeLocal.where(key.local, new Entry(key.name, value), op);
-    }
-
-    public static <R> R callWithSnapshot(Callable<R> op, Snapshot s) throws Exception {
-        return ScopeLocal.callWithSnapshot(op, s.snapshot);
-    }
-
-    public static void runWithSnapshot(Runnable op, Snapshot s) {
-        ScopeLocal.runWithSnapshot(op, s.snapshot);
-    }
-
-    public static RecordingContext forName(String name) {
-        return new RecordingContext(name, false);
-    }
-
-    public static RecordingContext inheritableForName(String name) {
-        return new RecordingContext(name, true);
-    }
-
-    public String get() {
-        return local.get().value;
-    }
-
-    public boolean isBound() {
-        return local.isBound();
-    }
-
-    public String orElse(String other) {
-        return local.orElse(new Entry(name, other)).value;
-    }
-
-    public <X extends Throwable> String orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        return local.orElseThrow(exceptionSupplier).value;
     }
 
     public static Snapshot snapshot() {
-        var snapshot = ScopeLocal.snapshot();
-        if (snapshot == null) {
-            return null;
-        }
-        return new Snapshot(snapshot);
+        return new Snapshot();
     }
 
-    // Called by JVM
-    private static void walkSnapshot(long callback) {
-        var snapshot = snapshot();
-        if (snapshot == null) {
-            return;
+    public static <R> R callWithSnapshot(Callable<R> op, Snapshot s) throws Exception {
+        InheritableRecordingContextBinding prev = InheritableRecordingContextBinding.current();
+        if (prev == s.inheritableRecordingContextBindings) {
+            return op.call();
         }
-        snapshot.foreach((k, v) -> {
-            JVM.getJVM().invokeWalkSnapshotCallback(callback, StringPool.addStringWithoutPreCache(k), StringPool.addStringWithoutPreCache(v));
-        });
+        try {
+            InheritableRecordingContextBinding.setCurrent(s.inheritableRecordingContextBindings);
+            return op.call();
+        } finally {
+            InheritableRecordingContextBinding.setCurrent(prev);
+        }
+    }
+
+    public static void runWithSnapshot(Runnable op, Snapshot s) {
+        InheritableRecordingContextBinding prev = InheritableRecordingContextBinding.current();
+        if (prev == s.inheritableRecordingContextBindings) {
+            op.run();
+        }
+        try {
+            InheritableRecordingContextBinding.setCurrent(s.inheritableRecordingContextBindings);
+            op.run();
+        } finally {
+            InheritableRecordingContextBinding.setCurrent(prev);
+        }
+    }
+
+    // initialize
+    public static class Builder {
+
+        Builder() {}
+
+        final Set<RecordingContextEntry> inheritableEntries = new HashSet<>();
+        final Set<RecordingContextEntry> noninheritableEntries = new HashSet<>();
+
+        // build and set current context
+        public Builder where(RecordingContextKey key, String value) {
+            Set<RecordingContextEntry> set = key.isInheritable() ?
+                inheritableEntries : noninheritableEntries;
+            
+            if (set.contains(key)) {
+                set.remove(key);
+            }
+            set.add(new RecordingContextEntry(key, value));
+
+            return this;
+        }
+
+        public RecordingContext build() {
+            return new RecordingContext(
+                new InheritableRecordingContextBinding(inheritableEntries),
+                new NonInheritableRecordingContextBinding(noninheritableEntries));
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // close
+    @Override
+    public void close() {
+        inheritableBinding.close();
+        noninheritableBinding.close();
     }
 }

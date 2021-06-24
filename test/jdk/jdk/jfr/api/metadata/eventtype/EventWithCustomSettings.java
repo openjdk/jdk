@@ -23,6 +23,7 @@
 
 package jdk.jfr.api.metadata.eventtype;
 
+import jdk.jfr.Context;
 import jdk.jfr.Enabled;
 import jdk.jfr.Event;
 import jdk.jfr.Name;
@@ -35,6 +36,7 @@ import jdk.test.lib.jfr.SimpleSetting;
 @Period("10 s")
 @Threshold("100 ms")
 @StackTrace(true)
+@Context(true)
 @Enabled(false)
 public class EventWithCustomSettings extends Event {
     @SettingDefinition

@@ -26,6 +26,7 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
+import jdk.jfr.Context;
 import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
@@ -38,6 +39,7 @@ import jdk.jfr.internal.Type;
 @Label("Flight Recording")
 @Category("Flight Recorder")
 @StackTrace(false)
+@Context(false)
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
     // To be accessed when holding recorder lock

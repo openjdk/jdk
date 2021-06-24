@@ -30,6 +30,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/context/jfrContext.hpp"
+#include "jfr/recorder/context/jfrContextBinding.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -43,8 +44,9 @@ static void copy_entries(JfrContextEntry** lhs_entries, u4 length, const JfrCont
   }
 }
 
-JfrContextEntry::JfrContextEntry(const jlong& name, const jlong& value) :
-  _name(name), _value(value) {}
+JfrContextEntry::JfrContextEntry(jlong name, jlong value) :
+  _name(name), _value(value) {
+}
 
 JfrContext::JfrContext(JfrContextEntry* entries, u4 max_entries) :
   _next(NULL),
@@ -54,6 +56,7 @@ JfrContext::JfrContext(JfrContextEntry* entries, u4 max_entries) :
   _nr_of_entries(0),
   _max_entries(max_entries),
   _entries_ownership(false),
+  _reached_root(false),
   _written(false) {}
 
 JfrContext::JfrContext(traceid id, const JfrContext& context, const JfrContext* next) :
@@ -64,6 +67,7 @@ JfrContext::JfrContext(traceid id, const JfrContext& context, const JfrContext* 
   _nr_of_entries(context._nr_of_entries),
   _max_entries(context._max_entries),
   _entries_ownership(true),
+  _reached_root(context._reached_root),
   _written(false) {
   copy_entries(&_entries, context._nr_of_entries, context._entries);
 }
@@ -75,8 +79,9 @@ JfrContext::~JfrContext() {
 }
 
 template <typename Writer>
-static void write_context(Writer& w, traceid id, u4 nr_of_entries, const JfrContextEntry* entries) {
+static void write_context(Writer& w, traceid id, bool reached_root, u4 nr_of_entries, const JfrContextEntry* entries) {
   w.write((u8)id);
+  w.write((u1)!reached_root);
   w.write(nr_of_entries);
   for (u4 i = 0; i < nr_of_entries; ++i) {
     entries[i].write(w);
@@ -85,12 +90,12 @@ static void write_context(Writer& w, traceid id, u4 nr_of_entries, const JfrCont
 
 void JfrContext::write(JfrChunkWriter& sw) const {
   assert(!_written, "invariant");
-  write_context(sw, _id, _nr_of_entries, _entries);
+  write_context(sw, _id, _reached_root, _nr_of_entries, _entries);
   _written = true;
 }
 
 void JfrContext::write(JfrCheckpointWriter& cpw) const {
-  write_context(cpw, _id, _nr_of_entries, _entries);
+  write_context(cpw, _id, _reached_root, _nr_of_entries, _entries);
 }
 
 bool JfrContextEntry::equals(const JfrContextEntry& rhs) const {
@@ -128,58 +133,47 @@ Symbol* JfrContext::_recordingContext_walkSnapshot_signature;
 Klass* JfrContext::_recordingContext_klass;
 
 bool JfrContext::initialize() {
-  JavaThread *thread = Thread::current()->as_Java_thread();
-  _recordingContext_klass = SystemDictionary::resolve_or_fail(SymbolTable::new_symbol("jdk/jfr/RecordingContext"), true, thread);
-  if (thread->has_pending_exception()) {
-    return false;
-  }
-  _recordingContext_walkSnapshot_method = SymbolTable::new_symbol("walkSnapshot");
-  _recordingContext_walkSnapshot_signature = SymbolTable::new_symbol("(J)V");
   return true;
 }
 
-class JfrContextSnapshotWalker : public StackObj {
+class IterContext : public StackObj {
  private:
   JfrContextEntry* _entries;
   u4 _max_entries;
   u4 *_nr_of_entries;
+  bool *_reached_root;
  public:
-  JfrContextSnapshotWalker(JfrContextEntry *entries, u4 max_entries, u4 *n_of_entries) :
-      _entries(entries), _max_entries(max_entries), _nr_of_entries(n_of_entries) {
+  IterContext(JfrContextEntry *entries, u4 max_entries, u4 *n_of_entries, bool *reached_root) :
+      _entries(entries), _max_entries(max_entries), _nr_of_entries(n_of_entries), _reached_root(reached_root) {
     assert(_nr_of_entries != NULL, "invariant");
     *_nr_of_entries = 0;
+    assert(_reached_root != NULL, "invariant");
+    *_reached_root = true;
   }
 
-  ~JfrContextSnapshotWalker() {}
+  ~IterContext() {}
 
-  void callback(jlong name, jlong value) {
+  bool do_entry(JfrContextEntry* entry) {
     if (*_nr_of_entries >= _max_entries) {
-      //FIXME: indicate somehow we couldn't capture all the context. See _reached_root.
-      return;
+      *_reached_root = false;
+      return false;
     }
-    _entries[*_nr_of_entries++] = JfrContextEntry(name, value);
+    memcpy(&_entries[*_nr_of_entries++], entry, sizeof(JfrContextEntry));
+    return true;
   }
 };
 
-void JfrContext::walk_snapshot_callback(jlong callback, jlong name, jlong value) {
-  ((JfrContextSnapshotWalker*)callback)->callback(name, value);
-}
-
 bool JfrContext::record_safe(JavaThread* thread, int skip) {
-  assert(thread == Thread::current(), "Thread context needs to be accessible");
-  // if (thread->thread_state() != _thread_in_vm) {
-  //   return false;
-  // }
-  // assert(_recordingContext_klass != NULL, "invariant");
-  // assert(_recordingContext_walkSnapshot_method != NULL, "invariant");
-  // assert(_recordingContext_walkSnapshot_signature != NULL, "invariant");
-  // JfrContextSnapshotWalker sw(_entries, _max_entries, &_nr_of_entries);
-  // JavaValue _(T_OBJECT);
-  // JfrJavaArguments args(&_, _recordingContext_klass, _recordingContext_walkSnapshot_method, _recordingContext_walkSnapshot_signature);
-  // args.push_long((jlong)&sw);
-  // JfrJavaSupport::call_static(&args, thread);
-  // if (thread->has_pending_exception()) {
-  //   return false;
-  // }
+  IterContext iter(_entries, _max_entries, &_nr_of_entries, &_reached_root);
+  JfrContextBinding* inheritable_binding = JfrContextBinding::current(true);
+  fprintf(stderr, "inheritable_binding = %p\n", inheritable_binding);
+  if (inheritable_binding != NULL) {
+    inheritable_binding->iterate(&iter);
+  }
+  JfrContextBinding* non_inheritable_binding = JfrContextBinding::current(false);
+  fprintf(stderr, "non_inheritable_binding = %p\n", non_inheritable_binding);
+  if (non_inheritable_binding != NULL) {
+    non_inheritable_binding->iterate(&iter);
+  }
   return _nr_of_entries > 0;
 }
