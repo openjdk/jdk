@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
+ * @modules jdk.incubator.foreign jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Short256VectorLoadStoreTests
  *
  */
@@ -43,12 +43,11 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.*;
 
 @Test
-public class Short256VectorLoadStoreTests extends AbstractVectorTest {
+public class Short256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     static final VectorSpecies<Short> SPECIES =
                 ShortVector.SPECIES_256;
 
