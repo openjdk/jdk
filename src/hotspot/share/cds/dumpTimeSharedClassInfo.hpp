@@ -25,16 +25,15 @@
 
 #ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
 #define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
-#include "classfile/compactHashtable.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "utilities/growableArray.hpp"
 
-class InstanceKlass;
 class Method;
 class Symbol;
 

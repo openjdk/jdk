@@ -250,7 +250,7 @@ public:
                                      Method* member_method,
                                      Symbol* instantiated_method_type, TRAPS) NOT_CDS_RETURN;
   static void add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
-                                                           InstanceKlass* proxy_klass) NOT_CDS_RETURN;
+                                                             InstanceKlass* proxy_klass) NOT_CDS_RETURN;
   static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
                                                       Symbol* invoked_name,
                                                       Symbol* invoked_type,
@@ -288,7 +288,6 @@ public:
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
-  static void dd_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey key, InstanceKlass* proxy_klass);
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 
 #ifdef ASSERT
