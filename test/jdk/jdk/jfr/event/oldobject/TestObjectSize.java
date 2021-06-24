@@ -25,6 +25,7 @@ package jdk.jfr.event.oldobject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
@@ -41,9 +42,9 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm  -XX:TLABSize=2k jdk.jfr.event.oldobject.TestAllocationSize
+ * @run main/othervm  -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectSize
  */
-public class TestAllocationSize {
+public class TestObjectSize {
 
     private interface Leak {
     }
@@ -78,12 +79,10 @@ public class TestAllocationSize {
             List<RecordedEvent> events = Events.fromRecording(recording);
             Events.hasEvents(events);
             for (RecordedEvent e : events) {
-                if (e.getEventType().getName().equals(EventNames.OldObjectSample)) {
-                    RecordedObject object = e.getValue("object");
-                    RecordedClass type = object.getValue("type");
-                    if ((long)e.getValue("allocationSize") <= 0) {
-                        throw new Exception("Allocation size for " + type.getName() + " is lower or equal to 0");
-                    }
+                RecordedObject object = e.getValue("object");
+                RecordedClass type = object.getValue("type");
+                if (e.getLong("objectSize") <= 0) {
+                    throw new Exception("Object size for " + type.getName() + " is lower or equal to 0");
                 }
             }
         }
