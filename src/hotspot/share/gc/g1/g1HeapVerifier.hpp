@@ -29,6 +29,7 @@
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 
@@ -79,7 +80,7 @@ public:
   void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
-  double verify(G1VerifyType type, VerifyOption vo, const char* msg);
+  void verify(G1VerifyType type, VerifyOption vo, const char* msg);
   void verify_before_gc(G1VerifyType type);
   void verify_after_gc(G1VerifyType type);
 
