@@ -83,9 +83,23 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
        memory_order_acq_rel == __ATOMIC_ACQ_REL &&
        memory_order_seq_cst == __ATOMIC_SEQ_CST);
 
+    // Some sanity checking on the memory order. It makes no
+    // sense to have a release operation for a store that never
+    // happens.
+    int failure_memory_order;
+    switch (order) {
+    case memory_order_release:
+      failure_memory_order = memory_order_relaxed; break;
+    case memory_order_acq_rel:
+      failure_memory_order = memory_order_acquire; break;
+    default:
+      failure_memory_order = order;
+    }
+    assert(failure_memory_order <= order, "must be");
+    
     T value = compare_value;
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
-                              order, order);
+                              order, failure_memory_order);
     return value;
   }
 }
