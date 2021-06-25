@@ -229,7 +229,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._CPP_file, "opto/regmask.hpp");
   AD.addInclude(AD._CPP_file, "opto/runtime.hpp");
-  AD.addInclude(AD._CPP_file, "runtime/biasedLocking.hpp");
   AD.addInclude(AD._CPP_file, "runtime/safepointMechanism.hpp");
   AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
@@ -305,7 +304,7 @@ int main(int argc, char *argv[])
   AD.buildInstructMatchCheck(AD._CPP_file._fp);  // .cpp
   // define methods for machine dependent frame management
   AD.buildFrameMethods(AD._CPP_file._fp);         // .cpp
-  AD.generate_needs_clone_jvms(AD._CPP_file._fp);
+  AD.generate_needs_deep_clone_jvms(AD._CPP_file._fp);
 
   // do this last:
   AD.addPreprocessorChecks(AD._CPP_file._fp);     // .cpp

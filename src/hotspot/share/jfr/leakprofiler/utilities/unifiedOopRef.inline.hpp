@@ -26,6 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOPREF_INLINE_HPP
 
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
+
 #include "oops/access.inline.hpp"
 #include "utilities/debug.hpp"
 

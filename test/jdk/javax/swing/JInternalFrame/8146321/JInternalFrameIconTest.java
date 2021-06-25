@@ -194,9 +194,11 @@ public class JInternalFrameIconTest {
         Rectangle rect = internalFrame.getBounds();
         Rectangle captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
-                internalFrame.getInsets().top);
+                point.y + internalFrame.getInsets().top,
+                titleImageIcon.getIconWidth(),
+                titleImageIcon.getIconHeight());
+
+        System.out.println("imageicon captureRect " + captureRect);
         imageIconImage
                 = robot.createScreenCapture(captureRect);
     }
@@ -206,9 +208,11 @@ public class JInternalFrameIconTest {
         Rectangle rect = internalFrame.getBounds();
         Rectangle captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
-                internalFrame.getInsets().top);
+                point.y + internalFrame.getInsets().top,
+                titleIcon.getIconWidth(),
+                titleIcon.getIconHeight());
+
+        System.out.println("icon captureRect " + captureRect);
         iconImage
                 = robot.createScreenCapture(captureRect);
     }

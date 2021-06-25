@@ -55,6 +55,7 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
       sm.checkPermission(new WhiteBoxPermission("getInstance"));
@@ -231,7 +232,7 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
-  public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
@@ -309,7 +310,7 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
@@ -591,8 +592,8 @@ public class WhiteBox {
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
-  public native boolean isCDSIncludedInVmBuild();
-  public native boolean isJFRIncludedInVmBuild();
+  public native boolean isCDSIncluded();
+  public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
@@ -604,6 +605,7 @@ public class WhiteBox {
 
   // Handshakes
   public native int handshakeWalkStack(Thread t, boolean all_threads);
+  public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
 
   // Returns true on linux if library has the noexecstack flag set.
@@ -634,7 +636,7 @@ public class WhiteBox {
   public native String getLibcName();
 
   // Walk stack frames of current thread
-  public native void verifyFrames(boolean log);
+  public native void verifyFrames(boolean log, boolean updateRegisterMap);
 
   public native boolean isJVMTIIncluded();
 

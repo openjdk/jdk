@@ -252,14 +252,14 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
-                .setDefaultTab(contents.allClassesAndInterfacesLabel.toString())
-                .addTab(contents.interfaces.toString(), utils::isInterface)
-                .addTab(contents.classes.toString(), e -> utils.isOrdinaryClass((TypeElement)e))
-                .addTab(contents.enums.toString(), utils::isEnum)
-                .addTab(contents.records.toString(), e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptions.toString(), e -> utils.isException((TypeElement)e))
-                .addTab(contents.errors.toString(), e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypes.toString(), utils::isAnnotationType);
+                .setDefaultTab(contents.allClassesAndInterfacesLabel)
+                .addTab(contents.interfaces, utils::isInterface)
+                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.enums, utils::isEnum)
+                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptions, e -> utils.isException((TypeElement)e))
+                .addTab(contents.errors, e -> utils.isError((TypeElement)e))
+                .addTab(contents.annotationTypes, utils::isAnnotationType);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(

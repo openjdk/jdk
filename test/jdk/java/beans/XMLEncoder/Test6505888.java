@@ -25,6 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests bean with the property that is guarded by UnmodifiableList
+ * @run main/othervm -Djava.security.manager=allow Test6505888
  * @author Sergey Malenkov
  */
 

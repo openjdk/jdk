@@ -36,8 +36,8 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ConstantNameAndType extends Constant {
 
-    private int name_index; // Name of field/method
-    private int signature_index; // and its signature.
+    private int nameIndex; // Name of field/method
+    private int signatureIndex; // and its signature.
 
 
     /**
@@ -60,13 +60,13 @@ public final class ConstantNameAndType extends Constant {
 
 
     /**
-     * @param name_index Name of field/method
-     * @param signature_index and its signature
+     * @param nameIndex Name of field/method
+     * @param signatureIndex and its signature
      */
-    public ConstantNameAndType(final int name_index, final int signature_index) {
+    public ConstantNameAndType(final int nameIndex, final int signatureIndex) {
         super(Const.CONSTANT_NameAndType);
-        this.name_index = name_index;
-        this.signature_index = signature_index;
+        this.nameIndex = nameIndex;
+        this.signatureIndex = signatureIndex;
     }
 
 
@@ -92,8 +92,8 @@ public final class ConstantNameAndType extends Constant {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         file.writeByte(super.getTag());
-        file.writeShort(name_index);
-        file.writeShort(signature_index);
+        file.writeShort(nameIndex);
+        file.writeShort(signatureIndex);
     }
 
 
@@ -101,7 +101,7 @@ public final class ConstantNameAndType extends Constant {
      * @return Name index in constant pool of field/method name.
      */
     public int getNameIndex() {
-        return name_index;
+        return nameIndex;
     }
 
 
@@ -116,7 +116,7 @@ public final class ConstantNameAndType extends Constant {
      * @return Index in constant pool of field/method signature.
      */
     public int getSignatureIndex() {
-        return signature_index;
+        return signatureIndex;
     }
 
 
@@ -128,18 +128,18 @@ public final class ConstantNameAndType extends Constant {
 
 
     /**
-     * @param name_index the name index of this constant
+     * @param nameIndex the name index of this constant
      */
-    public void setNameIndex( final int name_index ) {
-        this.name_index = name_index;
+    public void setNameIndex( final int nameIndex ) {
+        this.nameIndex = nameIndex;
     }
 
 
     /**
-     * @param signature_index the signature index in the constant pool of this type
+     * @param signatureIndex the signature index in the constant pool of this type
      */
-    public void setSignatureIndex( final int signature_index ) {
-        this.signature_index = signature_index;
+    public void setSignatureIndex( final int signatureIndex ) {
+        this.signatureIndex = signatureIndex;
     }
 
 
@@ -148,7 +148,7 @@ public final class ConstantNameAndType extends Constant {
      */
     @Override
     public String toString() {
-        return super.toString() + "(name_index = " + name_index + ", signature_index = "
-                + signature_index + ")";
+        return super.toString() + "(nameIndex = " + nameIndex + ", signatureIndex = "
+                + signatureIndex + ")";
     }
 }

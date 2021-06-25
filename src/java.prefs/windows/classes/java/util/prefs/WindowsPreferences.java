@@ -44,6 +44,7 @@ import sun.util.logging.PlatformLogger;
  * @since 1.4
  */
 
+@SuppressWarnings("removal")
 class WindowsPreferences extends AbstractPreferences {
 
     static {

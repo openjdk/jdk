@@ -80,6 +80,7 @@ bool SystemDictionaryShared::_dump_in_progress = false;
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
+  bool                         _has_checked_exclusion;
 public:
   struct DTLoaderConstraint {
     Symbol* _name;
@@ -122,6 +123,7 @@ public:
     _nest_host = NULL;
     _failed_verification = false;
     _is_archived_lambda_proxy = false;
+    _has_checked_exclusion = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
@@ -174,10 +176,6 @@ public:
     }
   }
 
-  void set_excluded() {
-    _excluded = true;
-  }
-
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
     return _excluded || _failed_verification || _klass == NULL;
@@ -188,21 +186,14 @@ public:
     return _is_early_klass;
   }
 
-  void set_failed_verification() {
-    _failed_verification = true;
-  }
-
-  bool failed_verification() {
-    return _failed_verification;
-  }
-
-  void set_nest_host(InstanceKlass* nest_host) {
-    _nest_host = nest_host;
-  }
-
-  InstanceKlass* nest_host() {
-    return _nest_host;
-  }
+  // simple accessors
+  void set_excluded()                               { _excluded = true; }
+  bool has_checked_exclusion() const                { return _has_checked_exclusion; }
+  void set_has_checked_exclusion()                  { _has_checked_exclusion = true; }
+  bool failed_verification() const                  { return _failed_verification; }
+  void set_failed_verification()                    { _failed_verification = true; }
+  InstanceKlass* nest_host() const                  { return _nest_host; }
+  void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 };
 
 inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
@@ -361,6 +352,8 @@ public:
       LambdaProxyClassKey const& k1, LambdaProxyClassKey const& k2) {
     return (k1.equals(k2));
   }
+
+  InstanceKlass* caller_ik() const { return _caller_ik; }
 };
 
 
@@ -436,7 +429,7 @@ DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary = NU
 
 static void add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey key,
                                                            InstanceKlass* proxy_klass) {
-  assert(DumpTimeTable_lock->owned_by_self(), "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_lambda_proxy_class_dictionary == NULL) {
     _dumptime_lambda_proxy_class_dictionary =
       new (ResourceObj::C_HEAP, mtClass)DumpTimeLambdaProxyClassDictionary();
@@ -1025,6 +1018,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != NULL) {
+        SharedClassLoadingMark slm(THREAD, k);
         k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
       }
     }
@@ -1054,11 +1048,10 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   assert(UseSharedSpaces, "must be");
   InstanceKlass* ik = find_builtin_class(class_name);
 
-  if (ik != NULL) {
-    if ((ik->is_shared_app_class() &&
-         SystemDictionary::is_system_class_loader(class_loader()))  ||
-        (ik->is_shared_platform_class() &&
-         SystemDictionary::is_platform_class_loader(class_loader()))) {
+  if (ik != NULL && !ik->shared_loading_failed()) {
+    if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->is_shared_app_class())  ||
+        (SystemDictionary::is_platform_class_loader(class_loader()) && ik->is_shared_platform_class())) {
+      SharedClassLoadingMark slm(THREAD, ik);
       PackageEntry* pkg_entry = get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
@@ -1107,7 +1100,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
   if (!UseSharedSpaces) {
     return NULL;
   }
-  if (class_name == NULL) {  // don't do this for hidden and unsafe anonymous classes
+  if (class_name == NULL) {  // don't do this for hidden classes
     return NULL;
   }
   if (class_loader.is_null() ||
@@ -1172,29 +1165,43 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-class LoadedUnregisteredClassesTable : public ResourceHashtable<
-  Symbol*, bool,
+class UnregisteredClassesTable : public ResourceHashtable<
+  Symbol*, InstanceKlass*,
   primitive_hash<Symbol*>,
   primitive_equals<Symbol*>,
-  6661,                             // prime number
+  15889, // prime number
   ResourceObj::C_HEAP> {};
 
-static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
+static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
-bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* k) {
-  // We don't allow duplicated unregistered classes of the same name.
-  assert(DumpSharedSpaces, "only when dumping");
-  Symbol* name = k->name();
-  if (_loaded_unregistered_classes == NULL) {
-    _loaded_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)LoadedUnregisteredClassesTable();
+bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
+  // We don't allow duplicated unregistered classes with the same name.
+  // We only archive the first class with that name that succeeds putting
+  // itself into the table.
+  Arguments::assert_is_dumping_archive();
+  MutexLocker ml(current, UnregisteredClassesTable_lock);
+  Symbol* name = klass->name();
+  if (_unregistered_classes_table == NULL) {
+    _unregistered_classes_table = new (ResourceObj::C_HEAP, mtClass)UnregisteredClassesTable();
   }
-  bool created = false;
-  _loaded_unregistered_classes->put_if_absent(name, true, &created);
+  bool created;
+  InstanceKlass** v = _unregistered_classes_table->put_if_absent(name, klass, &created);
   if (created) {
+    name->increment_refcount();
+  }
+  return (klass == *v);
+}
+
+// true == class was successfully added; false == a duplicated class (with the same name) already exists.
+bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
+  assert(DumpSharedSpaces, "only when dumping");
+  if (add_unregistered_class(current, k)) {
     MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k);
+    return true;
+  } else {
+    return false;
   }
-  return created;
 }
 
 // This function is called to lookup the super/interfaces of shared classes for
@@ -1243,6 +1250,11 @@ void SystemDictionaryShared::start_dumping() {
 
 DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  return find_or_allocate_info_for_locked(k);
+}
+
+DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for_locked(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
   }
@@ -1297,6 +1309,21 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   _dumptime_table->remove(k);
 }
 
+void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
+  remove_dumptime_info(klass);
+
+  if (_unregistered_classes_table != NULL) {
+    // Remove the class from _unregistered_classes_table: keep the entry but
+    // set it to NULL. This ensure no classes with the same name can be
+    // added again.
+    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock);
+    InstanceKlass** v = _unregistered_classes_table->get(klass->name());
+    if (v != NULL) {
+      *v = NULL;
+    }
+  }
+}
+
 bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
   while (k) {
     if (k->name()->equals("jdk/internal/event/Event")) {
@@ -1326,46 +1353,78 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   return (info != NULL) ? info->is_early_klass() : false;
 }
 
-void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
+// Returns true so the caller can do:    return warn_excluded(".....");
+bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  return true;
 }
 
-bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
-
-  if (k->is_unsafe_anonymous()) {
-    warn_excluded(k, "Unsafe anonymous class");
-    return true; // unsafe anonymous classes are not archived, skip
+bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info) {
+  if (MetaspaceShared::is_in_shared_metaspace(k)) {
+    // We have reached a super type that's already in the base archive. Treat it
+    // as "not excluded".
+    assert(DynamicDumpSharedSpaces, "must be");
+    return false;
   }
 
-  if (k->is_in_error_state()) {
-    warn_excluded(k, "In error state");
-    return true;
+  if (info == NULL) {
+    info = _dumptime_table->get(k);
+    assert(info != NULL, "supertypes of any classes in _dumptime_table must either be shared, or must also be in _dumptime_table");
   }
+
+  if (!info->has_checked_exclusion()) {
+    if (check_for_exclusion_impl(k)) {
+      info->set_excluded();
+    }
+    info->set_has_checked_exclusion();
+  }
+
+  return info->is_excluded();
+}
+
+// Check if a class or any of its supertypes has been redefined.
+bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
   if (k->has_been_redefined()) {
-    warn_excluded(k, "Has been redefined");
     return true;
+  }
+  if (k->java_super() != NULL && has_been_redefined(k->java_super())) {
+    return true;
+  }
+  Array<InstanceKlass*>* interfaces = k->local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    if (has_been_redefined(interfaces->at(i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
+  if (k->is_in_error_state()) {
+    return warn_excluded(k, "In error state");
+  }
+  if (has_been_redefined(k)) {
+    return warn_excluded(k, "Has been redefined");
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
-    warn_excluded(k, "Unsupported location");
-    return true;
+    return warn_excluded(k, "Unsupported location");
   }
   if (k->signers() != NULL) {
     // We cannot include signed classes in the archive because the certificates
     // used during dump time may be different than those used during
     // runtime (due to expiration, etc).
-    warn_excluded(k, "Signed JAR");
-    return true;
+    return warn_excluded(k, "Signed JAR");
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
     // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
-    warn_excluded(k, "JFR event class");
-    return true;
+    return warn_excluded(k, "JFR event class");
   }
   if (k->init_state() < InstanceKlass::linked) {
     // In CDS dumping, we will attempt to link all classes. Those that fail to link will
@@ -1379,12 +1438,10 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     //    a custom ClassLoader.loadClass() may be called, at a point where the
     //    class loader doesn't expect it.
     if (has_class_failed_verification(k)) {
-      warn_excluded(k, "Failed verification");
-      return true;
+      return warn_excluded(k, "Failed verification");
     } else {
-      if (!MetaspaceShared::is_old_class(k)) {
-        warn_excluded(k, "Not linked");
-        return true;
+      if (k->can_be_verified_at_dumptime()) {
+        return warn_excluded(k, "Not linked");
       }
     }
   }
@@ -1397,21 +1454,20 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     return true;
   }
 
-  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
-    warn_excluded(k, "Old class has been linked");
-    return true;
-  }
-
-  InstanceKlass* super = k->java_super();
-  if (super != NULL && should_be_excluded(super)) {
-    ResourceMark rm;
-    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
-    return true;
+  if (!k->can_be_verified_at_dumptime() && k->is_linked()) {
+    return warn_excluded(k, "Old class has been linked");
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
     ResourceMark rm;
-    log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
+    log_debug(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
+    return true;
+  }
+
+  InstanceKlass* super = k->java_super();
+  if (super != NULL && check_for_exclusion(super, NULL)) {
+    ResourceMark rm;
+    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
   }
 
@@ -1419,13 +1475,13 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
-    if (should_be_excluded(intf)) {
+    if (check_for_exclusion(intf, NULL)) {
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
   }
 
-  return false;
+  return false; // false == k should NOT be excluded
 }
 
 // k is a class before relocating by ArchiveBuilder
@@ -1449,17 +1505,69 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   }
 }
 
+class UnregisteredClassesDuplicationChecker : StackObj {
+  GrowableArray<InstanceKlass*> _list;
+  Thread* _thread;
+public:
+  UnregisteredClassesDuplicationChecker() : _thread(Thread::current()) {}
+
+  bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
+    if (!SystemDictionaryShared::is_builtin(k)) {
+      _list.append(k);
+    }
+    return true;  // keep on iterating
+  }
+
+  static int compare_by_loader(InstanceKlass** a, InstanceKlass** b) {
+    ClassLoaderData* loader_a = a[0]->class_loader_data();
+    ClassLoaderData* loader_b = b[0]->class_loader_data();
+
+    if (loader_a != loader_b) {
+      return intx(loader_a) - intx(loader_b);
+    } else {
+      return intx(a[0]) - intx(b[0]);
+    }
+  }
+
+  void mark_duplicated_classes() {
+    // Two loaders may load two identical or similar hierarchies of classes. If we
+    // check for duplication in random order, we may end up excluding important base classes
+    // in both hierarchies, causing most of the classes to be excluded.
+    // We sort the classes by their loaders. This way we're likely to archive
+    // all classes in the one of the two hierarchies.
+    _list.sort(compare_by_loader);
+    for (int i = 0; i < _list.length(); i++) {
+      InstanceKlass* k = _list.at(i);
+      bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
+      if (!i_am_first) {
+        SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
+        SystemDictionaryShared::set_excluded_locked(k);
+      }
+    }
+  }
+};
+
 class ExcludeDumpTimeSharedClasses : StackObj {
 public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (SystemDictionaryShared::should_be_excluded(k) || info.is_excluded()) {
-      info.set_excluded();
-    }
+    SystemDictionaryShared::check_for_exclusion(k, &info);
     return true; // keep on iterating
   }
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
+  assert(no_class_loading_should_happen(), "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
+
+  if (DynamicDumpSharedSpaces) {
+    // Do this first -- if a base class is excluded due to duplication,
+    // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses
+    ResourceMark rm;
+    UnregisteredClassesDuplicationChecker dup_checker;
+    _dumptime_table->iterate(&dup_checker);
+    dup_checker.mark_duplicated_classes();
+  }
+
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
@@ -1467,9 +1575,19 @@ void SystemDictionaryShared::check_excluded_classes() {
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(_no_class_loading_should_happen, "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
-  DumpTimeSharedClassInfo* p = find_or_allocate_info_for(k);
+  DumpTimeSharedClassInfo* p = find_or_allocate_info_for_locked(k);
   return (p == NULL) ? true : p->is_excluded();
+}
+
+void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for_locked(k);
+  if (info != NULL) {
+    info->set_excluded();
+  }
 }
 
 void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
@@ -1505,7 +1623,8 @@ public:
   IterateDumpTimeSharedClassTable(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (!info.is_excluded()) {
+    assert_lock_strong(DumpTimeTable_lock);
+    if (k->is_loader_alive() && !info.is_excluded()) {
       info.metaspace_pointers_do(_it);
     }
     return true; // keep on iterating
@@ -1518,14 +1637,17 @@ public:
   IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    info.metaspace_pointers_do(_it);
-    key.metaspace_pointers_do(_it);
-    return true;
+    assert_lock_strong(DumpTimeTable_lock);
+    if (key.caller_ik()->is_loader_alive()) {
+      info.metaspace_pointers_do(_it);
+      key.metaspace_pointers_do(_it);
+    }
+    return true; // keep on iterating
   }
 };
 
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
-  assert_locked_or_safepoint(DumpTimeTable_lock);
+  assert_lock_strong(DumpTimeTable_lock);
   IterateDumpTimeSharedClassTable iter(it);
   _dumptime_table->iterate(&iter);
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
@@ -1720,7 +1842,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   loaded_lambda->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD->as_Java_thread(), loaded_lambda);
+    JvmtiExport::post_class_load(THREAD, loaded_lambda);
   }
   if (class_load_start_event.should_commit()) {
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
@@ -1855,8 +1977,6 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   // either of these two loaders. The check itself does not
   // try to resolve T.
   oop klass_loader = klass->class_loader();
-  assert(klass_loader != NULL, "should not be called for boot loader");
-  assert(loader1 != loader2, "must be");
 
   if (!is_system_class_loader(klass_loader) &&
       !is_platform_class_loader(klass_loader)) {
@@ -1871,6 +1991,17 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     // loaders, so we bail.
     return;
   }
+
+  if (DumpSharedSpaces && !is_builtin(klass)) {
+    // During static dump, unregistered classes (those intended for
+    // custom loaders) are loaded by the boot loader. Need to
+    // exclude these for the same reason as above.
+    // This should be fixed by JDK-8261941.
+    return;
+  }
+
+  assert(klass_loader != NULL, "should not be called for boot loader");
+  assert(loader1 != loader2, "must be");
 
   if (DynamicDumpSharedSpaces && Thread::current()->is_VM_thread()) {
     // We are re-laying out the vtable/itables of the *copy* of
@@ -2145,7 +2276,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
   CopySharedClassInfoToArchive copy(&writer, is_builtin);
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert_lock_strong(DumpTimeTable_lock);
   _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }

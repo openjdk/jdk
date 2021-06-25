@@ -25,9 +25,10 @@
 #ifndef SHARE_RUNTIME_VFRAME_INLINE_HPP
 #define SHARE_RUNTIME_VFRAME_INLINE_HPP
 
+#include "runtime/vframe.hpp"
+
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vframe.hpp"
 
 inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread, bool process_frames) : _reg_map(thread, false, process_frames) {
   _thread = thread;

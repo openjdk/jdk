@@ -70,31 +70,114 @@ public class TestJFREvents {
             testProcessInfo();
 
             testEnvironmentVariables();
+
+            containerInfoTestCase();
+            testCpuUsage();
+            testCpuThrottling();
+            testMemoryUsage();
+            testIOUsage();
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
-    // This test case is currently not in use.
-    // Once new Container events are available, this test case can be used to test
-    // processor-related configuration such as active processor count (see JDK-8203359).
-    private static void cpuTestCase() throws Exception {
+    private static void containerInfoTestCase() throws Exception {
             // leave one CPU for system and tools, otherwise this test may be unstable
             int maxNrOfAvailableCpus =  availableCPUs - 1;
             for (int i=1; i < maxNrOfAvailableCpus; i = i * 2) {
-                testCPUInfo("jdk.ContainerConfiguration", i, i);
+                for (int j=64; j <= 256; j *= 2) {
+                    testContainerInfo(i, j);
+                }
             }
     }
 
-    private static void testCPUInfo(String eventName, int valueToSet, int expectedValue) throws Exception {
-        Common.logNewTestCase("CPUInfo: --cpus = " + valueToSet);
-        String fieldName = "activeProcessorCount";
+    private static void testContainerInfo(int expectedCPUs, int expectedMemoryMB) throws Exception {
+        Common.logNewTestCase("ContainerInfo: --cpus = " + expectedCPUs + " --memory=" + expectedMemoryMB + "m");
+        String eventName = "jdk.ContainerConfiguration";
+        long expectedSlicePeriod = 100000; // default slice period
+        long expectedMemoryLimit = expectedMemoryMB * 1024 * 1024;
+
+        String cpuCountFld = "effectiveCpuCount";
+        String cpuQuotaFld = "cpuQuota";
+        String cpuSlicePeriodFld = "cpuSlicePeriod";
+        String memoryLimitFld = "memoryLimit";
+
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
-                                      .addDockerOpts("--cpus=" + valueToSet)
+                                      .addDockerOpts("--cpus=" + expectedCPUs)
+                                      .addDockerOpts("--memory=" + expectedMemoryMB + "m")
                                       .addClassOptions(eventName))
             .shouldHaveExitValue(0)
-            .shouldContain(fieldName + " = " + expectedValue);
+            .shouldContain(cpuCountFld + " = " + expectedCPUs)
+            .shouldContain(cpuSlicePeriodFld + " = " + expectedSlicePeriod)
+            .shouldContain(cpuQuotaFld + " = " + expectedCPUs * expectedSlicePeriod)
+            .shouldContain(memoryLimitFld + " = " + expectedMemoryLimit);
+    }
+
+    private static void testCpuUsage() throws Exception {
+        Common.logNewTestCase("CPU Usage");
+        String eventName = "jdk.ContainerCPUUsage";
+
+        String cpuTimeFld = "cpuTime";
+        String cpuUserTimeFld = "cpuUserTime";
+        String cpuSystemTimeFld = "cpuSystemTime";
+
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addClassOptions(eventName, "period=endChunk"))
+            .shouldHaveExitValue(0)
+            .shouldNotContain(cpuTimeFld + " = " + 0)
+            .shouldNotContain(cpuUserTimeFld + " = " + 0)
+            .shouldNotContain(cpuSystemTimeFld + " = " + 0);
+    }
+
+    private static void testMemoryUsage() throws Exception {
+        Common.logNewTestCase("Memory Usage");
+        String eventName = "jdk.ContainerMemoryUsage";
+
+        String memoryFailCountFld = "memoryFailCount";
+        String memoryUsageFld = "memoryUsage";
+        String swapMemoryUsageFld = "swapMemoryUsage";
+
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addClassOptions(eventName, "period=endChunk"))
+            .shouldHaveExitValue(0)
+            .shouldContain(memoryFailCountFld)
+            .shouldContain(memoryUsageFld)
+            .shouldContain(swapMemoryUsageFld);
+    }
+
+    private static void testIOUsage() throws Exception {
+        Common.logNewTestCase("I/O Usage");
+        String eventName = "jdk.ContainerIOUsage";
+
+        String serviceRequestsFld = "serviceRequests";
+        String dataTransferredFld = "dataTransferred";
+
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addClassOptions(eventName, "period=endChunk"))
+            .shouldHaveExitValue(0)
+            .shouldContain(serviceRequestsFld)
+            .shouldContain(dataTransferredFld);
+    }
+
+    private static void testCpuThrottling() throws Exception {
+        Common.logNewTestCase("CPU Throttling");
+        String eventName = "jdk.ContainerCPUThrottling";
+
+        String cpuElapsedSlicesFld = "cpuElapsedSlices";
+        String cpuThrottledSlicesFld = "cpuThrottledSlices";
+        String cpuThrottledTimeFld = "cpuThrottledTime";
+
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addClassOptions(eventName, "period=endChunk"))
+            .shouldHaveExitValue(0)
+            .shouldContain(cpuElapsedSlicesFld)
+            .shouldContain(cpuThrottledSlicesFld)
+            .shouldContain(cpuThrottledTimeFld);
     }
 
 
@@ -117,7 +200,6 @@ public class TestJFREvents {
             .shouldHaveExitValue(0)
             .shouldContain("pid = 1");
     }
-
 
     private static DockerRunOptions commonDockerOpts() {
         return new DockerRunOptions(imageName, "/jdk/bin/java", "JfrReporter")

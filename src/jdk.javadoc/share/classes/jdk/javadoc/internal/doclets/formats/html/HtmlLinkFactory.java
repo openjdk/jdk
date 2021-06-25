@@ -37,8 +37,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -171,7 +171,7 @@ public class HtmlLinkFactory extends LinkFactory {
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(Entity.ZERO_WIDTH_SPACE);
+                    links.add(new HtmlTree(TagName.WBR));
                     if (((HtmlLinkInfo) linkInfo).getContext() == HtmlLinkInfo.Kind.MEMBER_TYPE_PARAMS) {
                         links.add(DocletConstants.NL);
                     }

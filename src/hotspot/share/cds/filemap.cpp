@@ -32,6 +32,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -240,6 +241,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
+  _has_non_jar_in_classpath = ClassLoaderExt::has_non_jar_in_classpath();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
@@ -293,6 +295,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- verify_local:                   %d", _verify_local);
   st->print_cr("- verify_remote:                  %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
+  st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
@@ -717,13 +720,25 @@ int FileMapInfo::num_paths(const char* path) {
 
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
-
+  JavaThread* current = JavaThread::current();
   ClasspathStream cp_stream(paths);
+  bool non_jar_in_cp = header()->has_non_jar_in_classpath();
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    struct stat st;
-    if (os::stat(path, &st) == 0) {
-      path_array->append(path);
+    if (!non_jar_in_cp) {
+      struct stat st;
+      if (os::stat(path, &st) == 0) {
+        path_array->append(path);
+      }
+    } else {
+      const char* canonical_path = ClassLoader::get_canonical_path(path, current);
+      if (canonical_path != NULL) {
+        char* error_msg = NULL;
+        jzfile* zip = ClassLoader::open_zip_file(canonical_path, &error_msg, current);
+        if (zip != NULL && error_msg == NULL) {
+          path_array->append(path);
+        }
+      }
     }
   }
   return path_array;
@@ -2047,6 +2062,18 @@ void FileMapInfo::fixup_mapped_heap_regions() {
     assert(open_archive_heap_ranges != NULL, "NULL open_archive_heap_ranges array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(open_archive_heap_ranges,
                                                   num_open_archive_heap_ranges);
+
+    // Populate the open archive regions' G1BlockOffsetTableParts. That ensures
+    // fast G1BlockOffsetTablePart::block_start operations for any given address
+    // within the open archive regions when trying to find start of an object
+    // (e.g. during card table scanning).
+    //
+    // This is only needed for open archive regions but not the closed archive
+    // regions, because objects in closed archive regions never reference objects
+    // outside the closed archive regions and they are immutable. So we never
+    // need their BOT during garbage collection.
+    G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_archive_heap_ranges,
+                                                               num_open_archive_heap_ranges);
   }
 }
 

@@ -26,8 +26,8 @@
 # Versions and download locations for dependencies used by pre-submit testing.
 
 BOOT_JDK_VERSION=16
-JTREG_VERSION=5.1
-JTREG_BUILD=b01
+JTREG_VERSION=6
+JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
 LINUX_X64_BOOT_JDK_FILENAME=openjdk-16_linux-x64_bin.tar.gz

@@ -232,9 +232,8 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
     if (!method->is_synchronized()) {
       return new GrowableArray<MonitorInfo*>(0);
     }
-    // This monitor is really only needed for UseBiasedLocking, but
-    // return it in all cases for now as it might be useful for stack
-    // traces and tools as well
+    // This monitor is not really needed but return it for now as it might be
+    // useful for stack traces and tools
     GrowableArray<MonitorInfo*> *monitors = new GrowableArray<MonitorInfo*>(1);
     // Casting away const
     frame& fr = (frame&) _fr;

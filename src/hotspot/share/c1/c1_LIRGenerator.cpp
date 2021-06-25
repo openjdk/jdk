@@ -485,23 +485,7 @@ void LIRGenerator::array_range_check(LIR_Opr array, LIR_Opr index,
   }
 }
 
-
-void LIRGenerator::nio_range_check(LIR_Opr buffer, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
-  CodeStub* stub = new RangeCheckStub(info, index);
-  if (index->is_constant()) {
-    cmp_mem_int(lir_cond_belowEqual, buffer, java_nio_Buffer::limit_offset(), index->as_jint(), info);
-    __ branch(lir_cond_belowEqual, stub); // forward branch
-  } else {
-    cmp_reg_mem(lir_cond_aboveEqual, index, buffer,
-                java_nio_Buffer::limit_offset(), T_INT, info);
-    __ branch(lir_cond_aboveEqual, stub); // forward branch
-  }
-  __ move(index, result);
-}
-
-
-
-void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp_op, CodeEmitInfo* info) {
+void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp_op, CodeEmitInfo* info) {
   LIR_Opr result_op = result;
   LIR_Opr left_op   = left;
   LIR_Opr right_op  = right;
@@ -520,15 +504,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
     case Bytecodes::_fmul:
     case Bytecodes::_lmul:  __ mul(left_op, right_op, result_op); break;
 
-    case Bytecodes::_dmul:
-      {
-        if (is_strictfp) {
-          __ mul_strictfp(left_op, right_op, result_op, tmp_op); break;
-        } else {
-          __ mul(left_op, right_op, result_op); break;
-        }
-      }
-      break;
+    case Bytecodes::_dmul:  __ mul(left_op, right_op, result_op, tmp_op); break;
 
     case Bytecodes::_imul:
       {
@@ -559,15 +535,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
     case Bytecodes::_fdiv: __ div (left_op, right_op, result_op); break;
     // ldiv and lrem are implemented with a direct runtime call
 
-    case Bytecodes::_ddiv:
-      {
-        if (is_strictfp) {
-          __ div_strictfp (left_op, right_op, result_op, tmp_op); break;
-        } else {
-          __ div (left_op, right_op, result_op); break;
-        }
-      }
-      break;
+    case Bytecodes::_ddiv: __ div(left_op, right_op, result_op, tmp_op); break;
 
     case Bytecodes::_drem:
     case Bytecodes::_frem: __ rem (left_op, right_op, result_op); break;
@@ -578,17 +546,17 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
 
 
 void LIRGenerator::arithmetic_op_int(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp) {
-  arithmetic_op(code, result, left, right, false, tmp);
+  arithmetic_op(code, result, left, right, tmp);
 }
 
 
 void LIRGenerator::arithmetic_op_long(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
-  arithmetic_op(code, result, left, right, false, LIR_OprFact::illegalOpr, info);
+  arithmetic_op(code, result, left, right, LIR_OprFact::illegalOpr, info);
 }
 
 
-void LIRGenerator::arithmetic_op_fpu(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp) {
-  arithmetic_op(code, result, left, right, is_strictfp, tmp);
+void LIRGenerator::arithmetic_op_fpu(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp) {
+  arithmetic_op(code, result, left, right, tmp);
 }
 
 
@@ -1186,11 +1154,6 @@ void LIRGenerator::do_Local(Local* x) {
 }
 
 
-void LIRGenerator::do_IfInstanceOf(IfInstanceOf* x) {
-  Unimplemented();
-}
-
-
 void LIRGenerator::do_Return(Return* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
@@ -1311,6 +1274,34 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
   __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
 }
 
+// Example: Foo.class.getModifiers()
+void LIRGenerator::do_getModifiers(Intrinsic* x) {
+  assert(x->number_of_arguments() == 1, "wrong type");
+
+  LIRItem receiver(x->argument_at(0), this);
+  receiver.load_item();
+  LIR_Opr result = rlock_result(x);
+
+  CodeEmitInfo* info = NULL;
+  if (x->needs_null_check()) {
+    info = state_for(x);
+  }
+
+  LabelObj* L_not_prim = new LabelObj();
+  LabelObj* L_done = new LabelObj();
+
+  LIR_Opr klass = new_register(T_METADATA);
+  // Checking if it's a java mirror of primitive type
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
+  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
+  __ branch(lir_cond_notEqual, L_not_prim->label());
+  __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
+  __ branch(lir_cond_always, L_done->label());
+
+  __ branch_destination(L_not_prim->label());
+  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ branch_destination(L_done->label());
+}
 
 // Example: Thread.currentThread()
 void LIRGenerator::do_currentThread(Intrinsic* x) {
@@ -1852,39 +1843,70 @@ void LIRGenerator::do_LoadField(LoadField* x) {
                  info ? new CodeEmitInfo(info) : NULL, info);
 }
 
+// int/long jdk.internal.util.Preconditions.checkIndex
+void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
+  assert(x->number_of_arguments() == 3, "wrong type");
+  LIRItem index(x->argument_at(0), this);
+  LIRItem length(x->argument_at(1), this);
+  LIRItem oobef(x->argument_at(2), this);
 
-//------------------------java.nio.Buffer.checkIndex------------------------
-
-// int java.nio.Buffer.checkIndex(int)
-void LIRGenerator::do_NIOCheckIndex(Intrinsic* x) {
-  // NOTE: by the time we are in checkIndex() we are guaranteed that
-  // the buffer is non-null (because checkIndex is package-private and
-  // only called from within other methods in the buffer).
-  assert(x->number_of_arguments() == 2, "wrong type");
-  LIRItem buf  (x->argument_at(0), this);
-  LIRItem index(x->argument_at(1), this);
-  buf.load_item();
   index.load_item();
+  length.load_item();
+  oobef.load_item();
 
   LIR_Opr result = rlock_result(x);
-  if (GenerateRangeChecks) {
-    CodeEmitInfo* info = state_for(x);
-    CodeStub* stub = new RangeCheckStub(info, index.result());
-    if (index.result()->is_constant()) {
-      cmp_mem_int(lir_cond_belowEqual, buf.result(), java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
-      __ branch(lir_cond_belowEqual, stub);
-    } else {
-      cmp_reg_mem(lir_cond_aboveEqual, index.result(), buf.result(),
-                  java_nio_Buffer::limit_offset(), T_INT, info);
-      __ branch(lir_cond_aboveEqual, stub);
-    }
-    __ move(index.result(), result);
-  } else {
-    // Just load the index into the result register
-    __ move(index.result(), result);
+  // x->state() is created from copy_state_for_exception, it does not contains arguments
+  // we should prepare them before entering into interpreter mode due to deoptimization.
+  ValueStack* state = x->state();
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    Value arg = x->argument_at(i);
+    state->push(arg->type(), arg);
   }
-}
+  CodeEmitInfo* info = state_for(x, state);
 
+  LIR_Opr len = length.result();
+  LIR_Opr zero = NULL;
+  if (type == T_INT) {
+    zero = LIR_OprFact::intConst(0);
+    if (length.result()->is_constant()){
+      len = LIR_OprFact::intConst(length.result()->as_jint());
+    }
+  } else {
+    assert(type == T_LONG, "sanity check");
+    zero = LIR_OprFact::longConst(0);
+    if (length.result()->is_constant()){
+      len = LIR_OprFact::longConst(length.result()->as_jlong());
+    }
+  }
+  // C1 can not handle the case that comparing index with constant value while condition
+  // is neither lir_cond_equal nor lir_cond_notEqual, see LIR_Assembler::comp_op.
+  LIR_Opr zero_reg = new_register(type);
+  __ move(zero, zero_reg);
+#if defined(X86) && !defined(_LP64)
+  // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
+  LIR_Opr index_copy = new_register(index.type());
+  // index >= 0
+  __ move(index.result(), index_copy);
+  __ cmp(lir_cond_less, index_copy, zero_reg);
+  __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                    Deoptimization::Action_make_not_entrant));
+  // index < length
+  __ move(index.result(), index_copy);
+  __ cmp(lir_cond_greaterEqual, index_copy, len);
+  __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                            Deoptimization::Action_make_not_entrant));
+#else
+  // index >= 0
+  __ cmp(lir_cond_less, index.result(), zero_reg);
+  __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                    Deoptimization::Action_make_not_entrant));
+  // index < length
+  __ cmp(lir_cond_greaterEqual, index.result(), len);
+  __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                            Deoptimization::Action_make_not_entrant));
+#endif
+  __ move(index.result(), result);
+}
 
 //------------------------array access--------------------------------------
 
@@ -2971,17 +2993,6 @@ void LIRGenerator::do_Invoke(Invoke* x) {
     __ move(FrameMap::method_handle_invoke_SP_save_opr(), FrameMap::stack_pointer());
   }
 
-  if (x->type()->is_float() || x->type()->is_double()) {
-    // Force rounding of results from non-strictfp when in strictfp
-    // scope (or when we don't know the strictness of the callee, to
-    // be safe.)
-    if (method()->is_strict()) {
-      if (!x->target_is_loaded() || !x->target_is_strictfp()) {
-        result_register = round_item(result_register);
-      }
-    }
-  }
-
   if (result_register->is_valid()) {
     LIR_Opr result = rlock_result(x);
     __ move(result_register, result);
@@ -3032,33 +3043,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 }
 
 #ifdef JFR_HAVE_INTRINSICS
-void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
-  CodeEmitInfo* info = state_for(x);
-  CodeEmitInfo* info2 = new CodeEmitInfo(info); // Clone for the second null check
-
-  assert(info != NULL, "must have info");
-  LIRItem arg(x->argument_at(0), this);
-
-  arg.load_item();
-  LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  LIR_Opr id = new_register(T_LONG);
-  ByteSize offset = KLASS_TRACE_ID_OFFSET;
-  LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);
-
-  __ move(trace_id_addr, id);
-  __ logical_or(id, LIR_OprFact::longConst(0x01l), id);
-  __ store(id, trace_id_addr);
-
-#ifdef TRACE_ID_META_BITS
-  __ logical_and(id, LIR_OprFact::longConst(~TRACE_ID_META_BITS), id);
-#endif
-#ifdef TRACE_ID_SHIFT
-  __ unsigned_shift_right(id, TRACE_ID_SHIFT, id);
-#endif
-
-  __ move(id, rlock_result(x));
-}
 
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   LabelObj* L_end = new LabelObj();
@@ -3108,9 +3092,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getClassId:
-    do_ClassIDIntrinsic(x);
-    break;
   case vmIntrinsics::_getEventWriter:
     do_getEventWriter(x);
     break;
@@ -3130,6 +3111,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
   case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
+  case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
@@ -3148,8 +3130,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_fmaD:           do_FmaIntrinsic(x); break;
   case vmIntrinsics::_fmaF:           do_FmaIntrinsic(x); break;
 
-  // java.nio.Buffer.checkIndex
-  case vmIntrinsics::_checkIndex:     do_NIOCheckIndex(x); break;
+  case vmIntrinsics::_Preconditions_checkIndex:
+    do_PreconditionsCheckIndex(x, T_INT);
+    break;
+  case vmIntrinsics::_Preconditions_checkLongIndex:
+    do_PreconditionsCheckIndex(x, T_LONG);
+    break;
 
   case vmIntrinsics::_compareAndSetReference:
     do_CompareAndSwap(x, objectType);

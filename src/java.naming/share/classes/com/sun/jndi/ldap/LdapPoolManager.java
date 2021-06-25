@@ -55,6 +55,7 @@ import jdk.internal.misc.InnocuousThread;
  * @author Rosanna Lee
  */
 
+@SuppressWarnings("removal")
 public final class LdapPoolManager {
     private static final String DEBUG =
         "com.sun.jndi.ldap.connect.pool.debug";

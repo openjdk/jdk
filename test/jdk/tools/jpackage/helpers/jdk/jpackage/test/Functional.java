@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,12 +150,12 @@ public class Functional {
 
     @SuppressWarnings("unchecked")
     public static void rethrowUnchecked(Throwable throwable) throws ExceptionBox {
-        if (throwable instanceof ExceptionBox) {
-            throw (ExceptionBox)throwable;
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException)throwable;
         }
 
         if (throwable instanceof InvocationTargetException) {
-            new ExceptionBox(throwable.getCause());
+            throw new ExceptionBox(throwable.getCause());
         }
 
         throw new ExceptionBox(throwable);

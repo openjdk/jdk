@@ -109,6 +109,10 @@ class VMError : public AllStatic {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
 
+  static bool should_submit_bug_report(unsigned int id) {
+    return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
+  }
+
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);

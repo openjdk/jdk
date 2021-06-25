@@ -223,24 +223,18 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
 
   outputStream* out = output();
   const char* scale = current_scale();
-  size_t committed   = MetaspaceUtils::committed_bytes(type);
-  size_t used = MetaspaceUtils::used_bytes(type);
+  const MetaspaceStats stats = MetaspaceUtils::get_statistics(type);
 
-  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
-  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
-  size_t free = committed - used;
-
-  assert(committed >= used + free, "Sanity");
-  size_t waste = committed - (used + free);
+  size_t waste = stats.committed() - stats.used();
+  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/stats.committed()) : 0.0f;
 
   out->print_cr("%27s (  %s)", " ", name);
   out->print("%27s (    ", " ");
-  print_total(MetaspaceUtils::reserved_bytes(type), committed);
+  print_total(stats.reserved(), stats.committed());
   out->print_cr(")");
-  out->print_cr("%27s (    used=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(used), scale);
-  out->print_cr("%27s (    free=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(free), scale);
+  out->print_cr("%27s (    used=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(stats.used()), scale);
   out->print_cr("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%)", " ", amount_in_current_scale(waste),
-    scale, ((float)waste * 100)/committed);
+    scale, waste_percentage);
 }
 
 void MemDetailReporter::report_detail() {
@@ -408,10 +402,10 @@ void MemSummaryDiffReporter::report_diff() {
     diff_summary_of_type(flag,
       _early_baseline.malloc_memory(flag),
       _early_baseline.virtual_memory(flag),
-      _early_baseline.metaspace_snapshot(),
+      _early_baseline.metaspace_stats(),
       _current_baseline.malloc_memory(flag),
       _current_baseline.virtual_memory(flag),
-      _current_baseline.metaspace_snapshot());
+      _current_baseline.metaspace_stats());
   }
 }
 
@@ -474,9 +468,9 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 
 void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
   const MallocMemory* early_malloc, const VirtualMemory* early_vm,
-  const MetaspaceSnapshot* early_ms,
+  const MetaspaceCombinedStats& early_ms,
   const MallocMemory* current_malloc, const VirtualMemory* current_vm,
-  const MetaspaceSnapshot* current_ms) const {
+  const MetaspaceCombinedStats& current_ms) const {
 
   outputStream* out = output();
   const char* scale = current_scale();
@@ -615,70 +609,54 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       }
       out->print_cr(")");
     } else if (flag == mtClass) {
-      assert(current_ms != NULL && early_ms != NULL, "Sanity");
       print_metaspace_diff(current_ms, early_ms);
     }
     out->print_cr(" ");
   }
 }
 
-void MemSummaryDiffReporter::print_metaspace_diff(const MetaspaceSnapshot* current_ms,
-                                                  const MetaspaceSnapshot* early_ms) const {
-  print_metaspace_diff(Metaspace::NonClassType, current_ms, early_ms);
+void MemSummaryDiffReporter::print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                                                  const MetaspaceCombinedStats& early_ms) const {
+  print_metaspace_diff("Metadata", current_ms.non_class_space_stats(), early_ms.non_class_space_stats());
   if (Metaspace::using_class_space()) {
-    print_metaspace_diff(Metaspace::ClassType, current_ms, early_ms);
+    print_metaspace_diff("Class space", current_ms.class_space_stats(), early_ms.class_space_stats());
   }
 }
 
-void MemSummaryDiffReporter::print_metaspace_diff(Metaspace::MetadataType type,
-                                                  const MetaspaceSnapshot* current_ms,
-                                                  const MetaspaceSnapshot* early_ms) const {
-  const char* name = (type == Metaspace::NonClassType) ?
-    "Metadata:   " : "Class space:";
-
+void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
+                                                  const MetaspaceStats& current_stats,
+                                                  const MetaspaceStats& early_stats) const {
   outputStream* out = output();
   const char* scale = current_scale();
 
-  out->print_cr("%27s (  %s)", " ", name);
+  out->print_cr("%27s: (  %s)", " ", header);
   out->print("%27s (    ", " ");
-  print_virtual_memory_diff(current_ms->reserved_in_bytes(type),
-                            current_ms->committed_in_bytes(type),
-                            early_ms->reserved_in_bytes(type),
-                            early_ms->committed_in_bytes(type));
+  print_virtual_memory_diff(current_stats.reserved(),
+                            current_stats.committed(),
+                            early_stats.reserved(),
+                            early_stats.committed());
   out->print_cr(")");
 
-  long diff_used = diff_in_current_scale(current_ms->used_in_bytes(type),
-                                         early_ms->used_in_bytes(type));
-  long diff_free = diff_in_current_scale(current_ms->free_in_bytes(type),
-                                         early_ms->free_in_bytes(type));
+  long diff_used = diff_in_current_scale(current_stats.used(),
+                                         early_stats.used());
 
-  size_t current_waste = current_ms->committed_in_bytes(type)
-    - (current_ms->used_in_bytes(type) + current_ms->free_in_bytes(type));
-  size_t early_waste = early_ms->committed_in_bytes(type)
-    - (early_ms->used_in_bytes(type) + early_ms->free_in_bytes(type));
+  size_t current_waste = current_stats.committed() - current_stats.used();
+  size_t early_waste = early_stats.committed() - early_stats.used();
   long diff_waste = diff_in_current_scale(current_waste, early_waste);
 
   // Diff used
   out->print("%27s (    used=" SIZE_FORMAT "%s", " ",
-    amount_in_current_scale(current_ms->used_in_bytes(type)), scale);
+    amount_in_current_scale(current_stats.used()), scale);
   if (diff_used != 0) {
     out->print(" %+ld%s", diff_used, scale);
   }
   out->print_cr(")");
 
-  // Diff free
-  out->print("%27s (    free=" SIZE_FORMAT "%s", " ",
-    amount_in_current_scale(current_ms->free_in_bytes(type)), scale);
-  if (diff_free != 0) {
-    out->print(" %+ld%s", diff_free, scale);
-  }
-  out->print_cr(")");
-
-
   // Diff waste
+  const float waste_percentage = current_stats.committed() == 0 ? 0.0f :
+                                 (current_waste * 100.0f) / current_stats.committed();
   out->print("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%", " ",
-    amount_in_current_scale(current_waste), scale,
-    ((float)current_waste * 100) / current_ms->committed_in_bytes(type));
+    amount_in_current_scale(current_waste), scale, waste_percentage);
   if (diff_waste != 0) {
     out->print(" %+ld%s", diff_waste, scale);
   }

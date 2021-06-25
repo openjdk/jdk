@@ -51,7 +51,8 @@ public final class UntrustedCertificates {
     private static final String algorithm;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
                 File f = new File(StaticProperty.javaHome(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 #ifndef SHARE_GC_G1_G1FULLGCOOPCLOSURES_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCOOPCLOSURES_INLINE_HPP
 
+#include "gc/g1/g1FullGCOopClosures.hpp"
+
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
-#include "gc/g1/g1FullGCOopClosures.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -78,11 +79,10 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   if (!obj->is_forwarded()) {
     // Not forwarded, return current reference.
-    assert(obj->mark() == markWord::prototype_for_klass(obj->klass()) || // Correct mark
-           obj->mark_must_be_preserved() || // Will be restored by PreservedMarksSet
-           (UseBiasedLocking && obj->has_bias_pattern()), // Will be restored by BiasedLocking
+    assert(obj->mark().set_narrow_klass(0) == markWord::prototype() || // Correct mark
+           obj->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
            "Must have correct prototype or be preserved, obj: " PTR_FORMAT ", mark: " PTR_FORMAT ", prototype: " PTR_FORMAT,
-           p2i(obj), obj->mark().value(), markWord::prototype_for_klass(obj->klass()).value());
+           p2i(obj), obj->mark().value(), markWord::prototype().value());
     return;
   }
 

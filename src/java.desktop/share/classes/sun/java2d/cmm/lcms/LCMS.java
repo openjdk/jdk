@@ -142,6 +142,7 @@ final class LCMS implements PCMM {
 
     private static LCMS theLcms = null;
 
+    @SuppressWarnings("removal")
     static synchronized PCMM getModule() {
         if (theLcms != null) {
             return theLcms;

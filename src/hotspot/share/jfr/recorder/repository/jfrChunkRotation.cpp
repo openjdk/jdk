@@ -33,7 +33,7 @@ static jobject chunk_monitor = NULL;
 static int64_t threshold = 0;
 static bool rotate = false;
 
-static jobject install_chunk_monitor(Thread* thread) {
+static jobject install_chunk_monitor(JavaThread* thread) {
   assert(chunk_monitor == NULL, "invariant");
   // read static field
   HandleMark hm(thread);
@@ -48,7 +48,7 @@ static jobject install_chunk_monitor(Thread* thread) {
 }
 
 // lazy install
-static jobject get_chunk_monitor(Thread* thread) {
+static jobject get_chunk_monitor(JavaThread* thread) {
   return chunk_monitor != NULL ? chunk_monitor : install_chunk_monitor(thread);
 }
 

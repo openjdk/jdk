@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ final class CardImpl extends Card {
     private static final boolean isWindows;
 
     static {
+        @SuppressWarnings("removal")
         final String osName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("os.name"));
         isWindows = osName.startsWith("Windows");
@@ -127,6 +128,7 @@ final class CardImpl extends Card {
     }
 
     private void checkSecurity(String action) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new CardPermission(terminal.name, action));

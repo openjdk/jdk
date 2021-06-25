@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,6 +585,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
     /**
      * Gets an InputStream for this socket.
      */
+    @SuppressWarnings("removal")
     protected synchronized InputStream getInputStream() throws IOException {
         synchronized (fdLock) {
             if (isClosedOrPending())
@@ -610,6 +611,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
     /**
      * Gets an OutputStream for this socket.
      */
+    @SuppressWarnings("removal")
     protected synchronized OutputStream getOutputStream() throws IOException {
         synchronized (fdLock) {
             if (isClosedOrPending())

@@ -641,15 +641,11 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_string()) {
     oop string = NULL;
     assert(cache_index >= 0, "should have a cache index");
-    if (cpool->is_pseudo_string_at(index)) {
-      string = cpool->pseudo_string_at(index, cache_index);
-    } else {
-      string = cpool->string_at(index, cache_index, THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-        record_out_of_memory_failure();
-        return ciConstant();
-      }
+    string = cpool->string_at(index, cache_index, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+      record_out_of_memory_failure();
+      return ciConstant();
     }
     ciObject* constant = get_object(string);
     if (constant->is_array()) {

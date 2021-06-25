@@ -54,7 +54,7 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) {
+ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE) {
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -85,10 +85,12 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file) {
+  if (_file != NULL) {
     fclose(_file);
   }
   Atomic::store(&_parsing_thread, (Thread*)NULL);
+  delete _indy_items;
+  delete _interfaces;
   _instance = NULL;
 }
 
@@ -464,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
@@ -522,9 +524,9 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   return true;
 }
 
-void ClassListParser::resolve_indy(Thread* current, Symbol* class_name_symbol) {
+void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbol) {
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
+  JavaThread* THREAD = current; // For exception macros.
   ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     ResourceMark rm(current);
@@ -612,9 +614,8 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     // delegate to the correct loader (boot, platform or app) depending on
     // the package name.
 
-    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
     // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-    Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle ext_class_name = java_lang_String::externalize_classname(class_name_symbol, CHECK_NULL);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
 
     JavaCalls::call_virtual(&result,

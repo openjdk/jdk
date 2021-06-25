@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logDecorators.hpp"
@@ -261,6 +262,10 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
+    // User may disable a logOuput like this:
+    // LogConfiguration::parse_log_arguments(filename, "all=off", "", "", &stream);
+    // Just be conservative. Flush them all before deleting idx.
+    AsyncLogWriter::flush();
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
     return;
@@ -277,6 +282,12 @@ void LogConfiguration::disable_outputs() {
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     ts->disable_outputs();
   }
+
+  // Handle jcmd VM.log disable
+  // ts->disable_outputs() above has deleted output_list with RCU synchronization.
+  // Therefore, no new logging entry can enter AsyncLog buffer for the time being.
+  // flush pending entries before LogOutput instances die.
+  AsyncLogWriter::flush();
 
   while (idx > 0) {
     LogOutput* out = _outputs[--idx];
@@ -545,6 +556,12 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
                                     " If set to 0, log rotation is disabled."
                                     " This will cause existing log files to be overwritten.");
   out->cr();
+  out->print_cr("\nAsynchronous logging (off by default):");
+  out->print_cr(" -Xlog:async");
+  out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
+                " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
+                " guaranteed non-blocking.");
+  out->cr();
 
   out->print_cr("Some examples:");
   out->print_cr(" -Xlog");
@@ -587,6 +604,10 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
   out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
+
+  out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
+  out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");
+  out->print_cr("\t and messages tagged with 'gc' up to 'debug' level to file 'gc.log'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {
@@ -613,3 +634,5 @@ void LogConfiguration::notify_update_listeners() {
     _listener_callbacks[i]();
   }
 }
+
+bool LogConfiguration::_async_mode = false;

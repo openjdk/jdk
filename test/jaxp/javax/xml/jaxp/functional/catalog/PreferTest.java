@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.PreferTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.PreferTest
  * @run testng/othervm catalog.PreferTest
  * @summary Get matched URIs from system and public family entries, which
  *          specify the prefer attribute. It tests how does the prefer attribute

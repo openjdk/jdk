@@ -25,6 +25,7 @@
  * @test
  * @bug 6777487
  * @summary Tests private field access for EnumMap
+ * @run main/othervm -Djava.security.manager=allow TestEnumMap
  * @author Sergey Malenkov
  */
 

@@ -110,6 +110,11 @@ class StandardDocFileFactory extends DocFileFactory {
     }
 
     @Override
+    public DocFile createFileForInput(Path file) {
+        return new StandardDocFile(file);
+    }
+
+    @Override
     public DocFile createFileForOutput(DocPath path) {
         return new StandardDocFile(DocumentationTool.Location.DOCUMENTATION_OUTPUT, path);
     }
@@ -140,12 +145,12 @@ class StandardDocFileFactory extends DocFileFactory {
         private final Path file;
 
         /** Create a StandardDocFile for a given file. */
-        private StandardDocFile(Path file) {
+        StandardDocFile(Path file) {
             this.file = file;
         }
 
         /** Create a StandardDocFile for a given location and relative path. */
-        private StandardDocFile(Location location, DocPath path) {
+        StandardDocFile(Location location, DocPath path) {
             super(location, path);
             Assert.check(location == DocumentationTool.Location.DOCUMENTATION_OUTPUT);
             this.file = newFile(getDestDir(), path.getPath());

@@ -444,7 +444,7 @@ class DumpWriter : public StackObj {
   void finish_dump_segment();
 
   // Called by threads used for parallel writing.
-  void writer_loop()                    { _backend.thread_loop(false); }
+  void writer_loop()                    { _backend.thread_loop(); }
   // Called when finished to release the threads.
   void deactivate()                     { flush(); _backend.deactivate(); }
 };

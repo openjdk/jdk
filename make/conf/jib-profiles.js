@@ -396,7 +396,7 @@ var getJibProfilesCommon = function (input, data) {
 
     if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
         common.boot_jdk_version = "17";
-        common.boot_jdk_build_number = "19";
+        common.boot_jdk_build_number = "24";
     } else {
         common.boot_jdk_version = "16";
         common.boot_jdk_build_number = "36";
@@ -491,6 +491,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
+                "--with-zlib=system",
+                "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
             ],
         },
@@ -1069,9 +1071,15 @@ var getJibProfilesDependencies = function (input, common) {
             devkit_cross_prefix = input.build_platform + "-to-";
         }
     }
-
-    var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
-        + "-" + input.build_cpu;
+    var boot_jdk_os = input.build_os;
+    if (input.build_os == "macosx") {
+        if (input.build_cpu == "aarch64") {
+            boot_jdk_os = "macos";
+        } else {
+            boot_jdk_os = "osx";
+        }
+    }
+    var boot_jdk_platform = boot_jdk_os + "-" + input.build_cpu;
     var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")
     // If running in WSL and building for Windows, it will look like Linux,
     // but we need a Windows boot JDK.
@@ -1133,10 +1141,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "5.1",
-            build_number: "b01",
-            checksum_file: "MD5_VALUES",
-            file: "bundles/jtreg_bin-5.1.zip",
+            version: "6",
+            build_number: "1",
+            file: "bundles/jtreg-6+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),

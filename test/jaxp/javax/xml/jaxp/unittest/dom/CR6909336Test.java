@@ -38,7 +38,7 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
  * @test
  * @bug 6909336
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.CR6909336Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.CR6909336Test
  * @run testng/othervm dom.CR6909336Test
  * @summary Test DOM writer can write more that 20 nested elements.
  */

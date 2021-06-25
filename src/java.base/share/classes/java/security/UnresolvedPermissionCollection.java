@@ -75,14 +75,13 @@ implements java.io.Serializable
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof UnresolvedPermission))
+        if (!(permission instanceof UnresolvedPermission unresolvedPermission))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
-        UnresolvedPermission up = (UnresolvedPermission) permission;
 
         // Add permission to map. NOTE: cannot use lambda for
         // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.compute(up.getName(),
+        perms.compute(unresolvedPermission.getName(),
             new java.util.function.BiFunction<>() {
                 @Override
                 public List<UnresolvedPermission> apply(String key,
@@ -90,10 +89,10 @@ implements java.io.Serializable
                     if (oldValue == null) {
                         List<UnresolvedPermission> v =
                             new CopyOnWriteArrayList<>();
-                        v.add(up);
+                        v.add(unresolvedPermission);
                         return v;
                     } else {
-                        oldValue.add(up);
+                        oldValue.add(unresolvedPermission);
                         return oldValue;
                     }
                 }

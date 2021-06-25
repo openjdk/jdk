@@ -1716,7 +1716,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                          "-AlookupClass=+test.Test",
                          "-AlookupPackage=+test",
                          "--add-modules=m2x",
-                         "-XDshould-stop.at=ATTR",
+                         "-XDshould-stop.ifError=ATTR",
+                         "-XDshould-stop.ifNoError=ATTR",
                          "-XDrawDiagnostics")
                 .outdir(srcClasses)
                 .files(findJavaFiles(src))

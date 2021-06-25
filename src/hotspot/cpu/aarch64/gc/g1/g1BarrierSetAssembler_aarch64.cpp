@@ -254,7 +254,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ bind(runtime);
   // save the live input values
-  RegSet saved = RegSet::of(store_addr, new_val);
+  RegSet saved = RegSet::of(store_addr);
   __ push(saved, sp);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
   __ pop(saved, sp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ public class CreatedFontTracker {
         private static HashMap<File, OutputStream> files = new HashMap<>();
 
         private static Thread t = null;
+        @SuppressWarnings("removal")
         static void init() {
             if (t == null) {
                 // Add a shutdown hook to remove the temp file.

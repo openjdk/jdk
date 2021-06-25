@@ -147,7 +147,7 @@ ArchDesc::ArchDesc()
     _internalMatch(cmpstr,hashstr, Form::arena),
     _chainRules(cmpstr,hashstr, Form::arena),
     _cisc_spill_operand(NULL),
-    _needs_clone_jvms(false) {
+    _needs_deep_clone_jvms(false) {
 
       // Initialize the opcode to MatchList table with NULLs
       for( int i=0; i<_last_opcode; ++i ) {

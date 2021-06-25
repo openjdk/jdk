@@ -1151,6 +1151,11 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     int arg_val = arg->get_int();
     int count = 1;
     if (arg_val < 0) {
+      // Special case for min_jint - it can't be negated.
+      if (arg_val == min_jint) {
+        return __ intcon(11);
+      }
+
       arg_val = -arg_val;
       count++;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 /**
  * An implementation of an SctpChannel
  */
+@SuppressWarnings("removal")
 public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {

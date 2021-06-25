@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8136421
- * @requires vm.jvmci & vm.compMode == "Xmixed"
+ * @requires vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib /
  * @library ../common/patches
  * @modules jdk.internal.vm.compiler

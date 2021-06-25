@@ -180,6 +180,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         }
     }
 
+    @SuppressWarnings("removal")
     private static RevocationProperties getRevocationProperties() {
         return AccessController.doPrivileged(
             new PrivilegedAction<RevocationProperties>() {

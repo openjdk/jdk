@@ -39,6 +39,7 @@
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -224,7 +225,15 @@ Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* 
 }
 
 bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type,
-                                                    bool is_clone, ArrayCopyPhase phase) const {
+                                                    bool is_clone, bool is_clone_instance,
+                                                    ArrayCopyPhase phase) const {
+  if (phase == ArrayCopyPhase::Parsing) {
+    return false;
+  }
+  if (phase == ArrayCopyPhase::Optimization) {
+    return is_clone_instance;
+  }
+  // else ArrayCopyPhase::Expansion
   return type == T_OBJECT || type == T_ARRAY;
 }
 
@@ -245,11 +254,51 @@ static const TypeFunc* clone_type() {
   return TypeFunc::make(domain, range);
 }
 
+#define XTOP LP64_ONLY(COMMA phase->top())
+
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
+
   if (ac->is_clone_array()) {
-    // Clone primitive array
-    BarrierSetC2::clone_at_expansion(phase, ac);
+    const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
+    BasicType bt;
+    if (ary_ptr == NULL) {
+      // ary_ptr can be null iff we are running with StressReflectiveCode
+      // This code will be unreachable
+      assert(StressReflectiveCode, "Guard against surprises");
+      bt = T_LONG;
+    } else {
+      bt = ary_ptr->elem()->array_element_basic_type();
+      if (is_reference_type(bt)) {
+        // Clone object array
+        bt = T_OBJECT;
+      } else {
+        // Clone primitive array
+        bt = T_LONG;
+      }
+    }
+
+    Node* ctrl = ac->in(TypeFunc::Control);
+    Node* mem = ac->in(TypeFunc::Memory);
+    Node* src = ac->in(ArrayCopyNode::Src);
+    Node* src_offset = ac->in(ArrayCopyNode::SrcPos);
+    Node* dest = ac->in(ArrayCopyNode::Dest);
+    Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
+    Node* length = ac->in(ArrayCopyNode::Length);
+
+    Node* payload_src = phase->basic_plus_adr(src, src_offset);
+    Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
+
+    const char* copyfunc_name = "arraycopy";
+    address     copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
+
+    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
+    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+
+    Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
+    phase->transform_later(call);
+
+    phase->igvn().replace_node(ac, call);
     return;
   }
 
@@ -280,6 +329,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   phase->transform_later(call);
   phase->igvn().replace_node(ac, call);
 }
+
+#undef XTOP
 
 // == Dominating barrier elision ==
 

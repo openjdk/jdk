@@ -86,6 +86,11 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override

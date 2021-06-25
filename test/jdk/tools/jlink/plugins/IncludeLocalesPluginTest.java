@@ -377,13 +377,13 @@ public class IncludeLocalesPluginTest {
             "--include-locales=he,id,yi",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_in.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_in_ID.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_iw.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_iw_IL.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_in.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_iw.class",
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ji.class"),
+                "/jdk.localedata/sun/text/resources/ext/FormatData_he.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_he_IL.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_id.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_id_ID.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_he.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_id.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_yi.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
@@ -396,8 +396,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "in", "in_ID",
-                "in_ID_#Latn", "iw", "iw_IL", "iw_IL_#Hebr", "ji", "ji_001", "ji_001_#Hebr"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "id", "id_ID",
+                "id_ID_#Latn", "he", "he_IL", "he_IL_#Hebr", "yi", "yi_001", "yi_001_#Hebr"),
             "",
         },
 

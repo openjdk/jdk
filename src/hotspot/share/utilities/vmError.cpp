@@ -153,7 +153,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
   // provider of that code.
   if (thread && thread->is_Java_thread() &&
       !thread->is_hidden_from_external_view()) {
-    if (thread->as_Java_thread()->thread_state() == _thread_in_native) {
+    if (JavaThread::cast(thread)->thread_state() == _thread_in_native) {
       out->print_cr("# The crash happened outside the Java Virtual Machine in native code.\n# See problematic frame for where to report the bug.");
     }
   }
@@ -264,7 +264,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
           break;
         }
         if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map(t->as_Java_thread(), false); // No update
+          RegisterMap map(JavaThread::cast(t), false); // No update
           fr = fr.sender(&map);
         } else {
           // is_first_C_frame() does only simple checks for frame pointer,
@@ -636,7 +636,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing bug submit message")
 
-     if (should_report_bug(_id) && _verbose) {
+     if (should_submit_bug_report(_id) && _verbose) {
        print_bug_submit_message(st, _thread);
      }
 
@@ -750,7 +750,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing Java stack")
 
      if (_verbose && _thread && _thread->is_Java_thread()) {
-       print_stack_trace(st, _thread->as_Java_thread(), buf, sizeof(buf));
+       print_stack_trace(st, JavaThread::cast(_thread), buf, sizeof(buf));
      }
 
   STEP("printing target Java thread stack")
@@ -759,7 +759,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && _thread && (_thread->is_Named_thread())) {
        Thread* thread = ((NamedThread *)_thread)->processed_thread();
        if (thread != NULL && thread->is_Java_thread()) {
-         JavaThread* jt = thread->as_Java_thread();
+         JavaThread* jt = JavaThread::cast(thread);
          st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
@@ -1584,7 +1584,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  static bool skip_bug_url = !should_report_bug(_id);
+  static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 

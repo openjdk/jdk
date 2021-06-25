@@ -123,9 +123,9 @@ private:
 
   // If a Call node uses $constanttablebase, it gets MachConstantBaseNode
   // by the matcher and the matcher will modify the jvms. If so, jvm states
-  // always have to be cloned when a node is cloned.  Adlc generates
-  // Compile::needs_clone_jvms() accordingly.
-  bool _needs_clone_jvms;
+  // always have to be deep cloned when a node is cloned. Adlc generates
+  // Compile::needs_deep_clone_jvms() accordingly.
+  bool _needs_deep_clone_jvms;
 
   // Methods for outputting the DFA
   void gen_match(FILE *fp, MatchList &mlist, ProductionState &status, Dict &operands_chained_from);
@@ -295,7 +295,7 @@ public:
   void addPreHeaderBlocks(FILE *fp_hpp);
   void addHeaderBlocks(FILE *fp_hpp);
   void addSourceBlocks(FILE *fp_cpp);
-  void generate_needs_clone_jvms(FILE *fp_cpp);
+  void generate_needs_deep_clone_jvms(FILE *fp_cpp);
   void generate_adlc_verification(FILE *fp_cpp);
 
   // output declaration of class State

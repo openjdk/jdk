@@ -55,8 +55,8 @@ public class Thread extends VMObject {
     Type typeThread = db.lookupType("Thread");
     Type typeJavaThread = db.lookupType("JavaThread");
 
-    suspendFlagsField = typeThread.getCIntegerField("_suspend_flags");
-    HAS_ASYNC_EXCEPTION = db.lookupIntConstant("Thread::_has_async_exception").intValue();
+    suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
+    HAS_ASYNC_EXCEPTION = db.lookupIntConstant("JavaThread::_has_async_exception").intValue();
 
     tlabFieldOffset    = typeThread.getField("_tlab").getOffset();
     activeHandlesField = typeThread.getAddressField("_active_handles");

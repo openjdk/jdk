@@ -339,6 +339,7 @@ public:
 class ClassHistogramDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _all;
+  DCmdArgument<jlong> _parallel_thread_num;
 public:
   ClassHistogramDCmd(outputStream* output, bool heap);
   static const char* name() {

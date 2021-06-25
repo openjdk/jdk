@@ -28,36 +28,20 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestUpcall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestUpcall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   TestUpcall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ *   --enable-native-access=ALL-UNNAMED
  *   TestUpcall
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ValueLayout;
-import org.testng.annotations.AfterClass;
+
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SegmentAllocator;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -77,8 +61,12 @@ import static org.testng.Assert.assertEquals;
 
 public class TestUpcall extends CallGeneratorHelper {
 
-    static LibraryLookup lib = LibraryLookup.ofLibrary("TestUpcall");
+    static {
+        System.loadLibrary("TestUpcall");
+    }
     static CLinker abi = CLinker.getInstance();
+
+    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     static MethodHandle DUMMY;
     static MethodHandle PASS_AND_SAVE;
@@ -86,39 +74,55 @@ public class TestUpcall extends CallGeneratorHelper {
     static {
         try {
             DUMMY = MethodHandles.lookup().findStatic(TestUpcall.class, "dummy", MethodType.methodType(void.class));
-            PASS_AND_SAVE = MethodHandles.lookup().findStatic(TestUpcall.class, "passAndSave", MethodType.methodType(Object.class, Object[].class, AtomicReference.class));
+            PASS_AND_SAVE = MethodHandles.lookup().findStatic(TestUpcall.class, "passAndSave",
+                    MethodType.methodType(Object.class, Object[].class, AtomicReference.class));
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
     }
 
-    static MemorySegment dummyStub;
+    static MemoryAddress dummyStub;
 
     @BeforeClass
     void setup() {
-        dummyStub = abi.upcallStub(DUMMY, FunctionDescriptor.ofVoid());
-    }
-
-    @AfterClass
-    void teardown() {
-        dummyStub.close();
+        dummyStub = abi.upcallStub(DUMMY, FunctionDescriptor.ofVoid(), ResourceScope.newImplicitScope());
     }
 
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
-    public void testUpcalls(String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
-        List<MemorySegment> segments = new ArrayList<>();
+    public void testUpcalls(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        LibraryLookup.Symbol addr = lib.lookup(fName).get();
-        MethodHandle mh = abi.downcallHandle(addr, methodType(ret, paramTypes, fields), function(ret, paramTypes, fields));
-        Object[] args = makeArgs(ret, paramTypes, fields, returnChecks, argChecks, segments);
-        mh = mh.asSpreader(Object[].class, paramTypes.size() + 1);
-        Object res = mh.invoke(args);
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
+        MethodType mtype = methodType(ret, paramTypes, fields);
+        try (NativeScope scope = new NativeScope()) {
+            MethodHandle mh = abi.downcallHandle(addr, scope, mtype, function(ret, paramTypes, fields));
+            Object[] args = makeArgs(scope.scope(), ret, paramTypes, fields, returnChecks, argChecks);
+            Object[] callArgs = args;
+            Object res = mh.invokeWithArguments(callArgs);
+            argChecks.forEach(c -> c.accept(args));
+            if (ret == Ret.NON_VOID) {
+                returnChecks.forEach(c -> c.accept(res));
+            }
+        }
+    }
+
+    @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
+    public void testUpcallsNoScope(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
+        List<Consumer<Object>> returnChecks = new ArrayList<>();
+        List<Consumer<Object[]>> argChecks = new ArrayList<>();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
+        MethodType mtype = methodType(ret, paramTypes, fields);
+        MethodHandle mh = abi.downcallHandle(addr, IMPLICIT_ALLOCATOR, mtype, function(ret, paramTypes, fields));
+        Object[] args = makeArgs(ResourceScope.newImplicitScope(), ret, paramTypes, fields, returnChecks, argChecks);
+        Object[] callArgs = args;
+        if (count % 100 == 0) {
+            System.gc();
+        }
+        Object res = mh.invokeWithArguments(callArgs);
         argChecks.forEach(c -> c.accept(args));
         if (ret == Ret.NON_VOID) {
             returnChecks.forEach(c -> c.accept(res));
         }
-        segments.forEach(MemorySegment::close);
     }
 
     static MethodType methodType(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
@@ -140,17 +144,17 @@ public class TestUpcall extends CallGeneratorHelper {
                 FunctionDescriptor.of(layouts[0], layouts);
     }
 
-    static Object[] makeArgs(Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemorySegment> segments) throws ReflectiveOperationException {
+    static Object[] makeArgs(ResourceScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
         Object[] args = new Object[params.size() + 1];
         for (int i = 0 ; i < params.size() ; i++) {
-            args[i] = makeArg(params.get(i).layout(fields), checks, i == 0, segments);
+            args[i] = makeArg(params.get(i).layout(fields), checks, i == 0);
         }
-        args[params.size()] = makeCallback(ret, params, fields, checks, argChecks, segments);
+        args[params.size()] = makeCallback(scope, ret, params, fields, checks, argChecks);
         return args;
     }
 
     @SuppressWarnings("unchecked")
-    static MemoryAddress makeCallback(Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemorySegment> segments) {
+    static MemoryAddress makeCallback(ResourceScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) {
         if (params.isEmpty()) {
             return dummyStub.address();
         }
@@ -189,12 +193,18 @@ public class TestUpcall extends CallGeneratorHelper {
         FunctionDescriptor func = ret != Ret.VOID
                 ? FunctionDescriptor.of(firstlayout, paramLayouts)
                 : FunctionDescriptor.ofVoid(paramLayouts);
-        MemorySegment stub = abi.upcallStub(mh, func);
-        segments.add(stub);
-        return stub.address();
+        return abi.upcallStub(mh, func, scope);
     }
 
     static Object passAndSave(Object[] o, AtomicReference<Object[]> ref) {
+        for (int i = 0; i < o.length; i++) {
+            if (o[i] instanceof MemorySegment) {
+                MemorySegment ms = (MemorySegment) o[i];
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), ResourceScope.newImplicitScope());
+                copy.copyFrom(ms);
+                o[i] = copy;
+            }
+        }
         ref.set(o);
         return o[0];
     }

@@ -275,8 +275,8 @@ private:
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                            int num, Thread* THREAD);
-  static void resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD);
+                                            int num, JavaThread* THREAD);
+  static void resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD);
   static void clear_archived_roots_of(Klass* k);
   static const ArchivedKlassSubGraphInfoRecord*
                resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS);
@@ -386,8 +386,8 @@ private:
 
   inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void resolve_classes(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_from_archived_subgraph(Klass* k, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void resolve_classes(JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.

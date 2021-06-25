@@ -108,7 +108,7 @@ InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
   fixup_after_potential_safepoint()
 
 int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   // Allocate and initialize our frame.
   InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
@@ -122,7 +122,7 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -170,7 +170,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 
 
 void ZeroInterpreter::main_loop(int recurse, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // If we are entering from a deopt we may need to call
@@ -304,7 +304,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
@@ -551,7 +551,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
   if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
@@ -639,7 +639,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
   if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
@@ -730,7 +730,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
@@ -746,7 +746,7 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Calculate the size of the frame we'll build, including
@@ -821,7 +821,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
-  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
+  ZeroStack *stack = THREAD->zero_stack();
 
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,7 @@ public class TabularDataSupport
         // Since LinkedHashMap was introduced in SE 1.4, it's conceivable even
         // if very unlikely that we might be the server of a 1.3 client.  In
         // that case you'll need to set this property.  See CR 6334663.
+        @SuppressWarnings("removal")
         String useHashMapProp = AccessController.doPrivileged(
                 new GetPropertyAction("jmx.tabular.data.hash.map"));
         boolean useHashMap = "true".equalsIgnoreCase(useHashMapProp);

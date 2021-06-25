@@ -149,7 +149,8 @@ public abstract class Filter {
      * <p>The {@link Consumer operation} is the effective implementation of the
      * filter. It is executed for each {@code HttpExchange} before invoking
      * either the next filter in the chain or the exchange handler (if this is
-     * the final filter in the chain).
+     * the final filter in the chain). Exceptions thrown by the
+     * {@code operation} are not handled by the filter.
      *
      * @apiNote
      * A beforeHandler filter is typically used to examine or modify the
@@ -197,7 +198,8 @@ public abstract class Filter {
      * <p>The {@link Consumer operation} is the effective implementation of the
      * filter. It is executed for each {@code HttpExchange} after invoking
      * either the next filter in the chain or the exchange handler (if this
-     * filter is the final filter in the chain).
+     * filter is the final filter in the chain). Exceptions thrown by the
+     * {@code operation} are not handled by the filter.
      *
      * @apiNote
      * An afterHandler filter is typically used to examine the exchange state
@@ -207,7 +209,8 @@ public abstract class Filter {
      * executed. The filter {@code operation} is not expected to handle the
      * exchange or {@linkplain HttpExchange#sendResponseHeaders(int, long) send the response headers}.
      * Doing so is likely to fail, since the exchange has commonly been handled
-     * before the operation is invoked.
+     * before the {@code operation} is invoked. More specifically, the response
+     * may be sent before the filter {@code operation} is executed.
      *
      * <p> Example of adding a filter that logs the response code of all exchanges:
      * <pre>{@code

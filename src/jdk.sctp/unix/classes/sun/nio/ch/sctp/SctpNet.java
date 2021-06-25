@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.nio.ch.Net;
 import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
+@SuppressWarnings("removal")
 public class SctpNet {
     private static final String osName = AccessController.doPrivileged(
         (PrivilegedAction<String>) () -> System.getProperty("os.name"));

@@ -834,10 +834,9 @@ public class X509CertSelector implements CertSelector {
                 throw new IOException("name list size not 2");
             }
             Object o =  nameList.get(0);
-            if (!(o instanceof Integer)) {
+            if (!(o instanceof Integer nameType)) {
                 throw new IOException("expected an Integer");
             }
-            int nameType = ((Integer)o).intValue();
             o = nameList.get(1);
             genNames.add(makeGeneralNameInterface(nameType, o));
         }
@@ -885,29 +884,29 @@ public class X509CertSelector implements CertSelector {
                 + type + ")...");
         }
 
-        if (name instanceof String) {
+        if (name instanceof String nameAsString) {
             if (debug != null) {
                 debug.println("X509CertSelector.makeGeneralNameInterface() "
-                    + "name is String: " + name);
+                    + "name is String: " + nameAsString);
             }
             switch (type) {
             case NAME_RFC822:
-                result = new RFC822Name((String)name);
+                result = new RFC822Name(nameAsString);
                 break;
             case NAME_DNS:
-                result = new DNSName((String)name);
+                result = new DNSName(nameAsString);
                 break;
             case NAME_DIRECTORY:
-                result = new X500Name((String)name);
+                result = new X500Name(nameAsString);
                 break;
             case NAME_URI:
-                result = new URIName((String)name);
+                result = new URIName(nameAsString);
                 break;
             case NAME_IP:
-                result = new IPAddressName((String)name);
+                result = new IPAddressName(nameAsString);
                 break;
             case NAME_OID:
-                result = new OIDName((String)name);
+                result = new OIDName(nameAsString);
                 break;
             default:
                 throw new IOException("unable to parse String names of type "
@@ -1668,10 +1667,9 @@ public class X509CertSelector implements CertSelector {
                 throw new IOException("name list size not 2");
             }
             Object o = nameList.get(0);
-            if (!(o instanceof Integer)) {
+            if (!(o instanceof Integer nameType)) {
                 throw new IOException("expected an Integer");
             }
-            int nameType = ((Integer)o).intValue();
             if ((nameType < 0) || (nameType > 8)) {
                 throw new IOException("name type not 0-8");
             }
@@ -1929,8 +1927,7 @@ public class X509CertSelector implements CertSelector {
      */
     private static Extension getExtensionObject(X509Certificate cert, KnownOIDs extId)
             throws IOException {
-        if (cert instanceof X509CertImpl) {
-            X509CertImpl impl = (X509CertImpl) cert;
+        if (cert instanceof X509CertImpl impl) {
             switch (extId) {
                 case PrivateKeyUsage:
                     return impl.getPrivateKeyUsageExtension();
@@ -1980,10 +1977,9 @@ public class X509CertSelector implements CertSelector {
      *         selected, {@code false} otherwise
      */
     public boolean match(Certificate cert) {
-        if (!(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate xcert)) {
             return false;
         }
-        X509Certificate xcert = (X509Certificate)cert;
 
         if (debug != null) {
             debug.println("X509CertSelector.match(SN: "

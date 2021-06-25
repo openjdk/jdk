@@ -89,7 +89,6 @@ void ZServiceabilityCounters::update_sizes() {
     _space_counters.update_used(used);
 
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 

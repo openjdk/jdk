@@ -52,8 +52,8 @@ public class ContentBuilder extends Content {
     public ContentBuilder add(Content content) {
         Objects.requireNonNull(content);
         ensureMutableContents();
-        if (content instanceof ContentBuilder) {
-            contents.addAll(((ContentBuilder) content).contents);
+        if (content instanceof ContentBuilder cb) {
+            contents.addAll(cb.contents);
         } else
             contents.add(content);
         return this;
@@ -65,8 +65,8 @@ public class ContentBuilder extends Content {
             ensureMutableContents();
             Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
             TextBuilder tb;
-            if (c != null && c instanceof TextBuilder) {
-                tb = (TextBuilder) c;
+            if (c instanceof TextBuilder tbi) {
+                tb = tbi;
             } else {
                 contents.add(tb = new TextBuilder());
             }
@@ -90,6 +90,23 @@ public class ContentBuilder extends Content {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * A content builder is valid if any of its content is; thus, it is
+     * valid to be added to an HtmlTree, which checks the validity of
+     * each content in this builder.
+     */
+    @Override
+    public boolean isValid() {
+        for (Content content: contents) {
+            if (content.isValid())
+                return true;
+        }
+        return false;
     }
 
     @Override

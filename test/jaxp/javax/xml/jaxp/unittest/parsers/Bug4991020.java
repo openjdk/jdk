@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4991020
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug4991020
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4991020
  * @run testng/othervm parsers.Bug4991020
  * @summary Test XPath like "node_name/." can be parsed.
  */

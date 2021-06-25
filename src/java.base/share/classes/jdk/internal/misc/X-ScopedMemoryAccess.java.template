@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import jdk.internal.vm.annotation.ForceInline;
  */
 public class ScopedMemoryAccess {
 
-    private static Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     private static native void registerNatives();
     static {
@@ -97,9 +97,20 @@ public class ScopedMemoryAccess {
      * which embodies the temporal checks associated with a given memory region.
      */
     public interface Scope {
+
+       interface Handle {
+            Scope scope();
+        }
+
         void checkValidState();
 
         Thread ownerThread();
+
+        boolean isImplicit();
+
+        Handle acquire();
+
+        void release(Handle handle);
 
         /**
          * Error thrown when memory access fails because the memory has already been released.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,8 +104,8 @@ class ConsoleIOContext extends IOContext {
 
     String prefix = "";
 
-    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout) throws Exception {
-        this.allowIncompleteInputs = Boolean.getBoolean("jshell.test.allow.incomplete.inputs");
+    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
+                     boolean interactive) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -116,8 +117,20 @@ class ConsoleIOContext extends IOContext {
             }
         };
         Terminal terminal;
-        if (System.getProperty("test.jdk") != null) {
-            terminal = new TestTerminal(nonBlockingInput, cmdout);
+        boolean allowIncompleteInputs = Boolean.getBoolean("jshell.test.allow.incomplete.inputs");
+        Consumer<LineReaderImpl> setupReader = r -> {};
+        if (cmdin != System.in) {
+            if (System.getProperty("test.jdk") != null) {
+                terminal = new TestTerminal(nonBlockingInput, cmdout);
+            } else {
+                Size size = null;
+                terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
+                                                      size);
+                if (!interactive) {
+                    setupReader = r -> r.unsetOpt(Option.BRACKETED_PASTE);
+                    allowIncompleteInputs = true;
+                }
+            }
             input.setInputStream(cmdin);
         } else {
             terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
@@ -125,6 +138,7 @@ class ConsoleIOContext extends IOContext {
                 return nonBlockingInput;
             }).build();
         }
+        this.allowIncompleteInputs = allowIncompleteInputs;
         originalAttributes = terminal.getAttributes();
         Attributes noIntr = new Attributes(originalAttributes);
         noIntr.setControlChar(ControlChar.VINTR, 0);
@@ -179,10 +193,11 @@ class ConsoleIOContext extends IOContext {
             }
         };
 
+        setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
 
         reader.setParser((line, cursor, context) -> {
-            if (!allowIncompleteInputs && !repl.isComplete(line)) {
+            if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
                 int pendingBraces = countPendingOpenBraces(line);
                 throw new EOFError(cursor, cursor, line, null, pendingBraces, null);
             }
@@ -230,7 +245,7 @@ class ConsoleIOContext extends IOContext {
         this.prefix = prefix;
         try {
             in.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, continuationPrompt);
-            return in.readLine(firstLinePrompt);
+            return in.readLine(firstLine ? firstLinePrompt : continuationPrompt);
         } catch (UserInterruptException ex) {
             throw (InputInterruptedException) new InputInterruptedException().initCause(ex);
         } catch (EndOfFileException ex) {
@@ -1276,28 +1291,31 @@ class ConsoleIOContext extends IOContext {
         return in.getHistory();
     }
 
-    private static final class TestTerminal extends LineDisciplineTerminal {
+    private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
-        private static final int DEFAULT_HEIGHT = 24;
+        protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
+        private final Size bufferSize;
 
-        public TestTerminal(InputStream input, OutputStream output) throws Exception {
-            super("test", "ansi", output, Charset.forName("UTF-8"));
+        public ProgrammaticInTerminal(InputStream input, OutputStream output,
+                                       boolean interactive, Size size) throws Exception {
+            this(input, output, interactive ? "ansi" : "dumb",
+                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size
+                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                                            : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
+        }
+
+        protected ProgrammaticInTerminal(InputStream input, OutputStream output,
+                                         String terminal, Size size, Size bufferSize) throws Exception {
+            super("non-system-in", terminal, output, Charset.forName("UTF-8"));
             this.inputReader = NonBlocking.nonBlocking(getName(), input, encoding());
             Attributes a = new Attributes(getAttributes());
             a.setLocalFlag(LocalFlag.ECHO, false);
             setAttributes(attributes);
-            int h = DEFAULT_HEIGHT;
-            try {
-                String hp = System.getProperty("test.terminal.height");
-                if (hp != null && !hp.isEmpty()) {
-                    h = Integer.parseInt(hp);
-                }
-            } catch (Throwable ex) {
-                // ignore
-            }
-            setSize(new Size(80, h));
+            setSize(size);
+            this.bufferSize = bufferSize;
         }
 
         @Override
@@ -1312,6 +1330,31 @@ class ConsoleIOContext extends IOContext {
             inputReader.close();
         }
 
+        @Override
+        public Size getBufferSize() {
+            return bufferSize;
+        }
+    }
+
+    private static final class TestTerminal extends ProgrammaticInTerminal {
+        private static Size computeSize() {
+            int h = DEFAULT_HEIGHT;
+            try {
+                String hp = System.getProperty("test.terminal.height");
+                if (hp != null && !hp.isEmpty() && System.getProperty("test.jdk") != null) {
+                    h = Integer.parseInt(hp);
+                }
+            } catch (Throwable ex) {
+                // ignore
+            }
+            return new Size(80, h);
+        }
+        public TestTerminal(InputStream input, OutputStream output) throws Exception {
+            this(input, output, computeSize());
+        }
+        private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
+            super(input, output, "ansi", size, size);
+        }
     }
 
     private static final class CompletionState {

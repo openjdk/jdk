@@ -109,6 +109,7 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
@@ -380,6 +381,7 @@ public class ServerSocket implements java.io.Closeable {
         if (backlog < 1)
           backlog = 50;
         try {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null)
                 security.checkListen(epoint.getPort());
@@ -418,6 +420,7 @@ public class ServerSocket implements java.io.Closeable {
             return null;
         try {
             InetAddress in = getImpl().getInetAddress();
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkConnect(in.getHostAddress(), -1);
@@ -672,6 +675,7 @@ public class ServerSocket implements java.io.Closeable {
         impl.accept(si);
 
         // check permission, close SocketImpl/connection if denied
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -879,6 +883,7 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @return  a string representation of this socket.
      */
+    @SuppressWarnings("removal")
     public String toString() {
         if (!isBound())
             return "ServerSocket[unbound]";
@@ -935,6 +940,7 @@ public class ServerSocket implements java.io.Closeable {
         if (factory != null) {
             throw new SocketException("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();

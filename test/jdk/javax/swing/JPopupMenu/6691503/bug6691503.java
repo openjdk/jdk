@@ -29,7 +29,7 @@
  * to show a popup menu which has whole screen size.
  * a heaviweight popup menu is shown from an applet.
  * @author Mikhail Lapshin
- * @run main bug6691503
+ * @run main/othervm -Djava.security.manager=allow bug6691503
  */
 
 import javax.swing.*;

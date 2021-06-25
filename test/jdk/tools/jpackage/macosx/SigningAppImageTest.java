@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of app image with --mac-sign and related arguments. Test will
@@ -52,26 +52,26 @@ import jdk.jpackage.test.TKit;
  * @build SigningAppImageTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m SigningAppImageTest
+ * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningAppImageTest
  */
 public class SigningAppImageTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            SigningCheck.checkCertificates();
+    @Test
+    public static void test() throws Exception {
+        SigningCheck.checkCertificates();
 
-            JPackageCommand cmd = JPackageCommand.helloAppImage();
-            cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
-                    SigningBase.DEV_NAME, "--mac-signing-keychain",
-                    SigningBase.KEYCHAIN);
-            cmd.executeAndAssertHelloAppImageCreated();
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
+                SigningBase.DEV_NAME, "--mac-signing-keychain",
+                SigningBase.KEYCHAIN);
+        cmd.executeAndAssertHelloAppImageCreated();
 
-            Path launcherPath = cmd.appLauncherPath();
-            SigningBase.verifyCodesign(launcherPath, true);
+        Path launcherPath = cmd.appLauncherPath();
+        SigningBase.verifyCodesign(launcherPath, true);
 
-            Path appImage = cmd.outputBundle();
-            SigningBase.verifyCodesign(appImage, true);
-            SigningBase.verifySpctl(appImage, "exec");
-        });
+        Path appImage = cmd.outputBundle();
+        SigningBase.verifyCodesign(appImage, true);
+        SigningBase.verifySpctl(appImage, "exec");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,22 +62,6 @@ struct iovec {
     jint  iov_len;
 };
 
-#endif
-
-#ifndef POLLIN
-    /* WSAPoll()/WSAPOLLFD and the corresponding constants are only defined   */
-    /* in Windows Vista / Windows Server 2008 and later. If we are on an      */
-    /* older release we just use the Solaris constants as this was previously */
-    /* done in PollArrayWrapper.java.                                         */
-    #define POLLIN       0x0001
-    #define POLLOUT      0x0004
-    #define POLLERR      0x0008
-    #define POLLHUP      0x0010
-    #define POLLNVAL     0x0020
-    #define POLLCONN     0x0002
-#else
-    /* POLLCONN must not equal any of the other constants (see winsock2.h).   */
-    #define POLLCONN     0x2000
 #endif
 
 /* Defined in UnixDomainSockets.c */

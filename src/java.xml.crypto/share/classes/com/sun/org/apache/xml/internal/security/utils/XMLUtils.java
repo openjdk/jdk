@@ -56,6 +56,7 @@ import org.w3c.dom.Text;
  */
 public final class XMLUtils {
 
+    @SuppressWarnings("removal")
     private static boolean ignoreLineBreaks =
             AccessController.doPrivileged(
                     (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.ignoreLineBreaks"));
@@ -63,6 +64,7 @@ public final class XMLUtils {
     private static final com.sun.org.slf4j.internal.Logger LOG =
             com.sun.org.slf4j.internal.LoggerFactory.getLogger(XMLUtils.class);
 
+    @SuppressWarnings("removal")
     private static XMLParser xmlParserImpl =
             AccessController.doPrivileged(
                     (PrivilegedAction<XMLParser>) () -> {

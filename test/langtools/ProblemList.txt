@@ -41,10 +41,8 @@ jdk/jshell/ToolBasicTest.java                                                   
 
 tools/javac/annotations/typeAnnotations/failures/CantAnnotatePackages.java      8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateScoping.java       8057679    generic-all    clarify error messages trying to annotate scoping
-tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679    generic-all    clarify error messages trying to annotate scoping
-tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057683    generic-all    improve ordering of errors with type annotations
-tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass3.java  8057679    generic-all    clarify error messages trying to annotate scoping
-tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass3.java  8057683    generic-all    improve order of errors with type annotations
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679,8057683    generic-all    clarify error messages and improve ordering of errors with type annotations
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass3.java  8057679,8057683    generic-all    clarify error messages and improve ordering of errors with type annotations
 tools/javac/annotations/typeAnnotations/newlocations/RepeatingTypeAnnotations.java 8057683 generic-all    improve ordering of errors with type annotations
 tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations

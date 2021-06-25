@@ -25,9 +25,10 @@
 #ifndef SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 #define SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 
+#include "jfr/utilities/jfrEpochQueue.hpp"
+
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "jfr/utilities/jfrEpochQueue.hpp"
 #include "runtime/thread.inline.hpp"
 
 template <template <typename> class ElementPolicy>

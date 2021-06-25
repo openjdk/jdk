@@ -448,6 +448,7 @@ public class Arguments {
             // But also note that none of these options are supported in API mode.
             if (options.isSet(Option.HELP)
                     || options.isSet(Option.X)
+                    || options.isSet(Option.HELP_LINT)
                     || options.isSet(Option.VERSION)
                     || options.isSet(Option.FULLVERSION)
                     || options.isSet(Option.MODULE)) {

@@ -380,20 +380,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     }
 
     /*package-private*/
-    @ForceInline
-    static boolean doBinTest(int cond, byte a, byte b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
-    }
-
-    /*package-private*/
     @Override
     abstract ByteSpecies vspecies();
 
@@ -1767,17 +1753,20 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, byte a, byte b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, byte a, byte b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            case BT_ult -> Byte.compareUnsigned(a, b) < 0;
+            case BT_ule -> Byte.compareUnsigned(a, b) <= 0;
+            case BT_ugt -> Byte.compareUnsigned(a, b) > 0;
+            case BT_uge -> Byte.compareUnsigned(a, b) >= 0;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -1981,14 +1970,11 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector sliceTemplate(int origin, Vector<Byte> v1) {
         ByteVector that = (ByteVector) v1;
         that.check(this);
-        byte[] a0 = this.vec();
-        byte[] a1 = that.vec();
-        byte[] res = new byte[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Byte> iota = iotaShuffle();
+        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2010,6 +1996,17 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public abstract
     ByteVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    ByteVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Byte> iota = iotaShuffle();
+        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2024,21 +2021,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     unsliceTemplate(int origin, Vector<Byte> w, int part) {
         ByteVector that = (ByteVector) w;
         that.check(this);
-        byte[] slice = this.vec();
-        byte[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Byte> iota = iotaShuffle();
+        VectorMask<Byte> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((byte)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2067,6 +2055,19 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @Override
     public abstract
     ByteVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    ByteVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Byte> iota = iotaShuffle();
+        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((byte)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
@@ -2163,6 +2164,29 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
+        byte[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
+        ByteSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), byte.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ByteVector::toShuffle0);
     }
 
     /**
@@ -2823,6 +2847,165 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
     }
 
+
+    /**
+     * Loads a vector from an array of type {@code boolean[]}
+     * starting at an offset.
+     * For each vector lane, where {@code N} is the vector lane index, the
+     * array element at index {@code offset + N}
+     * is first converted to a {@code byte} value and then
+     * placed into the resulting vector at lane index {@code N}.
+     * <p>
+     * A {@code boolean} value is converted to a {@code byte} value by applying the
+     * expression {@code (byte) (b ? 1 : 0)}, where {@code b} is the {@code boolean} value.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public static
+    ByteVector fromBooleanArray(VectorSpecies<Byte> species,
+                                          boolean[] a, int offset) {
+        offset = checkFromIndexSize(offset, species.length(), a.length);
+        ByteSpecies vsp = (ByteSpecies) species;
+        return vsp.dummyVector().fromBooleanArray0(a, offset);
+    }
+
+    /**
+     * Loads a vector from an array of type {@code boolean[]}
+     * starting at an offset and using a mask.
+     * Lanes where the mask is unset are filled with the default
+     * value of {@code byte} (zero).
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then the array element at
+     * index {@code offset + N}
+     * is first converted to a {@code byte} value and then
+     * placed into the resulting vector at lane index
+     * {@code N}, otherwise the default element value is placed into the
+     * resulting vector at lane index {@code N}.
+     * <p>
+     * A {@code boolean} value is converted to a {@code byte} value by applying the
+     * expression {@code (byte) (b ? 1 : 0)}, where {@code b} is the {@code boolean} value.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public static
+    ByteVector fromBooleanArray(VectorSpecies<Byte> species,
+                                          boolean[] a, int offset,
+                                          VectorMask<Byte> m) {
+        ByteSpecies vsp = (ByteSpecies) species;
+        if (offset >= 0 && offset <= (a.length - species.length())) {
+            ByteVector zero = vsp.zero();
+            return zero.blend(zero.fromBooleanArray0(a, offset), m);
+        }
+
+        // FIXME: optimize
+        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        return vsp.vOp(m, i -> (byte) (a[offset + i] ? 1 : 0));
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code boolean[]},
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane is loaded from the expression
+     * {@code (byte) (a[f(N)] ? 1 : 0)}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see ByteVector#toIntArray()
+     */
+    @ForceInline
+    public static
+    ByteVector fromBooleanArray(VectorSpecies<Byte> species,
+                                          boolean[] a, int offset,
+                                          int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        ByteSpecies vsp = (ByteSpecies) species;
+        return vsp.vOp(n -> (byte) (a[offset + indexMap[mapOffset + n]] ? 1 : 0));
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code boolean[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the lane is set in the mask,
+     * the lane is loaded from the expression
+     * {@code (byte) (a[f(N)] ? 1 : 0)}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * Unset lanes in the resulting vector are set to zero.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see ByteVector#toIntArray()
+     */
+    @ForceInline
+    public static
+    ByteVector fromBooleanArray(VectorSpecies<Byte> species,
+                                          boolean[] a, int offset,
+                                          int[] indexMap, int mapOffset,
+                                          VectorMask<Byte> m) {
+        // FIXME: optimize
+        ByteSpecies vsp = (ByteSpecies) species;
+        return vsp.vOp(m, n -> (byte) (a[offset + indexMap[mapOffset + n]] ? 1 : 0));
+    }
+
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
@@ -2949,7 +3132,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     }
 
     /**
-     * Stores this vector into an array of {@code byte}
+     * Stores this vector into an array of type {@code byte[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3065,6 +3248,174 @@ public abstract class ByteVector extends AbstractVector<Byte> {
              });
     }
 
+
+    /**
+     * Stores this vector into an array of type {@code boolean[]}
+     * starting at an offset.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset the offset into the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset) {
+        offset = checkFromIndexSize(offset, length(), a.length);
+        ByteSpecies vsp = vspecies();
+        ByteVector normalized = this.and((byte) 1);
+        VectorSupport.store(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, booleanArrayAddress(a, offset),
+            normalized,
+            a, offset,
+            (arr, off, v)
+            -> v.stOp(arr, off,
+                      (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));
+    }
+
+    /**
+     * Stores this vector into an array of type {@code boolean[]}
+     * starting at offset and using a mask.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * If the mask lane at {@code N} is unset then the corresponding
+     * array element {@code a[offset+N]} is left unchanged.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     * <p>
+     * Array range checking is done for lanes where the mask is set.
+     * Lanes where the mask is unset are not stored and do not need
+     * to correspond to legitimate elements of {@code a}.
+     * That is, unset lanes may correspond to array indexes less than
+     * zero or beyond the end of the array.
+     *
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane storage
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          VectorMask<Byte> m) {
+        if (m.allTrue()) {
+            intoBooleanArray(a, offset);
+        } else {
+            // FIXME: optimize
+            ByteSpecies vsp = vspecies();
+            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            stOp(a, offset, m, (arr, off, i, e) -> arr[off+i] = (e & 1) != 0);
+        }
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code boolean[]}
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see ByteVector#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        stOp(a, offset,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (e & 1) != 0;
+             });
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code boolean[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see ByteVector#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          int[] indexMap, int mapOffset,
+                          VectorMask<Byte> m) {
+        // FIXME: optimize
+        stOp(a, offset, m,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (e & 1) != 0;
+             });
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -3169,6 +3520,22 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
+    }
+
+
+    /*package-private*/
+    abstract
+    ByteVector fromBooleanArray0(boolean[] a, int offset);
+    @ForceInline
+    final
+    ByteVector fromBooleanArray0Template(boolean[] a, int offset) {
+        ByteSpecies vsp = vspecies();
+        return VectorSupport.load(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, booleanArrayAddress(a, offset),
+            a, offset, vsp,
+            (arr, off, s) -> s.ldOp(arr, off,
+                                    (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
     }
 
     @Override
@@ -3299,6 +3666,17 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     static long arrayAddress(byte[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
+    }
+
+
+    static final int ARRAY_BOOLEAN_SHIFT =
+            31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_BOOLEAN_INDEX_SCALE);
+    static final long ARRAY_BOOLEAN_BASE =
+            Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
+
+    @ForceInline
+    static long booleanArrayAddress(boolean[] a, int index) {
+        return ARRAY_BOOLEAN_BASE + (((long)index) << ARRAY_BOOLEAN_SHIFT);
     }
 
     @ForceInline

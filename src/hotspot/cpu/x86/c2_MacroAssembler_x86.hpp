@@ -38,7 +38,6 @@ public:
   // See full desription in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2,
-                 BiasedLockingCounters* counters,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
@@ -139,10 +138,17 @@ public:
 
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch = rscratch1);
+  void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister src2, int comparison, int vector_len);
   void evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
+
+  // vector compare
+  void vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
+              XMMRegister vtmp1, XMMRegister vtmp2, Register scratch);
+  void vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
+                XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
@@ -215,7 +221,13 @@ public:
   void reduce_operation_256(BasicType typ, int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
  public:
+#ifdef _LP64
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, Register tmp,
+                             KRegister ktmp, int masklen, int vec_enc);
 
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, XMMRegister xtmp1,
+                             Register tmp, int masklen, int vec_enc);
+#endif
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 

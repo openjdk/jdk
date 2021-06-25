@@ -28,31 +28,15 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestDowncall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestDowncall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   TestDowncall
- * @run testng/othervm
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ *   --enable-native-access=ALL-UNNAMED
  *   TestDowncall
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 
 import java.lang.invoke.MethodHandle;
@@ -62,27 +46,76 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.SegmentAllocator;
 import org.testng.annotations.*;
+import static org.testng.Assert.*;
 
 public class TestDowncall extends CallGeneratorHelper {
 
-    static LibraryLookup lib = LibraryLookup.ofLibrary("TestDowncall");
     static CLinker abi = CLinker.getInstance();
+    static {
+        System.loadLibrary("TestDowncall");
+    }
 
+    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
-    public void testDowncall(String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
+    public void testDowncall(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        List<MemorySegment> segments = new ArrayList<>();
-        LibraryLookup.Symbol addr = lib.lookup(fName).get();
-        MethodHandle mh = abi.downcallHandle(addr, methodType(ret, paramTypes, fields), function(ret, paramTypes, fields));
-        Object[] args = makeArgs(paramTypes, fields, checks, segments);
-        mh = mh.asSpreader(Object[].class, paramTypes.size());
-        Object res = mh.invoke(args);
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
+        MethodType mt = methodType(ret, paramTypes, fields);
+        FunctionDescriptor descriptor = function(ret, paramTypes, fields);
+        Object[] args = makeArgs(paramTypes, fields, checks);
+        try (NativeScope scope = new NativeScope()) {
+            boolean needsScope = mt.returnType().equals(MemorySegment.class);
+            Object res = doCall(addr, scope, mt, descriptor, args);
+            if (ret == Ret.NON_VOID) {
+                checks.forEach(c -> c.accept(res));
+                if (needsScope) {
+                    // check that return struct has indeed been allocated in the native scope
+                    assertEquals(((MemorySegment) res).scope(), scope.scope());
+                    assertEquals(scope.allocatedBytes(), descriptor.returnLayout().get().byteSize());
+                } else {
+                    // if here, there should be no allocation through the scope!
+                    assertEquals(scope.allocatedBytes(), 0L);
+                }
+            } else {
+                // if here, there should be no allocation through the scope!
+                assertEquals(scope.allocatedBytes(), 0L);
+            }
+        }
+    }
+
+    @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
+    public void testDowncallNoScope(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
+        List<Consumer<Object>> checks = new ArrayList<>();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
+        MethodType mt = methodType(ret, paramTypes, fields);
+        FunctionDescriptor descriptor = function(ret, paramTypes, fields);
+        Object[] args = makeArgs(paramTypes, fields, checks);
+        boolean needsScope = mt.returnType().equals(MemorySegment.class);
+        if (count % 100 == 0) {
+            System.gc();
+        }
+        Object res = doCall(addr, IMPLICIT_ALLOCATOR, mt, descriptor, args);
         if (ret == Ret.NON_VOID) {
             checks.forEach(c -> c.accept(res));
+            if (needsScope) {
+                // check that return struct has indeed been allocated in the default scope
+                try {
+                    ((MemorySegment)res).scope().close(); // should throw
+                    fail("Expected exception!");
+                } catch (UnsupportedOperationException ex) {
+                    // ok
+                }
+            }
         }
-        segments.forEach(MemorySegment::close);
+    }
+
+    Object doCall(MemoryAddress addr, SegmentAllocator allocator, MethodType type, FunctionDescriptor descriptor, Object[] args) throws Throwable {
+        MethodHandle mh = abi.downcallHandle(addr, allocator, type, descriptor);
+        Object res = mh.invokeWithArguments(args);
+        return res;
     }
 
     static MethodType methodType(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
@@ -101,10 +134,10 @@ public class TestDowncall extends CallGeneratorHelper {
                 FunctionDescriptor.of(paramLayouts[0], paramLayouts);
     }
 
-    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<MemorySegment> segments) throws ReflectiveOperationException {
+    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
         Object[] args = new Object[params.size()];
         for (int i = 0 ; i < params.size() ; i++) {
-            args[i] = makeArg(params.get(i).layout(fields), checks, i == 0, segments);
+            args[i] = makeArg(params.get(i).layout(fields), checks, i == 0);
         }
         return args;
     }

@@ -325,7 +325,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-fs", "HFS+",
                 "-format", "UDRW");
         try {
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
         } catch (IOException ex) {
             Log.verbose(ex); // Log exception
 
@@ -346,7 +346,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-volname", APP_NAME.fetchFrom(params),
                 "-ov", protoDMG.toAbsolutePath().toString(),
                 "-fs", "HFS+");
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
         }
 
         // mount temp image
@@ -463,7 +463,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                                 "-force",
                                 hdiUtilVerbosityFlag,
                                 mountedRoot.toAbsolutePath().toString());
-                        IOUtils.exec(pb);
+                        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
                     }
                 }
             }
@@ -495,7 +495,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                         hdiUtilVerbosityFlag,
                         "-format", "UDZO",
                         "-o", finalDMG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } finally {
                 Files.deleteIfExists(protoDMG2);
             }

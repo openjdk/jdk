@@ -27,6 +27,8 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -55,6 +57,7 @@
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/memRegion.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -65,6 +68,7 @@
 // Forward declarations
 class HeapRegion;
 class GenerationSpec;
+class G1CardSetFreeMemoryTask;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
@@ -157,6 +161,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
+  G1CardSetFreeMemoryTask* _free_card_set_memory_task;
 
   WorkGang* _workers;
   G1CardTable* _card_table;
@@ -171,6 +176,11 @@ private:
   HeapRegionSet _old_set;
   HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
+
+  // Young gen memory statistics before GC.
+  G1CardSetMemoryStats _young_gen_card_set_stats;
+  // Collection set candidates memory statistics after GC.
+  G1CardSetMemoryStats _collection_set_candidates_card_set_stats;
 
   void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
@@ -266,6 +276,9 @@ public:
 
   bool should_do_eager_reclaim() const;
 
+  bool should_sample_collection_set_candidates() const;
+  void set_collection_set_candidates_stats(G1CardSetMemoryStats& stats);
+
 private:
 
   G1HRPrinter _hr_printer;
@@ -284,9 +297,6 @@ private:
   bool try_collect_concurrently(GCCause::Cause cause,
                                 uint gc_counter,
                                 uint old_marking_started_before);
-
-  // Return true if should upgrade to full gc after an incremental one.
-  bool should_upgrade_to_full_gc(GCCause::Cause cause);
 
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
@@ -516,6 +526,9 @@ private:
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
+  // Helper to do a full collection that clears soft references.
+  bool upgrade_to_full_collection();
+
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
@@ -534,7 +547,7 @@ private:
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
-                                             bool clear_all_soft_refs,
+                                             bool maximum_compaction,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
@@ -740,6 +753,10 @@ public:
   // alloc_archive_regions, and after class loading has occurred.
   void fill_archive_regions(MemRegion* range, size_t count);
 
+  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // memory ranges.
+  void populate_archive_regions_bot_part(MemRegion* range, size_t count);
+
   // For each of the specified MemRegions, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
   // rather than fill_archive_regions at JVM init time if the archive file
@@ -835,6 +852,8 @@ public:
 
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
+  // Global card set configuration
+  G1CardSetConfiguration _card_set_config;
 
   void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
                                G1RedirtyCardsQueueSet* rdcqs);
@@ -863,6 +882,8 @@ public:
 
   // Number of regions evacuation failed in the current collection.
   volatile uint _num_regions_failed_evacuation;
+  // Records for every region on the heap whether evacuation failed for it.
+  CHeapBitMap _regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 
@@ -1082,9 +1103,10 @@ public:
     return _hrm.available() == 0;
   }
 
-  // Returns whether there are any regions left in the heap for allocation.
-  bool has_regions_left_for_allocation() const {
-    return !is_maximal_no_gc() || num_free_regions() != 0;
+  // Returns true if an incremental GC should be upgrade to a full gc. This
+  // is done when there are no free regions and the heap can't be expanded.
+  bool should_upgrade_to_full_gc() const {
+    return is_maximal_no_gc() && num_free_regions() == 0;
   }
 
   // The current number of regions in the heap.
@@ -1140,10 +1162,15 @@ public:
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
+  // True iff the given region encountered an evacuation failure in the most-recent
+  // collection.
+  inline bool evacuation_failed(uint region_idx) const;
+
   inline uint num_regions_failed_evacuation() const;
-  // Notify that the garbage collection encountered an evacuation failure in a
-  // region. Should only be called once per region.
-  inline void notify_region_failed_evacuation();
+  // Notify that the garbage collection encountered an evacuation failure in the
+  // given region. Returns whether this has been the first occurrence of an evacuation
+  // failure in that region.
+  inline bool notify_region_failed_evacuation(uint const region_idx);
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
@@ -1401,18 +1428,10 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Partial cleaning of VM internal data structures.
-  void string_dedup_cleaning(BoolObjectClosure* is_alive,
-                             OopClosure* keep_alive,
-                             G1GCPhaseTimes* phase_times = NULL);
-
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Verification
-
-  // Deduplicate the string
-  virtual void deduplicate_string(oop str);
 
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();

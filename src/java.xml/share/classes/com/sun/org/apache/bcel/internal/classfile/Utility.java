@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,7 +42,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Utility functions that do not really belong to any class in particular.
  *
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 // @since 6.0 methods are no longer final
 public abstract class Utility {
@@ -772,10 +772,10 @@ public abstract class Utility {
      * There is some nomenclature confusion through much of the BCEL code base with
      * respect to the terms Descriptor and Signature.  For the offical definitions see:
      *
-     * @see <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3">
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3">
      * Descriptors in The Java Virtual Machine Specification</a>
      *
-     * @see <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.9.1">
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.9.1">
      * Signatures in The Java Virtual Machine Specification</a>
      *
      * In brief, a descriptor is a string representing the type of a field or method.
@@ -835,30 +835,29 @@ public abstract class Utility {
             index += unwrap(consumed_chars); // update position
             // ignore any throws information in the signature
             return type;
-        } else {
-            // Could be Class or Type...
-            type = typeSignatureToString(signature.substring(index), chopit);
-            index += unwrap(consumed_chars); // update position
-            if ((typeParams.length() == 0) && (index == signature.length())) {
-                // We have a Type signature.
-                return type;
-            }
-            // We have a Class signature.
-            final StringBuilder typeClass = new StringBuilder(typeParams);
-            typeClass.append(" extends ");
-            typeClass.append(type);
-            if (index < signature.length()) {
-                typeClass.append(" implements ");
-                typeClass.append(typeSignatureToString(signature.substring(index), chopit));
-                index += unwrap(consumed_chars); // update position
-            }
-            while (index < signature.length()) {
-                typeClass.append(", ");
-                typeClass.append(typeSignatureToString(signature.substring(index), chopit));
-                index += unwrap(consumed_chars); // update position
-            }
-            return typeClass.toString();
         }
+        // Could be Class or Type...
+        type = typeSignatureToString(signature.substring(index), chopit);
+        index += unwrap(consumed_chars); // update position
+        if ((typeParams.length() == 0) && (index == signature.length())) {
+            // We have a Type signature.
+            return type;
+        }
+        // We have a Class signature.
+        final StringBuilder typeClass = new StringBuilder(typeParams);
+        typeClass.append(" extends ");
+        typeClass.append(type);
+        if (index < signature.length()) {
+            typeClass.append(" implements ");
+            typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        while (index < signature.length()) {
+            typeClass.append(", ");
+            typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        return typeClass.toString();
     }
 
 
@@ -1149,7 +1148,7 @@ public abstract class Utility {
                     break;
                 case '[':
                     if (!char_found) {
-                        throw new RuntimeException("Illegal type: " + type);
+                        throw new IllegalArgumentException("Illegal type: " + type);
                     }
                     index = i;
                     break loop;
@@ -1191,13 +1190,13 @@ public abstract class Utility {
             switch (c) {
                 case '[':
                     if (open) {
-                        throw new RuntimeException("Illegally nested brackets:" + brackets);
+                        throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
                     }
                     open = true;
                     break;
                 case ']':
                     if (!open) {
-                        throw new RuntimeException("Illegally nested brackets:" + brackets);
+                        throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
                     }
                     open = false;
                     count++;
@@ -1208,7 +1207,7 @@ public abstract class Utility {
             }
         }
         if (open) {
-            throw new RuntimeException("Illegally nested brackets:" + brackets);
+            throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
         }
         return count;
     }

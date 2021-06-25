@@ -48,8 +48,8 @@ import static org.testng.Assert.assertThrows;
  * @bug 8236105 8240533
  * @summary Check that DatagramSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
- * @run testng SendPortZero
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow -Djdk.net.usePlainDatagramSocketImpl SendPortZero
  */
 
 public class SendPortZero {

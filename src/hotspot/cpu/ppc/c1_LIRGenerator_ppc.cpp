@@ -394,7 +394,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     left.load_item();
     right.load_item();
     rlock_result(x);
-    arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result(), x->is_strictfp());
+    arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result());
   }
   break;
 

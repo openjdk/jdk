@@ -164,9 +164,8 @@ RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
 }
 
 RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
-                                                             ReferenceProcessorPhaseTimes* phase_times,
-                                                             ReferenceProcessor* rp) :
-  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times), _rp(rp) {
+                                                             ReferenceProcessorPhaseTimes* phase_times) :
+  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
 }
 
 RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {

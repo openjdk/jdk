@@ -1365,16 +1365,27 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
-      if( !parm_regs[i].first()->is_valid() &&
-          !parm_regs[i].second()->is_valid() ) {
+      VMReg first = parm_regs[i].first();
+      VMReg second = parm_regs[i].second();
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
+      // Handle case where arguments are in vector registers.
+      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+        OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
+        OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
+        assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
+        for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
+          rm->Insert(r);
+        }
+      }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(parm_regs[i].first(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(parm_regs[i].second(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -2216,6 +2227,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVF:
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
+    case Op_VectorCmpMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2306,6 +2318,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_VectorCmpMasked: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
       n->del_req(3);
       break;
     }
@@ -2749,9 +2767,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

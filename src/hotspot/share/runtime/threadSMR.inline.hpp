@@ -25,13 +25,14 @@
 #ifndef SHARE_RUNTIME_THREADSMR_INLINE_HPP
 #define SHARE_RUNTIME_THREADSMR_INLINE_HPP
 
+#include "runtime/threadSMR.hpp"
+
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/threadSMR.hpp"
 
 // Devirtualize known thread closure types.
 template <class T>

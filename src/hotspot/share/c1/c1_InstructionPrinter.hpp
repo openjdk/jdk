@@ -115,7 +115,6 @@ class InstructionPrinter: public InstructionVisitor {
   virtual void do_BlockBegin     (BlockBegin*      x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x);
   virtual void do_TableSwitch    (TableSwitch*     x);
   virtual void do_LookupSwitch   (LookupSwitch*    x);
   virtual void do_Return         (Return*          x);

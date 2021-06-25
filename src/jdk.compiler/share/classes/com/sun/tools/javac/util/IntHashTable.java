@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,20 +74,20 @@ public class IntHashTable {
      * @param key The object whose hash code is to be computed.
      * @return zero if the object is null, otherwise the identityHashCode
      */
-    public int hash(Object key) {
+    protected int hash(Object key) {
         return System.identityHashCode(key);
     }
 
     /**
      * Find either the index of a key's value, or the index of an available space.
      *
-     * @param key The key to whose value you want to find.
-     * @param hash The hash code of this key.
+     * @param key The key to whose index you want to find.
      * @return Either the index of the key's value, or an index pointing to
      * unoccupied space.
      */
-    public int lookup(Object key, int hash) {
+    protected int lookup(Object key) {
         Object node;
+        int hash = hash(key);
         int hash1 = hash ^ (hash >>> 15);
         int hash2 = (hash ^ (hash << 6)) | 1; //ensure coprimeness
         int deleted = -1;
@@ -103,24 +103,14 @@ public class IntHashTable {
     }
 
     /**
-     * Lookup a given key's value in the hash table.
+     * Return the value to which the specified key is mapped.
      *
-     * @param key The key whose value you want to find.
-     * @return Either the index of the key's value, or an index pointing to
-     * unoccupied space.
+     * @param key The key to whose value you want to find.
+     * @return A non-negative integer if the value is found.
+     *         Otherwise, it is -1.
      */
-    public int lookup(Object key) {
-        return lookup(key, hash(key));
-    }
-
-    /**
-     * Return the value stored at the specified index in the table.
-     *
-     * @param index The index to inspect, as returned from {@link #lookup}
-     * @return A non-negative integer if the index contains a non-null
-     *         value, or -1 if it does.
-     */
-    public int getFromIndex(int index) {
+    public int get(Object key) {
+        int index = lookup(key);
         Object node = objs[index];
         return node == null || node == DELETED ? -1 : ints[index];
     }
@@ -130,12 +120,11 @@ public class IntHashTable {
      *
      * @param key key with which the specified value is to be associated.
      * @param value value to be associated with the specified key.
-     * @param index the index at which to place this binding, as returned
-     *              from {@link #lookup}.
      * @return previous value associated with specified key, or -1 if there was
      * no mapping for key.
      */
-    public int putAtIndex(Object key, int value, int index) {
+    public int put(Object key, int value) {
+        int index = lookup(key);
         Object old = objs[index];
         if (old == null || old == DELETED) {
             objs[index] = key;
@@ -152,6 +141,13 @@ public class IntHashTable {
         }
     }
 
+    /**
+     * Remove the mapping(key and value) of the specified key.
+     *
+     * @param key the key to whose value you want to remove.
+     * @return the removed value associated with the specified key,
+     *         or -1 if there was no mapping for the specified key.
+     */
     public int remove(Object key) {
         int index = lookup(key);
         Object old = objs[index];
@@ -169,20 +165,16 @@ public class IntHashTable {
     protected void rehash() {
         Object[] oldObjsTable = objs;
         int[] oldIntsTable = ints;
-        int oldCapacity = oldObjsTable.length;
-        int newCapacity = oldCapacity << 1;
-        Object[] newObjTable = new Object[newCapacity];
-        int[] newIntTable = new int[newCapacity];
-        int newMask = newCapacity - 1;
-        objs = newObjTable;
-        ints = newIntTable;
-        mask = newMask;
+        int newCapacity = oldObjsTable.length << 1;
+        objs = new Object[newCapacity];
+        ints = new int[newCapacity];
+        mask = newCapacity - 1;
         num_bindings = 0; // this is recomputed below
         Object key;
         for (int i = oldIntsTable.length; --i >= 0;) {
             key = oldObjsTable[i];
             if (key != null && key != DELETED)
-                putAtIndex(key, oldIntsTable[i], lookup(key, hash(key)));
+                put(key, oldIntsTable[i]);
         }
     }
 

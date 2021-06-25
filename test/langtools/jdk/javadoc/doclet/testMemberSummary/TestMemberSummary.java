@@ -46,7 +46,7 @@ public class TestMemberSummary extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
-                "-private",
+                "-private", "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg","pkg2");
         checkExit(Exit.OK);
@@ -72,7 +72,7 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
-                    " class="member-name-link">PrivateParent</a>&#8203;(int&nbsp;i)</code></div>""");
+                    " class="member-name-link">PrivateParent</a><wbr>(int&nbsp;i)</code></div>""");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
@@ -85,7 +85,7 @@ public class TestMemberSummary extends JavadocTester {
     @Test
     public void testSummaries() {
         javadoc("-d", "out-summaries",
-                "-private",
+                "-private", "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg3");
         checkExit(Exit.OK);
@@ -150,7 +150,7 @@ public class TestMemberSummary extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Optional Element</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code><a href="https://download.java.net/java/early_access/jdk17/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+                    <div class="col-first even-row-color"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="#s()" class="member-name-link">s</a></code></div>
                     <div class="col-last even-row-color">&nbsp;</div>
                     </div>

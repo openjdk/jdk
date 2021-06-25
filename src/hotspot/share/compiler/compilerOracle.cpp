@@ -32,7 +32,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"

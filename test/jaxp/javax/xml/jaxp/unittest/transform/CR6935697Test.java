@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6935697
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6935697Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6935697Test
  * @run testng/othervm transform.CR6935697Test
  * @summary Test XSLT can parse the certain xsl.
  */

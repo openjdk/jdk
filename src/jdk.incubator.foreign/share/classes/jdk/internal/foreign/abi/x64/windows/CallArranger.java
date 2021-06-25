@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
-import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.internal.foreign.PlatformLayouts;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.UpcallHandler;
@@ -124,10 +122,10 @@ public class CallArranger {
         return new Bindings(csb.csb.build(), returnInMemory);
     }
 
-    public static MethodHandle arrangeDowncall(Addressable addr, MethodType mt, FunctionDescriptor cDesc) {
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(CWindows, addr, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new ProgrammableInvoker(CWindows, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
@@ -140,10 +138,10 @@ public class CallArranger {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
-            target = SharedUtils.adaptUpcallForIMR(target);
+            target = SharedUtils.adaptUpcallForIMR(target, false /* need the return value as well */);
         }
 
-        return new ProgrammableUpcallHandler(CWindows, target, bindings.callingSequence);
+        return ProgrammableUpcallHandler.make(CWindows, target, bindings.callingSequence);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -205,7 +203,7 @@ public class CallArranger {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
-                    Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize());
+                    Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
                             .vmStore(storage, type);
                     break;
@@ -270,7 +268,7 @@ public class CallArranger {
                     bindings.allocate(layout)
                             .dup();
                     VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
-                    Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize());
+                    Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.vmLoad(storage, type)
                             .bufferStore(0, type);
                     break;
@@ -281,9 +279,6 @@ public class CallArranger {
                     bindings.vmLoad(storage, long.class)
                             .boxAddress()
                             .toSegment(layout);
-                    // ASSERT SCOPE OF BOXED ADDRESS HERE
-                    // caveat. buffer should instead go out of scope after call
-                    bindings.copy(layout);
                     break;
                 }
                 case POINTER: {

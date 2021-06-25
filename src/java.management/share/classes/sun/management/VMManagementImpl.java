@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,7 @@ class VMManagementImpl implements VMManagement {
 
     // Compilation Subsystem
     public String   getCompilerName() {
+        @SuppressWarnings("removal")
         String name =  AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 public String run() {
@@ -254,6 +255,7 @@ class VMManagementImpl implements VMManagement {
         }
 
         // construct PerfInstrumentation object
+        @SuppressWarnings("removal")
         Perf perf =  AccessController.doPrivileged(new Perf.GetPerfAction());
         try {
             ByteBuffer bb = perf.attach(0, "r");

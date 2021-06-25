@@ -44,7 +44,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary UnreferencedContext_Stub
- * @run main/othervm/timeout=120 UnreferencedContext
+ * @run main/othervm/timeout=120 -Djava.security.manager=allow UnreferencedContext
  */
 
 import java.net.*;

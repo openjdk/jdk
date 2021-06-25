@@ -27,8 +27,10 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Set;
 
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -106,15 +108,15 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * Get the given package header.
      *
-     * @param packageName the package header to write
+     * @param packageElement the package element to write
      * @return a content tree for the package header
      */
     @Override
-    public Content getPackageHeader(String packageName) {
+    public Content getPackageHeader(PackageElement packageElement) {
         Content heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
                 contents.packageLabel);
         heading.add(Entity.NO_BREAK_SPACE);
-        heading.add(packageName);
+        heading.add(getPackageLink(packageElement, Text.of(utils.getPackageName(packageElement))));
         return heading;
     }
 
@@ -159,15 +161,26 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,
                         typeElement.getSuperclass()))
                 : null;
+        Content interfaceLink = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,
+                utils.isExternalizable(typeElement)
+                        ? utils.getExternalizableType()
+                        : utils.getSerializableType()));
 
-        //Print the heading.
-        Content className = superClassLink == null ?
-            contents.getContent(
-            "doclet.Class_0_implements_serializable", classLink) :
-            contents.getContent(
-            "doclet.Class_0_extends_implements_serializable", classLink,
-            superClassLink);
+        // Print the heading.
+        Content className = new ContentBuilder();
+        className.add(utils.getTypeElementKindName(typeElement, false));
+        className.add(Entity.NO_BREAK_SPACE);
+        className.add(classLink);
         section.add(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
+        // Print a simplified signature.
+        Content signature = new ContentBuilder();
+        signature.add("class ");
+        signature.add(typeElement.getSimpleName());
+        signature.add(" extends ");
+        signature.add(superClassLink);
+        signature.add(" implements ");
+        signature.add(interfaceLink);
+        section.add(HtmlTree.DIV(HtmlStyle.typeSignature, signature));
         return section;
     }
 

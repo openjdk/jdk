@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,7 @@ public class ClhsdbLongConstant {
             expStrMap.put("longConstant", List.of(
                     "longConstant markWord::locked_value",
                     "longConstant markWord::lock_bits",
-                    "InvocationCounter::count_increment",
-                    "markWord::epoch_mask_in_place"));
+                    "InvocationCounter::count_increment"));
             expStrMap.put("longConstant markWord::locked_value", List.of(
                     "longConstant markWord::locked_value"));
             expStrMap.put("longConstant markWord::lock_bits", List.of(
@@ -93,7 +92,6 @@ public class ClhsdbLongConstant {
         // Expected output snippet is of the form (on x64-64):
         // ...
         // longConstant VM_Version::CPU_SHA 17179869184
-        // longConstant markWord::biased_lock_bits 1
         // longConstant markWord::age_shift 3
         // longConstant markWord::hash_mask_in_place 549755813632
         // ...

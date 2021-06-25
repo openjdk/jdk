@@ -721,35 +721,39 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
 }
 
 Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mask_len = in(3)->in(1);
-  const TypeLong* ty = phase->type(mask_len)->isa_long();
-  if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type()->array_element_basic_type();
-    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-    if ( load_sz == 32 || load_sz == 64) {
-      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
-      Node* ctr = in(MemNode::Control);
-      Node* mem = in(MemNode::Memory);
-      Node* adr = in(MemNode::Address);
-      return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+  if (!in(3)->is_top() && in(3)->Opcode() == Op_VectorMaskGen) {
+    Node* mask_len = in(3)->in(1);
+    const TypeLong* ty = phase->type(mask_len)->isa_long();
+    if (ty && ty->is_con()) {
+      BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type();
+      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+      if ( load_sz == 32 || load_sz == 64) {
+        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
+        Node* ctr = in(MemNode::Control);
+        Node* mem = in(MemNode::Memory);
+        Node* adr = in(MemNode::Address);
+        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+      }
     }
   }
   return NULL;
 }
 
 Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mask_len = in(4)->in(1);
-  const TypeLong* ty = phase->type(mask_len)->isa_long();
-  if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type()->array_element_basic_type();
-    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
-    if ( load_sz == 32 || load_sz == 64) {
-      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
-      Node* ctr = in(MemNode::Control);
-      Node* mem = in(MemNode::Memory);
-      Node* adr = in(MemNode::Address);
-      Node* val = in(MemNode::ValueIn);
-      return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+  if (!in(4)->is_top() && in(4)->Opcode() == Op_VectorMaskGen) {
+    Node* mask_len = in(4)->in(1);
+    const TypeLong* ty = phase->type(mask_len)->isa_long();
+    if (ty && ty->is_con()) {
+      BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type();
+      uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+      if ( load_sz == 32 || load_sz == 64) {
+        assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
+        Node* ctr = in(MemNode::Control);
+        Node* mem = in(MemNode::Memory);
+        Node* adr = in(MemNode::Address);
+        Node* val = in(MemNode::ValueIn);
+        return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+      }
     }
   }
   return NULL;
@@ -1243,10 +1247,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
           return new VectorLoadMaskNode(value, out_vt);
         } else if (is_vector_shuffle) {
-          if (is_shuffle_to_vector()) {
-            // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-            return new VectorCastB2XNode(value, out_vt);
-          } else {
+          if (!is_shuffle_to_vector()) {
             // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
             return new VectorLoadShuffleNode(value, out_vt);
           }
@@ -1293,6 +1294,21 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
+  switch(mopc) {
+    case Op_VectorMaskTrueCount:
+      return new VectorMaskTrueCountNode(mask, ty);
+    case Op_VectorMaskLastTrue:
+      return new VectorMaskLastTrueNode(mask, ty);
+    case Op_VectorMaskFirstTrue:
+      return new VectorMaskFirstTrueNode(mask, ty);
+    default:
+      assert(false, "Unhandled operation");
+  }
+  return NULL;
+}
+
 
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {

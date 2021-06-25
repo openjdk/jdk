@@ -45,7 +45,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -104,7 +103,7 @@ class RetryableAllocationMark: public StackObj {
   ~RetryableAllocationMark() {
     if (_thread != NULL) {
       _thread->set_in_retryable_allocation(false);
-      JavaThread* THREAD = _thread;
+      JavaThread* THREAD = _thread; // For exception macros.
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
         // Do not clear probable async exceptions.
@@ -1046,7 +1045,7 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
   {
     MutexUnlocker unlock(JVMCI_lock);
 
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HandleMark hm(THREAD);
     ResourceMark rm(THREAD);
     if (JVMCIENV->is_hotspot()) {
@@ -1086,7 +1085,7 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
 }
 
 JVMCIObject JVMCIRuntime::create_jvmci_primitive_type(BasicType type, JVMCI_TRAPS) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   // These primitive types are long lived and are created before the runtime is fully set up
   // so skip registering them for scanning.
   JVMCIObject mirror = JVMCIENV->get_object_constant(java_lang_Class::primitive_mirror(type), false, true);
@@ -1197,7 +1196,7 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
 
 
 void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   static volatile int report_error = 0;
   if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {
@@ -1641,7 +1640,7 @@ bool JVMCIRuntime::is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name)
 // ------------------------------------------------------------------
 JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                 const methodHandle& method,
-                                nmethod*& nm,
+                                nmethodLocker& code_handle,
                                 int entry_bci,
                                 CodeOffsets* offsets,
                                 int orig_pc_offset,
@@ -1662,7 +1661,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                 char* speculations,
                                 int speculations_len) {
   JVMCI_EXCEPTION_CONTEXT;
-  nm = NULL;
+  nmethod* nm = NULL;
   int comp_level = CompLevel_full_optimization;
   char* failure_detail = NULL;
 
@@ -1747,6 +1746,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
           MutexUnlocker locker(MethodCompileQueue_lock);
           CompileBroker::handle_full_code_cache(CodeCache::get_code_blob_type(comp_level));
         }
+        result = JVMCI::cache_full;
       } else {
         nm->set_has_unsafe_access(has_unsafe_access);
         nm->set_has_wide_vectors(has_wide_vector);
@@ -1784,6 +1784,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
             MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
             if (nm->make_in_use()) {
               method->set_code(method, nm);
+            } else {
+              result = JVMCI::nmethod_reclaimed;
             }
           } else {
             LogTarget(Info, nmethod, install) lt;
@@ -1796,13 +1798,21 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
             MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
             if (nm->make_in_use()) {
               InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+            } else {
+              result = JVMCI::nmethod_reclaimed;
             }
           }
         } else {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
+          MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+          if (!nm->make_in_use()) {
+            result = JVMCI::nmethod_reclaimed;
+          }
         }
       }
-      result = nm != NULL ? JVMCI::ok :JVMCI::cache_full;
+    }
+    if (result == JVMCI::ok) {
+      code_handle.set_code(nm);
     }
   }
 
@@ -1813,8 +1823,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     JVMCIENV->set_HotSpotCompiledNmethod_installationFailureMessage(compiled_code, message);
   }
 
-  // JVMTI -- compiled method notification (must be done outside lock)
-  if (nm != NULL) {
+  if (result == JVMCI::ok) {
+    // JVMTI -- compiled method notification (must be done outside lock)
     nm->post_compiled_method_load_event();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -37,9 +36,9 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
-import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -51,6 +50,8 @@ import org.xml.sax.XMLReader;
  * @author Santiago Pericas-Geertsen
  *
  * Added Catalog Support for URI resolution
+ *
+ * @LastModified: May 2021
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public final class Util {
@@ -103,13 +104,13 @@ public final class Util {
                     JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
                             xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
 
-                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
-                            xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
+                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+                            xsltc.getProperty(JdkConstants.CDATA_CHUNK_SIZE), false);
 
                     String lastProperty = "";
                     try {
                         XMLSecurityManager securityManager =
-                                (XMLSecurityManager)xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
+                                (XMLSecurityManager)xsltc.getProperty(JdkConstants.SECURITY_MANAGER);
                         if (securityManager != null) {
                             for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
                                 lastProperty = limit.apiProperty();
@@ -117,8 +118,8 @@ public final class Util {
                                         securityManager.getLimitValueAsString(limit));
                             }
                             if (securityManager.printEntityCountInfo()) {
-                                lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                                reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                                lastProperty = JdkConstants.JDK_DEBUG_LIMIT;
+                                reader.setProperty(lastProperty, JdkConstants.JDK_YES);
                             }
                         }
                     } catch (SAXException se) {

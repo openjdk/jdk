@@ -576,7 +576,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
       if (thread != NULL && thread->threadObj() != NULL) {
         ResourceMark rm(THREAD);
         jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->get_thread_name());
+        "in thread \"%s\" ", thread->name());
       }
       if (ex->is_a(vmClasses::Throwable_klass())) {
         JavaValue result(T_VOID);
@@ -3602,7 +3602,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
       if (UseJVMCICompiler) {
         // JVMCI is initialized on a CompilerThread
         if (BootstrapJVMCI) {
-          JavaThread* THREAD = thread;
+          JavaThread* THREAD = thread; // For exception macros.
           JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
           compiler->bootstrap(THREAD);
           if (HAS_PENDING_EXCEPTION) {
@@ -3643,7 +3643,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // to continue.
     if (Universe::is_fully_initialized()) {
       // otherwise no pending exception possible - VM will already have aborted
-      JavaThread* THREAD = JavaThread::current();
+      JavaThread* THREAD = JavaThread::current(); // For exception macros.
       if (HAS_PENDING_EXCEPTION) {
         HandleMark hm(THREAD);
         vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
@@ -3767,7 +3767,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     // If executing from an atexit hook we may be in the VMThread.
     if (t->is_Java_thread()) {
       // If the thread has been attached this operation is a no-op
-      *(JNIEnv**)penv = t->as_Java_thread()->jni_environment();
+      *(JNIEnv**)penv = JavaThread::cast(t)->jni_environment();
       return JNI_OK;
     } else {
       return JNI_ERR;
@@ -3904,7 +3904,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
 
   VM_Exit::block_if_vm_exited();
 
-  JavaThread* thread = current->as_Java_thread();
+  JavaThread* thread = JavaThread::cast(current);
   if (thread->has_last_Java_frame()) {
     HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     // Can't detach a thread that's running java, that can't work.
@@ -3966,7 +3966,7 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
   Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread()) {
     if (Threads::is_supported_jni_version_including_1_1(version)) {
-      *(JNIEnv**)penv = thread->as_Java_thread()->jni_environment();
+      *(JNIEnv**)penv = JavaThread::cast(thread)->jni_environment();
       ret = JNI_OK;
       return ret;
 
