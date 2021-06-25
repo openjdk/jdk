@@ -3837,6 +3837,14 @@ void Assembler::evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int
   emit_int16(0x7D, (0xC0 | encode));
 }
 
+void Assembler::evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_avx512_vbmi(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), ctl->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x83, (0xC0 | encode));
+}
+
 void Assembler::pause() {
   emit_int16((unsigned char)0xF3, (unsigned char)0x90);
 }
