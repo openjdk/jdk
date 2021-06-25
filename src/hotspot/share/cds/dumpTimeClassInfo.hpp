@@ -37,7 +37,7 @@
 class Method;
 class Symbol;
 
-class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
+class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
@@ -78,7 +78,7 @@ public:
   GrowableArray<char>*                 _verifier_constraint_flags;
   GrowableArray<DTLoaderConstraint>*   _loader_constraints;
 
-  DumpTimeSharedClassInfo() {
+  DumpTimeClassInfo() {
     _klass = NULL;
     _nest_host = NULL;
     _failed_verification = false;
@@ -169,7 +169,7 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
 
 class DumpTimeSharedClassTable: public ResourceHashtable<
   InstanceKlass*,
-  DumpTimeSharedClassInfo,
+  DumpTimeClassInfo,
   &DumpTimeSharedClassTable_hash,
   primitive_equals<InstanceKlass*>,
   15889, // prime number
@@ -178,7 +178,7 @@ class DumpTimeSharedClassTable: public ResourceHashtable<
   int _builtin_count;
   int _unregistered_count;
 public:
-  DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress);
+  DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress);
   void inc_builtin_count()      { _builtin_count++; }
   void inc_unregistered_count() { _unregistered_count++; }
   void update_counts();

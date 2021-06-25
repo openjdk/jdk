@@ -40,14 +40,14 @@
 class Method;
 class Symbol;
 
-class RunTimeSharedClassInfo {
+class RunTimeClassInfo {
 public:
   struct CrcInfo {
     int _clsfile_size;
     int _clsfile_crc32;
   };
 
-  // This is different than  DumpTimeSharedClassInfo::DTVerifierConstraint. We use
+  // This is different than  DumpTimeClassInfo::DTVerifierConstraint. We use
   // u4 instead of Symbol* to save space on 64-bit CPU.
   struct RTVerifierConstraint {
     u4 _name;
@@ -77,7 +77,7 @@ public:
 
 private:
   static size_t header_size_size() {
-    return sizeof(RunTimeSharedClassInfo);
+    return sizeof(RunTimeClassInfo);
   }
   static size_t verifier_constraints_size(int num_verifier_constraints) {
     return sizeof(RTVerifierConstraint) * num_verifier_constraints;
@@ -175,7 +175,7 @@ public:
     return loader_constraints() + i;
   }
 
-  void init(DumpTimeSharedClassInfo& info);
+  void init(DumpTimeClassInfo& info);
 
   bool matches(int clsfile_size, int clsfile_crc32) const {
     return crc()->_clsfile_size  == clsfile_size &&
@@ -190,22 +190,22 @@ public:
 private:
   // ArchiveBuilder::make_shallow_copy() has reserved a pointer immediately
   // before archived InstanceKlasses. We can use this slot to do a quick
-  // lookup of InstanceKlass* -> RunTimeSharedClassInfo* without
+  // lookup of InstanceKlass* -> RunTimeClassInfo* without
   // building a new hashtable.
   //
-  //  info_pointer_addr(klass) --> 0x0100   RunTimeSharedClassInfo*
+  //  info_pointer_addr(klass) --> 0x0100   RunTimeClassInfo*
   //  InstanceKlass* klass     --> 0x0108   <C++ vtbl>
   //                               0x0110   fields from Klass ...
-  static RunTimeSharedClassInfo** info_pointer_addr(InstanceKlass* klass) {
-    return &((RunTimeSharedClassInfo**)klass)[-1];
+  static RunTimeClassInfo** info_pointer_addr(InstanceKlass* klass) {
+    return &((RunTimeClassInfo**)klass)[-1];
   }
 
 public:
-  static RunTimeSharedClassInfo* get_for(InstanceKlass* klass) {
+  static RunTimeClassInfo* get_for(InstanceKlass* klass) {
     assert(klass->is_shared(), "don't call for non-shared class");
     return *info_pointer_addr(klass);
   }
-  static void set_for(InstanceKlass* klass, RunTimeSharedClassInfo* record) {
+  static void set_for(InstanceKlass* klass, RunTimeClassInfo* record) {
     assert(ArchiveBuilder::current()->is_in_buffer_space(klass), "must be");
     assert(ArchiveBuilder::current()->is_in_buffer_space(record), "must be");
     *info_pointer_addr(klass) = record;
@@ -214,13 +214,13 @@ public:
 
   // Used by RunTimeSharedDictionary to implement OffsetCompactHashtable::EQUALS
   static inline bool EQUALS(
-       const RunTimeSharedClassInfo* value, Symbol* key, int len_unused) {
+       const RunTimeClassInfo* value, Symbol* key, int len_unused) {
     return (value->_klass->name() == key);
   }
 };
 
 class RunTimeSharedDictionary : public OffsetCompactHashtable<
   Symbol*,
-  const RunTimeSharedClassInfo*,
-  RunTimeSharedClassInfo::EQUALS> {};
+  const RunTimeClassInfo*,
+  RunTimeClassInfo::EQUALS> {};
 #endif // SHARED_CDS_SHAREDCLASSINFO_HPP

@@ -25,6 +25,7 @@
 #ifndef SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
 #define SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
 #include "cds/metaspaceShared.hpp"
+#include "classfile/javaClasses.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/resourceHash.hpp"
 

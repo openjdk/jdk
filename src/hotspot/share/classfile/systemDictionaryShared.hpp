@@ -26,9 +26,9 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/filemap.hpp"
-#include "cds/dumpTimeSharedClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/runTimeSharedClassInfo.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -109,10 +109,10 @@
 class BootstrapInfo;
 class ClassFileStream;
 class Dictionary;
-class DumpTimeSharedClassInfo;
+class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
 class LambdaProxyClassDictionary;
-class RunTimeSharedClassInfo;
+class RunTimeClassInfo;
 class RunTimeSharedDictionary;
 class DumpTimeLambdaProxyClassDictionary;
 class LambdaProxyClassKey;
@@ -166,8 +166,8 @@ private:
                                  Handle protection_domain,
                                  const ClassFileStream* cfs,
                                  TRAPS);
-  static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
-  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
+  static DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -190,7 +190,7 @@ public:
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
-  static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* static_dict,
+  static const RunTimeClassInfo* find_record(RunTimeSharedDictionary* static_dict,
                                                    RunTimeSharedDictionary* dynamic_dict,
                                                    Symbol* name);
 
@@ -268,7 +268,7 @@ public:
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static void check_excluded_classes();
-  static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
+  static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);

@@ -25,9 +25,9 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/runTimeSharedClassInfo.hpp"
+#include "cds/runTimeClassInfo.hpp"
 
-void RunTimeSharedClassInfo::init(DumpTimeSharedClassInfo& info) {
+void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
   assert(builder->is_in_buffer_space(info._klass), "must be");
   _klass = info._klass;
@@ -67,7 +67,7 @@ void RunTimeSharedClassInfo::init(DumpTimeSharedClassInfo& info) {
   ArchivePtrMarker::mark_pointer(&_klass);
 }
 
-size_t RunTimeSharedClassInfo::crc_size(InstanceKlass* klass) {
+size_t RunTimeClassInfo::crc_size(InstanceKlass* klass) {
   if (!SystemDictionaryShared::is_builtin(klass)) {
     return sizeof(CrcInfo);
   } else {

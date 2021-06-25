@@ -24,13 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/dumpTimeSharedClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
-void DumpTimeSharedClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
+void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == NULL) {
     _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
@@ -75,7 +75,7 @@ static char get_loader_type_by(oop  loader) {
   }
 }
 
-void DumpTimeSharedClassInfo::record_linking_constraint(Symbol* name, Handle loader1, Handle loader2) {
+void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, Handle loader2) {
   assert(loader1 != loader2, "sanity");
   LogTarget(Info, class, loader, constraints) log;
   if (_loader_constraints == NULL) {
@@ -110,13 +110,13 @@ void DumpTimeSharedClassInfo::record_linking_constraint(Symbol* name, Handle loa
   }
 }
 
-bool DumpTimeSharedClassInfo::is_builtin() {
+bool DumpTimeClassInfo::is_builtin() {
   return SystemDictionaryShared::is_builtin(_klass);
 }
 
-DumpTimeSharedClassInfo* DumpTimeSharedClassTable::find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress) {
+DumpTimeClassInfo* DumpTimeSharedClassTable::find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress) {
   bool created = false;
-  DumpTimeSharedClassInfo* p;
+  DumpTimeClassInfo* p;
   if (!dump_in_progress) {
     p = put_if_absent(k, &created);
   } else {
@@ -138,7 +138,7 @@ class CountClassByCategory : StackObj {
   DumpTimeSharedClassTable* _table;
 public:
   CountClassByCategory(DumpTimeSharedClassTable* table) : _table(table) {}
-  bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
+  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       if (info.is_builtin()) {
         _table->inc_builtin_count();

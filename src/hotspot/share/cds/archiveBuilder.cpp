@@ -228,7 +228,7 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
         _num_type_array_klasses ++;
       }
     }
-    // See RunTimeSharedClassInfo::get_for()
+    // See RunTimeClassInfo::get_for()
     _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
@@ -319,7 +319,7 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
+  // size of the symbol table and two dictionaries, plus the RunTimeClassInfo's
   size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
@@ -632,8 +632,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   oldtop = dump_region->top();
   if (ref->msotype() == MetaspaceObj::ClassType) {
     // Save a pointer immediate in front of an InstanceKlass, so
-    // we can do a quick lookup from InstanceKlass* -> RunTimeSharedClassInfo*
-    // without building another hashtable. See RunTimeSharedClassInfo::get_for()
+    // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
+    // without building another hashtable. See RunTimeClassInfo::get_for()
     // in systemDictionaryShared.cpp.
     Klass* klass = (Klass*)src;
     if (klass->is_instance_klass()) {
