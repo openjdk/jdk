@@ -263,17 +263,16 @@ public class HeadersTest {
     public static void testEqualsMap() {
         final var h = new Headers();
         final var m = new HashMap<String, List<String>>();
-        assertFalse(h.equals(m), "Map instance cannot be equal to Headers");
-        assertFalse(h.equals(null), "null cannot be equal to Headers");
+        assertTrue(h.equals(m));
         assertTrue(m.equals(h));
+        assertFalse(h.equals(null), "null cannot be equal to Headers");
     }
 
     @Test
     public static void testToString() {
         final var h = new Headers();
         h.put("Accept-Encoding", List.of("gzip, deflate"));
-        assertTrue(h.toString().startsWith("com.sun.net.httpserver.Headers"));
-        assertTrue(h.toString().endsWith(" { {Accept-encoding=[gzip, deflate]} }"));
+        assertTrue(h.toString().equals("Headers { {Accept-encoding=[gzip, deflate]} }"));
     }
 
     @Test

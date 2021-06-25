@@ -135,7 +135,6 @@ public class Headers implements Map<String,List<String>> {
      * @param key the key to search for
      * @return    the first {@code String} value associated with the key,
      *            or {@code null} if no mapping for the key exists
-     * @throws NullPointerException if key is null
      */
     public String getFirst(String key) {
         List<String> l = map.get(normalize(key));
@@ -158,7 +157,6 @@ public class Headers implements Map<String,List<String>> {
      *
      * @param key   the header name
      * @param value the value to add to the header
-     * @throws NullPointerException if key or value are null
      */
     public void add(String key, String value) {
         checkValue(value);
@@ -201,7 +199,6 @@ public class Headers implements Map<String,List<String>> {
      *
      * @param key   the header name
      * @param value the header value to set
-     * @throws NullPointerException if key or value are null
      */
     public void set(String key, String value) {
         LinkedList<String> l = new LinkedList<>();
@@ -244,16 +241,14 @@ public class Headers implements Map<String,List<String>> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof Headers h && map.equals(h);
-    }
+    public boolean equals(Object o) { return map.equals(o); }
 
     @Override
     public int hashCode() {return map.hashCode();}
 
     @Override
     public String toString() {
-        final var sb = new StringBuilder(super.toString());
+        final var sb = new StringBuilder(Headers.class.getSimpleName());
         sb.append(" { ");
         sb.append(map.toString());
         sb.append(" }");
