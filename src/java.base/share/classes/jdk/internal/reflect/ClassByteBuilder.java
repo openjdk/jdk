@@ -71,9 +71,10 @@ public class ClassByteBuilder extends ClassWriter {
         addConstructor();
 
         Class<?> type = field.getType().isPrimitive() ? field.getType() : Object.class;
-        boolean isStatic = Modifier.isStatic(field.getModifiers());
-        addGetter(type, isStatic);
-        addSetter(type, isStatic);
+        var isStatic = Modifier.isStatic(field.getModifiers());
+        var isVolatile = Modifier.isVolatile(field.getModifiers());
+        addGetter(type, isStatic, isVolatile);
+        addSetter(type, isStatic, isVolatile);
         visitEnd();
         return toByteArray();
     }
@@ -82,7 +83,7 @@ public class ClassByteBuilder extends ClassWriter {
         visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, METHOD_ACCESSOR_INTF);
         addConstructor();
 
-        boolean isStatic = Modifier.isStatic(method.getModifiers());
+        var isStatic = Modifier.isStatic(method.getModifiers());
         // check if this method type is specialized form or not
         int lastArgIndex = mtype.parameterCount() - 1 - (hasCallerParameter ? 1 : 0);
         if (lastArgIndex >= 0 && mtype.parameterType(lastArgIndex) == Object[].class) {
@@ -118,7 +119,7 @@ public class ClassByteBuilder extends ClassWriter {
         mv.visitEnd();
     }
 
-    private void addGetter(Class<?> type, boolean isStatic) {
+    private void addGetter(Class<?> type, boolean isStatic, boolean isVolatile) {
         MethodType mtype = isStatic ? methodType(type) : methodType(type, Object.class);
         MethodVisitor mv = visitMethod(ACC_PUBLIC,
                                        methodName("get", type),
@@ -129,14 +130,14 @@ public class ClassByteBuilder extends ClassWriter {
         if (!isStatic) {
             mv.visitVarInsn(ALOAD, 1);
         }
-        mv.visitMethodInsn(INVOKEVIRTUAL, VH_CLS, "get",
+        mv.visitMethodInsn(INVOKEVIRTUAL, VH_CLS, isVolatile ? "getVolatile" : "get",
                            mtype.descriptorString(), false);
         emitReturn(mv, type);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
 
-    private void addSetter(Class<?> type, boolean isStatic) {
+    private void addSetter(Class<?> type, boolean isStatic, boolean isVolatile) {
         MethodType mtype = isStatic ? methodType(void.class, type) : methodType(void.class, Object.class, type);
         MethodVisitor mv = visitMethod(ACC_PUBLIC,
                                        methodName("set", type),
@@ -150,7 +151,7 @@ public class ClassByteBuilder extends ClassWriter {
             mv.visitVarInsn(ALOAD, 1);
             emitLoad(mv, type, 2);
         }
-        mv.visitMethodInsn(INVOKEVIRTUAL, VH_CLS, "set",
+        mv.visitMethodInsn(INVOKEVIRTUAL, VH_CLS, isVolatile ? "setVolatile" : "set",
                            mtype.descriptorString(), false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0, 0);
@@ -225,6 +226,8 @@ public class ClassByteBuilder extends ClassWriter {
         } else if (type == Byte.TYPE) {
             mv.visitVarInsn(ILOAD, slot);
         } else if (type == Character.TYPE) {
+            mv.visitVarInsn(ILOAD, slot);
+        } else if (type == Short.TYPE) {
             mv.visitVarInsn(ILOAD, slot);
         } else if (type == Integer.TYPE) {
             mv.visitVarInsn(ILOAD, slot);

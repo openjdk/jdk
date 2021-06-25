@@ -51,20 +51,15 @@ abstract class DirectMethodAccessorImpl extends MethodAccessorImpl {
         assert !Modifier.isNative(method.getModifiers()) && !Reflection.isCallerSensitive(method);
 
         boolean isStatic = Modifier.isStatic(method.getModifiers());
-        return switch (ReflectionFactory.invocationType()) {
+        if (ReflectionFactory.noInflation()) {
+            var mhInvoker = MethodHandleAccessorFactory.newMethodHandleAccessor(method, target, false);
+            return isStatic ? new StaticMethodAccessor(method, target, mhInvoker, false)
+                            : new InstanceMethodAccessor(method, target, mhInvoker, false);
+        } else {
             // Default is the adaptive accessor method.
-            // The direct and fast method accessor are for performance experimentation.
-            case "adaptive" -> isStatic ? new StaticAdaptiveMethodAccessor(method, target)
-                                        : new InstanceAdaptiveMethodAccessor(method, target);
-            case "direct"   -> isStatic ? new StaticMethodAccessor(method, target)
-                                        : new InstanceMethodAccessor(method, target);
-            case "fast"     -> {
-                var mhInvoker = MethodHandleAccessorFactory.newMethodHandleAccessor(method, target, false);
-                yield  isStatic ? new StaticMethodAccessor(method, target, mhInvoker, false)
-                                : new InstanceMethodAccessor(method, target, mhInvoker, false);
-            }
-            default -> throw new InternalError("unexpected invocation type: " + ReflectionFactory.invocationType());
-        };
+            return isStatic ? new StaticAdaptiveMethodAccessor(method, target)
+                            : new InstanceAdaptiveMethodAccessor(method, target);
+        }
     }
 
     /**

@@ -30,6 +30,12 @@
  * @author Andrej Golovnin
  */
 
+/*
+ * @test
+ * @run main/othervm -Xverify:all -Dsun.reflect.noInflation=true TestFieldReflectValueOf
+ * @summary verify the bytecode generated for Field::get and Field::set for each field
+ */
+
 import java.lang.reflect.Field;
 
 public class TestFieldReflectValueOf {
@@ -87,25 +93,25 @@ public class TestFieldReflectValueOf {
     private volatile short shortVolatileField;
 
     public static void main(String[] args) {
-        testUnsafeStaticFieldAccessors();
-        testUnsafeQualifiedStaticFieldAccessors();
-        testUnsafeFieldAccessors();
-        testUnsafeQualifiedFieldAccessors();
+        testStaticFieldAccessors();
+        testStaticVolatileFieldAccessors();
+        testFieldAccessors();
+        testVolatileFieldAccessors();
     }
 
-    private static void testUnsafeStaticFieldAccessors() {
+    private static void testStaticFieldAccessors() {
         testFieldAccessors(true, false);
     }
 
-    private static void testUnsafeQualifiedStaticFieldAccessors() {
+    private static void testStaticVolatileFieldAccessors() {
         testFieldAccessors(true, true);
     }
 
-    private static void testUnsafeFieldAccessors() {
+    private static void testFieldAccessors() {
         testFieldAccessors(false, false);
     }
 
-    private static void testUnsafeQualifiedFieldAccessors() {
+    private static void testVolatileFieldAccessors() {
         testFieldAccessors(false, true);
     }
 

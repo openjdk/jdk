@@ -86,7 +86,6 @@ public class ReflectionFactory {
     private static boolean noInflation        = false;
     private static int     inflationThreshold = 15;
     private static boolean useDirectMethodHandle = true;
-    private static String invocationType = "adaptive";
     private static boolean useNativeAccessorOnly = false;  // for testing only
 
     // true if deserialization constructor checking is disabled
@@ -168,10 +167,11 @@ public class ReflectionFactory {
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
         if (useDirectMethodHandle) {
-            // VM will complete the java.lang.invoke initialization after System::initPhase1
-            // completes.  So method handles are ready for use when initPhase2 begins.
-            // TODO: re-examine if the Field implementation using Unsafe should be kept
-            // for early startup use
+            // Core reflection is supported after java.lang.invoke completes initialization.
+            // java.lang.invoke initialization starts soon after System::initPhase1
+            // and method handles are ready for use when initPhase2 begins.
+            // During early VM startup (initPhase1), fields are accessed directly from
+            // the VM or through JNI.  It should avoid using core reflection.
             if (!VM.isJavaLangInvokeInited()) {
                 throw new InternalError(field.getDeclaringClass().getName() + "::" + field.getName() +
                         " cannot be accessed reflectively before java.lang.invoke is initialized");
@@ -666,12 +666,12 @@ public class ReflectionFactory {
         return inflationThreshold;
     }
 
-    static boolean useDirectMethodHandle() {
-        return useDirectMethodHandle;
+    static boolean noInflation() {
+        return noInflation;
     }
 
-    static String invocationType() {
-        return invocationType;
+    static boolean useDirectMethodHandle() {
+        return useDirectMethodHandle;
     }
 
     /** We have to defer full initialization of this class until after
@@ -706,13 +706,6 @@ public class ReflectionFactory {
         val = props.getProperty("jdk.reflect.useDirectMethodHandle");
         if (val != null && val.equals("false")) {
             useDirectMethodHandle = false;
-        }
-        val = props.getProperty("jdk.reflect.invocationType");
-        if (val != null) {
-            if (!val.equals("direct") && !val.equals("adaptive") && !val.equals("fast")) {
-                throw new IllegalArgumentException("must be direct, fast or adaptive");
-            }
-            invocationType = val;
         }
         val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
         if (val != null && val.equals("true")) {

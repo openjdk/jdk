@@ -261,7 +261,16 @@ final class MethodHandleAccessorFactory {
 
     /**
      * Spins a hidden class that invokes a constant VarHandle of the target field,
-     * loaded from the class data via condy, for reliable performance
+     * loaded from the class data via condy, for reliable performance.
+     *
+     * For a non-volatile field, one class file is generated for each primitive
+     * type and a reference type, its class name is FieldAccessorImpl_L_<T>
+     * for an instance field or FieldAccessorImpl_<T> for a static field
+     * where T is the base type, B C D F I J S Z, for primitive type or L
+     * for a reference type.
+     *
+     * For a volatile field, its class name is FieldAccessorImpl_<T>_V
+     * for an instance field or FieldAccessorImpl_<T>_V for a static field.
      */
     static MHFieldAccessor newVarHandleAccessor(Field field, VarHandle varHandle) {
         var name = classNamePrefix(field);
@@ -281,12 +290,18 @@ final class MethodHandleAccessorFactory {
      * Spins a hidden class that invokes a constant MethodHandle of the target method handle,
      * loaded from the class data via condy, for reliable performance.
      *
-     * Due to the overhead of class loading, this is not the default.
+     * One class file is generated for each method type which is either
+     * (Object,Object[])Object or the specialized version
+     * (Object,Object, ...)Object or (Object,Object, ..., Class)Object
+     * where the number of parameter types = receiver if it's an instance method
+     * + the number of formal parameters + "Class" if it's a caller-sensitive method
+     * which has an adapter defined.
      */
     static MHMethodAccessor newMethodHandleAccessor(Method method, MethodHandle target, boolean hasCallerParameter) {
         var name = classNamePrefix(method, target.type(), hasCallerParameter);
         var cn = name + "$$" + counter.getAndIncrement();
-        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name, n -> spinByteCode(name, method, target.type(), hasCallerParameter));
+        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
+                n -> spinByteCode(name, method, target.type(), hasCallerParameter));
         try {
             var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
             var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
@@ -306,7 +321,8 @@ final class MethodHandleAccessorFactory {
     static MHMethodAccessor newMethodHandleAccessor(Constructor<?> c, MethodHandle target) {
         var name = classNamePrefix(c, target.type());
         var cn = name + "$$" + counter.getAndIncrement();
-        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name, n -> spinByteCode(name, c, target.type()));
+        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
+                n -> spinByteCode(name, c, target.type()));
         try {
             var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
             var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
@@ -327,9 +343,10 @@ final class MethodHandleAccessorFactory {
 
     private static String classNamePrefix(Field field) {
         var isStatic = Modifier.isStatic(field.getModifiers());
+        var isVolatile = Modifier.isVolatile(field.getModifiers());
         var type = field.getType();
         var desc = type.isPrimitive() ? type.descriptorString() : "L";
-        return FIELD_CLASS_NAME_PREFIX + (isStatic ? desc : "L" + desc);
+        return FIELD_CLASS_NAME_PREFIX + (isStatic ? desc : "L" + desc) + (isVolatile ? "_V" : "");
     }
     private static String classNamePrefix(Method method, MethodType mtype, boolean hasCallerParameter) {
         var isStatic = Modifier.isStatic(method.getModifiers());

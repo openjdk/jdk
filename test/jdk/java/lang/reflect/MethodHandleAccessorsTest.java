@@ -26,17 +26,12 @@
  * @bug 6824466
  * @modules java.base/jdk.internal.reflect
  * @summary Test compliance of ConstructorAccessor and MethodAccessor implementations
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.invocationType=direct -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
+ * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Dsun.reflect.inflationThreshold=1 -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
  */
 /*
  * @test
  * @modules java.base/jdk.internal.reflect
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.invocationType=fast -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
- */
-/*
- * @test
- * @modules java.base/jdk.internal.reflect
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.invocationType=adaptive -Dsun.reflect.inflationThreshold=1 -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
+ * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.noInflation=true -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
  */
 /*
  * @test
