@@ -80,6 +80,26 @@ public final class ByteOrder {
     }
 
     /**
+     * Check if the byte order of underlying platform is big endian.
+     *
+     * @return {@code true} if the byte order of underlying platform is
+     * big endian otherwise {@code false}
+     */
+    public static boolean isBigEndian() {
+        return NATIVE_ORDER == BIG_ENDIAN;
+    }
+
+    /**
+     * Check if the byte order of underlying platform is little endian.
+     *
+     * @return {@code true} if the byte order of underlying platform is
+     * little endian otherwise {@code false}
+     */
+    public static boolean isLittleEndian() {
+        return NATIVE_ORDER == LITTLE_ENDIAN;
+    }
+
+    /**
      * Constructs a string describing this object.
      *
      * <p> This method returns the string
