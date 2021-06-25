@@ -47,6 +47,7 @@ public:
 
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
+  static void fix_entry_barrier(nmethod* nm, bool bypass);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);

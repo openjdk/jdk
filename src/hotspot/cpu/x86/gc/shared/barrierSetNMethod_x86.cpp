@@ -165,6 +165,43 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
+class NativeJccInstruction: public NativeInstruction {
+public:
+  enum Intel_specific_constants {
+    je_opcode_b0            = 0x0F,
+    je_opcode_b1            = 0x84,
+    instruction_size        = 6,
+    data_offset             = 2,
+  };
+  bool is_je() {
+    u_char b0 = ubyte_at(0);
+    u_char b1 = ubyte_at(1);
+    return b0 == je_opcode_b0 && b1 == je_opcode_b1;
+  }
+  void patch_to_jmp() {
+    jint offset = int_at(NativeJccInstruction::data_offset);
+    assert(offset == NativeCall::instruction_size, "jump over the call");
+   
+    set_char_at(0, NativeJump::instruction_code);
+    set_int_at(NativeJump::data_offset, offset + NativeInstruction::nop_instruction_size);
+    set_char_at(NativeJump::instruction_size, NativeInstruction::nop_instruction_code);
+  }
+  void patch_to_je() {
+    u_char jmp_opcode = ubyte_at(0);
+    u_char nop_opcode = ubyte_at(NativeJump::instruction_size);
+    assert(jmp_opcode == NativeJump::instruction_code &&
+        nop_opcode == NativeInstruction::nop_instruction_code, "must equal");
+
+    jint offset = int_at(NativeJump::data_offset);
+    assert(offset == NativeCall::instruction_size + NativeInstruction::nop_instruction_size,
+        "jump over nop and call");
+
+    set_char_at(0, je_opcode_b0);
+    set_char_at(1, je_opcode_b1);
+    set_int_at(2, offset - NativeInstruction::nop_instruction_size);
+  }
+};
+
 void BarrierSetNMethod::disarm(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
     return;
@@ -172,6 +209,29 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   cmp->set_immediate(disarmed_value());
+}
+
+void BarrierSetNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+  address je_addr = nm->code_begin() + nm->frame_complete_offset() +
+      entry_barrier_offset + NativeNMethodCmpBarrier::instruction_size;
+#ifndef _LP64
+  // there is a pop instruction after the cmpl instruction
+  je_addr += NativePopReg::instruction_size;
+#endif
+  NativeJccInstruction* jcc = reinterpret_cast<NativeJccInstruction*>(je_addr);
+  if (bypass) {
+    if (jcc->is_je()) {
+      jcc->patch_to_jmp();
+    }
+  } else {
+    if (!jcc->is_je()) {
+      // has been bypassed
+      jcc->patch_to_je();
+    }
+  }
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

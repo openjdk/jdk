@@ -163,6 +163,8 @@ void ZNMethod::register_nmethod(nmethod* nm) {
   log_register(nm);
 
   ZNMethodTable::register_nmethod(nm);
+  const ZNMethodDataOops* const oops = gc_data(nm)->oops();
+  fix_entry_barrier(nm, nm->oops_count() == 1 && oops->immediates_count() == 0);
 
   // Disarm nmethod entry barrier
   disarm(nm);
@@ -202,6 +204,11 @@ bool ZNMethod::is_armed(nmethod* nm) {
 void ZNMethod::disarm(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   bs->disarm(nm);
+}
+
+void ZNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
+  BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs->fix_entry_barrier(nm, bypass);
 }
 
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
