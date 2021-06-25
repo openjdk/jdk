@@ -1608,39 +1608,41 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
     if (is_not_entrant() && can_convert_to_zombie()) {
       return;
     }
+    mark_as_seen_on_stack();
+  }
+
+  // This is a bad time for a safepoint.  We don't want
+  // this nmethod to get unloaded while we're queueing the event.
+  NoSafepointVerifier nsv;
 
 
-    // This is a bad time for a safepoint.  We don't want
-    // this nmethod to get unloaded while we're queueing the event.
-    NoSafepointVerifier nsv;
+  Method *m = method();
+  HOTSPOT_COMPILED_METHOD_LOAD(
+      (char *) m->klass_name()->bytes(),
+      m->klass_name()->utf8_length(),
+      (char *) m->name()->bytes(),
+      m->name()->utf8_length(),
+      (char *) m->signature()->bytes(),
+      m->signature()->utf8_length(),
+      insts_begin(), insts_size());
 
-    Method *m = method();
-    HOTSPOT_COMPILED_METHOD_LOAD(
-        (char *) m->klass_name()->bytes(),
-        m->klass_name()->utf8_length(),
-        (char *) m->name()->bytes(),
-        m->name()->utf8_length(),
-        (char *) m->signature()->bytes(),
-        m->signature()->utf8_length(),
-        insts_begin(), insts_size());
-
-    if (JvmtiExport::should_post_compiled_method_load()) {
-      // Only post unload events if load events are found.
-      set_load_reported();
-      // If a JavaThread hasn't been passed in, let the Service thread
-      // (which is a real Java thread) post the event
-      JvmtiDeferredEvent event = JvmtiDeferredEvent::compiled_method_load_event(this);
-      if (state == NULL) {
-        // Execute any barrier code for this nmethod as if it's called, since
-        // keeping it alive looks like stack walking.
-        run_nmethod_entry_barrier();
-        ServiceThread::enqueue_deferred_event(&event);
-      } else {
-        // This enters the nmethod barrier outside in the caller.
-        state->enqueue_event(&event);
-      }
+  if (JvmtiExport::should_post_compiled_method_load()) {
+    // Only post unload events if load events are found.
+    set_load_reported();
+    // If a JavaThread hasn't been passed in, let the Service thread
+    // (which is a real Java thread) post the event
+    JvmtiDeferredEvent event = JvmtiDeferredEvent::compiled_method_load_event(this);
+    if (state == NULL) {
+      // Execute any barrier code for this nmethod as if it's called, since
+      // keeping it alive looks like stack walking.
+      run_nmethod_entry_barrier();
+      ServiceThread::enqueue_deferred_event(&event);
+    } else {
+      // This enters the nmethod barrier outside in the caller.
+      state->enqueue_event(&event);
     }
   }
+
 }
 
 void nmethod::post_compiled_method_unload() {
