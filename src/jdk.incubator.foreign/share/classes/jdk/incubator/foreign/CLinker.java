@@ -28,8 +28,10 @@ package jdk.incubator.foreign;
 import jdk.internal.foreign.AbstractCLinker;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.PlatformLayouts;
+import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.aarch64.AArch64VaList;
+import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64VaList;
+import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64VaList;
 import jdk.internal.foreign.abi.x64.sysv.SysVVaList;
 import jdk.internal.foreign.abi.x64.windows.WinVaList;
 import jdk.internal.reflect.CallerSensitive;
@@ -39,6 +41,7 @@ import java.lang.constant.Constable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -114,7 +117,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * Returns the C linker for the current platform.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -130,6 +133,25 @@ public sealed interface CLinker permits AbstractCLinker {
     }
 
     /**
+     * Obtains a system lookup which is suitable to find symbols in the standard C libraries. The set of symbols
+     * available for lookup is unspecified, as it depends on the platform and on the operating system.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     * @return a system-specific library lookup which is suitable to find symbols in the standard C libraries.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    static SymbolLookup systemLookup() {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        return SystemLookup.getInstance();
+    }
+
+    /**
      * Obtains a foreign method handle, with the given type and featuring the given function descriptor,
      * which can be used to call a target foreign function at the given address.
      * <p>
@@ -137,13 +159,14 @@ public sealed interface CLinker permits AbstractCLinker {
      * an additional prefix parameter, of type {@link SegmentAllocator}, which will be used by the linker runtime
      * to allocate structs returned by-value.
      *
-     * @see LibraryLookup#lookup(String)
-     *
      * @param symbol   downcall symbol.
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
-     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
+     *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
@@ -154,14 +177,15 @@ public sealed interface CLinker permits AbstractCLinker {
      * If the provided method type's return type is {@code MemorySegment}, then the provided allocator will be used by
      * the linker runtime to allocate structs returned by-value.
      *
-     * @see LibraryLookup#lookup(String)
-     *
      * @param symbol    downcall symbol.
      * @param allocator the segment allocator.
      * @param type      the method type.
      * @param function  the function descriptor.
      * @return the downcall method handle.
-     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
+     *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function);
 
@@ -174,13 +198,16 @@ public sealed interface CLinker permits AbstractCLinker {
      * If the provided method type's return type is {@code MemorySegment}, then the resulting method handle features an
      * additional prefix parameter (inserted immediately after the address parameter), of type {@link SegmentAllocator}),
      * which will be used by the linker runtime to allocate structs returned by-value.
-     *
-     * @see LibraryLookup#lookup(String)
+     * <p>
+     * The returned method handle will throw an {@link IllegalArgumentException} if the target address passed to it is
+     * {@link MemoryAddress#NULL}, or a {@link NullPointerException} if the target address is {@code null}.
      *
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(MethodType type, FunctionDescriptor function);
 
@@ -188,8 +215,15 @@ public sealed interface CLinker permits AbstractCLinker {
      * Allocates a native stub with given scope which can be passed to other foreign functions (as a function pointer);
      * calling such a function pointer from native code will result in the execution of the provided method handle.
      *
-     * <p>The returned memory address is associated with the provided scope. When such scope is closed,
+     * <p>
+     * The returned memory address is associated with the provided scope. When such scope is closed,
      * the corresponding native stub will be deallocated.
+     * <p>
+     * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
+     * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients
+     * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
+     * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
+     * method handle combinator, and handle exceptions as desired in the corresponding catch block.
      *
      * @param target   the target method handle.
      * @param function the function descriptor.
@@ -252,7 +286,7 @@ public sealed interface CLinker permits AbstractCLinker {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the platform's default charset,
+     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
      * storing the result into a native memory segment allocated using the provided allocator.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -267,11 +301,11 @@ public sealed interface CLinker permits AbstractCLinker {
     static MemorySegment toCString(String str, SegmentAllocator allocator) {
         Objects.requireNonNull(str);
         Objects.requireNonNull(allocator);
-        return toCString(str.getBytes(), allocator);
+        return toCString(str.getBytes(StandardCharsets.UTF_8), allocator);
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the platform's default charset,
+     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
      * storing the result into a native memory segment associated with the provided resource scope.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -290,48 +324,7 @@ public sealed interface CLinker permits AbstractCLinker {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
-     * storing the result into a new native memory segment native memory segment allocated using the provided allocator.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
-     * {@link java.nio.charset.CharsetEncoder} class should be used when more
-     * control over the encoding process is required.
-     *
-     * @param str the Java string to be converted into a C string.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @param allocator the allocator to be used for the native segment allocation.
-     * @return a new native memory segment containing the converted C string.
-     */
-    static MemorySegment toCString(String str, Charset charset, SegmentAllocator allocator) {
-        Objects.requireNonNull(str);
-        Objects.requireNonNull(charset);
-        Objects.requireNonNull(allocator);
-        return toCString(str.getBytes(charset), allocator);
-    }
-
-    /**
-     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
-     * storing the result into a native memory segment associated with the provided resource scope.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
-     * {@link java.nio.charset.CharsetEncoder} class should be used when more
-     * control over the encoding process is required.
-     *
-     * @param str the Java string to be converted into a C string.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @param scope the resource scope to be associated with the returned segment.
-     * @return a new native memory segment containing the converted C string.
-     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
-     * than the thread owning {@code scope}.
-     */
-    static MemorySegment toCString(String str, Charset charset, ResourceScope scope) {
-        return toCString(str, charset, SegmentAllocator.ofScope(scope));
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a UTF-8 encoded, null-terminated C string stored at given address into a Java string.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -339,13 +332,14 @@ public sealed interface CLinker permits AbstractCLinker {
      * over the decoding process is required.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform,
+     * or if {@code addr == MemoryAddress.NULL}.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -353,41 +347,12 @@ public sealed interface CLinker permits AbstractCLinker {
     @CallerSensitive
     static String toJavaString(MemoryAddress addr) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
-        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), Charset.defaultCharset());
+        SharedUtils.checkAddress(addr);
+        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue());
     }
 
     /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string.  The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
-     *
-     * @param addr the address at which the string is stored.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
-     * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
-     */
-    @CallerSensitive
-    static String toJavaString(MemoryAddress addr, Charset charset) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
-        Objects.requireNonNull(charset);
-        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), charset);
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a UTF-8 encoded, null-terminated C string stored at given address into a Java string.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -401,27 +366,7 @@ public sealed interface CLinker permits AbstractCLinker {
      */
     static String toJavaString(MemorySegment addr) {
         Objects.requireNonNull(addr);
-        return SharedUtils.toJavaStringInternal(addr, 0L, Charset.defaultCharset());
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string.  The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
-     * @param addr the address at which the string is stored.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
-     * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalStateException if the size of the native string is greater than the size of the segment
-     * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
-     */
-    static String toJavaString(MemorySegment addr, Charset charset) {
-        Objects.requireNonNull(addr);
-        Objects.requireNonNull(charset);
-        return SharedUtils.toJavaStringInternal(addr, 0L, charset);
+        return SharedUtils.toJavaStringInternal(addr, 0L);
     }
 
     private static void copy(MemorySegment addr, byte[] bytes) {
@@ -440,7 +385,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * Allocates memory of given size using malloc.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -466,19 +411,20 @@ public sealed interface CLinker permits AbstractCLinker {
      * Frees the memory pointed by the given memory address.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr memory address of the native memory to be freed
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * @throws IllegalArgumentException if {@code addr == MemoryAddress.NULL}.
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
     static void freeMemory(MemoryAddress addr) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
+        SharedUtils.checkAddress(addr);
         SharedUtils.freeMemoryInternal(addr);
     }
 
@@ -498,7 +444,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
      * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
      */
-    sealed interface VaList extends Addressable permits WinVaList, SysVVaList, AArch64VaList, SharedUtils.EmptyVaList {
+    sealed interface VaList extends Addressable permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, SharedUtils.EmptyVaList {
 
         /**
          * Reads the next value as an {@code int} and advances this va list's position.
@@ -622,7 +568,7 @@ public sealed interface CLinker permits AbstractCLinker {
          * backed by the {@linkplain ResourceScope#globalScope() global} resource scope.
          * <p>
          * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-         * Restricted method are unsafe, and, if used incorrectly, their use might crash
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
          * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
          * restricted methods, and use safe and supported functionalities, where possible.
          *
@@ -643,7 +589,7 @@ public sealed interface CLinker permits AbstractCLinker {
          * with given resource scope.
          * <p>
          * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-         * Restricted method are unsafe, and, if used incorrectly, their use might crash
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
          * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
          * restricted methods, and use safe and supported functionalities, where possible.
          *
@@ -704,7 +650,7 @@ public sealed interface CLinker permits AbstractCLinker {
          * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
          * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
          */
-        sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, AArch64VaList.Builder {
+        sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder {
 
             /**
              * Adds a native value represented as an {@code int} to the C {@code va_list} being constructed.

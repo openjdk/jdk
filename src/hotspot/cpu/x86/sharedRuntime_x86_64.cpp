@@ -1149,6 +1149,31 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return stk_args;
 }
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  assert(num_bits == 64 || num_bits == 128 || num_bits == 256 || num_bits == 512,
+         "only certain vector sizes are supported for now");
+
+  static const XMMRegister VEC_ArgReg[32] = {
+     xmm0,  xmm1,  xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
+     xmm8,  xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+    xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+    xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31
+  };
+
+  uint stk_args = 0;
+  uint fp_args = 0;
+
+  for (uint i = 0; i < total_args_passed; i++) {
+    VMReg vmreg = VEC_ArgReg[fp_args++]->as_VMReg();
+    int next_val = num_bits == 64 ? 1 : (num_bits == 128 ? 3 : (num_bits  == 256 ? 7 : 15));
+    regs[i].set_pair(vmreg->next(next_val), vmreg);
+  }
+
+  return stk_args;
+}
+
 void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type, int frame_slots) {
   // We always ignore the frame_slots arg and just use the space just below frame pointer
   // which by this time is free to use
@@ -2045,10 +2070,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (UseBiasedLocking) {
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, rscratch1, rscratch2, false, lock_done, &slow_path_lock);
-    }
-
     // Load immediate 1 into swap_reg %rax
     __ movl(swap_reg, 1);
 
@@ -2199,11 +2220,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
     Label done;
-
-    if (UseBiasedLocking) {
-      __ biased_locking_exit(obj_reg, old_hdr, done);
-    }
-
     // Simple recursive lock?
 
     __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), (int32_t)NULL_WORD);

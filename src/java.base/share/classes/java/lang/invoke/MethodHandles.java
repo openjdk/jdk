@@ -1933,9 +1933,9 @@ public class MethodHandles {
          * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The purported representation in {@code bytes} must be a {@code ClassFile}
-         * structure of a supported major and minor version. The major and minor version
-         * may differ from the {@code class} file version of the lookup class of this
-         * {@code Lookup}.</li>
+         * structure (JVMS {@jvms 4.1}) of a supported major and minor version.
+         * The major and minor version may differ from the {@code class} file version
+         * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The value of {@code this_class} must be a valid index in the
          * {@code constant_pool} table, and the entry at that index must be a valid
@@ -5175,13 +5175,13 @@ assert((int)twice.invokeExact(21) == 42);
         Wrapper w = Wrapper.forPrimitiveType(ptype);
         // perform unboxing and/or primitive conversion
         value = w.convert(value, ptype);
-        switch (w) {
-        case INT:     return result.bindArgumentI(pos, (int)value);
-        case LONG:    return result.bindArgumentJ(pos, (long)value);
-        case FLOAT:   return result.bindArgumentF(pos, (float)value);
-        case DOUBLE:  return result.bindArgumentD(pos, (double)value);
-        default:      return result.bindArgumentI(pos, ValueConversions.widenSubword(value));
-        }
+        return switch (w) {
+            case INT    -> result.bindArgumentI(pos, (int) value);
+            case LONG   -> result.bindArgumentJ(pos, (long) value);
+            case FLOAT  -> result.bindArgumentF(pos, (float) value);
+            case DOUBLE -> result.bindArgumentD(pos, (double) value);
+            default -> result.bindArgumentI(pos, ValueConversions.widenSubword(value));
+        };
     }
 
     private static Class<?>[] insertArgumentsChecks(MethodHandle target, int insCount, int pos) throws RuntimeException {

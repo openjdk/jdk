@@ -1024,6 +1024,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       is_arraycopy = (call->Opcode() == Op_ArrayCopy) ||
         call->as_CallLeaf()->is_call_to_arraycopystub();
       // fall through
+    case Op_CallLeafVector:
     case Op_CallLeaf: {
       // Stub calls, objects do not escape but they are not scale replaceable.
       // Adjust escape state for outgoing arguments.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ import jdk.internal.vm.vector.VectorSupport;
  * <ul>
  * <li>Lane-wise vector operations that apply to floating point vectors
  * follow the accuracy and monotonicity specifications of the equivalent
- * Java operation or method mentioned in its documentation.
+ * Java operation or method mentioned in its documentation unless specified otherwise.
  * If the vector element type is {@code float} and the Java operation or
  * method only accepts and returns {@code double} values, then the scalar operation
  * on each lane is adapted to cast operands and the result, specifically widening
@@ -451,40 +451,70 @@ public abstract class VectorOperators {
     /** Produce {@code -a}. */
     public static final Unary NEG = unary("NEG", "-a", VectorSupport.VECTOR_OP_NEG, VO_ALL|VO_SPECIAL);
 
-    /** Produce {@code sin(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary SIN = unary("SIN", "sin", -1 /*VectorSupport.VECTOR_OP_SIN*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code cos(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary COS = unary("COS", "cos", -1 /*VectorSupport.VECTOR_OP_COS*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code tan(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary TAN = unary("TAN", "tan", -1 /*VectorSupport.VECTOR_OP_TAN*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code asin(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary ASIN = unary("ASIN", "asin", -1 /*VectorSupport.VECTOR_OP_ASIN*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code acos(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary ACOS = unary("ACOS", "acos", -1 /*VectorSupport.VECTOR_OP_ACOS*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code atan(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary ATAN = unary("ATAN", "atan", -1 /*VectorSupport.VECTOR_OP_ATAN*/, VO_ONLYFP | VO_SPECIAL);
+    /** Produce {@code sin(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary SIN = unary("SIN", "sin", VectorSupport.VECTOR_OP_SIN, VO_ONLYFP);
+    /** Produce {@code cos(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary COS = unary("COS", "cos", VectorSupport.VECTOR_OP_COS, VO_ONLYFP);
+    /** Produce {@code tan(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary TAN = unary("TAN", "tan", VectorSupport.VECTOR_OP_TAN, VO_ONLYFP);
+    /** Produce {@code asin(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary ASIN = unary("ASIN", "asin", VectorSupport.VECTOR_OP_ASIN, VO_ONLYFP);
+    /** Produce {@code acos(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary ACOS = unary("ACOS", "acos", VectorSupport.VECTOR_OP_ACOS, VO_ONLYFP);
+    /** Produce {@code atan(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary ATAN = unary("ATAN", "atan", VectorSupport.VECTOR_OP_ATAN, VO_ONLYFP);
 
-    /** Produce {@code exp(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary EXP = unary("EXP", "exp", -1 /*VectorSupport.VECTOR_OP_EXP*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code log(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary LOG = unary("LOG", "log", -1 /*VectorSupport.VECTOR_OP_LOG*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code log10(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary LOG10 = unary("LOG10", "log10", -1 /*VectorSupport.VECTOR_OP_LOG10*/, VO_ONLYFP | VO_SPECIAL);
+    /** Produce {@code exp(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary EXP = unary("EXP", "exp", VectorSupport.VECTOR_OP_EXP, VO_ONLYFP);
+    /** Produce {@code log(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary LOG = unary("LOG", "log", VectorSupport.VECTOR_OP_LOG, VO_ONLYFP);
+    /** Produce {@code log10(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary LOG10 = unary("LOG10", "log10", VectorSupport.VECTOR_OP_LOG10, VO_ONLYFP);
     /** Produce {@code sqrt(a)}.  Floating only.  See section "Operations on floating point vectors" above */
     public static final /*float*/ Unary SQRT = unary("SQRT", "sqrt", VectorSupport.VECTOR_OP_SQRT, VO_ONLYFP);
-    /** Produce {@code cbrt(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary CBRT = unary("CBRT", "cbrt", -1 /*VectorSupport.VECTOR_OP_CBRT*/, VO_ONLYFP | VO_SPECIAL);
+    /** Produce {@code cbrt(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary CBRT = unary("CBRT", "cbrt", VectorSupport.VECTOR_OP_CBRT, VO_ONLYFP);
 
-    /** Produce {@code sinh(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary SINH = unary("SINH", "sinh", -1 /*VectorSupport.VECTOR_OP_SINH*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code cosh(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary COSH = unary("COSH", "cosh", -1 /*VectorSupport.VECTOR_OP_COSH*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code tanh(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary TANH = unary("TANH", "tanh", -1 /*VectorSupport.VECTOR_OP_TANH*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code expm1(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary EXPM1 = unary("EXPM1", "expm1", -1 /*VectorSupport.VECTOR_OP_EXPM1*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code log1p(a)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Unary LOG1P = unary("LOG1P", "log1p", -1 /*VectorSupport.VECTOR_OP_LOG1P*/, VO_ONLYFP | VO_SPECIAL);
+    /** Produce {@code sinh(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary SINH = unary("SINH", "sinh", VectorSupport.VECTOR_OP_SINH, VO_ONLYFP);
+    /** Produce {@code cosh(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary COSH = unary("COSH", "cosh", VectorSupport.VECTOR_OP_COSH, VO_ONLYFP);
+    /** Produce {@code tanh(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary TANH = unary("TANH", "tanh", VectorSupport.VECTOR_OP_TANH, VO_ONLYFP);
+    /** Produce {@code expm1(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary EXPM1 = unary("EXPM1", "expm1", VectorSupport.VECTOR_OP_EXPM1, VO_ONLYFP);
+    /** Produce {@code log1p(a)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Unary LOG1P = unary("LOG1P", "log1p", VectorSupport.VECTOR_OP_LOG1P, VO_ONLYFP);
 
     // Binary operators
 
@@ -525,12 +555,18 @@ public abstract class VectorOperators {
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", -1 /*VectorSupport.VECTOR_OP_RROTATE*/, VO_SHIFT | VO_SPECIAL);
 
-    /** Produce {@code atan2(a,b)}. See  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Binary ATAN2 = binary("ATAN2", "atan2", -1 /*VectorSupport.VECTOR_OP_ATAN2*/ , VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code pow(a,b)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Binary POW = binary("POW", "pow", -1 /*VectorSupport.VECTOR_OP_POW*/, VO_ONLYFP | VO_SPECIAL);
-    /** Produce {@code hypot(a,b)}.  Floating only.  See section "Operations on floating point vectors" above */
-    public static final /*float*/ Binary HYPOT = binary("HYPOT", "hypot", -1 /*VectorSupport.VECTOR_OP_HYPOT*/, VO_ONLYFP | VO_SPECIAL);
+    /** Produce {@code atan2(a,b)}. See  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Binary ATAN2 = binary("ATAN2", "atan2", VectorSupport.VECTOR_OP_ATAN2, VO_ONLYFP);
+    /** Produce {@code pow(a,b)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Binary POW = binary("POW", "pow", VectorSupport.VECTOR_OP_POW, VO_ONLYFP);
+    /** Produce {@code hypot(a,b)}.  Floating only.
+     *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
+     */
+    public static final /*float*/ Binary HYPOT = binary("HYPOT", "hypot", VectorSupport.VECTOR_OP_HYPOT, VO_ONLYFP);
 
     // Ternary operators
 
@@ -1251,11 +1287,7 @@ public abstract class VectorOperators {
                        op == ROR ||
                        op == IS_DEFAULT || op == IS_NEGATIVE ||
                        op == IS_FINITE || op == IS_NAN || op == IS_INFINITE ||
-                       op == BITWISE_BLEND ||
-                       op == SIN   || op == COS   || op == TAN   || op == ASIN || op == ACOS || op == ATAN || op == EXP  ||
-                       op == LOG   || op == LOG10 || op == SQRT  || op == CBRT || op == SINH || op == COSH || op == TANH ||
-                       op == EXPM1 || op == LOG1P || op == ATAN2 || op == POW || op == HYPOT
-                ) : op;
+                       op == BITWISE_BLEND) : op;
             }
         }
         return true;

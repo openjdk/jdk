@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        SharedUtils.checkFunctionTypes(mt, cDesc, AArch64Linker.ADDRESS_SIZE);
+        SharedUtils.checkFunctionTypes(mt, cDesc, AArch64.C_POINTER.bitSize());
 
         CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
 
@@ -207,6 +207,16 @@ public class CallArranger {
 
             return storage[0];
         }
+
+        void adjustForVarArgs(MemoryLayout layout) {
+            if (layout.attribute(AArch64.STACK_VARARGS_ATTRIBUTE_NAME)
+                    .map(Boolean.class::cast).orElse(false)) {
+                // This system passes all variadic parameters on the stack. Ensure
+                // no further arguments are allocated to registers.
+                nRegs[StorageClasses.INTEGER] = MAX_REGISTER_ARGUMENTS;
+                nRegs[StorageClasses.VECTOR] = MAX_REGISTER_ARGUMENTS;
+            }
+        }
     }
 
     static abstract class BindingCalculator {
@@ -278,6 +288,7 @@ public class CallArranger {
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
             TypeClass argumentClass = TypeClass.classifyLayout(layout);
             Binding.Builder bindings = Binding.builder();
+            storageCalculator.adjustForVarArgs(layout);
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
@@ -380,6 +391,7 @@ public class CallArranger {
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
             TypeClass argumentClass = TypeClass.classifyLayout(layout);
             Binding.Builder bindings = Binding.builder();
+            assert !layout.attribute(AArch64.STACK_VARARGS_ATTRIBUTE_NAME).isPresent() : "no variadic upcalls";
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;

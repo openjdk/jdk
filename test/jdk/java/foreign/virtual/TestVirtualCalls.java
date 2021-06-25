@@ -32,11 +32,11 @@
 import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import org.testng.annotations.*;
 
@@ -46,7 +46,6 @@ import static org.testng.Assert.assertEquals;
 public class TestVirtualCalls {
 
     static final CLinker abi = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofLibrary("Virtual");
 
     static final MethodHandle func;
     static final MemoryAddress funcA;
@@ -58,9 +57,11 @@ public class TestVirtualCalls {
             MethodType.methodType(int.class),
             FunctionDescriptor.of(C_INT));
 
-        funcA = lookup.lookup("funcA").orElseThrow();
-        funcB = lookup.lookup("funcB").orElseThrow();
-        funcC = lookup.lookup("funcC").orElseThrow();
+        System.loadLibrary("Virtual");
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
+        funcA = lookup.lookup("funcA").get();
+        funcB = lookup.lookup("funcB").get();
+        funcC = lookup.lookup("funcC").get();
     }
 
     @Test
@@ -68,6 +69,11 @@ public class TestVirtualCalls {
         assertEquals((int) func.invokeExact((Addressable) funcA), 1);
         assertEquals((int) func.invokeExact((Addressable) funcB), 2);
         assertEquals((int) func.invokeExact((Addressable) funcC), 3);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNullTarget() throws Throwable {
+        int x = (int) func.invokeExact((Addressable) null);
     }
 
 }

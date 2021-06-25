@@ -34,7 +34,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
@@ -58,10 +58,7 @@ public class MethodHandleLookup {
                             MethodType.methodType(CLinker.class)), "CLinker::getInstance" },
                     { MethodHandles.lookup().findStatic(CLinker.class, "toJavaString",
                             MethodType.methodType(String.class, MemoryAddress.class)),
-                            "CLinker::toJavaString/1" },
-                    { MethodHandles.lookup().findStatic(CLinker.class, "toJavaString",
-                            MethodType.methodType(String.class, MemoryAddress.class, Charset.class)),
-                            "CLinker::toJavaString/2" },
+                            "CLinker::toJavaString" },
                     { MethodHandles.lookup().findStatic(CLinker.class, "allocateMemory",
                             MethodType.methodType(MemoryAddress.class, long.class)),
                             "CLinker::allocateMemory" },
@@ -74,15 +71,12 @@ public class MethodHandleLookup {
                     { MethodHandles.lookup().findStatic(CLinker.VaList.class, "ofAddress",
                             MethodType.methodType(CLinker.VaList.class, MemoryAddress.class, ResourceScope.class)),
                             "VaList::ofAddress/2" },
-                    { MethodHandles.lookup().findStatic(LibraryLookup.class, "ofPath",
-                            MethodType.methodType(LibraryLookup.class, Path.class)),
-                            "LibraryLookup::ofPath" },
-                    { MethodHandles.lookup().findStatic(LibraryLookup.class, "ofLibrary",
-                            MethodType.methodType(LibraryLookup.class, String.class)),
-                            "LibraryLookup::ofLibrary" },
-                    { MethodHandles.lookup().findStatic(LibraryLookup.class, "ofDefault",
-                            MethodType.methodType(LibraryLookup.class)),
-                            "LibraryLookup::ofDefault" },
+                    { MethodHandles.lookup().findStatic(CLinker.class, "systemLookup",
+                            MethodType.methodType(SymbolLookup.class)),
+                            "CLinker::systemLookup" },
+                    { MethodHandles.lookup().findStatic(SymbolLookup.class, "loaderLookup",
+                            MethodType.methodType(SymbolLookup.class)),
+                            "SymbolLookup::loaderLookup" },
                     { MethodHandles.lookup().findVirtual(MemoryAddress.class, "asSegment",
                             MethodType.methodType(MemorySegment.class, long.class, ResourceScope.class)),
                             "MemoryAddress::asSegment/1" },

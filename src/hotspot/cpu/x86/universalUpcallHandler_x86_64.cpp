@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,7 +483,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     __ stmxcsr(mxcsr_save);
     __ movl(rax, mxcsr_save);
     __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-    ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ cmp32(rax, mxcsr_std);
     __ jcc(Assembler::equal, skip_ldmx);
     __ ldmxcsr(mxcsr_std);
@@ -585,7 +585,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs conv = ForeignGlobals::parse_call_regs(jconv);
   assert(conv._rets_length <= 1, "no multi reg returns");
-  CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 1024, /* locs_size = */ 1024);
+  CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 2048, /* locs_size = */ 1024);
 
   int register_size = sizeof(uintptr_t);
   int buffer_alignment = xmm_reg_size;

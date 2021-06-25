@@ -542,10 +542,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 java/foreign/TestMismatch.java 8249684 macosx-all
 
-java/foreign/StdLibTest.java 8263512 macosx-aarch64
-java/foreign/TestVarArgs.java 8263512 macosx-aarch64
-java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
-
 ############################################################################
 
 # jdk_lang
@@ -610,7 +606,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/MulticastSocket/Promiscuous.java                       8265369 macosx-aarch64
 
 ############################################################################
 
@@ -804,6 +799,10 @@ sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
+sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 ############################################################################
 
@@ -822,6 +821,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java        8263461 linux-x64
+jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
 
 ############################################################################
 

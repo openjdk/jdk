@@ -119,7 +119,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * }</pre>
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -153,7 +153,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * the provided cleanup action (if any).
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *

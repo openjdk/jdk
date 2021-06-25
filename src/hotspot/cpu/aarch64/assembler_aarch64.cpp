@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,25 @@ short Assembler::SIMD_Size_in_bytes[] = {
   // T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
        8,   16,   8,  16,   8,  16,   8,  16,  16
 };
+
+Assembler::SIMD_Arrangement Assembler::_esize2arrangement_table[9][2] = {
+  // esize        isQ:false             isQ:true
+  /*   0  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   1  */      {T8B,                 T16B},
+  /*   2  */      {T4H,                 T8H},
+  /*   3  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   4  */      {T2S,                 T4S},
+  /*   5  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   6  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   7  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   8  */      {T1D,                 T2D}
+  };
+
+
+Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
+    guarantee(esize == 1 || esize == 2 || esize == 4 || esize == 8, "unsupported element size");
+    return _esize2arrangement_table[esize][isQ];
+}
 
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,

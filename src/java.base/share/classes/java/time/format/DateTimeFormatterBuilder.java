@@ -2546,10 +2546,10 @@ public final class DateTimeFormatterBuilder {
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             // using ordinals to avoid javac synthetic inner class
             switch (ordinal()) {
-                case 0: context.setCaseSensitive(true); break;
-                case 1: context.setCaseSensitive(false); break;
-                case 2: context.setStrict(true); break;
-                case 3: context.setStrict(false); break;
+                case 0 -> context.setCaseSensitive(true);
+                case 1 -> context.setCaseSensitive(false);
+                case 2 -> context.setStrict(true);
+                case 3 -> context.setStrict(false);
             }
             return position;
         }
@@ -2787,15 +2787,10 @@ public final class DateTimeFormatterBuilder {
                 }
             } else {
                 switch (signStyle) {
-                    case NORMAL:
-                    case EXCEEDS_PAD:
-                    case ALWAYS:
-                        buf.append(decimalStyle.getNegativeSign());
-                        break;
-                    case NOT_NEGATIVE:
-                        throw new DateTimeException("Field " + field +
-                            " cannot be printed as the value " + value +
-                            " cannot be negative according to the SignStyle");
+                    case NORMAL, EXCEEDS_PAD, ALWAYS -> buf.append(decimalStyle.getNegativeSign());
+                    case NOT_NEGATIVE -> throw new DateTimeException("Field " + field +
+                                             " cannot be printed as the value " + value +
+                                             " cannot be negative according to the SignStyle");
                 }
             }
             for (int i = 0; i < minWidth - str.length(); i++) {
@@ -4128,13 +4123,11 @@ public final class DateTimeFormatterBuilder {
                 perLocale.put(locale, names);
                 cache.put(id, new SoftReference<>(perLocale));
             }
-            switch (type) {
-            case STD:
-                return names[textStyle.zoneNameStyleIndex() + 1];
-            case DST:
-                return names[textStyle.zoneNameStyleIndex() + 3];
-            }
-            return names[textStyle.zoneNameStyleIndex() + 5];
+            return switch (type) {
+                case STD -> names[textStyle.zoneNameStyleIndex() + 1];
+                case DST -> names[textStyle.zoneNameStyleIndex() + 3];
+                default  -> names[textStyle.zoneNameStyleIndex() + 5];
+            };
         }
 
         @Override

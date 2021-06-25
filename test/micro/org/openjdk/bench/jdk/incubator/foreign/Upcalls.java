@@ -23,10 +23,10 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SymbolLookup;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -80,13 +80,13 @@ public class Upcalls {
         cb_args10_jni = makeCB(className, "args10", "(JDJDJDJDJD)V");
 
         try {
-            LibraryLookup ll = LibraryLookup.ofLibrary("Upcalls");
+            System.loadLibrary("Upcalls");
             {
                 String name = "blank";
                 MethodType mt = MethodType.methodType(void.class);
                 FunctionDescriptor fd = FunctionDescriptor.ofVoid();
 
-                blank = linkFunc(ll, name, mt, fd);
+                blank = linkFunc(name, mt, fd);
                 cb_blank = makeCB(name, mt, fd);
             }
             {
@@ -94,7 +94,7 @@ public class Upcalls {
                 MethodType mt = MethodType.methodType(int.class, int.class);
                 FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
 
-                identity = linkFunc(ll, name, mt, fd);
+                identity = linkFunc(name, mt, fd);
                 cb_identity = makeCB(name, mt, fd);
             }
             {
@@ -104,7 +104,7 @@ public class Upcalls {
                 FunctionDescriptor fd = FunctionDescriptor.ofVoid(
                         C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG);
 
-                args5 = linkFunc(ll, name, mt, fd);
+                args5 = linkFunc(name, mt, fd);
                 cb_args5 = makeCB(name, mt, fd);
             }
             {
@@ -116,7 +116,7 @@ public class Upcalls {
                         C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG,
                         C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE);
 
-                args10 = linkFunc(ll, name, mt, fd);
+                args10 = linkFunc(name, mt, fd);
                 cb_args10 = makeCB(name, mt, fd);
             }
         } catch (ReflectiveOperationException e) {
@@ -124,9 +124,9 @@ public class Upcalls {
         }
     }
 
-    static MethodHandle linkFunc(LibraryLookup ll, String name, MethodType baseType, FunctionDescriptor baseDesc) {
+    static MethodHandle linkFunc(String name, MethodType baseType, FunctionDescriptor baseDesc) {
         return abi.downcallHandle(
-            ll.lookup(name).orElseThrow(),
+            SymbolLookup.loaderLookup().lookup(name).orElseThrow(),
             baseType.insertParameterTypes(baseType.parameterCount(), MemoryAddress.class),
             baseDesc.withAppendedArgumentLayouts(C_POINTER)
         );

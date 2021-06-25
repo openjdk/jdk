@@ -3344,7 +3344,6 @@ public class Check {
         return targets.isEmpty() || targets.isPresent() && !targets.get().isEmpty();
     }
 
-    @SuppressWarnings("preview")
     Optional<Set<Name>> getApplicableTargets(JCAnnotation a, Symbol s) {
         Attribute.Array arr = getAttributeTargetAttribute(a.annotationType.type.tsym);
         Name[] targets;

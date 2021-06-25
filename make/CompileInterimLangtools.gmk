@@ -49,7 +49,8 @@ TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
     $(INTERIM_LANGTOOLS_MODULES))
 
 $(eval $(call SetupCopyFiles, COPY_PREVIEW_FEATURES, \
-    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java, \
+    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
+        $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/NoPreview.java, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/, \
 ))
 

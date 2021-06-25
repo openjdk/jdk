@@ -1530,8 +1530,16 @@ public:
 public:
 
   enum SIMD_Arrangement {
-    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
+    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
   };
+
+private:
+
+  static SIMD_Arrangement _esize2arrangement_table[9][2];
+
+public:
+
+  static SIMD_Arrangement esize2arrangement(int esize, bool isQ);
 
   enum SIMD_RegVariant {
     B, H, S, D, Q, INVALID
@@ -2410,6 +2418,7 @@ public:
   INSN(cmgt,   0, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmge,   0, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmhi,   1, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmhs,   1, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
@@ -3265,8 +3274,6 @@ Instruction_aarch64::~Instruction_aarch64() {
 inline const Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
-
-class BiasedLockingCounters;
 
 extern "C" void das(uint64_t start, int len);
 

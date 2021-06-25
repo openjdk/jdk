@@ -30,7 +30,6 @@
 #include "opto/intrinsicnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -234,7 +233,6 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
                                          Metadata* method_data, bool profile_rtm,
                                          Label& DONE_LABEL, Label& IsInflated) {
   assert(UseRTMForStackLocks, "why call this otherwise?");
-  assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
   assert(tmpReg == rax, "");
   assert(scrReg == rdx, "");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
@@ -244,7 +242,7 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
     bind(L_rtm_retry);
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
-  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral
   jcc(Assembler::notZero, IsInflated);
 
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
@@ -259,8 +257,8 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
   }
   xbegin(L_on_abort);
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));       // fetch markword
-  andptr(tmpReg, markWord::biased_lock_mask_in_place); // look at 3 lock bits
-  cmpptr(tmpReg, markWord::unlocked_value);            // bits = 001 unlocked
+  andptr(tmpReg, markWord::lock_mask_in_place);     // look at 2 lock bits
+  cmpptr(tmpReg, markWord::unlocked_value);         // bits = 01 unlocked
   jcc(Assembler::equal, DONE_LABEL);        // all done if unlocked
 
   Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
@@ -447,7 +445,6 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
                                  Register scrReg, Register cx1Reg, Register cx2Reg,
-                                 BiasedLockingCounters* counters,
                                  RTMLockingCounters* rtm_counters,
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
@@ -462,10 +459,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     assert_different_registers(objReg, boxReg, tmpReg, scrReg);
   }
 
-  if (counters != NULL) {
-    atomic_incl(ExternalAddress((address)counters->total_entry_count_addr()), scrReg);
-  }
-
   // Possible cases that we'll encounter in fast_lock
   // ------------------------------------------------
   // * Inflated
@@ -473,9 +466,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   //    -- Locked
   //       = by self
   //       = by other
-  // * biased
-  //    -- by Self
-  //    -- by other
   // * neutral
   // * stack-locked
   //    -- by self
@@ -493,16 +483,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     jcc(Assembler::notZero, DONE_LABEL);
   }
 
-  // it's stack-locked, biased or neutral
-  // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
-  // order to reduce the number of conditional branches in the most common cases.
-  // Beware -- there's a subtle invariant that fetch of the markword
-  // at [FETCH], below, will never observe a biased encoding (*101b).
-  // If this invariant is not held we risk exclusion (safety) failure.
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_enter(boxReg, objReg, tmpReg, scrReg, cx1Reg, false, DONE_LABEL, NULL, counters);
-  }
-
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
@@ -512,7 +492,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #endif // INCLUDE_RTM_OPT
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
-  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
   jccb(Assembler::notZero, IsInflated);
 
   // Attempt stack-locking ...
@@ -520,10 +500,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
   lock();
   cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-  if (counters != NULL) {
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)counters->fast_path_entry_count_addr()));
-  }
   jcc(Assembler::equal, DONE_LABEL);           // Success
 
   // Recursive locking.
@@ -533,10 +509,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
   andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
   movptr(Address(boxReg, 0), tmpReg);
-  if (counters != NULL) {
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)counters->fast_path_entry_count_addr()));
-  }
   jmp(DONE_LABEL);
 
   bind(IsInflated);
@@ -659,19 +631,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   Label DONE_LABEL, Stacked, CheckSucc;
 
-  // Critically, the biased locking test must have precedence over
-  // and appear before the (box->dhw == 0) recursive stack-lock test.
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-  }
-
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
-    andptr(tmpReg, markWord::biased_lock_mask_in_place);              // look at 3 lock bits
-    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 001 unlocked
+    andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
+    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 01 unlocked
     jccb(Assembler::notEqual, L_regular_unlock);                      // if !HLE RegularLock
     xend();                                                           // otherwise end...
     jmp(DONE_LABEL);                                                  // ... and we're done
@@ -738,7 +703,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
   bind (Stacked);
-  // It's not inflated and it's not recursively stack-locked and it's not biased.
+  // It's not inflated and it's not recursively stack-locked.
   // It must be stack-locked.
   // Try to reset the header to displaced header.
   // The "box" value on the stack is stable, so we can reload
@@ -1923,7 +1888,7 @@ void C2_MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMReg
 }
 
 void C2_MacroAssembler::genmask(KRegister dst, Register len, Register temp) {
-  assert(ArrayCopyPartialInlineSize <= 64,"");
+  assert(ArrayOperationPartialInlineSize > 0 && ArrayOperationPartialInlineSize <= 64, "invalid");
   mov64(temp, -1L);
   bzhiq(temp, temp, len);
   kmovql(dst, temp);
@@ -2140,11 +2105,37 @@ void C2_MacroAssembler::get_elem(BasicType typ, XMMRegister dst, XMMRegister src
   }
 }
 
+void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister src2, int comparison, int vector_len) {
+  switch(typ) {
+    case T_BYTE:
+    case T_BOOLEAN:
+      evpcmpb(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
+      break;
+    case T_SHORT:
+    case T_CHAR:
+      evpcmpw(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evpcmpd(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evpcmpq(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
+      break;
+    default:
+      assert(false,"Should not reach here.");
+      break;
+  }
+}
+
 void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch) {
   switch(typ) {
+    case T_BOOLEAN:
     case T_BYTE:
       evpcmpb(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
       break;
+    case T_CHAR:
     case T_SHORT:
       evpcmpw(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, scratch);
       break;

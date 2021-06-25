@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import jtreg.SkippedException;
 import sun.hotspot.gc.GC;

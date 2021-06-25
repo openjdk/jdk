@@ -419,6 +419,8 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
+  if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
+  idx = 0;
   if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
   idx = 0;
 
@@ -787,6 +789,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
 #endif
        !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
+       !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
        !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;

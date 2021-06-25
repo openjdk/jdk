@@ -1969,18 +1969,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
-      assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long(), "bad phi type");
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = NULL;
-      if (phi_type->isa_int()) {
-        cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
-      } else if (phi_type->isa_long()) {
-        cast = ConstraintCastNode::make_cast(Op_CastLL, r, uin, phi_type, true);
-      } else {
+      if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
+          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -1990,7 +1985,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, true);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2002,12 +1997,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, true);
+            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency);
           }
           if (cast == NULL) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
           }
         }
+      } else {
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency);
       }
       assert(cast != NULL, "cast should be set");
       cast = phase->transform(cast);

@@ -50,6 +50,7 @@ import static com.sun.tools.javac.code.Flags.RECORD;
 import static com.sun.tools.javac.code.Flags.SEALED;
 import static com.sun.tools.javac.code.Flags.NON_SEALED;
 import static com.sun.tools.javac.main.Option.PREVIEW;
+import com.sun.tools.javac.util.JCDiagnostic;
 
 /**
  * Helper class to handle preview language features. This class maps certain language features
@@ -79,6 +80,7 @@ public class Preview {
 
     private final Lint lint;
     private final Log log;
+    private final Source source;
 
     private static final Context.Key<Preview> previewKey = new Context.Key<>();
 
@@ -96,7 +98,7 @@ public class Preview {
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
         lint = Lint.instance(context);
-        Source source = Source.instance(context);
+        source = Source.instance(context);
         this.previewHandler =
                 new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
@@ -183,6 +185,9 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
+            case CASE_NULL -> true;
+            case PATTERN_SWITCH -> true;
+
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
@@ -234,6 +239,21 @@ public class Preview {
 
     public void clear() {
         previewHandler.clear();
+    }
+
+    public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
+        if (isPreview(feature) && !isEnabled()) {
+            //preview feature without --preview flag, error
+            log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
+        } else {
+            if (!feature.allowedInSource(source)) {
+                log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos,
+                          feature.error(source.name));
+            }
+            if (isEnabled() && isPreview(feature)) {
+                warnPreview(pos, feature);
+            }
+        }
     }
 
 }

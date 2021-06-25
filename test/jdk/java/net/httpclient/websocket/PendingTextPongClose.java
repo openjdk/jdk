@@ -27,6 +27,7 @@
  * @run testng/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.internal.httpclient.websocket.debug=true
+ *      -Djdk.httpclient.sendBufferSize=8192
  *       PendingTextPongClose
  */
 
@@ -49,6 +50,7 @@ public class PendingTextPongClose extends PendingOperations {
     public void pendingTextPongClose(boolean last) throws Exception {
         repeatable(() -> {
             server = Support.notReadingServer();
+            server.setReceiveBufferSize(1024);
             server.open();
             webSocket = httpClient().newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })

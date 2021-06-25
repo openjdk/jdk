@@ -28,8 +28,6 @@
 #include "asm/register.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class BiasedLockingCounters;
-
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention
@@ -1480,6 +1478,7 @@ private:
   void kmovql(Register dst, KRegister src);
 
   void knotwl(KRegister dst, KRegister src);
+  void knotql(KRegister dst, KRegister src);
 
   void kortestbl(KRegister dst, KRegister src);
   void kortestwl(KRegister dst, KRegister src);
@@ -1698,6 +1697,7 @@ private:
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pause();
 
@@ -1811,6 +1811,8 @@ private:
   // Multiply add
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+
   // Multiply add accumulate
   void evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
@@ -1877,6 +1879,8 @@ private:
   // Logical Compare 256bit
   void vptest(XMMRegister dst, XMMRegister src);
   void vptest(XMMRegister dst, Address src);
+
+  void evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2139,6 +2143,7 @@ private:
 
   void shlxl(Register dst, Register src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Register src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);

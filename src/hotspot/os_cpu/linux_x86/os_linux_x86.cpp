@@ -615,7 +615,7 @@ void os::print_register_info(outputStream *st, const void *context) {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
+  address fpu_cntrl = StubRoutines::x86::addr_fpu_cntrl_wrd_std();
   __asm__ volatile (  "fldcw (%0)" :
                       : "r" (fpu_cntrl) : "memory");
 #endif // !AMD64

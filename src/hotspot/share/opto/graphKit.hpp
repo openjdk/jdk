@@ -343,6 +343,12 @@ class GraphKit : public Phase {
   Node* load_object_klass(Node* object);
   // Find out the length of an array.
   Node* load_array_length(Node* array);
+  // Cast array allocation's length as narrow as possible.
+  // If replace_length_in_map is true, replace length with CastIINode in map.
+  // This method is invoked after creating/moving ArrayAllocationNode or in load_array_length
+  Node* array_ideal_length(AllocateArrayNode* alloc,
+                           const TypeOopPtr* oop_type,
+                           bool replace_length_in_map);
 
 
   // Helper function to do a NULL pointer check or ZERO check based on type.
@@ -810,6 +816,7 @@ class GraphKit : public Phase {
     RC_MUST_THROW = 8,          // flag passed to add_safepoint_edges
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
+    RC_VECTOR = 64,             // CallLeafVectorNode
     RC_LEAF = 0                 // null value:  no flags set
   };
 

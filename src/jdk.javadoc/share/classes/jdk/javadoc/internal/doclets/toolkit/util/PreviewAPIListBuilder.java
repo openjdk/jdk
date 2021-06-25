@@ -44,5 +44,6 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      */
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
         super(configuration, e -> configuration.utils.isPreviewAPI(e));
+        buildSummaryAPIInfo();
     }
 }

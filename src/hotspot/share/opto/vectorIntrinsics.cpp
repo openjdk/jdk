@@ -29,6 +29,7 @@
 #include "opto/runtime.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/vectorSupport.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #ifdef ASSERT
 static bool is_vector(ciKlass* klass) {
@@ -122,6 +123,30 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     return false;
   } else {
     assert(Matcher::match_rule_supported(sopc), "must be supported");
+  }
+
+  if (num_elem == 1) {
+    if (mask_use_type != VecMaskNotUsed) {
+#ifndef PRODUCT
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector mask op (%s,%s,%d) because architecture does not support it",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
+#endif
+      return false;
+    }
+
+    if (sopc != 0) {
+      if (sopc != Op_LoadVector && sopc != Op_StoreVector) {
+#ifndef PRODUCT
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** Not a svml call or load/store vector op (%s,%s,%d)",
+                        NodeClassNames[sopc], type2name(type), num_elem);
+        }
+#endif
+        return false;
+      }
+    }
   }
 
   if (!has_scalar_args && VectorNode::is_vector_shift(sopc) &&
@@ -231,17 +256,49 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
   int sopc = VectorNode::opcode(opc, elem_bt);
-  if (sopc == 0) {
+  if ((opc != Op_CallLeafVector) && (sopc == 0)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** operation not supported: opc=%s bt=%s", NodeClassNames[opc], type2name(elem_bt));
     }
     return false; // operation not supported
   }
+  if (num_elem == 1) {
+    if (opc != Op_CallLeafVector || elem_bt != T_DOUBLE) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not a svml call: arity=%d opc=%d vlen=%d etype=%s",
+                      n, opc, num_elem, type2name(elem_bt));
+      }
+      return false;
+    }
+  }
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
+  if (opc == Op_CallLeafVector) {
+    if (!UseVectorStubs) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** vector stubs support is disabled");
+      }
+      return false;
+    }
+    if (!Matcher::supports_vector_calling_convention()) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** no vector calling conventions supported");
+      }
+      return false;
+    }
+    if (!Matcher::vector_size_supported(elem_bt, num_elem)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** vector size (vlen=%d, etype=%s) is not supported",
+                      num_elem, type2name(elem_bt));
+      }
+      return false;
+    }
+  }
+
   // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
-  if (!arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
+  if ((sopc != 0) &&
+      !arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
                     n, sopc, num_elem, type2name(elem_bt),
@@ -289,18 +346,32 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   Node* operation = NULL;
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
-  switch (n) {
-    case 1:
-    case 2: {
-      operation = gvn().transform(VectorNode::make(sopc, opd1, opd2, vt));
-      break;
+  if (opc == Op_CallLeafVector) {
+    assert(UseVectorStubs, "sanity");
+    operation = gen_call_to_svml(opr->get_con(), elem_bt, num_elem, opd1, opd2);
+    if (operation == NULL) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** svml call failed for %s_%s_%d",
+                         (elem_bt == T_FLOAT)?"float":"double",
+                         VectorSupport::svmlname[opr->get_con() - VectorSupport::VECTOR_OP_SVML_START],
+                         num_elem * type2aelembytes(elem_bt));
+      }
+      return false;
+     }
+  } else {
+    const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+    switch (n) {
+      case 1:
+      case 2: {
+        operation = gvn().transform(VectorNode::make(sopc, opd1, opd2, vt));
+        break;
+      }
+      case 3: {
+        operation = gvn().transform(VectorNode::make(sopc, opd1, opd2, opd3, vt));
+        break;
+      }
+      default: fatal("unsupported arity: %d", n);
     }
-    case 3: {
-      operation = gvn().transform(VectorNode::make(sopc, opd1, opd2, opd3, vt));
-      break;
-    }
-    default: fatal("unsupported arity: %d", n);
   }
   // Wrap it up in VectorBox to keep object type information.
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
@@ -507,7 +578,11 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
   const TypeInstPtr* shuffle_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, sbox_klass);
 
   // Unbox shuffle with true flag to indicate its load shuffle to vector
-  Node* shuffle_vec = unbox_vector(shuffle, shuffle_box_type, elem_bt, num_elem, true);
+  // shuffle is a byte array
+  Node* shuffle_vec = unbox_vector(shuffle, shuffle_box_type, T_BYTE, num_elem, true);
+
+  // cast byte to target element type
+  shuffle_vec = gvn().transform(VectorCastNode::make(cast_vopc, shuffle_vec, elem_bt, num_elem));
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vec_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
@@ -1330,6 +1405,63 @@ bool LibraryCallKit::inline_vector_rearrange() {
   return true;
 }
 
+static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len) {
+  address addr = NULL;
+  assert(UseVectorStubs, "sanity");
+  assert(name_ptr != NULL, "unexpected");
+  assert((vop >= VectorSupport::VECTOR_OP_SVML_START) && (vop <= VectorSupport::VECTOR_OP_SVML_END), "unexpected");
+  int op = vop - VectorSupport::VECTOR_OP_SVML_START;
+
+  switch(bits) {
+    case 64:  //fallthough
+    case 128: //fallthough
+    case 256: //fallthough
+    case 512:
+      if (bt == T_FLOAT) {
+        snprintf(name_ptr, name_len, "vector_%s_float%d", VectorSupport::svmlname[op], bits);
+        addr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
+      } else {
+        assert(bt == T_DOUBLE, "must be FP type only");
+        snprintf(name_ptr, name_len, "vector_%s_double%d", VectorSupport::svmlname[op], bits);
+        addr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
+      }
+      break;
+    default:
+      snprintf(name_ptr, name_len, "invalid");
+      addr = NULL;
+      Unimplemented();
+      break;
+  }
+
+  return addr;
+}
+
+Node* LibraryCallKit::gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2) {
+  assert(UseVectorStubs, "sanity");
+  assert(vector_api_op_id >= VectorSupport::VECTOR_OP_SVML_START && vector_api_op_id <= VectorSupport::VECTOR_OP_SVML_END, "need valid op id");
+  assert(opd1 != NULL, "must not be null");
+  const TypeVect* vt = TypeVect::make(bt, num_elem);
+  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(opd2 != NULL ? 2 : 1, vt, vt);
+  char name[100] = "";
+
+  // Get address for svml method.
+  address addr = get_svml_address(vector_api_op_id, vt->length_in_bytes() * BitsPerByte, bt, name, 100);
+
+  if (addr == NULL) {
+    return NULL;
+  }
+
+  assert(name != NULL, "name must not be null");
+  Node* operation = make_runtime_call(RC_VECTOR,
+                                      call_type,
+                                      addr,
+                                      name,
+                                      TypePtr::BOTTOM,
+                                      opd1,
+                                      opd2);
+  return gvn().transform(new ProjNode(gvn().transform(operation), TypeFunc::Parms));
+}
+
 //  public static
 //  <V extends Vector<?,?>>
 //  V broadcastInt(int opr, Class<V> vectorClass, Class<?> elementType, int vlen,
@@ -1460,7 +1592,7 @@ bool LibraryCallKit::inline_vector_convert() {
 
   ciKlass* vbox_klass_from = vector_klass_from->const_oop()->as_instance()->java_lang_Class_klass();
   ciKlass* vbox_klass_to = vector_klass_to->const_oop()->as_instance()->java_lang_Class_klass();
-  if (is_vector_shuffle(vbox_klass_from) || is_vector_shuffle(vbox_klass_to)) {
+  if (is_vector_shuffle(vbox_klass_from)) {
     return false; // vector shuffles aren't supported
   }
   bool is_mask = is_vector_mask(vbox_klass_from);
