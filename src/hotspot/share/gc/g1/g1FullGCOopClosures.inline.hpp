@@ -79,7 +79,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   if (!obj->is_forwarded()) {
     // Not forwarded, return current reference.
-    assert(obj->mark().set_narrow_klass(0) == markWord::prototype() || // Correct mark
+    assert(obj->mark() LP64_ONLY(.set_narrow_klass(0)) == markWord::prototype() || // Correct mark
            obj->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
            "Must have correct prototype or be preserved, obj: " PTR_FORMAT ", mark: " PTR_FORMAT ", prototype: " PTR_FORMAT,
            p2i(obj), obj->mark().value(), markWord::prototype().value());
