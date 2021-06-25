@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_SPARSEPRT_INLINE_HPP
-#define SHARE_GC_G1_SPARSEPRT_INLINE_HPP
+package jdk.jfr.jcmd;
 
-#include "gc/g1/sparsePRT.hpp"
+import jdk.test.lib.process.OutputAnalyzer;
 
-#include "gc/g1/g1CollectedHeap.hpp"
+/**
+ * @test
+ * @summary The test verifies JFR.stop
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdStopWithoutFilename
+ */
+public class TestJcmdStopWithoutFilename {
 
-inline bool SparsePRT::contains_card(RegionIdx_t region_id, CardIdx_t card_index) const {
-  return _table->contains_card(region_id, card_index);
+    public static void main(String[] args) throws Exception {
+
+        JcmdHelper.jcmd("JFR.start name=test");
+        OutputAnalyzer output = JcmdHelper.jcmd("JFR.stop name=test");
+        output.shouldNotContain("written to");
+
+        String filename = "output.jfr";
+        JcmdHelper.jcmd("JFR.start name=test filename=" + filename);
+        output = JcmdHelper.jcmd("JFR.stop name=test");
+        output.shouldContain("written to").shouldContain(filename);
+    }
 }
 
-
-#endif // SHARE_GC_G1_SPARSEPRT_INLINE_HPP

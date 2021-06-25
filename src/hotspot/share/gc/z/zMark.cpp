@@ -622,7 +622,7 @@ public:
     ZThreadLocalAllocBuffer::publish_statistics();
   }
   virtual void do_thread(Thread* thread) {
-    JavaThread* const jt = thread->as_Java_thread();
+    JavaThread* const jt = JavaThread::cast(thread);
     StackWatermarkSet::finish_processing(jt, _cl, StackWatermarkKind::gc);
     ZThreadLocalAllocBuffer::update_stats(jt);
   }

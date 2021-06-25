@@ -67,8 +67,6 @@
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
-  template(EnableBiasedLocking)                   \
-  template(BulkRevokeBias)                        \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
   template(RedefineClasses)                       \
