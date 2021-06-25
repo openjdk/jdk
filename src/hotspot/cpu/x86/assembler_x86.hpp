@@ -1698,6 +1698,7 @@ private:
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister src, int vector_len);
 
   void pause();
 
@@ -1746,6 +1747,7 @@ private:
 
   void pmovmskb(Register dst, XMMRegister src);
   void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
+  void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
@@ -2268,6 +2270,7 @@ private:
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmulhuw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Minimum of packed integers
   void pminsb(XMMRegister dst, XMMRegister src);
