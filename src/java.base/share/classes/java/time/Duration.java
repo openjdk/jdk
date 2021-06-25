@@ -720,13 +720,13 @@ public final class Duration
             return this;
         }
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
-                case MILLIS: return plusMillis(amountToAdd);
-                case SECONDS: return plusSeconds(amountToAdd);
-            }
-            return plusSeconds(Math.multiplyExact(unit.getDuration().seconds, amountToAdd));
+            return switch (chronoUnit) {
+                case NANOS -> plusNanos(amountToAdd);
+                case MICROS -> plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
+                case MILLIS -> plusMillis(amountToAdd);
+                case SECONDS -> plusSeconds(amountToAdd);
+                default -> plusSeconds(Math.multiplyExact(unit.getDuration().seconds, amountToAdd));
+            };
         }
         Duration duration = unit.getDuration().multipliedBy(amountToAdd);
         return plusSeconds(duration.getSeconds()).plusNanos(duration.getNano());

@@ -604,14 +604,13 @@ public final class LocalDate
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
             if (chronoField.isDateBased()) {
-                switch (chronoField) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, getMonth() == Month.FEBRUARY && isLeapYear() == false ? 4 : 5);
-                    case YEAR_OF_ERA:
-                        return (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
-                }
-                return field.range();
+                return switch (chronoField) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, getMonth() == Month.FEBRUARY && !isLeapYear() ? 4 : 5);
+                    case YEAR_OF_ERA -> (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
+                    default -> field.range();
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -866,17 +865,11 @@ public final class LocalDate
      */
     @Override
     public int lengthOfMonth() {
-        switch (month) {
-            case 2:
-                return (isLeapYear() ? 29 : 28);
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                return 30;
-            default:
-                return 31;
-        }
+        return switch (month) {
+            case 2 -> (isLeapYear() ? 29 : 28);
+            case 4, 6, 9, 11 -> 30;
+            default -> 31;
+        };
     }
 
     /**
