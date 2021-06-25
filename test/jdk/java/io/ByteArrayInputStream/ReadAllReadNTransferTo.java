@@ -33,7 +33,7 @@ import jdk.test.lib.RandomFactory;
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main ReadAllReadNTransferTo
- * @bug 8180451
+ * @bug 6766844 8180451
  * @summary Verify ByteArrayInputStream readAllBytes, readNBytes, and transferTo
  * @key randomness
  */
