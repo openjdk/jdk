@@ -182,9 +182,9 @@ public:
     jint offset = int_at(NativeJccInstruction::data_offset);
     assert(offset == NativeCall::instruction_size, "jump over the call");
    
-    set_char_at(0, NativeJump::instruction_code);
+    set_char_at(0, static_cast<char>(NativeJump::instruction_code));
     set_int_at(NativeJump::data_offset, offset + NativeInstruction::nop_instruction_size);
-    set_char_at(NativeJump::instruction_size, NativeInstruction::nop_instruction_code);
+    set_char_at(NativeJump::instruction_size, static_cast<char>(NativeInstruction::nop_instruction_code));
   }
   void patch_to_je() {
     u_char jmp_opcode = ubyte_at(0);
@@ -196,8 +196,8 @@ public:
     assert(offset == NativeCall::instruction_size + NativeInstruction::nop_instruction_size,
         "jump over nop and call");
 
-    set_char_at(0, je_opcode_b0);
-    set_char_at(1, je_opcode_b1);
+    set_char_at(0, static_cast<char>(je_opcode_b0));
+    set_char_at(1, static_cast<char>(je_opcode_b1));
     set_int_at(2, offset - NativeInstruction::nop_instruction_size);
   }
 };
