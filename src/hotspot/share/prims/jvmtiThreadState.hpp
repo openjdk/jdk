@@ -397,6 +397,7 @@ public:
   void enqueue_event(JvmtiDeferredEvent* event) NOT_JVMTI_RETURN;
   void post_events(JvmtiEnv* env);
   void run_nmethod_entry_barriers();
+  void verify_nmethods();
 };
 
 #endif // SHARE_PRIMS_JVMTITHREADSTATE_HPP

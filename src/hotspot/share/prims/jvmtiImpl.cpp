@@ -896,6 +896,13 @@ void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
   }
 }
 
+void JvmtiDeferredEvent::verify() {
+  if (_type == TYPE_COMPILED_METHOD_LOAD) {
+    assert(_event_data.compiled_method_load != NULL, "zombie in in verify");
+    assert(_event_data.compiled_method_load->is_zombie(), "zombie in verify");
+  }
+}
+
 
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
@@ -925,6 +932,8 @@ bool JvmtiDeferredEventQueue::has_events() {
 }
 
 void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
+  assert(event._event_data.compiled_method_load != NULL, "zombie in enqueue");
+  assert(!event._event_data.compiled_method_load->is_zombie(), "zombie in enqueue");
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
   if (_queue_tail == NULL) {
@@ -937,6 +946,8 @@ void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
 
   assert((_queue_head == NULL) == (_queue_tail == NULL),
          "Inconsistent queue markers");
+  assert(event._event_data.compiled_method_load != NULL, "zombie in enqueue2");
+  assert(!event._event_data.compiled_method_load->is_zombie(), "zombie in enqueue2");
 }
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
@@ -958,14 +969,20 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 
   JvmtiDeferredEvent event = node->event();
   delete node;
+  assert(event._event_data.compiled_method_load != NULL, "zombie in dequeue");
+  assert(!event._event_data.compiled_method_load->is_zombie(), "zombie in dequeue");
   return event;
 }
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
-  // Post and destroy queue nodes
+   for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+     assert(node->event()._event_data.compiled_method_load != NULL, "zombie in post");
+     assert(!node->event()._event_data.compiled_method_load->is_zombie(), "zombie in post");
+     node->event().post_compiled_method_load_event(env);
+  }
+  // Destroy queue nodes
   while (_queue_head != NULL) {
      JvmtiDeferredEvent event = dequeue();
-     event.post_compiled_method_load_event(env);
   }
 }
 
@@ -974,6 +991,13 @@ void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
      node->event().run_nmethod_entry_barriers();
   }
 }
+
+void JvmtiDeferredEventQueue::verify() {
+  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+    node->event().run_nmethod_entry_barriers();
+  }
+}
+
 
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {

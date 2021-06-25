@@ -245,6 +245,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
     state->run_nmethod_entry_barriers();
   }
 
+  state->verify_nmethods();
   // Now post all the events outside the CodeCache_lock.
   // If there's a safepoint, the queued events will be kept alive.
   // Adding these events to the service thread to post is something that

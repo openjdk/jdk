@@ -445,3 +445,9 @@ void JvmtiThreadState::run_nmethod_entry_barriers() {
     _jvmti_event_queue->run_nmethod_entry_barriers();
   }
 }
+
+void JvmtiThreadState::verify_nmethods() {
+  if (_jvmti_event_queue != NULL) {
+    _jvmti_event_queue->run_nmethod_entry_barriers();
+  }
+}
