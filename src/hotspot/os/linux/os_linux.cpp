@@ -2139,7 +2139,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
 
 bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
   FILE* f = ::fopen("/proc/self/status", "r");
-  const int num_values = 8;
+  const int num_values = sizeof(os::Linux::meminfo_t) / sizeof(size_t);
   int num_found = 0;
   char buf[256];
   info->vmsize = info->vmpeak = info->vmrss = info->vmhwm = info->vmswap =
@@ -2151,9 +2151,9 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
            (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
            (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
            (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
-           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) ||
-           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) ||
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;

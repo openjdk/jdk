@@ -40,9 +40,12 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 public class TrimLibcHeapTest {
     public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("VM.trim_libc_heap");
+        OutputAnalyzer output = executor.execute("System.glibc_trim_heap");
         output.reportDiagnosticSummary();
-        output.shouldMatch("(Done|Not available)");
+        output.shouldMatch("(Done|Not available)"); // Not available could happen on Linux + non-glibc (eg. muslc)
+        if (output.firstMatch("Done") != null) {
+            output.shouldMatch("(Virtual size before|RSS before|Swap before|No details available)");
+        }
     }
 
     @Test
