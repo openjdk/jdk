@@ -152,13 +152,6 @@ class Deoptimization : AllStatic {
   // find all marked nmethods and they are made not_entrant.
   static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
 
- private:
-  // Revoke biased locks at deopt.
-  static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
-
-  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
-                                               RegisterMap* map, JavaThread* thread);
-
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);

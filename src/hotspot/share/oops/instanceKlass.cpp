@@ -75,7 +75,6 @@
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -508,12 +507,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   assert(NULL == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
-
-  // Set biased locking bit for all instances of this class; it will be
-  // cleared if revocation occurs too often for this type
-  if (UseBiasedLocking && BiasedLocking::enabled()) {
-    set_prototype_header(markWord::biased_locking_prototype());
-  }
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
@@ -2530,15 +2523,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
 
-  // Initialize current biased locking state.
-  if (UseBiasedLocking && BiasedLocking::enabled()) {
-    set_prototype_header(markWord::biased_locking_prototype());
-  }
-
   // Initialize @ValueBased class annotation
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
     set_is_value_based();
-    set_prototype_header(markWord::prototype());
   }
 }
 
