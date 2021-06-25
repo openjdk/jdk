@@ -159,7 +159,7 @@ public class ByteArrayInputStream extends InputStream {
      * This {@code read} method cannot block.
      *
      * @apiNote
-     * Unlike the {@link InputStream#read(byte[],int,int) equivalent method}
+     * Unlike the {@link InputStream#read(byte[],int,int) overridden method}
      * of {@code InputStream}, this method returns {@code -1} instead of zero
      * if the end of the stream has been reached and {@code len == 0}.
      *
