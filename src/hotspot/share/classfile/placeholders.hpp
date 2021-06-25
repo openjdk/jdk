@@ -116,7 +116,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
  private:
   ClassLoaderData*  _loader_data;   // initiating loader
   Symbol*           _supername;
-  JavaThread*           _definer;       // owner of define token
+  JavaThread*       _definer;       // owner of define token
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
   SeenThread*       _superThreadQ;  // doubly-linked queue of Threads loading a superclass for this class
   SeenThread*       _loadInstanceThreadQ;  // loadInstance thread
