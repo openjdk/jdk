@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,30 @@
  * questions.
  */
 
-/*
+package jdk.jfr.jcmd;
+
+import jdk.test.lib.process.OutputAnalyzer;
+
+/**
  * @test
- * @bug 8062950
- * @requires vm.flavor == "server"
- * @library /test/lib
- * @run driver compiler.c2.Test8062950
+ * @summary The test verifies JFR.stop
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdStopWithoutFilename
  */
+public class TestJcmdStopWithoutFilename {
 
-package compiler.c2;
-
-import jdk.test.lib.process.ProcessTools;
-
-public class Test8062950 {
-    private static final String CLASSNAME = "DoesNotExist";
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJvm("-Xcomp",
-                                    "-XX:-TieredCompilation",
-                                    "-XX:-UseOptoBiasInlining",
-                                    CLASSNAME)
-                    .shouldHaveExitValue(1)
-                    .shouldContain("Error: Could not find or load main class " + CLASSNAME)
-                    .shouldNotContain("A fatal error has been detected")
-                    .shouldNotContain("Internal Error")
-                    .shouldNotContain("HotSpot Virtual Machine Error");
+
+        JcmdHelper.jcmd("JFR.start name=test");
+        OutputAnalyzer output = JcmdHelper.jcmd("JFR.stop name=test");
+        output.shouldNotContain("written to");
+
+        String filename = "output.jfr";
+        JcmdHelper.jcmd("JFR.start name=test filename=" + filename);
+        output = JcmdHelper.jcmd("JFR.stop name=test");
+        output.shouldContain("written to").shouldContain(filename);
     }
 }
+

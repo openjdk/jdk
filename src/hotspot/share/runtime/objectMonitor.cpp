@@ -1431,7 +1431,7 @@ bool ObjectMonitor::check_owner(TRAPS) {
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
-                                    jlong notifier_tid,
+                                    uint64_t notifier_tid,
                                     jlong timeout,
                                     bool timedout) {
   assert(event != NULL, "invariant");
@@ -2243,7 +2243,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
   st->print_cr("  }");
   st->print_cr("  _owner = " INTPTR_FORMAT, p2i(owner_raw()));
-  st->print_cr("  _previous_owner_tid = " INTPTR_FORMAT, _previous_owner_tid);
+  st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf1 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");

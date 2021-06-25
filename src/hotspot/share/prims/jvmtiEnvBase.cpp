@@ -41,7 +41,6 @@
 #include "prims/jvmtiManageCapabilities.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -970,9 +969,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   uint32_t debug_bits = 0;
   // first derive the object's owner and entry_count (if any)
   {
-    // Revoke any biases before querying the mark word
-    BiasedLocking::revoke_at_safepoint(hobj);
-
     address owner = NULL;
     {
       markWord mark = hobj()->mark();

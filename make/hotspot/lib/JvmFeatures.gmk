@@ -183,7 +183,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       assembler.cpp \
       barrierSet.cpp \
       basicLock.cpp \
-      biasedLocking.cpp \
       bytecode.cpp \
       bytecodeInterpreter.cpp \
       c1_Compilation.cpp \
