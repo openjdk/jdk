@@ -38,6 +38,9 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
+
+import java.nio.ByteOrder;
+
 import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
@@ -1502,12 +1505,10 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    private static native boolean isBigEndian();
-
     static final int HI_BYTE_SHIFT;
     static final int LO_BYTE_SHIFT;
     static {
-        if (isBigEndian()) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
         } else {
