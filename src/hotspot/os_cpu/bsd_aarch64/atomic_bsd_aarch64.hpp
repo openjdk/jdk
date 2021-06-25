@@ -96,7 +96,7 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
       failure_memory_order = order;
     }
     assert(failure_memory_order <= order, "must be");
-    
+
     T value = compare_value;
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
                               order, failure_memory_order);
