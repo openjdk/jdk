@@ -25,11 +25,12 @@
  * @test
  * @bug 7162400
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
+ * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  * @modules jdk.attach/sun.tools.attach
  * @library /test/lib
- * @requires os.family != "windows"
  * @run driver AttachWithStalePidFile
  */
 

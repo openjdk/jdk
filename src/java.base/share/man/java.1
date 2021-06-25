@@ -794,13 +794,69 @@ list.
 .TP
 .B \f[CB]\-Xcheck:jni\f[R]
 Performs additional checks for Java Native Interface (JNI) functions.
-Specifically, it validates the parameters passed to the JNI function and
-the runtime environment data before processing the JNI request.
-It also checks for pending exceptions between JNI calls.
-Any invalid data encountered indicates a problem in the native code, and
-the JVM terminates with an irrecoverable error in such cases.
-Expect a performance degradation when this option is used.
 .RS
+.PP
+The following checks are considered indicative of significant problems
+with the native code, and the JVM terminates with an irrecoverable error
+in such cases:
+.IP \[bu] 2
+The thread doing the call is not attached to the JVM.
+.IP \[bu] 2
+The thread doing the call is using the \f[CB]JNIEnv\f[R] belonging to
+another thread.
+.IP \[bu] 2
+A parameter validation check fails:
+.RS 2
+.IP \[bu] 2
+A \f[CB]jfieldID\f[R], or \f[CB]jmethodID\f[R], is detected as being
+invalid.
+For example:
+.RS 2
+.IP \[bu] 2
+Of the wrong type
+.IP \[bu] 2
+Associated with the wrong class
+.RE
+.IP \[bu] 2
+A parameter of the wrong type is detected.
+.IP \[bu] 2
+An invalid parameter value is detected.
+For example:
+.RS 2
+.IP \[bu] 2
+NULL where not permitted
+.IP \[bu] 2
+An out\-of\-bounds array index, or frame capacity
+.IP \[bu] 2
+A non\-UTF\-8 string
+.IP \[bu] 2
+An invalid JNI reference
+.IP \[bu] 2
+An attempt to use a \f[CB]ReleaseXXX\f[R] function on a parameter not
+produced by the corresponding \f[CB]GetXXX\f[R] function
+.RE
+.RE
+.PP
+The following checks only result in warnings being printed:
+.IP \[bu] 2
+A JNI call was made without checking for a pending exception from a
+previous JNI call, and the current call is not safe when an exception
+may be pending.
+.IP \[bu] 2
+The number of JNI local references existing when a JNI function
+terminates exceeds the number guaranteed to be available.
+See the \f[CB]EnsureLocalcapacity\f[R] function.
+.IP \[bu] 2
+A class descriptor is in decorated format (\f[CB]Lname;\f[R]) when it
+should not be.
+.IP \[bu] 2
+A \f[CB]NULL\f[R] parameter is allowed, but its use is questionable.
+.IP \[bu] 2
+Calling other JNI functions in the scope of
+\f[CB]Get/ReleasePrimitiveArrayCritical\f[R] or
+\f[CB]Get/ReleaseStringCritical\f[R]
+.PP
+Expect a performance degradation when this option is used.
 .RE
 .TP
 .B \f[CB]\-Xdebug\f[R]

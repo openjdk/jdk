@@ -533,6 +533,8 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "G1RSetRegionEntries",          JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "G1RSetSparseRegionEntries",    JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },

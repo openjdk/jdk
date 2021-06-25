@@ -170,10 +170,6 @@ class OptoRuntime : public AllStatic {
   static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
 
 public:
-  // Slow-path Locking and Unlocking
-  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-  static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
 

@@ -37,6 +37,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -195,9 +196,7 @@ bool G1CollectedHeap::evacuation_failed() const {
 }
 
 bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
-  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
-
-  return Atomic::load(&_regions_failed_evacuation[region_idx]);
+  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }
 
 uint G1CollectedHeap::num_regions_failed_evacuation() const {
@@ -205,10 +204,7 @@ uint G1CollectedHeap::num_regions_failed_evacuation() const {
 }
 
 bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
-  assert(region_idx < max_regions(), "Invalid region index %u", region_idx);
-
-  volatile bool* region_failed_addr = &_regions_failed_evacuation[region_idx];
-  bool result = !Atomic::load(region_failed_addr) && !Atomic::cmpxchg(region_failed_addr, false, true, memory_order_relaxed);
+  bool result = _regions_failed_evacuation.par_set_bit(region_idx, memory_order_relaxed);
   if (result) {
     Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
   }

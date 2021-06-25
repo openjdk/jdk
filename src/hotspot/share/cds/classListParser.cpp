@@ -466,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
@@ -614,9 +614,8 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     // delegate to the correct loader (boot, platform or app) depending on
     // the package name.
 
-    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
     // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-    Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle ext_class_name = java_lang_String::externalize_classname(class_name_symbol, CHECK_NULL);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
 
     JavaCalls::call_virtual(&result,

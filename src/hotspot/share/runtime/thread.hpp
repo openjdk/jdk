@@ -355,10 +355,6 @@ class Thread: public ThreadShadow {
   // If so it must participate in the safepoint protocol.
   virtual bool is_active_Java_thread() const         { return false; }
 
-  // Casts
-  inline JavaThread* as_Java_thread();
-  inline const JavaThread* as_Java_thread() const;
-
   virtual char* name() const { return (char*)"Unknown thread"; }
 
   // Returns the current thread (ASSERTS if NULL)
@@ -1420,7 +1416,20 @@ class JavaThread: public Thread {
 
  public:
   // Returns the running thread as a JavaThread
-  static inline JavaThread* current();
+  static JavaThread* current() {
+    return JavaThread::cast(Thread::current());
+  }
+
+  // Casts
+  static JavaThread* cast(Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to JavaThread");
+    return static_cast<JavaThread*>(t);
+  }
+
+  static const JavaThread* cast(const Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to const JavaThread");
+    return static_cast<const JavaThread*>(t);
+  }
 
   // Returns the active Java thread.  Do not use this if you know you are calling
   // from a JavaThread, as it's slower than JavaThread::current.  If called from
@@ -1585,21 +1594,6 @@ public:
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 };
-
-// Inline implementation of JavaThread::current
-inline JavaThread* JavaThread::current() {
-  return Thread::current()->as_Java_thread();
-}
-
-inline JavaThread* Thread::as_Java_thread() {
-  assert(is_Java_thread(), "incorrect cast to JavaThread");
-  return static_cast<JavaThread*>(this);
-}
-
-inline const JavaThread* Thread::as_Java_thread() const {
-  assert(is_Java_thread(), "incorrect cast to const JavaThread");
-  return static_cast<const JavaThread*>(this);
-}
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.

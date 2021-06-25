@@ -1058,8 +1058,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-  // SIMD&FP comparison
-  void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1, FloatRegister src2, int cond, bool isQ);
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 

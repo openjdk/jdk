@@ -397,7 +397,6 @@ public:
 
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
-  void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
@@ -558,27 +557,6 @@ class ReferenceProcessorIsAliveMutator: StackObj {
 
   ~ReferenceProcessorIsAliveMutator() {
     _rp->set_is_alive_non_header(_saved_cl);
-  }
-};
-
-// A utility class to temporarily change the disposition
-// of the "discovery_is_atomic" field of the
-// given ReferenceProcessor in the scope that contains it.
-class ReferenceProcessorAtomicMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool                _saved_atomic_discovery;
-
- public:
-  ReferenceProcessorAtomicMutator(ReferenceProcessor* rp,
-                                  bool atomic):
-    _rp(rp) {
-    _saved_atomic_discovery = _rp->discovery_is_atomic();
-    _rp->set_atomic_discovery(atomic);
-  }
-
-  ~ReferenceProcessorAtomicMutator() {
-    _rp->set_atomic_discovery(_saved_atomic_discovery);
   }
 };
 

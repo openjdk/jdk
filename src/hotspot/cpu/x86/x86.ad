@@ -1898,18 +1898,6 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(TypeInt::BOOL, length);
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  int float_pressure_threshold = default_pressure_threshold;
-#ifdef _LP64
-  if (UseAVX > 2) {
-    // Increase pressure threshold on machines with AVX3 which have
-    // 2x more XMM registers.
-    float_pressure_threshold = default_pressure_threshold * 2;
-  }
-#endif
-  return float_pressure_threshold;
-}
-
 // Max vector size in bytes. 0 if not supported.
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
@@ -4844,7 +4832,8 @@ instruct vaddB_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vaddB_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVB src (LoadVector mem)));
   format %{ "vpaddb  $dst,$src,$mem\t! add packedB" %}
   ins_encode %{
@@ -4877,7 +4866,8 @@ instruct vaddS_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vaddS_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVS src (LoadVector mem)));
   format %{ "vpaddw  $dst,$src,$mem\t! add packedS" %}
   ins_encode %{
@@ -4911,7 +4901,8 @@ instruct vaddI_reg(vec dst, vec src1, vec src2) %{
 
 
 instruct vaddI_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVI src (LoadVector mem)));
   format %{ "vpaddd  $dst,$src,$mem\t! add packedI" %}
   ins_encode %{
@@ -4944,7 +4935,8 @@ instruct vaddL_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vaddL_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVL src (LoadVector mem)));
   format %{ "vpaddq  $dst,$src,$mem\t! add packedL" %}
   ins_encode %{
@@ -4977,7 +4969,8 @@ instruct vaddF_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vaddF_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVF src (LoadVector mem)));
   format %{ "vaddps  $dst,$src,$mem\t! add packedF" %}
   ins_encode %{
@@ -5010,7 +5003,8 @@ instruct vaddD_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vaddD_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AddVD src (LoadVector mem)));
   format %{ "vaddpd  $dst,$src,$mem\t! add packedD" %}
   ins_encode %{
@@ -5045,7 +5039,8 @@ instruct vsubB_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vsubB_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVB src (LoadVector mem)));
   format %{ "vpsubb  $dst,$src,$mem\t! sub packedB" %}
   ins_encode %{
@@ -5079,7 +5074,8 @@ instruct vsubS_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vsubS_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVS src (LoadVector mem)));
   format %{ "vpsubw  $dst,$src,$mem\t! sub packedS" %}
   ins_encode %{
@@ -5112,7 +5108,8 @@ instruct vsubI_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vsubI_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVI src (LoadVector mem)));
   format %{ "vpsubd  $dst,$src,$mem\t! sub packedI" %}
   ins_encode %{
@@ -5146,7 +5143,8 @@ instruct vsubL_reg(vec dst, vec src1, vec src2) %{
 
 
 instruct vsubL_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVL src (LoadVector mem)));
   format %{ "vpsubq  $dst,$src,$mem\t! sub packedL" %}
   ins_encode %{
@@ -5179,7 +5177,8 @@ instruct vsubF_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vsubF_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVF src (LoadVector mem)));
   format %{ "vsubps  $dst,$src,$mem\t! sub packedF" %}
   ins_encode %{
@@ -5212,7 +5211,8 @@ instruct vsubD_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vsubD_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (SubVD src (LoadVector mem)));
   format %{ "vsubpd  $dst,$src,$mem\t! sub packedD" %}
   ins_encode %{
@@ -5360,7 +5360,8 @@ instruct vmulS_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vmulS_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (MulVS src (LoadVector mem)));
   format %{ "vpmullw $dst,$src,$mem\t! mul packedS" %}
   ins_encode %{
@@ -5394,7 +5395,8 @@ instruct vmulI_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vmulI_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (MulVI src (LoadVector mem)));
   format %{ "vpmulld $dst,$src,$mem\t! mul packedI" %}
   ins_encode %{
@@ -5418,7 +5420,8 @@ instruct vmulL_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vmulL_mem(vec dst, vec src, memory mem) %{
-  predicate(VM_Version::supports_avx512dq());
+  predicate(VM_Version::supports_avx512dq() &&
+              (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (MulVL src (LoadVector mem)));
   format %{ "vpmullq $dst,$src,$mem\t! mul packedL" %}
   ins_encode %{
@@ -5503,7 +5506,8 @@ instruct vmulF_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vmulF_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (MulVF src (LoadVector mem)));
   format %{ "vmulps  $dst,$src,$mem\t! mul packedF" %}
   ins_encode %{
@@ -5536,7 +5540,8 @@ instruct vmulD_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vmulD_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (MulVD src (LoadVector mem)));
   format %{ "vmulpd  $dst,$src,$mem\t! mul packedD" %}
   ins_encode %{
@@ -5607,7 +5612,8 @@ instruct vdivF_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vdivF_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (DivVF src (LoadVector mem)));
   format %{ "vdivps  $dst,$src,$mem\t! div packedF" %}
   ins_encode %{
@@ -5640,7 +5646,8 @@ instruct vdivD_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vdivD_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (DivVD src (LoadVector mem)));
   format %{ "vdivpd  $dst,$src,$mem\t! div packedD" %}
   ins_encode %{
@@ -5824,6 +5831,7 @@ instruct vsqrtF_reg(vec dst, vec src) %{
 %}
 
 instruct vsqrtF_mem(vec dst, memory mem) %{
+  predicate(vector_length_in_bytes(n->in(1)) > 8);
   match(Set dst (SqrtVF (LoadVector mem)));
   format %{ "vsqrtps  $dst,$mem\t! sqrt packedF" %}
   ins_encode %{
@@ -5847,6 +5855,7 @@ instruct vsqrtD_reg(vec dst, vec src) %{
 %}
 
 instruct vsqrtD_mem(vec dst, memory mem) %{
+  predicate(vector_length_in_bytes(n->in(1)) > 8);
   match(Set dst (SqrtVD (LoadVector mem)));
   format %{ "vsqrtpd  $dst,$mem\t! sqrt packedD" %}
   ins_encode %{
@@ -6459,7 +6468,8 @@ instruct vand_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vand_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (AndV src (LoadVector mem)));
   format %{ "vpand   $dst,$src,$mem\t! and vectors" %}
   ins_encode %{
@@ -6493,7 +6503,8 @@ instruct vor_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vor_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (OrV src (LoadVector mem)));
   format %{ "vpor    $dst,$src,$mem\t! or vectors" %}
   ins_encode %{
@@ -6527,7 +6538,8 @@ instruct vxor_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct vxor_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0);
+  predicate((UseAVX > 0) &&
+            (vector_length_in_bytes(n->in(1)) > 8));
   match(Set dst (XorV src (LoadVector mem)));
   format %{ "vpxor   $dst,$src,$mem\t! xor vectors" %}
   ins_encode %{
@@ -7947,6 +7959,7 @@ instruct vfmaF_reg(vec a, vec b, vec c) %{
 %}
 
 instruct vfmaF_mem(vec a, memory b, vec c) %{
+  predicate(vector_length_in_bytes(n->in(1)) > 8);
   match(Set c (FmaVF  c (Binary a (LoadVector b))));
   format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packedF" %}
   ins_cost(150);
@@ -7971,6 +7984,7 @@ instruct vfmaD_reg(vec a, vec b, vec c) %{
 %}
 
 instruct vfmaD_mem(vec a, memory b, vec c) %{
+  predicate(vector_length_in_bytes(n->in(1)) > 8);
   match(Set c (FmaVD  c (Binary a (LoadVector b))));
   format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packedD" %}
   ins_cost(150);
@@ -8048,6 +8062,7 @@ instruct vpternlog(vec dst, vec src2, vec src3, immU8 func) %{
 %}
 
 instruct vpternlog_mem(vec dst, vec src2, memory src3, immU8 func) %{
+  predicate(vector_length_in_bytes(n->in(1)) > 8);
   match(Set dst (MacroLogicV (Binary dst src2) (Binary (LoadVector src3) func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}

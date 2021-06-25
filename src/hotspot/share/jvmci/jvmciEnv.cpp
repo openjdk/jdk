@@ -314,7 +314,7 @@ JVMCIEnv::~JVMCIEnv() {
     } else {
       Thread* thread = Thread::current();
       if (thread->is_Java_thread()) {
-        JavaThread* THREAD = thread->as_Java_thread(); // For exception macros.
+        JavaThread* THREAD = JavaThread::cast(thread); // For exception macros.
         if (HAS_PENDING_EXCEPTION) {
           Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
           CLEAR_PENDING_EXCEPTION;

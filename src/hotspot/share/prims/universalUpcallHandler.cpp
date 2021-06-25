@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
 
   {
     MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-    upcall_helper(thread->as_Java_thread(), rec, buff);
+    upcall_helper(JavaThread::cast(thread), rec, buff);
   }
 
   if (should_detach) {

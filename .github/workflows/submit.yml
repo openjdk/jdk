@@ -10,7 +10,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
+        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows x64, macOS x64"
 
 jobs:
   prerequisites:
@@ -22,7 +22,6 @@ jobs:
       platform_linux_additional: ${{ steps.check_platforms.outputs.platform_linux_additional }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
-      platform_windows_aarch64: ${{ steps.check_platforms.outputs.platform_windows_aarch64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
       platform_macos_aarch64: ${{ steps.check_platforms.outputs.platform_macos_aarch64 }}
@@ -39,7 +38,6 @@ jobs:
           echo "::set-output name=platform_linux_additional::${{ contains(github.event.inputs.platforms, 'linux additional (hotspot only)') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux additional (hotspot only)'))) }}"
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
           echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
-          echo "::set-output name=platform_windows_aarch64::${{ contains(github.event.inputs.platforms, 'windows aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows aarch64'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
           echo "::set-output name=platform_macos_aarch64::${{ contains(github.event.inputs.platforms, 'macos aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos aarch64'))) }}"
@@ -849,94 +847,6 @@ jobs:
           path: ~/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
-  windows_aarch64_build:
-    name: Windows aarch64
-    runs-on: "windows-2019"
-    needs: prerequisites
-    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_windows_aarch64 != 'false'
-
-    strategy:
-      fail-fast: false
-      matrix:
-        flavor:
-          - build debug
-        include:
-          - flavor: build debug
-            flags: --enable-debug
-            artifact: -debug
-
-    env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
-      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
-      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_FILENAME }}"
-      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_URL }}"
-      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
-
-    steps:
-      - name: Restore cygwin packages from cache
-        id: cygwin
-        uses: actions/cache@v2
-        with:
-          path: ~/cygwin/packages
-          key: cygwin-packages-${{ runner.os }}-v1
-
-      - name: Install cygwin
-        run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
-
-      - name: Checkout the source
-        uses: actions/checkout@v2
-        with:
-          path: jdk
-
-      - name: Restore boot JDK from cache
-        id: bootjdk
-        uses: actions/cache@v2
-        with:
-          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
-          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
-
-      - name: Download boot JDK
-        run: |
-          mkdir -p "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
-          & curl -L "$env:BOOT_JDK_URL" -o "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
-          $FileHash = Get-FileHash -Algorithm SHA256 "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
-          $FileHash.Hash -eq $env:BOOT_JDK_SHA256
-          & tar -xf "$HOME/bootjdk/$env:BOOT_JDK_FILENAME" -C "$HOME/bootjdk/$env:BOOT_JDK_VERSION"
-          Get-ChildItem "$HOME\bootjdk\$env:BOOT_JDK_VERSION\*\*" | Move-Item -Destination "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
-        if: steps.bootjdk.outputs.cache-hit != 'true'
-
-      - name: Ensure a specific version of MSVC is installed
-        run: >
-          Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
-          'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
-          --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
-
-      - name: Configure
-        run: >
-          $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
-          $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
-          $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION" ;
-          & bash configure
-          --with-conf-name=windows-aarch64
-          --with-msvc-toolset-version=14.28
-          --openjdk-target=aarch64-unknown-cygwin
-          ${{ matrix.flags }}
-          --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
-          --with-version-build=0
-          --with-boot-jdk="$env:BOOT_JDK"
-          --with-default-make-target="hotspot"
-        working-directory: jdk
-
-      - name: Build
-        run: |
-          $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
-          $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
-          & make CONF_NAME=windows-aarch64
-        working-directory: jdk
-
   windows_x64_build:
     name: Windows x64
     runs-on: "windows-2019"
@@ -1661,7 +1571,6 @@ jobs:
     needs:
       - prerequisites
       - linux_additional_build
-      - windows_aarch64_build
       - linux_x64_test
       - linux_x86_test
       - windows_x64_test

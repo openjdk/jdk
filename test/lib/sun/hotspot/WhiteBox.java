@@ -310,7 +310,7 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {

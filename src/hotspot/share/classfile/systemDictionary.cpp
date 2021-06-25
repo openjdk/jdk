@@ -155,7 +155,6 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
 
 bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
-  if (AlwaysLockClassLoader) return false;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
@@ -1309,9 +1308,8 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
                                jt->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
 
-    Handle s = java_lang_String::create_from_symbol(class_name, CHECK_NULL);
     // Translate to external class name format, i.e., convert '/' chars to '.'
-    Handle string = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle string = java_lang_String::externalize_classname(class_name, CHECK_NULL);
 
     JavaValue result(T_OBJECT);
 

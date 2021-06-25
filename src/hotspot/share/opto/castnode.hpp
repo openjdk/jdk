@@ -32,15 +32,21 @@
 //------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
+public:
+  enum DependencyType {
+    RegularDependency, // if cast doesn't improve input type, cast can be removed
+    StrongDependency,  // leave cast in even if _type doesn't improve input type, can be replaced by stricter dominating cast if one exist
+    UnconditionalDependency // leave cast in unconditionally
+  };
+
   protected:
-  // Can this node be removed post CCP or does it carry a required dependency?
-  const bool _carry_dependency;
+  const DependencyType _dependency;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
 
   public:
-  ConstraintCastNode(Node *n, const Type *t, bool carry_dependency)
-    : TypeNode(t,2), _carry_dependency(carry_dependency) {
+  ConstraintCastNode(Node *n, const Type *t, DependencyType dependency)
+    : TypeNode(t,2), _dependency(dependency) {
     init_class_id(Class_ConstraintCast);
     init_req(1, n);
   }
@@ -49,10 +55,10 @@ class ConstraintCastNode: public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
-  virtual bool depends_only_on_test() const { return !_carry_dependency; }
-  bool carry_dependency() const { return _carry_dependency; }
+  virtual bool depends_only_on_test() const { return _dependency == RegularDependency; }
+  bool carry_dependency() const { return _dependency != RegularDependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
-  static Node* make_cast(int opcode,  Node* c, Node *n, const Type *t, bool carry_dependency);
+  static Node* make_cast(int opcode, Node* c, Node *n, const Type *t, DependencyType dependency);
   static Node* make(Node* c, Node *n, const Type *t, BasicType bt);
   virtual bool operates_on(BasicType bt, bool signed_int) const {
     assert(bt == T_INT || bt == T_LONG, "unsupported");
@@ -63,7 +69,7 @@ class ConstraintCastNode: public TypeNode {
   virtual void dump_spec(outputStream *st) const;
 #endif
 
-  static Node* make_cast_for_type(Node* c, Node* in, const Type* type);
+  static Node* make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency);
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -76,12 +82,12 @@ class CastIINode: public ConstraintCastNode {
   virtual uint size_of() const;
 
   public:
-  CastIINode(Node* n, const Type* t, bool carry_dependency = false, bool range_check_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
+  CastIINode(Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false)
+    : ConstraintCastNode(n, t, dependency), _range_check_dependency(range_check_dependency) {
     init_class_id(Class_CastII);
   }
-  CastIINode(Node* ctrl, Node* n, const Type* t, bool carry_dependency = false, bool range_check_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
+  CastIINode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false)
+    : ConstraintCastNode(n, t, dependency), _range_check_dependency(range_check_dependency) {
     init_class_id(Class_CastII);
     init_req(0, ctrl);
   }
@@ -110,13 +116,13 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
-  CastLLNode(Node* ctrl, Node* n, const Type* t, bool carry_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency) {
+  CastLLNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency)
+    : ConstraintCastNode(n, t, dependency) {
     init_class_id(Class_CastLL);
     init_req(0, ctrl);
   }
-  CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
-          : ConstraintCastNode(n, t, carry_dependency){
+  CastLLNode(Node* n, const Type* t, DependencyType dependency = RegularDependency)
+          : ConstraintCastNode(n, t, dependency){
     init_class_id(Class_CastLL);
   }
   virtual bool operates_on(BasicType bt, bool signed_int) const {
@@ -129,8 +135,8 @@ public:
 
 class CastFFNode: public ConstraintCastNode {
 public:
-  CastFFNode(Node* n, const Type* t, bool carry_dependency = false)
-          : ConstraintCastNode(n, t, carry_dependency){
+  CastFFNode(Node* n, const Type* t, DependencyType dependency = RegularDependency)
+          : ConstraintCastNode(n, t, dependency){
     init_class_id(Class_CastFF);
   }
   virtual int Opcode() const;
@@ -139,8 +145,8 @@ public:
 
 class CastDDNode: public ConstraintCastNode {
 public:
-  CastDDNode(Node* n, const Type* t, bool carry_dependency = false)
-          : ConstraintCastNode(n, t, carry_dependency){
+  CastDDNode(Node* n, const Type* t, DependencyType dependency = RegularDependency)
+          : ConstraintCastNode(n, t, dependency){
     init_class_id(Class_CastDD);
   }
   virtual int Opcode() const;
@@ -149,8 +155,8 @@ public:
 
 class CastVVNode: public ConstraintCastNode {
 public:
-  CastVVNode(Node* n, const Type* t, bool carry_dependency = false)
-          : ConstraintCastNode(n, t, carry_dependency){
+  CastVVNode(Node* n, const Type* t, DependencyType dependency = RegularDependency)
+          : ConstraintCastNode(n, t, dependency){
     init_class_id(Class_CastVV);
   }
   virtual int Opcode() const;
@@ -162,8 +168,8 @@ public:
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node *n, const Type *t, bool carry_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency) {
+  CastPPNode (Node *n, const Type *t, DependencyType dependency = RegularDependency)
+    : ConstraintCastNode(n, t, dependency) {
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
@@ -173,8 +179,8 @@ class CastPPNode: public ConstraintCastNode {
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
 class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode(Node *c, Node *n, const Type *t, bool carry_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency) {
+  CheckCastPPNode(Node *c, Node *n, const Type *t, DependencyType dependency = RegularDependency)
+    : ConstraintCastNode(n, t, dependency) {
     init_class_id(Class_CheckCastPP);
     init_req(0, c);
   }

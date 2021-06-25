@@ -881,8 +881,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
-  nonstatic_field(ObjectMonitor,               _contentions,                                  jint)                                  \
-  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
+  nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
+  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
@@ -2402,6 +2402,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
+  declare_constant(Deoptimization::Reason_receiver_constraint)            \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \

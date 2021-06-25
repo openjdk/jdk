@@ -25,6 +25,7 @@
  * @test
  * @bug 8054823
  * @summary Tests the setFlag and printFlag attach command
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
