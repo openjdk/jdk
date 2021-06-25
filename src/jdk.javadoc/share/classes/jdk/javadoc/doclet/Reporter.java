@@ -94,6 +94,12 @@ public interface Reporter {
      * The positions are all 0-based character offsets from the beginning of content of the file.
      * The positions should satisfy the relation {@code start <= pos <= end}.
      *
+     * @implSpec
+     * This implementation always throws {@code UnsupportedOperationException}.
+     * The implementation provided by the {@code javadoc} tool to
+     * {@link Doclet#init(Locale, Reporter) initialize} a doclet
+     * overrides this implementation.
+     *
      * @param kind    the kind of diagnostic
      * @param file    the file
      * @param start   the beginning of the enclosing range
@@ -103,7 +109,9 @@ public interface Reporter {
      *
      * @since 17
      */
-    void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message);
+    default void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Returns a writer that can be used to write non-diagnostic output,
