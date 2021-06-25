@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,7 @@ public class FXLauncherTest extends TestHelper {
         createFile(ManifestFile, createManifestContents(null, StdMainClass)); // No MC, but supply JAC
         createJar(FXtestJar, ManifestFile);
         String sTestJar = FXtestJar.getAbsolutePath();
-        TestResult tr = doFxExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+        TestResult tr = doFxExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
         tr.checkNegative(); // should abort if no Main-Class
         if (tr.testStatus) {
             if (!tr.contains("no main manifest attribute")) {

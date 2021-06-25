@@ -242,7 +242,7 @@ public class TestSpecialArgs extends TestHelper {
 
         // make sure a missing class is handled correctly, because the class
         // resolution is performed by the JVM.
-        tr = doExec(javaCmd, "AbsentClass", "-XX:NativeMemoryTracking=summary");
+        tr = doExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "AbsentClass", "-XX:NativeMemoryTracking=summary");
         if (!tr.contains("Error: Could not find or load main class AbsentClass")) {
             throw new RuntimeException("Test Fails");
         }

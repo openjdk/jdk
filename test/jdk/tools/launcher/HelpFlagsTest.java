@@ -208,7 +208,9 @@ public class HelpFlagsTest extends TestHelper {
 
     static TestResult runToolWithFlag(File f, String flag) {
         String x = f.getAbsolutePath();
-        TestResult tr = doExec(x, flag);
+        String language = f.getName().equals("java.exe") ? "-Duser.language=en" : "-J-Duser.language=en";
+        String country = f.getName().equals("java.exe") ? "-Duser.country=US" : "-J-Duser.country=US";
+        TestResult tr = doExec(x, language, country, flag);
         System.out.println("Testing " + f.getName());
         System.out.println("#> " + x + " " + flag);
         tr.testOutput.forEach(System.out::println);
