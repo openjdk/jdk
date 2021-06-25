@@ -468,8 +468,8 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
           int second = regalloc->get_reg_second(def);
           //If peephole had removed the node,do not set live bit for it.
           if (!(def->is_Mach() && def->as_Mach()->get_removed())) {
-            if( OptoReg::is_valid(first) ) set_live_bit(tmp_live,first);
-            if( OptoReg::is_valid(second) ) set_live_bit(tmp_live,second);
+            if (OptoReg::is_valid(first)) set_live_bit(tmp_live,first);
+            if (OptoReg::is_valid(second)) set_live_bit(tmp_live,second);
           }
           // If we use the stack pointer in a cisc-alternative instruction,
           // check for use as a memory operand.  Then reconstruct the RegName
