@@ -5429,27 +5429,20 @@ address generate_avx_ghash_processBlocks() {
 		  __ jcc(Assembler::below, L_not512);
 
 		  __ shll(isURL, 6); // index into decode table based on isURL
-		  __ lea(encode_table,
-			 ExternalAddress(StubRoutines::x86::
-						 base64_encoding_table_addr()));
+		  __ lea(encode_table, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
 		  __ addptr(encode_table, isURL);
 		  __ shrl(isURL, 6); // restore isURL
 
 		  __ mov64(rax, 0x3036242a1016040a); // Shifts
-		  __ evmovdquq(
-			  xmm3,
-			  ExternalAddress(
-				  StubRoutines::x86::base64_shuffle_addr()),
+		  __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()),
 			  Assembler::AVX_512bit, r15);
-		  __ evmovdquq(xmm2, Address(encode_table, 0),
-			       Assembler::AVX_512bit);
+		  __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
 		  __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
 
 		  __ align(32);
 		  __ BIND(L_vbmiLoop);
 
-		  __ vpermb(xmm0, xmm3, Address(source, start_offset),
-			    Assembler::AVX_512bit);
+		  __ vpermb(xmm0, xmm3, Address(source, start_offset), Assembler::AVX_512bit);
 		  __ subl(length, 48);
 
 		  // Put the input bytes into the proper lanes for writing, then
@@ -5476,7 +5469,7 @@ address generate_avx_ghash_processBlocks() {
 		  **      https://dl.acm.org/doi/10.1145/3132709
 		  **
 		  ** We use AVX2 SIMD instructions to encode 24 bytes into 32
-		  *output bytes.
+		  ** output bytes.
 		  **
 		  */
 		  // Lengths under 32 bytes are done with scalar routine
@@ -5484,15 +5477,10 @@ address generate_avx_ghash_processBlocks() {
 		  __ jcc(Assembler::belowEqual, L_process3);
 
 		  // Set up supporting constant table data
-		  __ vmovdqu(xmm9, ExternalAddress(
-					   StubRoutines::x86::
-						   base64_avx2_shuffle_addr()));
+		  __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()));
 		  // 6-bit mask for 2nd and 4th (and multiples) 6-bit values
 		  __ movl(rax, 0x0fc0fc00);
-		  __ vmovdqu(xmm1,
-			     ExternalAddress(
-				     StubRoutines::x86::
-					     base64_avx2_input_mask_addr()));
+		  __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()));
 		  __ evpbroadcastd(xmm8, rax, Assembler::AVX_256bit);
 
 		  // Multiplication constant for "shifting" right by 6 and 10
@@ -5589,10 +5577,7 @@ address generate_avx_ghash_processBlocks() {
 		  //
 		  // Load input bytes - only 28 bytes.  Mask the first load to
 		  // not load into the full register.
-		  __ vpmaskmovd(
-			  xmm1, xmm1,
-			  Address(source, start_offset, Address::times_1, -4),
-			  Assembler::AVX_256bit);
+		  __ vpmaskmovd(xmm1, xmm1, Address(source, start_offset, Address::times_1, -4), Assembler::AVX_256bit);
 
 		  // Move 3-byte chunks of input (12 bytes) into 16 bytes,
 		  // ordering by:
@@ -5636,9 +5621,7 @@ address generate_avx_ghash_processBlocks() {
 		  __ vpsubb(xmm1, xmm1, xmm2, Assembler::AVX_256bit);
 
 		  // Load the proper lookup table
-		  __ lea(r11,
-			 ExternalAddress(
-				 StubRoutines::x86::base64_avx2_lut_addr()));
+		  __ lea(r11, ExternalAddress(StubRoutines::x86::base64_avx2_lut_addr()));
 		  __ movl(r15, isURL);
 		  __ shll(r15, 5);
 		  __ vmovdqu(xmm2, Address(r11, r15));
@@ -5660,8 +5643,7 @@ address generate_avx_ghash_processBlocks() {
 		  __ BIND(L_32byteLoop);
 
 		  // Get next 32 bytes
-		  __ vmovdqu(xmm1, Address(source, start_offset,
-					   Address::times_1, -4));
+		  __ vmovdqu(xmm1, Address(source, start_offset, Address::times_1, -4));
 
 		  __ subl(length, 24);
 		  __ addl(start_offset, 24);
@@ -5691,7 +5673,6 @@ address generate_avx_ghash_processBlocks() {
 		  __ jcc(Assembler::above, L_32byteLoop);
 
 		  __ vzeroupper();
-		  __ addl(dp, 32);
 	  }
 
 	  __ BIND(L_process3);
@@ -5699,8 +5680,7 @@ address generate_avx_ghash_processBlocks() {
 	  __ jcc(Assembler::below, L_exit);
 
 	  // Load the encoding table based on isURL
-	  __ lea(r11, ExternalAddress(
-			      StubRoutines::x86::base64_encoding_table_addr()));
+	  __ lea(r11, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
 	  __ movl(r15, isURL);
 	  __ shll(r15, 5);
 	  __ addptr(r11, r15);
@@ -5709,10 +5689,8 @@ address generate_avx_ghash_processBlocks() {
 
 	  // Load 3 bytes
 	  __ load_unsigned_byte(r15, Address(source, start_offset));
-	  __ load_unsigned_byte(
-		  r10, Address(source, start_offset, Address::times_1, 1));
-	  __ load_unsigned_byte(
-		  r13, Address(source, start_offset, Address::times_1, 2));
+	  __ load_unsigned_byte(r10, Address(source, start_offset, Address::times_1, 1));
+	  __ load_unsigned_byte(r13, Address(source, start_offset, Address::times_1, 2));
 
 	  // Build a 32-bit word with bytes 1, 2, 0, 1
 	  __ movl(rax, r10);
