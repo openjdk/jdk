@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1260,6 +1260,8 @@ public final class Duration
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
+     * @apiNote
+     * This method behaves exactly the same way as {@link #toDays()}.
      *
      * @return the number of days in the duration, may be negative
      * @since 9
