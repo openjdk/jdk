@@ -466,9 +466,8 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
           assert(def != 0, "input edge required");
           int first = regalloc->get_reg_first(def);
           int second = regalloc->get_reg_second(def);
-          if ( def->is_Mach() && def->as_Mach()->get_removed() ) {
-            //do nothing. peephole has removed the node.
-          } else {
+          //If peephole had removed the node,do not set live bit for it.
+          if (!(def->is_Mach() && def->as_Mach()->get_removed())) {
             if( OptoReg::is_valid(first) ) set_live_bit(tmp_live,first);
             if( OptoReg::is_valid(second) ) set_live_bit(tmp_live,second);
           }
