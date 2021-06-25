@@ -158,6 +158,11 @@ public class ByteArrayInputStream extends InputStream {
      * <p>
      * This {@code read} method cannot block.
      *
+     * @apiNote
+     * Unlike the {@link InputStream#read(byte[],int,int) equivalent method}
+     * of {@code InputStream}, this method returns {@code -1} instead of zero
+     * if the end of the stream has been reached and {@code len == 0}.
+     *
      * @param   b     the buffer into which the data is read.
      * @param   off   the start offset in the destination array {@code b}
      * @param   len   the maximum number of bytes read.
@@ -171,9 +176,6 @@ public class ByteArrayInputStream extends InputStream {
      */
     public synchronized int read(byte b[], int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
-        if (len == 0) {
-            return 0;
-        }
 
         if (pos >= count) {
             return -1;

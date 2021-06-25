@@ -50,10 +50,10 @@ public class ReadAllReadNTransferTo {
 
         ByteArrayInputStream bais = new ByteArrayInputStream(buf);
         bais.readAllBytes();
-        if (bais.read(new byte[0]) != 0) {
+        if (bais.read(new byte[0]) != -1) {
             throw new RuntimeException("read(byte[]) did not return 0");
         }
-        if (bais.read(new byte[1], 0, 0) != 0) {
+        if (bais.read(new byte[1], 0, 0) != -1) {
             throw new RuntimeException("read(byte[],int,int) did not return 0");
         }
 
