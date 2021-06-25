@@ -2196,8 +2196,6 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   if (callback == NULL) {
     return;
   }
-  assert(nm != NULL, "zombie in post_compiled_method_load");
-  assert(!nm->is_zombie(), "zombie in post_compiled_method_load");
   JavaThread* thread = JavaThread::current();
 
   EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
@@ -2208,9 +2206,13 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   ResourceMark rm(thread);
   HandleMark hm(thread);
 
+  assert(nm != NULL, "zombie in post_compiled_method_load");
+  assert(!nm->is_zombie(), "zombie in post_compiled_method_load");
 
-  assert(nm != NULL, "zombie in post_compiled_method_load2");
-  assert(!nm->is_zombie(), "zombie in post_compiled_method_load2");
+  // Don't SEGV in product if nmethod is unloaded or made zombie, just skip event
+  if (nm == NULL || nm->is_zombie()) {
+    return;
+  }
 
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
