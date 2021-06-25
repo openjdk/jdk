@@ -1394,7 +1394,8 @@ public class DatagramSocket implements java.io.Closeable {
             if (factory != null) {
                 // create legacy DatagramSocket delegate
                 DatagramSocketImpl impl = factory.createDatagramSocketImpl();
-                Objects.requireNonNull(impl);
+                Objects.requireNonNull(impl,
+                        "Implementation returned by installed DatagramSocketFactoryImpl is null");
                 delegate = new NetMulticastSocket(impl);
                 ((NetMulticastSocket) delegate).getImpl(); // ensure impl.create() is called.
             } else {
