@@ -216,11 +216,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
                                 total_count(_discoveredFinalRefs),
                                 total_count(_discoveredPhantomRefs));
 
-  {
-    RefProcTotalPhaseTimesTracker tt(RefPhase1, &phase_times);
-    process_soft_ref_reconsider(proxy_task, phase_times);
-  }
-
   update_soft_ref_master_clock();
 
   {
@@ -327,37 +322,6 @@ inline void log_enqueued_ref(const DiscoveredListIterator& iter, const char* rea
                                reason, p2i(iter.obj()), iter.obj()->klass()->internal_name());
   }
   assert(oopDesc::is_oop(iter.obj()), "Adding a bad reference");
-}
-
-size_t ReferenceProcessor::process_soft_ref_reconsider_work(DiscoveredList&    refs_list,
-                                                            ReferencePolicy*   policy,
-                                                            BoolObjectClosure* is_alive,
-                                                            OopClosure*        keep_alive,
-                                                            VoidClosure*       complete_gc) {
-  assert(policy != NULL, "Must have a non-NULL policy");
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
-  // Decide which softly reachable refs should be kept alive.
-  while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
-    bool referent_is_dead = (iter.referent() != NULL) && !iter.is_referent_alive();
-    if (referent_is_dead &&
-        !policy->should_clear_reference(iter.obj(), _soft_ref_timestamp_clock)) {
-      log_dropped_ref(iter, "by policy");
-      // Remove Reference object from list
-      iter.remove();
-      // keep the referent around
-      iter.make_referent_alive();
-      iter.move_to_next();
-    } else {
-      iter.next();
-    }
-  }
-  // Close the reachable set
-  complete_gc->do_void();
-
-  log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " dead Refs out of " SIZE_FORMAT " discovered Refs by policy, from list " INTPTR_FORMAT,
-                             iter.removed(), iter.processed(), p2i(&refs_list));
-  return iter.removed();
 }
 
 size_t ReferenceProcessor::process_soft_weak_final_refs_work(DiscoveredList&    refs_list,
@@ -507,34 +471,6 @@ size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
   return total_count(list);
 }
 
-
-
-class RefProcPhase1Task : public RefProcTask {
-public:
-  RefProcPhase1Task(ReferenceProcessor& ref_processor,
-                    ReferenceProcessorPhaseTimes* phase_times,
-                    ReferencePolicy* policy)
-    : RefProcTask(ref_processor,
-                  phase_times),
-      _policy(policy) { }
-
-  void rp_work(uint worker_id,
-               BoolObjectClosure* is_alive,
-               OopClosure* keep_alive,
-               VoidClosure* complete_gc) override {
-    ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase1, _phase_times, tracker_id(worker_id));
-    size_t const removed = _ref_processor.process_soft_ref_reconsider_work(_ref_processor._discoveredSoftRefs[worker_id],
-                                                                           _policy,
-                                                                           is_alive,
-                                                                           keep_alive,
-                                                                           complete_gc);
-    _phase_times->add_ref_cleared(REF_SOFT, removed);
-  }
-
-private:
-  ReferencePolicy* _policy;
-};
 
 class RefProcPhase2Task: public RefProcTask {
   void run_phase2(uint worker_id,
@@ -789,38 +725,6 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
       proxy_task.work(i);
     }
   }
-}
-
-void ReferenceProcessor::process_soft_ref_reconsider(RefProcProxyTask& proxy_task,
-                                                     ReferenceProcessorPhaseTimes& phase_times) {
-
-  size_t const num_soft_refs = total_count(_discoveredSoftRefs);
-  phase_times.set_ref_discovered(REF_SOFT, num_soft_refs);
-  phase_times.set_processing_is_mt(processing_is_mt());
-
-  if (num_soft_refs == 0) {
-    log_debug(gc, ref)("Skipped phase 1 of Reference Processing: no references");
-    return;
-  }
-
-  if (_current_soft_ref_policy == NULL) {
-    log_debug(gc, ref)("Skipped phase 1 of Reference Processing: no policy");
-    return;
-  }
-
-  RefProcMTDegreeAdjuster a(this, RefPhase1, num_soft_refs);
-
-  if (processing_is_mt()) {
-    RefProcBalanceQueuesTimeTracker tt(RefPhase1, &phase_times);
-    maybe_balance_queues(_discoveredSoftRefs);
-  }
-
-  RefProcPhaseTimeTracker tt(RefPhase1, &phase_times);
-
-  log_reflist("Phase 1 Soft before", _discoveredSoftRefs, _max_num_queues);
-  RefProcPhase1Task phase1(*this, &phase_times, _current_soft_ref_policy);
-  run_task(phase1, proxy_task, true);
-  log_reflist("Phase 1 Soft after", _discoveredSoftRefs, _max_num_queues);
 }
 
 void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
@@ -1305,8 +1209,8 @@ uint RefProcMTDegreeAdjuster::ergo_proc_thread_count(size_t ref_count,
 }
 
 bool RefProcMTDegreeAdjuster::use_max_threads(RefProcPhases phase) const {
-  // Even a small number of references in either of those cases could produce large amounts of work.
-  return (phase == ReferenceProcessor::RefPhase1 || phase == ReferenceProcessor::RefPhase3);
+  // Even a small number of references in this phase could produce large amounts of work.
+  return phase == ReferenceProcessor::RefPhase3;
 }
 
 RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,

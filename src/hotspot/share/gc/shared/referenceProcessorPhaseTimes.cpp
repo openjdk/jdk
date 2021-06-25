@@ -36,16 +36,15 @@
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)
 
-#define ASSERT_PHASE(phase) assert((phase) >= ReferenceProcessor::RefPhase1 && \
+#define ASSERT_PHASE(phase) assert((phase) >= ReferenceProcessor::RefPhase2 && \
                                    (phase) < ReferenceProcessor::RefPhaseMax,  \
                                    "Invariant (%d)", (int)phase);
 
-#define ASSERT_SUB_PHASE(phase) assert((phase) >= ReferenceProcessor::SoftRefSubPhase1 && \
+#define ASSERT_SUB_PHASE(phase) assert((phase) >= ReferenceProcessor::SoftRefSubPhase2 && \
                                        (phase) < ReferenceProcessor::RefSubPhaseMax, \
                                        "Invariant (%d)", (int)phase);
 
 static const char* SubPhasesParWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
-       "SoftRef (ms):",
        "SoftRef (ms):",
        "WeakRef (ms):",
        "FinalRef (ms):",
@@ -56,7 +55,6 @@ static const char* SubPhasesParWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
 static const char* Phase2ParWorkTitle = "Total (ms):";
 
 static const char* SubPhasesSerWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
-       "SoftRef:",
        "SoftRef:",
        "WeakRef:",
        "FinalRef:",
@@ -69,7 +67,6 @@ static const char* Phase2SerWorkTitle = "Total:";
 static const char* Indents[6] = {"", "  ", "    ", "      ", "        ", "          "};
 
 static const char* PhaseNames[ReferenceProcessor::RefPhaseMax] = {
-       "Reconsider SoftReferences",
        "Notify Soft/WeakReferences",
        "Notify and keep alive finalizable",
        "Notify PhantomReferences"
@@ -279,7 +276,6 @@ void ReferenceProcessorPhaseTimes::print_all_references(uint base_indent, bool p
   }
 
   uint next_indent = base_indent + 1;
-  print_phase(ReferenceProcessor::RefPhase1, next_indent);
   print_phase(ReferenceProcessor::RefPhase2, next_indent);
   print_phase(ReferenceProcessor::RefPhase3, next_indent);
   print_phase(ReferenceProcessor::RefPhase4, next_indent);
@@ -333,9 +329,6 @@ void ReferenceProcessorPhaseTimes::print_phase(ReferenceProcessor::RefProcPhases
     }
 
     switch (phase) {
-      case ReferenceProcessor::RefPhase1:
-        print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase1, indent + 1);
-        break;
       case ReferenceProcessor::RefPhase2:
         print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase2, indent + 1);
         print_sub_phase(&ls, ReferenceProcessor::WeakRefSubPhase2, indent + 1);
