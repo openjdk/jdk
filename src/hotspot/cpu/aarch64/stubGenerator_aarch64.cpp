@@ -5683,6 +5683,7 @@ class StubGenerator: public StubCodeGenerator {
    *  c_rarg3   - dest_start
    *  c_rarg4   - dest_offset
    *  c_rarg5   - isURL
+   *  c_rarg6   - isMIME
    *
    */
   address generate_base64_decodeBlock() {
@@ -5765,12 +5766,13 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "decodeBlock");
     address start = __ pc();
 
-    Register src   = c_rarg0;  // source array
-    Register soff  = c_rarg1;  // source start offset
-    Register send  = c_rarg2;  // source end offset
-    Register dst   = c_rarg3;  // dest array
-    Register doff  = c_rarg4;  // position for writing to dest array
-    Register isURL = c_rarg5;  // Base64 or URL character set
+    Register src    = c_rarg0;  // source array
+    Register soff   = c_rarg1;  // source start offset
+    Register send   = c_rarg2;  // source end offset
+    Register dst    = c_rarg3;  // dest array
+    Register doff   = c_rarg4;  // position for writing to dest array
+    Register isURL  = c_rarg5;  // Base64 or URL character set
+    Register isMIME = c_rarg6;  // Decoding MIME block - unused in this implementation
 
     Register length = send;    // reuse send as length of source data to process
 

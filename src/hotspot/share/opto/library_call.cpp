@@ -6414,7 +6414,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   address stubAddr;
   const char *stubName;
   assert(UseBASE64Intrinsics, "need Base64 intrinsics support");
-  assert(callee()->signature()->size() == 6, "base64_decodeBlock has 6 parameters");
+  assert(callee()->signature()->size() == 7, "base64_decodeBlock has 7 parameters");
   stubAddr = StubRoutines::base64_decodeBlock();
   stubName = "decodeBlock";
 
@@ -6426,6 +6426,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* dest = argument(4);
   Node* dest_offset = argument(5);
   Node* isURL = argument(6);
+  Node* isMIME = argument(7);
 
   src = must_be_not_null(src, true);
   dest = must_be_not_null(dest, true);
@@ -6438,7 +6439,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* call = make_runtime_call(RC_LEAF,
                                  OptoRuntime::base64_decodeBlock_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, src_offset, len, dest_start, dest_offset, isURL);
+                                 src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
   return true;
