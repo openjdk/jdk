@@ -81,14 +81,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
   }
 #endif // ASSERT
 
-  // Someone could have modified the value of the static
-  // field in the j.l.r.SoftReference class that holds the
-  // soft reference timestamp clock using reflection or
-  // Unsafe between GCs. Unconditionally update the static
-  // field in ReferenceProcessor here so that we use the new
-  // value during reference discovery.
-
-  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
   _discovering_refs = true;
 }
 
@@ -156,8 +148,6 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
   // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
-  jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
-  assert(soft_ref_clock == _soft_ref_timestamp_clock, "soft ref clocks out of sync");
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
@@ -200,16 +190,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   // Stop treating discovered references specially.
   disable_discovery();
-
-  // If discovery was concurrent, someone could have modified
-  // the value of the static field in the j.l.r.SoftReference
-  // class that holds the soft reference timestamp clock using
-  // reflection or Unsafe between when discovery was enabled and
-  // now. Unconditionally update the static field in ReferenceProcessor
-  // here so that we use the new value during processing of the
-  // discovered soft refs.
-
-  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
 
   ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
                                 total_count(_discoveredWeakRefs),
