@@ -136,19 +136,19 @@ public class TestPrintReferences {
 
         final boolean p = parallelRefProcEnabled;
 
-        String phase2Regex = gcLogTimeRegex + phaseRegex(phaseNotifySoftWeakReferences) +
+        String phase1Regex = gcLogTimeRegex + phaseRegex(phaseNotifySoftWeakReferences) +
                              balanceRegex +
                              subphaseRegex("SoftRef", p) +
                              subphaseRegex("WeakRef", p) +
                              subphaseRegex("FinalRef", p) +
                              subphaseRegex("Total", p);
-        String phase3Regex = gcLogTimeRegex + phaseRegex(phaseNotifyKeepAliveFinalizer) + balanceRegex + subphaseRegex("FinalRef", p);
-        String phase4Regex = gcLogTimeRegex + phaseRegex(phaseNotifyPhantomReferences) + balanceRegex + subphaseRegex("PhantomRef", p);
+        String phase2Regex = gcLogTimeRegex + phaseRegex(phaseNotifyKeepAliveFinalizer) + balanceRegex + subphaseRegex("FinalRef", p);
+        String phase3Regex = gcLogTimeRegex + phaseRegex(phaseNotifyPhantomReferences) + balanceRegex + subphaseRegex("PhantomRef", p);
 
         output.shouldMatch(totalRegex +
+                           phase1Regex +
                            phase2Regex +
-                           phase3Regex +
-                           phase4Regex);
+                           phase3Regex);
     }
 
     // After getting time value, update 'output' for next use.
