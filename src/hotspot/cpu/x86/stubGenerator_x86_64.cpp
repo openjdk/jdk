@@ -5288,11 +5288,11 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_shuffle_addr()
   {
-	  __ align(64, (unsigned long)__ pc());
+	  __ align(64, (unsigned long long)__ pc());
 	  StubCodeMark mark(this, "StubRoutines", "shuffle_base64");
 	  address start = __ pc();
-	  assert(((unsigned long)start & 0x3f) == 0,
-		 "Alignment problem (0x%08lx)", (unsigned long)start);
+	  assert(((unsigned long long)start & 0x3f) == 0,
+		       "Alignment problem (0x%08lx)", (unsigned long long)start);
 	  __ emit_data64(0x0405030401020001, relocInfo::none);
 	  __ emit_data64(0x0a0b090a07080607, relocInfo::none);
 	  __ emit_data64(0x10110f100d0e0c0d, relocInfo::none);
@@ -5348,11 +5348,11 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_encoding_table_addr()
   {
-	  __ align(64, (unsigned long)__ pc());
+	  __ align(64, (unsigned long long)__ pc());
 	  StubCodeMark mark(this, "StubRoutines", "encoding_table_base64");
 	  address start = __ pc();
-	  assert(((unsigned long)start & 0x3f) == 0,
-		 "Alignment problem (0x%08lx)", (unsigned long)start);
+	  assert(((unsigned long long)start & 0x3f) == 0,
+		       "Alignment problem (0x%08lx)", (unsigned long long)start);
 	  __ emit_data64(0x4847464544434241, relocInfo::none);
 	  __ emit_data64(0x504f4e4d4c4b4a49, relocInfo::none);
 	  __ emit_data64(0x5857565554535251, relocInfo::none);
@@ -7688,16 +7688,16 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::x86::_encoding_table_base64 = base64_encoding_table_addr();
       if (VM_Version::supports_avx512_vbmi()) {
         StubRoutines::x86::_shuffle_base64 = base64_shuffle_addr();
-        StubRoutines::x86::_lookup_lo = base64_vbmi_lookup_lo_addr();
-        StubRoutines::x86::_lookup_hi = base64_vbmi_lookup_hi_addr();
-        StubRoutines::x86::_lookup_lo_url = base64_vbmi_lookup_lo_url_addr();
-        StubRoutines::x86::_lookup_hi_url = base64_vbmi_lookup_hi_url_addr();
-        StubRoutines::x86::_pack_vec = base64_vbmi_pack_vec_addr();
-        StubRoutines::x86::_join_0_1 = base64_vbmi_join_0_1_addr();
-        StubRoutines::x86::_join_1_2 = base64_vbmi_join_1_2_addr();
-        StubRoutines::x86::_join_2_3 = base64_vbmi_join_2_3_addr();
+        StubRoutines::x86::_lookup_lo_base64 = base64_vbmi_lookup_lo_addr();
+        StubRoutines::x86::_lookup_hi_base64 = base64_vbmi_lookup_hi_addr();
+        StubRoutines::x86::_lookup_lo_base64url = base64_vbmi_lookup_lo_url_addr();
+        StubRoutines::x86::_lookup_hi_base64url = base64_vbmi_lookup_hi_url_addr();
+        StubRoutines::x86::_pack_vec_base64 = base64_vbmi_pack_vec_addr();
+        StubRoutines::x86::_join_0_1_base64 = base64_vbmi_join_0_1_addr();
+        StubRoutines::x86::_join_1_2_base64 = base64_vbmi_join_1_2_addr();
+        StubRoutines::x86::_join_2_3_base64 = base64_vbmi_join_2_3_addr();
       }
-      StubRoutines::x86::_decoding_table = base64_decoding_table_addr();
+      StubRoutines::x86::_decoding_table_base64 = base64_decoding_table_addr();
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
       StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }

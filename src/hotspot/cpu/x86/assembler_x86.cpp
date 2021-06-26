@@ -3762,7 +3762,7 @@ void Assembler::vpermb(XMMRegister dst, XMMRegister nds, Address src, int vector
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_is_evex_instruction();
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-  emit_int8(0x8D);
+  emit_int8((unsigned char)0x8D);
   emit_operand(dst, src);
 }
 
@@ -3851,7 +3851,7 @@ void Assembler::evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister sr
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(dst->encoding(), ctl->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x83, (0xC0 | encode));
+  emit_int16((unsigned char)0x83, (unsigned char)(0xC0 | encode));
 }
 
 void Assembler::pause() {
@@ -4157,7 +4157,7 @@ void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int ve
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-  emit_int8(0x8C);
+  emit_int8((unsigned char)0x8C);
   emit_operand(dst, src);
 }
 
