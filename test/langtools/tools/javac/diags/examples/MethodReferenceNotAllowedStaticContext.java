@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.super.mref.cant.occur.static.context
+// key: compiler.err.cant.ref.before.ctor.called
 
 import java.util.function.Supplier;
 

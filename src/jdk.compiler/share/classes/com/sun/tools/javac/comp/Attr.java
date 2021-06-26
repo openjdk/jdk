@@ -3688,9 +3688,6 @@ public class Attr extends JCTree.Visitor {
                 if (!refSym.isStatic() && that.kind == JCMemberReference.ReferenceKind.SUPER) {
                     // Check that super-qualified symbols are not abstract (JLS)
                     rs.checkNonAbstract(that.pos(), that.sym);
-                    if (localEnv.info.isSelfCall) {
-                        log.error(that.pos(), Errors.SuperMrefCantOccurStaticContext);
-                    }
                 }
 
                 if (isTargetSerializable) {
@@ -4346,11 +4343,13 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (isType(sitesym)) {
-            if (sym.name == names._this) {
+            if (sym.name == names._this || sym.name == names._super) {
                 // If `C' is the currently compiled class, check that
-                // C.this' does not appear in a call to a super(...)
+                // C.this' does not appear in an explicit call to a constructor
                 if (env.info.isSelfCall &&
-                    site.tsym == env.enclClass.sym) {
+                        ((sym.name == names._this &&
+                        site.tsym == env.enclClass.sym) ||
+                        sym.name == names._super)) {
                     chk.earlyRefError(tree.pos(), sym);
                 }
             } else {

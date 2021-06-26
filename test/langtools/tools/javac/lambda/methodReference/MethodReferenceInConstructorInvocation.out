@@ -1,2 +1,2 @@
-MethodReferenceInConstructorInvocation.java:20:18: compiler.err.super.mref.cant.occur.static.context
+MethodReferenceInConstructorInvocation.java:20:21: compiler.err.cant.ref.before.ctor.called: super
 1 error
