@@ -4345,7 +4345,8 @@ public class Attr extends JCTree.Visitor {
         if (isType(sitesym)) {
             if (sym.name == names._this || sym.name == names._super) {
                 // If `C' is the currently compiled class, check that
-                // C.this' does not appear in an explicit call to a constructor
+                // `C.this' does not appear in an explicit call to a constructor
+                // also make sure that `super` is not used in constructor invocations
                 if (env.info.isSelfCall &&
                         ((sym.name == names._this &&
                         site.tsym == env.enclClass.sym) ||
