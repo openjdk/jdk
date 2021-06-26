@@ -5292,7 +5292,7 @@ address generate_avx_ghash_processBlocks() {
     StubCodeMark mark(this, "StubRoutines", "shuffle_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
-           "Alignment problem (0x%08lx)", (unsigned long long)start);
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
     __ emit_data64(0x0405030401020001, relocInfo::none);
     __ emit_data64(0x0a0b090a07080607, relocInfo::none);
     __ emit_data64(0x10110f100d0e0c0d, relocInfo::none);
@@ -5352,7 +5352,7 @@ address generate_avx_ghash_processBlocks() {
     StubCodeMark mark(this, "StubRoutines", "encoding_table_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
-           "Alignment problem (0x%08lx)", (unsigned long long)start);
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
     __ emit_data64(0x4847464544434241, relocInfo::none);
     __ emit_data64(0x504f4e4d4c4b4a49, relocInfo::none);
     __ emit_data64(0x5857565554535251, relocInfo::none);
