@@ -189,15 +189,15 @@ class x86 {
   static address _avx2_shuffle_base64;
   static address _avx2_input_mask_base64;
   static address _avx2_lut_base64;
-  static address _lookup_lo;
-  static address _lookup_hi;
-  static address _lookup_lo_url;
-  static address _lookup_hi_url;
-  static address _pack_vec;
-  static address _join_0_1;
-  static address _join_1_2;
-  static address _join_2_3;
-  static address _decoding_table;
+  static address _lookup_lo_base64;
+  static address _lookup_hi_base64;
+  static address _lookup_lo_base64url;
+  static address _lookup_hi_base64url;
+  static address _pack_vec_base64;
+  static address _join_0_1_base64;
+  static address _join_1_2_base64;
+  static address _join_2_3_base64;
+  static address _decoding_table_base64;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
@@ -341,15 +341,15 @@ class x86 {
   static address base64_avx2_input_mask_addr() { return _avx2_input_mask_base64; }
   static address base64_avx2_lut_addr() { return _avx2_lut_base64; }
   static address counter_mask_addr() { return _counter_mask_addr; }
-  static address base64_vbmi_lookup_lo_addr() { return _lookup_lo; }
-  static address base64_vbmi_lookup_hi_addr() { return _lookup_hi; }
-  static address base64_vbmi_lookup_lo_url_addr() { return _lookup_lo_url; }
-  static address base64_vbmi_lookup_hi_url_addr() { return _lookup_hi_url; }
-  static address base64_vbmi_pack_vec_addr() { return _pack_vec; }
-  static address base64_vbmi_join_0_1_addr() { return _join_0_1; }
-  static address base64_vbmi_join_1_2_addr() { return _join_1_2; }
-  static address base64_vbmi_join_2_3_addr() { return _join_2_3; }
-  static address base64_decoding_table_addr() { return _decoding_table; }
+  static address base64_vbmi_lookup_lo_addr() { return _lookup_lo_base64; }
+  static address base64_vbmi_lookup_hi_addr() { return _lookup_hi_base64; }
+  static address base64_vbmi_lookup_lo_url_addr() { return _lookup_lo_base64url; }
+  static address base64_vbmi_lookup_hi_url_addr() { return _lookup_hi_base64url; }
+  static address base64_vbmi_pack_vec_addr() { return _pack_vec_base64; }
+  static address base64_vbmi_join_0_1_addr() { return _join_0_1_base64; }
+  static address base64_vbmi_join_1_2_addr() { return _join_1_2_base64; }
+  static address base64_vbmi_join_2_3_addr() { return _join_2_3_base64; }
+  static address base64_decoding_table_addr() { return _decoding_table_base64; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
