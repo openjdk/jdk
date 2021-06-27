@@ -52,10 +52,10 @@ public:
        _stnext = NULL;
        _stprev = NULL;
    }
-   JavaThread* thread()                const { return _thread;}
+   JavaThread* thread()          const { return _thread;}
    void set_thread(JavaThread* thread) { _thread = thread; }
 
-   SeenThread* next()              const { return _stnext;}
+   SeenThread* next()        const { return _stnext;}
    void set_next(SeenThread* seen) { _stnext = seen; }
    void set_prev(SeenThread* seen) { _stprev = seen; }
 
