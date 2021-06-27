@@ -8062,7 +8062,7 @@ instruct vpternlog(vec dst, vec src2, vec src3, immU8 func) %{
 %}
 
 instruct vpternlog_mem(vec dst, vec src2, memory src3, immU8 func) %{
-  predicate(vector_length_in_bytes(n->in(1)) > 8);
+  predicate(vector_length_in_bytes(n->in(1)->in(1)) > 8);
   match(Set dst (MacroLogicV (Binary dst src2) (Binary (LoadVector src3) func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}
