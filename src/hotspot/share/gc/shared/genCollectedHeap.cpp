@@ -488,11 +488,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
       // collect() below will enable discovery as appropriate
     }
     gen->collect(full, clear_soft_refs, size, is_tlab);
-    if (!rp->enqueuing_is_done()) {
-      rp->disable_discovery();
-    } else {
-      rp->set_enqueuing_is_done(false);
-    }
+    rp->disable_discovery();
     rp->verify_no_references_recorded();
   }
 
