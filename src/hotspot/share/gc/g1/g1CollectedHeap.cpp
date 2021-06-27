@@ -2991,6 +2991,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // G1CollectedHeap::ref_processing_init() to see how
         // reference processing currently works in G1.
         _ref_processor_stw->enable_discovery();
+        _ref_processor_stw->setup_policy(false);
 
         // We want to temporarily turn off discovery by the
         // CM ref processor, if necessary, and turn it back on
@@ -3269,8 +3270,6 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   pss->set_ref_discoverer(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
-  // Setup the soft refs policy...
-  rp->setup_policy(false);
 
   ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
 

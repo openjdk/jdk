@@ -1125,7 +1125,7 @@ void G1ConcurrentMark::remark() {
 
   bool const mark_finished = !has_overflown();
   if (mark_finished) {
-    weak_refs_work(false /* clear_all_soft_refs */);
+    weak_refs_work();
 
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
@@ -1492,7 +1492,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
+void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
   // Is alive closure.
@@ -1506,8 +1506,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // See the comment in G1CollectedHeap::ref_processing_init()
     // about how reference processing currently works in G1.
 
-    // Set the soft reference policy
-    rp->setup_policy(clear_all_soft_refs);
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
 
     // We need at least one active thread. If reference processing
