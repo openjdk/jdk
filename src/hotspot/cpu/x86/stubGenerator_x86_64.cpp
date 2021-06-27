@@ -39,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -7657,7 +7658,10 @@ address generate_avx_ghash_processBlocks() {
     // Get svml stub routine addresses
     void *libsvml = NULL;
     char ebuf[1024];
-    libsvml = os::dll_load(JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, ebuf, sizeof ebuf);
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "svml")) {
+      libsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
     if (libsvml != NULL) {
       // SVML method naming convention
       //   All the methods are named as __svml_op<T><N>_ha_<VV>
