@@ -932,6 +932,10 @@ final class ZipPath implements Path {
             copyToTarget(target, options);
     }
 
+    byte[] getPath() {
+        return this.path;
+    }
+
     private void copyToTarget(ZipPath target, CopyOption... options)
         throws IOException
     {
