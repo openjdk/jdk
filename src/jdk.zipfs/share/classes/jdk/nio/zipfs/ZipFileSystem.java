@@ -105,6 +105,8 @@ class ZipFileSystem extends FileSystem {
     private static final String COMPRESSION_METHOD_DEFLATED = "DEFLATED";
     // Value specified for compressionMethod property to not compress Zip entries
     private static final String COMPRESSION_METHOD_STORED = "STORED";
+    // The maximum size of array to allocate. Some VMs reserve some header words in an array.
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
@@ -1948,7 +1950,7 @@ class ZipFileSystem extends FileSystem {
             e.file = getTempPathForEntry(null);
             os = Files.newOutputStream(e.file, WRITE);
         } else {
-            os = new ByteArrayOutputStream((e.size > 0)? (int)e.size : 8192);
+            os = new ByteArrayOutputStream((e.size > 0 && e.size <= MAX_ARRAY_SIZE)? (int)e.size : 8192);
         }
         if (e.method == METHOD_DEFLATED) {
             return new DeflatingEntryOutputStream(e, os);
