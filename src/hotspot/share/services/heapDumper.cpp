@@ -452,7 +452,7 @@ class DumpWriter : public StackObj {
   void deactivate()                     { flush(); _backend.deactivate(); }
 
   uint truncated_array_count() { return _truncated_array_count; }
-  uint truncated_length() { return _truncated_length; }
+  size_t truncated_length() { return _truncated_length; }
 
   void count_truncation(size_t length) {
     _truncated_array_count++;
