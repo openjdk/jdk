@@ -41,13 +41,6 @@
 #endif
 
 
-inline Register as_Register(FloatRegister reg) {
-  return as_Register(reg->encoding());
-}
-inline Register as_Register(void *whatever) {
-  return (Register)(intptr_t) whatever;
-}
-
 // definitions of various symbolic names for machine registers
 
 // First intercalls between C and Java which use 8 general registers
@@ -1777,11 +1770,11 @@ void mvnw(Register Rd, Register Rm,
   }
 
   // (1 source)
-#define INSN(NAME, op29, opcode2, opcode)       \
-  void NAME(Register Rd, Register Rn) {         \
-    starti;                                     \
-    f(opcode2, 20, 16);                         \
-    data_processing(current_insn, op29, opcode, Rd, Rn);       \
+#define INSN(NAME, op29, opcode2, opcode)                       \
+  void NAME(Register Rd, Register Rn) {                         \
+    starti;                                                     \
+    f(opcode2, 20, 16);                                         \
+    data_processing(current_insn, op29, opcode, Rd, Rn);        \
   }
 
   INSN(rbitw,  0b010, 0b00000, 0b00000);
@@ -1800,11 +1793,11 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // (2 sources)
-#define INSN(NAME, op29, opcode)                        \
-  void NAME(Register Rd, Register Rn, Register Rm) {    \
-    starti;                                             \
-    rf(Rm, 16);                                         \
-    data_processing(current_insn, op29, opcode, Rd, Rn);       \
+#define INSN(NAME, op29, opcode)                                \
+  void NAME(Register Rd, Register Rn, Register Rm) {            \
+    starti;                                                     \
+    rf(Rm, 16);                                                 \
+    data_processing(current_insn, op29, opcode, Rd, Rn);        \
   }
 
   INSN(udivw, 0b000, 0b000010);
@@ -1849,9 +1842,9 @@ void mvnw(Register Rd, Register Rm,
 
 #undef INSN
 
-#define INSN(NAME, op54, op31, o0)                      \
-  void NAME(Register Rd, Register Rn, Register Rm) {    \
-    data_processing(op54, op31, o0, Rd, Rn, Rm, as_Register(31)); \
+#define INSN(NAME, op54, op31, o0)                                      \
+  void NAME(Register Rd, Register Rn, Register Rm) {                    \
+    data_processing(op54, op31, o0, Rd, Rn, Rm, as_Register(31));       \
   }
 
   INSN(smulh, 0b100, 0b010, 0);
@@ -1871,7 +1864,7 @@ void mvnw(Register Rd, Register Rm,
 
 #define INSN(NAME, op31, type, opcode)                  \
   void NAME(FloatRegister Vd, FloatRegister Vn) {       \
-    data_processing(op31, type, opcode, Vd, Vn); \
+    data_processing(op31, type, opcode, Vd, Vn);        \
   }
 
 private:

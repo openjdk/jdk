@@ -420,4 +420,8 @@ inline FloatRegister AbstractRegSet<FloatRegister>::first() {
   return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
 }
 
+inline Register as_Register(FloatRegister reg) {
+  return as_Register(reg->encoding());
+}
+
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP
