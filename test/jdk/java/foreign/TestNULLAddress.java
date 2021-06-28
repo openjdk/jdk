@@ -27,7 +27,7 @@
  * @modules jdk.incubator.foreign
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
- *     TestNULLTarget
+ *     TestNULLAddress
  */
 
 import jdk.incubator.foreign.Addressable;
@@ -38,8 +38,9 @@ import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.nio.charset.Charset;
 
-public class TestNULLTarget {
+public class TestNULLAddress {
 
     static final CLinker LINKER = CLinker.getInstance();
 
@@ -57,5 +58,15 @@ public class TestNULLTarget {
                 MethodType.methodType(void.class),
                 FunctionDescriptor.ofVoid());
         mh.invokeExact((Addressable) MemoryAddress.NULL);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testNULLtoJavaString() {
+        CLinker.toJavaString(MemoryAddress.NULL);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testNULLfreeMemory() {
+        CLinker.freeMemory(MemoryAddress.NULL);
     }
 }

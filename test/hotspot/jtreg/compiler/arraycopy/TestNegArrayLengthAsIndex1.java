@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,34 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8062950
- * @requires vm.flavor == "server"
- * @library /test/lib
- * @run driver compiler.c2.Test8062950
+ * @bug 8268362
+ * @requires vm.compiler2.enabled & vm.debug
+ * @summary C2 using negative array length as index, using a.length.
+ *          AllocateArrayNode::make_ideal_length create CastIINode to not negative range.
+ *          Apply transform in GraphKit::load_array_length will covert array load index type to top.
+ *          This cause assert in Parse::array_addressing, it expect index type is int.
+ * @run main/othervm -XX:-PrintCompilation compiler.arraycopy.TestNegArrayLengthAsIndex1
  */
 
-package compiler.c2;
+package compiler.arraycopy;
+public class TestNegArrayLengthAsIndex1 {
 
-import jdk.test.lib.process.ProcessTools;
-
-public class Test8062950 {
-    private static final String CLASSNAME = "DoesNotExist";
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJvm("-Xcomp",
-                                    "-XX:-TieredCompilation",
-                                    "-XX:-UseOptoBiasInlining",
-                                    CLASSNAME)
-                    .shouldHaveExitValue(1)
-                    .shouldContain("Error: Could not find or load main class " + CLASSNAME)
-                    .shouldNotContain("A fatal error has been detected")
-                    .shouldNotContain("Internal Error")
-                    .shouldNotContain("HotSpot Virtual Machine Error");
+        for (int i = 0; i < 10000; i++) {
+            foo();
+        }
+    }
+
+    static int foo() {
+        int minusOne = -1;
+        int[] a = null;
+        try {
+            a = new int[minusOne];
+        } catch (NegativeArraySizeException e) {
+           return 0;
+        }
+        return a[a.length - 1];
     }
 }

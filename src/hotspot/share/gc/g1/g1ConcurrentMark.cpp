@@ -1693,7 +1693,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        thread->as_Java_thread()->nmethods_do(&_code_cl);
+        JavaThread::cast(thread)->nmethods_do(&_code_cl);
       }
     }
   }

@@ -2851,6 +2851,9 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
 }
 
 void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType type) {
+  if (evacuation_failed()) {
+    type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
+  }
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets after GC]");
     VerifyRegionRemSetClosure v_cl;
@@ -3066,12 +3069,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     print_heap_after_gc();
     print_heap_regions();
     trace_heap_after_gc(_gc_tracer_stw);
-
-    // We must call G1MonitoringSupport::update_sizes() in the same scoping level
-    // as an active TraceMemoryManagerStats object (i.e. before the destructor for the
-    // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
-    // before any GC notifications are raised.
-    g1mm()->update_sizes();
 
     gc_tracer_report_gc_end(concurrent_operation_is_full_mark, evacuation_info);
   }

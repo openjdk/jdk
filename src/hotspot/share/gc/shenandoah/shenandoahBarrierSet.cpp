@@ -102,7 +102,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
 
     if (ShenandoahStackWatermarkBarrier) {
-      JavaThread* const jt = thread->as_Java_thread();
+      JavaThread* const jt = JavaThread::cast(thread);
       StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
       StackWatermarkSet::add_watermark(jt, watermark);
     }
@@ -122,10 +122,10 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     if (ShenandoahStackWatermarkBarrier) {
       if (_heap->is_concurrent_mark_in_progress()) {
         ShenandoahKeepAliveClosure oops;
-        StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
       } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
         ShenandoahContextEvacuateUpdateRootsClosure oops;
-        StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
       }
     }
   }
