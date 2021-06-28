@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8261006
- * @summary fail to parse broken interface::method in lambda
+ * @summary 'super' qualified method references cannot occur in a static context
  * @compile/fail/ref=MethodReferenceInConstructorInvocation.out -XDrawDiagnostics MethodReferenceInConstructorInvocation.java
  */
 
@@ -16,11 +16,12 @@ public class MethodReferenceInConstructorInvocation {
 
     static class Foo implements Bar {
 
-        public Foo() {
+        Foo() {
             this(Bar.super::getString);
         }
+        Foo(Supplier<String> sString) {}
 
-        public Foo(Supplier<String> sString) {
-        }
+        Foo(int i) { this(Bar.super.getString()); }
+        Foo(String s) {}
     }
 }

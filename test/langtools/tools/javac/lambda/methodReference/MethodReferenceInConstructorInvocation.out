@@ -1,2 +1,3 @@
 MethodReferenceInConstructorInvocation.java:20:21: compiler.err.cant.ref.before.ctor.called: super
-1 error
+MethodReferenceInConstructorInvocation.java:24:30: compiler.err.cant.ref.before.ctor.called: super
+2 errors
