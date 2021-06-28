@@ -176,8 +176,8 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
     stub = aarch64_atomic_cmpxchg_8_relaxed_impl; break;
   case memory_order_release:
     stub = aarch64_atomic_cmpxchg_8_release_impl; break;
-  case memory_order_seq_cst:
   case memory_order_acq_rel:
+  case memory_order_seq_cst:
     stub = aarch64_atomic_cmpxchg_8_seq_cst_impl; break;
   default:
     stub = aarch64_atomic_cmpxchg_8_impl; break;
