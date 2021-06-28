@@ -70,7 +70,6 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 
-compiler/intrinsics/VectorizedMismatchTest.java 8268482 windows-x64
 
 #############################################################################
 
@@ -111,7 +110,7 @@ resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-al
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
-serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-x64
+serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 serviceability/jvmti/CompiledMethodLoad/Zombie.java 8245877 linux-aarch64
 
 #############################################################################
