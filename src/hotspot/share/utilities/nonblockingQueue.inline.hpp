@@ -113,7 +113,7 @@ void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
     // Note that multiple concurrent push/append operations cannot modify
     // _head simultaneously, because the Atomic::xchg() above orders these
     // push/append operations so they perform Atomic::cmpxchg() on different
-    // old_tail. Thus, at most one Atomic::cmpxchg() can fail.
+    // old_tail. Thus, the cmpxchg can only fail because of a concurrent try_pop.
     DEBUG_ONLY(T* old_head = Atomic::load(&_head);)
     // If old_tail is NULL, old_head could be NULL, or an unseen object
     // that is being popped.  Otherwise, old_head must be either NULL
