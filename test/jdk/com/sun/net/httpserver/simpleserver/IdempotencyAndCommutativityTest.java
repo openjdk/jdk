@@ -89,7 +89,7 @@ public class IdempotencyAndCommutativityTest {
     // Container of expected response state for a given request
     record ExchangeValues(String method, String resource, int respCode, String contentType) {}
 
-    // Creates an exhaustive set of binary exchanges sequences
+    // Creates an exhaustive set of binary exchange sequences
     @DataProvider
     public Object[][] allBinarySequences() {
         final List<ExchangeValues> sequences =  List.of(

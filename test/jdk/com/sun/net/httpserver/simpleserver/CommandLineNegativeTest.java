@@ -73,11 +73,11 @@ public class CommandLineNegativeTest {
     }
 
     @Test(dataProvider = "badOption")
-    public void testBadOption(String option) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option)
+    public void testBadOption(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .assertNormalTermination()
                 .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option(s): " + option)
+                        assertContains(r.output, "Error: unknown option(s): " + opt)
                 );
     }
 
@@ -87,14 +87,18 @@ public class CommandLineNegativeTest {
                 {"-b", "localhost"},
                 {"-d", "/some/path"},
                 {"-o", "none"},
-                {"-p", "0"}
+                {"-p", "0"},
+                {"--bind-address", "localhost"},
+                {"--directory", "/some/path"},
+                {"--output", "none"},
+                {"--port", "0"}
                 // doesn't fail for -h option
         };
     }
 
     @Test(dataProvider = "tooManyOptionArgs")
-    public void testTooManyOptionArgs(String option, String arg) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option, arg, arg)
+    public void testTooManyOptionArgs(String opt, String arg) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, arg, arg)
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: unknown option(s): " + arg)
@@ -107,17 +111,21 @@ public class CommandLineNegativeTest {
                 {"-b"},
                 {"-d"},
                 {"-o"},
-                {"-p"}
+                {"-p"},
+                {"--bind-address"},
+                {"--directory"},
+                {"--output"},
+                {"--port"}
                 // doesn't fail for -h option
         };
     }
 
     @Test(dataProvider = "noArg")
-    public void testNoArg(String option) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option)
+    public void testNoArg(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .assertNormalTermination()
                 .resultChecker(r ->
-                        assertContains(r.output, "Error: no value given for " + option)
+                        assertContains(r.output, "Error: no value given for " + opt)
                 );
     }
 
@@ -125,32 +133,37 @@ public class CommandLineNegativeTest {
     public Object[][] invalidValue() {
         return new Object[][] {
                 {"-b", "[127.0.0.1]"},
-                {"-b", "192.168.1.220..."},
                 {"-b", "badhost"},
+                {"--bind-address", "192.168.1.220..."},
 
 //                {"-d", ""},
                 // TODO: expect failure at Path::of, not at actual file system access
                 //  need to be file system specific?
 
                 {"-o", "bad-output-level"},
+                {"--output", "bad-output-level"},
 
                 {"-p", "+-"},
+                {"--port", "+-"}
         };
     }
 
     @Test(dataProvider = "invalidValue")
-    public void testInvalidValue(String option, String value) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", option, value)
+    public void testInvalidValue(String opt, String val) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, val)
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: invalid value given for "
-                                + option + ": " + value)
+                                + opt + ": " + val)
                 );
     }
 
-    @Test
-    public void testPortOutOfRange() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "65536")  // range 0 to 65535
+    @DataProvider
+    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+
+    @Test(dataProvider = "portOptions")
+    public void testPortOutOfRange(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "65536")  // range 0 to 65535
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -158,11 +171,14 @@ public class CommandLineNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotAbsolute() throws Exception {
+    @DataProvider
+    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+
+    @Test(dataProvider = "directoryOptions")
+    public void testRootNotAbsolute(String opt) throws Exception {
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -170,11 +186,11 @@ public class CommandLineNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotADirectory() throws Exception {
+    @Test(dataProvider = "directoryOptions")
+    public void testRootNotADirectory(String opt) throws Exception {
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", file)
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, file)
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -182,11 +198,11 @@ public class CommandLineNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootDoesNotExist() throws Exception {
+    @Test(dataProvider = "directoryOptions")
+    public void testRootDoesNotExist(String opt) throws Exception {
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
                 .assertNormalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -194,8 +210,8 @@ public class CommandLineNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotReadable() throws Exception {
+    @Test(dataProvider = "directoryOptions")
+    public void testRootNotReadable(String opt) throws Exception {
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
         if (!Platform.isWindows()) {  // not applicable to Windows
                                       // reason: cannot revoke an owner's read
@@ -204,7 +220,7 @@ public class CommandLineNegativeTest {
             try {
                 root.toFile().setReadable(false, false);
                 assertFalse(Files.isReadable(root));
-                simpleserver(JAVA, "-m", "jdk.httpserver", "-d", root.toString())
+                simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
                         .assertNormalTermination()
                         .resultChecker(r ->
                                 assertContains(r.output, "Error: server config failed: "

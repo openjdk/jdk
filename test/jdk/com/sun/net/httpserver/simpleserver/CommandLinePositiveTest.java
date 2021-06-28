@@ -94,9 +94,12 @@ public class CommandLinePositiveTest {
         });
     }
 
-    @Test
-    public void testDirectory() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR)
+    @DataProvider
+    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+
+    @Test(dataProvider = "directoryOptions")
+    public void testDirectory(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
@@ -106,15 +109,12 @@ public class CommandLinePositiveTest {
                 });
     }
 
-    @DataProvider(name = "ports")
-    public Object[][] ports() {
-        return new Object[][] {
-                {"0"}
-        };
-    }
-    @Test(dataProvider = "ports")
-    public void testPort(String port) throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", port)
+    @DataProvider
+    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+
+    @Test(dataProvider = "portOptions")
+    public void testPort(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
@@ -124,28 +124,35 @@ public class CommandLinePositiveTest {
                 });
     }
 
-    @Test
-    public void testHelp() throws Exception {
-        var usageText =
-                "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory] [-o none|info|verbose]";
+    @DataProvider
+    public Object[][] helpOptions() { return new Object[][] {{"-?"}, {"-h"}, {"--help"}}; }
+
+    @Test(dataProvider = "helpOptions")
+    public void testHelp(String opt) throws Exception {
+        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]\n" +
+                        "                              [-o none|info|verbose] [-h to show options]";
         var optionsText = """
                 Options:
-                bind address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
-                directory       - Directory to serve. Default: current directory.
-                output          - Output format. none|info|verbose. Default: info.
-                port            - Port to listen on. Default: 8000.
+                -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+                -d, --directory       - Directory to serve. Default: current directory.
+                -o, --output          - Output format. none|info|verbose. Default: info.
+                -p, --port            - Port to listen on. Default: 8000.
+                -?, -h, --help        - Print this help message.
                 To stop the server, press Crtl + C.""";
 
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-h")
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .resultChecker(r -> {
                     assertContains(r.output, usageText);
                     assertContains(r.output, optionsText);
                 });
     }
 
-    @Test
-    public void testlastOneWinsBindAddress() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", "123.4.5.6", "-b", LOCALHOST_ADDR)
+    @DataProvider
+    public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
+
+    @Test(dataProvider = "bindOptions")
+    public void testlastOneWinsBindAddress(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOCALHOST_ADDR)
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
@@ -154,9 +161,9 @@ public class CommandLinePositiveTest {
                 });
     }
 
-    @Test
-    public void testlastOneWinsDirectory() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-d", TEST_DIR_STR, "-d", TEST_DIR_STR)
+    @Test(dataProvider = "directoryOptions")
+    public void testlastOneWinsDirectory(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
@@ -166,9 +173,12 @@ public class CommandLinePositiveTest {
                 });
     }
 
-    @Test
-    public void testlastOneWinsOutput() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-o", "none", "-o", "verbose")
+    @DataProvider
+    public Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
+
+    @Test(dataProvider = "outputOptions")
+    public void testlastOneWinsOutput(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,
@@ -178,9 +188,9 @@ public class CommandLinePositiveTest {
                 });
     }
 
-    @Test
-    public void testlastOneWinsPort() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "-999", "-p", "0")
+    @Test(dataProvider = "portOptions")
+    public void testlastOneWinsPort(String opt) throws Exception {
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
                 .assertExternalTermination()
                 .resultChecker(r -> {
                     assertContains(r.output,

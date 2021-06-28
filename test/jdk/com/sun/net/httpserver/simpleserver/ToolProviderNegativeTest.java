@@ -93,14 +93,18 @@ public class ToolProviderNegativeTest {
                 {"-b", "localhost"},
                 {"-d", "/some/path"},
                 {"-o", "none"},
-                {"-p", "0"}
+                {"-p", "0"},
+                {"--bind-address", "localhost"},
+                {"--directory", "/some/path"},
+                {"--output", "none"},
+                {"--port", "0"}
                 // doesn't fail for -h option
         };
     }
 
     @Test(dataProvider = "tooManyOptionArgs")
-    public void testTooManyOptionArgs(String option, String arg) {
-        simpleserver(option, arg, arg)
+    public void testTooManyOptionArgs(String opt, String arg) {
+        simpleserver(opt, arg, arg)
             .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: unknown option(s): " + arg)
@@ -113,17 +117,21 @@ public class ToolProviderNegativeTest {
                 {"-b"},
                 {"-d"},
                 {"-o"},
-                {"-p"}
+                {"-p"},
+                {"--bind-address"},
+                {"--directory"},
+                {"--output"},
+                {"--port"}
                 // doesn't fail for -h option
         };
     }
 
     @Test(dataProvider = "noArg")
-    public void testNoArg(String option) {
-        simpleserver(option)
+    public void testNoArg(String opt) {
+        simpleserver(opt)
             .assertExternalTermination()
             .resultChecker(r ->
-                assertContains(r.output, "Error: no value given for " + option)
+                assertContains(r.output, "Error: no value given for " + opt)
             );
     }
 
@@ -131,33 +139,37 @@ public class ToolProviderNegativeTest {
     public Object[][] invalidValue() {
         return new Object[][] {
                 {"-b", "[127.0.0.1]"},
-                {"-b", "192.168.1.220..."},
                 {"-b", "badhost"},
+                {"--bind-address", "192.168.1.220..."},
 
                 {"-d", "\u0000"},
                 // TODO: expect failure at Path::of, not at actual file system access
                 //  need to be file system specific?
 
                 {"-o", "bad-output-level"},
+                {"--output", "bad-output-level"},
 
                 {"-p", "+-"},
-                {"-p", "\u0000"},
+                {"--port", "\u0000"},
         };
     }
 
     @Test(dataProvider = "invalidValue")
-    public void testInvalidValue(String option, String value) {
-        simpleserver(option, value)
+    public void testInvalidValue(String opt, String value) {
+        simpleserver(opt, value)
             .assertExternalTermination()
             .resultChecker(r ->
                 assertContains(r.output, "Error: invalid value given for "
-                        + option + ": " + value)
+                        + opt + ": " + value)
             );
     }
 
-    @Test
-    public void testPortOutOfRange() {
-        simpleserver("-p", "65536")  // range 0 to 65535
+    @DataProvider
+    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+
+    @Test(dataProvider = "portOptions")
+    public void testPortOutOfRange(String opt) {
+        simpleserver(opt, "65536")  // range 0 to 65535
                 .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -165,11 +177,14 @@ public class ToolProviderNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotAbsolute() {
+    @DataProvider
+    public Object[][] dirOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+
+    @Test(dataProvider = "dirOptions")
+    public void testRootNotAbsolute(String opt) {
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
-        simpleserver("-d", root.toString())
+        simpleserver(opt, root.toString())
                 .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -177,11 +192,11 @@ public class ToolProviderNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotADirectory() {
+    @Test(dataProvider = "dirOptions")
+    public void testRootNotADirectory(String opt) {
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
-        simpleserver("-d", file)
+        simpleserver(opt, file)
                 .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -189,11 +204,11 @@ public class ToolProviderNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootDoesNotExist() {
+    @Test(dataProvider = "dirOptions")
+    public void testRootDoesNotExist(String opt) {
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
-        simpleserver("-d", root.toString())
+        simpleserver(opt, root.toString())
                 .assertExternalTermination()
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
@@ -201,8 +216,8 @@ public class ToolProviderNegativeTest {
                 );
     }
 
-    @Test
-    public void testRootNotReadable() throws IOException {
+    @Test(dataProvider = "dirOptions")
+    public void testRootNotReadable(String opt) throws IOException {
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
         if (!Platform.isWindows()) {  // not applicable to Windows
                                       // reason: cannot revoke an owner's read
@@ -211,7 +226,7 @@ public class ToolProviderNegativeTest {
             try {
                 root.toFile().setReadable(false, false);
                 assertFalse(Files.isReadable(root));
-                simpleserver("-d", root.toString())
+                simpleserver(opt, root.toString())
                         .assertExternalTermination()
                         .resultChecker(r ->
                                 assertContains(r.output, "Error: server config failed: "

@@ -52,10 +52,10 @@ import java.util.concurrent.Executors;
  * output stream.
  *
  * <p>Unless specified as arguments, the default values are:<ul>
- * <li>address: wildcard address (all interfaces)</li>
- * <li>port: 8000</li>
+ * <li>bind address: wildcard address (all interfaces)</li>
  * <li>directory: current working directory</li>
  * <li>outputLevel: info</li></ul>
+ * <li>port: 8000</li>
  * <p>
  * The implementation is provided via the main entry point of the jdk.httpserver
  * module.
@@ -95,15 +95,19 @@ final class SimpleFileServerImpl {
             while (options.hasNext()) {
                 option = options.next();
                 switch (option) {
-                    case "-h" -> {
+                    case "-?", "-h", "--help" -> {
                         showHelp();
                         return Result.OK.statusCode;
                     }
-                    case "-b" -> addr = InetAddress.getByName(optionArg = options.next());
-                    case "-d" -> root = Path.of(optionArg = options.next());
-                    case "-o" -> outputLevel = Enum.valueOf(OutputLevel.class,
-                            (optionArg = options.next()).toUpperCase(Locale.ROOT));
-                    case "-p" -> port = Integer.parseInt(optionArg = options.next());
+                    case "-b", "--bind-address" ->
+                        addr = InetAddress.getByName(optionArg = options.next());
+                    case "-d", "--directory" ->
+                        root = Path.of(optionArg = options.next());
+                    case "-o", "--output" ->
+                        outputLevel = Enum.valueOf(OutputLevel.class,
+                                (optionArg = options.next()).toUpperCase(Locale.ROOT));
+                    case "-p", "--port" ->
+                        port = Integer.parseInt(optionArg = options.next());
                     default -> throw new AssertionError();
                 }
             }

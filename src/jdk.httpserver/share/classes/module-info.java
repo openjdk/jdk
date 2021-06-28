@@ -47,8 +47,10 @@
  * HTTP file server (intended for testing, development and debugging purposes
  * only). A default implementation is provided via the main entry point of the
  * {@code jdk.httpserver} module, which can be used on the command line as such:
- * <p>
- * {@code java -m jdk.httpserver [-b bind address] [-p port] [-d directory] [-o none|info|verbose] [-h to show options]}
+ * <pre>
+ *       {@code java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
+ *                              [-o none|info|verbose] [-h to show options]}
+ * </pre>
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *
