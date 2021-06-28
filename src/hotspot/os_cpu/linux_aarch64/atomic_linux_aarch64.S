@@ -119,7 +119,7 @@ aarch64_atomic_cmpxchg_4_release_default_impl:
 0:      ldxr    w3, [x0]
         cmp     w3, w1
         b.ne    1f
-        stlxr    w8, w2, [x0]
+        stlxr   w8, w2, [x0]
         cbnz    w8, 0b
 1:      mov     w0, w3
         ret
