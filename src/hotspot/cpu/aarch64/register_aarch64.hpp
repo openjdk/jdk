@@ -419,4 +419,5 @@ inline FloatRegister AbstractRegSet<FloatRegister>::first() {
   uint32_t first = _bitset & -_bitset;
   return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
 }
+
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP
