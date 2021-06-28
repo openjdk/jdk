@@ -46,10 +46,10 @@ void OSThread::print_on(outputStream *st) const {
     case MONITOR_WAIT:            st->print("waiting for monitor entry "); break;
     case CONDVAR_WAIT:            st->print("waiting on condition ");      break;
     case OBJECT_WAIT:             st->print("in Object.wait() ");          break;
-    case BREAKPOINTED:            st->print("at breakpoint ");             break;
-    case SLEEPING:                st->print("sleeping ");                  break;
-    case ZOMBIE:                  st->print("zombie ");                    break;
-    default:                      st->print("unknown state %d ", _state);  break;
+    case BREAKPOINTED:            st->print("at breakpoint");               break;
+    case SLEEPING:                st->print("sleeping");                    break;
+    case ZOMBIE:                  st->print("zombie");                      break;
+    default:                      st->print("unknown state %d", _state); break;
   }
 }
 
