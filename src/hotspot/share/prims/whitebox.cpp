@@ -2017,6 +2017,52 @@ WB_END
 
 #endif // INCLUDE_CDS
 
+WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thread_handle))
+  class ReadMonitorsClosure : public HandshakeClosure {
+    jboolean _executed;
+
+    void do_thread(Thread* th) {
+      JavaThread* jt = JavaThread::cast(th);
+      ResourceMark rm;
+
+      GrowableArray<MonitorInfo*>* info = new GrowableArray<MonitorInfo*>();
+
+      if (!jt->has_last_Java_frame()) {
+        return;
+      }
+      RegisterMap rmap(jt);
+      for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
+        GrowableArray<MonitorInfo*> *monitors = vf->monitors();
+        if (monitors != NULL) {
+          int len = monitors->length();
+          // Walk monitors youngest to oldest
+          for (int i = len - 1; i >= 0; i--) {
+            MonitorInfo* mon_info = monitors->at(i);
+            if (mon_info->eliminated()) continue;
+            oop owner = mon_info->owner();
+            if (owner != NULL) {
+              info->append(mon_info);
+            }
+          }
+        }
+      }
+      _executed = true;
+    }
+
+   public:
+    ReadMonitorsClosure() : HandshakeClosure("WB_HandshakeReadMonitors"), _executed(false) {}
+    jboolean executed() const { return _executed; }
+  };
+
+  ReadMonitorsClosure rmc;
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    Handshake::execute(&rmc, target);
+  }
+  return rmc.executed();
+WB_END
+
 WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
   class TraceSelfClosure : public HandshakeClosure {
     jint _num_threads_completed;
@@ -2564,6 +2610,7 @@ static JNINativeMethod methods[] = {
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
+  {CC"handshakeReadMonitors", CC"(Ljava/lang/Thread;)Z", (void*)&WB_HandshakeReadMonitors },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },

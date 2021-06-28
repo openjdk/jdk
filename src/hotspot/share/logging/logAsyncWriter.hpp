@@ -160,7 +160,8 @@ class AsyncLogWriter : public NonJavaThread {
     NonJavaThread::pre_run();
     log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
   }
-  char* name() const override { return (char*)"AsyncLog Thread"; }
+  const char* name() const override { return "AsyncLog Thread"; }
+  const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {
     st->print("\"%s\" ", name());
     Thread::print_on(st);

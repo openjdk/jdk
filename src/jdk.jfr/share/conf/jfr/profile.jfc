@@ -96,24 +96,6 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.BiasedLockRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
-    <event name="jdk.BiasedLockSelfRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
-    <event name="jdk.BiasedLockClassRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
     <event name="jdk.ReservedStackActivation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>

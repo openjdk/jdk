@@ -428,8 +428,6 @@ static void do_previous_epoch_artifact(JfrArtifactClosure* callback, T* value) {
   assert(value != NULL, "invariant");
   if (USED_PREVIOUS_EPOCH(value)) {
     callback->do_artifact(value);
-    assert(IS_NOT_SERIALIZED(value), "invariant");
-    return;
   }
   if (IS_SERIALIZED(value)) {
     CLEAR_SERIALIZED(value);
