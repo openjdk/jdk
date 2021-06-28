@@ -74,6 +74,16 @@ class JVMCI : public AllStatic {
   // Access to the HotSpot heap based JVMCIRuntime
   static JVMCIRuntime* _java_runtime;
 
+  // The stream to which fatal_log() writes. The stream is configured on
+  // first call to fatal_log().
+  static volatile outputStream* _fatal_log_stream;
+
+  // The path of the file underlying _fatal_log_stream if it is a fileStream.
+  static const char* _fatal_log_filename;
+
+  // Native thread id of thread that will initialize _fatal_log_stream.
+  static volatile intx _fatal_log_init_thread;
+
   // JVMCI event log (shows up in hs_err crash logs).
   static StringEventLog* _events;
   static StringEventLog* _verbose_events;
@@ -99,6 +109,13 @@ class JVMCI : public AllStatic {
   // which the library is loaded is returned in `path`. If
   // `load` is true then JVMCI_lock must be locked.
   static void* get_shared_library(char*& path, bool load);
+
+  // Logs the fatal crash data in `buf` to the appropriate stream.
+  static void fatal_log(const char* buf, size_t count);
+
+  // Gets the name of the opened JVMCI shared library crash data file or NULL
+  // if this file has not been created.
+  static const char* fatal_log_filename() { return _fatal_log_filename; }
 
   static void do_unloading(bool unloading_occurred);
 

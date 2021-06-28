@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
@@ -45,6 +46,9 @@ char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
 StringEventLog* JVMCI::_events = NULL;
 StringEventLog* JVMCI::_verbose_events = NULL;
+volatile intx JVMCI::_fatal_log_init_thread = -1;
+volatile outputStream* JVMCI::_fatal_log_stream = NULL;
+const char* JVMCI::_fatal_log_filename = NULL;
 
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
@@ -209,6 +213,39 @@ void JVMCI::shutdown() {
 
 bool JVMCI::in_shutdown() {
   return _in_shutdown;
+}
+
+void JVMCI::fatal_log(const char* buf, size_t count) {
+  intx current_thread_id = os::current_thread_id();
+  intx invalid_id = -1;
+  if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
+    static char name_buffer[O_BUFLEN];
+    int fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
+    if (fd != -1) {
+      FILE* fp = os::open(fd, "w");
+      if (fp != NULL) {
+        _fatal_log_stream = new fileStream(fp);
+        _fatal_log_filename = name_buffer;
+      } else {
+        int e = errno;
+        tty->print("Can't open file to dump JVMCI shared library crash data. Error: ");
+        tty->print_raw_cr(os::strerror(e));
+        tty->print_cr("JVMCI shared library crash data will be written to console.");
+        _fatal_log_stream = tty;
+      }
+    }
+  } else {
+    // Another thread won the race to initialize the stream. Give it time
+    // to complete initialization. VM locks cannot be used as the current
+    // thread might not be attached to the VM (e.g. a native thread started
+    // within libjvmci).
+    while (_fatal_log_stream == NULL) {
+      os::naked_short_sleep(50);
+    }
+  }
+  outputStream* out = (outputStream*) _fatal_log_stream;
+  out->write(buf, count);
+  out->flush();
 }
 
 void JVMCI::vlog(int level, const char* format, va_list ap) {
