@@ -152,7 +152,7 @@ aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
         .align 5
 aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
         prfm    pstl1strm, [x0]
-0:      ldaxr    x3, [x0]
+0:      ldaxr   x3, [x0]
         cmp     x3, x1
         b.ne    1f
         stlxr    w8, x2, [x0]
