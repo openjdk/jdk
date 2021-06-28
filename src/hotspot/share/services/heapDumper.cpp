@@ -401,6 +401,9 @@ class DumpWriter : public StackObj {
 
   CompressionBackend _backend; // Does the actual writing.
 
+  uint _truncated_array_count;
+  size_t _truncated_length;
+
   void flush();
 
   char* buffer() const                          { return _buffer; }
@@ -447,6 +450,14 @@ class DumpWriter : public StackObj {
   void writer_loop()                    { _backend.thread_loop(); }
   // Called when finished to release the threads.
   void deactivate()                     { flush(); _backend.deactivate(); }
+
+  uint truncated_array_count() { return _truncated_array_count; }
+  uint truncated_length() { return _truncated_length; }
+
+  void count_truncation(size_t length) {
+    _truncated_array_count++;
+    _truncated_length += length;
+  }
 };
 
 // Check for error after constructing the object and destroy it in case of an error.
@@ -455,7 +466,9 @@ DumpWriter::DumpWriter(AbstractWriter* writer, AbstractCompressor* compressor) :
   _size(0),
   _pos(0),
   _in_dump_segment(false),
-  _backend(writer, compressor, io_buffer_max_size, io_buffer_max_waste) {
+  _backend(writer, compressor, io_buffer_max_size, io_buffer_max_waste),
+  _truncated_array_count(0),
+  _truncated_length(0) {
   flush();
 }
 
@@ -1129,11 +1142,13 @@ int DumperSupport::calculate_array_max_length(DumpWriter* writer, arrayOop array
   uint max_bytes = max_juint - header_size;
 
   if (length_in_bytes > max_bytes) {
+    size_t real_length = length_in_bytes;
     length = max_bytes / type_size;
     length_in_bytes = (size_t)length * type_size;
 
     warning("cannot dump array of type %s[] with length %d; truncating to length %d",
             type2name_tab[type], array->length(), length);
+    writer->count_truncation(real_length - length_in_bytes);
   }
   return length;
 }
@@ -1957,6 +1972,9 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression) {
     event.set_gcBeforeDump(_gc_before_heap_dump);
     event.set_size(writer.bytes_written());
     event.set_onOutOfMemoryError(_oome);
+    event.set_compressed(compression > 0);
+    event.set_truncatedArrayCount(writer.truncated_array_count());
+    event.set_truncatedLength(writer.truncated_length());
     event.commit();
   }
 

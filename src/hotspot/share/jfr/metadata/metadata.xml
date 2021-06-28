@@ -1074,6 +1074,9 @@
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
     <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+    <Field type="boolean" name="compressed" label="Compressed" />
+    <Field type="uint" name="truncatedArrayCount" label="Truncated Array Count" />
+    <Field type="ulong" contentType="bytes" name="truncatedLength" label="Truncated length" />
   </Event>
 
   <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">

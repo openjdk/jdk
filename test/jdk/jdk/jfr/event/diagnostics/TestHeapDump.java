@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.management.ObjectName;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -43,6 +44,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.management
+ * @requires os.maxMemory > 8G
  * @run main/othervm jdk.jfr.event.diagnostics.TestHeapDump
  */
 public class TestHeapDump {
@@ -50,10 +52,12 @@ public class TestHeapDump {
 
     public static void main(String[] args) throws Exception {
 
-        Path path = Paths.get("dump.hprof").toAbsolutePath();
+        Path path = Paths.get("dump.hprof.gz").toAbsolutePath();
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME);
             r.start();
+            // max segment size is 4G
+            long[] bigArray = new long[(1 << 29) + (1 << 27)];
             heapDump(path);
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
@@ -63,19 +67,17 @@ public class TestHeapDump {
             RecordedEvent e = events.get(0);
             Events.assertField(e, "destination").equal(path.toString());
             Events.assertField(e, "gcBeforeDump").equal(true);
-            Events.assertField(e, "onOutOfMemoryError").equals(false);
-            Events.assertField(e, "size").equals(Files.size(path));
+            Events.assertField(e, "onOutOfMemoryError").equal(false);
+            Events.assertField(e, "size").equal(Files.size(path));
+            Events.assertField(e, "compressed").equal(true);
+            Events.assertField(e, "truncatedArrayCount").equal(1);
+            Events.assertField(e, "truncatedLength").above(1024L * 1024L * 1024L);
             System.out.println(e);
+            path.toFile().delete();
         }
     }
 
     private static void heapDump(Path path) throws Exception {
-        ObjectName objectName = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
-        MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
-        Object[] parameters = new Object[2];
-        parameters[0] = path.toString();
-        parameters[1] = true;
-        String[] signature = new String[] { String.class.getName(), boolean.class.toString() };
-        mbeanServer.invoke(objectName, "dumpHeap", parameters, signature);
+        new PidJcmdExecutor().execute("GC.heap_dump -all=false -gz=1 " + path.toString());
     }
 }
