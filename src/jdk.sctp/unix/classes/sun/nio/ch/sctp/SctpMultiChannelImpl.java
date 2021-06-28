@@ -373,6 +373,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (state == ChannelState.KILLED)
                 return;
             if (state == ChannelState.UNINITIALIZED) {
+                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
                 return;
             }
