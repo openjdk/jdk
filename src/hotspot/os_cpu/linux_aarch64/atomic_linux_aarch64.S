@@ -155,7 +155,7 @@ aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
 0:      ldaxr   x3, [x0]
         cmp     x3, x1
         b.ne    1f
-        stlxr    w8, x2, [x0]
+        stlxr   w8, x2, [x0]
         cbnz    w8, 0b
 1:      mov     x0, x3
         ret
