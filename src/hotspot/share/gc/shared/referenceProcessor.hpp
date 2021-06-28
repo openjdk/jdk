@@ -202,7 +202,6 @@ private:
                                         // other collectors in configuration
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
-  bool        _enqueuing_is_done;       // true if all weak references enqueued
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
@@ -404,10 +403,6 @@ public:
 
   // Whether we are in a phase when _processing_ is MT.
   bool processing_is_mt() const;
-
-  // whether all enqueueing of weak references is complete
-  bool enqueuing_is_done()  { return _enqueuing_is_done; }
-  void set_enqueuing_is_done(bool v) { _enqueuing_is_done = v; }
 
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots

@@ -100,7 +100,6 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
-  _enqueuing_is_done(false),
   _next_id(0),
   _is_alive_non_header(is_alive_non_header)
 {
@@ -199,7 +198,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   double start_time = os::elapsedTime();
 
-  assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
   disable_discovery();
 
