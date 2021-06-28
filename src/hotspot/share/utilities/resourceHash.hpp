@@ -246,10 +246,6 @@ class ResourceHashtableBase : public ResourceObj {
 
 template<
     typename K, typename V,
-    // xlC does not compile this:
-    // http://stackoverflow.com/questions/8532961/template-argument-of-type-that-is-defined-by-inner-typedef-from-other-template-c
-    //typename ResourceHashtableFns<K>::hash_fn   HASH   = primitive_hash<K>,
-    //typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
     unsigned SIZE = 256,

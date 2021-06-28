@@ -507,7 +507,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
   }
 }
 
-bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
+bool ClassListParser::is_matching_cp_entry(const constantPoolHandle &pool, int cp_index, TRAPS) {
   ResourceMark rm(THREAD);
   CDSIndyInfo cii;
   populate_cds_indy_info(pool, cp_index, &cii, CHECK_0);
