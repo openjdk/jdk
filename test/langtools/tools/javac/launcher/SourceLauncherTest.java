@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774
+ * @bug 8192920 8204588 8246774 8248843 8268869
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -596,6 +596,38 @@ public class SourceLauncherTest extends TestRunner {
                 "^\n" +
                 "1 error\n",
                 "error: compilation failed");
+    }
+
+    @Test
+    public void testNoRecompileWithSuggestions(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class NoRecompile {\n" +
+            "    void use(String s) {}\n" +
+            "    void test() {\n" +
+            "        use(1);\n" +
+            "    }\n" +
+            "    <T> void test(T t, Object o) {\n" +
+            "        T t1 = (T) o;\n" +
+            "    }\n" +
+            "    static class Generic<T> {\n" +
+            "        T t;\n" +
+            "        void raw(Generic raw) {\n" +
+            "            raw.t = \"\";\n" +
+            "        }\n" +
+            "    }\n" +
+            "    void deprecation() {\n" +
+            "        Thread.currentThread().stop();\n" +
+            "    }\n" +
+            "    void preview(Object o) {\n" +
+            "      if (o instanceof String s) {\n" +
+            "          System.out.println(s);\n" +
+            "      }\n" +
+            "    }\n" +
+            "}");
+        Result r = run(base.resolve("NoRecompile.java"), Collections.emptyList(), Collections.emptyList());
+        if (r.stdErr.contains("recompile with")) {
+            error("Unexpected recompile suggestions in error output: " + r.stdErr);
+        }
     }
 
     void testError(Path file, String expectStdErr, String expectFault) throws IOException {
