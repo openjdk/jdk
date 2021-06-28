@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,17 +347,4 @@ void VM_Version::initialize() {
   }
 
   _is_initialized = true;
-}
-
-bool VM_Version::use_biased_locking() {
-  get_os_cpu_info();
-  // The cost of CAS on uniprocessor ARM v6 and later is low compared to the
-  // overhead related to slightly longer Biased Locking execution path.
-  // Testing shows no improvement when running with Biased Locking enabled
-  // on an ARMv6 and higher uniprocessor systems.  The situation is different on
-  // ARMv5 and MP systems.
-  //
-  // Therefore the Biased Locking is enabled on ARMv5 and ARM MP only.
-  //
-  return (!os::is_MP() && (arm_arch() > 5)) ? false : true;
 }

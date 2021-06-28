@@ -234,7 +234,7 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
 
         public SocketConnection getConnection() {
             synchronized (this) {
-                while (!connection.isConnected() && error != null) {
+                while (!connection.isConnected() && error == null) {
                     try {
                         wait();
                     } catch (InterruptedException e) {

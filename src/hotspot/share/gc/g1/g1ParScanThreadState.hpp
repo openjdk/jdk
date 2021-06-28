@@ -30,7 +30,7 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"

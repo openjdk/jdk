@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
@@ -52,6 +53,9 @@ public class TestVerifyGCType {
         testAllExplicitlyEnabled();
         testFullAndRemark();
         testConcurrentMark();
+        if (Platform.isDebugBuild()) {
+            testYoungEvacFail();
+        }
         testBadVerificationType();
     }
 
@@ -115,13 +119,33 @@ public class TestVerifyGCType {
         verifyCollection("Pause Full", false, false, false, output.getStdout());
     }
 
+    private static void testYoungEvacFail() throws Exception {
+        OutputAnalyzer output;
+        output = testWithVerificationType(new String[] {"young-evac-fail"},
+                                          new String[] {"-XX:+G1EvacuationFailureALot",
+                                                        "-XX:G1EvacuationFailureALotCount=100",
+                                                        "-XX:G1EvacuationFailureALotInterval=1",
+                                                        "-XX:+UnlockDiagnosticVMOptions",
+                                                        "-XX:-G1AllowPreventiveGC"});
+        output.shouldHaveExitValue(0);
+
+        verifyCollection("Pause Young (Normal)", false, false, true, output.getStdout());
+        verifyCollection("Pause Young (Concurrent Start)", false, false, true, output.getStdout());
+        verifyCollection("Pause Young (Mixed)", false, false, true, output.getStdout());
+        verifyCollection("Pause Young (Prepare Mixed)", false, false, true, output.getStdout());
+        verifyCollection("Pause Remark", false, false, false, output.getStdout());
+        verifyCollection("Pause Cleanup", false, false, false, output.getStdout());
+        verifyCollection("Pause Full", false, false, false, output.getStdout());
+    }
+
+
     private static void testBadVerificationType() throws Exception {
         OutputAnalyzer output;
         // Test bad type
         output = testWithVerificationType(new String[] {"old"});
         output.shouldHaveExitValue(0);
 
-        output.shouldMatch("VerifyGCType: '.*' is unknown. Available types are: young-normal, concurrent-start, mixed, remark, cleanup and full");
+        output.shouldMatch("VerifyGCType: '.*' is unknown. Available types are: young-normal, young-evac-fail, concurrent-start, mixed, remark, cleanup and full");
         verifyCollection("Pause Young (Normal)", true, false, true, output.getStdout());
         verifyCollection("Pause Young (Concurrent Start)", true, false, true, output.getStdout());
         verifyCollection("Pause Young (Mixed)", true, false, true, output.getStdout());
@@ -131,7 +155,7 @@ public class TestVerifyGCType {
         verifyCollection("Pause Full", true, true, true, output.getStdout());
     }
 
-    private static OutputAnalyzer testWithVerificationType(String[] types) throws Exception {
+    private static OutputAnalyzer testWithVerificationType(String[] types, String... extraOpts) throws Exception {
         ArrayList<String> basicOpts = new ArrayList<>();
         Collections.addAll(basicOpts, new String[] {
                                        "-Xbootclasspath/a:.",
@@ -151,10 +175,13 @@ public class TestVerifyGCType {
             basicOpts.add("-XX:VerifyGCType="+verifyType);
         }
 
+        Collections.addAll(basicOpts, extraOpts);
+
         basicOpts.add(TriggerGCs.class.getName());
 
         ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+
         return analyzer;
     }
 
@@ -228,6 +255,9 @@ public class TestVerifyGCType {
     }
 
     public static class TriggerGCs {
+
+        // This class triggers GCs; we need to make sure that in all of the young gcs
+        // at least some objects survive so that evacuation failure can happen.
         public static void main(String args[]) throws Exception {
             WhiteBox wb = WhiteBox.getWhiteBox();
             // Allocate some memory that can be turned into garbage.
@@ -241,7 +271,10 @@ public class TestVerifyGCType {
             // Memory have been promoted to old by full GC. Free
             // some memory to be reclaimed by concurrent cycle.
             partialFree(used);
+
+            used = alloc1M();
             wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
+            partialFree(used);
 
             // Sleep to make sure concurrent cycle is done
             while (wb.g1InConcurrentMark()) {
@@ -249,8 +282,13 @@ public class TestVerifyGCType {
             }
 
             // Trigger two young GCs, first will be young-prepare-mixed, second will be mixed.
+            used = alloc1M();
             wb.youngGC(); // young-prepare-mixed
+            partialFree(used);
+
+            used = alloc1M();
             wb.youngGC(); // mixed
+            partialFree(used);
         }
 
         private static Object[] alloc1M() {

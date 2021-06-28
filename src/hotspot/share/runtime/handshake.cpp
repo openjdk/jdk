@@ -166,7 +166,7 @@ class HandshakeSpinYield : public StackObj {
       // On UP this is always true.
       Thread* self = Thread::current();
       if (self->is_Java_thread()) {
-        wait_blocked(self->as_Java_thread(), now);
+        wait_blocked(JavaThread::cast(self), now);
       } else {
         wait_raw(now);
       }
@@ -300,7 +300,7 @@ void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_t
   if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
     // The handshake closure may contain oop Handles from the _requester.
     // We must make sure we can use them.
-    StackWatermarkSet::start_processing(_requester->as_Java_thread(), StackWatermarkKind::gc);
+    StackWatermarkSet::start_processing(JavaThread::cast(_requester), StackWatermarkKind::gc);
   }
 }
 
@@ -617,15 +617,15 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
  public:
   ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshake") {}
   void do_thread(Thread* thr) {
-    JavaThread* current = thr->as_Java_thread();
+    JavaThread* current = JavaThread::cast(thr);
     assert(current == Thread::current(), "Must be self executed.");
     current->handshake_state()->do_self_suspend();
   }
 };
 
 bool HandshakeState::suspend_with_handshake() {
-  if (_handshakee->is_exiting() ||
-     _handshakee->threadObj() == NULL) {
+  assert(_handshakee->threadObj() != NULL, "cannot suspend with a NULL threadObj");
+  if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }
@@ -660,7 +660,7 @@ class SuspendThreadHandshake : public HandshakeClosure {
 public:
   SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
   void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
+    JavaThread* target = JavaThread::cast(thr);
     _did_suspend = target->handshake_state()->suspend_with_handshake();
   }
   bool did_suspend() { return _did_suspend; }

@@ -38,11 +38,13 @@ class G1RedirtyCardsQueueSet;
 // First set of post evacuate collection set tasks containing ("s" means serial):
 // - Merge PSS (s)
 // - Recalculate Used (s)
+// - Sample Collection Set Candidates (s)
 // - Remove Self Forwards (on evacuation failure)
 // - Clear Card Table
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
   class MergePssTask;
   class RecalculateUsedTask;
+  class SampleCollectionSetCandidatesTask;
   class RemoveSelfForwardPtrsTask;
 
 public:
@@ -63,6 +65,16 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
 public:
   RecalculateUsedTask() : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed) { }
+
+  double worker_cost() const override;
+  void do_work(uint worker_id) override;
+};
+
+class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
+public:
+  SampleCollectionSetCandidatesTask() : G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
+
+  static bool should_execute();
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;

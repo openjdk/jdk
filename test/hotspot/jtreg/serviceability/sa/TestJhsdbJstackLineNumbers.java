@@ -38,6 +38,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @requires vm.hasSA
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires os.family=="windows" | os.family == "linux" | os.family == "mac"
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver TestJhsdbJstackLineNumbers
  */

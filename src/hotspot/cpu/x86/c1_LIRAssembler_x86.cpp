@@ -3512,13 +3512,9 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   if (!UseFastLocking) {
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
-    Register scratch = noreg;
-    if (UseBiasedLocking) {
-      scratch = op->scratch_opr()->as_register();
-    }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }

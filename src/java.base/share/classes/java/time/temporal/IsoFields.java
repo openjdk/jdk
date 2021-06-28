@@ -703,16 +703,13 @@ public final class IsoFields {
         @SuppressWarnings("unchecked")
         @Override
         public <R extends Temporal> R addTo(R temporal, long amount) {
-            switch (this) {
-                case WEEK_BASED_YEARS:
-                    return (R) temporal.with(WEEK_BASED_YEAR,
-                            Math.addExact(temporal.get(WEEK_BASED_YEAR), amount));
-                case QUARTER_YEARS:
-                    return (R) temporal.plus(amount / 4, YEARS)
-                            .plus((amount % 4) * 3, MONTHS);
-                default:
-                    throw new IllegalStateException("Unreachable");
-            }
+            return switch (this) {
+                case WEEK_BASED_YEARS -> (R) temporal.with(WEEK_BASED_YEAR,
+                                          Math.addExact(temporal.get(WEEK_BASED_YEAR), amount));
+                case QUARTER_YEARS -> (R) temporal.plus(amount / 4, YEARS)
+                                       .plus((amount % 4) * 3, MONTHS);
+                default -> throw new IllegalStateException("Unreachable");
+            };
         }
 
         @Override
@@ -720,15 +717,12 @@ public final class IsoFields {
             if (temporal1Inclusive.getClass() != temporal2Exclusive.getClass()) {
                 return temporal1Inclusive.until(temporal2Exclusive, this);
             }
-            switch(this) {
-                case WEEK_BASED_YEARS:
-                    return Math.subtractExact(temporal2Exclusive.getLong(WEEK_BASED_YEAR),
-                            temporal1Inclusive.getLong(WEEK_BASED_YEAR));
-                case QUARTER_YEARS:
-                    return temporal1Inclusive.until(temporal2Exclusive, MONTHS) / 3;
-                default:
-                    throw new IllegalStateException("Unreachable");
-            }
+            return switch (this) {
+                case WEEK_BASED_YEARS -> Math.subtractExact(temporal2Exclusive.getLong(WEEK_BASED_YEAR),
+                                          temporal1Inclusive.getLong(WEEK_BASED_YEAR));
+                case QUARTER_YEARS -> temporal1Inclusive.until(temporal2Exclusive, MONTHS) / 3;
+                default -> throw new IllegalStateException("Unreachable");
+            };
         }
 
         @Override
