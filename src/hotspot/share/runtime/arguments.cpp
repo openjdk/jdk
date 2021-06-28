@@ -1112,8 +1112,8 @@ void Arguments::print_on(outputStream* st) {
     char* path = _java_class_path->value();
     size_t len = strlen(path);
     st->print("java_class_path (initial): ");
-    if (len < O_BUFLEN) {
-      st->print_cr("%s", len == 0 ? "<not set>" : path );
+    if (len == 0) {
+      st->print_raw_cr("<not set>");
     } else {
       st->print_raw_cr(path, len);
     }
