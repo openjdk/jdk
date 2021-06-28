@@ -181,7 +181,7 @@ public:
   void patch_to_jmp() {
     jint offset = int_at(NativeJccInstruction::data_offset);
     assert(offset == NativeCall::instruction_size, "jump over the call");
-   
+
     set_char_at(0, static_cast<char>(NativeJump::instruction_code));
     set_int_at(NativeJump::data_offset, offset + NativeInstruction::nop_instruction_size);
     set_char_at(NativeJump::instruction_size, static_cast<char>(NativeInstruction::nop_instruction_code));
