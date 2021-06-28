@@ -61,28 +61,12 @@ void NotificationThread::initialize() {
                           vmSymbols::thread_void_signature(),
                           thread_oop,
                           THREAD);
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    NotificationThread* thread =  new NotificationThread(&notification_thread_entry);
 
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
-    if (thread == NULL || thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
+   NotificationThread* thread =  new NotificationThread(&notification_thread_entry);
+   JavaThread::exit_on_thread_allocation_failure(thread);
 
-    java_lang_Thread::set_thread(thread_oop(), thread);
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    java_lang_Thread::set_daemon(thread_oop());
-    thread->set_threadObj(thread_oop());
-    _instance = thread;
-
-    Threads::add(thread);
-    Thread::start(thread);
-  }
+   JavaThread::startInternalDaemon(THREAD, thread, thread_oop, NearMaxPriority,
+                                   &_instance);
 }
 
 
@@ -128,4 +112,3 @@ void NotificationThread::notification_thread_entry(JavaThread* jt, TRAPS) {
 
   }
 }
-

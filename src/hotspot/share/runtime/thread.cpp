@@ -3900,3 +3900,49 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
    report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
 }
 #endif
+
+// Starts the target JavaThread as a daemon of the given priority, and
+// bound to the given java.lang.Thread instance. If instance is non-NULL
+// it is set to the value of target once the j.l.Thread association is
+// complete and before adding to the ThreadsList. This ensures only a
+// properly initialized singleton instance is seen by other threads.
+// The Threads_lock is held for the duration.
+template <typename T, ENABLE_IF(std::is_base_of<JavaThread, T>::value)>
+void JavaThread::startInternalDaemon(JavaThread* current, T* target,
+                                     Handle thread_oop, ThreadPriority prio,
+                                     T** instance) {
+  MutexLocker mu(current, Threads_lock);
+
+  // Initialize the fields of the thread_oop first
+
+  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
+
+  if (prio != NoPriority) {
+    java_lang_Thread::set_priority(thread_oop(), prio);
+    // Note: we don't call os::set_priority here. Possibly we should,
+    // else all threads should call it themselves when they first run.
+  }
+
+  java_lang_Thread::set_daemon(thread_oop());
+
+  // Now bind the thread_oop to the target JavaThread
+  target->set_threadObj(thread_oop());
+
+  if (instance != nullptr) {
+    *instance = target;
+  }
+
+  Threads::add(target); // target is now visible for safepoint/handshake
+  Thread::start(target);
+}
+
+void JavaThread::exit_on_thread_allocation_failure(JavaThread* thread) {
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of memory. We would have to throw an exception
+  // in that case. However, since this must work and we do not allow
+  // exceptions anyway, check and abort if this fails.
+  if (thread == nullptr || thread->osthread() == nullptr) {
+    vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                  os::native_thread_creation_failed_msg());
+  }
+}
