@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.java.lang.invoke.t8150782;
+package test.java.lang.invoke;
 
 import static java.lang.invoke.MethodHandles.*;
 
