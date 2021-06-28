@@ -27,7 +27,6 @@
  * @bug 8263640
  * @summary In case of a class path is longer than O_BUFLEN, the class path
  *          should not be truncated in the output from jcmd VM.command_line.
- * @requires vm.cds
  * @library /test/lib
  * @run driver JcmdCmdLine
  */
