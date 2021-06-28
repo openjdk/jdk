@@ -573,6 +573,10 @@ protected:
   ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
 
+  // Used for tracking how much time a worker spends in a (sub)phase.
+  uint tracker_id(uint worker_id) const {
+    return _ref_processor.processing_is_mt() ? worker_id : 0;
+  }
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)
