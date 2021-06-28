@@ -266,8 +266,8 @@ public class Arguments {
         ADD_LAUNCHER ("add-launcher",
                     OptionCategories.PROPERTY, () -> {
             String spec = popArg();
-            String name = null;
-            String filename = spec;
+            String name = spec;
+            String filename = null;
             if (spec.contains("=")) {
                 String[] values = spec.split("=", 2);
                 name = values[0];
@@ -279,12 +279,14 @@ public class Arguments {
 
         SPLIT_RUNTIME ("split-runtime", OptionCategories.PROPERTY, () -> {
             String spec = popArg();
-            String name = null;
-            String filename = spec;
+            String name = spec;
+            String filename = null;
             if (spec.contains("=")) {
                 String[] values = spec.split("=", 2);
                 name = values[0];
                 filename = values[1];
+Log.info("--- for spec: " + spec + " len is: " + values.length +
+" and filename is: " + filename);
             }
             context().splitRuntime = new SplitRuntime(name, filename);
             setOptionValue("split-runtime", context().splitRuntime);
@@ -782,17 +784,17 @@ public class Arguments {
     static Map<String, String> getPropertiesFromFile(String filename) {
         Map<String, String> map = new HashMap<>();
         // load properties file
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Path.of(filename))) {
-            properties.load(reader);
-        } catch (IOException e) {
-            Log.error("Exception: " + e.getMessage());
+        if (filename != null && Files.exists(Path.of(filename))) {
+            Properties properties = new Properties();
+            try (Reader reader = Files.newBufferedReader(Path.of(filename))) {
+                properties.load(reader);
+            } catch (IOException e) {
+                Log.error("Exception: " + e.getMessage());
+            }
+            for (final String name: properties.stringPropertyNames()) {
+                map.put(name, properties.getProperty(name));
+            }
         }
-
-        for (final String name: properties.stringPropertyNames()) {
-            map.put(name, properties.getProperty(name));
-        }
-
         return map;
     }
 

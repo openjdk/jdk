@@ -120,14 +120,9 @@ LOG_TRACE(tstrings::any() << "version: " << version);
     const CfgFile::Properties::const_iterator searchpathProp = appOptions.find(
                 PropertyName::runtimeSearchPath);
 
-    tstring_array places;
-    if (searchpathProp != appOptions.end()) {
-        tstring searchpath = CfgFile::asString(*searchpathProp);
-        places = tstrings::split(searchpath, _T(","));
-    } else {
-        JP_THROW(tstrings::any() << "No runtime in app image and "
-                        << "no runtime serch path given in cfg file.");
-    }
+    tstring searchpath = (searchpathProp == appOptions.end()) ?
+            _T("") : CfgFile::asString(*searchpathProp);
+LOG_TRACE(tstrings::any() << "search path: " << searchpath);
 
     if (FileUtils::isFileExists(
             FileUtils::mkpath() << runtimePath << _T("/lib"))) {
@@ -144,9 +139,10 @@ LOG_TRACE(tstrings::any() << "version: " << version);
         LOG_TRACE(tstrings::any()
                 << " Using built-in Java runtime from \""
                 << runtimePath << "\" directory");
-    } else {
+    } else if (searchpathProp != appOptions.end()) {
         tstring releaseFile = FileUtils::mkpath() << releasePath;
         if (FileUtils::isFileExists(releaseFile)) {
+            tstring_array places = tstrings::split(searchpath, _T(","));
             runtimePath = findRuntime(releaseFile, version, places);
             if (FileUtils::isFileExists(runtimePath)) {
                 LOG_TRACE(tstrings::any()
@@ -161,6 +157,9 @@ LOG_TRACE(tstrings::any() << "version: " << version);
             JP_THROW(tstrings::any() << "No runtime in application image, "
                     << "and no release file at: " << releaseFile);
         }
+    } else {
+        JP_THROW(tstrings::any() << "No runtime in app image and "
+                        << "no runtime serch path given in cfg file.");
     }
 
     const tstring_array::const_iterator jvmLibNameEntry = std::find_if(
