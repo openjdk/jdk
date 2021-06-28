@@ -46,7 +46,7 @@ public:
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
-  void fix_entry_barrier(nmethod* nm, bool bypass);
+  void fix_entry_barrier(nmethod* nm, bool bypass) X86_ONLY(;) NOT_X86({})
 };
 
 

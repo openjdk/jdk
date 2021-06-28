@@ -161,7 +161,3 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
   return barrier->get_value() != disarmed_value();
 }
-
-void BarrierSetNMethod::fix_entry_barrier(nmethod*, bool) {
-  // not implement yet
-}
