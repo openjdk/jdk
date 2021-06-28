@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "concurrentTestRunner.inline.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"
@@ -226,6 +227,91 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators) {
   // Now reconfigure logging on stderr with no decorators
   set_log_config("stderr", "all=off", "none");
   EXPECT_TRUE(is_described("#1: stderr all=off none (reconfigured)\n")) << "Expecting no decorators";
+}
+
+class ConcurrentLogsite : public TestRunnable {
+  int _id;
+
+ public:
+  ConcurrentLogsite(int id) : _id(id) {}
+  void runUnitTest() const override {
+    log_debug(logging)("ConcurrentLogsite %d emits a log", _id);
+  }
+};
+
+// Dynamically change decorators while loggings are emitting.
+TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
+  const int nrOfThreads = 2;
+  ConcurrentLogsite logsites[nrOfThreads] = {0, 1};
+  Semaphore done(0);
+  const long testDurationMillis = 1000;
+  UnitTestThread* t[nrOfThreads];
+
+  set_log_config(TestLogFileName, "logging=debug", "none", "filecount=0");
+  set_log_config("stdout", "all=off", "none");
+  set_log_config("stderr", "all=off", "none");
+  for (int i = 0; i < nrOfThreads; ++i) {
+    t[i] = new UnitTestThread(&logsites[i], &done, testDurationMillis);
+  }
+
+  for (int i = 0; i < nrOfThreads; i++) {
+    t[i]->doit();
+  }
+
+  jlong time_start = os::elapsed_counter();
+  while (true) {
+    jlong elapsed = (jlong)TimeHelper::counter_to_millis(os::elapsed_counter() - time_start);
+    if (elapsed > testDurationMillis) {
+      break;
+    }
+
+    // Take turn logging with different decorators, either None or All.
+    set_log_config(TestLogFileName, "logging=debug", "none");
+    set_log_config(TestLogFileName, "logging=debug", _all_decorators);
+  }
+
+  for (int i = 0; i < nrOfThreads; ++i) {
+    done.wait();
+  }
+}
+
+// Dynamically change tags while loggings are emitting.
+TEST_VM_F(LogConfigurationTest, reconfigure_tags_MT) {
+  const int nrOfThreads = 2;
+  ConcurrentLogsite logsites[nrOfThreads] = {0, 1};
+  Semaphore done(0);
+  const long testDurationMillis = 1000;
+  UnitTestThread* t[nrOfThreads];
+
+  set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
+  set_log_config("stdout", "all=off", "none");
+  set_log_config("stderr", "all=off", "none");
+
+  for (int i = 0; i < nrOfThreads; ++i) {
+    t[i] = new UnitTestThread(&logsites[i], &done, testDurationMillis);
+  }
+
+  for (int i = 0; i < nrOfThreads; i++) {
+    t[i]->doit();
+  }
+
+  jlong time_start = os::elapsed_counter();
+  while (true) {
+    jlong elapsed = (jlong)TimeHelper::counter_to_millis(os::elapsed_counter() - time_start);
+    if (elapsed > testDurationMillis) {
+      break;
+    }
+
+    // turn on/off the tagset 'logging'.
+    set_log_config(TestLogFileName, "logging=off");
+    set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
+    // sleep a prime number milliseconds to allow concurrent logsites to write logs
+    os::naked_short_nanosleep(37);
+  }
+
+  for (int i = 0; i < nrOfThreads; ++i) {
+    done.wait();
+  }
 }
 
 // Test that invalid options cause configuration errors

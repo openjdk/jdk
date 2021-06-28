@@ -785,8 +785,6 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
-
 ############################################################################
 
 # jdk_instrument

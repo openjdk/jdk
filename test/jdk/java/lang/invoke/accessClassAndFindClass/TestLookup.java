@@ -25,9 +25,9 @@
 
 /* @test
  * @compile TestLookup.java TestCls.java
- * @run testng/othervm -ea -esa test.java.lang.invoke.t8150782.TestLookup
+ * @run testng/othervm -ea -esa test.java.lang.invoke.TestLookup
  */
-package test.java.lang.invoke.t8150782;
+package test.java.lang.invoke;
 
 import org.testng.annotations.Test;
 
@@ -48,7 +48,7 @@ public class TestLookup {
     @Test(expectedExceptions = {ClassNotFoundException.class})
     public void testPublicCannotLoadUserClass() throws IllegalAccessException, ClassNotFoundException {
         Lookup lookup = publicLookup();
-        lookup.findClass("test.java.lang.invoke.t8150782.TestCls");
+        lookup.findClass("test.java.lang.invoke.TestCls");
     }
 
     @Test

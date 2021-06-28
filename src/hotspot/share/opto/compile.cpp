@@ -4514,7 +4514,9 @@ bool Compile::coarsened_locks_consistent() {
     bool modified = false; // track locks kind modifications
     Lock_List* locks_list = (Lock_List*)_coarsened_locks.at(i);
     uint size = locks_list->size();
-    if (size != locks_list->origin_cnt()) {
+    if (size == 0) {
+      unbalanced = false; // All locks were eliminated - good
+    } else if (size != locks_list->origin_cnt()) {
       unbalanced = true; // Some locks were removed from list
     } else {
       for (uint j = 0; j < size; j++) {
