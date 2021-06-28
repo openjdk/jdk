@@ -156,12 +156,11 @@ public class ByteArrayInputStream extends InputStream {
      * {@code b[off+k-1]} in the manner performed by {@code System.arraycopy}.
      * The value {@code k} is added into {@code pos} and {@code k} is returned.
      * <p>
-     * This {@code read} method cannot block.
-     *
-     * @apiNote
      * Unlike the {@link InputStream#read(byte[],int,int) overridden method}
      * of {@code InputStream}, this method returns {@code -1} instead of zero
      * if the end of the stream has been reached and {@code len == 0}.
+     * <p>
+     * This {@code read} method cannot block.
      *
      * @param   b     the buffer into which the data is read.
      * @param   off   the start offset in the destination array {@code b}
