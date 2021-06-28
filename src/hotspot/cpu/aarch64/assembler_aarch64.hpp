@@ -732,8 +732,8 @@ public:
 
 #undef INSN
 
-  void add_sub_immediate(Instruction_aarch64 &current_insn, Register Rd, Register Rn, unsigned uimm, int op,
-                         int negated_op);
+  void add_sub_immediate(Instruction_aarch64 &current_insn, Register Rd, Register Rn,
+                         unsigned uimm, int op, int negated_op);
 
   // Add/subtract (immediate)
 #define INSN(NAME, decode, negated)                                     \
