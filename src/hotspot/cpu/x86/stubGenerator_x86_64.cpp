@@ -5351,8 +5351,7 @@ address generate_avx_ghash_processBlocks() {
     __ align(64, (unsigned long long)__ pc());
     StubCodeMark mark(this, "StubRoutines", "encoding_table_base64");
     address start = __ pc();
-    assert(((unsigned long long)start & 0x3f) == 0,
-           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    assert(((unsigned long long)start & 0x3f) == 0, "Alignment problem (0x%08llx)", (unsigned long long)start);
     __ emit_data64(0x4847464544434241, relocInfo::none);
     __ emit_data64(0x504f4e4d4c4b4a49, relocInfo::none);
     __ emit_data64(0x5857565554535251, relocInfo::none);
@@ -5401,8 +5400,7 @@ address generate_avx_ghash_processBlocks() {
     const Register dp = c_rarg4;    // Position for writing to dest array
     const Register isURL = c_rarg5; // Base64 or URL character set
 #else
-    const Address dp_mem(rbp,
-             6 * wordSize); // length is on stack on Win64
+    const Address dp_mem(rbp, 6 * wordSize); // length is on stack on Win64
     const Address isURL_mem(rbp, 7 * wordSize);
     const Register isURL = r10; // pick the volatile windows register
     const Register dp = r12;
@@ -5434,8 +5432,7 @@ address generate_avx_ghash_processBlocks() {
       __ shrl(isURL, 6); // restore isURL
 
       __ mov64(rax, 0x3036242a1016040a); // Shifts
-      __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()),
-        Assembler::AVX_512bit, r15);
+      __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()), Assembler::AVX_512bit, r15);
       __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
       __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
 
@@ -5682,7 +5679,7 @@ address generate_avx_ghash_processBlocks() {
     // Load the encoding table based on isURL
     __ lea(r11, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
     __ movl(r15, isURL);
-    __ shll(r15, 5);
+    __ shll(r15, 6);
     __ addptr(r11, r15);
 
     __ BIND(L_processdata);
