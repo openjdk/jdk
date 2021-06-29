@@ -317,7 +317,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   Label continuation;
   Register thread = r15_thread;
   Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_offset()));
-  __ align(8);
+  // reserved nops for patching
+  __ nop(); __ nop(); __ nop(); __ nop(); __ nop();
+  for (int i = 0; i < (__ offset() % 8); i++) {
+    __ nop();
+  }
   __ cmpl(disarmed_addr, 0);
   __ jcc(Assembler::equal, continuation);
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
@@ -333,10 +337,16 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   Label continuation;
 
   Register tmp = rdi;
+  // reserved nops for patching
+  __ nop(); __ nop(); __ nop(); __ nop(); __ nop();
+  for (int i = 0; i < (__ offset() % 4); i++) {
+    __ nop();
+  }
   __ push(tmp);
   __ movptr(tmp, (intptr_t)bs_nm->disarmed_value_address());
   Address disarmed_addr(tmp, 0);
-  __ align(4);
+  __ nop();
+  __ nop();
   __ cmpl(disarmed_addr, 0);
   __ pop(tmp);
   __ jcc(Assembler::equal, continuation);

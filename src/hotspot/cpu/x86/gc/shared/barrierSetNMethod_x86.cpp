@@ -158,49 +158,15 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // Note that this offset is invariant of PreserveFramePointer.
 static const int entry_barrier_offset = LP64_ONLY(-19) NOT_LP64(-18);
 
+static const int entry_barrier_bypass_offset = entry_barrier_offset LP64_ONLY(-5) NOT_LP64(-13);
+static const int entry_barrier_jump_offset = LP64_ONLY(19) NOT_LP64(27);
+
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   debug_only(barrier->verify());
   return barrier;
 }
-
-class NativeJccInstruction: public NativeInstruction {
-public:
-  enum Intel_specific_constants {
-    je_opcode_b0            = 0x0F,
-    je_opcode_b1            = 0x84,
-    instruction_size        = 6,
-    data_offset             = 2,
-  };
-  bool is_je() {
-    u_char b0 = ubyte_at(0);
-    u_char b1 = ubyte_at(1);
-    return b0 == je_opcode_b0 && b1 == je_opcode_b1;
-  }
-  void patch_to_jmp() {
-    jint offset = int_at(NativeJccInstruction::data_offset);
-    assert(offset == NativeCall::instruction_size, "jump over the call");
-
-    set_char_at(0, static_cast<char>(NativeJump::instruction_code));
-    set_int_at(NativeJump::data_offset, offset + NativeInstruction::nop_instruction_size);
-    set_char_at(NativeJump::instruction_size, static_cast<char>(NativeInstruction::nop_instruction_code));
-  }
-  void patch_to_je() {
-    u_char jmp_opcode = ubyte_at(0);
-    u_char nop_opcode = ubyte_at(NativeJump::instruction_size);
-    assert(jmp_opcode == NativeJump::instruction_code &&
-        nop_opcode == NativeInstruction::nop_instruction_code, "must equal");
-
-    jint offset = int_at(NativeJump::data_offset);
-    assert(offset == NativeCall::instruction_size + NativeInstruction::nop_instruction_size,
-        "jump over nop and call");
-
-    set_char_at(0, static_cast<char>(je_opcode_b0));
-    set_char_at(1, static_cast<char>(je_opcode_b1));
-    set_int_at(2, offset - NativeInstruction::nop_instruction_size);
-  }
-};
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
@@ -222,14 +188,19 @@ void BarrierSetNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
   je_addr += NativePopReg::instruction_size;
 #endif
   NativeJccInstruction* jcc = reinterpret_cast<NativeJccInstruction*>(je_addr);
+  address dest = jcc->jump_destination();
+
+  address jmp_addr = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_bypass_offset;
+  NativeJump* jmp = reinterpret_cast<NativeJump*>(jmp_addr);
   if (bypass) {
-    if (jcc->is_je()) {
-      jcc->patch_to_jmp();
+    if (!jmp->is_jmp()) {
+      // it's nops
+      jmp->patch_to_jmp(dest);
+      assert(jmp->int_at(NativeJump::data_offset) == entry_barrier_jump_offset, "must be equal");
     }
   } else {
-    if (!jcc->is_je()) {
-      // has been bypassed
-      jcc->patch_to_je();
+    if (jmp->is_jmp()) {
+      jmp->patch_to_nop();
     }
   }
 }

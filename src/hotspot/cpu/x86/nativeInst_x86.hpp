@@ -516,6 +516,22 @@ class NativeJump: public NativeInstruction {
 
   void verify();
 
+  bool is_jmp() {
+    return ubyte_at(0) == instruction_code;
+  }
+
+  void patch_to_jmp(address dest) {
+    intptr_t val = dest - next_instruction_address();
+    set_char_at(0, static_cast<char>(instruction_code));
+    set_int_at(data_offset, (jint)val);
+  }
+
+  void patch_to_nop() {
+    for (int i = 0; i < instruction_size; i++) {
+      set_char_at(i, static_cast<char>(NativeInstruction::nop_instruction_code));
+    }
+  }
+
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
   // MT-safe insertion of native jump at verified method entry
@@ -530,6 +546,17 @@ inline NativeJump* nativeJump_at(address address) {
 #endif
   return jump;
 }
+
+class NativeJccInstruction: public NativeInstruction {
+public:
+  enum Intel_specific_constants {
+    instruction_size        = 6,
+    data_offset             = 2,
+  };
+  address jump_destination() const {
+    return int_at(data_offset) + addr_at(instruction_size);
+  }
+};
 
 // far jump reg
 class NativeFarJump: public NativeInstruction {
