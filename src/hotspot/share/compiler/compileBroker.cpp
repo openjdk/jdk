@@ -913,10 +913,6 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
       CompilerThread::cast(new_thread)->set_compiler(comp);
     }
 
-    // Note that this only sets the JavaThread _priority field, which by
-    // definition is limited to Java priorities and not OS priorities.
-    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
-
     // Note that we cannot call os::set_priority because it expects Java
     // priorities and we are *explicitly* using OS priorities so that it's
     // possible to set the compiler thread priority higher than any Java
@@ -931,6 +927,10 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
       }
     }
     os::set_native_priority(new_thread, native_prio);
+
+    // Note that this only sets the JavaThread _priority field, which by
+    // definition is limited to Java priorities and not OS priorities.
+    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
 
   } else { // Allocation failure
     if (UseDynamicNumberOfCompilerThreads && type == compiler_t

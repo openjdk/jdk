@@ -1612,7 +1612,7 @@ public:
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.
   static void start_internal_daemon(JavaThread* current, JavaThread* target,
-                                  Handle thread_oop, ThreadPriority prio);
+                                    Handle thread_oop, ThreadPriority prio);
 
   // Helper function to do vm_exit_on_initialization for thread allocation
   // failure.
