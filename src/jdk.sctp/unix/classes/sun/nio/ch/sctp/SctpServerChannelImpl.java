@@ -289,8 +289,8 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
             // Postpone the kill if there is a thread in accept
             if (thread == 0) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
             } else {
                 state = ChannelState.KILLPENDING;
             }
