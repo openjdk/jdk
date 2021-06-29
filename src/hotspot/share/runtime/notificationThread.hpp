@@ -36,8 +36,6 @@ class NotificationThread : public JavaThread {
   friend class VMStructs;
  private:
 
-  static NotificationThread* _instance;
-
   static void notification_thread_entry(JavaThread* thread, TRAPS);
   NotificationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
 

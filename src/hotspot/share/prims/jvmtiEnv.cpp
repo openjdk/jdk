@@ -1337,8 +1337,8 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
-  JavaThread::startInternalDaemon(current_thread, new_thread, thread_hndl,
-                                  (ThreadPriority)priority, static_cast<JvmtiAgentThread**>(nullptr));
+  JavaThread::start_internal_daemon(current_thread, new_thread, thread_hndl,
+                                    (ThreadPriority)priority);
 
   return JVMTI_ERROR_NONE;
 } /* end RunAgentThread */

@@ -55,8 +55,7 @@ static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAP
     JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", THREAD);
     return NULL;
   } else {
-    JavaThread::startInternalDaemon(THREAD, new_thread, thread_oop, NormPriority,
-                                    static_cast<JavaThread**>(nullptr));
+    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NormPriority);
     return new_thread;
   }
 }

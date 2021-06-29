@@ -3907,10 +3907,8 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 // complete and before adding to the ThreadsList. This ensures only a
 // properly initialized singleton instance is seen by other threads.
 // The Threads_lock is held for the duration.
-template <typename T, ENABLE_IF_SDEFN(std::is_base_of<JavaThread, T>::value)>
-void JavaThread::startInternalDaemon(JavaThread* current, T* target,
-                                     Handle thread_oop, ThreadPriority prio,
-                                     T** instance) {
+void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
+                                     Handle thread_oop, ThreadPriority prio) {
   MutexLocker mu(current, Threads_lock);
 
   // Initialize the fields of the thread_oop first
@@ -3928,17 +3926,11 @@ void JavaThread::startInternalDaemon(JavaThread* current, T* target,
   // Now bind the thread_oop to the target JavaThread
   target->set_threadObj(thread_oop());
 
-  // We must set the field after the threadObj is fully prepared,
-  // but before we release the newly created thread.
-  if (instance != nullptr) {
-    *instance = target;
-  }
-
   Threads::add(target); // target is now visible for safepoint/handshake
   Thread::start(target);
 }
 
-void JavaThread::exit_on_thread_allocation_failure(JavaThread* thread) {
+void JavaThread::vm_exit_on_thread_allocation_failure(JavaThread* thread) {
   // At this point it may be possible that no osthread was created for the
   // JavaThread due to lack of memory. We would have to throw an exception
   // in that case. However, since this must work and we do not allow

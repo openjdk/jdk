@@ -491,10 +491,9 @@ void os::initialize_jdk_signal_support(TRAPS) {
                             CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
-    JavaThread::exit_on_thread_allocation_failure(thread);
+    JavaThread::vm_exit_on_thread_allocation_failure(thread);
 
-    JavaThread::startInternalDaemon(THREAD, thread, thread_oop, NearMaxPriority,
-                                    static_cast<JavaThread**>(nullptr));
+    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 
     // Handle ^BREAK
     os::signal(SIGBREAK, os::user_handler());

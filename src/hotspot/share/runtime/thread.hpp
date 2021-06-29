@@ -703,16 +703,6 @@ class JavaThread: public Thread {
 
  public:
 
-  // Helper function to start a VM-internal daemon thread.
-  // E.g. ServiceThread, NotificationThread, CompilerThread etc.
-  template <typename T, ENABLE_IF(std::is_base_of<JavaThread, T>::value)>
-  static void startInternalDaemon(JavaThread* current, T* target,
-                                  Handle thread_oop, ThreadPriority prio,
-                                  T** instance);
-  // Helper function to do vm_exit_on_initialization for thread allocation
-  // failure.
-  static void exit_on_thread_allocation_failure(JavaThread* thread);
-
   int  java_call_counter()                       { return _java_call_counter; }
   void inc_java_call_counter()                   { _java_call_counter++; }
   void dec_java_call_counter() {
@@ -1605,6 +1595,28 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
+
+  template <typename T>
+  class InstanceSetter : public StackObj {
+    T* _value;
+    T** _field;
+   public:
+    void set() {
+      if (_field != nullptr) {
+        *_field = _value;
+      }
+    }
+    InstanceSetter(T* value, T** field) : _value(value), _field(field) { }
+  };
+
+  // Helper function to start a VM-internal daemon thread.
+  // E.g. ServiceThread, NotificationThread, CompilerThread etc.
+  static void start_internal_daemon(JavaThread* current, JavaThread* target,
+                                  Handle thread_oop, ThreadPriority prio);
+
+  // Helper function to do vm_exit_on_initialization for thread allocation
+  // failure.
+  static void vm_exit_on_thread_allocation_failure(JavaThread* thread);
 };
 
 // The active thread queue. It also keeps track of the current used

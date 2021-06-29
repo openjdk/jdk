@@ -32,7 +32,6 @@
 class MonitorDeflationThread : public JavaThread {
   friend class VMStructs;
  private:
-  static MonitorDeflationThread* _instance;
 
   static void monitor_deflation_thread_entry(JavaThread* thread, TRAPS);
   MonitorDeflationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};

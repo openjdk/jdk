@@ -33,8 +33,6 @@
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 
-MonitorDeflationThread* MonitorDeflationThread::_instance = NULL;
-
 void MonitorDeflationThread::initialize() {
   EXCEPTION_MARK;
 
@@ -51,10 +49,9 @@ void MonitorDeflationThread::initialize() {
                           CHECK);
 
   MonitorDeflationThread* thread =  new MonitorDeflationThread(&monitor_deflation_thread_entry);
-  JavaThread::exit_on_thread_allocation_failure(thread);
+  JavaThread::vm_exit_on_thread_allocation_failure(thread);
 
-  JavaThread::startInternalDaemon(THREAD, thread, thread_oop, NearMaxPriority,
-                                  &_instance);
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 }
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {

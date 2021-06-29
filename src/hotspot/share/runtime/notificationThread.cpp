@@ -35,8 +35,6 @@
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 
-NotificationThread* NotificationThread::_instance = NULL;
-
 void NotificationThread::initialize() {
   EXCEPTION_MARK;
 
@@ -63,10 +61,9 @@ void NotificationThread::initialize() {
                           THREAD);
 
    NotificationThread* thread =  new NotificationThread(&notification_thread_entry);
-   JavaThread::exit_on_thread_allocation_failure(thread);
+   JavaThread::vm_exit_on_thread_allocation_failure(thread);
 
-   JavaThread::startInternalDaemon(THREAD, thread, thread_oop, NearMaxPriority,
-                                   &_instance);
+   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 }
 
 
