@@ -46,7 +46,11 @@ public:
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
-  void fix_entry_barrier(nmethod* nm, bool bypass) X86_ONLY(;) NOT_X86({})
+#if defined(AMD64) || defined(AARCH64)
+  void fix_entry_barrier(nmethod* nm, bool bypass);
+#else
+  void fix_entry_barrier(nmethod* nm, bool bypass) {}
+#endif
 };
 
 

@@ -158,9 +158,6 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // Note that this offset is invariant of PreserveFramePointer.
 static const int entry_barrier_offset = LP64_ONLY(-19) NOT_LP64(-18);
 
-static const int entry_barrier_bypass_offset = entry_barrier_offset LP64_ONLY(-5) NOT_LP64(-13);
-static const int entry_barrier_jump_offset = LP64_ONLY(19) NOT_LP64(27);
-
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
@@ -177,16 +174,14 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   cmp->set_immediate(disarmed_value());
 }
 
+#ifdef _LP64
+static const int entry_barrier_bypass_offset = entry_barrier_offset - NativeJump::instruction_size;
 void BarrierSetNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
   address je_addr = nm->code_begin() + nm->frame_complete_offset() +
       entry_barrier_offset + NativeNMethodCmpBarrier::instruction_size;
-#ifndef _LP64
-  // there is a pop instruction after the cmpl instruction
-  je_addr += NativePopReg::instruction_size;
-#endif
   NativeJccInstruction* jcc = reinterpret_cast<NativeJccInstruction*>(je_addr);
   address dest = jcc->jump_destination();
 
@@ -204,6 +199,7 @@ void BarrierSetNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
     }
   }
 }
+#endif
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {

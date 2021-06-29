@@ -34,25 +34,6 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-class NativeNMethodBarrier: public NativeInstruction {
-  address instruction_address() const { return addr_at(0); }
-
-  int *guard_addr() {
-    return reinterpret_cast<int*>(instruction_address() + 10 * 4);
-  }
-
-public:
-  int get_value() {
-    return Atomic::load_acquire(guard_addr());
-  }
-
-  void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
-  }
-
-  void verify() const;
-};
-
 // Store the instruction bitmask, bits and name for checking the barrier.
 struct CheckInsn {
   uint32_t mask;
@@ -61,6 +42,7 @@ struct CheckInsn {
 };
 
 static const struct CheckInsn barrierInsn[] = {
+  { 0xffffffff, 0xd503201f, "nop" },
   { 0xff000000, 0x18000000, "ldr (literal)" },
   { 0xfffff0ff, 0xd50330bf, "dmb" },
   { 0xffc00000, 0xb9400000, "ldr"},
@@ -73,12 +55,58 @@ static const struct CheckInsn barrierInsn[] = {
   { 0xfc000000, 0x14000000, "b"}
 };
 
+class NativeNMethodBarrier: public NativeInstruction {
+  address instruction_address() const { return addr_at(0); }
+
+  int *guard_addr() {
+    return reinterpret_cast<int*>(instruction_address() + 11 * 4);
+  }
+
+  uint32_t *bypass_addr() {
+    return reinterpret_cast<uint32_t*>(instruction_address());
+  }
+
+  address next_instruction() const {
+    return addr_at(0) + 12 * 4;
+  }
+
+public:
+  int get_value() {
+    return Atomic::load_acquire(guard_addr());
+  }
+
+  void set_value(int value) {
+    Atomic::release_store(guard_addr(), value);
+  }
+
+  bool is_bypassed() {
+    uint32_t inst = *bypass_addr();
+    return inst != barrierInsn[0].bits;
+  }
+
+  void patch_barrier_bypass() {
+    uint32_t* inst_addr = bypass_addr();
+    const int len = sizeof(barrierInsn) / sizeof(struct CheckInsn);
+    *inst_addr = barrierInsn[len - 1].bits;
+    NativeJump* jmp = reinterpret_cast<NativeJump*>(inst_addr);
+    address dest = next_instruction();
+    jmp->set_jump_destination(dest);
+  }
+
+  void patch_barrier_on() {
+    Atomic::release_store(bypass_addr(), barrierInsn[0].bits);
+    ICache::invalidate_range(reinterpret_cast<address>(bypass_addr()), 4);
+  }
+
+  void verify() const;
+};
+
 // The encodings must match the instructions emitted by
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
 void NativeNMethodBarrier::verify() const {
   intptr_t addr = (intptr_t) instruction_address();
-  for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
+  for(unsigned int i = 1; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
     uint32_t inst = *((uint32_t*) addr);
     if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
       tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", addr, inst);
@@ -132,7 +160,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
 
-static const int entry_barrier_offset = -4 * 11;
+static const int entry_barrier_offset = -4 * 12;
 
 static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
@@ -160,4 +188,21 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
   return barrier->get_value() != disarmed_value();
+}
+
+void BarrierSetNMethod::fix_entry_barrier(nmethod* nm, bool bypass) {
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
+  if (bypass) {
+    if (!barrier->is_bypassed()) {
+      barrier->patch_barrier_bypass();
+    }
+  } else {
+    if (barrier->is_bypassed()) {
+      barrier->patch_barrier_on();
+    }
+  }
 }

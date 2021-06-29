@@ -242,6 +242,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   Label skip, guard;
   Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
 
+  __ nop();
+
   __ ldrw(rscratch1, guard);
 
   // Subsequent loads of oops must occur after load of guard value.
