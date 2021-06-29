@@ -141,7 +141,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 // logical object with its forwardee. The reason why we need stronger-than-relaxed memory
 // ordering has to do with coordination with GC barriers and mutator accesses.
 //
-// In essence, stronger CAS access is required to maintain the transitive acq/rel that mutator
+// In essence, stronger CAS access is required to maintain the transitive chains that mutator
 // accesses build by themselves. To illustrate this point, consider the following example.
 //
 // Suppose "o" is the object that has a field "x" and the reference to "o" is stored
@@ -152,17 +152,17 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 // Thread 1 (Java)
 //         // --- previous access starts here
 //         ...
-//   T1.1: store(&o.x, 1, mo_relaxed);
-//   T1.2: store(&addr, o, mo_release); // volatile store
+//   T1.1: store(&o.x, 1, mo_relaxed)
+//   T1.2: store(&addr, o, mo_release) // volatile store
 //
 //         // --- new access starts here
 //         // LRB: copy and install the new copy to fwdptr
 //   T1.3: var copy = copy(o)
-//   T1.4: cas(&fwd, t, copy, mo_release)
+//   T1.4: cas(&fwd, t, copy, mo_release) // pointer-mediated publication
 //         <access continues>
 //
 // Thread 2 (GC updater)
-//   T2.1: var f = load(&fwd, mo_acquire)
+//   T2.1: var f = load(&fwd, mo_{consume|acquire}) // pointer-mediated acquisition
 //   T2.2: cas(&addr, o, f, mo_release) // this method
 //
 // Thread 3 (Java)
@@ -179,7 +179,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 // from T2.2 to T3.1 (which is brought by this CAS).
 //
 // Note that we do not need to "acquire" in these methods, because we do not read the
-// failure witnesses contents on any path.
+// failure witnesses contents on any path, and "release" is enough.
 //
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, oop* addr, oop compare) {
