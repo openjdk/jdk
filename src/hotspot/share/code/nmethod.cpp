@@ -1608,6 +1608,7 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
     if (is_not_entrant() && can_convert_to_zombie()) {
       return;
     }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
     mark_as_seen_on_stack();
   }
 
