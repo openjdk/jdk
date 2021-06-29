@@ -701,7 +701,6 @@ class JavaThread: public Thread {
   int _java_call_counter;
 
  public:
-
   int  java_call_counter()                       { return _java_call_counter; }
   void inc_java_call_counter()                   { _java_call_counter++; }
   void dec_java_call_counter() {
@@ -1594,19 +1593,6 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
-
-  template <typename T>
-  class InstanceSetter : public StackObj {
-    T* _value;
-    T** _field;
-   public:
-    void set() {
-      if (_field != nullptr) {
-        *_field = _value;
-      }
-    }
-    InstanceSetter(T* value, T** field) : _value(value), _field(field) { }
-  };
 
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.
