@@ -220,19 +220,26 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx invalid_id = -1;
   if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
     static char name_buffer[O_BUFLEN];
-    int fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
-    if (fd != -1) {
-      FILE* fp = os::open(fd, "w");
-      if (fp != NULL) {
-        _fatal_log_stream = new fileStream(fp);
+    static fdStream log(-1);
+    if (ErrorFileToStdout) {
+      log.set_fd(1);
+    } else if (ErrorFileToStderr) {
+      log.set_fd(2);
+    } else {
+      int fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
+      if (fd != -1) {
         _fatal_log_filename = name_buffer;
+        log.set_fd(fd);
       } else {
         int e = errno;
-        tty->print("Can't open file to dump JVMCI shared library crash data. Error: ");
+        tty->print("Can't open JVMCI shared library error report file. Error: ");
         tty->print_raw_cr(os::strerror(e));
-        tty->print_cr("JVMCI shared library crash data will be written to console.");
-        _fatal_log_stream = tty;
+        tty->print_cr("JVMCI shared library error report will be written to console.");
+
+        // See notes in VMError::report_and_die about hard coding tty to 1
+        log.set_fd(1);
       }
+      _fatal_log_stream = &log;
     }
   } else {
     // Another thread won the race to initialize the stream. Give it time

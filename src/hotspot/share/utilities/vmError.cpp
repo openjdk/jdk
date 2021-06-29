@@ -1589,7 +1589,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
 #if INCLUDE_JVMCI
   if (JVMCI::fatal_log_filename() != NULL) {
-    out.print_raw("#\n# The JVMCI shared library error data is saved as:\n# ");
+    out.print_raw("#\n# The JVMCI shared library error report file is saved as:\n# ");
     out.print_raw_cr(JVMCI::fatal_log_filename());
   }
 #endif
