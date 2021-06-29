@@ -179,14 +179,16 @@ public final class ARCFOURCipher extends CipherSpi {
         init(opmode, key);
     }
 
-    // init method. Check opmode and key, then call init(byte[]).
+    // init method. Check key, then call init(byte[]).
     private void init(int opmode, Key key) throws InvalidKeyException {
+
+        // Cipher.init() already checks opmode to be:
+        // ENCRYPT_MODE/DECRYPT_MODE/WRAP_MODE/UNWRAP_MODE
+
         if (lastKey != null) {
             Arrays.fill(lastKey, (byte)0);
         }
-        if ((opmode < Cipher.ENCRYPT_MODE) || (opmode > Cipher.UNWRAP_MODE)) {
-            throw new InvalidKeyException("Unknown opmode: " + opmode);
-        }
+
         lastKey = getEncodedKey(key);
         init(lastKey);
     }

@@ -260,7 +260,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_LibmIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
-  void do_NIOCheckIndex(Intrinsic* x);
+  void do_PreconditionsCheckIndex(Intrinsic* x, BasicType type);
   void do_FPIntrinsics(Intrinsic* x);
   void do_Reference_get(Intrinsic* x);
   void do_update_CRC32(Intrinsic* x);
@@ -348,8 +348,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   // this loads the length and compares against the index
   void array_range_check          (LIR_Opr array, LIR_Opr index, CodeEmitInfo* null_check_info, CodeEmitInfo* range_check_info);
-  // For java.nio.Buffer.checkIndex
-  void nio_range_check            (LIR_Opr buffer, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info);
 
   void arithmetic_op_int  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp);
   void arithmetic_op_long (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info = NULL);

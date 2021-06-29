@@ -587,7 +587,7 @@ public final class SSLSocketImpl
         } catch (IOException ioe) {
             // ignore the exception
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("SSLSocket duplex close failed", ioe);
+                SSLLogger.warning("SSLSocket duplex close failed. Debug info only. Exception details:", ioe);
             }
         } finally {
             if (!isClosed()) {
@@ -597,7 +597,7 @@ public final class SSLSocketImpl
                 } catch (IOException ioe) {
                     // ignore the exception
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.warning("SSLSocket close failed", ioe);
+                        SSLLogger.warning("SSLSocket close failed. Debug info only. Exception details:", ioe);
                     }
                 } finally {
                     tlsIsClosed = true;
@@ -1134,7 +1134,7 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("input stream close failed", ioe);
+                    SSLLogger.warning("input stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
         }
@@ -1329,7 +1329,7 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("output stream close failed", ioe);
+                    SSLLogger.warning("output stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
         }

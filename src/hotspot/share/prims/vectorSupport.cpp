@@ -30,6 +30,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"

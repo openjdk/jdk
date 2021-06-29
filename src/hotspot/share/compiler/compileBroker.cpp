@@ -1008,9 +1008,9 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        tty->print_cr("Added initial compiler thread %s", ct->name());
       }
     }
   }
@@ -1029,9 +1029,9 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        tty->print_cr("Added initial compiler thread %s", ct->name());
       }
     }
   }
@@ -1116,10 +1116,10 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
+                      ct->name(), (int)(available_memory/M), (int)(available_cc_np/M));
       }
     }
   }
@@ -1137,10 +1137,10 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
+                      ct->name(), (int)(available_memory/M), (int)(available_cc_p/M));
       }
     }
   }
@@ -1276,7 +1276,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
-        vframeStream vfst(thread->as_Java_thread());
+        vframeStream vfst(JavaThread::cast(thread));
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
               (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&

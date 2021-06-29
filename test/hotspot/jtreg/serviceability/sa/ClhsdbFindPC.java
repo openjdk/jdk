@@ -209,7 +209,8 @@ public class ClhsdbFindPC {
                 cmdStr = "findpc " + stackAddress;
                 cmds = List.of(cmdStr);
                 expStrMap = new HashMap<>();
-                expStrMap.put(cmdStr, List.of("In java stack"));
+                // Note, sometimes a stack address points to a hotspot type, thus allow for "Is of type".
+                expStrMap.put(cmdStr, List.of("(In java stack)|(Is of type)"));
                 runTest(withCore, cmds, expStrMap);
             }
 

@@ -621,7 +621,7 @@ ShenandoahConcurrentEvacThreadClosure::ShenandoahConcurrentEvacThreadClosure(Oop
 }
 
 void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
-  JavaThread* const jt = thread->as_Java_thread();
+  JavaThread* const jt = JavaThread::cast(thread);
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 }
 
@@ -934,7 +934,7 @@ ShenandoahUpdateThreadClosure::ShenandoahUpdateThreadClosure() :
 
 void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
   if (thread->is_Java_thread()) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     ResourceMark rm;
     jt->oops_do(&_cl, NULL);
   }

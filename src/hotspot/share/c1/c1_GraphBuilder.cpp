@@ -3047,9 +3047,11 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necesary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the interpreter_invocation_count.
+  // can increment the the counters.
+  // In addition, with range check elimination, we may need a valid block
+  // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
-  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges()) {
+  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges() || RangeCheckElimination) {
     new_header_block = header_block(std_entry, BlockBegin::std_entry_flag, state);
   } else {
     new_header_block = std_entry;

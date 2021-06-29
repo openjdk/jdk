@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8268333
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -46,6 +46,8 @@ public class Switches {
         assertTrue(testNullSwitch(""));
         runArrayTypeTest(this::testArrayTypeStatement);
         runArrayTypeTest(this::testArrayTypeExpression);
+        runDefaultTest(this::testDefaultDoesNotDominateStatement);
+        runDefaultTest(this::testDefaultDoesNotDominateExpression);
         runEnumTest(this::testEnumExpression1);
         runEnumTest(this::testEnumExpression2);
         runEnumTest(this::testEnumWithGuards1);
@@ -79,6 +81,13 @@ public class Switches {
         assertEquals("str6", mapper.apply("string"));
         assertEquals("i1", mapper.apply(1));
         assertEquals("", mapper.apply(1.0));
+    }
+
+    void runDefaultTest(Function<Object, String> mapper) {
+        assertEquals("default", mapper.apply(new int[0]));
+        assertEquals("str6", mapper.apply("string"));
+        assertEquals("default", mapper.apply(1));
+        assertEquals("default", mapper.apply(1.0));
     }
 
     void runEnumTest(Function<E, String> mapper) {
@@ -169,6 +178,22 @@ public class Switches {
             case int[] arr -> "arr" + arr.length;
             case String str -> "str" + str.length();
             default -> "";
+        };
+    }
+
+    String testDefaultDoesNotDominateStatement(Object o) {
+        String res;
+        switch (o) {
+            default -> res = "default";
+            case String str -> res = "str" + str.length();
+        }
+        return res;
+    }
+
+    String testDefaultDoesNotDominateExpression(Object o) {
+        return switch (o) {
+            case default -> "default";
+            case String str -> "str" + str.length();
         };
     }
 
