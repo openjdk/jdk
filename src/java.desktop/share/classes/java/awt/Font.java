@@ -971,7 +971,7 @@ public class Font implements java.io.Serializable
             }
             return createFont0(fontFormat, fontStream, true, tracker);
         } catch (InterruptedException e) {
-            throw new IOException("Problem reading font data.");
+            throw new IOException("Problem reading font data.", e);
         } finally {
             if (acquired) {
                 tracker.releasePermit();
@@ -1205,7 +1205,7 @@ public class Font implements java.io.Serializable
             if (cause instanceof FontFormatException) {
                 throw (FontFormatException)cause;
             }
-            throw new IOException("Problem reading font data.");
+            throw new IOException("Problem reading font data.", t);
         }
     }
 
