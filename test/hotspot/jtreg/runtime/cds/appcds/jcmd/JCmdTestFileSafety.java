@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8265465
+ * @bug 8265465 8267075
  * @summary Test jcmd to dump static shared archive.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
@@ -41,8 +41,25 @@ import java.io.IOException;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class JCmdTestFileSafety extends JCmdTestDumpBase {
+    static final String promptStdout = "please check stdout file";
+    static final String promptStderr = "or stderr file";
+
+    static void checkContainAbsoluteLogPath(OutputAnalyzer output) throws Exception {
+       String stdText = output.getOutput();
+       if (stdText.contains(promptStdout) &&
+           stdText.contains(promptStderr)) {
+           int a = stdText.indexOf(promptStdout);
+           int b = stdText.indexOf(promptStderr);
+           String stdOutFileName = stdText.substring(a + promptStdout.length() + 1, b - 1).trim();
+           File   stdOutFile = new File(stdOutFileName);
+           if (!stdOutFile.isAbsolute()) {
+               throw new RuntimeException("Failed to set file name in absolute for prompting message");
+           }
+        }
+    }
 
     static void test() throws Exception {
         buildJars();
@@ -67,9 +84,15 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         test(localFileName, pid, noBoot,  EXPECT_PASS);
         outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
-        app.stopApp();
         outputDirFile.setWritable(true);
         checkFileExistence(localFileName, true/*exist*/);
+
+        // Illegal character in file name
+        localFileName = "mystatic:.jsa";
+        OutputAnalyzer output = test(localFileName, pid, noBoot,  EXPECT_FAIL);
+        checkFileExistence(localFileName, false/*exist*/);
+        checkContainAbsoluteLogPath(output);
+        app.stopApp();
 
         setIsStatic(false/*dynamic*/);
         //  Set target dir not writable, do dynamic dump

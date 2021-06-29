@@ -4069,16 +4069,43 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 }
 
 // Deoptimize all compiled code that depends on the classes redefined.
+//
+// If the can_redefine_classes capability is obtained in the onload
+// phase then the compiler has recorded all dependencies from startup.
+// In that case we need only deoptimize and throw away all compiled code
+// that depends on the class.
+//
+// If can_redefine_classes is obtained sometime after the onload
+// phase then the dependency information may be incomplete. In that case
+// the first call to RedefineClasses causes all compiled code to be
+// thrown away. As can_redefine_classes has been obtained then
+// all future compilations will record dependencies so second and
+// subsequent calls to RedefineClasses need only throw away code
+// that depends on the class.
+//
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
 
-  int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-  log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
+  bool deopt_needed;
 
-  if (deopt != 0) {
+  // This is the first redefinition, mark all the nmethods for deoptimization
+  if (!JvmtiExport::all_dependencies_are_recorded()) {
+    log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
+    CodeCache::mark_all_nmethods_for_evol_deoptimization();
+    deopt_needed = true;
+  } else {
+    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
+    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
+    deopt_needed = (deopt != 0);
+  }
+
+  if (deopt_needed) {
     CodeCache::flush_evol_dependents();
   }
+
+  // From now on we know that the dependency information is complete
+  JvmtiExport::set_all_dependencies_are_recorded(true);
 }
 
 void VM_RedefineClasses::compute_added_deleted_matching_methods() {

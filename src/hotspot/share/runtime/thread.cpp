@@ -76,7 +76,6 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
@@ -163,7 +162,7 @@ void universe_post_module_init();  // must happen after call_initPhase2
     {                                                                      \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
-      const char* name = (javathread)->get_thread_name();                  \
+      const char* name = (javathread)->name();                             \
       len = strlen(name);                                                  \
       HOTSPOT_THREAD_PROBE_##probe(/* probe = start, stop */               \
         (char *) name, len,                                                \
@@ -184,37 +183,13 @@ THREAD_LOCAL Thread* Thread::_thr_current = NULL;
 #endif
 
 // ======= Thread ========
-// Support for forcing alignment of thread objects for biased locking
 void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
-  if (UseBiasedLocking) {
-    const size_t alignment = markWord::biased_lock_alignment;
-    size_t aligned_size = size + (alignment - sizeof(intptr_t));
-    void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
-                                          : AllocateHeap(aligned_size, flags, CURRENT_PC,
-                                                         AllocFailStrategy::RETURN_NULL);
-    void* aligned_addr     = align_up(real_malloc_addr, alignment);
-    assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
-           ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
-           "JavaThread alignment code overflowed allocated storage");
-    if (aligned_addr != real_malloc_addr) {
-      log_info(biasedlocking)("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                              p2i(real_malloc_addr),
-                              p2i(aligned_addr));
-    }
-    ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
-    return aligned_addr;
-  } else {
-    return throw_excpt? AllocateHeap(size, flags, CURRENT_PC)
+  return throw_excpt ? AllocateHeap(size, flags, CURRENT_PC)
                        : AllocateHeap(size, flags, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  }
 }
 
 void Thread::operator delete(void* p) {
-  if (UseBiasedLocking) {
-    FreeHeap(((Thread*) p)->_real_malloc_address);
-  } else {
-    FreeHeap(p);
-  }
+  FreeHeap(p);
 }
 
 void JavaThread::smr_delete() {
@@ -288,14 +263,6 @@ Thread::Thread() {
     _unhandled_oops = new UnhandledOops(this);
   }
 #endif // CHECK_UNHANDLED_OOPS
-#ifdef ASSERT
-  if (UseBiasedLocking) {
-    assert(is_aligned(this, markWord::biased_lock_alignment), "forced alignment of thread object failed");
-    assert(this == _real_malloc_address ||
-           this == align_up(_real_malloc_address, markWord::biased_lock_alignment),
-           "bug in forced alignment of thread objects");
-  }
-#endif // ASSERT
 
   // Notify the barrier set that a thread is being created. The initial
   // thread is created before the barrier set is available.  The call to
@@ -642,17 +609,7 @@ void Thread::print() const { print_on(tty); }
 void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   assert(!(is_Compiler_thread() || is_Java_thread()), "Can't call name() here if it allocates");
 
-  if (is_VM_thread())                 { st->print("VMThread"); }
-  else if (is_GC_task_thread())       { st->print("GCTaskThread"); }
-  else if (is_Watcher_thread())       { st->print("WatcherThread"); }
-  else if (is_ConcurrentGC_thread())  { st->print("ConcurrentGCThread"); }
-  else if (this == AsyncLogWriter::instance()) {
-    st->print("%s", this->name());
-  } else                                { st->print("Thread"); }
-
-  if (is_Named_thread()) {
-    st->print(" \"%s\"", name());
-  }
+  st->print("%s \"%s\"", type_name(), name());
 
   OSThread* os_thr = osthread();
   if (os_thr != NULL) {
@@ -1081,7 +1038,6 @@ JavaThread::JavaThread() :
   _thread_stat(new ThreadStatistics()),
 
   _parker(),
-  _cached_monitor_info(nullptr),
 
   _class_to_be_initialized(nullptr),
 
@@ -1241,11 +1197,6 @@ JavaThread::~JavaThread() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    if (jvmci_counters_include(this)) {
-      for (int i = 0; i < JVMCICounterSize; i++) {
-        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
-      }
-    }
     FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
@@ -1306,7 +1257,7 @@ void JavaThread::thread_main_inner() {
       !java_lang_Thread::is_stillborn(this->threadObj())) {
     {
       ResourceMark rm(this);
-      this->set_native_thread_name(this->get_thread_name());
+      this->set_native_thread_name(this->name());
     }
     HandleMark hm(this);
     this->entry_point()(this, this);
@@ -1385,7 +1336,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
                     "\nException: %s thrown from the UncaughtExceptionHandler"
                     " in thread \"%s\"\n",
                     pending_exception()->klass()->external_name(),
-                    get_thread_name());
+                    name());
         CLEAR_PENDING_EXCEPTION;
       }
     }
@@ -1490,7 +1441,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   char* thread_name = NULL;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
-    thread_name = os::strdup(get_thread_name());
+    thread_name = os::strdup(name());
   }
 
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
@@ -1501,6 +1452,17 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     _timer_exit_phase3.stop();
     _timer_exit_phase4.start();
   }
+
+#if INCLUDE_JVMCI
+  if (JVMCICounterSize > 0) {
+    if (jvmci_counters_include(this)) {
+      for (int i = 0; i < JVMCICounterSize; i++) {
+        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
+      }
+    }
+  }
+#endif // INCLUDE_JVMCI
+
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this, daemon);
 
@@ -2087,7 +2049,7 @@ void JavaThread::print_thread_state_on(outputStream *st) const {
 // Called by Threads::print() for VM_PrintThreads operation
 void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_raw("\"");
-  st->print_raw(get_thread_name());
+  st->print_raw(name());
   st->print_raw("\" ");
   oop thread_oop = threadObj();
   if (thread_oop != NULL) {
@@ -2125,7 +2087,7 @@ void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) co
 // Called by fatal error handler. The difference between this and
 // JavaThread::print() is that we can't grab lock or allocate memory.
 void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
-  st->print("JavaThread \"%s\"", get_thread_name_string(buf, buflen));
+  st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
   oop thread_obj = threadObj();
   if (thread_obj != NULL) {
     if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
@@ -2173,7 +2135,7 @@ void JavaThread::verify() {
 // seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
-const char* JavaThread::get_thread_name() const {
+const char* JavaThread::name() const  {
   if (Thread::is_JavaThread_protected(this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
     return get_thread_name_string();
@@ -2199,7 +2161,7 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";
     } else {
-      name_str = Thread::name();
+      name_str = "<un-named>";
     }
   } else {
     name_str = Thread::name();
@@ -3049,8 +3011,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
-
-  BiasedLocking::init();
 
 #if INCLUDE_RTM_OPT
   RTMLockingCounters::init();

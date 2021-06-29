@@ -164,9 +164,6 @@ class Thread: public ThreadShadow {
 
   DEBUG_ONLY(static Thread* _starting_thread;)
 
-  // Support for forcing alignment of thread objects for biased locking
-  void*       _real_malloc_address;
-
   // JavaThread lifecycle support:
   friend class SafeThreadsListPtr;  // for _threads_list_ptr, cmpxchg_threads_hazard_ptr(), {dec_,inc_,}nested_threads_hazard_ptr_cnt(), {g,s}et_threads_hazard_ptr(), inc_nested_handle_cnt(), tag_hazard_ptr() access
   friend class ScanHazardPtrGatherProtectedThreadsClosure;  // for cmpxchg_threads_hazard_ptr(), get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
@@ -355,7 +352,15 @@ class Thread: public ThreadShadow {
   // If so it must participate in the safepoint protocol.
   virtual bool is_active_Java_thread() const         { return false; }
 
-  virtual char* name() const { return (char*)"Unknown thread"; }
+  // All threads are given names. For singleton subclasses we can
+  // just hard-wire the known name of the instance. JavaThreads and
+  // NamedThreads support multiple named instances, and dynamic
+  // changing of the name of an instance.
+  virtual const char* name() const { return "Unknown thread"; }
+
+  // A thread's type name is also made available for debugging
+  // and logging.
+  virtual const char* type_name() const { return "Thread"; }
 
   // Returns the current thread (ASSERTS if NULL)
   static inline Thread* current();
@@ -571,6 +576,7 @@ protected:
   virtual void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
+  // Basic, non-virtual, printing support that is simple and always safe.
   void print_value_on(outputStream* st) const;
 
   // Debug-only code
@@ -1350,6 +1356,9 @@ class JavaThread: public Thread {
  private:
   void set_entry_point(ThreadFunction entry_point) { _entry_point = entry_point; }
 
+  // factor out low-level mechanics for use in both normal and error cases
+  const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
+
  public:
 
   // Frame iteration; calls the function f for all frames on the stack
@@ -1369,7 +1378,9 @@ class JavaThread: public Thread {
   DEBUG_ONLY(void verify_states_for_handshake();)
 
   // Misc. operations
-  char* name() const { return (char*)get_thread_name(); }
+  const char* name() const;
+  const char* type_name() const { return "JavaThread"; }
+
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
@@ -1377,11 +1388,7 @@ class JavaThread: public Thread {
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
-  const char* get_thread_name() const;
- protected:
-  // factor out low-level mechanics for use in both normal and error cases
-  virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
- public:
+
   // Accessing frames
   frame last_frame() {
     _anchor.make_walkable(this);
@@ -1560,13 +1567,7 @@ class JavaThread: public Thread {
  public:
   Parker* parker() { return &_parker; }
 
-  // Biased locking support
- private:
-  GrowableArray<MonitorInfo*>* _cached_monitor_info;
  public:
-  GrowableArray<MonitorInfo*>* cached_monitor_info() { return _cached_monitor_info; }
-  void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
-
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }

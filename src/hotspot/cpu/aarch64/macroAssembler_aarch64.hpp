@@ -105,20 +105,6 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg is killed.
-  // tmp_reg must be supplied and must not be rscratch1 or rscratch2
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
-
-
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
   void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
@@ -846,8 +832,6 @@ public:
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 

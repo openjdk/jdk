@@ -53,7 +53,6 @@ import sun.net.www.HeaderParser;
 //      policy in HttpURLConnection.  A failure on baz.foo.com shouldn't
 //      uncache foo.com!
 
-@SuppressWarnings("removal")
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
     @java.io.Serial
@@ -70,12 +69,10 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * repeatedly, via the Authenticator. Default is false, which means that this
      * behavior is switched off.
      */
-    static final boolean serializeAuth;
-    static {
-        serializeAuth = java.security.AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    static final boolean serializeAuth = java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
                 "http.auth.serializeRequests")).booleanValue();
-    }
 
     /* AuthCacheValue: */
 
