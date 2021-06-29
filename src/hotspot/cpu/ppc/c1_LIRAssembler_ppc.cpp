@@ -1172,7 +1172,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
     assert(Assembler::is_simm16(disp_value), "should have set this up");
     offset = load(src, disp_value, to_reg, type, wide, unaligned);
   } else {
-    assert(!unaligned, "unexpected");
     offset = load(src, disp_reg, to_reg, type, wide);
   }
 
@@ -1301,7 +1300,6 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
     assert(Assembler::is_simm16(disp_value), "should have set this up");
     offset = store(from_reg, src, disp_value, type, wide, unaligned);
   } else {
-    assert(!unaligned, "unexpected");
     offset = store(from_reg, src, disp_reg, type, wide);
   }
 
