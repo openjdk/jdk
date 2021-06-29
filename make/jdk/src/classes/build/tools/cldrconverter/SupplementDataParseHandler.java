@@ -85,6 +85,10 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
      * It returns null when there is no firstDay and minDays for the country
      * although this should not happen because supplementalData.xml includes
      * default value for the world ("001") for firstDay and minDays.
+     *
+     * This method also returns Maps for "preferred" and "allowed" skeletons,
+     * which are grouped by regions. E.g, "h:XX YY ZZ;" which means 'h' pattern
+     * is "preferred"/"allowed" in "XX", "YY", and "ZZ" regions.
      */
     Map<String, Object> getData(String id) {
         Map<String, Object> values = new HashMap<>();

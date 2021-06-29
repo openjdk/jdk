@@ -540,20 +540,24 @@ public class LocaleResources {
     }
 
     /**
+     * Returns the actual format pattern string based on the passed skeleton
+     * and calendar type for this locale.
      *
-     * @param requestedSkeleton
-     * @param calType
-     * @return
+     * @param requestedSkeleton requested skeleton
+     * @param calType calendar type
+     * @return format pattern string for this locale, null if not found
      */
     public String getSkeletonPattern(String requestedSkeleton, String calType) {
         initSkeletonIfNeeded();
 
         // input skeleton substitution
         final String skeleton = substituteInputSkeletons(requestedSkeleton);
+
+        // Expand it with possible inferred skeleton stream based on its priority
         var inferred = possibleInferred(skeleton);
         ResourceBundle r = localeData.getDateFormatData(locale);
 
-System.out.println("req :"+requestedSkeleton);
+        // Search the closest format pattern string from the resource bundle
         var matched = inferred
 //.peek(s -> System.out.println("inf: "+s))
                 .map(s -> skeletonFromRB(r, CalendarDataUtility.normalizeCalendarType(calType), s))
@@ -563,13 +567,17 @@ System.out.println("req :"+requestedSkeleton);
                 .map(s -> adjustSkeletonLength(skeleton, s))
                 .orElse(null);
 
-System.out.println("requested: " + requestedSkeleton + ", matched: "+matched);
+System.out.println("requested: " + requestedSkeleton + ", locale: " + locale + ", caltype: " + calType + ", matched: "+matched);
         return matched;
     }
 
+    // Possible valid skeleton patterns. Retrieved from
     private static Set<String> validSkeletons;
+    // Input Skeleton map for "preferred" and "allowed"
+    // Map<"preferred"/"allowed", Map<"region", "skeleton">>>
     private static Map<String, String> preferredInputSkeletons;
     private static Map<String, String> allowedInputSkeletons;
+    // Skeletons for "j" and "C" input skeleton symbols for this locale
     private String jPattern;
     private String CPattern;
     private void initSkeletonIfNeeded() {
@@ -619,8 +627,8 @@ System.out.println("requested: " + requestedSkeleton + ", matched: "+matched);
      * Replace 'j' and 'C' input skeletons with locale specific patterns. Note that 'j'
      * is guaranteed to be replaced with one char [hkHK], while 'C' may be replaced with
      * multiple chars. Repeat each as much as 'C' count.
-     * @param requested
-     * @return
+     * @param requested requested skeleton
+     * @return skeleton with j/C substituted with concrete patterns
      */
     private String substituteInputSkeletons(String requested) {
         return requested.replaceAll("j", jPattern)
@@ -639,10 +647,16 @@ System.out.println("requested: " + requestedSkeleton + ", matched: "+matched);
         return skeleton;
     }
 
+    /**
+     * Returns a stream of possible skeletons, inferring standalone/format (M/L and/or E/c) patterns
+     * and their styles.
+     *
+     * @param skeleton original skeleton
+     * @return inferred Stream of skeletons in its priority order
+     */
     private Stream<String> possibleInferred(String skeleton) {
         return List.of(skeleton).stream()
             .flatMap(s -> {
-                Stream<String> ret = List.of(s).stream();
                 if (s.indexOf('M') >= 0) {
                     return Stream.concat(priorityList(s, "M", "M"), priorityList(s, "M", "L"));
                 } else if (s.indexOf('L') >= 0) {
@@ -662,11 +676,23 @@ System.out.println("requested: " + requestedSkeleton + ", matched: "+matched);
             .filter(validSkeletons::contains);
     }
 
+    /**
+     * Inferring the possible format styles in priority order, based on the original
+     * skeleton length.
+     *
+     * @param skeleton skeleton
+     * @param pChar pattern character string
+     * @param subChar substitute character string
+     * @return stream of skeletons
+     */
     private Stream<String> priorityList(String skeleton, String pChar, String subChar) {
         List<String> list;
         int last = skeleton.lastIndexOf(pChar);
         if (last >= 0) {
-            // 1->2->3->4
+            // Priority are based on this chart. First column is the original count of `pChar`,
+            // then it is followed by inferred skeletons base on priority.
+            //
+            // 1->2->3->4 (number form (1-digit) -> number form (2-digit) -> Abbr. form -> Full form)
             // 2->1->3->4
             // 3->4->2->1
             // 4->3->2->1

@@ -79,7 +79,8 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
                 .map(lr -> lr.getSkeletonPattern(modifiedSkeeleton, calType))
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse(skeleton); // should we fallback to parent locale?
+//                .orElse(skeleton);
+                .orElse(calType.equals("generic") ? skeleton : getJavaTimeDateTimePattern(skeleton, "generic", locale));
     }
 
     @Override
