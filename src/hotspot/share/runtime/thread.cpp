@@ -3902,10 +3902,7 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 #endif
 
 // Starts the target JavaThread as a daemon of the given priority, and
-// bound to the given java.lang.Thread instance. If instance is non-NULL
-// it is set to the value of target once the j.l.Thread association is
-// complete and before adding to the ThreadsList. This ensures only a
-// properly initialized singleton instance is seen by other threads.
+// bound to the given java.lang.Thread instance.
 // The Threads_lock is held for the duration.
 void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
                                        Handle thread_oop, ThreadPriority prio) {
