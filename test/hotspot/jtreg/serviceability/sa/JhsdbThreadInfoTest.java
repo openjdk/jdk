@@ -60,8 +60,8 @@ public class JhsdbThreadInfoTest {
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());
 
-            out.shouldMatch("\".+\" #\\d+ daemon prio=\\d+ tid=0x[0-9a-f]+ nid=0x[0-9a-f]+ .+ \\[0x[0-9a-f]+]");
-            out.shouldMatch("\"main\" #\\d+ prio=\\d+ tid=0x[0-9a-f]+ nid=0x[0-9a-f]+ .+ \\[0x[0-9a-f]+]");
+            out.shouldMatch("\".+\" #\\d+ daemon prio=\\d+ tid=0x[0-9a-f]+ nid=[0-9]+ .+ \\[0x[0-9a-f]+]");
+            out.shouldMatch("\"main\" #\\d+ prio=\\d+ tid=0x[0-9a-f]+ nid=[0-9]+ .+ \\[0x[0-9a-f]+]");
             out.shouldMatch("   java.lang.Thread.State: .+");
             out.shouldMatch("   JavaThread state: _thread_.+");
 
