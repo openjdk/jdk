@@ -243,7 +243,8 @@ class ResourceHashtable : public ResourceHashtableBase<
   FixedResourceHashtableStorage<SIZE, K, V>,
     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
 public:
-  ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>() {}
+  ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
+                                              K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>() {}
 };
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP

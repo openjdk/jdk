@@ -81,7 +81,8 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
   unsigned _max_size;
 
-  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
+  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
+                                     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
   using Node = ResourceHashtableNode<K, V>;
 
 public:
@@ -124,7 +125,9 @@ public:
       ++bucket;
     }
 
-    FREE_C_HEAP_ARRAY(Node*, old_table);
+    if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+      FREE_C_HEAP_ARRAY(Node*, old_table);
+    }
     BASE::_table = new_table;
     BASE::_table_size = new_size;
   }
