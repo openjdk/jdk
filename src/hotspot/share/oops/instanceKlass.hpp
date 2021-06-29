@@ -1240,6 +1240,7 @@ public:
   // Printing
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
+  void print_misc_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st);
 

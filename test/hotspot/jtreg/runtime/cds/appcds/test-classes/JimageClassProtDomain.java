@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+import java.util.ArrayList;
 
 public class JimageClassProtDomain {
     public static void main(String args[]) throws Throwable {
@@ -55,10 +57,29 @@ public class JimageClassProtDomain {
         }
     }
 
+    private static volatile Object dummy = null;
+    private static void allocateMemory(int kilobytes) {
+        ArrayList<byte[]> l = new ArrayList<>();
+        dummy = l;
+        for (int i = kilobytes; i > 0; i -= 1) {
+            l.add(new byte[1024]);
+        }
+        l = null;
+        dummy = null;
+    }
+
+    public static void triggerYoungCollection() {
+        allocateMemory(16*1024);
+    }
+
     private static void testProtectionDomain(String shared, String nonShared)
               throws Throwable {
+        triggerYoungCollection();
         Class c1 = Class.forName(shared);
+        triggerYoungCollection();
         Class c2 = Class.forName(nonShared);
+        triggerYoungCollection();
+        System.gc();
         if (c1.getProtectionDomain() != c2.getProtectionDomain()) {
             System.out.println(c1.getProtectionDomain());
             System.out.println(c1.getProtectionDomain().getCodeSource());

@@ -3328,6 +3328,23 @@ static void print_vtable(vtableEntry* start, int len, outputStream* st) {
   return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
+void InstanceKlass::print_misc_flags(outputStream* st) const {
+  if (is_rewritten())                         st->print("rewritten ");
+  if (has_nonstatic_fields())                 st->print("has_nonstatic_fields ");
+  if (should_verify_class())                  st->print("should_verify_class ");
+  if (is_contended())                         st->print("is_contended ");
+  if (has_nonstatic_concrete_methods())       st->print("has_nonstatic_concrete_methods ");
+  if (declares_nonstatic_concrete_methods())  st->print("declares_nonstatic_concrete_methods ");
+  if (has_been_redefined())                   st->print("has_been_redefined ");
+  if (is_scratch_class())                     st->print("is_scratch_class ");
+  if (is_shared_boot_class())                 st->print("is_shared_boot_class ");
+  if (is_shared_platform_class())             st->print("is_shared_platform_class ");
+  if (is_shared_app_class())                  st->print("is_shared_app_class ");
+  if (has_resolved_methods())                 st->print("has_resolved_methods ");
+  if (is_being_redefined())                   st->print("is_being_redefined ");
+  if (has_contended_annotations())            st->print("has_contended_annotations");
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -3335,6 +3352,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"misc_flags:        "); print_misc_flags(st);                   st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();

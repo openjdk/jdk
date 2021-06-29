@@ -799,6 +799,8 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != NULL) {
     return;
   } else {
+    // record_modified_oops();
+    tty->print_cr("init_handle_locked " INTPTR_FORMAT, p2i(h()));
     dest = _handles.add(h());
   }
 }
