@@ -649,7 +649,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
     if (id2klass_table()->maybe_grow()) {
-      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->size());
+      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 

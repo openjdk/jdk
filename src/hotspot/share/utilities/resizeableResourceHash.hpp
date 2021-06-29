@@ -29,37 +29,104 @@
 
 template<
     typename K, typename V,
+    ResourceObj::allocation_type ALLOC_TYPE,
+    MEMFLAGS MEM_TYPE>
+class ResizeableResourceHashtableStorage : public ResourceObj {
+  using Node = ResourceHashtableNode<K, V>;
+
+protected:
+  unsigned _table_size;
+  Node** _table;
+
+  ResizeableResourceHashtableStorage(unsigned table_size) {
+    _table_size = table_size;
+    _table = alloc_table(table_size);
+  }
+
+  ~ResizeableResourceHashtableStorage() {
+    if (ALLOC_TYPE == C_HEAP) {
+      FREE_C_HEAP_ARRAY(Node*, _table);
+    }
+  }
+
+  Node** alloc_table(unsigned table_size) {
+    Node** table;
+    if (ALLOC_TYPE == C_HEAP) {
+      table = NEW_C_HEAP_ARRAY(Node*, table_size, MEM_TYPE);
+    } else {
+      table = NEW_RESOURCE_ARRAY(Node*, table_size);
+    }
+    memset(table, 0, table_size * sizeof(Node*));
+    return table;
+  }
+
+  unsigned table_size() const {
+    return _table_size;
+  }
+
+  Node** table() const {
+    return _table;
+  }
+};
+
+template<
+    typename K, typename V,
     ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
 class ResizeableResourceHashtable : public ResourceHashtableBase<
-    ResizeableResourceHashtable<K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>,
+    ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
-  unsigned _size;
   unsigned _max_size;
 
-  using BASE = ResourceHashtableBase<ResizeableResourceHashtable, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
+  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>, K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
+  using Node = ResourceHashtableNode<K, V>;
 
 public:
   ResizeableResourceHashtable(unsigned size, unsigned max_size = 0)
-  : BASE(size),
-    _size(size), _max_size(max_size) {}
-  unsigned size_impl() const { return _size; }
+  : BASE(size), _max_size(max_size) {
+    assert(size <= 0x3fffffff && max_size <= 0x3fffffff, "avoid overflow in resize");
+  }
 
   bool maybe_grow(int load_factor = 8) {
-    if (_size >= _max_size) {
+    unsigned old_size = BASE::_table_size;
+    if (old_size >= _max_size) {
       return false;
     }
-    if (BASE::number_of_entries() / int(_size) > load_factor) {
-      int new_size = MIN2<int>(_size * 2, _max_size);
-      BASE::resize(new_size);
-      _size = new_size;
+    if (BASE::number_of_entries() / int(old_size) > load_factor) {
+      unsigned new_size = MIN2<unsigned>(old_size * 2, _max_size);
+      resize(old_size, new_size);
       return true;
     } else {
       return false;
     }
+  }
+
+  void resize(unsigned old_size, unsigned new_size) {
+    Node** old_table = BASE::_table;
+    Node** new_table = BASE::alloc_table(new_size);
+
+    Node* const* bucket = old_table;
+    while (bucket < &old_table[old_size]) {
+      Node* node = *bucket;
+      while (node != NULL) {
+        Node* next = node->_next;
+        unsigned hash = HASH(node->_key);
+        unsigned index = hash % new_size;
+
+        node->_next = new_table[index];
+        new_table[index] = node;
+
+        node = next;
+      }
+      ++bucket;
+    }
+
+    FREE_C_HEAP_ARRAY(Node*, old_table);
+    BASE::_table = new_table;
+    BASE::_table_size = new_size;
   }
 };
 
