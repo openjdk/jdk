@@ -146,10 +146,6 @@ public:
     return VMOp_ZMarkStart;
   }
 
-  virtual bool needs_inactive_gc_locker() const {
-    return true;
-  }
-
   virtual bool do_operation() {
     ZStatTimer timer(ZPhasePauseMarkStart);
     ZServiceabilityPauseTracer tracer;
