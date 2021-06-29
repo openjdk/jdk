@@ -105,7 +105,7 @@ public:
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
 void NativeNMethodBarrier::verify() const {
-  intptr_t addr = (intptr_t) instruction_address();
+  intptr_t addr = (intptr_t) instruction_address() + 4;
   for(unsigned int i = 1; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
     uint32_t inst = *((uint32_t*) addr);
     if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
