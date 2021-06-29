@@ -1188,6 +1188,28 @@ public final class Math {
     }
 
     /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        long x0 = x & 0xffffffffL;
+        long x1 = x >>> 32;
+        long y0 = y & 0xffffffffL;
+        long y1 = y >>> 32;
+
+        long t = x1 * y0 + ((x0 * y0) >>> 32);
+        long z0 = x0 * y1 + (t & 0xffffffffL);
+        long z1 = t >>> 32;
+
+        return x1 * y1 + z1 + (z0 >>> 32);
+    }
+
+    /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
      * There is one special case, if the dividend is the

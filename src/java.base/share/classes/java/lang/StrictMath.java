@@ -990,6 +990,19 @@ public final class StrictMath {
     }
 
     /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        return Math.unsignedMultiplyHigh(x, y);
+    }
+
+    /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
      * There is one special case, if the dividend is the
