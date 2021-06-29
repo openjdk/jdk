@@ -30,6 +30,7 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/frame.hpp"
@@ -53,8 +54,6 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
-
-#include <type_traits>
 
 class SafeThreadsListPtr;
 class ThreadSafepointState;
