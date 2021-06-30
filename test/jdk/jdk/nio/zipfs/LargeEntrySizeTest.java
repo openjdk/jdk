@@ -43,7 +43,8 @@ import java.util.zip.ZipOutputStream;
 /**
  * @test
  * @bug 8190753
- * @summary Verify that opening an outputstream for a large zip entry doesn't run into "Negative initial size" exception
+ * @summary Verify that using zip filesystem for opening an outputstream for a large zip entry doesn't
+ * run into "Negative initial size" exception
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 5g)
  * @run testng/othervm -Xmx4g LargeEntrySizeTest
  */
