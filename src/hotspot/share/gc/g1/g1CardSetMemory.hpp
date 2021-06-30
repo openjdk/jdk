@@ -200,7 +200,7 @@ class G1CardSetAllocator {
   // by this allocator.
 
   static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node);
-  typedef LockFreeStack<G1CardSetContainer, &next_ptr> NodeStack;
+  typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> NodeStack;
 
   volatile bool _transfer_lock;
   NodeStack _free_nodes_list;

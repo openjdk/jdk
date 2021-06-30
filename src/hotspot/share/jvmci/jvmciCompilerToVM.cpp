@@ -148,7 +148,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
     assert(allow_null, "npe");
     return NULL;
   }
-  return thread->as_Java_thread();
+  return JavaThread::cast(thread);
 }
 
 // Entry to native method implementation that transitions
@@ -2279,7 +2279,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
 
     JavaVMAttachArgs attach_args;
     attach_args.version = JNI_VERSION_1_2;
-    attach_args.name = thread->name();
+    attach_args.name = const_cast<char*>(thread->name());
     attach_args.group = NULL;
     JNIEnv* peerJNIEnv;
     if (runtime->GetEnv(thread, (void**) &peerJNIEnv, JNI_VERSION_1_2) == JNI_OK) {

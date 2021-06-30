@@ -75,7 +75,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
 
-    final int prototypeMarkWordOffset = getFieldOffset("Klass::_prototype_header", Integer.class, "markWord");
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");
     final int nextSiblingOffset = getFieldOffset("Klass::_next_sibling", Integer.class, "Klass*");
@@ -152,7 +151,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     /**
      * See {@code markWord::prototype()}.
      */
-    long arrayPrototypeMarkWord() {
+    long prototypeMarkWord() {
         return markWordNoHashInPlace | markWordNoLockInPlace;
     }
 

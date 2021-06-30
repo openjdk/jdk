@@ -153,7 +153,7 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  calling_thread()->as_Java_thread()->make_zombies();
+  JavaThread::cast(calling_thread())->make_zombies();
 }
 
 #endif // !PRODUCT

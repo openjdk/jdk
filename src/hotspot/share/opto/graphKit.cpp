@@ -3524,10 +3524,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   Node* mem = reset_memory();
 
   FastLockNode * flock = _gvn.transform(new FastLockNode(0, obj, box) )->as_FastLock();
-  if (UseBiasedLocking && PrintPreciseBiasedLockingStatistics) {
-    // Create the counters for this fast lock.
-    flock->create_lock_counter(sync_jvms()); // sync_jvms used to get current bci
-  }
 
   // Create the rtm counters for this fast lock if needed.
   flock->create_rtm_lock_counter(sync_jvms()); // sync_jvms used to get current bci

@@ -42,6 +42,20 @@ public class DisambiguateParenthesizedPattern {
                                  ExpressionType.EXPRESSION);
         test.disambiguationTest("((0x1))",
                                  ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a > b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a >> b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a >>> b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a < b | a > b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a << b | a >> b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a << b || a < b | a >>> b)",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("(a < c.d > b)",
+                                 ExpressionType.PATTERN);
     }
 
     private final ParserFactory factory;
