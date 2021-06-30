@@ -625,9 +625,7 @@ class PhaseCFG : public Phase {
   bool trace_opto_pipelining() const { return false; }
 #endif
 
-#ifdef ASSERT
   bool unrelated_load_in_store_null_block(Node* store, Node* load);
-#endif
 
   // Check that block b is in the home loop (or an ancestor) of n, if n is a
   // memory writer.
