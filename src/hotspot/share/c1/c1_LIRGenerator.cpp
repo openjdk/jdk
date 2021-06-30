@@ -2077,7 +2077,7 @@ void LIRGenerator::do_RoundFP(RoundFP* x) {
 }
 
 
-void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
+void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
   BasicType type = x->basic_type();
   LIRItem src(x->object(), this);
   LIRItem off(x->offset(), this);
@@ -2119,7 +2119,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 }
 
 
-void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
+void LIRGenerator::do_UnsafePut(UnsafePut* x) {
   BasicType type = x->basic_type();
   LIRItem src(x->object(), this);
   LIRItem off(x->offset(), this);
@@ -2145,7 +2145,7 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
   access_store_at(decorators, type, src, off.result(), data.result());
 }
 
-void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
+void LIRGenerator::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
   BasicType type = x->basic_type();
   LIRItem src(x->object(), this);
   LIRItem off(x->offset(), this);

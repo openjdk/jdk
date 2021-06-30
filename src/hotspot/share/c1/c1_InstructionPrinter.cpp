@@ -263,11 +263,6 @@ void InstructionPrinter::print_inline_level(BlockBegin* block) {
 
 void InstructionPrinter::print_unsafe_op(UnsafeOp* op, const char* name) {
   output()->print("%s", name);
-  output()->print(".(");
-}
-
-void InstructionPrinter::print_unsafe_object_op(UnsafeObjectOp* op, const char* name) {
-  print_unsafe_op(op, name);
   print_value(op->object());
   output()->print(", ");
   print_value(op->offset());
@@ -803,20 +798,20 @@ void InstructionPrinter::do_RoundFP(RoundFP* x) {
   print_value(x->input());
 }
 
-void InstructionPrinter::do_UnsafeGetObject(UnsafeGetObject* x) {
-  print_unsafe_object_op(x, "UnsafeGetObject");
+void InstructionPrinter::do_UnsafeGet(UnsafeGet* x) {
+  print_unsafe_op(x, x->is_raw() ? "UnsafeGet (raw)" : "UnsafeGet");
   output()->put(')');
 }
 
-void InstructionPrinter::do_UnsafePutObject(UnsafePutObject* x) {
-  print_unsafe_object_op(x, "UnsafePutObject");
+void InstructionPrinter::do_UnsafePut(UnsafePut* x) {
+  print_unsafe_op(x, "UnsafePut");
   output()->print(", value ");
   print_value(x->value());
   output()->put(')');
 }
 
-void InstructionPrinter::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
-  print_unsafe_object_op(x, x->is_add()?"UnsafeGetAndSetObject (add)":"UnsafeGetAndSetObject");
+void InstructionPrinter::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
+  print_unsafe_op(x, x->is_add()?"UnsafeGetAndSet (add)":"UnsafeGetAndSet");
   output()->print(", value ");
   print_value(x->value());
   output()->put(')');

@@ -373,10 +373,10 @@ class GraphBuilder {
   void pop_scope();
   void pop_scope_for_jsr();
 
-  void append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile);
   void append_unsafe_CAS(ciMethod* callee);
-  void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
+  void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
