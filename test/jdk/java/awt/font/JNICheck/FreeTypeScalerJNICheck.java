@@ -25,7 +25,6 @@
 /* @test
  * @bug 8269223
  * @summary Verifies that -Xcheck:jni issues no warnings from freetypeScaler.c
- * @requires os.family == "linux"
  * @library /test/lib
  * @run main FreeTypeScalerJNICheck
  */
