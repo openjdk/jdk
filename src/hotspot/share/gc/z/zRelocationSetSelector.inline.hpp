@@ -146,6 +146,14 @@ inline size_t ZRelocationSetSelector::relocate() const {
   return _small.stats().relocate() + _medium.stats().relocate() + _large.stats().relocate();
 }
 
+inline void ZRelocationSetSelectorGroupStats::reset() {
+  _npages = 0;
+  _total = 0;
+  _live = 0;
+  _empty = 0;
+  _relocate = 0;
+}
+
 inline const ZArray<ZPage*>* ZRelocationSetSelector::small() const {
   return _small.selected();
 }

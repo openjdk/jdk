@@ -34,6 +34,7 @@
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zRelocationSetSelector.hpp"
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zUnload.hpp"
@@ -59,6 +60,7 @@ private:
   ZWeakRootsProcessor _weak_roots_processor;
   ZRelocate           _relocate;
   ZRelocationSet      _relocation_set;
+  ZRelocationSetSelector _selector;
   ZUnload             _unload;
   ZServiceability     _serviceability;
 
@@ -138,6 +140,10 @@ public:
   uintptr_t relocate_object(uintptr_t addr);
   uintptr_t remap_object(uintptr_t addr);
   void relocate();
+
+  // Pinning hooks
+  oop pin_object(oop obj);
+  void unpin_object(oop obj);
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);

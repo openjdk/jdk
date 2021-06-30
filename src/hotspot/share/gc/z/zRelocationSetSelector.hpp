@@ -47,6 +47,7 @@ public:
   size_t live() const;
   size_t empty() const;
   size_t relocate() const;
+  void reset();
 };
 
 class ZRelocationSetSelectorStats {
@@ -85,6 +86,8 @@ public:
                               size_t page_size,
                               size_t object_size_limit);
 
+  void reset();
+
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
   void select();
@@ -108,6 +111,8 @@ private:
 
 public:
   ZRelocationSetSelector();
+
+  void reset();
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);

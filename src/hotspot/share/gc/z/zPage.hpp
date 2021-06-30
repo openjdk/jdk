@@ -44,6 +44,7 @@ private:
   uint64_t           _last_used;
   ZPhysicalMemory    _physical;
   ZListNode<ZPage>   _node;
+  volatile size_t    _critical_pins;
 
   void assert_initialized() const;
 
@@ -108,6 +109,10 @@ public:
 
   bool undo_alloc_object(uintptr_t addr, size_t size);
   bool undo_alloc_object_atomic(uintptr_t addr, size_t size);
+
+  void record_pin();
+  void record_unpin();
+  size_t pin_count() const;
 
   void print_on(outputStream* out) const;
   void print() const;

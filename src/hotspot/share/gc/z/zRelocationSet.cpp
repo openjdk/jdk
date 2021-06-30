@@ -37,7 +37,7 @@ class ZRelocationSetInstallTask : public ZTask {
 private:
   ZForwardingAllocator* const    _allocator;
   ZForwarding**                  _forwardings;
-  const size_t                   _nforwardings;
+  size_t                         _nforwardings;
   ZArrayParallelIterator<ZPage*> _small_iter;
   ZArrayParallelIterator<ZPage*> _medium_iter;
   volatile size_t                _small_next;
@@ -79,19 +79,23 @@ public:
     _forwardings = new (_allocator->alloc(relocation_set_size)) ZForwarding*[_nforwardings];
   }
 
-  ~ZRelocationSetInstallTask() {
-    assert(_allocator->is_full(), "Should be full");
-  }
-
   virtual void work() {
     // Allocate and install forwardings for small pages
     for (ZPage* page; _small_iter.next(&page);) {
+      if (page->pin_count() > 0) {
+        _nforwardings--;
+        continue;
+      }
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
       install_small(forwarding);
     }
 
     // Allocate and install forwardings for medium pages
     for (ZPage* page; _medium_iter.next(&page);) {
+      if (page->pin_count() > 0) {
+        _nforwardings--;
+        continue;
+      }
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
       install_medium(forwarding);
     }

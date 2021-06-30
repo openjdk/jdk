@@ -352,7 +352,6 @@ void ZHeap::select_relocation_set() {
   _page_allocator.enable_deferred_delete();
 
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector;
   ZPageTableIterator pt_iter(&_page_table);
   for (ZPage* page; pt_iter.next(&page);) {
     if (!page->is_relocatable()) {
@@ -362,37 +361,24 @@ void ZHeap::select_relocation_set() {
 
     if (page->is_marked()) {
       // Register live page
-      selector.register_live_page(page);
+      _selector.register_live_page(page);
     } else {
       // Register empty page
-      selector.register_empty_page(page);
+      _selector.register_empty_page(page);
 
       // Reclaim empty pages in bulk
-      free_empty_pages(&selector, 64 /* bulk */);
+      free_empty_pages(&_selector, 64 /* bulk */);
     }
   }
 
   // Reclaim remaining empty pages
-  free_empty_pages(&selector, 0 /* bulk */);
+  free_empty_pages(&_selector, 0 /* bulk */);
 
   // Allow pages to be deleted
   _page_allocator.disable_deferred_delete();
 
   // Select relocation set
-  selector.select();
-
-  // Install relocation set
-  _relocation_set.install(&selector);
-
-  // Setup forwarding table
-  ZRelocationSetIterator rs_iter(&_relocation_set);
-  for (ZForwarding* forwarding; rs_iter.next(&forwarding);) {
-    _forwarding_table.insert(forwarding);
-  }
-
-  // Update statistics
-  ZStatRelocation::set_at_select_relocation_set(selector.stats());
-  ZStatHeap::set_at_select_relocation_set(selector.stats());
+  _selector.select();
 }
 
 void ZHeap::reset_relocation_set() {
@@ -408,6 +394,22 @@ void ZHeap::reset_relocation_set() {
 
 void ZHeap::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+
+  // Install relocation set
+  _relocation_set.install(&_selector);
+
+  // Setup forwarding table
+  ZRelocationSetIterator rs_iter(&_relocation_set);
+  for (ZForwarding* forwarding; rs_iter.next(&forwarding);) {
+    _forwarding_table.insert(forwarding);
+  }
+
+  // Update statistics
+  ZStatRelocation::set_at_select_relocation_set(_selector.stats());
+  ZStatHeap::set_at_select_relocation_set(_selector.stats());
+
+  // Reset relocation set selector
+  _selector.reset();
 
   // Finish unloading stale metadata and nmethods
   _unload.finish();
@@ -431,6 +433,15 @@ void ZHeap::relocate() {
 
   // Update statistics
   ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
+}
+
+oop ZHeap::pin_object(oop o) {
+  _page_table.get(ZOop::to_address(o))->record_pin();
+  return o;
+}
+
+void ZHeap::unpin_object(oop o) {
+  _page_table.get(ZOop::to_address(o))->record_unpin();
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {

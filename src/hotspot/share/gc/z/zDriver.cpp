@@ -79,21 +79,12 @@ uint ZDriverRequest::nworkers() const {
 class VM_ZOperation : public VM_Operation {
 private:
   const uint _gc_id;
-  bool       _gc_locked;
   bool       _success;
 
 public:
   VM_ZOperation() :
       _gc_id(GCId::current()),
-      _gc_locked(false),
       _success(false) {}
-
-  virtual bool needs_inactive_gc_locker() const {
-    // An inactive GC locker is needed in operations where we change the bad
-    // mask or move objects. Changing the bad mask will invalidate all oops,
-    // which makes it conceptually the same thing as moving all objects.
-    return false;
-  }
 
   virtual bool skip_thread_oop_barriers() const {
     return true;
@@ -107,12 +98,6 @@ public:
   }
 
   virtual void doit() {
-    // Abort if GC locker state is incompatible
-    if (needs_inactive_gc_locker() && GCLocker::check_active_before_gc()) {
-      _gc_locked = true;
-      return;
-    }
-
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
     IsGCActiveMark gc_active_mark;
@@ -131,10 +116,6 @@ public:
     Heap_lock->unlock();
   }
 
-  bool gc_locked() const {
-    return _gc_locked;
-  }
-
   bool success() const {
     return _success;
   }
@@ -144,10 +125,6 @@ class VM_ZMarkStart : public VM_ZOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStart;
-  }
-
-  virtual bool needs_inactive_gc_locker() const {
-    return true;
   }
 
   virtual bool do_operation() {
@@ -180,10 +157,6 @@ public:
     return VMOp_ZRelocateStart;
   }
 
-  virtual bool needs_inactive_gc_locker() const {
-    return true;
-  }
-
   virtual bool do_operation() {
     ZStatTimer timer(ZPhasePauseRelocateStart);
     ZServiceabilityPauseTracer tracer;
@@ -208,8 +181,7 @@ public:
 };
 
 ZDriver::ZDriver() :
-    _gc_cycle_port(),
-    _gc_locker_port() {
+    _gc_cycle_port() {
   set_name("ZDriver");
   create_and_start();
 }
@@ -244,11 +216,6 @@ void ZDriver::collect(const ZDriverRequest& request) {
     _gc_cycle_port.send_async(request);
     break;
 
-  case GCCause::_gc_locker:
-    // Restart VM operation previously blocked by the GC locker
-    _gc_locker_port.signal();
-    break;
-
   case GCCause::_wb_breakpoint:
     ZBreakpoint::start_gc();
     _gc_cycle_port.send_async(request);
@@ -263,21 +230,9 @@ void ZDriver::collect(const ZDriverRequest& request) {
 
 template <typename T>
 bool ZDriver::pause() {
-  for (;;) {
-    T op;
-    VMThread::execute(&op);
-    if (op.gc_locked()) {
-      // Wait for GC to become unlocked and restart the VM operation
-      ZStatTimer timer(ZCriticalPhaseGCLockerStall);
-      _gc_locker_port.wait();
-      continue;
-    }
-
-    // Notify VM operation completed
-    _gc_locker_port.ack();
-
-    return op.success();
-  }
+  T op;
+  VMThread::execute(&op);
+  return op.success();
 }
 
 void ZDriver::pause_mark_start() {

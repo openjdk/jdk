@@ -53,6 +53,12 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _forwarding_entries(0),
     _stats() {}
 
+void ZRelocationSetSelectorGroup::reset() {
+  _live_pages.clear_and_deallocate();
+  _forwarding_entries = 0;
+  _stats.reset();
+}
+
 bool ZRelocationSetSelectorGroup::is_disabled() {
   // Medium pages are disabled when their page size is zero
   return _page_type == ZPageTypeMedium && _page_size == 0;
@@ -181,6 +187,13 @@ ZRelocationSetSelector::ZRelocationSetSelector() :
     _medium("Medium", ZPageTypeMedium, ZPageSizeMedium, ZObjectSizeLimitMedium),
     _large("Large", ZPageTypeLarge, 0 /* page_size */, 0 /* object_size_limit */),
     _empty_pages() {}
+
+void ZRelocationSetSelector::reset() {
+  _small.reset();
+  _medium.reset();
+  _large.reset();
+  _empty_pages.clear_and_deallocate();
+}
 
 void ZRelocationSetSelector::select() {
   // Select pages to relocate. The resulting relocation set will be

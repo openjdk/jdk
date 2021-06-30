@@ -113,6 +113,11 @@ public:
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
 
+  // Pinning hooks
+  virtual oop pin_object(JavaThread* thread, oop obj);
+  virtual void unpin_object(JavaThread* thread, oop obj);
+  virtual bool supports_object_pinning() const { return true; }
+
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;

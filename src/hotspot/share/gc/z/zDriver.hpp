@@ -49,7 +49,6 @@ public:
 class ZDriver : public ConcurrentGCThread {
 private:
   ZMessagePort<ZDriverRequest> _gc_cycle_port;
-  ZRendezvousPort              _gc_locker_port;
 
   template <typename T> bool pause();
 

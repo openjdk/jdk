@@ -41,7 +41,8 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
     _livemap(object_max_count()),
     _last_used(0),
     _physical(pmem),
-    _node() {
+    _node(),
+    _critical_pins(0) {
   assert_initialized();
 }
 
@@ -116,6 +117,20 @@ ZPage* ZPage::split_committed() {
 
   // Create new page
   return new ZPage(vmem, pmem);
+}
+
+void ZPage::record_pin() {
+  Atomic::add(&_critical_pins, (size_t)1);
+}
+
+void ZPage::record_unpin() {
+  // assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", _seqnum);
+  assert(pin_count() > 0, "Region " UINT32_FORMAT " should have non-zero pins", _seqnum);
+  Atomic::sub(&_critical_pins, (size_t)1);
+}
+
+size_t ZPage::pin_count() const {
+  return Atomic::load(&_critical_pins);
 }
 
 void ZPage::print_on(outputStream* out) const {

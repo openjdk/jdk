@@ -291,6 +291,15 @@ void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
 }
 
+oop ZCollectedHeap::pin_object(JavaThread* thr, oop o) {
+  _heap.pin_object(o);
+  return o;
+}
+
+void ZCollectedHeap::unpin_object(JavaThread* thr, oop o) {
+  _heap.unpin_object(o);
+}
+
 void ZCollectedHeap::prepare_for_verify() {
   // Does nothing
 }

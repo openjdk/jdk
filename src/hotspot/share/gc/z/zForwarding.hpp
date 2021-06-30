@@ -68,6 +68,7 @@ public:
   size_t object_alignment_shift() const;
   void object_iterate(ObjectClosure *cl);
 
+  ZPage* get_page() const { return _page; }
   bool retain_page();
   ZPage* claim_page();
   void release_page();
