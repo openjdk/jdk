@@ -26,8 +26,12 @@ package sun.net.httpserver;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.text.MessageFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.Headers;
@@ -109,9 +113,40 @@ public final class OutputFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-        filter.doFilter(exchange, chain);
+        try  {
+            filter.doFilter(exchange, chain);
+        } catch (Throwable t) {
+            if (!outputLevel.equals(OutputLevel.NONE)) {
+                reportError(getMessage("err.server.handle.failed", t.getMessage()));
+            }
+            throw t;
+        }
     }
 
     @Override
     public String description() { return filter.description(); }
+
+    private void reportError(String message) {
+        printStream.println(getMessage("error.prefix") + " " + message);
+    }
+
+    private static String getMessage(String key, Object... args) {
+        try {
+            return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
+        } catch (MissingResourceException e) {
+            throw new InternalError("Missing message: " + key);
+        }
+    }
+
+    private static class ResourceBundleHelper {
+        static final ResourceBundle bundle;
+
+        static {
+            try {
+                bundle = ResourceBundle.getBundle("sun.net.httpserver.simpleserver.resources.simpleserver");
+            } catch (MissingResourceException e) {
+                throw new InternalError("Cannot find simpleserver resource bundle for locale " + Locale.getDefault());
+            }
+        }
+    }
 }

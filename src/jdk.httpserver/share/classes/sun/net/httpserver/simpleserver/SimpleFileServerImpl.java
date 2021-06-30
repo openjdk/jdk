@@ -133,9 +133,8 @@ final class SimpleFileServerImpl {
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
-        } catch (Exception e) {
-            reportError(getMessage("err.server.config.failed", e.getMessage()));
-            e.printStackTrace(out);
+        } catch (Throwable t) {
+            reportError(getMessage("err.server.config.failed", t.getMessage()));
             return Result.SYSERR.statusCode;
         } finally {
             out.flush();

@@ -82,24 +82,6 @@ public class ToolProviderPositiveTest {
         Files.createFile(TEST_FILE);
     }
 
-    //    @Test
-    // TODO: which addresses do we expect to succeed?
-    public void testBindAddress() throws SocketException {
-        NetworkInterface.networkInterfaces()
-                .flatMap(NetworkInterface::inetAddresses)
-                .map(InetAddress::getHostAddress)
-                .forEach(addr -> {
-                    try {
-                        simpleserver(JAVA, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-b", addr)
-                                .resultChecker(r -> assertContains(r.output,
-                                        "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                        "http://" + addr));
-                    } catch (Exception e) {
-                        throw new AssertionError(e);
-                    }
-                });
-    }
-
     @DataProvider
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 

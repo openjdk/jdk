@@ -77,7 +77,7 @@ public class CommandLineNegativeTest {
         simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .assertNormalTermination()
                 .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option(s): " + opt)
+                        assertContains(r.output, "Error: unknown option: " + opt)
                 );
     }
 
@@ -101,7 +101,7 @@ public class CommandLineNegativeTest {
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, arg, arg)
                 .assertNormalTermination()
                 .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option(s): " + arg)
+                        assertContains(r.output, "Error: unknown option: " + arg)
                 );
     }
 

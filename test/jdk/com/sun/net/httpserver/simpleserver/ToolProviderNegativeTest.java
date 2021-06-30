@@ -83,7 +83,7 @@ public class ToolProviderNegativeTest {
         simpleserver("--badOption")
             .assertExternalTermination()
             .resultChecker(r ->
-                assertContains(r.output, "Error: unknown option(s): --badOption")
+                assertContains(r.output, "Error: unknown option: --badOption")
             );
     }
 
@@ -107,7 +107,7 @@ public class ToolProviderNegativeTest {
         simpleserver(opt, arg, arg)
             .assertExternalTermination()
             .resultChecker(r ->
-                assertContains(r.output, "Error: unknown option(s): " + arg)
+                assertContains(r.output, "Error: unknown option: " + arg)
             );
     }
 
