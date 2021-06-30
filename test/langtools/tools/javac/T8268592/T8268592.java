@@ -24,8 +24,6 @@
 /* @test
  * @bug 8268592
  * @summary JDK-8262891 causes an NPE in Lint.augment
- * @modules java.compiler
- *          jdk.compiler
  * @compile T8268592.java
  */
 
