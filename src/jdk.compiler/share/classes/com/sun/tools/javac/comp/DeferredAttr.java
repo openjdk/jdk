@@ -1217,6 +1217,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     freeArgVars.nonEmpty()) {
                 stuckVars.addAll(freeArgVars);
                 depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
+                depVars.addAll(inferenceContext.freeVarsIn(descType.getThrownTypes()));
             }
             scanLambdaBody(tree, descType.getReturnType());
         }
@@ -1238,6 +1239,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     tree.getOverloadKind() != JCMemberReference.OverloadKind.UNOVERLOADED) {
                 stuckVars.addAll(freeArgVars);
                 depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
+                depVars.addAll(inferenceContext.freeVarsIn(descType.getThrownTypes()));
             }
         }
 

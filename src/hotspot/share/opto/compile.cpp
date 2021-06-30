@@ -4515,7 +4515,9 @@ bool Compile::coarsened_locks_consistent() {
     bool modified = false; // track locks kind modifications
     Lock_List* locks_list = (Lock_List*)_coarsened_locks.at(i);
     uint size = locks_list->size();
-    if (size != locks_list->origin_cnt()) {
+    if (size == 0) {
+      unbalanced = false; // All locks were eliminated - good
+    } else if (size != locks_list->origin_cnt()) {
       unbalanced = true; // Some locks were removed from list
     } else {
       for (uint j = 0; j < size; j++) {
@@ -4580,10 +4582,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
           modified++;
         }
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }
@@ -4604,10 +4608,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }

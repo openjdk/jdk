@@ -26,6 +26,9 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/filemap.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -106,11 +109,13 @@
 class BootstrapInfo;
 class ClassFileStream;
 class Dictionary;
-class DumpTimeSharedClassInfo;
+class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
 class LambdaProxyClassDictionary;
-class RunTimeSharedClassInfo;
+class RunTimeClassInfo;
 class RunTimeSharedDictionary;
+class DumpTimeLambdaProxyClassDictionary;
+class LambdaProxyClassKey;
 
 class SharedClassLoadingMark {
  private:
@@ -139,92 +144,30 @@ public:
   };
 
 private:
-  // These _shared_xxxs arrays are used to initialize the java.lang.Package and
-  // java.security.ProtectionDomain objects associated with each shared class.
-  //
-  // See SystemDictionaryShared::init_security_info for more info.
-  static OopHandle _shared_protection_domains;
-  static OopHandle _shared_jar_urls;
-  static OopHandle _shared_jar_manifests;
+
+  static DumpTimeSharedClassTable* _dumptime_table;
+  static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
+  // SystemDictionaries in the base layer static archive
+  static RunTimeSharedDictionary _builtin_dictionary;
+  static RunTimeSharedDictionary _unregistered_dictionary;
+  static LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
+  // SystemDictionaries in the top layer dynamic archive
+  static RunTimeSharedDictionary _dynamic_builtin_dictionary;
+  static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
+  static LambdaProxyClassDictionary _dynamic_lambda_proxy_class_dictionary;
 
   static InstanceKlass* load_shared_class_for_builtin_loader(
                                                Symbol* class_name,
                                                Handle class_loader,
                                                TRAPS);
-  static Handle get_package_name(Symbol*  class_name, TRAPS);
-
-  static PackageEntry* get_package_entry_from_class(InstanceKlass* ik, Handle class_loader);
-
-
-  // Package handling:
-  //
-  // 1. For named modules in the runtime image
-  //    BOOT classes: Reuses the existing JVM_GetSystemPackage(s) interfaces
-  //                  to get packages in named modules for shared classes.
-  //                  Package for non-shared classes in named module is also
-  //                  handled using JVM_GetSystemPackage(s).
-  //
-  //    APP  classes: VM calls ClassLoaders.AppClassLoader::definePackage(String, Module)
-  //                  to define package for shared app classes from named
-  //                  modules.
-  //
-  //    PLATFORM  classes: VM calls ClassLoaders.PlatformClassLoader::definePackage(String, Module)
-  //                  to define package for shared platform classes from named
-  //                  modules.
-  //
-  // 2. For unnamed modules
-  //    BOOT classes: Reuses the existing JVM_GetSystemPackage(s) interfaces to
-  //                  get packages for shared boot classes in unnamed modules.
-  //
-  //    APP  classes: VM calls ClassLoaders.AppClassLoader::defineOrCheckPackage()
-  //                  with with the manifest and url from archived data.
-  //
-  //    PLATFORM  classes: No package is defined.
-  //
-  // The following two define_shared_package() functions are used to define
-  // package for shared APP and PLATFORM classes.
-  static void define_shared_package(Symbol*  class_name,
-                                    Handle class_loader,
-                                    Handle manifest,
-                                    Handle url,
-                                    TRAPS);
-
-  static Handle get_shared_jar_manifest(int shared_path_index, TRAPS);
-  static Handle get_shared_jar_url(int shared_path_index, TRAPS);
-  static Handle get_protection_domain_from_classloader(Handle class_loader,
-                                                       Handle url, TRAPS);
-  static Handle get_shared_protection_domain(Handle class_loader,
-                                             int shared_path_index,
-                                             Handle url,
-                                             TRAPS);
-  static Handle get_shared_protection_domain(Handle class_loader,
-                                             ModuleEntry* mod, TRAPS);
-
-  static void atomic_set_array_index(OopHandle array, int index, oop o);
-
-  static oop shared_protection_domain(int index);
-  static void atomic_set_shared_protection_domain(int index, oop pd) {
-    atomic_set_array_index(_shared_protection_domains, index, pd);
-  }
-  static void allocate_shared_protection_domain_array(int size, TRAPS);
-  static oop shared_jar_url(int index);
-  static void atomic_set_shared_jar_url(int index, oop url) {
-    atomic_set_array_index(_shared_jar_urls, index, url);
-  }
-  static void allocate_shared_jar_url_array(int size, TRAPS);
-  static oop shared_jar_manifest(int index);
-  static void atomic_set_shared_jar_manifest(int index, oop man) {
-    atomic_set_array_index(_shared_jar_manifests, index, man);
-  }
-  static void allocate_shared_jar_manifest_array(int size, TRAPS);
   static InstanceKlass* acquire_class_for_current_thread(
                                  InstanceKlass *ik,
                                  Handle class_loader,
                                  Handle protection_domain,
                                  const ClassFileStream* cfs,
                                  TRAPS);
-  static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
-  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
+  static DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -245,10 +188,9 @@ private:
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
-  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
-  static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* static_dict,
+  static const RunTimeClassInfo* find_record(RunTimeSharedDictionary* static_dict,
                                                    RunTimeSharedDictionary* dynamic_dict,
                                                    Symbol* name);
 
@@ -307,6 +249,8 @@ public:
                                      Symbol* method_type,
                                      Method* member_method,
                                      Symbol* instantiated_method_type, TRAPS) NOT_CDS_RETURN;
+  static void add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
+                                                             InstanceKlass* proxy_klass) NOT_CDS_RETURN;
   static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
                                                       Symbol* invoked_name,
                                                       Symbol* invoked_type,
@@ -324,7 +268,7 @@ public:
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static void check_excluded_classes();
-  static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
+  static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
@@ -341,11 +285,9 @@ public:
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
-  static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
+  static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
-  static Handle create_jar_manifest(const char* man, size_t size, TRAPS) NOT_CDS_RETURN_(Handle());
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
-
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 
 #ifdef ASSERT

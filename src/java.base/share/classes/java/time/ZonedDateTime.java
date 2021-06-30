@@ -814,13 +814,12 @@ public final class ZonedDateTime
     @Override  // override for Javadoc and performance
     public int get(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS:
-                    throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS:
-                    return getOffset().getTotalSeconds();
-            }
-            return dateTime.get(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field " +
+                                         "'InstantSeconds' for get() method, use getLong() instead");
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.get(field);
+            };
         }
         return ChronoZonedDateTime.super.get(field);
     }
@@ -851,11 +850,11 @@ public final class ZonedDateTime
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return dateTime.getLong(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.getLong(field);
+            };
         }
         return field.getFrom(this);
     }

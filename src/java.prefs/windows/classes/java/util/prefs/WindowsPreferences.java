@@ -44,10 +44,14 @@ import sun.util.logging.PlatformLogger;
  * @since 1.4
  */
 
-@SuppressWarnings("removal")
 class WindowsPreferences extends AbstractPreferences {
 
     static {
+        loadPrefsLib();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadPrefsLib() {
         PrivilegedAction<Void> load = () -> {
             System.loadLibrary("prefs");
             return null;

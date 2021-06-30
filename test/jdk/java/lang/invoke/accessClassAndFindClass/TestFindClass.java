@@ -24,13 +24,15 @@
  */
 
 /* @test
- * @bug 8150782 8207027
- * @compile TestFindClass.java TestCls.java
- * @run testng/othervm -ea -esa test.java.lang.invoke.t8150782.TestFindClass
+ * @bug 8150782 8207027 8266269
+ * @compile TestFindClass.java TestCls.java p/Foo.java q/Bar.java
+ * @run testng/othervm -ea -esa test.java.lang.invoke.TestFindClass
  */
-package test.java.lang.invoke.t8150782;
+package test.java.lang.invoke;
 
 import java.lang.invoke.*;
+import p.Foo;
+import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
@@ -40,7 +42,7 @@ import org.testng.annotations.*;
 
 public class TestFindClass {
 
-    private static final String PACKAGE_PREFIX = "test.java.lang.invoke.t8150782.";
+    private static final String PACKAGE_PREFIX = "test.java.lang.invoke.";
 
     private static boolean initializedClass1;
 
@@ -94,4 +96,18 @@ public class TestFindClass {
         lookup().findClass(PACKAGE_PREFIX + "TestCls$PrivateSIC");
     }
 
+    /**
+     * Verify that a protected Q is as accessible as a public Q during linkage
+     * (see JLS 15.12.4.3).
+     */
+    @Test
+    public void protectedInnerClass() throws IllegalAccessException, ClassNotFoundException {
+        lookup().findClass("p.Foo$T");
+        lookup().findClass("[Lp.Foo$T;");
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void illegalArgument() throws IllegalAccessException, ClassNotFoundException {
+        lookup().findClass(null);
+    }
 }

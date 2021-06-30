@@ -1972,9 +1972,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
-// UseOptoBiasInlining
-#define XorXNode     XorLNode
-#define StoreXConditionalNode StoreLConditionalNode
+// For shenandoahSupport
 #define LoadXNode    LoadLNode
 #define StoreXNode   StoreLNode
 // Opcodes
@@ -2020,9 +2018,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
-// UseOptoBiasInlining
-#define XorXNode     XorINode
-#define StoreXConditionalNode StoreIConditionalNode
+// For shenandoahSupport
 #define LoadXNode    LoadINode
 #define StoreXNode   StoreINode
 // Opcodes

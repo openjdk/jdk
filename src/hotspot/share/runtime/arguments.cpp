@@ -1110,7 +1110,14 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
   if (_java_class_path != NULL) {
     char* path = _java_class_path->value();
-    st->print_cr("java_class_path (initial): %s", strlen(path) == 0 ? "<not set>" : path );
+    size_t len = strlen(path);
+    st->print("java_class_path (initial): ");
+    // Avoid using st->print_cr() because path length maybe longer than O_BUFLEN.
+    if (len == 0) {
+      st->print_raw_cr("<not set>");
+    } else {
+      st->print_raw_cr(path, (int)len);
+    }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
@@ -3105,10 +3112,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
-    // Disable biased locking now as it interferes with the clean up of
-    // the archived Klasses and Java string objects (at dump time only).
-    UseBiasedLocking = false;
-
     // Compiler threads may concurrently update the class metadata (such as method entries), so it's
     // unsafe with DumpSharedSpaces (which modifies the class metadata in place). Let's disable
     // compiler just to be safe.
@@ -4022,30 +4025,9 @@ jint Arguments::apply_ergo() {
     return code;
   }
 
-  // Turn off biased locking for locking debug mode flags,
-  // which are subtly different from each other but neither works with
-  // biased locking
-  if (UseHeavyMonitors
-#ifdef COMPILER1
-      || !UseFastLocking
-#endif // COMPILER1
-#if INCLUDE_JVMCI
-      || !JVMCIUseFastLocking
-#endif
-    ) {
-    if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
-      // flag set to true on command line; warn the user that they
-      // can't enable biased locking here
-      warning("Biased Locking is not supported with locking debug flags"
-              "; ignoring UseBiasedLocking flag." );
-    }
-    UseBiasedLocking = false;
-  }
-
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
-  FLAG_SET_DEFAULT(UseBiasedLocking, false);
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -4076,18 +4058,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-  // Apply CPU specific policy for the BiasedLocking
-  if (UseBiasedLocking) {
-    if (!VM_Version::use_biased_locking() &&
-        !(FLAG_IS_CMDLINE(UseBiasedLocking))) {
-      UseBiasedLocking = false;
-    }
-  }
 #ifdef COMPILER2
-  if (!UseBiasedLocking) {
-    UseOptoBiasInlining = false;
-  }
-
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");

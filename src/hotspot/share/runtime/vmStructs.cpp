@@ -266,7 +266,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
-  nonstatic_field(Klass,                       _prototype_header,                             markWord)                              \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
@@ -2630,33 +2629,24 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                           \
   declare_constant(markWord::age_bits)                                    \
   declare_constant(markWord::lock_bits)                                   \
-  declare_constant(markWord::biased_lock_bits)                            \
   declare_constant(markWord::max_hash_bits)                               \
   declare_constant(markWord::hash_bits)                                   \
                                                                           \
   declare_constant(markWord::lock_shift)                                  \
-  declare_constant(markWord::biased_lock_shift)                           \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \
-  declare_constant(markWord::biased_lock_mask)                            \
-  declare_constant(markWord::biased_lock_mask_in_place)                   \
-  declare_constant(markWord::biased_lock_bit_in_place)                    \
   declare_constant(markWord::age_mask)                                    \
   declare_constant(markWord::age_mask_in_place)                           \
-  declare_constant(markWord::epoch_mask)                                  \
-  declare_constant(markWord::epoch_mask_in_place)                         \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
-  declare_constant(markWord::biased_lock_alignment)                       \
                                                                           \
   declare_constant(markWord::locked_value)                                \
   declare_constant(markWord::unlocked_value)                              \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
-  declare_constant(markWord::biased_lock_pattern)                         \
                                                                           \
   declare_constant(markWord::no_hash)                                     \
   declare_constant(markWord::no_hash_in_place)                            \
