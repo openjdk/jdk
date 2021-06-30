@@ -2254,12 +2254,12 @@ bool Method::is_method_id(jmethodID mid) {
 Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
   if (mid == NULL) return NULL;
   Method* o = resolve_jmethod_id(mid);
-  if (o == NULL || o == JNIMethodBlock::_free_method ||
-      !o->method_holder()->is_loader_alive() ||
-      !is_valid_method(o)) {
+  if (o == NULL || o == JNIMethodBlock::_free_method) {
     return NULL;
   }
-  return o;
+  // Method should otherwise be valid. Assert for testing.
+  assert(is_valid_method(o), "should be valid jmethodid");
+  return o->method_holder()->is_loader_alive() ? o : NULL;
 };
 
 void Method::set_on_stack(const bool value) {
