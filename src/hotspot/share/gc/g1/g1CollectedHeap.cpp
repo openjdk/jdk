@@ -4213,6 +4213,10 @@ public:
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
+      assert(!hr->is_continues_humongous(),
+             "trying to add code root " PTR_FORMAT " in continuation of humongous region " HR_FORMAT
+             " starting at " HR_FORMAT,
+             p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
       // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
       hr->add_strong_code_root_locked(_nm);
@@ -4235,6 +4239,10 @@ public:
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
+      assert(!hr->is_continues_humongous(),
+             "trying to remove code root " PTR_FORMAT " in continuation of humongous region " HR_FORMAT
+             " starting at " HR_FORMAT,
+             p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
       hr->remove_strong_code_root(_nm);
     }
