@@ -220,12 +220,12 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx invalid_id = -1;
   int log_fd;
   if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
-    static char name_buffer[O_BUFLEN];
     if (ErrorFileToStdout) {
       log_fd = 1;
     } else if (ErrorFileToStderr) {
       log_fd = 2;
     } else {
+      static char name_buffer[O_BUFLEN];
       log_fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
       if (log_fd != -1) {
         _fatal_log_filename = name_buffer;
