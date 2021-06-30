@@ -2906,6 +2906,8 @@ void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_
 
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
+// The code relies on the fact that GCTraceTimeWrapper stores the string passed
+// initially as a reference only, so that we can modify it as needed.
 class G1YoungGCTraceTime {
   G1GCPauseType _pause_type;
 
