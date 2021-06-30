@@ -67,7 +67,7 @@ public class TestEvacuationFailure {
         private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
 
         public static void main(String [] args) {
-            largeObject = new byte[16*1024*1024];
+            largeObject = new byte[16 * 1024 * 1024];
             System.out.println("Creating garbage");
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)

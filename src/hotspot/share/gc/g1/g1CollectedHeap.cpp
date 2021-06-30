@@ -2914,7 +2914,7 @@ class G1YoungGCTraceTime {
 
   GCTraceTime(Info, gc) _tt;
 
-  char* update_young_gc_name() {
+  const char* update_young_gc_name() {
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
              "Pause Young (%s)%s",
