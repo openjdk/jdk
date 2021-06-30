@@ -411,9 +411,6 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = T_BYTE;
 
-  if (num_elem < 4)
-    return false;
-
   if (!arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
