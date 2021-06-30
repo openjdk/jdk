@@ -47,7 +47,7 @@ volatile bool JVMCI::_in_shutdown = false;
 StringEventLog* JVMCI::_events = NULL;
 StringEventLog* JVMCI::_verbose_events = NULL;
 volatile intx JVMCI::_fatal_log_init_thread = -1;
-volatile outputStream* JVMCI::_fatal_log_stream = NULL;
+volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = NULL;
 
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
@@ -218,18 +218,17 @@ bool JVMCI::in_shutdown() {
 void JVMCI::fatal_log(const char* buf, size_t count) {
   intx current_thread_id = os::current_thread_id();
   intx invalid_id = -1;
+  int log_fd;
   if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
     static char name_buffer[O_BUFLEN];
-    static fdStream log(-1);
     if (ErrorFileToStdout) {
-      log.set_fd(1);
+      log_fd = 1;
     } else if (ErrorFileToStderr) {
-      log.set_fd(2);
+      log_fd = 2;
     } else {
-      int fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
-      if (fd != -1) {
+      log_fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
+      if (log_fd != -1) {
         _fatal_log_filename = name_buffer;
-        log.set_fd(fd);
       } else {
         int e = errno;
         tty->print("Can't open JVMCI shared library error report file. Error: ");
@@ -237,22 +236,22 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
         tty->print_cr("JVMCI shared library error report will be written to console.");
 
         // See notes in VMError::report_and_die about hard coding tty to 1
-        log.set_fd(1);
+        log_fd = 1;
       }
-      _fatal_log_stream = &log;
     }
+    _fatal_log_fd = log_fd;
   } else {
     // Another thread won the race to initialize the stream. Give it time
     // to complete initialization. VM locks cannot be used as the current
     // thread might not be attached to the VM (e.g. a native thread started
     // within libjvmci).
-    while (_fatal_log_stream == NULL) {
+    while (_fatal_log_fd == -1) {
       os::naked_short_sleep(50);
     }
   }
-  outputStream* out = (outputStream*) _fatal_log_stream;
-  out->write(buf, count);
-  out->flush();
+  fdStream log(_fatal_log_fd);
+  log.write(buf, count);
+  log.flush();
 }
 
 void JVMCI::vlog(int level, const char* format, va_list ap) {

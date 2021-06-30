@@ -74,14 +74,14 @@ class JVMCI : public AllStatic {
   // Access to the HotSpot heap based JVMCIRuntime
   static JVMCIRuntime* _java_runtime;
 
-  // The stream to which fatal_log() writes. The stream is configured on
+  // The file descriptor to which fatal_log() writes. Initialized on
   // first call to fatal_log().
-  static volatile outputStream* _fatal_log_stream;
+  static volatile int _fatal_log_fd;
 
-  // The path of the file underlying _fatal_log_stream if it is a fileStream.
+  // The path of the file underlying _fatal_log_fd if it is a normal file.
   static const char* _fatal_log_filename;
 
-  // Native thread id of thread that will initialize _fatal_log_stream.
+  // Native thread id of thread that will initialize _fatal_log_fd.
   static volatile intx _fatal_log_init_thread;
 
   // JVMCI event log (shows up in hs_err crash logs).
