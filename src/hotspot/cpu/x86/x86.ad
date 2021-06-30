@@ -7454,7 +7454,8 @@ instruct cmpvptest_anytrue_evex(rFlagsReg cr, legVec src1, legVec src2, immI_0 z
 
 //------------------------------------- LoadMask --------------------------------------------
 
-instruct loadMask(vec dst, vec src) %{
+instruct loadMask(legVec dst, legVec src) %{
+  predicate(!VM_Version::supports_avx512vlbw());
   match(Set dst (VectorLoadMask src));
   effect(TEMP dst);
   format %{ "vector_loadmask_byte $dst,$src\n\t" %}
@@ -7462,7 +7463,21 @@ instruct loadMask(vec dst, vec src) %{
     int vlen_in_bytes = vector_length_in_bytes(this);
     BasicType elem_bt = vector_element_basic_type(this);
 
-    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt);
+    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt, true);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct loadMask_evex(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorLoadMask src));
+  effect(TEMP dst);
+  format %{ "vector_loadmask_byte $dst,$src\n\t" %}
+  ins_encode %{
+    int vlen_in_bytes = vector_length_in_bytes(this);
+    BasicType elem_bt = vector_element_basic_type(this);
+
+    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt, false);
   %}
   ins_pipe( pipe_slow );
 %}

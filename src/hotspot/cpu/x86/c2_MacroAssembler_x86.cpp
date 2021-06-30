@@ -1462,7 +1462,7 @@ void C2_MacroAssembler::evscatter(BasicType typ, Register base, XMMRegister idx,
   }
 }
 
-void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt) {
+void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy) {
   if (vlen_in_bytes <= 16) {
     pxor (dst, dst);
     psubb(dst, src);
@@ -1477,10 +1477,12 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
       default: assert(false, "%s", type2name(elem_bt));
     }
   } else {
+    assert(!is_legacy || !is_subword_type(elem_bt) || vlen_in_bytes < 64, "");
     int vlen_enc = vector_length_encoding(vlen_in_bytes);
 
     vpxor (dst, dst, dst, vlen_enc);
-    vpsubb(dst, dst, src, vlen_enc);
+    vpsubb(dst, dst, src, is_legacy ? AVX_256bit : vlen_enc);
+
     switch (elem_bt) {
       case T_BYTE:   /* nothing to do */            break;
       case T_SHORT:  vpmovsxbw(dst, dst, vlen_enc); break;
