@@ -278,7 +278,7 @@ public class Switches {
     String testStringWithGuards1(E e) {
         switch (e != null ? e.name() : null) {
             case "A": return "a";
-            case "B": return "b";
+            case Switches.ConstantClassClash: return "b";
             case String x && "C".equals(x): return "C";
             case "C": return "broken";
             case null, String x: return String.valueOf(x);
@@ -288,7 +288,7 @@ public class Switches {
     String testStringWithGuardsExpression1(E e) {
         return switch (e != null ? e.name() : null) {
             case "A" -> "a";
-            case "B" -> "b";
+            case ConstantClassClash -> "b";
             case String x && "C".equals(x) -> "C";
             case "C" -> "broken";
             case null, String x -> String.valueOf(x);
@@ -365,6 +365,12 @@ public class Switches {
             case Object obj, null:; //no break intentionally - should not fall through to any possible default
         }
     }
+
+    //verify that for cases like:
+    //case ConstantClassClash ->
+    //ConstantClassClash is interpreted as a field, not as a class
+    private static final String ConstantClassClash = "B";
+    private static class ConstantClassClash {}
 
     sealed interface I {}
     final class A implements I {}
