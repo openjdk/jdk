@@ -89,7 +89,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.lang.Integer#toString(int)
      */
     public static String toString(short s) {
-        return Integer.toString((int)s, 10);
+        return Integer.toString(s);
     }
 
     /**
@@ -441,8 +441,9 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    @Override
     public String toString() {
-        return Integer.toString((int)value);
+        return toString(value);
     }
 
     /**

@@ -216,8 +216,9 @@ public final class Boolean implements java.io.Serializable,
      *
      * @return  a string representation of this object.
      */
+    @Override
     public String toString() {
-        return value ? "true" : "false";
+        return toString(value);
     }
 
     /**

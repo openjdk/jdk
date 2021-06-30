@@ -90,7 +90,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.lang.Integer#toString(int)
      */
     public static String toString(byte b) {
-        return Integer.toString((int)b, 10);
+        return Integer.toString(b);
     }
 
     /**
@@ -436,8 +436,9 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    @Override
     public String toString() {
-        return Integer.toString((int)value);
+        return toString(value);
     }
 
     /**
