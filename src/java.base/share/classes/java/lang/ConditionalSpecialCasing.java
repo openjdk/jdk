@@ -170,25 +170,14 @@ final class ConditionalSpecialCasing {
     }
 
     private static boolean isConditionMet(String src, int index, Locale locale, int condition) {
-        switch (condition) {
-        case FINAL_CASED:
-            return isFinalCased(src, index, locale);
-
-        case AFTER_SOFT_DOTTED:
-            return isAfterSoftDotted(src, index);
-
-        case MORE_ABOVE:
-            return isMoreAbove(src, index);
-
-        case AFTER_I:
-            return isAfterI(src, index);
-
-        case NOT_BEFORE_DOT:
-            return !isBeforeDot(src, index);
-
-        default:
-            return true;
-        }
+        return switch (condition) {
+            case FINAL_CASED       -> isFinalCased(src, index, locale);
+            case AFTER_SOFT_DOTTED -> isAfterSoftDotted(src, index);
+            case MORE_ABOVE        -> isMoreAbove(src, index);
+            case AFTER_I           -> isAfterI(src, index);
+            case NOT_BEFORE_DOT    -> !isBeforeDot(src, index);
+            default -> true;
+        };
     }
 
     /**

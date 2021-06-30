@@ -60,9 +60,16 @@ class MessageDecoder implements Frame.Consumer {
     private long payloadLen;
     private long unconsumedPayloadLen;
     private ByteBuffer binaryData;
+    private final boolean server;
+    private int maskingKey;
 
     MessageDecoder(MessageStreamConsumer output) {
+        this(output, false);
+    }
+
+    MessageDecoder(MessageStreamConsumer output, boolean server) {
         this.output = requireNonNull(output);
+        this.server = server;
     }
 
     /* Exposed for testing purposes */
@@ -143,8 +150,11 @@ class MessageDecoder implements Frame.Consumer {
         if (debug.on()) {
             debug.log("mask %s", value);
         }
-        if (value) {
+        if (value && !server) {
             throw new FailWebSocketException("Masked frame received");
+        }
+        if (!value && server) {
+            throw new FailWebSocketException("Masked frame expected");
         }
     }
 
@@ -175,7 +185,9 @@ class MessageDecoder implements Frame.Consumer {
         // So this method (`maskingKey`) is not supposed to be invoked while
         // reading a frame that has came from the server. If this method is
         // invoked, then it's an error in implementation, thus InternalError
-        throw new InternalError();
+        if (!server)
+            throw new InternalError();
+        maskingKey = value;
     }
 
     @Override
@@ -204,10 +216,17 @@ class MessageDecoder implements Frame.Consumer {
             boolean last = fin && lastPayloadChunk;
             boolean text = opcode == Opcode.TEXT || originatingOpcode == Opcode.TEXT;
             if (!text) {
-                output.onBinary(data.slice(), last);
+                ByteBuffer slice = data.slice();
+                if (server) {
+                    unMask(slice);
+                }
+                output.onBinary(slice, last);
                 data.position(data.limit()); // Consume
             } else {
                 boolean binaryNonEmpty = data.hasRemaining();
+                if (server) {
+                    unMask(data);
+                }
                 CharBuffer textData;
                 try {
                     textData = decoder.decode(data, last);
@@ -223,6 +242,17 @@ class MessageDecoder implements Frame.Consumer {
                 }
             }
         }
+    }
+
+    private void unMask(ByteBuffer src) {
+        int pos = src.position();
+        int size = src.remaining();
+        ByteBuffer temp = ByteBuffer.allocate(size);
+        Frame.Masker.transferMasking(src, temp, maskingKey);
+        temp.flip();
+        src.position(pos);
+        src.put(temp);
+        src.position(pos).limit(pos+size);
     }
 
     @Override

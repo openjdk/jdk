@@ -2282,15 +2282,11 @@ public abstract class VarHandle implements Constable {
             }
 
             ConstantDesc[] toBSMArgs(ClassDesc declaringClass, ClassDesc varType) {
-                switch (this) {
-                    case FIELD:
-                    case STATIC_FIELD:
-                        return new ConstantDesc[] {declaringClass, varType };
-                    case ARRAY:
-                        return new ConstantDesc[] {declaringClass };
-                    default:
-                        throw new InternalError("Cannot reach here");
-                }
+                return switch (this) {
+                    case FIELD, STATIC_FIELD -> new ConstantDesc[]{declaringClass, varType};
+                    case ARRAY               -> new ConstantDesc[]{declaringClass};
+                    default -> throw new InternalError("Cannot reach here");
+                };
             }
         }
 
@@ -2385,20 +2381,16 @@ public abstract class VarHandle implements Constable {
         @Override
         public VarHandle resolveConstantDesc(MethodHandles.Lookup lookup)
                 throws ReflectiveOperationException {
-            switch (kind) {
-                case FIELD:
-                    return lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
-                                                constantName(),
-                                                (Class<?>) varType.resolveConstantDesc(lookup));
-                case STATIC_FIELD:
-                    return lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
-                                                      constantName(),
-                                                      (Class<?>) varType.resolveConstantDesc(lookup));
-                case ARRAY:
-                    return MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
-                default:
-                    throw new InternalError("Cannot reach here");
-            }
+            return switch (kind) {
+                case FIELD        -> lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                          constantName(),
+                                                          (Class<?>) varType.resolveConstantDesc(lookup));
+                case STATIC_FIELD -> lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                          constantName(),
+                                                          (Class<?>) varType.resolveConstantDesc(lookup));
+                case ARRAY        -> MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
+                default -> throw new InternalError("Cannot reach here");
+            };
         }
 
         /**
@@ -2411,17 +2403,13 @@ public abstract class VarHandle implements Constable {
          */
         @Override
         public String toString() {
-            switch (kind) {
-                case FIELD:
-                case STATIC_FIELD:
-                    return String.format("VarHandleDesc[%s%s.%s:%s]",
-                                         (kind == Kind.STATIC_FIELD) ? "static " : "",
-                                         declaringClass.displayName(), constantName(), varType.displayName());
-                case ARRAY:
-                    return String.format("VarHandleDesc[%s[]]", declaringClass.displayName());
-                default:
-                    throw new InternalError("Cannot reach here");
-            }
+            return switch (kind) {
+                case FIELD, STATIC_FIELD -> String.format("VarHandleDesc[%s%s.%s:%s]",
+                                                           (kind == Kind.STATIC_FIELD) ? "static " : "",
+                                                           declaringClass.displayName(), constantName(), varType.displayName());
+                case ARRAY               -> String.format("VarHandleDesc[%s[]]", declaringClass.displayName());
+                default -> throw new InternalError("Cannot reach here");
+            };
         }
     }
 

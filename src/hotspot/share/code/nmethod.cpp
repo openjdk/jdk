@@ -1596,8 +1596,20 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 
   // Don't post this nmethod load event if it is already dying
   // because the sweeper might already be deleting this nmethod.
-  if (is_not_entrant() && can_convert_to_zombie()) {
-    return;
+  {
+    MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+    // When the nmethod is acquired from the CodeCache iterator, it can racingly become zombie
+    // before this code is called. Filter them out here under the CompiledMethod_lock.
+    if (!is_alive()) {
+      return;
+    }
+    // As for is_alive() nmethods, we also don't want them to racingly become zombie once we
+    // release this lock, so we check that this is not going to be the case.
+    if (is_not_entrant() && can_convert_to_zombie()) {
+      return;
+    }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
+    mark_as_seen_on_stack();
   }
 
   // This is a bad time for a safepoint.  We don't want

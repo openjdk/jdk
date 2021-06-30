@@ -4013,6 +4013,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // all the code before the peeled area, so the verify pass will always
     // complain about it.
   }
+
+  // Check for bailout, and return
+  if (C->failing()) {
+    return;
+  }
+
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 

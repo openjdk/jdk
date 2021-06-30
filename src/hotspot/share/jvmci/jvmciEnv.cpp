@@ -205,7 +205,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       ResourceMark rm; // Thread name is resource allocated
       JavaVMAttachArgs attach_args;
       attach_args.version = JNI_VERSION_1_2;
-      attach_args.name = thread->name();
+      attach_args.name = const_cast<char*>(thread->name());
       attach_args.group = NULL;
       if (_runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args) != JNI_OK) {
         fatal("Error attaching current thread (%s) to JVMCI shared library JNI interface", attach_args.name);
@@ -314,7 +314,7 @@ JVMCIEnv::~JVMCIEnv() {
     } else {
       Thread* thread = Thread::current();
       if (thread->is_Java_thread()) {
-        JavaThread* THREAD = thread->as_Java_thread(); // For exception macros.
+        JavaThread* THREAD = JavaThread::cast(thread); // For exception macros.
         if (HAS_PENDING_EXCEPTION) {
           Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
           CLEAR_PENDING_EXCEPTION;

@@ -23,70 +23,116 @@
 
 /*
  * @test
- * @bug 8266459
+ * @bug 8266459 8268349
  * @summary check various warnings
  * @library /test/lib
  */
 
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
-import java.security.Permission;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class SecurityManagerWarnings {
+
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
-            run(null)
-                    .shouldHaveExitValue(0)
-                    .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
-            run("allow")
-                    .shouldHaveExitValue(0)
-                    .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
-            run("disallow")
-                    .shouldNotHaveExitValue(0)
-                    .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
-                    .shouldContain("UnsupportedOperationException");
-            run("SecurityManagerWarnings$MySM")
-                    .shouldHaveExitValue(0)
-                    .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
-            run("")
-                    .shouldNotHaveExitValue(0)
-                    .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
-                    .shouldContain("AccessControlException");
-            run("default")
-                    .shouldNotHaveExitValue(0)
-                    .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
-                    .shouldContain("AccessControlException");
+            Files.writeString(Path.of("policy"), """
+                    grant {
+                        permission java.lang.RuntimePermission "setIO";
+                        permission java.lang.RuntimePermission "createSecurityManager";
+                        permission java.lang.RuntimePermission "setSecurityManager";
+                    };
+                    """);
+
+            String testClasses = System.getProperty("test.classes");
+
+            allowTest(null, testClasses);
+            allowTest("allow", testClasses);
+            disallowTest("disallow", testClasses);
+            enableTest("", testClasses);
+            enableTest("default", testClasses);
+            enableTest("java.lang.SecurityManager", testClasses);
+
+            JarUtils.createJarFile(Path.of("a.jar"),
+                    Path.of(testClasses),
+                    Path.of("SecurityManagerWarnings.class"));
+
+            allowTest(null, "a.jar");
         } else {
             System.out.println("SM is enabled: " + (System.getSecurityManager() != null));
-            System.setSecurityManager(new SecurityManager());
+            PrintStream oldErr = System.err;
+            // Modify System.err, thus make sure warnings are always printed
+            // to the original System.err and will not be swallowed.
+            System.setErr(new PrintStream(new ByteArrayOutputStream()));
+            try {
+                System.setSecurityManager(new SecurityManager());
+            } catch (Exception e) {
+                // Exception messages must show in original stderr
+                e.printStackTrace(oldErr);
+                throw e;
+            }
         }
     }
 
-    static OutputAnalyzer run(String prop) throws Exception {
+    // When SM is allowed, no startup warning, has setSM warning
+    static void allowTest(String prop, String cp) throws Exception {
+        checkInstallMessage(run(prop, cp), cp)
+                .shouldHaveExitValue(0)
+                .stdoutShouldContain("SM is enabled: false")
+                .shouldNotContain("A command line option");
+    }
+
+    // When SM is disallowed, no startup warning, setSM fails
+    static void disallowTest(String prop, String cp) throws Exception {
+        run(prop, cp)
+                .shouldNotHaveExitValue(0)
+                .stdoutShouldContain("SM is enabled: false")
+                .shouldNotContain("A command line option")
+                .shouldNotContain("A terminally deprecated method")
+                .stderrShouldContain("UnsupportedOperationException: The Security Manager is deprecated and will be removed in a future release");
+    }
+
+    // When SM is allowed, has startup warning, has setSM warning
+    static void enableTest(String prop, String cp) throws Exception {
+        checkInstallMessage(run(prop, cp), cp)
+                .shouldHaveExitValue(0)
+                .stdoutShouldContain("SM is enabled: true")
+                .stderrShouldContain("WARNING: A command line option has enabled the Security Manager")
+                .stderrShouldContain("WARNING: The Security Manager is deprecated and will be removed in a future release");
+    }
+
+    // Check the setSM warning
+    static OutputAnalyzer checkInstallMessage(OutputAnalyzer oa, String cp) {
+        String uri = new File(cp).toURI().toString();
+        return oa
+                .stderrShouldContain("WARNING: A terminally deprecated method in java.lang.System has been called")
+                .stderrShouldContain("WARNING: System::setSecurityManager has been called by SecurityManagerWarnings (" + uri + ")")
+                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of SecurityManagerWarnings")
+                .stderrShouldContain("WARNING: System::setSecurityManager will be removed in a future release");
+    }
+
+    static OutputAnalyzer run(String prop, String cp) throws Exception {
+        ProcessBuilder pb;
         if (prop == null) {
-            return ProcessTools.executeTestJvm(
+            pb = new ProcessBuilder(
+                    JDKToolFinder.getJDKTool("java"),
+                    "-cp", cp,
                     "SecurityManagerWarnings", "run");
         } else {
-            return ProcessTools.executeTestJvm(
+            pb = new ProcessBuilder(
+                    JDKToolFinder.getJDKTool("java"),
+                    "-cp", cp,
                     "-Djava.security.manager=" + prop,
+                    "-Djava.security.policy=policy",
                     "SecurityManagerWarnings", "run");
         }
-    }
-
-    // This SecurityManager allows everything!
-    public static class MySM extends SecurityManager {
-        @Override
-        public void checkPermission(Permission perm) {
-        }
+        return ProcessTools.executeProcess(pb);
     }
 }

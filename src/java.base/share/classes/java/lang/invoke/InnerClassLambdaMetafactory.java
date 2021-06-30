@@ -598,20 +598,14 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
 
         private int invocationOpcode() throws InternalError {
-            switch (implKind) {
-                case MethodHandleInfo.REF_invokeStatic:
-                    return INVOKESTATIC;
-                case MethodHandleInfo.REF_newInvokeSpecial:
-                    return INVOKESPECIAL;
-                 case MethodHandleInfo.REF_invokeVirtual:
-                    return INVOKEVIRTUAL;
-                case MethodHandleInfo.REF_invokeInterface:
-                    return INVOKEINTERFACE;
-                case MethodHandleInfo.REF_invokeSpecial:
-                    return INVOKESPECIAL;
-                default:
-                    throw new InternalError("Unexpected invocation kind: " + implKind);
-            }
+            return switch (implKind) {
+                case MethodHandleInfo.REF_invokeStatic     -> INVOKESTATIC;
+                case MethodHandleInfo.REF_newInvokeSpecial -> INVOKESPECIAL;
+                case MethodHandleInfo.REF_invokeVirtual    -> INVOKEVIRTUAL;
+                case MethodHandleInfo.REF_invokeInterface  -> INVOKEINTERFACE;
+                case MethodHandleInfo.REF_invokeSpecial    -> INVOKESPECIAL;
+                default -> throw new InternalError("Unexpected invocation kind: " + implKind);
+            };
         }
     }
 

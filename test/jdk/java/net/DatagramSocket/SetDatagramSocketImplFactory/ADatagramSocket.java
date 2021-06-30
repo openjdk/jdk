@@ -26,7 +26,7 @@
  * @summary DatagramSocket should use a factory for its impl
  *
  * @compile/module=java.base java/net/MyDatagramSocketImplFactory.java
- * @run main ADatagramSocket
+ * @run main/othervm ADatagramSocket
  */
 import java.io.*;
 import java.net.*;

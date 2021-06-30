@@ -40,7 +40,7 @@
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
@@ -49,6 +49,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
+
+#include "gc/shared/gcTraceTime.inline.hpp"
 
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
@@ -1414,7 +1416,7 @@ static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
 }
 
 bool G1Policy::preventive_collection_required(uint alloc_region_count) {
-  if (!G1AllowPreventiveGC || !Universe::is_fully_initialized()) {
+  if (!G1UsePreventiveGC || !Universe::is_fully_initialized()) {
     // Don't attempt any preventive GC's if the feature is disabled,
     // or before initialization is complete.
     return false;
