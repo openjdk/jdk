@@ -44,6 +44,7 @@ public class IgnoreAllErrorHandler implements ErrorHandler {
     private static final boolean throwExceptions =
         getProperty("com.sun.org.apache.xml.internal.security.test.throw.exceptions");
 
+    @SuppressWarnings("removal")
     private static boolean getProperty(final String name) {
         return java.security.AccessController.doPrivileged(
             (java.security.PrivilegedAction<Boolean>) () -> Boolean.getBoolean(name));

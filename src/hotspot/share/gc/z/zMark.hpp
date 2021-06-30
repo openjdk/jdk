@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,14 @@ private:
   void follow_partial_array(ZMarkStackEntry entry, bool finalizable);
   void follow_array_object(objArrayOop obj, bool finalizable);
   void follow_object(oop obj, bool finalizable);
-  bool try_mark_object(ZMarkCache* cache, uintptr_t addr, bool finalizable);
   void mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry);
 
   template <typename T> bool drain(ZMarkStripe* stripe,
                                    ZMarkThreadLocalStacks* stacks,
                                    ZMarkCache* cache,
                                    T* timeout);
-  template <typename T> bool drain_and_flush(ZMarkStripe* stripe,
-                                             ZMarkThreadLocalStacks* stacks,
-                                             ZMarkCache* cache,
-                                             T* timeout);
+  bool try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
+  bool try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   bool try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   void idle() const;
   bool flush(bool at_safepoint);
@@ -103,11 +100,12 @@ public:
 
   bool is_initialized() const;
 
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
 
   void start();
   void mark(bool initial);
   bool end();
+  void free();
 
   void flush_and_free();
   bool flush_and_free(Thread* thread);

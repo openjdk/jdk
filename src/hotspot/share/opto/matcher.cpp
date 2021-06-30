@@ -71,10 +71,11 @@ Matcher::Matcher()
   _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
-#ifdef ASSERT
+#ifndef PRODUCT
   _old2new_map(C->comp_arena()),
   _new2old_map(C->comp_arena()),
-#endif
+  _reused(C->comp_arena()),
+#endif // !PRODUCT
   _allocation_started(false),
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
@@ -723,12 +724,10 @@ void Matcher::init_first_stack_mask() {
 }
 
 //---------------------------is_save_on_entry----------------------------------
-bool Matcher::is_save_on_entry( int reg ) {
+bool Matcher::is_save_on_entry(int reg) {
   return
     _register_save_policy[reg] == 'E' ||
-    _register_save_policy[reg] == 'A' || // Save-on-entry register?
-    // Also save argument registers in the trampolining stubs
-    (C->save_argument_registers() && is_spillable_arg(reg));
+    _register_save_policy[reg] == 'A'; // Save-on-entry register?
 }
 
 //---------------------------Fixup_Save_On_Entry-------------------------------
@@ -743,12 +742,6 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Find the procedure Start Node
   StartNode *start = C->start();
   assert( start, "Expect a start node" );
-
-  // Save argument registers in the trampolining stubs
-  if( C->save_argument_registers() )
-    for( i = 0; i < _last_Mach_Reg; i++ )
-      if( is_spillable_arg(i) )
-        soe_cnt++;
 
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but
@@ -1098,16 +1091,12 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (n->is_Proj() && n->in(0) != NULL && n->in(0)->is_Multi()) {       // Projections?
               // Convert to machine-dependent projection
               m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               if (m->in(0) != NULL) // m might be top
                 collect_null_checks(m, n);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               // Def-Use edges will be added incrementally as Uses
               // of this node are matched.
               assert(m->outcnt() == 0, "no Uses of this clone yet");
@@ -1165,9 +1154,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
           m = m->clone();
-#ifdef ASSERT
-          _new2old_map.map(m->_idx, n);
-#endif
+          NOT_PRODUCT(record_new2old(m, n));
           mstack.push(m, Post_Visit, n, i); // Don't need to visit
           mstack.push(m->in(0), Visit, m, 0);
         } else {
@@ -1378,16 +1365,27 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
-      if( !parm_regs[i].first()->is_valid() &&
-          !parm_regs[i].second()->is_valid() ) {
+      VMReg first = parm_regs[i].first();
+      VMReg second = parm_regs[i].second();
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
+      // Handle case where arguments are in vector registers.
+      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+        OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
+        OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
+        assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
+        for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
+          rm->Insert(r);
+        }
+      }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(parm_regs[i].first(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(parm_regs[i].second(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -1499,10 +1497,8 @@ MachNode *Matcher::match_tree( const Node *n ) {
   }
   // Reduce input tree based upon the state labels to machine Nodes
   MachNode *m = ReduceInst(s, s->rule(mincost), mem);
-#ifdef ASSERT
-  _old2new_map.map(n->_idx, m);
-  _new2old_map.map(m->_idx, (Node*)n);
-#endif
+  // New-to-old mapping is done in ReduceInst, to cover complex instructions.
+  NOT_PRODUCT(_old2new_map.map(n->_idx, m);)
 
   // Add any Matcher-ignored edges
   uint cnt = n->req();
@@ -1759,6 +1755,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   mach->_opnds[0] = s->MachOperGenerator(_reduceOp[rule]);
   assert( mach->_opnds[0] != NULL, "Missing result operand" );
   Node *leaf = s->_leaf;
+  NOT_PRODUCT(record_new2old(mach, leaf);)
   // Check for instruction or instruction chain rule
   if( rule >= _END_INST_CHAIN_RULE || rule < _BEGIN_INST_CHAIN_RULE ) {
     assert(C->node_arena()->contains(s->_leaf) || !has_new_node(s->_leaf),
@@ -1827,9 +1824,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     for( uint i=0; i<mach->req(); i++ ) {
       mach->set_req(i,NULL);
     }
-#ifdef ASSERT
-    _new2old_map.map(ex->_idx, s->_leaf);
-#endif
+    NOT_PRODUCT(record_new2old(ex, s->_leaf);)
   }
 
   // PhaseChaitin::fixup_spills will sometimes generate spill code
@@ -2033,7 +2028,7 @@ OptoReg::Name Matcher::find_receiver() {
   return OptoReg::as_OptoReg(regs.first());
 }
 
-bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
+bool Matcher::is_vshift_con_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
     return VectorNode::is_vector_shift(n) &&
            VectorNode::is_vector_shift_count(m) && m->in(1)->is_Con();
@@ -2232,6 +2227,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVF:
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
+    case Op_VectorCmpMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2322,6 +2318,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_VectorCmpMasked: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
       n->del_req(3);
       break;
     }
@@ -2427,12 +2429,22 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
+void Matcher::record_new2old(Node* newn, Node* old) {
+  _new2old_map.map(newn->_idx, old);
+  if (!_reused.test_set(old->_igv_idx)) {
+    // Reuse the Ideal-level IGV identifier so that the node can be tracked
+    // across matching. If there are multiple machine nodes expanded from the
+    // same Ideal node, only one will reuse its IGV identifier.
+    newn->_igv_idx = old->_igv_idx;
+  }
+}
+
 // machine-independent root to machine-dependent root
 void Matcher::dump_old2new_map() {
   _old2new_map.dump();
 }
-#endif
+#endif // !PRODUCT
 
 //---------------------------collect_null_checks-------------------------------
 // Find null checks in the ideal graph; write a machine-specific node for
@@ -2755,9 +2767,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

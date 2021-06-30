@@ -50,7 +50,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ExtRootScan,
     ThreadRoots,
     CLDGRoots,
-    AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,
     // For every strong OopStorage there will be one element in this enum,
     // starting with StrongOopStorageSetRoots.
@@ -71,14 +70,23 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     Other,
     GCWorkerTotal,
     GCWorkerEnd,
-    StringDedupQueueFixup,
-    StringDedupTableFixup,
     RedirtyCards,
-    ParFreeCSet,
+    FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
     RebuildFreeList,
+    SampleCollectionSetCandidates,
     MergePSS,
+    RemoveSelfForwardingPtr,
+    ClearCardTable,
+    RecalculateUsed,
+    ResetHotCardCache,
+    PurgeCodeRoots,
+#if COMPILER2_OR_JVMCI
+    UpdateDerivedPointers,
+#endif
+    EagerlyReclaimHumongousObjects,
+    RestorePreservedMarks,
     GCParPhasesSentinel
   };
 
@@ -90,12 +98,23 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return GCParPhases(StrongOopStorageSetRoots + index);
   }
 
-  enum GCMergeRSWorkTimes {
-    MergeRSMergedSparse,
-    MergeRSMergedFine,
-    MergeRSMergedCoarse,
-    MergeRSDirtyCards
+  enum GCMergeRSWorkItems : uint {
+    MergeRSMergedInline = 0,
+    MergeRSMergedArrayOfCards,
+    MergeRSMergedHowl,
+    MergeRSMergedFull,
+    MergeRSHowlInline,
+    MergeRSHowlArrayOfCards,
+    MergeRSHowlBitmap,
+    MergeRSHowlFull,
+    MergeRSDirtyCards,
+    MergeRSContainersSentinel
   };
+
+  static constexpr const char* GCMergeRSWorkItemsStrings[MergeRSContainersSentinel] =
+    { "Merged Inline", "Merged ArrayOfCards", "Merged Howl", "Merged Full",
+      "Merged Howl Inline", "Merged Howl ArrayOfCards", "Merged Howl BitMap", "Merged Howl Full",
+      "Dirty Cards" };
 
   enum GCScanHRWorkItems {
     ScanHRScannedCards,
@@ -121,6 +140,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSLABUndoWasteBytes
   };
 
+  enum GCEagerlyReclaimHumongousObjectsItems {
+    EagerlyReclaimNumTotal,
+    EagerlyReclaimNumCandidates,
+    EagerlyReclaimNumReclaimed
+  };
+
  private:
   // Markers for grouping the phases in the GCPhases enum above
   static const int GCMainParPhasesLast = GCWorkerEnd;
@@ -130,12 +155,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
-  double _cur_strong_code_root_purge_time_ms;
-
-  double _cur_evac_fail_recalc_used;
-  double _cur_evac_fail_remove_self_forwards;
-
-  double _cur_string_deduplication_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
@@ -148,9 +167,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_concatenate_dirty_card_logs_time_ms;
 
-  double _cur_derived_pointer_table_update_time_ms;
+  double _cur_post_evacuate_cleanup_1_time_ms;
+  double _cur_post_evacuate_cleanup_2_time_ms;
 
-  double _cur_clear_ct_time_ms;
   double _cur_expand_heap_time_ms;
   double _cur_ref_proc_time_ms;
 
@@ -166,15 +185,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
-  double _recorded_redirty_logged_cards_time_ms;
+  double _recorded_sample_collection_set_candidates_time_ms;
 
   double _recorded_preserve_cm_referents_time_ms;
 
-  double _recorded_merge_pss_time_ms;
-
   double _recorded_start_new_cset_time_ms;
-
-  double _recorded_total_free_cset_time_ms;
 
   double _recorded_serial_free_cset_time_ms;
 
@@ -183,11 +198,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_serial_rebuild_freelist_time_ms;
 
   double _cur_region_register_time;
-
-  double _cur_fast_reclaim_humongous_time_ms;
-  size_t _cur_fast_reclaim_humongous_total;
-  size_t _cur_fast_reclaim_humongous_candidates;
-  size_t _cur_fast_reclaim_humongous_reclaimed;
 
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
@@ -200,7 +210,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void reset();
 
   template <class T>
-  void details(T* phase, const char* indent_str) const;
+  void details(T* phase, uint indent_level) const;
 
   void log_work_items(WorkerDataArray<double>* phase, uint indent, outputStream* out) const;
   void log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const;
@@ -261,14 +271,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_concatenate_dirty_card_logs_time_ms = ms;
   }
 
-  void record_derived_pointer_table_update_time(double ms) {
-    _cur_derived_pointer_table_update_time_ms = ms;
-  }
-
-  void record_clear_ct_time(double ms) {
-    _cur_clear_ct_time_ms = ms;
-  }
-
   void record_expand_heap_time(double ms) {
     _cur_expand_heap_time_ms = ms;
   }
@@ -283,10 +285,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_or_add_code_root_fixup_time(double ms) {
     _cur_collection_code_root_fixup_time_ms += ms;
-  }
-
-  void record_strong_code_root_purge_time(double ms) {
-    _cur_strong_code_root_purge_time_ms = ms;
   }
 
   void record_merge_heap_roots_time(double ms) {
@@ -305,28 +303,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_optional_prepare_merge_heap_roots_time_ms += ms;
   }
 
-  void record_evac_fail_recalc_used_time(double ms) {
-    _cur_evac_fail_recalc_used = ms;
-  }
-
-  void record_evac_fail_remove_self_forwards(double ms) {
-    _cur_evac_fail_remove_self_forwards = ms;
-  }
-
-  void record_string_deduplication_time(double ms) {
-    _cur_string_deduplication_time_ms = ms;
-  }
-
   void record_ref_proc_time(double ms) {
     _cur_ref_proc_time_ms = ms;
   }
 
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
-  }
-
-  void record_total_free_cset_time_ms(double time_ms) {
-    _recorded_total_free_cset_time_ms = time_ms;
   }
 
   void record_serial_free_cset_time_ms(double time_ms) {
@@ -341,15 +323,16 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_serial_rebuild_freelist_time_ms = time_ms;
   }
 
-  void record_register_regions(double time_ms, size_t total, size_t candidates) {
+  void record_register_regions(double time_ms) {
     _cur_region_register_time = time_ms;
-    _cur_fast_reclaim_humongous_total = total;
-    _cur_fast_reclaim_humongous_candidates = candidates;
   }
 
-  void record_fast_reclaim_humongous_time_ms(double value, size_t reclaimed) {
-    _cur_fast_reclaim_humongous_time_ms = value;
-    _cur_fast_reclaim_humongous_reclaimed = reclaimed;
+  void record_post_evacuate_cleanup_task_1_time(double time_ms) {
+    _cur_post_evacuate_cleanup_1_time_ms = time_ms;
+  }
+
+  void record_post_evacuate_cleanup_task_2_time(double time_ms) {
+    _cur_post_evacuate_cleanup_2_time_ms = time_ms;
   }
 
   void record_young_cset_choice_time_ms(double time_ms) {
@@ -360,8 +343,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_cset_choice_time_ms = time_ms;
   }
 
-  void record_redirty_logged_cards_time_ms(double time_ms) {
-    _recorded_redirty_logged_cards_time_ms = time_ms;
+  void record_sample_collection_set_candidates_time_ms(double time_ms) {
+    _recorded_sample_collection_set_candidates_time_ms = time_ms;
   }
 
   void record_preserve_cm_referents_time_ms(double time_ms) {
@@ -404,10 +387,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _cur_collection_initial_evac_time_ms + _cur_optional_evac_time_ms;
   }
 
-  double cur_clear_ct_time_ms() {
-    return _cur_clear_ct_time_ms;
-  }
-
   double cur_expand_heap_time_ms() {
     return _cur_expand_heap_time_ms;
   }
@@ -420,24 +399,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _recorded_young_cset_choice_time_ms;
   }
 
-  double total_free_cset_time_ms() {
-    return _recorded_total_free_cset_time_ms;
-  }
-
   double total_rebuild_freelist_time_ms() {
     return _recorded_total_rebuild_freelist_time_ms;
   }
 
   double non_young_cset_choice_time_ms() {
     return _recorded_non_young_cset_choice_time_ms;
-  }
-
-  double fast_reclaim_humongous_time_ms() {
-    return _cur_fast_reclaim_humongous_time_ms;
-  }
-
-  size_t fast_reclaim_humongous_candidates() const {
-    return _cur_fast_reclaim_humongous_candidates;
   }
 
   ReferenceProcessorPhaseTimes* ref_phase_times() { return &_ref_phase_times; }

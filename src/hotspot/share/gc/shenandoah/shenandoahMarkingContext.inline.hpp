@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+
+#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 
 inline bool ShenandoahMarkingContext::mark_strong(oop obj, bool& was_upgraded) {
   return !allocated_after_mark_start(obj) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), was_upgraded);

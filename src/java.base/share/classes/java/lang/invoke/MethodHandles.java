@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
@@ -230,6 +228,7 @@ public class MethodHandles {
             return new Lookup(targetClass);
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
@@ -263,13 +262,6 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-
-            if (!callerModule.isNamed() && targetModule.isNamed()) {
-                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-                if (logger != null) {
-                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
-                }
-            }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }
@@ -449,6 +441,7 @@ public class MethodHandles {
      * @since 1.8
      */
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
+        @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
         if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
@@ -1854,6 +1847,7 @@ public class MethodHandles {
             if (allowedModes == TRUSTED)  return;
 
             if (!hasFullPrivilegeAccess()) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkPermission(new RuntimePermission("defineClass"));
@@ -1939,9 +1933,9 @@ public class MethodHandles {
          * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The purported representation in {@code bytes} must be a {@code ClassFile}
-         * structure of a supported major and minor version. The major and minor version
-         * may differ from the {@code class} file version of the lookup class of this
-         * {@code Lookup}.</li>
+         * structure (JVMS {@jvms 4.1}) of a supported major and minor version.
+         * The major and minor version may differ from the {@code class} file version
+         * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The value of {@code this_class} must be a valid index in the
          * {@code constant_pool} table, and the entry at that index must be a valid
@@ -2774,6 +2768,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
+         * @throws NullPointerException if {@code targetName} is null
          * @since 9
          * @jvms 5.4.3.1 Class and Interface Resolution
          */
@@ -2843,8 +2838,12 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Determines if a class can be accessed from the lookup context defined by
          * this {@code Lookup} object. The static initializer of the class is not run.
+         * If {@code targetClass} is an array class, {@code targetClass} is accessible
+         * if the element type of the array class is accessible.  Otherwise,
+         * {@code targetClass} is determined as accessible as follows.
+         *
          * <p>
-         * If the {@code targetClass} is in the same module as the lookup class,
+         * If {@code targetClass} is in the same module as the lookup class,
          * the lookup class is {@code LC} in module {@code M1} and
          * the previous lookup class is in module {@code M0} or
          * {@code null} if not present,
@@ -2867,7 +2866,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * can access public types in all modules when the type is in a package
          * that is exported unconditionally.
          * <p>
-         * Otherwise, the target class is in a different module from {@code lookupClass},
+         * Otherwise, {@code targetClass} is in a different module from {@code lookupClass},
          * and if this lookup does not have {@code PUBLIC} access, {@code lookupClass}
          * is inaccessible.
          * <p>
@@ -2903,13 +2902,14 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @return the class that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws SecurityException if a security manager is present and it
+         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws NullPointerException if {@code targetClass} is {@code null}
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
-            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
+            if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
             checkSecurityManager(targetClass);
@@ -3690,7 +3690,11 @@ return mh1;
         boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            return caller == null || VerifyAccess.isClassAccessible(refc, caller, prevLookupClass, allowedModes);
+            Class<?> type = refc;
+            while (type.isArray()) {
+                type = type.getComponentType();
+            }
+            return caller == null || VerifyAccess.isClassAccessible(type, caller, prevLookupClass, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -3749,6 +3753,7 @@ return mh1;
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -3780,6 +3785,7 @@ return mh1;
 
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -5179,13 +5185,13 @@ assert((int)twice.invokeExact(21) == 42);
         Wrapper w = Wrapper.forPrimitiveType(ptype);
         // perform unboxing and/or primitive conversion
         value = w.convert(value, ptype);
-        switch (w) {
-        case INT:     return result.bindArgumentI(pos, (int)value);
-        case LONG:    return result.bindArgumentJ(pos, (long)value);
-        case FLOAT:   return result.bindArgumentF(pos, (float)value);
-        case DOUBLE:  return result.bindArgumentD(pos, (double)value);
-        default:      return result.bindArgumentI(pos, ValueConversions.widenSubword(value));
-        }
+        return switch (w) {
+            case INT    -> result.bindArgumentI(pos, (int) value);
+            case LONG   -> result.bindArgumentJ(pos, (long) value);
+            case FLOAT  -> result.bindArgumentF(pos, (float) value);
+            case DOUBLE -> result.bindArgumentD(pos, (double) value);
+            default -> result.bindArgumentI(pos, ValueConversions.widenSubword(value));
+        };
     }
 
     private static Class<?>[] insertArgumentsChecks(MethodHandle target, int insCount, int pos) throws RuntimeException {
@@ -6649,8 +6655,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6779,11 +6784,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**
@@ -7759,6 +7764,92 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }
+    }
+
+    /**
+     * Creates a table switch method handle, which can be used to switch over a set of target
+     * method handles, based on a given target index, called selector.
+     * <p>
+     * For a selector value of {@code n}, where {@code n} falls in the range {@code [0, N)},
+     * and where {@code N} is the number of target method handles, the table switch method
+     * handle will invoke the n-th target method handle from the list of target method handles.
+     * <p>
+     * For a selector value that does not fall in the range {@code [0, N)}, the table switch
+     * method handle will invoke the given fallback method handle.
+     * <p>
+     * All method handles passed to this method must have the same type, with the additional
+     * requirement that the leading parameter be of type {@code int}. The leading parameter
+     * represents the selector.
+     * <p>
+     * Any trailing parameters present in the type will appear on the returned table switch
+     * method handle as well. Any arguments assigned to these parameters will be forwarded,
+     * together with the selector value, to the selected method handle when invoking it.
+     *
+     * @apiNote Example:
+     * The cases each drop the {@code selector} value they are given, and take an additional
+     * {@code String} argument, which is concatenated (using {@link String#concat(String)})
+     * to a specific constant label string for each case:
+     * <blockquote><pre>{@code
+     * MethodHandles.Lookup lookup = MethodHandles.lookup();
+     * MethodHandle caseMh = lookup.findVirtual(String.class, "concat",
+     *         MethodType.methodType(String.class, String.class));
+     * caseMh = MethodHandles.dropArguments(caseMh, 0, int.class);
+     *
+     * MethodHandle caseDefault = MethodHandles.insertArguments(caseMh, 1, "default: ");
+     * MethodHandle case0 = MethodHandles.insertArguments(caseMh, 1, "case 0: ");
+     * MethodHandle case1 = MethodHandles.insertArguments(caseMh, 1, "case 1: ");
+     *
+     * MethodHandle mhSwitch = MethodHandles.tableSwitch(
+     *     caseDefault,
+     *     case0,
+     *     case1
+     * );
+     *
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(-1, "data"));
+     * assertEquals("case 0: data", (String) mhSwitch.invokeExact(0, "data"));
+     * assertEquals("case 1: data", (String) mhSwitch.invokeExact(1, "data"));
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(2, "data"));
+     * }</pre></blockquote>
+     *
+     * @param fallback the fallback method handle that is called when the selector is not
+     *                 within the range {@code [0, N)}.
+     * @param targets array of target method handles.
+     * @return the table switch method handle.
+     * @throws NullPointerException if {@code fallback}, the {@code targets} array, or any
+     *                              any of the elements of the {@code targets} array are
+     *                              {@code null}.
+     * @throws IllegalArgumentException if the {@code targets} array is empty, if the leading
+     *                                  parameter of the fallback handle or any of the target
+     *                                  handles is not {@code int}, or if the types of
+     *                                  the fallback handle and all of target handles are
+     *                                  not the same.
+     */
+    public static MethodHandle tableSwitch(MethodHandle fallback, MethodHandle... targets) {
+        Objects.requireNonNull(fallback);
+        Objects.requireNonNull(targets);
+        targets = targets.clone();
+        MethodType type = tableSwitchChecks(fallback, targets);
+        return MethodHandleImpl.makeTableSwitch(type, fallback, targets);
+    }
+
+    private static MethodType tableSwitchChecks(MethodHandle defaultCase, MethodHandle[] caseActions) {
+        if (caseActions.length == 0)
+            throw new IllegalArgumentException("Not enough cases: " + Arrays.toString(caseActions));
+
+        MethodType expectedType = defaultCase.type();
+
+        if (!(expectedType.parameterCount() >= 1) || expectedType.parameterType(0) != int.class)
+            throw new IllegalArgumentException(
+                "Case actions must have int as leading parameter: " + Arrays.toString(caseActions));
+
+        for (MethodHandle mh : caseActions) {
+            Objects.requireNonNull(mh);
+            if (mh.type() != expectedType)
+                throw new IllegalArgumentException(
+                    "Case actions must have the same type: " + Arrays.toString(caseActions));
+        }
+
+        return expectedType;
     }
 
 }

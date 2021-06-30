@@ -197,9 +197,8 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     @Override
     @SuppressWarnings("unchecked")
     public D plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case DAYS: return plusDays(amountToAdd);
                 case WEEKS: return plusDays(Math.multiplyExact(amountToAdd, 7));
                 case MONTHS: return plusMonths(amountToAdd);
@@ -377,8 +376,8 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Objects.requireNonNull(endExclusive, "endExclusive");
         ChronoLocalDate end = getChronology().date(endExclusive);
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case DAYS: return daysUntil(end);
                 case WEEKS: return daysUntil(end) / 7;
                 case MONTHS: return monthsUntil(end);

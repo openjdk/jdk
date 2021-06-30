@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -198,15 +197,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
                                        G1GCPhaseTimes* phase_times,
                                        uint worker_id) {
   OopClosure* strong_roots = closures->strong_oops();
-
-#if INCLUDE_AOT
-  if (_process_strong_tasks.try_claim_task(G1RP_PS_aot_oops_do)) {
-    if (UseAOT) {
-      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_id);
-      AOTLoader::oops_do(strong_roots);
-    }
-  }
-#endif
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     G1GCPhaseTimes::GCParPhases phase = G1GCPhaseTimes::strong_oopstorage_phase(id);

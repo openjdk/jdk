@@ -33,12 +33,10 @@
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
 #include "gc/g1/g1FullGCPrepareTask.hpp"
-#include "gc/g1/g1FullGCReferenceProcessorExecutor.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -46,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -96,10 +93,15 @@ uint G1FullCollector::calc_active_workers() {
   uint current_active_workers = heap->workers()->active_workers();
   uint active_worker_limit = WorkerPolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
 
+  // Finally consider the amount of used regions.
+  uint used_worker_limit = heap->num_used_regions();
+  assert(used_worker_limit > 0, "Should never have zero used regions.");
+
   // Update active workers to the lower of the limits.
-  uint worker_count = MIN2(heap_waste_worker_limit, active_worker_limit);
-  log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, adaptive workers: %u)",
-                      worker_count, heap_waste_worker_limit, active_worker_limit);
+  uint worker_count = MIN3(heap_waste_worker_limit, active_worker_limit, used_worker_limit);
+  log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
+                      "adaptive workers: %u, used limited workers: %u)",
+                      worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
   worker_count = heap->workers()->update_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
@@ -160,7 +162,7 @@ public:
 
   bool do_heap_region(HeapRegion* hr) {
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
-    _collector->update_attribute_table(hr);
+    _collector->before_marking_update_attribute_table(hr);
     return false;
   }
 };
@@ -182,10 +184,6 @@ void G1FullCollector::prepare_collection() {
 
   reference_processor()->enable_discovery();
   reference_processor()->setup_policy(scope()->should_clear_soft_refs());
-
-  // We should save the marks of the currently locked biased monitors.
-  // The marking doesn't preserve the marks of biased objects.
-  BiasedLocking::preserve_marks();
 
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
@@ -213,8 +211,6 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  BiasedLocking::restore_marks();
-
   _heap->concurrent_mark()->swap_mark_bitmaps();
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
@@ -229,18 +225,37 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
-void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_not_compacted) {
+void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
-    _region_attr_table.set_invalid(hr->hrm_index());
+    // Set as Invalid by default.
+    _region_attr_table.verify_is_invalid(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
     _region_attr_table.set_skip_marking(hr->hrm_index());
-  } else if (hr->is_pinned() || force_not_compacted) {
-    _region_attr_table.set_not_compacted(hr->hrm_index());
+  } else if (hr->is_pinned()) {
+    _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
-    // Everything else is processed normally.
-    _region_attr_table.set_compacted(hr->hrm_index());
+    // Everything else should be compacted.
+    _region_attr_table.set_compacting(hr->hrm_index());
   }
 }
+
+class G1FullGCRefProcProxyTask : public RefProcProxyTask {
+  G1FullCollector& _collector;
+
+public:
+  G1FullGCRefProcProxyTask(G1FullCollector &collector, uint max_workers)
+    : RefProcProxyTask("G1FullGCRefProcProxyTask", max_workers),
+      _collector(collector) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    G1IsAliveClosure is_alive(&_collector);
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    G1FullKeepAliveClosure keep_alive(_collector.marker(index));
+    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, complete_gc);
+  }
+};
 
 void G1FullCollector::phase1_mark_live_objects() {
   // Recursively traverse all live objects and mark them.
@@ -253,9 +268,18 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   {
-    // Process references discovered during marking.
-    G1FullGCReferenceProcessingExecutor reference_processing(this);
-    reference_processing.execute(scope()->timer(), scope()->tracer());
+    uint old_active_mt_degree = reference_processor()->num_queues();
+    reference_processor()->set_active_mt_degree(workers());
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Reference Processing", scope()->timer());
+    // Process reference objects found during marking.
+    ReferenceProcessorPhaseTimes pt(scope()->timer(), reference_processor()->max_num_queues());
+    G1FullGCRefProcProxyTask task(*this, reference_processor()->max_num_queues());
+    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, pt);
+    scope()->tracer()->report_gc_reference_stats(stats);
+    pt.print_all_references();
+    assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
+
+    reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
   // Weak oops cleanup.
@@ -270,10 +294,6 @@ void G1FullCollector::phase1_mark_live_objects() {
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(&_is_alive, purged_class);
-  } else if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: String Dedup Cleanup", scope()->timer());
-    // If no class unloading just clean out string deduplication data.
-    _heap->string_dedup_cleaning(&_is_alive, NULL);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);

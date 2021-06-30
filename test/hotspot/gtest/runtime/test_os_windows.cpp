@@ -25,6 +25,7 @@
 
 #ifdef _WINDOWS
 
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
@@ -38,7 +39,9 @@ namespace {
    public:
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
-      os::release_memory_special(_ptr, _size);
+      if (_ptr != NULL) {
+        os::release_memory_special(_ptr, _size);
+      }
     }
   };
 }
@@ -64,26 +67,33 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
-  if (result != NULL) {
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
+  if (result == NULL) {
       // failed to allocate memory, skipping the test
       return;
   }
-  MemoryReleaser mr(result, large_allocation_size);
+  MemoryReleaser m1(result, large_allocation_size);
 
-  // allocate another page within the recently allocated memory area which seems to be a good location. At least
-  // we managed to get it once.
+  // Reserve another page within the recently allocated memory area. This should fail
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
-  if (actual_location != NULL) {
-      // failed to allocate memory, skipping the test
-      return;
-  }
-  MemoryReleaser mr2(actual_location, expected_allocation_size);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  EXPECT_TRUE(actual_location == NULL) << "Should not be allowed to reserve within present reservation";
 
-  EXPECT_EQ(expected_location, actual_location)
-        << "Failed to allocate memory at requested location " << expected_location << " of size " << expected_allocation_size;
+  // Instead try reserving after the first reservation.
+  expected_location = result + large_allocation_size;
+  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  EXPECT_TRUE(actual_location != NULL) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
+  MemoryReleaser m2(actual_location, os::large_page_size());
+
+  // Now try to do a reservation with a larger alignment.
+  const size_t alignment = os::large_page_size() * 2;
+  const size_t new_large_size = alignment * 4;
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), NULL, false);
+  EXPECT_TRUE(aligned_request != NULL) << "Unexpected reservation failure, can’t verify correct alignment";
+  EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
+  MemoryReleaser m3(aligned_request, new_large_size);
 }
 
 // The types of path modifications we randomly apply to a path. They should not change the file designated by the path.

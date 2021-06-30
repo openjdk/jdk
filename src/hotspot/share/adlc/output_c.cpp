@@ -1526,7 +1526,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       }
 
       if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n", cnt);
         fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
         fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
       }
@@ -1792,7 +1791,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     if (node->is_ideal_call() != Form::invalid_type &&
         node->is_ideal_call() != Form::JAVA_LEAF) {
       fprintf(fp, "  // MachConstantBaseNode added in matcher.\n");
-      _needs_clone_jvms = true;
+      _needs_deep_clone_jvms = true;
     } else {
       fprintf(fp, "  add_req(C->mach_constant_base_node());\n");
     }
@@ -3603,9 +3602,9 @@ char reg_save_policy(const char *calling_convention) {
   return callconv;
 }
 
-void ArchDesc::generate_needs_clone_jvms(FILE *fp_cpp) {
-  fprintf(fp_cpp, "bool Compile::needs_clone_jvms() { return %s; }\n\n",
-          _needs_clone_jvms ? "true" : "false");
+void ArchDesc::generate_needs_deep_clone_jvms(FILE *fp_cpp) {
+  fprintf(fp_cpp, "bool Compile::needs_deep_clone_jvms() { return %s; }\n\n",
+          _needs_deep_clone_jvms ? "true" : "false");
 }
 
 //---------------------------generate_assertion_checks-------------------
@@ -3941,7 +3940,6 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
   }
   if( inst->is_ideal_fastlock() ) {
-    fprintf(fp_cpp, "%s node->_counters = _leaf->as_FastLock()->counters();\n", indent);
     fprintf(fp_cpp, "%s node->_rtm_counters = _leaf->as_FastLock()->rtm_counters();\n", indent);
     fprintf(fp_cpp, "%s node->_stack_rtm_counters = _leaf->as_FastLock()->stack_rtm_counters();\n", indent);
   }

@@ -96,11 +96,10 @@ public class ECPoint {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (this == POINT_INFINITY) return false;
-        if (obj instanceof ECPoint) {
-            return ((x.equals(((ECPoint)obj).x)) &&
-                    (y.equals(((ECPoint)obj).y)));
-        }
-        return false;
+
+        return obj instanceof ECPoint other
+                && ((x.equals(other.x))
+                && (y.equals(other.y)));
     }
 
     /**

@@ -60,6 +60,7 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.Options;
 
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.tool.ToolEnvironment;
@@ -196,18 +197,6 @@ public class WorkArounds {
 
         // finally, search by qualified name in all modules
         return elementUtils.getTypeElement(className);
-    }
-
-
-    // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
-    // see JDK-8261625
-    public boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
     }
 
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
@@ -534,6 +523,23 @@ public class WorkArounds {
     public boolean isReflectivePreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0;
+    }
+
+    /**
+     * Returns whether or not to permit dynamically loaded components to access
+     * part of the javadoc internal API. The flag is the same (hidden) compiler
+     * option that allows javac plugins and annotation processors to access
+     * javac internal API.
+     *
+     * As with all workarounds, it is better to consider updating the public API,
+     * rather than relying on undocumented features like this, that may be withdrawn
+     * at any time, without notice.
+     *
+     * @return true if access is permitted to internal API
+     */
+    public boolean accessInternalAPI() {
+        Options compilerOptions = Options.instance(toolEnv.context);
+        return compilerOptions.isSet("accessInternalAPI");
     }
 
 }

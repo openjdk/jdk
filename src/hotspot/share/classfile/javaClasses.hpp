@@ -66,7 +66,6 @@ class RecordComponent;
   f(java_lang_reflect_Constructor) \
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
-  f(java_nio_Buffer) \
   f(reflect_ConstantPool) \
   f(reflect_UnsafeStaticFieldAccessorImpl) \
   f(java_lang_reflect_Parameter) \
@@ -96,18 +95,37 @@ class java_lang_Object : AllStatic {
 
 // Interface to java.lang.String objects
 
+// The flags field is a collection of bits representing boolean values used
+// internally by the VM.
+#define STRING_INJECTED_FIELDS(macro) \
+  macro(java_lang_String, flags, byte_signature, false)
+
 class java_lang_String : AllStatic {
  private:
   static int _value_offset;
   static int _hash_offset;
   static int _hashIsZero_offset;
   static int _coder_offset;
+  static int _flags_offset;
 
   static bool _initialized;
 
   static Handle basic_create(int length, bool byte_arr, TRAPS);
 
   static inline void set_coder(oop string, jbyte coder);
+
+  // Bitmasks for values in the injected flags field.
+  static const uint8_t _deduplication_forbidden_mask = 1 << 0;
+  static const uint8_t _deduplication_requested_mask = 1 << 1;
+
+  static int flags_offset() { CHECK_INIT(_flags_offset); }
+  // Return the address of the injected flags field.
+  static inline uint8_t* flags_addr(oop java_string);
+  // Test whether the designated bit of the injected flags field is set.
+  static inline bool is_flag_set(oop java_string, uint8_t flag_mask);
+  // Atomically test and set the designated bit of the injected flags field,
+  // returning true if the bit was already set.
+  static bool test_and_set_flag(oop java_string, uint8_t flag_mask);
 
  public:
 
@@ -127,7 +145,6 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
-  static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
   static void set_compact_strings(bool value);
 
@@ -137,11 +154,26 @@ class java_lang_String : AllStatic {
   static inline void set_value_raw(oop string, typeArrayOop buffer);
   static inline void set_value(oop string, typeArrayOop buffer);
 
+  // Set the deduplication_forbidden flag true.  This flag is sticky; once
+  // set it never gets cleared.  This is set when a String is interned in
+  // the StringTable, to prevent string deduplication from changing the
+  // String's value array.
+  static inline void set_deduplication_forbidden(oop java_string);
+
+  // Test and set the deduplication_requested flag.  Returns the old value
+  // of the flag.  This flag is sticky; once set it never gets cleared.
+  // Some GCs may use this flag when deciding whether to request
+  // deduplication of a String, to avoid multiple requests for the same
+  // object.
+  static inline bool test_and_set_deduplication_requested(oop java_string);
+
   // Accessors
   static inline typeArrayOop value(oop java_string);
   static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline bool hash_is_set(oop string);
   static inline bool is_latin1(oop java_string);
+  static inline bool deduplication_forbidden(oop java_string);
+  static inline bool deduplication_requested(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
   static int utf8_length(oop java_string);
@@ -157,6 +189,7 @@ class java_lang_String : AllStatic {
   static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
+  static jchar* as_unicode_string_or_null(oop java_string, int& length);
   // produce an ascii string with all other values quoted using \u####
   static char*  as_quoted_ascii(oop java_string);
 
@@ -194,10 +227,8 @@ class java_lang_String : AllStatic {
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
-  // Conversion between '.' and '/' formats
-  static Handle externalize_classname(Handle java_string, TRAPS) {
-    return char_converter(java_string, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, THREAD);
-  }
+  // Conversion between '.' and '/' formats, and allocate a String from the result.
+  static Handle externalize_classname(Symbol* java_name, TRAPS);
 
   // Conversion
   static Symbol* as_symbol(oop java_string);
@@ -383,8 +414,6 @@ class java_lang_Thread : AllStatic {
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
-  // Instance creation
-  static oop create();
   // Returns the JavaThread associated with the thread obj
   static JavaThread* thread(oop java_thread);
   // Set JavaThread for instance
@@ -521,7 +550,6 @@ class java_lang_Throwable: AllStatic {
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Method* method, int bci);
-  static void print_stack_usage(Handle stream);
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -706,8 +734,6 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
-  static void set_parameter_annotations(oop method, oop value);
-  static void set_annotation_default(oop method, oop value);
 
   // Debugging
   friend class JavaClasses;
@@ -888,8 +914,6 @@ class java_lang_ref_Reference: AllStatic {
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
   static inline HeapWord* discovered_addr_raw(oop ref);
-  static inline oop queue(oop ref);
-  static inline void set_queue(oop ref, oop value);
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
@@ -923,8 +947,6 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
 };
 
 // Interface to java.lang.invoke.MethodHandle objects
-
-class MethodHandleEntry;
 
 class java_lang_invoke_MethodHandle: AllStatic {
   friend class JavaClasses;
@@ -998,7 +1020,6 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Accessors
   static oop            vmentry(oop lform);
-  static void       set_vmentry(oop lform, oop invoker);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1018,7 +1039,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   friend class JavaClasses;
 
  private:
-  static int _addr_offset;  // type is jlong
   static int _shadow_space_offset;
   static int _argMoves_offset;
   static int _returnMoves_offset;
@@ -1032,7 +1052,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static address    addr(oop entry);
   static jint       shadow_space(oop entry);
   static oop        argMoves(oop entry);
   static oop        returnMoves(oop entry);
@@ -1048,7 +1067,6 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int addr_offset_in_bytes()            { return _addr_offset;            }
   static int shadow_space_offset_in_bytes()    { return _shadow_space_offset;    }
   static int argMoves_offset_in_bytes()        { return _argMoves_offset;        }
   static int returnMoves_offset_in_bytes()     { return _returnMoves_offset;     }
@@ -1562,16 +1580,6 @@ class java_lang_AssertionStatusDirectives: AllStatic {
 };
 
 
-class java_nio_Buffer: AllStatic {
- private:
-  static int _limit_offset;
-
- public:
-  static int  limit_offset() { CHECK_INIT(_limit_offset); }
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-};
-
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
   static int  _owner_offset;
@@ -1745,6 +1753,7 @@ class InjectedField {
   klass##_##name##_enum,
 
 #define ALL_INJECTED_FIELDS(macro)          \
+  STRING_INJECTED_FIELDS(macro)             \
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
   RESOLVEDMETHOD_INJECTED_FIELDS(macro)     \

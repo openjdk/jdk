@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,6 +469,7 @@ class Metacity implements SynthConstants {
         private int type;
         private Object arg;
 
+        @SuppressWarnings("removal")
         public Object doPrivileged(int type, Object arg) {
             this.type = type;
             this.arg = arg;
@@ -1539,6 +1540,7 @@ class Metacity implements SynthConstants {
             documentBuilder =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder();
         }
+        @SuppressWarnings("removal")
         InputStream inputStream =
             AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
                 public InputStream run() {

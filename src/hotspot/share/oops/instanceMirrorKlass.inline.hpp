@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
 
+#include "oops/instanceMirrorKlass.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -59,10 +60,10 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
         assert(klass->is_shared(), "must be");
         return;
       } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
-        // A non-strong hidden class or an unsafe anonymous class doesn't have its own class loader,
+        // A non-strong hidden class doesn't have its own class loader,
         // so when handling the java mirror for the class we need to make sure its class
         // loader data is claimed, this is done by calling do_cld explicitly.
-        // For non-anonymous classes the call to do_cld is made when the class
+        // For non-strong hidden classes the call to do_cld is made when the class
         // loader itself is handled.
         Devirtualizer::do_cld(closure, klass->class_loader_data());
       } else {

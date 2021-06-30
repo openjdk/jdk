@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -440,10 +440,6 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   // write operation result
   char msg[32];
   sprintf(msg, "%d\n", result);
@@ -459,9 +455,6 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
   // done
   ::close(this->socket());
 
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
-
   delete this;
 }
 
@@ -472,14 +465,7 @@ AttachOperation* AttachListener::dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   AttachOperation* op = AixAttachListener::dequeue();
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   return op;
 }
@@ -511,14 +497,7 @@ int AttachListener::pd_init() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   int ret_code = AixAttachListener::init();
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   return ret_code;
 }

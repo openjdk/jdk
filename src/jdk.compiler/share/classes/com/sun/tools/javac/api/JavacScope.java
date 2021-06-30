@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package com.sun.tools.javac.api;
 
-
+import java.util.function.Predicate;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -38,7 +38,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.Filter;
 
 /**
  * Provides an implementation of Scope.
@@ -52,7 +51,7 @@ import com.sun.tools.javac.util.Filter;
  */
 public class JavacScope implements com.sun.source.tree.Scope {
 
-    private static final Filter<Symbol> VALIDATOR = sym -> {
+    private static final Predicate<Symbol> VALIDATOR = sym -> {
         sym.apiComplete();
         return sym.kind != Kind.ERR;
     };
@@ -128,12 +127,9 @@ public class JavacScope implements com.sun.source.tree.Scope {
     }
 
     public boolean equals(Object other) {
-        if (other instanceof JavacScope) {
-            JavacScope s = (JavacScope) other;
-            return (env.equals(s.env)
-                && isStarImportScope() == s.isStarImportScope());
-        } else
-            return false;
+        return other instanceof JavacScope javacScope
+                && env.equals(javacScope.env)
+                && isStarImportScope() == javacScope.isStarImportScope();
     }
 
     public int hashCode() {

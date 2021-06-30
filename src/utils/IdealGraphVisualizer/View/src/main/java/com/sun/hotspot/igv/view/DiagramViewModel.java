@@ -406,7 +406,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public Diagram getDiagramToView() {
 
         if (diagram == null) {
-            diagram = Diagram.createDiagram(getGraphToView(), Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
+            diagram = Diagram.createDiagram(getGraphToView(),
+                                            Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
+                                            Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
             getFilterChain().apply(diagram, getSequenceFilterChain());
             if (getFirstPosition() != getSecondPosition()) {
                 CustomFilter f = new CustomFilter(

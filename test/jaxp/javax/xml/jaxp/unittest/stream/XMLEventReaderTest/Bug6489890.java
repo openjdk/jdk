@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6489890
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6489890
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug6489890
  * @run testng/othervm stream.XMLEventReaderTest.Bug6489890
  * @summary Test XMLEventReader's initial state is an undefined state, and nextEvent() is START_DOCUMENT.
  */

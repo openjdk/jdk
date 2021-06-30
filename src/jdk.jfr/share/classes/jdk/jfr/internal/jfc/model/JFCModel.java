@@ -120,6 +120,16 @@ public final class JFCModel {
         return configuration;
     }
 
+    public LinkedHashMap<String, String> getSettings() {
+        LinkedHashMap<String, String> result = new LinkedHashMap<>();
+        for (XmlEvent event : configuration.getEvents()) {
+            for (XmlSetting setting : event.getSettings()) {
+                result.put(event.getName() + "#" + setting.getName(), setting.getContent());
+            }
+        }
+        return result;
+    }
+
     public void saveToFile(SafePath path) throws IOException {
         try (PrintWriter p = new PrintWriter(path.toFile(), Charset.forName("UTF-8"))) {
             PrettyPrinter pp = new PrettyPrinter(p);

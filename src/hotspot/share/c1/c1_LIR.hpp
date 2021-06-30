@@ -931,9 +931,7 @@ enum LIR_Code {
       , lir_add
       , lir_sub
       , lir_mul
-      , lir_mul_strictfp
       , lir_div
-      , lir_div_strictfp
       , lir_rem
       , lir_sqrt
       , lir_abs
@@ -2156,9 +2154,9 @@ class LIR_List: public CompilationResourceObj {
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL) { append(new LIR_Op2(lir_sub, left, right, res, info)); }
   void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res) { append(new LIR_Op2(lir_mul, left, right, res)); }
-  void mul_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul_strictfp, left, right, res, tmp)); }
+  void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul, left, right, res, tmp)); }
   void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_div, left, right, res, info)); }
-  void div_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div_strictfp, left, right, res, tmp)); }
+  void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div, left, right, res, tmp)); }
   void rem (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_rem, left, right, res, info)); }
 
   void volatile_load_mem_reg(LIR_Address* address, LIR_Opr dst, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);

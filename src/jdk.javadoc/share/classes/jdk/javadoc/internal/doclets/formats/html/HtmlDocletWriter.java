@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -689,13 +690,6 @@ public class HtmlDocletWriter {
         return label;
     }
 
-    public Content interfaceName(TypeElement typeElement, boolean qual) {
-        Content name = Text.of((qual)
-                ? typeElement.getQualifiedName()
-                : utils.getSimpleName(typeElement));
-        return (utils.isInterface(typeElement)) ?  HtmlTree.SPAN(HtmlStyle.interfaceName, name) : name;
-    }
-
     /**
      * Add the link to the content tree.
      *
@@ -1024,7 +1018,6 @@ public class HtmlDocletWriter {
                     case REFERENCE -> {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
-                        break;
                     }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
@@ -1039,8 +1032,9 @@ public class HtmlDocletWriter {
         Content labelContent = plainOrCode(isLinkPlain,
                 commentTagsToContent(see, element, label, context));
 
-        //The text from the @see tag.  We will output this text when a label is not specified.
-        Content text = plainOrCode(kind == LINK_PLAIN, Text.of(removeTrailingSlash(seeText)));
+        // The signature from the @see tag. We will output this text when a label is not specified.
+        Content text = plainOrCode(isLinkPlain,
+                Text.of(Objects.requireNonNullElse(ch.getReferencedSignature(see), "")));
 
         TypeElement refClass = ch.getReferencedClass(see);
         Element refMem =       ch.getReferencedMember(see);
@@ -1122,8 +1116,8 @@ public class HtmlDocletWriter {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (this instanceof ClassWriterImpl) {
-                    containing = ((ClassWriterImpl) this).getTypeElement();
+                if (this instanceof ClassWriterImpl writer) {
+                    containing = writer.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
                     messages.warning(
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
@@ -1149,10 +1143,10 @@ public class HtmlDocletWriter {
                 }
             }
 
-            text = plainOrCode(kind == LINK_PLAIN, Text.of(refMemName));
-
             return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
-                    refMem, (labelContent.isEmpty() ? text: labelContent), null, false);
+                    refMem, (labelContent.isEmpty()
+                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            : labelContent), null, false);
         }
     }
 
@@ -1438,7 +1432,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitAttribute(AttributeTree node, Content c) {
-                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName());
+                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName().toString());
                     if (node.getValueKind() == ValueKind.EMPTY) {
                         result.add(sb);
                         return false;
@@ -1685,7 +1679,6 @@ public class HtmlDocletWriter {
      *
      * @return the text, with all the relative links redirected to work.
      */
-    @SuppressWarnings("preview")
     private String redirectRelativeLinks(Element element, TextTree tt) {
         String text = tt.getBody();
         if (element == null || utils.isOverviewElement(element) || shouldNotRedirectRelativeLinks()) {
@@ -2057,18 +2050,18 @@ public class HtmlDocletWriter {
         }
         StringBuilder sb = new StringBuilder();
         for (Element e: chain) {
-            CharSequence name;
+            String name;
             switch (e.getKind()) {
                 case MODULE:
                 case PACKAGE:
-                    name = ((QualifiedNameable) e).getQualifiedName();
+                    name = ((QualifiedNameable) e).getQualifiedName().toString();
                     if (name.length() == 0) {
                         name = "<unnamed>";
                     }
                     break;
 
                 default:
-                    name = e.getSimpleName();
+                    name = e.getSimpleName().toString();
                     break;
             }
 
@@ -2110,7 +2103,8 @@ public class HtmlDocletWriter {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")
-                .replaceAll("^(Module|Package|Class)$", "$1Declaration");
+                .replaceAll("^(Module|Package|Class)$", "$1Declaration")
+                .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
         return HtmlStyle.valueOf(page);
     }
@@ -2128,11 +2122,11 @@ public class HtmlDocletWriter {
     List<DocPath> getLocalStylesheets(Element element) throws DocFileIOException {
         List<DocPath> stylesheets = new ArrayList<>();
         DocPath basePath = null;
-        if (element instanceof PackageElement) {
-            stylesheets.addAll(getModuleStylesheets((PackageElement)element));
-            basePath = docPaths.forPackage((PackageElement)element);
-        } else if (element instanceof ModuleElement) {
-            basePath = DocPaths.forModule((ModuleElement)element);
+        if (element instanceof PackageElement pkg) {
+            stylesheets.addAll(getModuleStylesheets(pkg));
+            basePath = docPaths.forPackage(pkg);
+        } else if (element instanceof ModuleElement mdle) {
+            basePath = DocPaths.forModule(mdle);
         }
         for (DocPath stylesheet : getStylesheets(element)) {
             stylesheets.add(basePath.resolve(stylesheet.getPath()));
@@ -2231,7 +2225,6 @@ public class HtmlDocletWriter {
         }
     }
 
-    @SuppressWarnings("preview")
     private List<Content> getPreviewNotes(TypeElement el) {
         String className = el.getSimpleName().toString();
         List<Content> result = new ArrayList<>();
@@ -2256,9 +2249,6 @@ public class HtmlDocletWriter {
         }
         previewLanguageFeatures.addAll(utils.previewLanguageFeaturesUsed(el));
         if (!previewLanguageFeatures.isEmpty()) {
-            if (previewLanguageFeatures.contains(DeclarationPreviewLanguageFeatures.SEALED_PERMITS)) {
-                previewLanguageFeatures.remove(DeclarationPreviewLanguageFeatures.SEALED);
-            }
             for (DeclarationPreviewLanguageFeatures feature : previewLanguageFeatures) {
                 String featureDisplayName =
                         resources.getText("doclet.Declared_Using_Preview." + feature.name());

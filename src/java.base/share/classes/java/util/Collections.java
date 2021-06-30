@@ -1775,12 +1775,9 @@ public class Collections {
                 if (o == this)
                     return true;
 
-                if (!(o instanceof Set))
-                    return false;
-                Set<?> s = (Set<?>) o;
-                if (s.size() != c.size())
-                    return false;
-                return containsAll(s); // Invokes safe containsAll() above
+                return o instanceof Set<?> s
+                        && s.size() == c.size()
+                        && containsAll(s); // Invokes safe containsAll() above
             }
 
             /**
@@ -1805,11 +1802,9 @@ public class Collections {
                 public boolean equals(Object o) {
                     if (this == o)
                         return true;
-                    if (!(o instanceof Map.Entry))
-                        return false;
-                    Map.Entry<?,?> t = (Map.Entry<?,?>)o;
-                    return eq(e.getKey(),   t.getKey()) &&
-                           eq(e.getValue(), t.getValue());
+                    return o instanceof Map.Entry<?, ?> t
+                            && eq(e.getKey(),   t.getKey())
+                            && eq(e.getValue(), t.getValue());
                 }
                 public String toString() {return e.toString();}
             }
@@ -3933,11 +3928,8 @@ public class Collections {
              * setValue method.
              */
             public boolean contains(Object o) {
-                if (!(o instanceof Map.Entry))
-                    return false;
-                Map.Entry<?,?> e = (Map.Entry<?,?>) o;
-                return s.contains(
-                    (e instanceof CheckedEntry) ? e : checkedEntry(e, valueType));
+                return o instanceof Map.Entry<?, ?> e
+                        && s.contains((e instanceof CheckedEntry) ? e : checkedEntry(e, valueType));
             }
 
             /**
@@ -3981,11 +3973,9 @@ public class Collections {
             public boolean equals(Object o) {
                 if (o == this)
                     return true;
-                if (!(o instanceof Set))
-                    return false;
-                Set<?> that = (Set<?>) o;
-                return that.size() == s.size()
-                    && containsAll(that); // Invokes safe containsAll() above
+                return o instanceof Set<?> that
+                        && that.size() == s.size()
+                        && containsAll(that); // Invokes safe containsAll() above
             }
 
             static <K,V,T> CheckedEntry<K,V,T> checkedEntry(Map.Entry<K,V> e,
@@ -5251,8 +5241,7 @@ public class Collections {
         public boolean equals(Object o) {
             if (o == this)
                 return true;
-            if (o instanceof CopiesList) {
-                CopiesList<?> other = (CopiesList<?>) o;
+            if (o instanceof CopiesList<?> other) {
                 return n == other.n && (n == 0 || eq(element, other.element));
             }
             if (!(o instanceof List))

@@ -1,6 +1,0 @@
-Where IdealGraphVisualizer graph dumps triggered by Dump or DumpOnError should be written.
-The accepted values are:
-      File - Dump IGV graphs to the local file system (see DumpPath).
-   Network - Dump IGV graphs to the network destination specified by PrintGraphHost and PrintGraphPort.
-             If a network connection cannot be opened, dumping falls back to file dumping. 
-   Disable - Do not dump IGV graphs.

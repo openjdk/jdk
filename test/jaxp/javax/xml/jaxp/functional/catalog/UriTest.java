@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.UriTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UriTest
  * @run testng/othervm catalog.UriTest
  * @summary Get matched URIs from uri entries.
  */

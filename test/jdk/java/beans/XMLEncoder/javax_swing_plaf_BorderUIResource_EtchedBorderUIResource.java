@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests EtchedBorderUIResource encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_BorderUIResource_EtchedBorderUIResource
  * @author Sergey Malenkov
  */
 

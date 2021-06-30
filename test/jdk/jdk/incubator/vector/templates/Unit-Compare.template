@@ -12,7 +12,7 @@
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
-                    Assert.assertEquals(mv.laneIsSet(j), a[i + j] [[TEST_OP]] b[i + j]);
+                    Assert.assertEquals(mv.laneIsSet(j), [[TEST_OP]](a[i + j], b[i + j]));
                 }
             }
         }

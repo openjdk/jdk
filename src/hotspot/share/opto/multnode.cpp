@@ -140,7 +140,7 @@ void ProjNode::dump_spec(outputStream *st) const { st->print("#%d",_con); if(_is
 void ProjNode::dump_compact_spec(outputStream *st) const {
   for (DUIterator i = this->outs(); this->has_out(i); i++) {
     Node* o = this->out(i);
-    if (NotANode(o)) {
+    if (not_a_node(o)) {
       st->print("[?]");
     } else if (o == NULL) {
       st->print("[_]");

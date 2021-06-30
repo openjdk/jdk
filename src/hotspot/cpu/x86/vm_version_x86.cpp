@@ -45,7 +45,10 @@ int VM_Version::_model;
 int VM_Version::_stepping;
 bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
-const char* VM_Version::_features_names[] = { FEATURES_NAMES };
+
+#define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
+const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
+#undef DECLARE_CPU_FEATURE_FLAG
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -782,7 +785,6 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(res > 0, "not enough temporary space allocated");
-  assert(log2i_exact((uint64_t)CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
@@ -896,6 +898,24 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+#ifdef _LP64
+  if (supports_avx2()) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      UseAdler32Intrinsics = true;
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 Intrinsics requires avx2 instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+#else
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+#endif
+
   if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       UseCRC32CIntrinsics = true;
@@ -991,16 +1011,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
-  }
-
   if (!supports_rtm() && UseRTMLocking) {
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
-    // VM_Version_init() is executed after UseBiasedLocking is used
-    // in Thread::allocate().
     vm_exit_during_initialization("RTM instructions are not available on this CPU");
   }
 
@@ -1008,8 +1019,6 @@ void VM_Version::get_processor_features() {
   if (UseRTMLocking) {
     if (!CompilerConfig::is_c2_enabled()) {
       // Only C2 does RTM locking optimization.
-      // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-      // setting during arguments processing. See use_biased_locking().
       vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
     }
     if (is_intel_family_core()) {
@@ -1047,8 +1056,6 @@ void VM_Version::get_processor_features() {
 #else
   if (UseRTMLocking) {
     // Only C2 does RTM locking optimization.
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
     vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
   }
 #endif
@@ -1404,12 +1411,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
-           ArrayCopyPartialInlineSize != 0 &&
-           ArrayCopyPartialInlineSize != 32 &&
-           ArrayCopyPartialInlineSize != 16 &&
-           ArrayCopyPartialInlineSize != 64)) {
+      if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
+           ArrayOperationPartialInlineSize != 0 &&
+           ArrayOperationPartialInlineSize != 16 &&
+           ArrayOperationPartialInlineSize != 32 &&
+           ArrayOperationPartialInlineSize != 64)) {
         int inline_size = 0;
         if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
           inline_size = 64;
@@ -1418,18 +1425,18 @@ void VM_Version::get_processor_features() {
         } else if (MaxVectorSize >= 16) {
           inline_size = 16;
         }
-        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+          warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
         }
-        ArrayCopyPartialInlineSize = inline_size;
+        ArrayOperationPartialInlineSize = inline_size;
       }
 
-      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
-        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (ArrayCopyPartialInlineSize) {
-          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+      if (ArrayOperationPartialInlineSize > MaxVectorSize) {
+        ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayOperationPartialInlineSize) {
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
         } else {
-          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
         }
       }
     }
@@ -1700,6 +1707,9 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // !PRODUCT
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -1716,27 +1726,6 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   } else if (vrt == HyperVRole) {
     st->print_cr("Hyper-V role detected");
   }
-}
-
-bool VM_Version::use_biased_locking() {
-#if INCLUDE_RTM_OPT
-  // RTM locking is most useful when there is high lock contention and
-  // low data contention.  With high lock contention the lock is usually
-  // inflated and biased locking is not suitable for that case.
-  // RTM locking code requires that biased locking is off.
-  // Note: we can't switch off UseBiasedLocking in get_processor_features()
-  // because it is used by Thread::allocate() which is called before
-  // VM_Version::initialize().
-  if (UseRTMLocking && UseBiasedLocking) {
-    if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
-      FLAG_SET_DEFAULT(UseBiasedLocking, false);
-    } else {
-      warning("Biased locking is not supported with RTM locking; ignoring UseBiasedLocking flag." );
-      UseBiasedLocking = false;
-    }
-  }
-#endif
-  return UseBiasedLocking;
 }
 
 bool VM_Version::compute_has_intel_jcc_erratum() {

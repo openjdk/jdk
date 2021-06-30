@@ -30,7 +30,7 @@ import java.lang.invoke.MethodType;
  * @bug 8007035
  * @summary Test MethodHandle of a private member
  *
- * @run main TestPrivateMember
+ * @run main/othervm -Djava.security.manager=allow TestPrivateMember
  */
 
 public class TestPrivateMember {

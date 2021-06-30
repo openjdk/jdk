@@ -98,10 +98,10 @@ public class TestStylesheet extends JavadocTester {
                         font-weight:bold;
                         clear:none;
                         overflow:hidden;
-                        padding:0px;
+                        padding:0;
                         padding-top:10px;
                         padding-left:1px;
-                        margin:0px;
+                        margin:0;
                         white-space:pre;
                     }""",
                 """
@@ -209,7 +209,7 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");

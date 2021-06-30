@@ -37,11 +37,6 @@ class MethodCounters : public Metadata {
  private:
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequency-based optimizations
-  // If you add a new field that points to any metaspace object, you
-  // must add this field to MethodCounters::metaspace_pointers_do().
-#if INCLUDE_AOT
-  Method*           _method;                     // Back link to Method
-#endif
   jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   int               _nmethod_age;
@@ -74,15 +69,12 @@ class MethodCounters : public Metadata {
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
 
-  AOT_ONLY(Method* method() const { return _method; })
-
   static int method_counters_size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
   }
   virtual int size() const {
     return method_counters_size();
   }
-  void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return MethodCountersType; }
   void clear_counters();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023 8263432
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -78,8 +79,10 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner14;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -1713,7 +1716,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                          "-AlookupClass=+test.Test",
                          "-AlookupPackage=+test",
                          "--add-modules=m2x",
-                         "-XDshould-stop.at=ATTR",
+                         "-XDshould-stop.ifError=ATTR",
+                         "-XDshould-stop.ifNoError=ATTR",
                          "-XDrawDiagnostics")
                 .outdir(srcClasses)
                 .files(findJavaFiles(src))
@@ -2032,6 +2036,101 @@ public class AnnotationProcessing extends ModuleTestBase {
         if (!log.equals(expected)) {
             throw new AssertionError("Expected output not found.");
         }
+    }
+
+    @Test
+    public void testClassPhantomPackageClash(Path base) throws Exception {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "module m {}",
+                          "package api; public class Nested {}",
+                          "package api.nested; public class C {}");
+
+        class TestFileManager extends ForwardingJavaFileManager<JavaFileManager>
+                              implements StandardJavaFileManager {
+
+            public TestFileManager(StandardJavaFileManager fileManager) {
+                super(fileManager);
+            }
+
+            @Override
+            public Iterable<JavaFileObject> list(Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
+                if ("api.Nested".equals(packageName)) {
+                    //simulate case insensitive filesystem:
+                    packageName = "api.nested";
+                }
+                return super.list(location, packageName, kinds, recurse);
+            }
+
+            @Override
+            public void setLocationFromPaths(Location location, Collection<? extends Path> paths) throws IOException {
+                ((StandardJavaFileManager) fileManager).setLocationFromPaths(location, paths);
+            }
+
+            @Override
+            public Iterable<? extends Path> getLocationAsPaths(Location location) {
+                return ((StandardJavaFileManager) fileManager).getLocationAsPaths(location);
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(Iterable<? extends File> files) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void setLocation(Location location, Iterable<? extends File> files) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends File> getLocation(Location location) {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
+             JavaFileManager testFM = new TestFileManager(fm)) {
+            new JavacTask(tb)
+                .fileManager(testFM)
+                .options("-processor", NoOpTestAP.class.getName(),
+                         "-sourcepath", src.toString())
+                .outdir(classes)
+                .files(src.resolve("module-info.java"),
+                       src.resolve("api").resolve("Nested.java"))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.STDERR);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class NoOpTestAP extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            return false;
+        }
+
     }
 
     private static void assertNonNull(String msg, Object val) {

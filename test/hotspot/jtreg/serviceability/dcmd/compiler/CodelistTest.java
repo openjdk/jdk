@@ -120,7 +120,7 @@ public class CodelistTest {
                 Assert.assertTrue(compileID > 0, "CompileID must be positive");
 
                 int compileLevel = Integer.parseInt(parts[1]);
-                Assert.assertTrue(compileLevel >= -1, "CompileLevel must be at least -1 (AOT)");
+                Assert.assertTrue(compileLevel >= -1, "CompileLevel must be at least -1 (Any)");
                 Assert.assertTrue(compileLevel <= 4,  "CompileLevel must be at most 4 (C2)");
 
                 int codeState = Integer.parseInt(parts[2]);

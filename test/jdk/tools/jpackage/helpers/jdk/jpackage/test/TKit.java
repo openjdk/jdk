@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,20 +99,6 @@ final public class TKit {
 
         throw throwUnknownPlatformError();
     }).get();
-
-    public static void run(String args[], ThrowingRunnable testBody) {
-        if (currentTest != null) {
-            throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
-        }
-
-        TestInstance test = new TestInstance(testBody);
-        ThrowingRunnable.toRunnable(() -> runTests(List.of(test))).run();
-        test.rethrowIfSkipped();
-        if (!test.passed()) {
-            throw new RuntimeException();
-        }
-    }
 
     static void withExtraLogStream(ThrowingRunnable action) {
         if (extraLogStream != null) {

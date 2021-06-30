@@ -105,20 +105,6 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg is killed.
-  // tmp_reg must be supplied and must not be rscratch1 or rscratch2
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
-
-
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
   void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
@@ -834,10 +820,6 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp_thread);
 
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
 
@@ -850,8 +832,6 @@ public:
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -1061,6 +1041,7 @@ public:
                enum operand_size size,
                bool acquire, bool release, bool weak,
                Register result);
+
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 
@@ -1084,7 +1065,7 @@ public:
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range || UseAOT;
+    return ReservedCodeCacheSize > branch_range;
   }
 
   // Jumps that can reach anywhere in the code cache.

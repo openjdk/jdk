@@ -107,6 +107,7 @@ public class Runtime {
      * @see #halt(int)
      */
     public void exit(int status) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkExit(status);
@@ -199,7 +200,7 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          {@link RuntimePermission}("shutdownHooks")
+     *          {@link RuntimePermission}{@code ("shutdownHooks")}
      *
      * @see #removeShutdownHook
      * @see #halt(int)
@@ -207,6 +208,7 @@ public class Runtime {
      * @since 1.3
      */
     public void addShutdownHook(Thread hook) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("shutdownHooks"));
@@ -228,13 +230,14 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          {@link RuntimePermission}("shutdownHooks")
+     *          {@link RuntimePermission}{@code ("shutdownHooks")}
      *
      * @see #addShutdownHook
      * @see #exit(int)
      * @since 1.3
      */
     public boolean removeShutdownHook(Thread hook) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("shutdownHooks"));
@@ -270,6 +273,7 @@ public class Runtime {
      * @since 1.3
      */
     public void halt(int status) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkExit(status);
@@ -365,7 +369,7 @@ public class Runtime {
      *
      * <p>More precisely, the {@code command} string is broken
      * into tokens using a {@link StringTokenizer} created by the call
-     * {@code new {@link StringTokenizer}(command)} with no
+     * {@code new StringTokenizer(command)} with no
      * further modification of the character categories.  The tokens
      * produced by the tokenizer are then placed in the new string
      * array {@code cmdarray}, in the same order.
@@ -734,6 +738,7 @@ public class Runtime {
     }
 
     void load0(Class<?> fromClass, String filename) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(filename);
@@ -797,6 +802,7 @@ public class Runtime {
     }
 
     void loadLibrary0(Class<?> fromClass, String libname) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(libname);

@@ -72,7 +72,7 @@ public class TestMethodId extends JavadocTester {
         checkOutput("p/C.html",
                 true,
                 """
-                    <code><a href="#m(int)" class="member-name-link">m</a>&#8203;(int&nbsp;i)</code>""",
+                    <code><a href="#m(int)" class="member-name-link">m</a><wbr>(int&nbsp;i)</code>""",
                 """
                     <section class="detail" id="m(int)">
                     <h3>m</h3>""");

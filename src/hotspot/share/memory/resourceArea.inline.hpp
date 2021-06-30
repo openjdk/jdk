@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
 
 #include "memory/resourceArea.hpp"
+
 #include "services/memTracker.hpp"
 
 inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failmode) {

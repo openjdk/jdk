@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     ToolEnvironment toolEnv;
 
-    final Messager messager;
+    final JavadocLog log;
     final ClassFinder javadocFinder;
     final DeferredCompletionFailureHandler dcfh;
     final Enter javadocEnter;
@@ -82,7 +82,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
      */
     protected JavadocTool(Context context) {
         super(context);
-        messager = Messager.instance0(context);
+        log = JavadocLog.instance0(context);
         javadocFinder = JavadocClassFinder.instance(context);
         dcfh = DeferredCompletionFailureHandler.instance(context);
         javadocEnter = JavadocEnter.instance(context);
@@ -101,7 +101,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
      *  Construct a new javadoc tool.
      */
     public static JavadocTool make0(Context context) {
-        Messager messager = null;
+        JavadocLog log = null;
         try {
             // force the use of Javadoc's class finder
             JavadocClassFinder.preRegister(context);
@@ -115,13 +115,13 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // force the use of Javadoc's own todo phase
             JavadocTodo.preRegister(context);
 
-            // force the use of Messager as a Log
-            messager = Messager.instance0(context);
+            // force the use of Javadoc's subtype of Log
+            log = JavadocLog.instance0(context);
 
             return new JavadocTool(context);
         } catch (CompletionFailure ex) {
-            assert messager != null;
-            messager.error(Position.NOPOS, ex.getMessage());
+            assert log != null;
+            log.error(Position.NOPOS, ex.getMessage());
             return null;
         }
     }
@@ -142,11 +142,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // If -Xclasses is set, the args should be a list of class names
             for (String arg: javaNames) {
                 if (!isValidPackageName(arg)) { // checks
-                    String text = messager.getText("main.illegal_class_name", arg);
+                    String text = log.getText("main.illegal_class_name", arg);
                     throw new ToolException(CMDERR, text);
                 }
             }
-            if (messager.hasErrors()) {
+            if (log.hasErrors()) {
                 return null;
             }
             etable.setClassArgList(javaNames);
@@ -158,8 +158,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
 
         try {
-            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager
-                    ? (StandardJavaFileManager) toolEnv.fileManager
+            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager sfm
+                    ? sfm
                     : null;
             Set<String> packageNames = new LinkedHashSet<>();
             // Normally, the args should be a series of package names or file names.
@@ -171,14 +171,14 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
                     if (fm == null) {
-                        String text = messager.getText("main.assertion.error", "fm == null");
+                        String text = log.getText("main.assertion.error", "fm == null");
                         throw new ToolException(ABNORMAL, text);
                     } else {
-                        String text = messager.getText("main.file_not_found", arg);
+                        String text = log.getText("main.file_not_found", arg);
                         throw new ToolException(ERROR, text);
                     }
                 } else {
-                    String text = messager.getText("main.illegal_package_name", arg);
+                    String text = log.getText("main.illegal_package_name", arg);
                     throw new ToolException(CMDERR, text);
                 }
             }
@@ -191,7 +191,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     .scanSpecifiedItems();
 
             // abort, if errors were encountered during modules initialization
-            if (messager.hasErrors()) {
+            if (log.hasErrors()) {
                 return null;
             }
 
@@ -202,7 +202,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             modules.newRound();
             modules.initModules(allTrees.toList());
 
-            if (messager.hasErrors()) {
+            if (log.hasErrors()) {
                 return null;
             }
 
@@ -210,7 +210,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             toolEnv.notice("main.Building_tree");
             javadocEnter.main(allTrees.toList());
 
-            if (messager.hasErrors()) {
+            if (log.hasErrors()) {
                 return null;
             }
 
@@ -232,17 +232,17 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         } catch (CompletionFailure cf) {
             throw new ToolException(ABNORMAL, cf.getMessage(), cf);
         } catch (Abort abort) {
-            if (messager.hasErrors()) {
+            if (log.hasErrors()) {
                 // presumably a message has been emitted, keep silent
                 throw new ToolException(ABNORMAL, "", abort);
             } else {
-                String text = messager.getText("main.internal.error");
+                String text = log.getText("main.internal.error");
                 Throwable t = abort.getCause() == null ? abort : abort.getCause();
                 throw new ToolException(ABNORMAL, text, t);
             }
         }
 
-        if (messager.hasErrors())
+        if (log.hasErrors())
             return null;
 
         toolEnv.docEnv = new DocEnvImpl(toolEnv, etable);

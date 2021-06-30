@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SHARED_SPACE_INLINE_HPP
 #define SHARE_GC_SHARED_SPACE_INLINE_HPP
 
+#include "gc/shared/space.hpp"
+
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
-#include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"

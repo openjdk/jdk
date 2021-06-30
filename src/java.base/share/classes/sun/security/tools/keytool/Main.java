@@ -933,16 +933,27 @@ public final class Main {
             }
         }
 
-        // Create new keystore
-        // Probe for keystore type when filename is available
         if (ksfile != null && ksStream != null && providerName == null &&
-                storetype == null && !inplaceImport) {
-            keyStore = KeyStore.getInstance(ksfile, storePass);
-            storetype = keyStore.getType();
+                !inplaceImport) {
+            // existing keystore
+            if (storetype == null) {
+                // Probe for keystore type when filename is available
+                keyStore = KeyStore.getInstance(ksfile, storePass);
+                storetype = keyStore.getType();
+            } else {
+                keyStore = KeyStore.getInstance(storetype);
+                // storePass might be null here, will probably prompt later
+                keyStore.load(ksStream, storePass);
+            }
             if (storetype.equalsIgnoreCase("pkcs12")) {
-                isPasswordlessKeyStore = PKCS12KeyStore.isPasswordless(ksfile);
+                try {
+                    isPasswordlessKeyStore = PKCS12KeyStore.isPasswordless(ksfile);
+                } catch (IOException ioe) {
+                    // This must be a JKS keystore that's opened as a PKCS12
+                }
             }
         } else {
+            // Create new keystore
             if (storetype == null) {
                 storetype = KeyStore.getDefaultType();
             }
@@ -985,10 +996,8 @@ public final class Main {
                 if (inplaceImport) {
                     keyStore.load(null, storePass);
                 } else {
+                    // both ksStream and storePass could be null
                     keyStore.load(ksStream, storePass);
-                }
-                if (ksStream != null) {
-                    ksStream.close();
                 }
             }
         }
@@ -1086,9 +1095,10 @@ public final class Main {
             if (nullStream) {
                 keyStore.load(null, storePass);
             } else if (ksStream != null) {
-                ksStream = new FileInputStream(ksfile);
-                keyStore.load(ksStream, storePass);
-                ksStream.close();
+                // Reload with user-provided password
+                try (FileInputStream fis = new FileInputStream(ksfile)) {
+                    keyStore.load(fis, storePass);
+                }
             }
         }
 
@@ -2419,8 +2429,15 @@ public final class Main {
             newPass = destKeyPass;
             pp = new PasswordProtection(destKeyPass);
         } else if (objs.snd != null) {
-            newPass = P12KEYSTORE.equalsIgnoreCase(storetype) ?
-                    storePass : objs.snd;
+            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+                if (isPasswordlessKeyStore) {
+                    newPass = objs.snd;
+                } else {
+                    newPass = storePass;
+                }
+            } else {
+                newPass = objs.snd;
+            }
             pp = new PasswordProtection(newPass);
         }
 
@@ -2432,7 +2449,7 @@ public final class Main {
             keyStore.setEntry(newAlias, entry, pp);
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
-            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+            if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
                 if (newPass != null && !Arrays.equals(newPass, storePass)) {
                     throw new Exception(rb.getString(
                             "The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified."));

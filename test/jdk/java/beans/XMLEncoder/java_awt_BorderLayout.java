@@ -25,6 +25,7 @@
  * @test
  * @bug 4916852
  * @summary Tests BorderLayout encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_BorderLayout
  * @author Sergey Malenkov
  */
 

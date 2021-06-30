@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,71 +58,76 @@ public class ButtonGroupLayoutTraversalTest {
 
     public static void main(String[] args) throws Exception {
 
-        SwingUtilities.invokeAndWait(() -> changeLAF());
-        SwingUtilities.invokeAndWait(() -> initLayout(nx, ny));
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
-        robot.waitForIdle();
-        robot.delay(200);
+        try {
+            SwingUtilities.invokeAndWait(() -> changeLAF());
+            SwingUtilities.invokeAndWait(() -> initLayout(nx, ny));
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
-            robot.keyPress(KeyEvent.VK_RIGHT);
-            robot.keyRelease(KeyEvent.VK_RIGHT);
-        }
-
-        for (int i = 0; i < nx * ny / 2; i++) {
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
-        }
-
-        robot.waitForIdle();
-        robot.delay(200);
-
-        for (int i = 0; i < nx * ny; i++) {
-            if (focusCnt[i] < 1) {
-                SwingUtilities.invokeLater(window::dispose);
-                throw new RuntimeException("Component " + i
-                        + " is not reachable in the forward focus cycle");
-            } else if (focusCnt[i] > 1) {
-                SwingUtilities.invokeLater(window::dispose);
-                throw new RuntimeException("Component " + i
-                        + " got focus more than once in the forward focus cycle");
+            for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
+                robot.keyPress(KeyEvent.VK_RIGHT);
+                robot.keyRelease(KeyEvent.VK_RIGHT);
+                robot.waitForIdle();
             }
-        }
 
-        for (int i = 0; i < nx * ny / 2; i++) {
+            for (int i = 0; i < nx * ny / 2; i++) {
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.waitForIdle();
+            }
+
+            robot.delay(200);
+
+            for (int i = 0; i < nx * ny; i++) {
+                if (focusCnt[i] < 1) {
+                    throw new RuntimeException("Component " + i
+                        + " is not reachable in the forward focus cycle");
+                } else if (focusCnt[i] > 1) {
+                    throw new RuntimeException("Component " + i
+                        + " got focus more than once in the forward focus cycle");
+                }
+            }
+
+            for (int i = 0; i < nx * ny / 2; i++) {
+                robot.keyPress(KeyEvent.VK_SHIFT);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_SHIFT);
+                robot.waitForIdle();
+            }
+
+            for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
+                robot.keyPress(KeyEvent.VK_LEFT);
+                robot.keyRelease(KeyEvent.VK_LEFT);
+                robot.waitForIdle();
+            }
+
             robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-        }
+            robot.waitForIdle();
 
-        for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
-            robot.keyPress(KeyEvent.VK_LEFT);
-            robot.keyRelease(KeyEvent.VK_LEFT);
-        }
+            robot.delay(200);
 
-        robot.keyPress(KeyEvent.VK_SHIFT);
-        robot.keyPress(KeyEvent.VK_TAB);
-        robot.keyRelease(KeyEvent.VK_TAB);
-        robot.keyRelease(KeyEvent.VK_SHIFT);
-
-        robot.waitForIdle();
-        robot.delay(200);
-
-        for (int i = 0; i < nx * ny; i++) {
-            if (focusCnt[i] < 2) {
-                SwingUtilities.invokeLater(window::dispose);
-                throw new RuntimeException("Component " + i
+            for (int i = 0; i < nx * ny; i++) {
+                if (focusCnt[i] < 2) {
+                    throw new RuntimeException("Component " + i
                         + " is not reachable in the backward focus cycle");
-            } else if (focusCnt[i] > 2) {
-                SwingUtilities.invokeLater(window::dispose);
-                throw new RuntimeException("Component " + i
+                } else if (focusCnt[i] > 2) {
+                    throw new RuntimeException("Component " + i
                         + " got focus more than once in the backward focus cycle");
+                }
             }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (window != null) {
+                    window.dispose();
+                }
+            });
         }
-
-        SwingUtilities.invokeLater(window::dispose);
     }
 
     private static void changeLAF() {
@@ -179,6 +184,7 @@ public class ButtonGroupLayoutTraversalTest {
         }
         rootPanel.add(formPanel, BorderLayout.CENTER);
         window.add(rootPanel);
+        window.setLocationRelativeTo(null);
         window.pack();
         window.setVisible(true);
     }

@@ -329,7 +329,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ bind(runtime);
   // save the live input values
   __ push(store_addr);
-  __ push(new_val);
 #ifdef _LP64
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, r15_thread);
 #else
@@ -337,7 +336,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
   __ pop(thread);
 #endif
-  __ pop(new_val);
   __ pop(store_addr);
 
   __ bind(done);

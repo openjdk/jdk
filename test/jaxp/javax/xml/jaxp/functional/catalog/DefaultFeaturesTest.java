@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.DefaultFeaturesTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DefaultFeaturesTest
  * @run testng/othervm catalog.DefaultFeaturesTest
  * @summary This case tests if the default feature values are expected.
  */

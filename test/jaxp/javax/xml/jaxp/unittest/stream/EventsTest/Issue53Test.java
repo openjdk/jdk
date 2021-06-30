@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EventsTest.Issue53Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EventsTest.Issue53Test
  * @run testng/othervm stream.EventsTest.Issue53Test
  * @summary Test encodingSet/standaloneSet returns correct result in case encoding/standalone is set when constructing StartDocument.
  */

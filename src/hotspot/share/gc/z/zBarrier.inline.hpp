@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZBARRIER_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIER_INLINE_HPP
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.hpp"
+
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
 #include "oops/oop.hpp"
@@ -364,7 +365,7 @@ inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
   assert(ZAddress::is_good(addr), "Invalid address");
 
   if (during_mark()) {
-    mark_barrier_on_oop_slow_path(addr);
+    keep_alive_barrier_on_oop_slow_path(addr);
   }
 }
 

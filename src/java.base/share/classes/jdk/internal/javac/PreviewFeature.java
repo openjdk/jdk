@@ -54,7 +54,11 @@ public @interface PreviewFeature {
     public boolean reflective() default false;
 
     public enum Feature {
+        /*
+         * This one can only be removed after JDK 17
+         */
         SEALED_CLASSES,
+        SWITCH_PATTERN_MATCHING,
         /**
          * A key for testing.
          */

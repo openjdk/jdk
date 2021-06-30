@@ -602,17 +602,15 @@ public final class LocalDate
      */
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isDateBased()) {
-                switch (f) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, getMonth() == Month.FEBRUARY && isLeapYear() == false ? 4 : 5);
-                    case YEAR_OF_ERA:
-                        return (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
-                }
-                return field.range();
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isDateBased()) {
+                return switch (chronoField) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, getMonth() == Month.FEBRUARY && !isLeapYear() ? 4 : 5);
+                    case YEAR_OF_ERA -> (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
+                    default -> field.range();
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -867,17 +865,11 @@ public final class LocalDate
      */
     @Override
     public int lengthOfMonth() {
-        switch (month) {
-            case 2:
-                return (isLeapYear() ? 29 : 28);
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                return 30;
-            default:
-                return 31;
-        }
+        return switch (month) {
+            case 2 -> (isLeapYear() ? 29 : 28);
+            case 4, 6, 9, 11 -> 30;
+            default -> 31;
+        };
     }
 
     /**
@@ -1045,10 +1037,9 @@ public final class LocalDate
      */
     @Override
     public LocalDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case DAY_OF_WEEK: return plusDays(newValue - getDayOfWeek().getValue());
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                 case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
@@ -1168,8 +1159,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return plusMonths(periodToAdd.toTotalMonths()).plusDays(periodToAdd.getDays());
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1259,9 +1249,8 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case DAYS: return plusDays(amountToAdd);
                 case WEEKS: return plusWeeks(amountToAdd);
                 case MONTHS: return plusMonths(amountToAdd);
@@ -1418,8 +1407,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return minusMonths(periodToSubtract.toTotalMonths()).minusDays(periodToSubtract.getDays());
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");
@@ -1940,7 +1928,7 @@ public final class LocalDate
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         LocalDateTime ldt = atTime(LocalTime.MIDNIGHT);
-        if (zone instanceof ZoneOffset == false) {
+        if (!(zone instanceof ZoneOffset)) {
             ZoneRules rules = zone.getRules();
             ZoneOffsetTransition trans = rules.getTransition(ldt);
             if (trans != null && trans.isGap()) {

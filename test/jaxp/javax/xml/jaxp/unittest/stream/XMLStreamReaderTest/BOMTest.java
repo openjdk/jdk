@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6218794
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.BOMTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.BOMTest
  * @run testng/othervm stream.XMLStreamReaderTest.BOMTest
  * @summary Test XMLStreamReader parses BOM UTF-8 and BOM UTF-16 big endian stream.
  */

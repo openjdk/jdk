@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 7143711
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.Bug7143711Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.Bug7143711Test
  * @summary Test set use-service-mechanism shall not override what's set by the constructor in secure mode.
  */
 @Listeners({ jaxp.library.BasePolicy.class })

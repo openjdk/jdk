@@ -124,16 +124,11 @@ public final class URICertStoreParameters implements CertStoreParameters {
      */
     @Override
     public boolean equals(Object p) {
-        if (p == null || (!(p instanceof URICertStoreParameters))) {
-            return false;
-        }
-
         if (p == this) {
             return true;
         }
-
-        URICertStoreParameters other = (URICertStoreParameters)p;
-        return uri.equals(other.getURI());
+        return p instanceof URICertStoreParameters other
+                && uri.equals(other.getURI());
     }
 
     /**

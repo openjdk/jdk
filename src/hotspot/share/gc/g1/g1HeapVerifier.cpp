@@ -33,7 +33,6 @@
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -468,7 +467,7 @@ void G1HeapVerifier::enable_verification_type(G1VerifyType type) {
 }
 
 bool G1HeapVerifier::should_verify(G1VerifyType type) {
-  return (_enabled_verification_types & type) == type;
+  return (_enabled_verification_types & type) != 0;
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
@@ -516,11 +515,6 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     if (blk.failures()) {
       failures = true;
     }
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    log_debug(gc, verify)("StrDedup");
-    G1StringDedup::verify();
   }
 
   if (failures) {

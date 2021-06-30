@@ -156,7 +156,7 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
 
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
-    CompileTask *task = thread->as_CompilerThread()->task();
+    CompileTask *task = CompilerThread::cast(thread)->task();
     if (task != NULL) {
       JVMCICompileState *state = task->blocking_jvmci_compile_state();
       if (state != NULL) {

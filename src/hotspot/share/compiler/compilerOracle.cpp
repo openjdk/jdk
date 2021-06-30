@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -306,6 +306,11 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
+  if (option == CompileCommand::Blackhole && !UnlockExperimentalVMOptions) {
+    warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
+    return;
+  }
+
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
@@ -415,6 +420,37 @@ bool CompilerOracle::should_log(const methodHandle& method) {
 
 bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
+}
+
+void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
+  if (!check_predicate(CompileCommand::Blackhole, method)) {
+    return;
+  }
+  guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
+  if (method->result_type() != T_VOID) {
+    warning("Blackhole compile option only works for methods with void type: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (!method->is_empty_method()) {
+    warning("Blackhole compile option only works for empty methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (!method->is_static()) {
+    warning("Blackhole compile option only works for static methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (method->intrinsic_id() == vmIntrinsics::_blackhole) {
+    return;
+  }
+  if (method->intrinsic_id() != vmIntrinsics::_none) {
+    warning("Blackhole compile option only works for methods that do not have intrinsic set: %s, %s",
+            method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
+    return;
+  }
+  method->set_intrinsic_id(vmIntrinsics::_blackhole);
 }
 
 static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {

@@ -62,7 +62,7 @@ public class ThreadLoggingTest {
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread=debug", "-version");
         output = new OutputAnalyzer(pb.start());
         analyzeOutputForDebugLevel(output);
-
+        output.reportDiagnosticSummary();
     }
 
 }

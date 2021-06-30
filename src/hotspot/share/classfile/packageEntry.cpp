@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"

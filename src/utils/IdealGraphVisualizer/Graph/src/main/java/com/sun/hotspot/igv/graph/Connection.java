@@ -128,10 +128,12 @@ public class Connection implements Source.Provider, Link {
         if (type != null) {
             builder.append(type).append(" ");
         }
-        builder.append("from ");
-        builder.append(getOutputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
-        builder.append(" to ");
-        builder.append(getInputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
+        // Resolve strings lazily every time the tooltip is shown, instead of
+        // eagerly as for node labels, for efficiency.
+        String shortNodeText = getInputSlot().getFigure().getDiagram().getShortNodeText();
+        builder.append(getOutputSlot().getFigure().getProperties().resolveString(shortNodeText));
+        builder.append(" → ");
+        builder.append(getInputSlot().getFigure().getProperties().resolveString(shortNodeText));
         return builder.toString();
     }
 

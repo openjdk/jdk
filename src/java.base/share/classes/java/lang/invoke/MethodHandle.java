@@ -1558,32 +1558,22 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
             return Optional.empty();
         }
 
-        switch (info.getReferenceKind()) {
-            case REF_getField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
-            case REF_putField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
-            case REF_getStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
-            case REF_putStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
-            case REF_invokeVirtual:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
-            case REF_invokeStatic:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
-            case REF_invokeSpecial:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
-            case REF_invokeInterface:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
-            case REF_newInvokeSpecial:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
-            default:
-                return Optional.empty();
-        }
+        return switch (info.getReferenceKind()) {
+            case REF_getField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
+            case REF_putField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
+            case REF_getStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
+            case REF_putStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
+            case REF_invokeVirtual    -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
+            case REF_invokeStatic     -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
+            case REF_invokeSpecial    -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
+            case REF_invokeInterface  -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
+            case REF_newInvokeSpecial -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
+            default -> Optional.empty();
+        };
     }
 
     /**
@@ -1677,6 +1667,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     MethodHandleImpl.Intrinsic intrinsicName() {
         // no special intrinsic meaning to most MHs
         return MethodHandleImpl.Intrinsic.NONE;
+    }
+
+    /*non-public*/
+    Object intrinsicData() {
+        return null;
     }
 
     /*non-public*/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,10 +406,6 @@ class CodeBuffer: public StackObj {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
-#if INCLUDE_AOT
-  bool         _immutable_PIC;
-#endif
-
 #ifndef PRODUCT
   CodeStrings  _code_strings;
   bool         _collect_comments; // Indicate if we need to collect block comments at all.
@@ -426,9 +422,6 @@ class CodeBuffer: public StackObj {
     _oop_recorder    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
-#if INCLUDE_AOT
-    _immutable_PIC   = false;
-#endif
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -674,13 +667,6 @@ class CodeBuffer: public StackObj {
 
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
-
-#if INCLUDE_AOT
-  // True if this is a code buffer used for immutable PIC, i.e. AOT
-  // compilation.
-  bool immutable_PIC() { return _immutable_PIC; }
-  void set_immutable_PIC(bool pic) { _immutable_PIC = pic; }
-#endif
 
 #ifndef PRODUCT
  public:

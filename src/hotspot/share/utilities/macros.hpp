@@ -273,14 +273,6 @@
 #define INCLUDE_JVMCI 1
 #endif
 
-#ifndef INCLUDE_AOT
-#define INCLUDE_AOT 1
-#endif
-
-#if INCLUDE_AOT && !INCLUDE_JVMCI
-#  error "Must have JVMCI for AOT"
-#endif
-
 #if INCLUDE_JVMCI
 #define JVMCI_ONLY(code) code
 #define NOT_JVMCI(code)
@@ -290,16 +282,6 @@
 #define NOT_JVMCI(code) code
 #define NOT_JVMCI_RETURN {}
 #endif // INCLUDE_JVMCI
-
-#if INCLUDE_AOT
-#define AOT_ONLY(code) code
-#define NOT_AOT(code)
-#define NOT_AOT_RETURN /* next token must be ; */
-#else
-#define AOT_ONLY(code)
-#define NOT_AOT(code) code
-#define NOT_AOT_RETURN {}
-#endif // INCLUDE_AOT
 
 // COMPILER1 variant
 #ifdef COMPILER1

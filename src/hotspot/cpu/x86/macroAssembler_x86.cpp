@@ -40,7 +40,6 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -121,22 +120,12 @@ void MacroAssembler::cmpklass(Register src1, Metadata* obj) {
   cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
-void MacroAssembler::cmpoop_raw(Address src1, jobject obj) {
-  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
-}
-
-void MacroAssembler::cmpoop_raw(Register src1, jobject obj) {
-  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
-}
-
 void MacroAssembler::cmpoop(Address src1, jobject obj) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, obj);
+  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
 void MacroAssembler::cmpoop(Register src1, jobject obj) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, obj);
+  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
 void MacroAssembler::extend_sign(Register hi, Register lo) {
@@ -923,6 +912,221 @@ void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   Disassembler::decode((address)pc, (address)pc+32);
 }
 
+// The java_calling_convention describes stack locations as ideal slots on
+// a frame with no abi restrictions. Since we must observe abi restrictions
+// (like the placement of the register window) the slots must be biased by
+// the following value.
+static int reg2offset_in(VMReg r) {
+  // Account for saved rbp and return address
+  // This should really be in_preserve_stack_slots
+  return (r->reg2stack() + 4) * VMRegImpl::stack_slot_size;
+}
+
+static int reg2offset_out(VMReg r) {
+  return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
+}
+
+// A long move
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.is_single_phys_reg() ) {
+    if (dst.is_single_phys_reg()) {
+      if (dst.first() != src.first()) {
+        mov(dst.first()->as_Register(), src.first()->as_Register());
+      }
+    } else {
+      assert(dst.is_single_reg(), "not a stack pair");
+      movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+    }
+  } else if (dst.is_single_phys_reg()) {
+    assert(src.is_single_reg(),  "not a stack pair");
+    movq(dst.first()->as_Register(), Address(rbp, reg2offset_out(src.first())));
+  } else {
+    assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
+    movq(rax, Address(rbp, reg2offset_in(src.first())));
+    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+  }
+}
+
+// A double move
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.is_single_phys_reg() ) {
+    if (dst.is_single_phys_reg()) {
+      // In theory these overlap but the ordering is such that this is likely a nop
+      if ( src.first() != dst.first()) {
+        movdbl(dst.first()->as_XMMRegister(), src.first()->as_XMMRegister());
+      }
+    } else {
+      assert(dst.is_single_reg(), "not a stack pair");
+      movdbl(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+    }
+  } else if (dst.is_single_phys_reg()) {
+    assert(src.is_single_reg(),  "not a stack pair");
+    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_out(src.first())));
+  } else {
+    assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
+    movq(rax, Address(rbp, reg2offset_in(src.first())));
+    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+  }
+}
+
+
+// A float arg may have to do float reg int reg conversion
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+  assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      movl(rax, Address(rbp, reg2offset_in(src.first())));
+      movptr(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      assert(dst.first()->is_XMMRegister(), "only expect xmm registers as parameters");
+      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    assert(src.first()->is_XMMRegister(), "only expect xmm registers as parameters");
+    movflt(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+  } else {
+    // reg to reg
+    // In theory these overlap but the ordering is such that this is likely a nop
+    if ( src.first() != dst.first()) {
+      movdbl(dst.first()->as_XMMRegister(),  src.first()->as_XMMRegister());
+    }
+  }
+}
+
+// On 64 bit we will store integer like items to the stack as
+// 64 bits items (x86_32/64 abi) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32 bits
+// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      movslq(rax, Address(rbp, reg2offset_in(src.first())));
+      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    // Do we really have to sign extend???
+    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
+    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+  } else {
+    // Do we really have to sign extend???
+    // __ movslq(dst.first()->as_Register(), src.first()->as_Register());
+    if (dst.first() != src.first()) {
+      movq(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+void MacroAssembler::move_ptr(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      movq(rax, Address(rbp, reg2offset_in(src.first())));
+      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      movq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+  } else {
+    if (dst.first() != src.first()) {
+      movq(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+// An oop arg. Must pass a handle not the oop itself
+void MacroAssembler::object_move(OopMap* map,
+                        int oop_handle_offset,
+                        int framesize_in_slots,
+                        VMRegPair src,
+                        VMRegPair dst,
+                        bool is_receiver,
+                        int* receiver_offset) {
+
+  // must pass a handle. First figure out the location we use as a handle
+
+  Register rHandle = dst.first()->is_stack() ? rax : dst.first()->as_Register();
+
+  // See if oop is NULL if it is we need no handle
+
+  if (src.first()->is_stack()) {
+
+    // Oop is already on the stack as an argument
+    int offset_in_older_frame = src.first()->reg2stack() + SharedRuntime::out_preserve_stack_slots();
+    map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + framesize_in_slots));
+    if (is_receiver) {
+      *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
+    }
+
+    cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    lea(rHandle, Address(rbp, reg2offset_in(src.first())));
+    // conditionally move a NULL
+    cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
+  } else {
+
+    // Oop is in an a register we must store it to the space we reserve
+    // on the stack for oop_handles and pass a handle if oop is non-NULL
+
+    const Register rOop = src.first()->as_Register();
+    int oop_slot;
+    if (rOop == j_rarg0)
+      oop_slot = 0;
+    else if (rOop == j_rarg1)
+      oop_slot = 1;
+    else if (rOop == j_rarg2)
+      oop_slot = 2;
+    else if (rOop == j_rarg3)
+      oop_slot = 3;
+    else if (rOop == j_rarg4)
+      oop_slot = 4;
+    else {
+      assert(rOop == j_rarg5, "wrong register");
+      oop_slot = 5;
+    }
+
+    oop_slot = oop_slot * VMRegImpl::slots_per_word + oop_handle_offset;
+    int offset = oop_slot*VMRegImpl::stack_slot_size;
+
+    map->set_oop(VMRegImpl::stack2reg(oop_slot));
+    // Store oop in handle area, may be NULL
+    movptr(Address(rsp, offset), rOop);
+    if (is_receiver) {
+      *receiver_offset = offset;
+    }
+
+    cmpptr(rOop, (int32_t)NULL_WORD);
+    lea(rHandle, Address(rsp, offset));
+    // conditionally move a NULL from the handle area where it was just stored
+    cmovptr(Assembler::equal, rHandle, Address(rsp, offset));
+  }
+
+  // If arg is on the stack then place it otherwise it is already in correct reg.
+  if (dst.first()->is_stack()) {
+    movptr(Address(rsp, reg2offset_out(dst.first())), rHandle);
+  }
+}
+
 #endif // _LP64
 
 // Now versions that are common to 32/64 bit
@@ -1073,200 +1277,6 @@ void MacroAssembler::reserved_stack_check() {
     should_not_reach_here();
 
     bind(no_reserved_zone_enabling);
-}
-
-void MacroAssembler::biased_locking_enter(Register lock_reg,
-                                          Register obj_reg,
-                                          Register swap_reg,
-                                          Register tmp_reg,
-                                          Register tmp_reg2,
-                                          bool swap_reg_contains_mark,
-                                          Label& done,
-                                          Label* slow_case,
-                                          BiasedLockingCounters* counters) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
-  assert(tmp_reg != noreg, "tmp_reg must be supplied");
-  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
-  NOT_LP64( Address saved_mark_addr(lock_reg, 0); )
-
-  if (PrintBiasedLockingStatistics && counters == NULL) {
-    counters = BiasedLocking::counters();
-  }
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  // First check to see whether biasing is even enabled for this object
-  Label cas_label;
-  if (!swap_reg_contains_mark) {
-    movptr(swap_reg, mark_addr);
-  }
-  movptr(tmp_reg, swap_reg);
-  andptr(tmp_reg, markWord::biased_lock_mask_in_place);
-  cmpptr(tmp_reg, markWord::biased_lock_pattern);
-  jcc(Assembler::notEqual, cas_label);
-  // The bias pattern is present in the object's header. Need to check
-  // whether the bias owner and the epoch are both still current.
-#ifndef _LP64
-  // Note that because there is no current thread register on x86_32 we
-  // need to store off the mark word we read out of the object to
-  // avoid reloading it and needing to recheck invariants below. This
-  // store is unfortunate but it makes the overall code shorter and
-  // simpler.
-  movptr(saved_mark_addr, swap_reg);
-#endif
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-#ifdef _LP64
-  orptr(tmp_reg, r15_thread);
-  xorptr(tmp_reg, swap_reg);
-  Register header_reg = tmp_reg;
-#else
-  xorptr(tmp_reg, swap_reg);
-  get_thread(swap_reg);
-  xorptr(swap_reg, tmp_reg);
-  Register header_reg = swap_reg;
-#endif
-  andptr(header_reg, ~((int) markWord::age_mask_in_place));
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->biased_lock_entry_count_addr()));
-  }
-  jcc(Assembler::equal, done);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  testptr(header_reg, markWord::biased_lock_mask_in_place);
-  jcc(Assembler::notZero, try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  testptr(header_reg, markWord::epoch_mask_in_place);
-  jccb(Assembler::notZero, try_rebias);
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
-  andptr(swap_reg,
-         markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place);
-#ifdef _LP64
-  movptr(tmp_reg, swap_reg);
-  orptr(tmp_reg, r15_thread);
-#else
-  get_thread(tmp_reg);
-  orptr(tmp_reg, swap_reg);
-#endif
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->anonymously_biased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-#ifdef _LP64
-  orptr(tmp_reg, r15_thread);
-#else
-  get_thread(swap_reg);
-  orptr(tmp_reg, swap_reg);
-  movptr(swap_reg, saved_mark_addr);
-#endif
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // If the biasing toward our thread failed, then another thread
-  // succeeded in biasing it toward itself and we need to revoke that
-  // bias. The revocation will occur in the runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->rebiased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->revoked_lock_entry_count_addr()));
-  }
-
-  bind(cas_label);
-}
-
-void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, Label& done) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-
-  // Check for biased locking unlock case, which is a no-op
-  // Note: we do not have to check the thread ID for two reasons.
-  // First, the interpreter checks for IllegalMonitorStateException at
-  // a higher level. Second, if the bias was revoked while we held the
-  // lock, the object could not be rebiased toward another thread, so
-  // the bias bit would be clear.
-  movptr(temp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-  andptr(temp_reg, markWord::biased_lock_mask_in_place);
-  cmpptr(temp_reg, markWord::biased_lock_pattern);
-  jcc(Assembler::equal, done);
 }
 
 void MacroAssembler::c2bool(Register x) {
@@ -1794,20 +1804,17 @@ void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
 }
 
 void MacroAssembler::cmpoop(Register src1, Register src2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, src2);
+  cmpptr(src1, src2);
 }
 
 void MacroAssembler::cmpoop(Register src1, Address src2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, src2);
+  cmpptr(src1, src2);
 }
 
 #ifdef _LP64
 void MacroAssembler::cmpoop(Register src1, jobject src2) {
   movoop(rscratch1, src2);
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, rscratch1);
+  cmpptr(src1, rscratch1);
 }
 #endif
 
@@ -2808,11 +2815,11 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool 
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, Thread::polling_word_offset()));
+    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, JavaThread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }
-  testb(Address(thread_reg, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+  testb(Address(thread_reg, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
   jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
 }
 
@@ -3143,42 +3150,42 @@ void MacroAssembler::evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds,
 }
 
 void MacroAssembler::evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
@@ -3229,9 +3236,9 @@ void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
   Assembler::vpmovzxbw(dst, src, vector_len);
 }
 
-void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
+void MacroAssembler::vpmovmskb(Register dst, XMMRegister src, int vector_len) {
   assert((src->encoding() < 16),"XMM register should be 0-15");
-  Assembler::vpmovmskb(dst, src);
+  Assembler::vpmovmskb(dst, src, vector_len);
 }
 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
@@ -3242,6 +3249,16 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpmullw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  assert((UseAVX > 0), "AVX support is needed");
+  if (reachable(src)) {
+    Assembler::vpmulld(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(scratch_reg, src);
+    Assembler::vpmulld(dst, nds, Address(scratch_reg, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
@@ -4368,7 +4385,7 @@ static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
     return true;                // All other stack states do not matter
   }
 
-  assert((fs->_control_word._value & 0xffff) == StubRoutines::_fpu_cntrl_wrd_std,
+  assert((fs->_control_word._value & 0xffff) == StubRoutines::x86::fpu_cntrl_wrd_std(),
          "bad FPU control word");
 
   // compute stack depth
@@ -4434,7 +4451,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
-      ldmxcsr(ExternalAddress(StubRoutines::addr_mxcsr_std()));
+      ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()));
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
@@ -4520,11 +4537,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
-  load_klass(dst, src, tmp);
-  movptr(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
@@ -4559,15 +4571,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
   } else {
     bs->store_at(this, decorators, type, dst, src, tmp1, tmp2);
   }
-}
-
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
@@ -4964,7 +4967,7 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
 #ifndef _LP64
   // If method sets FPU control word do it now
   if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
   }
   if (UseSSE >= 2 && VerifyFPU) {
     verify_FPU(0, "FPU stack must be clean on entry");
@@ -7858,7 +7861,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
@@ -7908,7 +7911,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 

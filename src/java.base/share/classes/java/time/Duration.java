@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,14 +719,14 @@ public final class Duration
         if (amountToAdd == 0) {
             return this;
         }
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
-                case MILLIS: return plusMillis(amountToAdd);
-                case SECONDS: return plusSeconds(amountToAdd);
-            }
-            return plusSeconds(Math.multiplyExact(unit.getDuration().seconds, amountToAdd));
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case NANOS -> plusNanos(amountToAdd);
+                case MICROS -> plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
+                case MILLIS -> plusMillis(amountToAdd);
+                case SECONDS -> plusSeconds(amountToAdd);
+                default -> plusSeconds(Math.multiplyExact(unit.getDuration().seconds, amountToAdd));
+            };
         }
         Duration duration = unit.getDuration().multipliedBy(amountToAdd);
         return plusSeconds(duration.getSeconds()).plusNanos(duration.getNano());
@@ -1260,6 +1260,8 @@ public final class Duration
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
+     * @apiNote
+     * This method behaves exactly the same way as {@link #toDays()}.
      *
      * @return the number of days in the duration, may be negative
      * @since 9
@@ -1421,20 +1423,17 @@ public final class Duration
      * <p>
      * The comparison is based on the total length of the durations.
      *
-     * @param otherDuration the other duration, null returns false
+     * @param other the other duration, null returns false
      * @return true if the other duration is equal to this one
      */
     @Override
-    public boolean equals(Object otherDuration) {
-        if (this == otherDuration) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (otherDuration instanceof Duration) {
-            Duration other = (Duration) otherDuration;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
-        }
-        return false;
+        return (other instanceof Duration otherDuration)
+                && this.seconds == otherDuration.seconds
+                && this.nanos == otherDuration.nanos;
     }
 
     /**

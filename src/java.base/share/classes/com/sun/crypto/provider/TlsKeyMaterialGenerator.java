@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -86,16 +87,18 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             throw new IllegalStateException(
                 "TlsKeyMaterialGenerator must be initialized");
         }
+        byte[] masterSecret = spec.getMasterSecret().getEncoded();
         try {
-            return engineGenerateKey0();
+            return engineGenerateKey0(masterSecret);
         } catch (GeneralSecurityException e) {
             throw new ProviderException(e);
+        } finally {
+            Arrays.fill(masterSecret, (byte)0);
         }
     }
 
     @SuppressWarnings("deprecation")
-    private SecretKey engineGenerateKey0() throws GeneralSecurityException {
-        byte[] masterSecret = spec.getMasterSecret().getEncoded();
+    private SecretKey engineGenerateKey0(byte[] masterSecret) throws GeneralSecurityException {
 
         byte[] clientRandom = spec.getClientRandom();
         byte[] serverRandom = spec.getServerRandom();
@@ -116,7 +119,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         int keyBlockLen = macLength + keyLength
             + (isExportable ? 0 : ivLength);
         keyBlockLen <<= 1;
-        byte[] keyBlock = new byte[keyBlockLen];
+        byte[] keyBlock;
 
         // These may be used again later for exportable suite calculations.
         MessageDigest md5 = null;
@@ -169,16 +172,11 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         int ofs = 0;
         if (macLength != 0) {
-            byte[] tmp = new byte[macLength];
-
             // mac keys
-            System.arraycopy(keyBlock, ofs, tmp, 0, macLength);
+            clientMacKey = new SecretKeySpec(keyBlock, ofs, macLength, "Mac");
             ofs += macLength;
-            clientMacKey = new SecretKeySpec(tmp, "Mac");
-
-            System.arraycopy(keyBlock, ofs, tmp, 0, macLength);
+            serverMacKey = new SecretKeySpec(keyBlock, ofs, macLength, "Mac");
             ofs += macLength;
-            serverMacKey = new SecretKeySpec(tmp, "Mac");
         }
 
         if (keyLength == 0) { // SSL_RSA_WITH_NULL_* ciphersuites
@@ -196,82 +194,89 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         System.arraycopy(keyBlock, ofs, serverKeyBytes, 0, keyLength);
         ofs += keyLength;
 
-        if (isExportable == false) {
-            // cipher keys
-            clientCipherKey = new SecretKeySpec(clientKeyBytes, alg);
-            serverCipherKey = new SecretKeySpec(serverKeyBytes, alg);
+        try {
+            if (isExportable == false) {
+                // cipher keys
+                clientCipherKey = new SecretKeySpec(clientKeyBytes, alg);
+                serverCipherKey = new SecretKeySpec(serverKeyBytes, alg);
 
-            // IV keys if needed.
-            if (ivLength != 0) {
-                byte[] tmp = new byte[ivLength];
-
-                System.arraycopy(keyBlock, ofs, tmp, 0, ivLength);
-                ofs += ivLength;
-                clientIv = new IvParameterSpec(tmp);
-
-                System.arraycopy(keyBlock, ofs, tmp, 0, ivLength);
-                ofs += ivLength;
-                serverIv = new IvParameterSpec(tmp);
-            }
-        } else {
-            // if exportable suites, calculate the alternate
-            // cipher key expansion and IV generation
-            if (protocolVersion >= 0x0302) {
-                // TLS 1.1+
-                throw new RuntimeException(
-                    "Internal Error:  TLS 1.1+ should not be negotiating" +
-                    "exportable ciphersuites");
-            } else if (protocolVersion == 0x0301) {
-                // TLS 1.0
-                byte[] seed = concat(clientRandom, serverRandom);
-
-                byte[] tmp = doTLS10PRF(clientKeyBytes,
-                    LABEL_CLIENT_WRITE_KEY, seed, expandedKeyLength, md5, sha);
-                clientCipherKey = new SecretKeySpec(tmp, alg);
-
-                tmp = doTLS10PRF(serverKeyBytes, LABEL_SERVER_WRITE_KEY, seed,
-                            expandedKeyLength, md5, sha);
-                serverCipherKey = new SecretKeySpec(tmp, alg);
-
+                // IV keys if needed.
                 if (ivLength != 0) {
-                    tmp = new byte[ivLength];
-                    byte[] block = doTLS10PRF(null, LABEL_IV_BLOCK, seed,
-                                ivLength << 1, md5, sha);
-                    System.arraycopy(block, 0, tmp, 0, ivLength);
-                    clientIv = new IvParameterSpec(tmp);
-                    System.arraycopy(block, ivLength, tmp, 0, ivLength);
-                    serverIv = new IvParameterSpec(tmp);
+                    clientIv = new IvParameterSpec(keyBlock, ofs, ivLength);
+                    ofs += ivLength;
+                    serverIv = new IvParameterSpec(keyBlock, ofs, ivLength);
+                    ofs += ivLength;
                 }
             } else {
-                // SSLv3
-                byte[] tmp = new byte[expandedKeyLength];
+                // if exportable suites, calculate the alternate
+                // cipher key expansion and IV generation
+                if (protocolVersion >= 0x0302) {
+                    // TLS 1.1+
+                    throw new RuntimeException(
+                            "Internal Error:  TLS 1.1+ should not be negotiating" +
+                                    "exportable ciphersuites");
+                } else if (protocolVersion == 0x0301) {
+                    // TLS 1.0
+                    byte[] seed = concat(clientRandom, serverRandom);
 
-                md5.update(clientKeyBytes);
-                md5.update(clientRandom);
-                md5.update(serverRandom);
-                System.arraycopy(md5.digest(), 0, tmp, 0, expandedKeyLength);
-                clientCipherKey = new SecretKeySpec(tmp, alg);
+                    byte[] tmp = doTLS10PRF(clientKeyBytes,
+                            LABEL_CLIENT_WRITE_KEY, seed, expandedKeyLength, md5, sha);
+                    clientCipherKey = new SecretKeySpec(tmp, alg);
+                    Arrays.fill(tmp, (byte) 0);
 
-                md5.update(serverKeyBytes);
-                md5.update(serverRandom);
-                md5.update(clientRandom);
-                System.arraycopy(md5.digest(), 0, tmp, 0, expandedKeyLength);
-                serverCipherKey = new SecretKeySpec(tmp, alg);
+                    tmp = doTLS10PRF(serverKeyBytes, LABEL_SERVER_WRITE_KEY, seed,
+                            expandedKeyLength, md5, sha);
+                    serverCipherKey = new SecretKeySpec(tmp, alg);
+                    Arrays.fill(tmp, (byte) 0);
 
-                if (ivLength != 0) {
-                    tmp = new byte[ivLength];
+                    if (ivLength != 0) {
+                        byte[] block = doTLS10PRF(null, LABEL_IV_BLOCK, seed,
+                                ivLength << 1, md5, sha);
+                        clientIv = new IvParameterSpec(block, 0, ivLength);
+                        serverIv = new IvParameterSpec(block, ivLength, ivLength);
+                    }
+                } else {
+                    // SSLv3
+                    byte[] tmp = new byte[expandedKeyLength];
+                    byte[] digest;
 
+                    md5.update(clientKeyBytes);
                     md5.update(clientRandom);
                     md5.update(serverRandom);
-                    System.arraycopy(md5.digest(), 0, tmp, 0, ivLength);
-                    clientIv = new IvParameterSpec(tmp);
+                    digest = md5.digest();
+                    System.arraycopy(digest, 0, tmp, 0, expandedKeyLength);
+                    clientCipherKey = new SecretKeySpec(tmp, alg);
+                    Arrays.fill(digest, (byte) 0);
 
+                    md5.update(serverKeyBytes);
                     md5.update(serverRandom);
                     md5.update(clientRandom);
-                    System.arraycopy(md5.digest(), 0, tmp, 0, ivLength);
-                    serverIv = new IvParameterSpec(tmp);
+                    digest = md5.digest();
+                    System.arraycopy(digest, 0, tmp, 0, expandedKeyLength);
+                    serverCipherKey = new SecretKeySpec(tmp, alg);
+                    Arrays.fill(digest, (byte) 0);
+
+                    Arrays.fill(tmp, (byte) 0);
+
+                    if (ivLength != 0) {
+                        tmp = new byte[ivLength];
+
+                        md5.update(clientRandom);
+                        md5.update(serverRandom);
+                        System.arraycopy(md5.digest(), 0, tmp, 0, ivLength);
+                        clientIv = new IvParameterSpec(tmp);
+
+                        md5.update(serverRandom);
+                        md5.update(clientRandom);
+                        System.arraycopy(md5.digest(), 0, tmp, 0, ivLength);
+                        serverIv = new IvParameterSpec(tmp);
+                    }
                 }
             }
+        } finally {
+            Arrays.fill(serverKeyBytes, (byte) 0);
+            Arrays.fill(clientKeyBytes, (byte) 0);
+            Arrays.fill(keyBlock, (byte) 0);
         }
 
         return new TlsKeyMaterialSpec(clientMacKey, serverMacKey,

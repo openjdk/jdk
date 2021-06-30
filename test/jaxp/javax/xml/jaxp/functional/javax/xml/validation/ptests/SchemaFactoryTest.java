@@ -71,7 +71,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 8080907 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.validation.ptests.SchemaFactoryTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.validation.ptests.SchemaFactoryTest
  * @run testng/othervm javax.xml.validation.ptests.SchemaFactoryTest
  * @summary Class containing the test cases for SchemaFactory
  */

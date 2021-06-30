@@ -70,7 +70,7 @@ import org.xml.sax.ext.DefaultHandler2;
  * @test
  * @bug 8081248 8144966 8146606 8146237 8150969 8151162 8152527 8154220 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogTest
  * @run testng/othervm catalog.CatalogTest
  * @summary Tests basic Catalog functions.
  */

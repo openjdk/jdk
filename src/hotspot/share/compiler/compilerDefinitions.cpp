@@ -159,16 +159,14 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
   }
 }
 
-void set_client_emulation_mode_flags() {
+void CompilerConfig::set_client_emulation_mode_flags() {
+  assert(has_c1(), "Must have C1 compiler present");
   CompilationModeFlag::set_quick_only();
 
   FLAG_SET_ERGO(ProfileInterpreter, false);
 #if INCLUDE_JVMCI
   FLAG_SET_ERGO(EnableJVMCI, false);
   FLAG_SET_ERGO(UseJVMCICompiler, false);
-#endif
-#if INCLUDE_AOT
-  FLAG_SET_ERGO(UseAOT, false);
 #endif
   if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
     FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
@@ -204,7 +202,6 @@ void set_client_emulation_mode_flags() {
 bool CompilerConfig::is_compilation_mode_selected() {
   return !FLAG_IS_DEFAULT(TieredCompilation) ||
          !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
-         !FLAG_IS_DEFAULT(UseAOT)            ||
          !FLAG_IS_DEFAULT(CompilationMode)
          JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI)
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
@@ -275,14 +272,6 @@ void CompilerConfig::set_legacy_emulation_flags() {
         FLAG_SET_ERGO(Tier4BackEdgeThreshold, osr_threshold);
         FLAG_SET_ERGO(Tier0ProfilingStartPercentage, InterpreterProfilePercentage);
       }
-#if INCLUDE_AOT
-      if (UseAOT) {
-        FLAG_SET_ERGO(Tier3AOTInvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3AOTMinInvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3AOTCompileThreshold, threshold);
-        FLAG_SET_ERGO(Tier3AOTBackEdgeThreshold, CompilerConfig::is_c1_only() ? osr_threshold : osr_profile_threshold);
-      }
-#endif
     } else {
       // Normal tiered mode, ignore legacy flags
     }
@@ -330,23 +319,6 @@ void CompilerConfig::set_compilation_policy_flags() {
     if (FLAG_IS_DEFAULT(Tier0ProfilingStartPercentage)) {
       FLAG_SET_DEFAULT(Tier0ProfilingStartPercentage, 33);
     }
-
-#if INCLUDE_AOT
-    if (UseAOT) {
-      if (FLAG_IS_DEFAULT(Tier3AOTInvocationThreshold)) {
-        FLAG_SET_DEFAULT(Tier3AOTInvocationThreshold, 200);
-      }
-      if (FLAG_IS_DEFAULT(Tier3AOTMinInvocationThreshold)) {
-        FLAG_SET_DEFAULT(Tier3AOTMinInvocationThreshold, 100);
-      }
-      if (FLAG_IS_DEFAULT(Tier3AOTCompileThreshold)) {
-        FLAG_SET_DEFAULT(Tier3AOTCompileThreshold, 2000);
-      }
-      if (FLAG_IS_DEFAULT(Tier3AOTBackEdgeThreshold)) {
-        FLAG_SET_DEFAULT(Tier3AOTBackEdgeThreshold, 2000);
-      }
-    }
-#endif
 
     if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
       FLAG_SET_DEFAULT(Tier4InvocationThreshold, 5000);
@@ -560,17 +532,19 @@ void CompilerConfig::ergo_initialize() {
   return;
 #endif
 
-  if (!is_compilation_mode_selected()) {
+  if (has_c1()) {
+    if (!is_compilation_mode_selected()) {
 #if defined(_WINDOWS) && !defined(_LP64)
-    if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-      FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-    }
+      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
+        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
+      }
 #endif
-    if (NeverActAsServerClassMachine) {
+      if (NeverActAsServerClassMachine) {
+        set_client_emulation_mode_flags();
+      }
+    } else if (!has_c2() && !is_jvmci_compiler()) {
       set_client_emulation_mode_flags();
     }
-  } else if (!has_c2() && !is_jvmci_compiler()) {
-    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();

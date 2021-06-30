@@ -499,7 +499,6 @@ class ContiguousSpace: public CompactibleSpace {
 
  protected:
   HeapWord* _top;
-  HeapWord* _concurrent_iteration_safe_limit;
   // A helper for mangling the unused area of the space in debug builds.
   GenSpaceMangler* _mangler;
 
@@ -564,24 +563,10 @@ class ContiguousSpace: public CompactibleSpace {
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* blk);
 
-  HeapWord* concurrent_iteration_safe_limit() {
-    assert(_concurrent_iteration_safe_limit <= top(),
-           "_concurrent_iteration_safe_limit update missed");
-    return _concurrent_iteration_safe_limit;
-  }
-  // changes the safe limit, all objects from bottom() to the new
-  // limit should be properly initialized
-  void set_concurrent_iteration_safe_limit(HeapWord* new_limit) {
-    assert(new_limit <= top(), "uninitialized objects in the safe range");
-    _concurrent_iteration_safe_limit = new_limit;
-  }
-
   // Compaction support
   virtual void reset_after_compaction() {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
-    // set new iteration safe limit
-    set_concurrent_iteration_safe_limit(compaction_top());
   }
 
   // Override.

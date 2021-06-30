@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,7 @@ public class LocaleData {
         return getBundle(type.getTextResourcesPackage() + ".FormatData", locale);
     }
 
+    @SuppressWarnings("removal")
     public static ResourceBundle getBundle(final String baseName, final Locale locale) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
@@ -187,6 +188,7 @@ public class LocaleData {
         });
     }
 
+    @SuppressWarnings("removal")
     private static OpenListResourceBundle getSupplementary(final String baseName, final Locale locale) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
            @Override
@@ -215,6 +217,13 @@ public class LocaleData {
          */
         protected String toBundleName(String baseName, Locale locale) {
             return LocaleDataStrategy.INSTANCE.toBundleName(baseName, locale);
+        }
+
+        /**
+         * Retrieves the other bundle name for legacy ISO 639 languages.
+         */
+        protected String toOtherBundleName(String baseName, String bundleName, Locale locale) {
+            return Bundles.toOtherBundleName(baseName, bundleName, locale);
         }
     }
 

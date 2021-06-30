@@ -51,7 +51,7 @@ import static org.testng.Assert.expectThrows;
  * @bug 8240533
  * @summary Check that DatagramSocket, MulticastSocket and DatagramSocketAdaptor
  *          throw expected Exception when connecting to port 0
- * @run testng/othervm ConnectPortZero
+ * @run testng/othervm -Djava.security.manager=allow ConnectPortZero
  */
 
 public class ConnectPortZero{

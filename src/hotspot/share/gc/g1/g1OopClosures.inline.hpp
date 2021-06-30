@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 
+#include "gc/g1/g1OopClosures.hpp"
+
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"

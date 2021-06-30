@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cppVtables.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -41,10 +43,8 @@
 #include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/cppVtables.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -226,6 +226,11 @@ void Method::print_external_name(outputStream *os, Klass* klass, Symbol* method_
 }
 
 int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS) {
+  if (log_is_enabled(Debug, exceptions)) {
+    ResourceMark rm(THREAD);
+    log_debug(exceptions)("Looking for catch handler for exception of type \"%s\" in method \"%s\"",
+                          ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string());
+  }
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
   ExceptionTable table(mh());
@@ -238,25 +243,65 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
     int beg_bci = table.start_pc(i);
     int end_bci = table.end_pc(i);
     assert(beg_bci <= end_bci, "inconsistent exception table");
+    log_debug(exceptions)("  - checking exception table entry for BCI %d to %d",
+                         beg_bci, end_bci);
+
     if (beg_bci <= throw_bci && throw_bci < end_bci) {
       // exception handler bci range covers throw_bci => investigate further
+      log_debug(exceptions)("    - entry covers throw point BCI %d", throw_bci);
+
       int handler_bci = table.handler_pc(i);
       int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
+        if (log_is_enabled(Info, exceptions)) {
+          ResourceMark rm(THREAD);
+          log_info(exceptions)("Found catch-all handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
+                               ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
+        }
         return handler_bci;
       } else if (ex_klass == NULL) {
+        // Is this even possible?
+        if (log_is_enabled(Info, exceptions)) {
+          ResourceMark rm(THREAD);
+          log_info(exceptions)("NULL exception class is implicitly caught by handler in method \"%s\" at BCI: %d",
+                               mh()->name()->as_C_string(), handler_bci);
+        }
         return handler_bci;
       } else {
+        if (log_is_enabled(Debug, exceptions)) {
+          ResourceMark rm(THREAD);
+          log_debug(exceptions)("    - resolving catch type \"%s\"",
+                               pool->klass_name_at(klass_index)->as_C_string());
+        }
         // we know the exception class => get the constraint class
         // this may require loading of the constraint class; if verification
         // fails or some other exception occurs, return handler_bci
-        Klass* k = pool->klass_at(klass_index, CHECK_(handler_bci));
+        Klass* k = pool->klass_at(klass_index, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          if (log_is_enabled(Debug, exceptions)) {
+            ResourceMark rm(THREAD);
+            log_debug(exceptions)("    - exception \"%s\" occurred resolving catch type",
+                                 PENDING_EXCEPTION->klass()->external_name());
+          }
+          return handler_bci;
+        }
         assert(k != NULL, "klass not loaded");
         if (ex_klass->is_subtype_of(k)) {
+          if (log_is_enabled(Info, exceptions)) {
+            ResourceMark rm(THREAD);
+            log_info(exceptions)("Found matching handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
+                                 ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
+          }
           return handler_bci;
         }
       }
     }
+  }
+
+  if (log_is_enabled(Debug, exceptions)) {
+    ResourceMark rm(THREAD);
+    log_debug(exceptions)("No catch handler found for exception of type \"%s\" in method \"%s\"",
+                          ex_klass->external_name(), mh->name()->as_C_string());
   }
 
   return -1;
@@ -344,11 +389,13 @@ Symbol* Method::klass_name() const {
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(Method): %p", this);
 
-  it->push(&_constMethod);
+  if (!method_holder()->is_rewritten()) {
+    it->push(&_constMethod, MetaspaceClosure::_writable);
+  } else {
+    it->push(&_constMethod);
+  }
   it->push(&_method_data);
   it->push(&_method_counters);
-
-  Method* this_ptr = this;
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -362,7 +409,7 @@ void Method::remove_unshareable_info() {
 }
 
 void Method::set_vtable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite()) {
+  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context.
@@ -373,7 +420,7 @@ void Method::set_vtable_index(int index) {
 }
 
 void Method::set_itable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite()) {
+  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context. The dumptime
@@ -566,7 +613,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   methodHandle mh(current, m);
   MethodCounters* counters;
   if (current->is_Java_thread()) {
-    Thread* THREAD = current;
+    JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
     // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
     // if needed.
     counters = MethodCounters::allocate_with_exception(mh, THREAD);
@@ -616,11 +663,6 @@ void Method::compute_from_signature(Symbol* sig) {
   set_size_of_parameters(fp.size_of_parameters());
   constMethod()->set_result_type(fp.return_type());
   constMethod()->set_fingerprint(fp.fingerprint());
-}
-
-bool Method::is_empty_method() const {
-  return  code_size() == 1
-      && *code_base() == Bytecodes::_return;
 }
 
 bool Method::is_vanilla_constructor() const {
@@ -2228,8 +2270,6 @@ void Method::set_on_stack(const bool value) {
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
-  assert(!value || !is_old() || is_obsolete() || is_running_emcp(),
-         "emcp methods cannot run after emcp bit is cleared");
 }
 
 // Called when the class loader is unloaded to make all methods weak.

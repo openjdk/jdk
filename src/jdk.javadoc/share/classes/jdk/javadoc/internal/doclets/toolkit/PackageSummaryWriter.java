@@ -68,66 +68,16 @@ public interface PackageSummaryWriter {
     /**
      * Adds the table of related packages to the documentation tree.
      *
-     * @param relatedPackages the interfaces to document.
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    void addRelatedPackagesSummary(List<PackageElement> relatedPackages, Content summaryContentTree);
+    void addRelatedPackagesSummary(Content summaryContentTree);
 
     /**
-     * Adds the table of interfaces to the documentation tree.
+     * Adds the table of all classes and interfaces to the documentation tree.
      *
-     * @param interfaces the interfaces to document.
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree);
-
-    /**
-     * Adds the table of classes to the documentation tree.
-     *
-     * @param classes the classes to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addClassSummary(SortedSet<TypeElement> classes, Content summaryContentTree);
-
-    /**
-     * Adds the table of enums to the documentation tree.
-     *
-     * @param enums the enums to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addEnumSummary(SortedSet<TypeElement> enums, Content summaryContentTree);
-
-    /**
-     * Adds the table of records to the documentation tree.
-     *
-     * @param records the records to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addRecordSummary(SortedSet<TypeElement> records, Content summaryContentTree);
-
-    /**
-     * Adds the table of exceptions to the documentation tree.
-     *
-     * @param exceptions the exceptions to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree);
-
-    /**
-     * Adds the table of errors to the documentation tree.
-     *
-     * @param errors the errors to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addErrorSummary(SortedSet<TypeElement> errors, Content summaryContentTree);
-
-    /**
-     * Adds the table of annotation types to the documentation tree.
-     *
-     * @param annoTypes the annotation types to document.
-     * @param summaryContentTree the content tree to which the summaries will be added
-     */
-    void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes, Content summaryContentTree);
+    void addAllClassesAndInterfacesSummary(Content summaryContentTree);
 
     /**
      * Adds the package description from the "packages.html" file to the documentation

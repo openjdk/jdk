@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,17 @@
 /*
  * @test
  * @summary Exercise Class#getModule
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
- *          java.desktop
+ * @modules java.desktop
  * @run testng GetModuleTest
  */
 
 import java.awt.Component;
-
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import jdk.internal.misc.Unsafe;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class GetModuleTest {
-
-    private static final Unsafe U = Unsafe.getUnsafe();
 
     private static final Module TEST_MODULE = GetModuleTest.class.getModule();
 
@@ -82,48 +74,6 @@ public class GetModuleTest {
         } else {
             assertEquals(m.getName(), expected);
         }
-    }
-
-
-    @DataProvider(name = "hostclasses")
-    public Object[][] hostClasses() {
-        return new Object[][] {
-
-            { GetModuleTest.class,      null },
-            { Object.class,             null },
-            { Component.class,          null },
-
-        };
-    }
-
-    /**
-     * Exercise Class::getModule on VM anonymous classes
-     */
-    @Test(dataProvider = "hostclasses")
-    public void testGetModuleOnVMAnonymousClass(Class<?> hostClass, String ignore) {
-
-        // choose a class name in the same package as the host class
-        String prefix = hostClass.getPackageName();
-        if (prefix.length() > 0)
-            prefix = prefix.replace('.', '/') + "/";
-        String className = prefix + "Anon";
-
-        // create the class
-        String superName = "java/lang/Object";
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V1_8, ACC_PUBLIC + ACC_FINAL + ACC_SUPER,
-                 className, null, superName, null);
-        byte[] classBytes = cw.toByteArray();
-        int cpPoolSize = constantPoolSize(classBytes);
-        Class<?> anonClass
-            = U.defineAnonymousClass(hostClass, classBytes, new Object[cpPoolSize]);
-
-        assertTrue(anonClass.getModule() == hostClass.getModule());
-    }
-
-    private static int constantPoolSize(byte[] classFile) {
-        return ((classFile[8] & 0xFF) << 8) | (classFile[9] & 0xFF);
     }
 
 }

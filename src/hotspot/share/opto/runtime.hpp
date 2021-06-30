@@ -29,7 +29,6 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
@@ -63,7 +62,6 @@ public:
     NoTag,
     LockCounter,
     EliminatedLockCounter,
-    BiasedLockingCounter,
     RTMLockingCounter
   };
 
@@ -100,18 +98,6 @@ private:
 
 };
 
-class BiasedLockingNamedCounter : public NamedCounter {
- private:
-  BiasedLockingCounters _counters;
-
- public:
-  BiasedLockingNamedCounter(const char *n) :
-    NamedCounter(n, BiasedLockingCounter), _counters() {}
-
-  BiasedLockingCounters* counters() { return &_counters; }
-};
-
-
 class RTMLockingNamedCounter : public NamedCounter {
  private:
  RTMLockingCounters _counters;
@@ -130,7 +116,7 @@ class OptoRuntime : public AllStatic {
 
  private:
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char *name, int is_fancy_jump, bool pass_tls, bool save_arguments, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   // References to generated stubs
   static address _new_instance_Java;
@@ -170,10 +156,6 @@ class OptoRuntime : public AllStatic {
   static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
 
 public:
-  // Slow-path Locking and Unlocking
-  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-  static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
 
@@ -256,6 +238,7 @@ private:
   static const TypeFunc* rethrow_Type();
   static const TypeFunc* Math_D_D_Type();  // sin,cos & friends
   static const TypeFunc* Math_DD_D_Type(); // mod,pow & friends
+  static const TypeFunc* Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type);
   static const TypeFunc* modf_Type();
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
@@ -303,6 +286,8 @@ private:
   static const TypeFunc* osr_end_Type();
 
   static const TypeFunc* register_finalizer_Type();
+
+  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

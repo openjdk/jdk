@@ -454,6 +454,7 @@ rather than bundling the JDK's own copy.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
   * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
+  * To install on macOS, try running `brew install freetype`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -1089,7 +1090,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
   * If the X11 libraries are not properly detected by `configure`, you can
     point them out by `--with-x`.
 
-### Creating And Using Sysroots With qemu-deboostrap
+### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
 provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
@@ -1110,7 +1111,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     sudo qemu-debootstrap \
       --arch=arm64 \
       --verbose \
-      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
       --resolve-deps \
       buster \
       ~/sysroot-arm64 \
@@ -1124,13 +1125,9 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
     ```
-    CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
-     --openjdk-target=aarch64-linux-gnu \
-     --with-sysroot=~/sysroot-arm64 \
-     --with-toolchain-path=~/sysroot-arm64 \
-     --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
-     --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
-     --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+    sh ./configure \
+      --openjdk-target=aarch64-linux-gnu \
+      --with-sysroot=~/sysroot-arm64
     make images
     ls build/linux-aarch64-server-release/
     ```
@@ -1138,17 +1135,34 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 The build does not create new files in that chroot, so it can be reused for multiple builds
 without additional cleanup.
 
+The build system should automatically detect the toolchain paths and dependencies, but sometimes
+it might require a little nudge with:
+
+  * Native compilers: override `CC` or `CXX` for `./configure`
+
+  * Freetype lib location: override `--with-freetype-lib`, for example `${sysroot}/usr/lib/${target}/`
+
+  * Freetype includes location: override `--with-freetype-include` for example `${sysroot}/usr/include/freetype2/`
+
+  * X11 libraries location: override `--x-libraries`, for example `${sysroot}/usr/lib/${target}/`
+
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        `CC`                      `CXX`                       `--arch=...`  `--openjdk-target=...`
-  ------------  ------------------------- --------------------------- ------------- -----------------------
-  x86           default                   default                     i386          i386-linux-gnu
-  armhf         gcc-arm-linux-gnueabihf   g++-arm-linux-gnueabihf     armhf         arm-linux-gnueabihf
-  aarch64       gcc-aarch64-linux-gnu     g++-aarch64-linux-gnu       arm64         aarch64-linux-gnu
-  ppc64el       gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu   ppc64el       powerpc64le-linux-gnu
-  s390x         gcc-s390x-linux-gnu       g++-s390x-linux-gnu         s390x         s390x-linux-gnu
-
-Additional architectures might be supported by Debian/Ubuntu Ports.
+  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
+  ------------  ------------ ------------- ------------------------ --------------
+  x86           buster       i386          i386-linux-gnu           (all)
+  arm           buster       armhf         arm-linux-gnueabihf      (all)
+  aarch64       buster       arm64         aarch64-linux-gnu        (all)
+  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
+  s390x         buster       s390x         s390x-linux-gnu          (all)
+  mipsle        buster       mipsel        mipsel-linux-gnu         zero
+  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
+  armel         buster       arm           arm-linux-gnueabi        zero
+  ppc           sid          powerpc       powerpc-linux-gnu        zero
+  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
+  m68k          sid          m68k          m68k-linux-gnu           zero
+  alpha         sid          alpha         alpha-linux-gnu          zero
+  sh4           sid          sh4           sh4-linux-gnu            zero
 
 ### Building for ARM/aarch64
 

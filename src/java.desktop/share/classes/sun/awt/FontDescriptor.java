@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public class FontDescriptor implements Cloneable {
     }
     static boolean isLE;
     static {
+        @SuppressWarnings("removal")
         String enc = java.security.AccessController.doPrivileged(
            new sun.security.action.GetPropertyAction("sun.io.unicode.encoding",
                                                           "UnicodeBig"));

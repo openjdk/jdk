@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
@@ -101,7 +100,6 @@ class ReferenceToRootClosure : public StackObj {
   bool do_cldg_roots();
   bool do_oop_storage_roots();
   bool do_string_table_roots();
-  bool do_aot_loader_roots();
 
   bool do_roots();
 
@@ -150,13 +148,6 @@ bool ReferenceToRootClosure::do_oop_storage_roots() {
   return false;
 }
 
-bool ReferenceToRootClosure::do_aot_loader_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rcl(_callback, OldObjectRoot::_aot, OldObjectRoot::_type_undetermined, NULL);
-  AOTLoader::oops_do(&rcl);
-  return rcl.complete();
-}
-
 bool ReferenceToRootClosure::do_roots() {
   assert(!complete(), "invariant");
   assert(OldObjectRoot::_system_undetermined == _info._system, "invariant");
@@ -168,11 +159,6 @@ bool ReferenceToRootClosure::do_roots() {
   }
 
   if (do_oop_storage_roots()) {
-   _complete = true;
-    return true;
-  }
-
-  if (do_aot_loader_roots()) {
    _complete = true;
     return true;
   }

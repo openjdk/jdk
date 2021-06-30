@@ -42,6 +42,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
     private final Metrics containerMetrics;
+    private long usageTicks = 0; // used for cpu load calculation
+    private long totalTicks = 0; // used for cpu load calculation
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -132,24 +134,56 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return getMaxFileDescriptorCount0();
     }
 
+    private double getUsageDividesTotal(long usageTicks, long totalTicks) {
+        // If cpu quota or cpu shares are in effect calculate the cpu load
+        // based on the following formula (similar to how
+        // getCpuLoad0() is being calculated):
+        //
+        //   | usageTicks - usageTicks' |
+        //  ------------------------------
+        //   | totalTicks - totalTicks' |
+        //
+        // where usageTicks' and totalTicks' are historical values
+        // retrieved via an earlier call of this method.
+        //
+        // Total ticks should be scaled to the container effective number
+        // of cpus, if cpu shares are in effect.
+        if (usageTicks < 0 || totalTicks <= 0) {
+            return -1;
+        }
+        long distance = usageTicks - this.usageTicks;
+        this.usageTicks = usageTicks;
+        long totalDistance = totalTicks - this.totalTicks;
+        this.totalTicks = totalTicks;
+
+        double systemLoad = 0.0;
+        if (distance > 0 && totalDistance > 0) {
+            systemLoad = ((double)distance) / totalDistance;
+        }
+        // Ensure the return value is in the range 0.0 -> 1.0
+        systemLoad = Math.max(0.0, systemLoad);
+        systemLoad = Math.min(1.0, systemLoad);
+        return systemLoad;
+    }
+
     public double getCpuLoad() {
         if (containerMetrics != null) {
             long quota = containerMetrics.getCpuQuota();
+            long share = containerMetrics.getCpuShares();
+            long usageNanos = containerMetrics.getCpuUsage();
             if (quota > 0) {
-                long periodLength = containerMetrics.getCpuPeriod();
                 long numPeriods = containerMetrics.getCpuNumPeriods();
-                long usageNanos = containerMetrics.getCpuUsage();
-                if (periodLength > 0 && numPeriods > 0 && usageNanos > 0) {
-                    long elapsedNanos = TimeUnit.MICROSECONDS.toNanos(periodLength * numPeriods);
-                    double systemLoad = (double) usageNanos / elapsedNanos;
-                    // Ensure the return value is in the range 0.0 -> 1.0
-                    systemLoad = Math.max(0.0, systemLoad);
-                    systemLoad = Math.min(1.0, systemLoad);
-                    return systemLoad;
-                }
-                return -1;
+                long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
+                return getUsageDividesTotal(usageNanos, quotaNanos);
+            } else if (share > 0) {
+                long hostTicks = getHostTotalCpuTicks0();
+                int totalCPUs = getHostOnlineCpuCount0();
+                int containerCPUs = getAvailableProcessors();
+                // scale the total host load to the actual container cpus
+                hostTicks = hostTicks * containerCPUs / totalCPUs;
+                return getUsageDividesTotal(usageNanos, hostTicks);
             } else {
-                // If CPU quotas are not active then find the average system load for
+                // If CPU quotas and shares are not active then find the average system load for
                 // all online CPUs that are allowed to run this container.
 
                 // If the cpuset is the same as the host's one there is no need to iterate over each CPU
@@ -208,6 +242,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private native double getSingleCpuLoad0(int cpuNum);
     private native int getHostConfiguredCpuCount0();
     private native int getHostOnlineCpuCount0();
+    // CPU ticks since boot in nanoseconds
+    private native long getHostTotalCpuTicks0();
 
     static {
         initialize0();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,24 +35,25 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-// Do work for all not-compacted regions.
-class G1ResetNotCompactedClosure : public HeapRegionClosure {
+// Do work for all skip-compacting regions.
+class G1ResetSkipCompactingClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
 
 public:
-  G1ResetNotCompactedClosure(G1FullCollector* collector) : _collector(collector) { }
+  G1ResetSkipCompactingClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
     uint region_index = r->hrm_index();
-    // There is nothing to do for compacted or skip marking regions.
-    if (_collector->is_compacted_or_skip_marking(region_index)) {
+    // Only for skip-compaction regions; early return otherwise.
+    if (!_collector->is_skip_compacting(region_index)) {
+
       return false;
     }
     assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
-           !r->is_starts_humongous() ||
-           _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
-           "must be, otherwise reclaimed earlier");
-    r->reset_not_compacted_after_full_gc();
+         !r->is_starts_humongous() ||
+         _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
+         "must be, otherwise reclaimed earlier");
+    r->reset_skip_compacting_after_full_gc();
     return false;
   }
 };
@@ -97,7 +98,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetNotCompactedClosure hc(collector());
+  G1ResetSkipCompactingClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

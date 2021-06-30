@@ -420,7 +420,7 @@ static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
 
 void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
   assert(LeakProfiler::is_running(), "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(Thread::current());)
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current());)
   const ObjectSample* last = ObjectSampler::sampler()->last();
   if (writer.has_data() && last != NULL) {
     save_type_set_blob(writer);

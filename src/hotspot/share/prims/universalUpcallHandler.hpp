@@ -45,8 +45,14 @@ private:
 
   static void upcall_helper(JavaThread* thread, jobject rec, address buff);
   static void attach_thread_and_do_upcall(jobject rec, address buff);
+
+  static void handle_uncaught_exception(oop exception);
+  static Thread* maybe_attach_and_get_thread(bool* should_detach);
+  static void detach_thread(Thread* thread);
 public:
+  static address generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv);
   static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
+  static bool supports_optimized_upcalls();
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP

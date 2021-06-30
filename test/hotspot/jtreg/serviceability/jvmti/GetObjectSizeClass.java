@@ -31,6 +31,7 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8075030
  * @summary JvmtiEnv::GetObjectSize reports incorrect java.lang.Class instance size
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
@@ -39,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build GetObjectSizeClassAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeClassAgent
- * @run main GetObjectSizeClass
+ * @run driver GetObjectSizeClass
  */
 public class GetObjectSizeClass {
     public static void main(String[] args) throws Exception  {

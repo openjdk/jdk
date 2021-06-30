@@ -486,14 +486,14 @@ import java.lang.NullPointerException;  // for javadoc
  * @since 1.4
  *
  * @see <a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
- * transformation format of ISO 10646</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
- * Architecture</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
- * Resource Identifiers (URI): Generic Syntax</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
- * Literal IPv6 Addresses in URLs</i></a>, <br><a
- * href="URISyntaxException.html">URISyntaxException</a>
+ * transformation format of ISO 10646</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
+ * Architecture</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
+ * Resource Identifiers (URI): Generic Syntax</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
+ * Literal IPv6 Addresses in URLs</i></a>
+ * @see <a href="URISyntaxException.html">URISyntaxException</a>
  */
 
 public final class URI

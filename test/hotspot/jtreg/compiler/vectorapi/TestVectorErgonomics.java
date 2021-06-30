@@ -29,7 +29,7 @@ package compiler.vectorapi;
  * @requires vm.compiler2.enabled
  * @summary Check ergonomics for Vector API
  * @library /test/lib
- * @run main/othervm compiler.vectorapi.TestVectorErgonomics
+ * @run driver compiler.vectorapi.TestVectorErgonomics
  */
 
 import jdk.test.lib.process.ProcessTools;

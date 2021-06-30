@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import sun.security.action.GetPropertyAction;
 import sun.security.rsa.RSAUtil.KeyType;
@@ -308,8 +309,14 @@ public class RSAKeyFactory extends KeyFactorySpi {
                 throw new InvalidKeyException("Invalid key", e);
             }
         } else {
-            return RSAPrivateCrtKeyImpl.newKey(type, key.getFormat(),
-                    key.getEncoded());
+            byte[] encoded = key.getEncoded();
+            try {
+                return RSAPrivateCrtKeyImpl.newKey(type, key.getFormat(), encoded);
+            } finally {
+                if (encoded != null) {
+                    Arrays.fill(encoded, (byte)0);
+                }
+            }
         }
     }
 
@@ -340,8 +347,12 @@ public class RSAKeyFactory extends KeyFactorySpi {
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
-            return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8",
-                    ((PKCS8EncodedKeySpec)keySpec).getEncoded());
+            byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
+            try {
+                return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else if (keySpec instanceof RSAPrivateCrtKeySpec) {
             RSAPrivateCrtKeySpec rsaSpec = (RSAPrivateCrtKeySpec)keySpec;
             try {
@@ -404,7 +415,12 @@ public class RSAKeyFactory extends KeyFactorySpi {
             }
         } else if (key instanceof RSAPrivateKey) {
             if (keySpec.isAssignableFrom(PKCS8_KEYSPEC_CLS)) {
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (keySpec.isAssignableFrom(RSA_PRIVCRT_KEYSPEC_CLS)) {
                 // All supported keyspecs (other than PKCS8_KEYSPEC_CLS) descend from RSA_PRIVCRT_KEYSPEC_CLS
                 if (key instanceof RSAPrivateCrtKey) {

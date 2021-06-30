@@ -444,6 +444,7 @@ public class Beans {
 
     public static void setDesignTime(boolean isDesignTime)
                         throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -470,6 +471,7 @@ public class Beans {
 
     public static void setGuiAvailable(boolean isGuiAvailable)
                         throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();

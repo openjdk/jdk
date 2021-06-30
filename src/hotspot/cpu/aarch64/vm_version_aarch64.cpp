@@ -195,16 +195,9 @@ void VM_Version::initialize() {
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
-  if (_features & CPU_ASIMD) strcat(buf, ", simd");
-  if (_features & CPU_CRC32) strcat(buf, ", crc");
-  if (_features & CPU_AES)   strcat(buf, ", aes");
-  if (_features & CPU_SHA1)  strcat(buf, ", sha1");
-  if (_features & CPU_SHA2)  strcat(buf, ", sha256");
-  if (_features & CPU_SHA3) strcat(buf, ", sha3");
-  if (_features & CPU_SHA512) strcat(buf, ", sha512");
-  if (_features & CPU_LSE) strcat(buf, ", lse");
-  if (_features & CPU_SVE) strcat(buf, ", sve");
-  if (_features & CPU_SVE2) strcat(buf, ", sve2");
+#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, ", " name);
+  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
+#undef ADD_FEATURE_IF_SUPPORTED
 
   _features_string = os::strdup(buf);
 

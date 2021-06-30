@@ -621,7 +621,7 @@ ShenandoahConcurrentEvacThreadClosure::ShenandoahConcurrentEvacThreadClosure(Oop
 }
 
 void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
-  JavaThread* const jt = thread->as_Java_thread();
+  JavaThread* const jt = JavaThread::cast(thread);
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 }
 
@@ -728,7 +728,6 @@ private:
   ShenandoahClassLoaderDataRoots<true /* concurrent */, true /* single thread*/>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
-  ShenandoahConcurrentStringDedupRoots       _dedup_roots;
   ShenandoahPhaseTimings::Phase              _phase;
 
 public:
@@ -737,19 +736,14 @@ public:
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
     _nmethod_itr(ShenandoahCodeRoots::table()),
-    _dedup_roots(phase),
     _phase(phase) {
     if (ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
-
-    _dedup_roots.prologue();
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
-    _dedup_roots.epilogue();
-
     if (ShenandoahHeap::heap()->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();
@@ -766,11 +760,6 @@ public:
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
       _vm_roots.oops_do(&cl, worker_id);
-
-      // String dedup weak roots
-      ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahEvacuateUpdateMetadataClosure<MO_RELEASE> keep_alive;
-      _dedup_roots.oops_do(&is_alive, &keep_alive, worker_id);
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
@@ -945,7 +934,7 @@ ShenandoahUpdateThreadClosure::ShenandoahUpdateThreadClosure() :
 
 void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
   if (thread->is_Java_thread()) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     ResourceMark rm;
     jt->oops_do(&_cl, NULL);
   }

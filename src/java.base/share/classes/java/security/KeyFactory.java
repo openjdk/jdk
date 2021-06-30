@@ -313,10 +313,9 @@ public class KeyFactory {
                 Service s = serviceIterator.next();
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof KeyFactorySpi == false) {
+                    if (!(obj instanceof KeyFactorySpi spi)) {
                         continue;
                     }
-                    KeyFactorySpi spi = (KeyFactorySpi)obj;
                     provider = s.getProvider();
                     this.spi = spi;
                     return spi;

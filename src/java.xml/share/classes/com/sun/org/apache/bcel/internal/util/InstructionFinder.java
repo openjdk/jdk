@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  *
  * @see com.sun.org.apache.bcel.internal.generic.Instruction
  * @see InstructionList
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class InstructionFinder {
 
@@ -72,7 +72,7 @@ public class InstructionFinder {
     private static final int NO_OPCODES = 256; // Potential number, some are not used
     private static final Map<String, String> map = new HashMap<>();
     private final InstructionList il;
-    private String il_string; // instruction list as string
+    private String ilString; // instruction list as string
     private InstructionHandle[] handles; // map instruction
 
 
@@ -99,7 +99,7 @@ public class InstructionFinder {
         for (int i = 0; i < size; i++) {
             buf[i] = makeChar(handles[i].getInstruction().getOpcode());
         }
-        il_string = new String(buf);
+        ilString = new String(buf);
     }
 
 
@@ -120,7 +120,7 @@ public class InstructionFinder {
                 return "" + makeChar(i);
             }
         }
-        throw new RuntimeException("Instruction unknown: " + pattern);
+        throw new IllegalArgumentException("Instruction unknown: " + pattern);
     }
 
 
@@ -221,8 +221,8 @@ public class InstructionFinder {
         }
         final Pattern regex = Pattern.compile(search);
         final List<InstructionHandle[]> matches = new ArrayList<>();
-        final Matcher matcher = regex.matcher(il_string);
-        while (start < il_string.length() && matcher.find(start)) {
+        final Matcher matcher = regex.matcher(ilString);
+        while (start < ilString.length() && matcher.find(start)) {
             final int startExpr = matcher.start();
             final int endExpr = matcher.end();
             final int lenExpr = endExpr - startExpr;

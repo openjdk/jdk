@@ -26,12 +26,12 @@ package gc.epsilon;
 /**
  * @test TestClasses
  * @requires vm.gc.Epsilon
- * @summary Epsilon is able to allocate a lot of classes
+ * @summary Epsilon is able to allocate a lot of classes, resizing Metaspace
  *
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *
- * @run main/othervm -Xmx128m -XX:MetaspaceSize=1m -XX:MaxMetaspaceSize=64m -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -Xlog:gc+metaspace gc.epsilon.TestClasses
+ * @run main/othervm -Xmx1g -XX:MetaspaceSize=1m -XX:MaxMetaspaceSize=64m -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -Xlog:gc+metaspace gc.epsilon.TestClasses
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -44,14 +44,26 @@ import java.nio.file.*;
 
 public class TestClasses {
 
-  static final int COUNT = 32*1024;
+  static final int CLASSES = 1024;
+  static final int FIELDS = 1024;
 
   static volatile Object sink;
 
   static class MyClassLoader extends ClassLoader {
+    static final String[] FIELD_NAMES;
+    static {
+       FIELD_NAMES = new String[FIELDS];
+       for (int c = 0; c < FIELDS; c++) {
+          FIELD_NAMES[c] = "f" + c;
+       }
+    }
+
     public byte[] createClass(String name) {
       ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
       cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, name, null, "java/lang/Object", null);
+      for (String fName : FIELD_NAMES) {
+          cw.visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE, fName, "J", null, null);
+      }
       return cw.toByteArray();
     }
 
@@ -66,7 +78,7 @@ public class TestClasses {
 
   public static void main(String[] args) throws Exception {
     ClassLoader cl = new MyClassLoader();
-    for (int c = 0; c < COUNT; c++) {
+    for (int c = 0; c < CLASSES; c++) {
       Class<?> clazz = Class.forName("Dummy" + c, true, cl);
       if (clazz.getClassLoader() != cl) {
         throw new IllegalStateException("Should have loaded by target loader");

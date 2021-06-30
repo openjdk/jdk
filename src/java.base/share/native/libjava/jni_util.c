@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,7 +462,7 @@ static jstring
 newString646_US(JNIEnv *env, const char *str)
 {
     int len = (int)strlen(str);
-    jchar buf[512];
+    jchar buf[512] = {0};
     jchar *str1;
     jstring result;
     int i;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,9 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 16.
      *
+     * Additions in this release include pattern matching for {@code
+     * instanceof} and records.
+     *
      * @since 16
      */
     RELEASE_16,
@@ -229,9 +232,20 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 17.
      *
+     * Additions in this release include sealed classes and
+     * restoration of always-strict floating-point semantics.
+     *
      * @since 17
      */
-    RELEASE_17;
+    RELEASE_17,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 18.
+     *
+     * @since 18
+     */
+    RELEASE_18;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -240,7 +254,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_17;
+        return RELEASE_18;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -255,7 +269,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(17, intVersion)):
+            valueOf("RELEASE_" + Math.min(18, intVersion)):
             RELEASE_10;
     }
 

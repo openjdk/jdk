@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ public abstract class HttpServerProvider {
      *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
     protected HttpServerProvider() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("httpServerProvider"));
@@ -165,6 +166,7 @@ public abstract class HttpServerProvider {
      *
      * @return  The system-wide default HttpServerProvider
      */
+    @SuppressWarnings("removal")
     public static HttpServerProvider provider () {
         synchronized (lock) {
             if (provider != null)

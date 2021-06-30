@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,9 @@ public:
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
   bool includes(const JavaThread * const p) const;
 
+#ifdef ASSERT
   static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
+#endif
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr

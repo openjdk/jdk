@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6688002
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.Bug6688002Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6688002Test
  * @run testng/othervm stream.Bug6688002Test
  * @summary Test single instance of XMLOutputFactory/XMLInputFactory create multiple Writer/Readers in parallel.
  */

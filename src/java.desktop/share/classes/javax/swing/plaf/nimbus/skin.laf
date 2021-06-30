@@ -27248,7 +27248,7 @@
          <borderStates/>
          <regions/>
       </uiComponent>
-      <uiComponent opaque="false" type="javax.swing.JToolTip" name="ToolTip" ui="ToolTipUI" subregion="false">
+      <uiComponent opaque="true" type="javax.swing.JToolTip" name="ToolTip" ui="ToolTipUI" subregion="false">
          <stateTypes/>
          <contentMargins top="4" bottom="4" left="4" right="4"/>
          <style>

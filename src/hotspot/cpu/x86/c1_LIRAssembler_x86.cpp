@@ -555,12 +555,12 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   int offset = __ offset();
 #ifdef _LP64
   const Register poll_addr = rscratch1;
-  __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+  __ movptr(poll_addr, Address(r15_thread, JavaThread::polling_page_offset()));
 #else
   assert(tmp->is_cpu_register(), "needed");
   const Register poll_addr = tmp->as_register();
   __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, in_bytes(Thread::polling_page_offset())));
+  __ movptr(poll_addr, Address(poll_addr, in_bytes(JavaThread::polling_page_offset())));
 #endif
   add_debug_info_for_branch(info);
   __ relocate(relocInfo::poll_type);
@@ -1582,10 +1582,10 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
         __ cvttsd2sil(dest->as_register(), src->as_xmm_double_reg());
       } else {
         assert(src->fpu() == 0, "input must be on TOS");
-        __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
         __ fist_s(Address(rsp, 0));
         __ movl(dest->as_register(), Address(rsp, 0));
-        __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
       }
       // IA32 conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
       assert(op->stub() != NULL, "stub required");
@@ -2204,9 +2204,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ addss(lreg, rreg);  break;
         case lir_sub: __ subss(lreg, rreg);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ mulss(lreg, rreg);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ divss(lreg, rreg);  break;
         default: ShouldNotReachHere();
       }
@@ -2223,9 +2221,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ addss(lreg, raddr);  break;
         case lir_sub: __ subss(lreg, raddr);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ mulss(lreg, raddr);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ divss(lreg, raddr);  break;
         default: ShouldNotReachHere();
       }
@@ -2240,9 +2236,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ addsd(lreg, rreg);  break;
         case lir_sub: __ subsd(lreg, rreg);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ mulsd(lreg, rreg);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ divsd(lreg, rreg);  break;
         default: ShouldNotReachHere();
       }
@@ -2259,9 +2253,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ addsd(lreg, raddr);  break;
         case lir_sub: __ subsd(lreg, raddr);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ mulsd(lreg, raddr);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ divsd(lreg, raddr);  break;
         default: ShouldNotReachHere();
       }
@@ -2293,9 +2285,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ fadd_s(raddr); break;
         case lir_sub: __ fsub_s(raddr); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ fmul_s(raddr); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ fdiv_s(raddr); break;
         default:      ShouldNotReachHere();
       }
@@ -2304,9 +2294,9 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
   } else if (left->is_double_fpu()) {
     assert(dest->is_double_fpu(),  "fpu stack allocation required");
 
-    if (code == lir_mul_strictfp || code == lir_div_strictfp) {
+    if (code == lir_mul || code == lir_div) {
       // Double values require special handling for strictfp mul/div on x86
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias1()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
       __ fmulp(left->fpu_regnrLo() + 1);
     }
 
@@ -2330,17 +2320,15 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ fadd_d(raddr); break;
         case lir_sub: __ fsub_d(raddr); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ fmul_d(raddr); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ fdiv_d(raddr); break;
         default: ShouldNotReachHere();
       }
     }
 
-    if (code == lir_mul_strictfp || code == lir_div_strictfp) {
+    if (code == lir_mul || code == lir_div) {
       // Double values require special handling for strictfp mul/div on x86
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias2()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
       __ fmulp(dest->fpu_regnrLo() + 1);
     }
 #endif // !_LP64
@@ -2415,14 +2403,12 @@ void LIR_Assembler::arith_fpu_implementation(LIR_Code code, int left_index, int 
       }
       break;
 
-    case lir_mul_strictfp: // fall through
     case lir_mul:
       if (pop_fpu_stack)       __ fmulp(non_tos_index);
       else if (dest_is_tos)    __ fmul (non_tos_index);
       else                     __ fmula(non_tos_index);
       break;
 
-    case lir_div_strictfp: // fall through
     case lir_div:
       if (left_is_tos) {
         if (pop_fpu_stack)     __ fdivrp(non_tos_index);
@@ -2919,23 +2905,13 @@ void LIR_Assembler::emit_static_call_stub() {
 
   // make sure that the displacement word of the call ends up word aligned
   __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
-  __ relocate(static_stub_Relocation::spec(call_pc, false /* is_aot */));
+  __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)NULL);
   // must be set to -1 at code generation time
   assert(((__ offset() + 1) % BytesPerWord) == 0, "must be aligned");
   // On 64bit this will die since it will take a movq & jmp, must be only a jmp
   __ jump(RuntimeAddress(__ pc()));
 
-  if (UseAOT) {
-    // Trampoline to aot code
-    __ relocate(static_stub_Relocation::spec(call_pc, true /* is_aot */));
-#ifdef _LP64
-    __ mov64(rax, CONST64(0));  // address is zapped till fixup time.
-#else
-    __ movl(rax, 0xdeadffff);  // address is zapped till fixup time.
-#endif
-    __ jmp(rax);
-  }
   assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
@@ -3103,9 +3079,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register length  = op->length()->as_register();
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-
-  __ resolve(ACCESS_READ, src);
-  __ resolve(ACCESS_WRITE, dst);
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
@@ -3539,14 +3512,9 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   if (!UseFastLocking) {
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
-    Register scratch = noreg;
-    if (UseBiasedLocking) {
-      scratch = op->scratch_opr()->as_register();
-    }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }

@@ -88,7 +88,7 @@ public final class StrikeMetrics {
     StrikeMetrics() {
         ascentX = ascentY = Integer.MAX_VALUE;
         descentX = descentY = leadingX = leadingY = Integer.MIN_VALUE;
-        baselineX = baselineX = maxAdvanceX = maxAdvanceY = Integer.MIN_VALUE;
+        baselineX = baselineY = maxAdvanceX = maxAdvanceY = Integer.MIN_VALUE;
     }
 
     StrikeMetrics(float ax, float ay, float dx, float dy, float bx, float by,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class Testjsig {
 
         // Start the process and check the output
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.shouldContain("old handler");
     }
 }

@@ -33,7 +33,7 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
  * @test
  * @bug 6367542
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6367542
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6367542
  * @run testng/othervm dom.Bug6367542
  * @summary Test DOMImplementationRegistry.getDOMImplementation("XML") returns a DOMImplementation instance.
  */

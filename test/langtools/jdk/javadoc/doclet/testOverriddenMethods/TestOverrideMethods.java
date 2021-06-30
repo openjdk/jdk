@@ -347,7 +347,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="block">This is Base::m5.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    b2 method-summary-table-tab4"><code>final java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#m6()" class="member-name-link">m6\
                     </a>()</code></div>
@@ -409,8 +409,8 @@ public class TestOverrideMethods  extends JavadocTester {
                     annotation interface in pkg7">@A</a>
                     </span><span class="return-type"><a href="A.html" title="annotation interface in\
                      pkg7">@A</a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class\
-                    ="element-name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? e\
-                    xtends java.lang.CharSequence&gt;&nbsp;p1,
+                    ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
+                    ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
@@ -434,8 +434,8 @@ public class TestOverrideMethods  extends JavadocTester {
                     annotation interface in pkg7">@A</a>
                     </span><span class="return-type"><a href="A.html" title="annotation interface in\
                      pkg7">@A</a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class\
-                    ="element-name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? e\
-                    xtends java.lang.CharSequence&gt;&nbsp;p1,
+                    ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
+                    ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
@@ -457,8 +457,8 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;<a\
                      href="A.html" title="annotation interface in pkg7">@A</a> java.lang.String&gt;<\
-                    /span>&nbsp;<span class="element-name">m1</span>&#8203;<span class="parameters">\
-                    (java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
+                    /span>&nbsp;<span class="element-name">m1</span><wbr><span class="parameters">(j\
+                    ava.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
@@ -479,8 +479,8 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub5.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(<a href="A.html" title="annotation interface in pkg7">@A</a>
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(<a href="A.html" title="annotation interface in pkg7">@A</a>
                      <a href="A.html" title="annotation interface in pkg7">@A</a> java.lang.Class&lt\
                     ;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
@@ -503,9 +503,9 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub6.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation interf\
-                    ace in pkg7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation interfac\
+                    e in pkg7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
@@ -526,9 +526,9 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub7.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotat\
-                    ion interface in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotatio\
+                    n interface in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
@@ -549,9 +549,8 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub8.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp\
-                    ;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int <a href="A.html" title="annotation interface in pkg7">@A</a> []&nbsp;p2)</s\
                     pan></div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,15 +224,13 @@ public class TestSingletonLists extends JavadocTester {
      */
     public class ListChecker extends HtmlChecker {
         private int listErrors;
-
-        private boolean inBody;
-        private boolean inNoScript;
+        // Ignore "Constant Field Values" @see items for final fields created by javadoc
+        private boolean inSeeList;
         private Stack<Map<String,Integer>> counts = new Stack<>();
-        private int regionErrors;
         private String fileName;
-        private boolean inheritanceClass;
         private List<String> excludeFiles = List.of(
                 "overview-tree.html",
+                "package-summary.html",
                 "package-tree.html",
                 "module-summary.html",
                 "help-doc.html");
@@ -252,12 +250,6 @@ public class TestSingletonLists extends JavadocTester {
             } else {
                 out.println(listErrors + " list errors");
             }
-
-            if (regionErrors == 0) {
-                out.println("All regions OK");
-            } else {
-                out.println(regionErrors + " errors in regions");
-            }
         }
 
         @Override
@@ -276,9 +268,11 @@ public class TestSingletonLists extends JavadocTester {
         @Override
         public void startElement(String name, Map<String,String> attrs, boolean selfClosing) {
             switch (name) {
-
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
+                    if ("see-list".equals(attrs.get("class"))) {
+                        inSeeList = true;
+                    }
                     break;
 
                 case "li": case "dd": case "dt": {
@@ -294,10 +288,15 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": {
                     Map<String,Integer> c = counts.pop();
-                    if (c.get("li") == 0) {
+                    if (inSeeList) {
+                        // Ignore "Constant Field Values" @see items for final fields created by javadoc
+                        inSeeList = false;
+                    } else if (c.get("li") == 0) {
                         error(currFile, getLineNumber(), "empty list");
+                        listErrors++;
                     } else if (c.get("li") == 1 && fileName != null && !excludeFiles.contains(fileName)) {
                         error(currFile, getLineNumber(), "singleton list");
+                        listErrors++;
                     }
                     break;
                 }
@@ -306,9 +305,11 @@ public class TestSingletonLists extends JavadocTester {
                     Map<String, Integer> c = counts.pop();
                     if (c.get("dd") == 0 || c.get("dt") == 0) {
                         error(currFile, getLineNumber(), "empty list");
+                        listErrors++;
                     }
                     /*if (c.get("dd") == 1 || c.get("dt") == 1) {
                         error(currFile, getLineNumber(), "singleton list");
+                        listErrors++;
                     }*/
                     break;
                 }

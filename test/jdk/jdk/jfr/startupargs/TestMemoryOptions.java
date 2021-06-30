@@ -638,6 +638,11 @@ public class TestMemoryOptions {
         tc.setGlobalBufferSizeTestParam(64, 'k');
         tc.setGlobalBufferCountTestParam(16, 'b');
         testCases.add(tc);
+
+        // threadbuffersize exceeds default memorysize
+        tc = new TestCase("ThreadBufferSizeExceedMemorySize", false);
+        tc.setThreadBufferSizeTestParam(30, 'm');
+        testCases.add(tc);
     }
 
     public static void main(String[] args) throws Exception {

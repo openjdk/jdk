@@ -75,7 +75,7 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 
@@ -85,7 +85,17 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
+        }
+    }
+
+    @Test(dataProvider = "outOfBoundsObjectArray", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadObjectOutOfBoundsObjectArray(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readObjectConstant(base, offset);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 

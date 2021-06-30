@@ -3967,11 +3967,7 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      __ ldr(Rtemp, Address(Rklass, Klass::prototype_header_offset()));
-    } else {
-      __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
-    }
+    __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
     // mark
     __ str(Rtemp, Address(Robj, oopDesc::mark_offset_in_bytes()));
 
@@ -4249,8 +4245,6 @@ void TemplateTable::monitorenter() {
   // check for NULL object
   __ null_check(Robj, Rtemp);
 
-  __ resolve(IS_NOT_NULL, Robj);
-
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
   assert (entry_size % StackAlignmentInBytes == 0, "keep stack alignment");
   Label allocate_monitor, allocated;
@@ -4361,8 +4355,6 @@ void TemplateTable::monitorexit() {
 
   // check for NULL object
   __ null_check(Robj, Rtemp);
-
-  __ resolve(IS_NOT_NULL, Robj);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
   Label found, throw_exception;

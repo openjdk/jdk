@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,11 +139,16 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public String getToolTipText() {
         StringBuilder sb = new StringBuilder();
-        sb.append(text);
+        String shortNodeText = figure.getDiagram().getShortNodeText();
+        if (!text.isEmpty()) {
+            sb.append(text);
+            if (!shortNodeText.isEmpty()) {
+                sb.append(": ");
+            }
+        }
 
         for (InputNode n : getSource().getSourceNodes()) {
-            sb.append(StringUtils.escapeHTML("Node (ID=" + n.getId() + "): " + n.getProperties().get("name")));
-            sb.append("<br>");
+            sb.append(StringUtils.escapeHTML(n.getProperties().resolveString(shortNodeText)));
         }
 
         return sb.toString();

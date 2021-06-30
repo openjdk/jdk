@@ -47,7 +47,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
-// This is based on test compiler/classUnloading/anonymousClass/TestAnonymousClassUnloading.java
 public class TestHiddenClassUnloading {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 

@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 7014246
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug7014246Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug7014246Test
  * @run testng/othervm validation.tck.Bug7014246Test
  * @summary Test Schema doesn't allow maxInclusive of derived time type greater than the base.
  */

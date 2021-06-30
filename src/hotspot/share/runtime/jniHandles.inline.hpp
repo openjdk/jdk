@@ -25,9 +25,10 @@
 #ifndef SHARE_RUNTIME_JNIHANDLES_INLINE_HPP
 #define SHARE_RUNTIME_JNIHANDLES_INLINE_HPP
 
+#include "runtime/jniHandles.hpp"
+
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
-#include "runtime/jniHandles.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

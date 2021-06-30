@@ -444,8 +444,8 @@ public final class MonthDay
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 // alignedDOW and alignedWOM not supported because they cannot be set in with()
                 case DAY_OF_MONTH: return day;
                 case MONTH_OF_YEAR: return month;
@@ -720,11 +720,9 @@ public final class MonthDay
         if (this == obj) {
             return true;
         }
-        if (obj instanceof MonthDay) {
-            MonthDay other = (MonthDay) obj;
-            return month == other.month && day == other.day;
-        }
-        return false;
+        return (obj instanceof MonthDay other)
+                && month == other.month
+                && day == other.day;
     }
 
     /**

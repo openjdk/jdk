@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,15 +325,9 @@ final class Long128Vector extends LongVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        long[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Long128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -377,14 +371,7 @@ final class Long128Vector extends LongVector {
     @Override
     @ForceInline
     public Long128Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Long128Shuffle Iota = iotaShuffle();
-         VectorMask<Long> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((long)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Long128Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -405,14 +392,7 @@ final class Long128Vector extends LongVector {
     @Override
     @ForceInline
     public Long128Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Long128Shuffle Iota = iotaShuffle();
-         VectorMask<Long> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((long)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Long128Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -575,31 +555,43 @@ final class Long128Vector extends LongVector {
             return (Long128Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte128Vector.Byte128Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short128Vector.Short128Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int128Vector.Int128Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long128Vector.Long128Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float128Vector.Float128Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double128Vector.Double128Mask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    Long128Mask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public Long128Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long128Mask m = (Long128Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -640,6 +632,29 @@ final class Long128Vector extends LongVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Long128Mask.class, long.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Long128Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Long128Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Long128Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Long128Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Long128Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Long128Mask)m).getBits()));
         }
 
         // Reductions
@@ -721,24 +736,7 @@ final class Long128Vector extends LongVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte128Vector.Byte128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short128Vector.Short128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int128Vector.Int128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long128Vector.Long128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float128Vector.Float128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double128Vector.Double128Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -766,6 +764,8 @@ final class Long128Vector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

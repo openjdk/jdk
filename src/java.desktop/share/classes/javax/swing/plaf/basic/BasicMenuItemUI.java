@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -921,7 +921,13 @@ public class BasicMenuItemUI extends MenuItemUI
         if (dumpStack == true)
             Thread.dumpStack();
     }
-    /** Mouse input handler */
+    /**
+     * Mouse input handler.
+     * This class exists only for backward compatibility.
+     * All its functionality has been moved into Handler.
+     * @deprecated
+     */
+    @Deprecated(since = "17")
     protected class MouseInputHandler implements MouseInputListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add

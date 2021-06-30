@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ public class TestPrivateClasses extends JavadocTester {
                 // Method is documented as though it is declared in the inheriting method.
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFromParent\
-                    </span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
+                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFr\
+                    omParent</span><wbr><span class="parameters">(int&nbsp;p1)</span>
                                                    throws <span class="exceptions">java.lang.Exception</span></div>""",
                 """
                     <dl class="notes">
@@ -99,13 +99,13 @@ public class TestPrivateClasses extends JavadocTester {
                 // Should not document comments from private inherited interfaces
                 """
                     <td class="col-last"><code><span class="member-name-link"><a href="#methodInterf\
-                    ace(int)">methodInterface</a></span>&#8203;(int&nbsp;p1)</code>
+                    ace(int)">methodInterface</a></span><wbr>(int&nbsp;p1)</code>
                     <div class="block">Comment from interface.</div>
                     </td>""",
                 // and similarly one more
                 """
                     <td class="col-last"><code><span class="member-name-link"><a href="#methodInterf\
-                    ace2(int)">methodInterface2</a></span>&#8203;(int&nbsp;p1)</code>
+                    ace2(int)">methodInterface2</a></span><wbr>(int&nbsp;p1)</code>
                     <div class="block">Comment from interface.</div>
                     </td>"""
         );

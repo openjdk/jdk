@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public:
   Node* split_through_phi(PhaseGVN *phase);
 
   // Recover original value from boxed values
-  Node *eliminate_autobox(PhaseGVN *phase);
+  Node *eliminate_autobox(PhaseIterGVN *igvn);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
@@ -1335,6 +1335,26 @@ public:
   OnSpinWaitNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
+};
+
+//------------------------------BlackholeNode----------------------------
+// Blackhole all arguments. This node would survive through the compiler
+// the effects on its arguments, and would be finally matched to nothing.
+class BlackholeNode : public MemBarNode {
+public:
+  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
+    return RegMask::All;
+  }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
 };
 
 // Isolation of object setup after an AllocateNode and before next safepoint.

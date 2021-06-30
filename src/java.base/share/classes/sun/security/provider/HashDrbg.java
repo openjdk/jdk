@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,15 +254,15 @@ public class HashDrbg extends AbstractHashDrbg {
         int len = output.length;
 
         while (len > 0) {
+            // Step 4.1 w = Hash (data).
+            digest.update(data);
             if (len < outLen) {
-                // Step 4.1 w = Hash (data).
                 // Step 4.2 W = W || w.
-                System.arraycopy(digest.digest(data), 0, output, pos,
-                        len);
+                byte[] out = digest.digest();
+                System.arraycopy(out, 0, output, pos, len);
+                Arrays.fill(out, (byte)0);
             } else {
                 try {
-                    // Step 4.1 w = Hash (data).
-                    digest.update(data);
                     // Step 4.2 digest into right position, no need to cat
                     digest.digest(output, pos, outLen);
                 } catch (DigestException e) {

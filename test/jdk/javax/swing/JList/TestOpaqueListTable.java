@@ -33,7 +33,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  *  @test
- *  @bug 8253266
+ *  @bug 8253266 8264950
  *  @summary setUIProperty should work when opaque property is not set by
  *  client
  *  @key headful

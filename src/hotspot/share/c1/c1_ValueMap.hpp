@@ -194,7 +194,6 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_BlockBegin     (BlockBegin*      x) { /* nothing to do */ }
   void do_Goto           (Goto*            x) { /* nothing to do */ }
   void do_If             (If*              x) { /* nothing to do */ }
-  void do_IfInstanceOf   (IfInstanceOf*    x) { /* nothing to do */ }
   void do_TableSwitch    (TableSwitch*     x) { /* nothing to do */ }
   void do_LookupSwitch   (LookupSwitch*    x) { /* nothing to do */ }
   void do_Return         (Return*          x) { /* nothing to do */ }

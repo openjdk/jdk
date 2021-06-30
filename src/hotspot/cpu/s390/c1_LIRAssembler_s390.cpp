@@ -1209,7 +1209,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
 
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
@@ -1228,7 +1228,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register_lo();
-  __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(poll_addr, Address(Z_thread, JavaThread::polling_page_offset()));
   guarantee(info != NULL, "Shouldn't be NULL");
   add_debug_info_for_branch(info);
   int offset = __ offset();
@@ -1610,9 +1610,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_aebr(lreg, rreg);  break;
         case lir_sub: __ z_sebr(lreg, rreg);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_meebr(lreg, rreg); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_debr(lreg, rreg);  break;
         default: ShouldNotReachHere();
       }
@@ -1620,9 +1618,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_aeb(lreg, raddr);  break;
         case lir_sub: __ z_seb(lreg, raddr);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_meeb(lreg, raddr);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_deb(lreg, raddr);  break;
         default: ShouldNotReachHere();
       }
@@ -1645,9 +1641,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_adbr(lreg, rreg); break;
         case lir_sub: __ z_sdbr(lreg, rreg); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_mdbr(lreg, rreg); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_ddbr(lreg, rreg); break;
         default: ShouldNotReachHere();
       }
@@ -1655,9 +1649,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_adb(lreg, raddr); break;
         case lir_sub: __ z_sdb(lreg, raddr); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_mdb(lreg, raddr); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_ddb(lreg, raddr); break;
         default: ShouldNotReachHere();
       }

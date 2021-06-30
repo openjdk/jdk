@@ -261,7 +261,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
-  if ((EnableJVMCI || UseAOT) && state == vtos && step == 0) {
+  if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
     __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
     __ jcc(Assembler::zero, L);
@@ -591,7 +591,6 @@ void TemplateInterpreterGenerator::lock_method() {
 #endif // ASSERT
 
     __ bind(done);
-    __ resolve(IS_NOT_NULL, rax);
   }
 
   // add space for monitor & lock
@@ -1051,7 +1050,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifndef _LP64
   if (AlwaysRestoreFPU) {
     //  Make sure the control word is correct.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 #endif // _LP64
 

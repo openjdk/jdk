@@ -54,19 +54,22 @@ h3 {
     font-size:16px;
 }
 h4 {
-    font-size:13px;
+    font-size:15px;
 }
 h5 {
-    font-size:12px;
+    font-size:14px;
 }
 h6 {
-    font-size:11px;
+    font-size:13px;
 }
 ul {
     list-style-type:disc;
 }
 code, tt {
     font-family:'DejaVu Sans Mono', monospace;
+}
+:not(h1, h2, h3, h4, h5, h6) > code,
+:not(h1, h2, h3, h4, h5, h6) > tt {
     font-size:14px;
     padding-top:4px;
     margin-top:8px;
@@ -281,7 +284,7 @@ dl.notes > dt {
     color:#4E4E4E;
 }
 dl.notes > dd {
-    margin:5px 0 10px 0;
+    margin:5px 10px 10px 0;
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }
@@ -332,6 +335,18 @@ ul.summary-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
+ul.see-list, ul.see-list-long {
+    padding-left: 0;
+    list-style: none;
+}
+ul.see-list li {
+    display: inline;
+}
+ul.see-list li:not(:last-child):after,
+ul.see-list-long li:not(:last-child):after {
+    content: ", ";
+    white-space: pre-wrap;
+}
 /*
  * Styles for tables.
  */
@@ -353,10 +368,10 @@ ul.summary-list > li {
     font-weight:bold;
     clear:none;
     overflow:hidden;
-    padding:0px;
+    padding:0;
     padding-top:10px;
     padding-left:1px;
-    margin:0px;
+    margin:0;
     white-space:pre;
 }
 .caption a:link, .caption a:visited {
@@ -378,7 +393,10 @@ ul.summary-list > li {
     border: none;
     height:16px;
 }
-
+div.table-tabs {
+    padding:10px 0 0 1px;
+    margin:0;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;
@@ -537,7 +555,7 @@ h1.hidden {
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
 }
-.deprecation-comment, .help-footnote, .interface-name, .preview-comment {
+.deprecation-comment, .help-footnote, .preview-comment {
     font-style:italic;
 }
 .deprecation-block {
@@ -562,8 +580,7 @@ h1.hidden {
     margin-right:10px;
     display:inline-block;
 }
-div.block div.deprecation-comment, div.block div.block span.emphasized-phrase,
-div.block div.block span.interface-name {
+div.block div.deprecation-comment {
     font-style:normal;
 }
 /*

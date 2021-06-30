@@ -34,7 +34,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
@@ -48,7 +48,6 @@
 #include "utilities/powerOfTwo.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogOfHRGrainWords = 0;
 int    HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
@@ -84,9 +83,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
   LogOfHRGrainBytes = region_size_log;
 
-  guarantee(LogOfHRGrainWords == 0, "we should only set it once");
-  LogOfHRGrainWords = LogOfHRGrainBytes - LogHeapWordSize;
-
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
@@ -94,7 +90,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
@@ -109,8 +104,8 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_evacuation_failed(false);
   set_old();
+  _next_marked_bytes = 0;
 }
 
 void HeapRegion::unlink_from_list() {
@@ -122,8 +117,6 @@ void HeapRegion::unlink_from_list() {
 void HeapRegion::hr_clear(bool clear_space) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(!in_collection_set(),
-         "Should not clear heap region %u in the collection set", hrm_index());
 
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
@@ -138,7 +131,6 @@ void HeapRegion::hr_clear(bool clear_space) {
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
-  _evacuation_failed = false;
   _gc_efficiency = -1.0;
 }
 
@@ -234,7 +226,8 @@ void HeapRegion::clear_humongous() {
 
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
-                       MemRegion mr) :
+                       MemRegion mr,
+                       G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
@@ -246,7 +239,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _hrm_index(hrm_index),
   _type(),
   _humongous_start_region(NULL),
-  _evacuation_failed(false),
   _index_in_opt_cset(InvalidCSetIndex),
   _next(NULL), _prev(NULL),
 #ifdef ASSERT
@@ -261,7 +253,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new HeapRegionRemSet(bot, this);
+  _rem_set = new HeapRegionRemSet(this, config);
   initialize();
 }
 
@@ -619,11 +611,12 @@ public:
           if (!_failures) {
             log.error("----------");
           }
+          LogStream ls(log.error());
+          to->rem_set()->print_info(&ls, p);
           log.error("Missing rem set entry:");
           log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
           ResourceMark rm;
-          LogStream ls(log.error());
           _containing_obj->print_on(&ls);
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
                     p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());

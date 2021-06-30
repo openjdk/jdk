@@ -45,7 +45,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 /**
  * @test
  * @key headful
- * @bug 8059942
+ * @bug 8059942 8264317
  * @summary Tests rotated clip when unmanaged image is drawn to VI.
  *          Results of the blit to compatibleImage are used for comparison.
  * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectUnmanagedImageRotatedClip

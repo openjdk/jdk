@@ -25,8 +25,9 @@
 #ifndef SHARE_C1_C1_VALUESET_INLINE_HPP
 #define SHARE_C1_C1_VALUESET_INLINE_HPP
 
-#include "c1/c1_Instruction.hpp"
 #include "c1/c1_ValueSet.hpp"
+
+#include "c1/c1_Instruction.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline ValueSet::ValueSet() : _map(Instruction::number_of_instructions()) {

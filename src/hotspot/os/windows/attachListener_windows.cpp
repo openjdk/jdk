@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,10 +310,6 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   HANDLE hPipe = open_pipe();
   int lastError = (int)::GetLastError();
   if (hPipe != INVALID_HANDLE_VALUE) {
@@ -351,9 +347,6 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
 
     ::ReleaseMutex(Win32AttachListener::mutex());
   }
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 }
 
 
@@ -363,14 +356,7 @@ AttachOperation* AttachListener::dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   AttachOperation* op = Win32AttachListener::dequeue();
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   return op;
 }

@@ -75,7 +75,6 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_LogicOp        (LogicOp*         x);
   virtual void do_CompareOp      (CompareOp*       x);
   virtual void do_IfOp           (IfOp*            x);
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x);
   virtual void do_Convert        (Convert*         x);
   virtual void do_NullCheck      (NullCheck*       x);
   virtual void do_TypeCast       (TypeCast*        x);

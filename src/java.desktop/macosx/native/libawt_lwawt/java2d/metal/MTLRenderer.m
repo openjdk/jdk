@@ -470,8 +470,8 @@ void MTLRenderer_FillSpans(MTLContext *mtlc, BMTLSDOps * dstOps, jint spanCount,
 
     jfloat shapeX1 = mtlc.clip.shapeX;
     jfloat shapeY1 = mtlc.clip.shapeY;
-    jfloat shapeX2 = shapeX1 + mtlc.clip.shapeWidth;
-    jfloat shapeY2 = shapeY1 + mtlc.clip.shapeHeight;
+    jfloat shapeX2 = (mtlc.clip.shapeWidth > 0)?  shapeX1 + mtlc.clip.shapeWidth : 0;
+    jfloat shapeY2 = (mtlc.clip.shapeHeight > 0)? shapeY1 + mtlc.clip.shapeHeight : 0;
 
     int counter = 0;
     for (int i = 0; i < spanCount; i++) {

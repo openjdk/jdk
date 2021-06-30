@@ -666,6 +666,10 @@ class Eval {
             if (ei == null) {
                 // We got no type info, check for not a statement by trying
                 DiagList dl = trialCompile(guts);
+                if (dl.hasUnreachableError()) {
+                    guts = Wrap.methodUnreachableWrap(compileSource);
+                    dl = trialCompile(guts);
+                }
                 if (dl.hasNotStatement()) {
                     guts = Wrap.methodReturnWrap(compileSource);
                     dl = trialCompile(guts);

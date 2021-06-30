@@ -25,17 +25,18 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
+#include "gc/g1/g1FullGCMarker.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
-#include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,14 +58,15 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   if (obj->mark_must_be_preserved(mark) &&
       // It is not necessary to preserve marks for objects in regions we do not
       // compact because we do not change their headers (i.e. forward them).
-      _collector->is_compacted(obj)) {
+      _collector->is_compacting(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
   // Check if deduplicatable string.
-  if (G1StringDedup::is_enabled() &&
-      java_lang_String::is_instance_inlined(obj)) {
-    G1StringDedup::enqueue_from_mark(obj, _worker_id);
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance_inlined(obj) &&
+      G1StringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests.add(obj);
   }
 
   // Collect live words.

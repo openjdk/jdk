@@ -65,8 +65,6 @@ requires.properties= \
     vm.hasJFR \
     vm.rtm.cpu \
     vm.rtm.compiler \
-    vm.aot \
-    vm.aot.enabled \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.archived.java.heap \
@@ -80,7 +78,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=5.1 b1
+requiredVersion=6+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

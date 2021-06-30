@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,13 +228,12 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   if (scope() == NULL) {
     CompiledMethod* nm = code();
     Method* method = nm->method();
-    assert(method->is_native() || nm->is_aot(), "Expect a native method or precompiled method");
+    assert(method->is_native(), "Expect a native method");
     if (!method->is_synchronized()) {
       return new GrowableArray<MonitorInfo*>(0);
     }
-    // This monitor is really only needed for UseBiasedLocking, but
-    // return it in all cases for now as it might be useful for stack
-    // traces and tools as well
+    // This monitor is not really needed but return it for now as it might be
+    // useful for stack traces and tools
     GrowableArray<MonitorInfo*> *monitors = new GrowableArray<MonitorInfo*>(1);
     // Casting away const
     frame& fr = (frame&) _fr;

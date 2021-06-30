@@ -124,8 +124,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 #endif // ASSERT
 
 
-#define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, save_arg_regs, return_pc) \
-  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, save_arg_regs, return_pc); \
+#define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, return_pc) \
+  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, return_pc); \
   if (var == NULL) { return false; }
 
 bool OptoRuntime::generate(ciEnv* env) {
@@ -134,23 +134,23 @@ bool OptoRuntime::generate(ciEnv* env) {
 
   // Note: tls: Means fetching the return oop out of the thread-local storage
   //
-  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,save_args,retpc
+  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,retpc
   // -------------------------------------------------------------------------------------------------------------------------------
-  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true , false, false);
-  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true , false, false);
-  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true , false, false);
-  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true , false, false);
-  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true , false, false);
-  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true , false, false);
-  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true , false, false);
-  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true , false, false);
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false, false);
-  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false, false);
-  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false, false);
-  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , false, true );
+  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true, false);
+  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true, false);
+  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true, false);
+  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true, false);
+  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true, false);
+  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
+  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
+  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
+  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
+  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
+  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
+  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , true );
 
-  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false, false);
-  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false, false);
+  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false);
+  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false);
 
   return true;
 }
@@ -159,17 +159,16 @@ bool OptoRuntime::generate(ciEnv* env) {
 
 
 // Helper method to do generation of RunTimeStub's
-address OptoRuntime::generate_stub( ciEnv* env,
-                                    TypeFunc_generator gen, address C_function,
-                                    const char *name, int is_fancy_jump,
-                                    bool pass_tls,
-                                    bool save_argument_registers,
-                                    bool return_pc) {
+address OptoRuntime::generate_stub(ciEnv* env,
+                                   TypeFunc_generator gen, address C_function,
+                                   const char *name, int is_fancy_jump,
+                                   bool pass_tls,
+                                   bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
   ResourceMark rm;
-  Compile C( env, gen, C_function, name, is_fancy_jump, pass_tls, save_argument_registers, return_pc, directive);
+  Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);
   return  C.stub_entry_point();
 }
@@ -660,6 +659,25 @@ const TypeFunc *OptoRuntime::Math_D_D_Type() {
   fields[TypeFunc::Parms+0] = Type::DOUBLE;
   fields[TypeFunc::Parms+1] = Type::HALF;
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(num_arg);
+  // Symbol* name of class to be loaded
+  assert(num_arg > 0, "must have at least 1 input");
+  for (uint i = 0; i < num_arg; i++) {
+    fields[TypeFunc::Parms+i] = in_type;
+  }
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+num_arg, fields);
+
+  // create result type (range)
+  const uint num_ret = 1;
+  fields = TypeTuple::fields(num_ret);
+  fields[TypeFunc::Parms+0] = out_type;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+num_ret, fields);
 
   return TypeFunc::make(domain, range);
 }
@@ -1175,7 +1193,7 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
 }
 // Base64 decode function
 const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
-  int argcnt = 6;
+  int argcnt = 7;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1185,6 +1203,7 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // dest array
   fields[argp++] = TypeInt::INT;        // dest offset
   fields[argp++] = TypeInt::BOOL;       // isURL
+  fields[argp++] = TypeInt::BOOL;       // isMIME
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1499,6 +1518,21 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+#if INCLUDE_JFR
+const TypeFunc *OptoRuntime::get_class_id_intrinsic_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 0, fields);
+
+  return TypeFunc::make(domain,range);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature
@@ -1565,12 +1599,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-    } else if (c->tag() == NamedCounter::BiasedLockingCounter) {
-      BiasedLockingCounters* blc = ((BiasedLockingNamedCounter*)c)->counters();
-      if (blc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        blc->print_on(tty);
-      }
 #if INCLUDE_RTM_OPT
     } else if (c->tag() == NamedCounter::RTMLockingCounter) {
       RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
@@ -1621,9 +1649,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
   NamedCounter* c;
-  if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(st.as_string());
-  } else if (tag == NamedCounter::RTMLockingCounter) {
+  if (tag == NamedCounter::RTMLockingCounter) {
     c = new RTMLockingNamedCounter(st.as_string());
   } else {
     c = new NamedCounter(st.as_string(), tag);

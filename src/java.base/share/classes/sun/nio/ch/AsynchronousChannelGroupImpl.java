@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ abstract class AsynchronousChannelGroupImpl
 {
     // number of internal threads handling I/O events when using an unbounded
     // thread pool. Internal threads do not dispatch to completion handlers.
+    @SuppressWarnings("removal")
     private static final int internalThreadCount = AccessController.doPrivileged(
         new GetIntegerAction("sun.nio.ch.internalThreadPoolSize", 1));
 
@@ -114,6 +115,7 @@ abstract class AsynchronousChannelGroupImpl
         };
     }
 
+    @SuppressWarnings("removal")
     private void startInternalThread(final Runnable task) {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
@@ -245,6 +247,7 @@ abstract class AsynchronousChannelGroupImpl
      */
     abstract void shutdownHandlerTasks();
 
+    @SuppressWarnings("removal")
     private void shutdownExecutors() {
         AccessController.doPrivileged(
             new PrivilegedAction<>() {
@@ -317,13 +320,16 @@ abstract class AsynchronousChannelGroupImpl
      */
     @Override
     public final void execute(Runnable task) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // when a security manager is installed then the user's task
             // must be run with the current calling context
+            @SuppressWarnings("removal")
             final AccessControlContext acc = AccessController.getContext();
             final Runnable delegate = task;
             task = new Runnable() {
+                @SuppressWarnings("removal")
                 @Override
                 public void run() {
                     AccessController.doPrivileged(new PrivilegedAction<>() {

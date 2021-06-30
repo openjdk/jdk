@@ -38,14 +38,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
-import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,6 +57,7 @@ import static java.net.StandardSocketOptions.IP_MULTICAST_IF;
 import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
 import static java.net.StandardSocketOptions.IP_MULTICAST_TTL;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
+import static jdk.test.lib.NetworkConfiguration.isSameInterface;
 
 public class DatagramSocketMulticasting {
     static final ProtocolFamily UNSPEC = () -> "UNSPEC";
@@ -239,7 +238,7 @@ public class DatagramSocketMulticasting {
 
         // setOption(IP_MULTICAST_IF)
         s.setOption(IP_MULTICAST_IF, ni);
-        assertTrue(s.getOption(IP_MULTICAST_IF).equals(ni));
+        assertTrue(isSameInterface(s.getOption(IP_MULTICAST_IF), ni));
 
         // bad values for IP_MULTICAST_IF
         assertThrows(IllegalArgumentException.class,

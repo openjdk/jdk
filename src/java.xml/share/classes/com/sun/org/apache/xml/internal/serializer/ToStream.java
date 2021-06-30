@@ -42,6 +42,7 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import jdk.xml.internal.JdkConstants;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -52,7 +53,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: Jan 2021
+ * @LastModified: June 2021
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -494,11 +495,10 @@ abstract public class ToStream extends SerializerBase {
                     setIndentAmount(Integer.parseInt(val));
                 } else if (OutputKeys.INDENT.equals(name)) {
                     m_doIndent = val.endsWith("yes");
-                } else if ((DOMConstants.NS_IS_STANDALONE)
+                } else if ((DOMConstants.S_JDK_PROPERTIES_NS + JdkConstants.S_IS_STANDALONE)
                         .equals(name)) {
                     m_isStandalone = val.endsWith("yes");
                 }
-
                 break;
             case 'l':
                 if (OutputPropertiesFactory.S_KEY_LINE_SEPARATOR.equals(name)) {
@@ -1893,10 +1893,6 @@ abstract public class ToStream extends SerializerBase {
             throw new SAXException(e);
         }
 
-        // process the attributes now, because after this SAX call they might be gone
-        if (atts != null)
-            addAttributes(atts);
-
         if (m_doIndent) {
             m_ispreserveSpace = m_preserveSpaces.peekOrFalse();
             m_preserveSpaces.push(m_ispreserveSpace);
@@ -1904,6 +1900,10 @@ abstract public class ToStream extends SerializerBase {
             m_childNodeNumStack.add(m_childNodeNum);
             m_childNodeNum = 0;
         }
+
+        // process the attributes now, because after this SAX call they might be gone
+        if (atts != null)
+            addAttributes(atts);
 
         m_elemContext = m_elemContext.push(namespaceURI,localName,name);
         m_isprevtext = false;

@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventWriterTest.XMLEventWriterTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventWriterTest.XMLEventWriterTest
  * @run testng/othervm stream.XMLEventWriterTest.XMLEventWriterTest
  * @summary Test XMLEventWriter.
  */

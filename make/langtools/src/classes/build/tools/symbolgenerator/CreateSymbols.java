@@ -132,6 +132,7 @@ import com.sun.tools.classfile.Module_attribute.ProvidesEntry;
 import com.sun.tools.classfile.Module_attribute.RequiresEntry;
 import com.sun.tools.classfile.NestHost_attribute;
 import com.sun.tools.classfile.NestMembers_attribute;
+import com.sun.tools.classfile.PermittedSubclasses_attribute;
 import com.sun.tools.classfile.Record_attribute;
 import com.sun.tools.classfile.Record_attribute.ComponentInfo;
 import com.sun.tools.classfile.RuntimeAnnotations_attribute;
@@ -977,6 +978,16 @@ public class CreateSymbols {
             }
             attributes.put(Attribute.Record,
                            new Record_attribute(attributeString, recordComponents));
+        }
+        if (header.isSealed) {
+            int attributeString = addString(constantPool, Attribute.PermittedSubclasses);
+            int[] subclasses = new int[header.permittedSubclasses.size()];
+            int i = 0;
+            for (String intf : header.permittedSubclasses) {
+                subclasses[i++] = addClass(constantPool, intf);
+            }
+            attributes.put(Attribute.PermittedSubclasses,
+                    new PermittedSubclasses_attribute(attributeString, subclasses));
         }
         addInnerClassesAttribute(header, constantPool, attributes);
     }
@@ -2229,6 +2240,16 @@ public class CreateSymbols {
                 }
                 break;
             }
+            case Attribute.PermittedSubclasses: {
+                assert feature instanceof ClassHeaderDescription;
+                PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute) attr;
+                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+                chd.permittedSubclasses = Arrays.stream(permittedSubclasses.subtypes)
+                        .mapToObj(i -> getClassName(cf, i))
+                        .collect(Collectors.toList());
+                chd.isSealed = true;
+                break;
+            }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
                                                 attrName);
@@ -3077,6 +3098,8 @@ public class CreateSymbols {
         List<String> nestMembers;
         boolean isRecord;
         List<RecordComponentDescription> recordComponents;
+        boolean isSealed;
+        List<String> permittedSubclasses;
 
         @Override
         public int hashCode() {
@@ -3087,6 +3110,8 @@ public class CreateSymbols {
             hash = 17 * hash + Objects.hashCode(this.nestMembers);
             hash = 17 * hash + Objects.hashCode(this.isRecord);
             hash = 17 * hash + Objects.hashCode(this.recordComponents);
+            hash = 17 * hash + Objects.hashCode(this.isSealed);
+            hash = 17 * hash + Objects.hashCode(this.permittedSubclasses);
             return hash;
         }
 
@@ -3117,6 +3142,12 @@ public class CreateSymbols {
             if (!listEquals(this.recordComponents, other.recordComponents)) {
                 return false;
             }
+            if (this.isSealed != other.isSealed) {
+                return false;
+            }
+            if (!listEquals(this.permittedSubclasses, other.permittedSubclasses)) {
+                return false;
+            }
             return true;
         }
 
@@ -3136,6 +3167,9 @@ public class CreateSymbols {
                 output.append(" nestMembers " + serializeList(nestMembers));
             if (isRecord) {
                 output.append(" record true");
+            }
+            if (isSealed) {
+                output.append(" sealed true");
             }
             writeAttributes(output);
             output.append("\n");
@@ -3163,6 +3197,11 @@ public class CreateSymbols {
                 readRecordComponents(reader);
             }
             readInnerClasses(reader);
+            isSealed = reader.attributes.containsKey("permittedSubclasses");
+            if (isSealed) {
+                String subclassesList = reader.attributes.get("permittedSubclasses");
+                permittedSubclasses = deserializeList(subclassesList);
+            }
 
             return true;
         }

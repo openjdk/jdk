@@ -21,7 +21,7 @@
  * questions.
  */
 
-package test;
+package test/*getTypeMirror:PACKAGE:test*/;
 
 public class TestGetTypeMirrorReferenceData {
 

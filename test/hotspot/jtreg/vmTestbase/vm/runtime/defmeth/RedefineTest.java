@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,29 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.RedefineTest
+ */
 package vm.runtime.defmeth;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import nsk.share.Pair;
-import nsk.share.TestFailure;
-import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.DefMethTestFailure;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
@@ -39,6 +54,8 @@ import vm.runtime.defmeth.shared.data.Clazz;
 import vm.runtime.defmeth.shared.data.ConcreteClass;
 import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.Tester;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /*
@@ -47,7 +64,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class RedefineTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new RedefineTest(), args);
+        DefMethTest.runTest(RedefineTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(true),
+                /* execMode */ Set.of(DIRECT, INVOKE_EXACT, INVOKE_GENERIC, INDY));
     }
 
     @Override
@@ -55,9 +76,8 @@ public class RedefineTest extends DefMethTest {
         // There are no testers being generated for reflection-based scenarios,
         // so scenarios on class redefinition don't work
         String mode = factory.getExecutionMode();
-        if ( "REFLECTION".equals(mode) || "INVOKE_WITH_ARGS".equals(mode)) {
-            throw new TestFailure("RedefineTest isn't applicable to reflection-based execution scenario " +
-                    "(REDEFINE & INVOKE_WITH_ARGS).");
+        if ("REFLECTION".equals(mode) || "INVOKE_WITH_ARGS".equals(mode)) {
+            getLog().warn("RedefineTest isn't applicable to reflection-based execution scenario (REDEFINE & INVOKE_WITH_ARGS).");
         }
     }
 

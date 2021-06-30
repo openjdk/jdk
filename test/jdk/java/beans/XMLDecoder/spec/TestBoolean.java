@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <boolean> element
+ * @run main/othervm -Djava.security.manager=allow TestBoolean
  * @author Sergey Malenkov
  */
 

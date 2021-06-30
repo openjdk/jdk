@@ -94,6 +94,9 @@ class InternalStats : public AllStatic {
                                                     \
   /* Number of times we did a purge */              \
   x(num_purges)                                     \
+                                                    \
+  /* Number of times we read inconsistent stats. */ \
+  x(num_inconsistent_stats)                         \
 
 // Note: We use uintx since 32bit platforms lack 64bit atomic add; this increases
 //  the possibility of counter overflows but the probability is very low for any counter
