@@ -4064,24 +4064,19 @@ public class Attr extends JCTree.Visitor {
                 tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype;
         JCTree typeTree;
-        boolean checkRawTypes;
-        if (tree.pattern.getTag() == BINDINGPATTERN) {
+        if (tree.pattern.getTag() == BINDINGPATTERN ||
+           tree.pattern.getTag() == PARENTHESIZEDPATTERN) {
             attribTree(tree.pattern, env, unknownExprInfo);
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous()) {
                 log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
             }
-            JCBindingPattern pattern = (JCBindingPattern) tree.pattern;
-            typeTree = pattern.var.vartype;
-            if (!clazztype.hasTag(TYPEVAR)) {
-                clazztype = chk.checkClassOrArrayType(pattern.var.vartype.pos(), clazztype);
-            }
-            checkRawTypes = true;
+            typeTree = TreeInfo.primaryPatternTree((JCPattern) tree.pattern).var.vartype;
         } else {
             clazztype = attribType(tree.pattern, env);
             typeTree = tree.pattern;
-            checkRawTypes = false;
+            chk.validate(typeTree, env, false);
         }
         if (!clazztype.hasTag(TYPEVAR)) {
             clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
@@ -4099,7 +4094,6 @@ public class Attr extends JCTree.Visitor {
                 clazztype = types.createErrorType(clazztype);
             }
         }
-        chk.validate(typeTree, env, checkRawTypes);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, KindSelector.VAL, resultInfo);
     }
@@ -4133,6 +4127,7 @@ public class Attr extends JCTree.Visitor {
         annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         annotate.flush();
+        chk.validate(tree.var.vartype, env, true);
         result = tree.type;
         matchBindings = new MatchBindings(List.of(v), List.nil());
     }
@@ -4140,6 +4135,7 @@ public class Attr extends JCTree.Visitor {
     @Override
     public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
         attribExpr(tree.pattern, env);
+        result = tree.type = tree.pattern.type;
     }
 
     @Override

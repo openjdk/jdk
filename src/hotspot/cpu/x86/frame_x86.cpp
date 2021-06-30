@@ -358,12 +358,20 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return reinterpret_cast<JavaFrameAnchor*>(reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(jfa_sp_offset()));
 }
 
+bool frame::optimized_entry_frame_is_first() const {
+  assert(is_optimized_entry_frame(), "must be optimzed entry frame");
+  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == NULL;
+}
+
 frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
   OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!optimized_entry_frame_is_first(), "must have a frame anchor to go back to");
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.

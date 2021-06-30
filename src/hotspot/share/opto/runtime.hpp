@@ -29,7 +29,6 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
@@ -63,7 +62,6 @@ public:
     NoTag,
     LockCounter,
     EliminatedLockCounter,
-    BiasedLockingCounter,
     RTMLockingCounter
   };
 
@@ -99,18 +97,6 @@ private:
   }
 
 };
-
-class BiasedLockingNamedCounter : public NamedCounter {
- private:
-  BiasedLockingCounters _counters;
-
- public:
-  BiasedLockingNamedCounter(const char *n) :
-    NamedCounter(n, BiasedLockingCounter), _counters() {}
-
-  BiasedLockingCounters* counters() { return &_counters; }
-};
-
 
 class RTMLockingNamedCounter : public NamedCounter {
  private:
@@ -170,10 +156,6 @@ class OptoRuntime : public AllStatic {
   static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
 
 public:
-  // Slow-path Locking and Unlocking
-  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-  static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
 

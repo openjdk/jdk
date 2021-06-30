@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,22 +155,22 @@ public class TestLocaleOption extends TestRunner {
 
     private void testHelloWorld(Path base, Locale defaultLocale, Locale localeOption) throws Exception {
         Path apiDir = base.resolve("api");
-        String stdOut = javadoc(defaultLocale,
+        String stdErr = javadoc(defaultLocale,
                                 localeOption,
                                 "-sourcepath", srcDir.toString(),
                                 "-d", apiDir.toString(),
                                 "p")
                 .writeAll()
-                .getOutput(Task.OutputKind.STDOUT);
+                .getOutput(Task.OutputKind.STDERR);
 
         // check console messages
         if (Objects.equals(defaultLocale, ALLCAPS)) {
-            checkContains(stdOut,
+            checkContains(stdErr,
                     """
                         LOADING SOURCE FILES FOR PACKAGE p...
                         CONSTRUCTING JAVADOC INFORMATION...""");
         } else {
-            checkContains(stdOut,
+            checkContains(stdErr,
                     """
                         Loading source files for package p...
                         Constructing Javadoc information...""");

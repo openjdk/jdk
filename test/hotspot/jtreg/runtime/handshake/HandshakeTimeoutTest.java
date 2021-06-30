@@ -36,20 +36,11 @@ import sun.hotspot.WhiteBox;
  * @library /testlibrary /test/lib
  * @build HandshakeTimeoutTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeTimeoutTest
+ * @run main HandshakeTimeoutTest
  */
 
 public class HandshakeTimeoutTest {
     public static void main(String[] args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        Boolean useJVMCICompiler = wb.getBooleanVMFlag("UseJVMCICompiler");
-        String useJVMCICompilerStr;
-        if (useJVMCICompiler != null) {
-            useJVMCICompilerStr = useJVMCICompiler ?  "-XX:+UseJVMCICompiler" : "-XX:-UseJVMCICompiler";
-        } else {
-            // pass something innocuous
-            useJVMCICompilerStr = "-XX:+UnlockExperimentalVMOptions";
-        }
         ProcessBuilder pb =
             ProcessTools.createTestJvm(
                     "-Xbootclasspath/a:.",
@@ -63,7 +54,6 @@ public class HandshakeTimeoutTest {
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:HandshakeTimeout=50",
                     "-XX:-CreateCoredumpOnCrash",
-                    useJVMCICompilerStr,
                     "HandshakeTimeoutTest$Test");
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);

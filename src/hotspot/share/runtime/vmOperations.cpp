@@ -153,7 +153,7 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  calling_thread()->as_Java_thread()->make_zombies();
+  JavaThread::cast(calling_thread())->make_zombies();
 }
 
 #endif // !PRODUCT
@@ -168,6 +168,9 @@ bool VM_PrintThreads::doit_prologue() {
 
 void VM_PrintThreads::doit() {
   Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
+  if (_print_jni_handle_info) {
+    JNIHandles::print_on(_out);
+  }
 }
 
 void VM_PrintThreads::doit_epilogue() {
@@ -175,10 +178,6 @@ void VM_PrintThreads::doit_epilogue() {
     // Release Heap_lock
     Heap_lock->unlock();
   }
-}
-
-void VM_PrintJNI::doit() {
-  JNIHandles::print_on(_out);
 }
 
 void VM_PrintMetadata::doit() {

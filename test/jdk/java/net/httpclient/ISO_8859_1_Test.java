@@ -278,6 +278,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
 
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) throws Exception {
+        checkSkip();
         System.out.println("Request to " + uri);
 
         HttpClient client = newHttpClient(sameClient);
