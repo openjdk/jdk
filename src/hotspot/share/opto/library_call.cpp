@@ -1032,16 +1032,17 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  if (stopped()) {
+    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return success
+    return true;
+  }
+
   // length is now known postive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
   Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
-
-  if (stopped()) {
-    return false;
-  }
 
   // Use an unsigned comparison for the range check itself
   Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
@@ -1061,7 +1062,8 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   if (stopped()) {
-    return false;
+    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return success
+    return true;
   }
 
   // index is now known to be >= 0 and < length, cast it
@@ -3810,7 +3812,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
-  Node *lock_mask      = _gvn.MakeConX(markWord::biased_lock_mask_in_place);
+  Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
   Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
   Node *unlocked_val   = _gvn.MakeConX(markWord::unlocked_value);
   Node *chk_unlocked   = _gvn.transform(new CmpXNode( lmasked_header, unlocked_val));
@@ -4116,6 +4118,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
   return true;
 }
+
+#undef XTOP
 
 //------------------------clone_coping-----------------------------------
 // Helper function for inline_native_clone.
@@ -4443,6 +4447,36 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     Node* alloc_mem = alloc->in(TypeFunc::Memory);
     C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
     C->gvn_replace_by(init->proj_out(TypeFunc::Memory), alloc_mem);
+
+    // The CastIINode created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) must stay below
+    // the allocation (i.e. is only valid if the allocation succeeds):
+    // 1) replace CastIINode with AllocateArrayNode's length here
+    // 2) Create CastIINode again once allocation has moved (see below) at the end of this method
+    //
+    // Multiple identical CastIINodes might exist here. Each GraphKit::load_array_length() call will generate
+    // new separate CastIINode (arraycopy guard checks or any array length use between array allocation and ararycopy)
+    Node* init_control = init->proj_out(TypeFunc::Control);
+    Node* alloc_length = alloc->Ideal_length();
+#ifdef ASSERT
+    Node* prev_cast = NULL;
+#endif
+    for (uint i = 0; i < init_control->outcnt(); i++) {
+      Node* init_out = init_control->raw_out(i);
+      if (init_out->is_CastII() && init_out->in(TypeFunc::Control) == init_control && init_out->in(1) == alloc_length) {
+#ifdef ASSERT
+        if (prev_cast == NULL) {
+          prev_cast = init_out;
+        } else {
+          if (prev_cast->cmp(*init_out) == false) {
+            prev_cast->dump();
+            init_out->dump();
+            assert(false, "not equal CastIINode");
+          }
+        }
+#endif
+        C->gvn_replace_by(init_out, alloc_length);
+      }
+    }
     C->gvn_replace_by(init->proj_out(TypeFunc::Control), alloc->in(0));
 
     // move the allocation here (after the guards)
@@ -4474,6 +4508,8 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     dest->set_req(0, control());
     Node* destx = _gvn.transform(dest);
     assert(destx == dest, "where has the allocation result gone?");
+
+    array_ideal_length(alloc, ary_type, true);
   }
 }
 
@@ -5236,46 +5272,133 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 
 //-------------inline_vectorizedMismatch------------------------------
 bool LibraryCallKit::inline_vectorizedMismatch() {
-  assert(UseVectorizedMismatchIntrinsic, "not implementated on this platform");
+  assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
-  address stubAddr = StubRoutines::vectorizedMismatch();
-  if (stubAddr == NULL) {
-    return false; // Intrinsic's stub is not implemented on this platform
-  }
-  const char* stubName = "vectorizedMismatch";
-  int size_l = callee()->signature()->size();
   assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+  Node* obja    = argument(0); // Object
+  Node* aoffset = argument(1); // long
+  Node* objb    = argument(3); // Object
+  Node* boffset = argument(4); // long
+  Node* length  = argument(6); // int
+  Node* scale   = argument(7); // int
 
-  Node* obja = argument(0);
-  Node* aoffset = argument(1);
-  Node* objb = argument(3);
-  Node* boffset = argument(4);
-  Node* length = argument(6);
-  Node* scale = argument(7);
-
-  const Type* a_type = obja->Value(&_gvn);
-  const Type* b_type = objb->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  if (top_a == NULL || top_a->klass() == NULL ||
-    top_b == NULL || top_b->klass() == NULL) {
-    // failed array check
-    return false;
+  const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
+  const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
+  if (obja_t == NULL || obja_t->klass() == NULL ||
+      objb_t == NULL || objb_t->klass() == NULL ||
+      scale == top()) {
+    return false; // failed input validation
   }
-
-  Node* call;
-  jvms()->set_should_reexecute(true);
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
 
-  call = make_runtime_call(RC_LEAF,
-    OptoRuntime::vectorizedMismatch_Type(),
-    stubAddr, stubName, TypePtr::BOTTOM,
-    obja_adr, objb_adr, length, scale);
+  // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
+  //
+  //    inline_limit = ArrayOperationPartialInlineSize / element_size;
+  //    if (length <= inline_limit) {
+  //      inline_path:
+  //        vmask   = VectorMaskGen length
+  //        vload1  = LoadVectorMasked obja, vmask
+  //        vload2  = LoadVectorMasked objb, vmask
+  //        result1 = VectorCmpMasked vload1, vload2, vmask
+  //    } else {
+  //      call_stub_path:
+  //        result2 = call vectorizedMismatch_stub(obja, objb, length, scale)
+  //    }
+  //    exit_block:
+  //      return Phi(result1, result2);
+  //
+  enum { inline_path = 1,  // input is small enough to process it all at once
+         stub_path   = 2,  // input is too large; call into the VM
+         PATH_LIMIT  = 3
+  };
 
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  Node* exit_block = new RegionNode(PATH_LIMIT);
+  Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
+  Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+
+  Node* call_stub_path = control();
+
+  BasicType elem_bt = T_ILLEGAL;
+
+  const TypeInt* scale_t = _gvn.type(scale)->is_int();
+  if (scale_t->is_con()) {
+    switch (scale_t->get_con()) {
+      case 0: elem_bt = T_BYTE;  break;
+      case 1: elem_bt = T_SHORT; break;
+      case 2: elem_bt = T_INT;   break;
+      case 3: elem_bt = T_LONG;  break;
+
+      default: elem_bt = T_ILLEGAL; break; // not supported
+    }
+  }
+
+  int inline_limit = 0;
+  bool do_partial_inline = false;
+
+  if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
+    inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
+    do_partial_inline = inline_limit >= 16;
+  }
+
+  if (do_partial_inline) {
+    assert(elem_bt != T_ILLEGAL, "sanity");
+
+    if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
+
+      const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
+      Node* cmp_length = _gvn.transform(new CmpINode(length, intcon(inline_limit)));
+      Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
+
+      call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
+
+      if (!stopped()) {
+        Node* casted_length = _gvn.transform(new CastIINode(control(), length, TypeInt::make(0, inline_limit, Type::WidenMin)));
+
+        const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
+        const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
+        Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
+        Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
+
+        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
+        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
+        Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
+
+        exit_block->init_req(inline_path, control());
+        memory_phi->init_req(inline_path, map()->memory());
+        result_phi->init_req(inline_path, result);
+
+        C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
+        clear_upper_avx();
+      }
+    }
+  }
+
+  if (call_stub_path != NULL) {
+    set_control(call_stub_path);
+
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::vectorizedMismatch_Type(),
+                                   StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
+                                   obja_adr, objb_adr, length, scale);
+
+    exit_block->init_req(stub_path, control());
+    memory_phi->init_req(stub_path, map()->memory());
+    result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  }
+
+  exit_block = _gvn.transform(exit_block);
+  memory_phi = _gvn.transform(memory_phi);
+  result_phi = _gvn.transform(result_phi);
+
+  set_control(exit_block);
+  set_all_memory(memory_phi);
+  set_result(result_phi);
+
   return true;
 }
 
@@ -6292,7 +6415,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   address stubAddr;
   const char *stubName;
   assert(UseBASE64Intrinsics, "need Base64 intrinsics support");
-  assert(callee()->signature()->size() == 6, "base64_decodeBlock has 6 parameters");
+  assert(callee()->signature()->size() == 7, "base64_decodeBlock has 7 parameters");
   stubAddr = StubRoutines::base64_decodeBlock();
   stubName = "decodeBlock";
 
@@ -6304,6 +6427,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* dest = argument(4);
   Node* dest_offset = argument(5);
   Node* isURL = argument(6);
+  Node* isMIME = argument(7);
 
   src = must_be_not_null(src, true);
   dest = must_be_not_null(dest, true);
@@ -6316,7 +6440,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* call = make_runtime_call(RC_LEAF,
                                  OptoRuntime::base64_decodeBlock_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, src_offset, len, dest_start, dest_offset, isURL);
+                                 src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
   return true;

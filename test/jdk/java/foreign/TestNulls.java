@@ -84,6 +84,7 @@ public class TestNulls {
             ValueLayout.class,
             GroupLayout.class,
             Addressable.class,
+            SymbolLookup.class,
             MemoryAccess.class,
             MemoryLayouts.class,
             MemoryHandles.class,
@@ -91,7 +92,6 @@ public class TestNulls {
             CLinker.VaList.class,
             CLinker.VaList.Builder.class,
             FunctionDescriptor.class,
-            LibraryLookup.class,
             SegmentAllocator.class,
             ResourceScope.class
     };
@@ -145,8 +145,8 @@ public class TestNulls {
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(Consumer.class, x -> {});
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
-        addDefaultMapping(MemoryAddress.class, MemoryAddress.NULL);
-        addDefaultMapping(Addressable.class, MemoryAddress.NULL);
+        addDefaultMapping(MemoryAddress.class, MemoryAddress.ofLong(1));
+        addDefaultMapping(Addressable.class, MemoryAddress.ofLong(1));
         addDefaultMapping(MemoryLayout.class, MemoryLayouts.JAVA_INT);
         addDefaultMapping(ValueLayout.class, MemoryLayouts.JAVA_INT);
         addDefaultMapping(GroupLayout.class, MemoryLayout.structLayout(MemoryLayouts.JAVA_INT));
@@ -156,11 +156,12 @@ public class TestNulls {
         addDefaultMapping(CLinker.class, CLinker.getInstance());
         addDefaultMapping(CLinker.VaList.class, VaListHelper.vaList);
         addDefaultMapping(CLinker.VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(LibraryLookup.class, LibraryLookup.ofDefault());
         addDefaultMapping(ResourceScope.class, ResourceScope.newImplicitScope());
         addDefaultMapping(SegmentAllocator.class, (size, align) -> null);
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ResourceScope.Handle.class, ResourceScope.globalScope().acquire());
+        addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
+        addDefaultMapping(SymbolLookup.class, CLinker.systemLookup());
     }
 
     static class VaListHelper {

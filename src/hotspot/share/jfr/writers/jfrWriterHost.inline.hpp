@@ -274,22 +274,22 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write(const Symbol* symbol) {
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const Ticks& time) {
-  write((uintptr_t)JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
+  write(JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const Tickspan& time) {
-  write((uintptr_t)JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
+  write(JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const JfrTicks& time) {
-  write((uintptr_t)time.value());
+  write(time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const JfrTickspan& time) {
-  write((uintptr_t)time.value());
+  write(time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>

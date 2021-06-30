@@ -27,6 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
@@ -39,7 +40,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -680,6 +681,11 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
 
 void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   assert_at_safepoint_on_vm_thread();
+  // To avoid fragmentation the full collection requesting to clear the bitmap
+  // might use fewer workers than available. To ensure the bitmap is cleared
+  // as efficiently as possible the number of active workers are temporarily
+  // increased to include all currently created workers.
+  WithUpdatedActiveWorkers update(workers, workers->created_workers());
   clear_bitmap(_next_mark_bitmap, workers, false);
 }
 
@@ -1687,7 +1693,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        thread->as_Java_thread()->nmethods_do(&_code_cl);
+        JavaThread::cast(thread)->nmethods_do(&_code_cl);
       }
     }
   }
@@ -2942,7 +2948,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   }
 
   // add static memory usages to remembered set sizes
-  _total_remset_bytes += HeapRegionRemSet::fl_mem_size() + HeapRegionRemSet::static_mem_size();
+  _total_remset_bytes += G1CardSetFreePool::free_list_pool()->mem_size() + HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

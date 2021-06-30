@@ -44,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -94,10 +93,15 @@ uint G1FullCollector::calc_active_workers() {
   uint current_active_workers = heap->workers()->active_workers();
   uint active_worker_limit = WorkerPolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
 
+  // Finally consider the amount of used regions.
+  uint used_worker_limit = heap->num_used_regions();
+  assert(used_worker_limit > 0, "Should never have zero used regions.");
+
   // Update active workers to the lower of the limits.
-  uint worker_count = MIN2(heap_waste_worker_limit, active_worker_limit);
-  log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, adaptive workers: %u)",
-                      worker_count, heap_waste_worker_limit, active_worker_limit);
+  uint worker_count = MIN3(heap_waste_worker_limit, active_worker_limit, used_worker_limit);
+  log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
+                      "adaptive workers: %u, used limited workers: %u)",
+                      worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
   worker_count = heap->workers()->update_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
@@ -181,10 +185,6 @@ void G1FullCollector::prepare_collection() {
   reference_processor()->enable_discovery();
   reference_processor()->setup_policy(scope()->should_clear_soft_refs());
 
-  // We should save the marks of the currently locked biased monitors.
-  // The marking doesn't preserve the marks of biased objects.
-  BiasedLocking::preserve_marks();
-
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
 }
@@ -210,8 +210,6 @@ void G1FullCollector::complete_collection() {
   // When the pointers have been adjusted and moved, we can
   // update the derived pointer table.
   update_derived_pointers();
-
-  BiasedLocking::restore_marks();
 
   _heap->concurrent_mark()->swap_mark_bitmaps();
   // Prepare the bitmap for the next (potentially concurrent) marking.

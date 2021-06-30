@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986 8222169 8224031 8240964 8267119
+ * @bug 8206986 8222169 8224031 8240964 8267119 8268670
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
@@ -117,6 +117,26 @@ public class ExpressionSwitch {
             case "h": yield "";
             case "i": yield null;
             default: yield 0;
+        };
+    }
+
+    private int yieldUnaryNumberOperator(String s, int a) {
+        return switch (s) {
+            case "a": yield +a;
+            case "b": yield -a;
+            case "c": yield ~a; // intentionally repeated ~a, test the case clause
+            case "d": yield ++a;
+            case "e": yield --a;
+            case "f": yield a++;
+            case "g": yield a--;
+            default: yield ~a; // intentionally repeated ~a, test the default clause
+        };
+    }
+
+    private boolean yieldUnaryNotOperator(String s, boolean b) {
+        return switch (s) {
+            case "a": yield !b; // intentionally repeated !b, test the case clause
+            default: yield !b; // intentionally repeated !b, test the default clause
         };
     }
 

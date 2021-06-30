@@ -196,8 +196,14 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
 
   if (!inst_src->klass_is_exact()) {
     ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
-    assert(!ik->is_interface() && !ik->has_subklass(), "inconsistent klass hierarchy");
-    phase->C->dependencies()->assert_leaf_type(ik);
+    assert(!ik->is_interface(), "inconsistent klass hierarchy");
+    if (ik->has_subklass()) {
+      // Concurrent class loading.
+      // Fail fast and return NodeSentinel to indicate that the transform failed.
+      return NodeSentinel;
+    } else {
+      phase->C->dependencies()->assert_leaf_type(ik);
+    }
   }
 
   ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
@@ -738,7 +744,7 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
 
 // As an optimization, choose optimum vector size for copy length known at compile time.
 int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
-  int lane_count = ArrayCopyPartialInlineSize/type2aelembytes(type);
+  int lane_count = ArrayOperationPartialInlineSize/type2aelembytes(type);
   if (const_len > 0) {
     int size_in_bytes = const_len * type2aelembytes(type);
     if (size_in_bytes <= 16)

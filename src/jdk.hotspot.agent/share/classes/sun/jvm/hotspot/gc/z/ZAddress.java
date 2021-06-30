@@ -40,7 +40,7 @@ class ZAddress {
     }
 
     static boolean is_weak_bad(Address value) {
-        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0;
+        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0L;
     }
 
     static boolean is_weak_good(Address value) {
@@ -61,5 +61,17 @@ class ZAddress {
 
     static Address good_or_null(Address value) {
         return is_null(value) ? value : good(value);
+    }
+
+    private static boolean isPowerOf2(long value) {
+        return (value != 0L) && ((value & (value - 1)) == 0L);
+    }
+
+    static boolean isIn(Address addr) {
+        long value = as_long(addr);
+        if (!isPowerOf2(value & ~ZGlobals.ZAddressOffsetMask())) {
+            return false;
+        }
+        return (value & (ZGlobals.ZAddressMetadataMask() & ~ZGlobals.ZAddressMetadataFinalizable())) != 0L;
     }
 }

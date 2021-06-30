@@ -40,7 +40,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.inline.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -98,13 +97,10 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      atomic_discovery,
-                                       BoolObjectClosure* is_alive_non_header,
-                                       bool      adjust_no_of_processing_threads)  :
+                                       BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
-  _enqueuing_is_done(false),
   _next_id(0),
-  _adjust_no_of_processing_threads(adjust_no_of_processing_threads),
   _is_alive_non_header(is_alive_non_header)
 {
   assert(is_subject_to_discovery != NULL, "must be set");
@@ -202,7 +198,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   double start_time = os::elapsedTime();
 
-  assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
   disable_discovery();
 
@@ -528,7 +523,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase1, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase1, _phase_times, tracker_id(worker_id));
     size_t const removed = _ref_processor.process_soft_ref_reconsider_work(_ref_processor._discoveredSoftRefs[worker_id],
                                                                            _policy,
                                                                            is_alive,
@@ -566,17 +561,17 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcWorkerTimeTracker t(_phase_times->phase2_worker_time_sec(), worker_id);
+    RefProcWorkerTimeTracker t(_phase_times->phase2_worker_time_sec(), tracker_id(worker_id));
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredSoftRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_SOFT);
     }
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::WeakRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::WeakRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredWeakRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_WEAK);
     }
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredFinalRefs, is_alive, keep_alive, false /* do_enqueue_and_clear */, REF_FINAL);
     }
     // Close the reachable set; needed for collectors which keep_alive_closure do
@@ -597,7 +592,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase3, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase3, _phase_times, tracker_id(worker_id));
     _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive, complete_gc);
   }
 };
@@ -614,7 +609,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::PhantomRefSubPhase4, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::PhantomRefSubPhase4, _phase_times, tracker_id(worker_id));
     size_t const removed = _ref_processor.process_phantom_refs_work(_ref_processor._discoveredPhantomRefs[worker_id],
                                                                     is_alive,
                                                                     keep_alive,
@@ -931,8 +926,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    Thread* thr = Thread::current();
-    id = thr->as_Worker_thread()->id();
+    id = WorkerThread::current()->id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
@@ -1320,12 +1314,7 @@ RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  if (!_rp->adjust_no_of_processing_threads() || (ReferencesPerThread == 0)) {
-    return;
-  }
-
   uint workers = ergo_proc_thread_count(ref_count, _rp->num_queues(), phase);
-
   _rp->set_active_mt_degree(workers);
 }
 

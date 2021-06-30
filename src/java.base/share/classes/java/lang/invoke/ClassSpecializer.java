@@ -853,14 +853,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         }
 
         private int typeLoadOp(char t) {
-            switch (t) {
-            case 'L': return ALOAD;
-            case 'I': return ILOAD;
-            case 'J': return LLOAD;
-            case 'F': return FLOAD;
-            case 'D': return DLOAD;
-            default : throw newInternalError("unrecognized type " + t);
-            }
+            return switch (t) {
+                case 'L' -> ALOAD;
+                case 'I' -> ILOAD;
+                case 'J' -> LLOAD;
+                case 'F' -> FLOAD;
+                case 'D' -> DLOAD;
+                default -> throw newInternalError("unrecognized type " + t);
+            };
         }
 
         private void emitIntConstant(int con, MethodVisitor mv) {

@@ -313,20 +313,22 @@ final class MemberName implements Member, Cloneable {
     /*non-public*/
     boolean referenceKindIsConsistentWith(int originalRefKind) {
         int refKind = getReferenceKind();
-        if (refKind == originalRefKind)  return true;
-        switch (originalRefKind) {
-        case REF_invokeInterface:
-            // Looking up an interface method, can get (e.g.) Object.hashCode
-            assert(refKind == REF_invokeVirtual ||
-                   refKind == REF_invokeSpecial) : this;
-            return true;
-        case REF_invokeVirtual:
-        case REF_newInvokeSpecial:
-            // Looked up a virtual, can get (e.g.) final String.hashCode.
-            assert(refKind == REF_invokeSpecial) : this;
-            return true;
+        if (refKind == originalRefKind) return true;
+        if (getClass().desiredAssertionStatus()) {
+            switch (originalRefKind) {
+                case REF_invokeInterface -> {
+                    // Looking up an interface method, can get (e.g.) Object.hashCode
+                    assert (refKind == REF_invokeVirtual || refKind == REF_invokeSpecial) : this;
+                }
+                case REF_invokeVirtual, REF_newInvokeSpecial -> {
+                    // Looked up a virtual, can get (e.g.) final String.hashCode.
+                    assert (refKind == REF_invokeSpecial) : this;
+                }
+                default -> {
+                    assert (false) : this + " != " + MethodHandleNatives.refKindName((byte) originalRefKind);
+                }
+            }
         }
-        assert(false) : this+" != "+MethodHandleNatives.refKindName((byte)originalRefKind);
         return true;
     }
     private boolean staticIsConsistent() {

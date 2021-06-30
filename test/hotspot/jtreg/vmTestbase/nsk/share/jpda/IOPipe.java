@@ -24,6 +24,7 @@
 package nsk.share.jpda;
 
 import nsk.share.*;
+import nsk.share.jdi.Binder;
 
 /**
  * This class implements communicational channel between
@@ -42,8 +43,6 @@ public class IOPipe extends SocketIOPipe {
 
     public static final String PIPE_LOG_PREFIX = "IOPipe> ";
 
-    private DebugeeProcess debugee;
-
     /**
       * Make <code>IOPipe</code> at debugee's side.
       *
@@ -61,7 +60,9 @@ public class IOPipe extends SocketIOPipe {
       * Make <code>IOPipe</code> at debugger's side
       * with given <code>Debugee</code> mirror.
       *
-      * @deprecated Use Debugee.createIOPipe() instead.
+      * @deprecated Preferred way is to start IOPipe before launching debuggee process.
+      *
+      * @see #startDebuggerPipe
       */
     @Deprecated
     public IOPipe(DebugeeProcess debugee) {
@@ -70,8 +71,7 @@ public class IOPipe extends SocketIOPipe {
                 debugee.getArgumentHandler().getPipePortNumber(),
                 (long)debugee.getArgumentHandler().getWaitTime() * 60 * 1000,
                 true);
-
-        this.debugee = debugee;
+        setServerSocket(debugee.getPipeServerSocket());
     }
 
     /**
@@ -81,12 +81,22 @@ public class IOPipe extends SocketIOPipe {
         super("IOPipe", log, PIPE_LOG_PREFIX, host, port, timeout, listening);
     }
 
-    protected void connect() {
-        if (listening) {
-            setServerSocket(debugee.getPipeServerSocket());
-            setConnectingProcess(debugee.getProcess());
-        }
+    /**
+     * Creates and starts listening <code>IOPipe</code> at debugger side.
+     */
+    public static IOPipe startDebuggerPipe(Binder binder) {
+        IOPipe ioPipe = new IOPipe(binder.getLog(),
+                binder.getArgumentHandler().getDebugeeHost(),
+                binder.getArgumentHandler().getPipePortNumber(),
+                (long)binder.getArgumentHandler().getWaitTime() * 60 * 1000,
+                true);
+        ioPipe.setServerSocket(binder.getPipeServerSocket());
+        ioPipe.startListening();
+        return ioPipe;
+    }
 
+
+    protected void connect() {
         super.connect();
     }
 

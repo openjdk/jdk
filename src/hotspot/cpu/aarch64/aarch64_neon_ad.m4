@@ -864,119 +864,35 @@ VECTOR_EXTRACT_F(2, D, X, D)
 dnl
 
 // ------------------------------ Vector comparison ---------------------------------
-define(`VECTOR_CMP_EQ_GT_GE', `
-instruct vcm$1$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2, immI cond)
+
+instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
 %{
-  predicate(n->as_Vector()->length() == $2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::$1 &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
+  predicate(n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$6cm$1  $dst, T$2$5, $src1, $src2\t# vector cmp ($2$3)" %}
+  format %{ "vcmpD  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ $6cm$1(as_FloatRegister($dst$$reg), __ T$2$5,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    assert(type2aelembytes(bt) != 8, "not supported");
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ false);
   %}
-  ins_pipe(vdop$7);
-%}')dnl
-dnl                $1   $2 $3 $4 $5 $6 $7
-VECTOR_CMP_EQ_GT_GE(eq, 8, B, D, B,  , 64)
-VECTOR_CMP_EQ_GT_GE(eq, 16,B, X, B,  , 128)
-VECTOR_CMP_EQ_GT_GE(eq, 4, S, D, H,  , 64)
-VECTOR_CMP_EQ_GT_GE(eq, 8, S, X, H,  , 128)
-VECTOR_CMP_EQ_GT_GE(eq, 2, I, D, S,  , 64)
-VECTOR_CMP_EQ_GT_GE(eq, 4, I, X, S,  , 128)
-VECTOR_CMP_EQ_GT_GE(eq, 2, L, X, D,  , 128)
-VECTOR_CMP_EQ_GT_GE(eq, 2, F, D, S, f, 64)
-VECTOR_CMP_EQ_GT_GE(eq, 4, F, X, S, f, 128)
-VECTOR_CMP_EQ_GT_GE(eq, 2, D, X, D, f, 128)
-VECTOR_CMP_EQ_GT_GE(gt, 8, B, D, B,  , 64)
-VECTOR_CMP_EQ_GT_GE(gt, 16,B, X, B,  , 128)
-VECTOR_CMP_EQ_GT_GE(gt, 4, S, D, H,  , 64)
-VECTOR_CMP_EQ_GT_GE(gt, 8, S, X, H,  , 128)
-VECTOR_CMP_EQ_GT_GE(gt, 2, I, D, S,  , 64)
-VECTOR_CMP_EQ_GT_GE(gt, 4, I, X, S,  , 128)
-VECTOR_CMP_EQ_GT_GE(gt, 2, L, X, D,  , 128)
-VECTOR_CMP_EQ_GT_GE(gt, 2, F, D, S, f, 64)
-VECTOR_CMP_EQ_GT_GE(gt, 4, F, X, S, f, 128)
-VECTOR_CMP_EQ_GT_GE(gt, 2, D, X, D, f, 128)
-VECTOR_CMP_EQ_GT_GE(ge, 8, B, D, B,  , 64)
-VECTOR_CMP_EQ_GT_GE(ge, 16,B, X, B,  , 128)
-VECTOR_CMP_EQ_GT_GE(ge, 4, S, D, H,  , 64)
-VECTOR_CMP_EQ_GT_GE(ge, 8, S, X, H,  , 128)
-VECTOR_CMP_EQ_GT_GE(ge, 2, I, D, S,  , 64)
-VECTOR_CMP_EQ_GT_GE(ge, 4, I, X, S,  , 128)
-VECTOR_CMP_EQ_GT_GE(ge, 2, L, X, D,  , 128)
-VECTOR_CMP_EQ_GT_GE(ge, 2, F, D, S, f, 64)
-VECTOR_CMP_EQ_GT_GE(ge, 4, F, X, S, f, 128)
-VECTOR_CMP_EQ_GT_GE(ge, 2, D, X, D, f, 128)
-dnl
-define(`VECTOR_CMP_NE', `
-instruct vcmne$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2, immI cond)
+  ins_pipe(vdop64);
+%}
+
+instruct vcmpX(vecX dst, vecX src1, vecX src2, immI cond)
 %{
-  predicate(n->as_Vector()->length() == $1 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($2));
+  predicate(n->as_Vector()->length_in_bytes() == 16);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$5cmeq  $dst, T$1$4, $src1, $src2\n\t# vector cmp ($1$2)"
-            "not   $dst, T$6, $dst\t" %}
+  format %{ "vcmpX  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ $5cmeq(as_FloatRegister($dst$$reg), __ T$1$4,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T$6, as_FloatRegister($dst$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ true);
   %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl           $1 $2 $3 $4 $5 $6
-VECTOR_CMP_NE(8, B, D, B,  , 8B)
-VECTOR_CMP_NE(16,B, X, B,  , 16B)
-VECTOR_CMP_NE(4, S, D, H,  , 8B)
-VECTOR_CMP_NE(8, S, X, H,  , 16B)
-VECTOR_CMP_NE(2, I, D, S,  , 8B)
-VECTOR_CMP_NE(4, I, X, S,  , 16B)
-VECTOR_CMP_NE(2, L, X, D,  , 16B)
-VECTOR_CMP_NE(2, F, D, S, f, 8B)
-VECTOR_CMP_NE(4, F, X, S, f, 16B)
-VECTOR_CMP_NE(2, D, X, D, f, 16B)
-dnl
-define(`VECTOR_CMP_LT_LE', `
-instruct vcm$1$2$3`'(vec$4 dst, vec$4 src1, vec$4 src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == $2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::$1 &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "$6cm$7  $dst, T$2$5, $src2, $src1\t# vector cmp ($2$3)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ $6cm$7(as_FloatRegister($dst$$reg), __ T$2$5,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop$8);
-%}')dnl
-dnl              $1  $2 $3 $4 $5 $6 $7  $8
-VECTOR_CMP_LT_LE(lt, 8, B, D, B,  , gt, 64)
-VECTOR_CMP_LT_LE(lt, 16,B, X, B,  , gt, 128)
-VECTOR_CMP_LT_LE(lt, 4, S, D, H,  , gt, 64)
-VECTOR_CMP_LT_LE(lt, 8, S, X, H,  , gt, 128)
-VECTOR_CMP_LT_LE(lt, 2, I, D, S,  , gt, 64)
-VECTOR_CMP_LT_LE(lt, 4, I, X, S,  , gt, 128)
-VECTOR_CMP_LT_LE(lt, 2, L, X, D,  , gt, 128)
-VECTOR_CMP_LT_LE(lt, 2, F, D, S, f, gt, 64)
-VECTOR_CMP_LT_LE(lt, 4, F, X, S, f, gt, 128)
-VECTOR_CMP_LT_LE(lt, 2, D, X, D, f, gt, 128)
-VECTOR_CMP_LT_LE(le, 8, B, D, B,  , ge, 64)
-VECTOR_CMP_LT_LE(le, 16,B, X, B,  , ge, 128)
-VECTOR_CMP_LT_LE(le, 4, S, D, H,  , ge, 64)
-VECTOR_CMP_LT_LE(le, 8, S, X, H,  , ge, 128)
-VECTOR_CMP_LT_LE(le, 2, I, D, S,  , ge, 64)
-VECTOR_CMP_LT_LE(le, 4, I, X, S,  , ge, 128)
-VECTOR_CMP_LT_LE(le, 2, L, X, D,  , ge, 128)
-VECTOR_CMP_LT_LE(le, 2, F, D, S, f, ge, 64)
-VECTOR_CMP_LT_LE(le, 4, F, X, S, f, ge, 128)
-VECTOR_CMP_LT_LE(le, 2, D, X, D, f, ge, 128)
-dnl
+  ins_pipe(vdop128);
+%}
 
 // ------------------------------ Vector mul -----------------------------------
 

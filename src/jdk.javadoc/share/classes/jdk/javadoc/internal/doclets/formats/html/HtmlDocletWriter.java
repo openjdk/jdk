@@ -1432,7 +1432,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitAttribute(AttributeTree node, Content c) {
-                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName());
+                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName().toString());
                     if (node.getValueKind() == ValueKind.EMPTY) {
                         result.add(sb);
                         return false;
@@ -2050,18 +2050,18 @@ public class HtmlDocletWriter {
         }
         StringBuilder sb = new StringBuilder();
         for (Element e: chain) {
-            CharSequence name;
+            String name;
             switch (e.getKind()) {
                 case MODULE:
                 case PACKAGE:
-                    name = ((QualifiedNameable) e).getQualifiedName();
+                    name = ((QualifiedNameable) e).getQualifiedName().toString();
                     if (name.length() == 0) {
                         name = "<unnamed>";
                     }
                     break;
 
                 default:
-                    name = e.getSimpleName();
+                    name = e.getSimpleName().toString();
                     break;
             }
 
@@ -2103,7 +2103,8 @@ public class HtmlDocletWriter {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")
-                .replaceAll("^(Module|Package|Class)$", "$1Declaration");
+                .replaceAll("^(Module|Package|Class)$", "$1Declaration")
+                .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
         return HtmlStyle.valueOf(page);
     }

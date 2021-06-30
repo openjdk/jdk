@@ -23,8 +23,8 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -54,12 +54,15 @@ import static jdk.incubator.foreign.CLinker.asVarArg;
 public class VaList {
 
     static final CLinker linker = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofLibrary("VaList");
+    static {
+        System.loadLibrary("VaList");
+    }
 
     static final MethodHandle MH_ellipsis;
     static final MethodHandle MH_vaList;
 
     static {
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_ellipsis = linker.downcallHandle(lookup.lookup("ellipsis").get(),
                 MethodType.methodType(void.class, int.class, int.class, double.class, long.class),
                 FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONG_LONG)));

@@ -62,7 +62,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
@@ -805,8 +804,7 @@ void PSScavenge::initialize() {
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
                            true,                       // atomic_discovery
-                           NULL,                       // header provides liveness info
-                           false);
+                           NULL);                      // header provides liveness info
 
   // Cache the cardtable
   _card_table = heap->card_table();

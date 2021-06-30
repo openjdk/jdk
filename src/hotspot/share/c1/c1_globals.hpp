@@ -153,9 +153,6 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
-          "Intrinsify java.nio.Buffer.checkIndex")                          \
-                                                                            \
   develop(bool, CanonicalizeNodes, true,                                    \
           "Canonicalize graph nodes")                                       \
                                                                             \

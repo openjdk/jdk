@@ -515,6 +515,10 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
 
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
+  if (!allow_inline && _callee->holder()->is_interface()) {
+    // Don't convert the interface call to a direct call guarded by an interface subtype check.
+    return false;
+  }
   CallGenerator* cg = C->call_generator(_callee,
                                         vtable_index(),
                                         false /*call_does_dispatch*/,
@@ -953,12 +957,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   if (kit.stopped()) {
-    // Instance exactly does not matches the desired type.
+    // Instance does not match the predicted type.
     kit.set_jvms(slow_jvms);
     return kit.transfer_exceptions_into_jvms();
   }
 
-  // fall through if the instance exactly matches the desired type
+  // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:

@@ -202,11 +202,9 @@ private:
                                         // other collectors in configuration
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
-  bool        _enqueuing_is_done;       // true if all weak references enqueued
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
-  bool        _adjust_no_of_processing_threads; // allow dynamic adjustment of processing threads
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
@@ -368,8 +366,7 @@ public:
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL,
-                     bool adjust_no_of_processing_threads = false);
+                     BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -399,7 +396,6 @@ public:
 
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
-  void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
@@ -407,10 +403,6 @@ public:
 
   // Whether we are in a phase when _processing_ is MT.
   bool processing_is_mt() const;
-
-  // whether all enqueueing of weak references is complete
-  bool enqueuing_is_done()  { return _enqueuing_is_done; }
-  void set_enqueuing_is_done(bool v) { _enqueuing_is_done = v; }
 
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
@@ -438,8 +430,6 @@ public:
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-
-  bool adjust_no_of_processing_threads() const { return _adjust_no_of_processing_threads; }
 };
 
 // A subject-to-discovery closure that uses a single memory span to determine the area that
@@ -565,27 +555,6 @@ class ReferenceProcessorIsAliveMutator: StackObj {
   }
 };
 
-// A utility class to temporarily change the disposition
-// of the "discovery_is_atomic" field of the
-// given ReferenceProcessor in the scope that contains it.
-class ReferenceProcessorAtomicMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool                _saved_atomic_discovery;
-
- public:
-  ReferenceProcessorAtomicMutator(ReferenceProcessor* rp,
-                                  bool atomic):
-    _rp(rp) {
-    _saved_atomic_discovery = _rp->discovery_is_atomic();
-    _rp->set_atomic_discovery(atomic);
-  }
-
-  ~ReferenceProcessorAtomicMutator() {
-    _rp->set_atomic_discovery(_saved_atomic_discovery);
-  }
-};
-
 enum class RefProcThreadModel { Multi, Single };
 
 /*
@@ -599,6 +568,10 @@ protected:
   ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
 
+  // Used for tracking how much time a worker spends in a (sub)phase.
+  uint tracker_id(uint worker_id) const {
+    return _ref_processor.processing_is_mt() ? worker_id : 0;
+  }
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)

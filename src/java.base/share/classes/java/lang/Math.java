@@ -1926,29 +1926,25 @@ public final class Math {
     public static double ulp(double d) {
         int exp = getExponent(d);
 
-        switch(exp) {
-        case Double.MAX_EXPONENT + 1:       // NaN or infinity
-            return Math.abs(d);
+        return switch(exp) {
+            case Double.MAX_EXPONENT + 1 -> Math.abs(d);      // NaN or infinity
+            case Double.MIN_EXPONENT - 1 -> Double.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
 
-        case Double.MIN_EXPONENT - 1:       // zero or subnormal
-            return Double.MIN_VALUE;
-
-        default:
-            assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Double.MIN_EXPONENT) {
-                return powerOfTwoD(exp);
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Double.MIN_EXPONENT) {
+                    yield powerOfTwoD(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of Double.MIN_VALUE appropriate
+                    // number of positions
+                    yield Double.longBitsToDouble(1L <<
+                            (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of Double.MIN_VALUE appropriate
-                // number of positions
-                return Double.longBitsToDouble(1L <<
-                (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        };
     }
 
     /**
@@ -1977,28 +1973,25 @@ public final class Math {
     public static float ulp(float f) {
         int exp = getExponent(f);
 
-        switch(exp) {
-        case Float.MAX_EXPONENT+1:        // NaN or infinity
-            return Math.abs(f);
+        return switch(exp) {
+            case Float.MAX_EXPONENT + 1 -> Math.abs(f);     // NaN or infinity
+            case Float.MIN_EXPONENT - 1 -> Float.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
 
-        case Float.MIN_EXPONENT-1:        // zero or subnormal
-            return Float.MIN_VALUE;
-
-        default:
-            assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Float.MIN_EXPONENT) {
-                return powerOfTwoF(exp);
-            } else {
-                // return a subnormal result; left shift integer
-                // representation of FloatConsts.MIN_VALUE appropriate
-                // number of positions
-                return Float.intBitsToFloat(1 <<
-                (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (FloatConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Float.MIN_EXPONENT) {
+                    yield powerOfTwoF(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of FloatConsts.MIN_VALUE appropriate
+                    // number of positions
+                    yield Float.intBitsToFloat(1 <<
+                            (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-        }
+        };
     }
 
     /**
