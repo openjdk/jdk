@@ -21,7 +21,7 @@
  * questions.
  */
 
-package sun.net.httpserver;
+package sun.net.httpserver.simpleserver;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -34,8 +34,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import sun.net.httpserver.FileServerHandler;
-import sun.net.httpserver.OutputFilter;
+import sun.net.httpserver.simpleserver.FileServerHandler;
+import sun.net.httpserver.simpleserver.OutputFilter;
 
 /**
  * A simple HTTP file server and its components (intended for testing,
