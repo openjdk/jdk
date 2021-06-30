@@ -1498,7 +1498,11 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
-  if (vlen_in_bytes <= 16) {
+  if (vlen_in_bytes == 4) {
+    movdl(dst, addr);
+  } else if (vlen_in_bytes == 8) {
+    movq(dst, addr);
+  } else if (vlen_in_bytes == 16) {
     movdqu(dst, addr, scratch);
   } else if (vlen_in_bytes == 32) {
     vmovdqu(dst, addr, scratch);
@@ -1507,6 +1511,7 @@ void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int
     evmovdqub(dst, k0, addr, false /*merge*/, Assembler::AVX_512bit, scratch);
   }
 }
+
 // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
 void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src) {
