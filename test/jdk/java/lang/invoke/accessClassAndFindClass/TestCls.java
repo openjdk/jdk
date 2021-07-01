@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +21,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
--->
-<configuration version="2.0" label="TestSettings" description="Configuration for testing promotion failed event" provider="Oracle">
+ */
+package test.java.lang.invoke;
 
-    <event name="jdk.EvacuationFailed">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-</configuration>
+import static java.lang.invoke.MethodHandles.*;
+
+public class TestCls {
+
+    public static final Lookup LOOKUP = lookup();
+
+    private static class PrivateSIC {}
+    public static Class getPrivateSIC() { return PrivateSIC.class; }
+    public static Lookup getLookupForPrivateSIC() { return lookup(); }
+
+}
+

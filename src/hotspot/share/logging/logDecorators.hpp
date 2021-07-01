@@ -82,6 +82,7 @@ class LogDecorators {
 
  public:
   static const LogDecorators None;
+  static const LogDecorators All;
 
   LogDecorators() : _decorators(DefaultDecoratorsMask) {
   }
