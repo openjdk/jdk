@@ -919,39 +919,29 @@ instruct vmaskcast(vReg dst) %{
   ins_pipe(pipe_class_empty);
 %}
 
-instruct string_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
-                                 iRegI_R0 result, vReg ztmp1, vReg ztmp2,
-                                 pRegGov pgtmp, pReg ptmp, rFlagsReg cr)
-%{
-  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate((UseSVE > 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
-  effect(TEMP ztmp1, TEMP ztmp2, TEMP pgtmp, TEMP ptmp, KILL cr);
+// Intrisics for String.indexOf(char)
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result # use sve" %}
-
-  ins_encode %{
-    __ string_indexof_char_sve($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
-                               as_FloatRegister($ztmp1$$reg), as_FloatRegister($ztmp2$$reg),
-                               as_PRegister($pgtmp$$reg), as_PRegister($ptmp$$reg), false /* isL */);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct stringL_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+dnl
+define(`STRING_INDEXOF_CHAR', `
+instruct string$1_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
                                   iRegI_R0 result, vReg ztmp1, vReg ztmp2,
                                   pRegGov pgtmp, pReg ptmp, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate((UseSVE > 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
+  predicate((UseSVE > 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::$1));
   effect(TEMP ztmp1, TEMP ztmp2, TEMP pgtmp, TEMP ptmp, KILL cr);
 
-  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result # use sve" %}
+  format %{ "String$2 IndexOf char[] $str1,$cnt1,$ch -> $result # use sve" %}
 
   ins_encode %{
     __ string_indexof_char_sve($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
                                as_FloatRegister($ztmp1$$reg), as_FloatRegister($ztmp2$$reg),
-                               as_PRegister($pgtmp$$reg), as_PRegister($ptmp$$reg), true /* isL */);
+                               as_PRegister($pgtmp$$reg), as_PRegister($ptmp$$reg), $3 /* isL */);
   %}
   ins_pipe(pipe_class_memory);
-%}
+%}')dnl
+dnl                 $1 $2      $3
+STRING_INDEXOF_CHAR(L, Latin1, true)
+STRING_INDEXOF_CHAR(U, UTF16,  false)
+dnl
 
