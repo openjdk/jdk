@@ -74,18 +74,6 @@ source_hpp %{
 %}
 
 source %{
-  static inline BasicType vector_element_basic_type(const MachNode* n) {
-    const TypeVect* vt = n->bottom_type()->is_vect();
-    return vt->element_basic_type();
-  }
-
-  static inline BasicType vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
-    int def_idx = use->operand_index(opnd);
-    Node* def = use->in(def_idx);
-    const TypeVect* vt = def->bottom_type()->is_vect();
-    return vt->element_basic_type();
-  }
-
   static Assembler::SIMD_RegVariant elemBytes_to_regVariant(int esize) {
     switch(esize) {
       case 1:
@@ -190,6 +178,9 @@ source %{
       case Op_VectorReinterpret:
       case Op_VectorStoreMask:
       case Op_VectorTest:
+      case Op_VectorMaskTrueCount:
+      case Op_VectorMaskLastTrue:
+      case Op_VectorMaskFirstTrue:
         return false;
       default:
         return true;

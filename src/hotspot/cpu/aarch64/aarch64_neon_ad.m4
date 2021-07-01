@@ -2243,3 +2243,140 @@ instruct vpopcount$1$2`'(vec$5 dst, vec$5 src) %{
 dnl       $1 $2 $3  $4 $5
 VPOPCOUNT(4, I, 16, 8, X)
 VPOPCOUNT(2, I, 8,  4, D)
+
+dnl
+define(`VMASK_TRUECOUNT', `
+instruct vmask_truecount$1(iRegINoSp dst, $2 src, $2 tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskTrueCount src));
+  effect(TEMP tmp);
+  ins_cost(2 * INSN_COST);
+  format %{ "addv $tmp, $src\n\t"
+            "umov $dst, $tmp, B, 0\t# vector ($1)" %}
+  ins_encode %{
+    __ addv(as_FloatRegister($tmp$$reg), __ T$1, as_FloatRegister($src$$reg));
+    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector mask reductions
+dnl             $1   $2
+VMASK_TRUECOUNT(8B,  vecD)
+VMASK_TRUECOUNT(16B, vecX)
+
+instruct vmask_firsttrue_LT8B(iRegINoSp dst, vecD src, vecD tmp, rFlagsReg cr) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN &&
+            n->in(1)->bottom_type()->is_vect()->length() < 8);
+  match(Set dst (VectorMaskFirstTrue src));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  ins_cost(8 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (4I/4S/2I)" %}
+  ins_encode %{
+    // Revert the bits and count the leading zero bytes. Get the maximum value
+    // between the vector length and the leading zero bytes.
+    __ negr(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src$$reg));
+    __ fmovd($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ lsrw($dst$$Register, $dst$$Register, 3);
+    __ movw(rscratch1, vector_length(this, $src));
+    __ cmpw($dst$$Register, rscratch1);
+    __ cselw($dst$$Register, rscratch1, $dst$$Register, Assembler::GE);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_firsttrue8B(iRegINoSp dst, vecD src, vecD tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN &&
+            n->in(1)->bottom_type()->is_vect()->length() == 8);
+  match(Set dst (VectorMaskFirstTrue src));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    // Revert the bits and count the leading zero bytes.
+    __ negr(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src$$reg));
+    __ fmovd($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ lsrw($dst$$Register, $dst$$Register, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_firsttrue16B(iRegINoSp dst, vecX src, vecX tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskFirstTrue src));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(8 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    Label FIRST_TRUE_INDEX;
+
+    // Move the lower 64-bits to a general register and check whether the
+    // value is zero.
+    __ negr(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src$$reg));
+    __ fmovd($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ movw(rscratch1, zr);
+    __ cbnz($dst$$Register, FIRST_TRUE_INDEX);
+
+    // If the lower half part is zero, compute the result from the higher
+    // 64-bits.
+    __ fmovhid($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ movw(rscratch1, 8);
+
+    // Revert the bits, count the leading zero bytes and add it with 8/0.
+    __ bind(FIRST_TRUE_INDEX);
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ addw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue8B(iRegINoSp dst, vecD src, vecD tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    // Count the leading zero bytes and substract it by 7.
+    __ negr(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src$$reg));
+    __ fmovd($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ clz($dst$$Register, $dst$$Register);
+    __ movw(rscratch1, 7);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue16B(iRegINoSp dst, vecX src, vecX tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(6 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    Label LAST_TRUE_INDEX;
+
+    // Move the higher 64-bits to a general register and check whether the
+    // value is zero.
+    __ negr(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src$$reg));
+    __ fmovhid($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ movw(rscratch1, 16 - 1);
+    __ cbnz($dst$$Register, LAST_TRUE_INDEX);
+
+    // If the higher half part value is zero, compute the result from the
+    // lower 64-bits.
+    __ fmovd($dst$$Register, as_FloatRegister($tmp$$reg));
+    __ movw(rscratch1, 8 - 1);
+
+    // Count the leading zero bytes and substract it by the 15/7.
+    __ bind(LAST_TRUE_INDEX);
+    __ clz($dst$$Register, $dst$$Register);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
