@@ -148,72 +148,90 @@ public class ChannelInputStream
     public long transferTo(OutputStream out) throws IOException {
         if (out instanceof ChannelOutputStream cos) {
             WritableByteChannel oc = cos.channel();
-            long i = 0L;
 
             if (ch instanceof FileChannel fc) {
-                long pos = fc.position();
-                long size = fc.size();
-                try {
-                    for (long n = size - pos; i < n;)
-                        i += fc.transferTo(pos + i, Long.MAX_VALUE, oc);
-                    return i;
-                } finally {
-                    fc.position(pos + i);
-                }
+                return transfer(fc, oc);
             }
 
             if (oc instanceof FileChannel fc) {
-                long fcpos = fc.position();
-
                 if (ch instanceof SeekableByteChannel sbc) {
-                    long pos = sbc.position();
-                    long size = sbc.size();
-                    try {
-                        for (long n = size - pos; i < n;)
-                            i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
-                        return i;
-                    } finally {
-                        fc.position(fcpos + i);
-                    }
+                    return transfer(sbc, fc);
                 }
 
-                ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
-                try {
-                    int r;
-                    do {
-                        i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
-                        r = ch.read(bb); // detect end-of-stream
-                        if (r > -1) {
-                            bb.flip();
-                            while (bb.hasRemaining())
-                                oc.write(bb);
-                            bb.clear();
-                            i += r;
-                        }
-                    } while (r > -1);
-                    return i;
-                } finally {
-                    fc.position(fcpos + i);
-                    Util.releaseTemporaryDirectBuffer(bb);
-                }
+                return transfer(ch, fc);
             }
 
-            ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
-            try {
-                for (int r = ch.read(bb); r > -1; r = ch.read(bb)) {
-                    bb.flip();
-                    while (bb.hasRemaining())
-                        oc.write(bb);
-                    bb.clear();
-                    i += r;
-                }
-                return i;
-            } finally {
-                Util.releaseTemporaryDirectBuffer(bb);
-            }
+            return transfer(ch, oc);
         }
 
         return super.transferTo(out);
     }
 
+    private static long transfer(FileChannel src, WritableByteChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long srcPos = src.position();
+        long srcSize = src.size();
+        try {
+            for (long n = srcSize - srcPos; bytesWritten < n;)
+                bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dest);
+            return bytesWritten;
+        } finally {
+            src.position(srcPos + bytesWritten);
+        }
+    }
+
+    private static long transfer(SeekableByteChannel src, FileChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long destPos = dest.position();
+        long srcPos = src.position();
+        long srcSize = src.size();
+        try {
+            for (long n = srcSize - srcPos; bytesWritten < n;)
+                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+            return bytesWritten;
+        } finally {
+            dest.position(destPos + bytesWritten);
+        }
+    }
+
+    private static long transfer(ReadableByteChannel src, FileChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long destPos = dest.position();
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+        try {
+            int r;
+            do {
+                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+                r = src.read(bb); // detect end-of-stream
+                if (r > -1) {
+                    bb.flip();
+                    while (bb.hasRemaining())
+                        dest.write(bb);
+                    bb.clear();
+                    bytesWritten += r;
+                }
+            } while (r > -1);
+            return bytesWritten;
+        } finally {
+            dest.position(destPos + bytesWritten);
+            Util.releaseTemporaryDirectBuffer(bb);
+        }
+    }
+
+    private static long transfer(ReadableByteChannel src, WritableByteChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+        try {
+            for (int r = src.read(bb); r > -1; r = src.read(bb)) {
+                bb.flip();
+                while (bb.hasRemaining())
+                    dest.write(bb);
+                bb.clear();
+                bytesWritten += r;
+            }
+            return bytesWritten;
+        } finally {
+            Util.releaseTemporaryDirectBuffer(bb);
+        }
+    }
 }
