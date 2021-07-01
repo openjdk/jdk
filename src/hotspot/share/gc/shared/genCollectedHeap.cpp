@@ -482,6 +482,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
 
     gen->collect(full, clear_soft_refs, size, is_tlab);
 
+    rp->disable_discovery();
     rp->verify_no_references_recorded();
   }
 
