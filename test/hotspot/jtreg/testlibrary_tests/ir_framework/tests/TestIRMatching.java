@@ -184,9 +184,9 @@ public class TestIRMatching {
 
         runCheck(BadFailOnConstraint.create(ScopeObj.class, "scopeObject()", 1, "ScObj"));
         runCheck(BadFailOnConstraint.create(Membar.class, "membar()", 1, "MemBar"));
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, "cmp", "precise klass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,"cmp", "precise klass", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,"cmp", "precise klass", "ir_framework/tests/MyClass"),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, "cmp", "precise"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,"cmp", "precise", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,"cmp", "precise", "ir_framework/tests/MyClass"),
                  GoodFailOnConstraint.create(CheckCastArray.class, "array()", 3),
                  BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1, "checkcast_arraycopy")
         );

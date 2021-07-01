@@ -5156,7 +5156,7 @@ void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
     {
       const char *name = klass()->name()->as_utf8();
       if (name) {
-        st->print("klass %s: " INTPTR_FORMAT, name, p2i(klass()));
+        st->print("%s: " INTPTR_FORMAT, name, p2i(klass()));
       } else {
         ShouldNotReachHere();
       }
@@ -5736,10 +5736,8 @@ void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
     st->print("precise ");
   case NotNull:
     {
-      st->print("klass ");
-      _elem->dump2(d, depth, st);
       st->print("[");
-      st->print("]");
+      _elem->dump2(d, depth, st);
       st->print(": ");
     }
   case BotPTR:
