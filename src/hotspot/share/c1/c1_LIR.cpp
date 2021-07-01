@@ -1781,8 +1781,6 @@ const char * LIR_Op1::name() const {
     switch (move_kind()) {
     case lir_move_normal:
       return "move";
-    case lir_move_unaligned:
-      return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
     case lir_move_wide:
