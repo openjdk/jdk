@@ -480,6 +480,25 @@ void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
   }
 }
 
+void FileMapInfo::clone_shared_path_table(TRAPS) {
+  Arguments::assert_is_dumping_archive();
+
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
+
+  assert(jrt != NULL,
+         "No modular java runtime image present when allocating the CDS classpath entry table");
+
+  // After dynamic dump, _saved_shared_path_table is corrupt, can not be used again.
+  // could not free the corrupt table. May have memory leak but it should be OK since
+  // it is not a big leak. This will fail:
+  // if (_saved_shared_path_table.size() > 0) {
+  //   MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table->_table);
+  // }
+
+  copy_shared_path_table(loader_data, CHECK);
+}
+
 void FileMapInfo::allocate_shared_path_table(TRAPS) {
   Arguments::assert_is_dumping_archive();
 
@@ -503,8 +522,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
   }
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
-
-  copy_shared_path_table(loader_data, CHECK);
+  clone_shared_path_table(CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {

@@ -368,6 +368,7 @@ public:
     return _shared_path_table;
   }
   static SharedPathTable saved_shared_path_table() {
+    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
     return _saved_shared_path_table;
   }
 
@@ -497,6 +498,7 @@ public:
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
+  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();

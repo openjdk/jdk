@@ -110,7 +110,7 @@ public:
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(NULL) {}
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<InstanceKlass*>(5, mtClassShared);
+      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
     }
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);
@@ -121,6 +121,7 @@ public:
       it->push(_proxy_klasses->adr_at(i));
     }
   }
+  DumpTimeLambdaProxyClassInfo clone(); // copy ctor will cause implicitly-declared
 };
 
 class RunTimeLambdaProxyClassInfo {
@@ -160,6 +161,10 @@ class DumpTimeLambdaProxyClassDictionary
                              137, // prime number
                              ResourceObj::C_HEAP> {
 public:
+  // GCC will memset for default ctor. With user defined ctor, data members need manually initialized.
+  // We could not use default ctor, it will destroy allocation_type in debug version and fail to delete.
+  // see bug 8269537
+  DumpTimeLambdaProxyClassDictionary() : _count(0)  {}
   int _count;
 };
 

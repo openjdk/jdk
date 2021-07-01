@@ -30,7 +30,9 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -71,7 +73,9 @@
 #include "utilities/stringUtils.hpp"
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
+DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
+DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 // SystemDictionaries in the base layer static archive
 RunTimeSharedDictionary SystemDictionaryShared::_builtin_dictionary;
 RunTimeSharedDictionary SystemDictionaryShared::_unregistered_dictionary;
@@ -190,7 +194,7 @@ DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKla
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
-    _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
+    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
   }
   return _dumptime_table->find_or_allocate_info_for(k, _dump_in_progress);
 }
@@ -792,7 +796,7 @@ void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(Lamb
   assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_lambda_proxy_class_dictionary == NULL) {
     _dumptime_lambda_proxy_class_dictionary =
-      new (ResourceObj::C_HEAP, mtClass)DumpTimeLambdaProxyClassDictionary();
+      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
   }
   DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
   if (lambda_info == NULL) {
@@ -1535,6 +1539,76 @@ bool SystemDictionaryShared::is_dumptime_table_empty() {
     return true;
   }
   return false;
+}
+
+class CloneDumpTimeClassTable: public StackObj {
+  DumpTimeSharedClassTable* _table;
+  DumpTimeSharedClassTable* _cloned_table;
+ public:
+  CloneDumpTimeClassTable(DumpTimeSharedClassTable* table, DumpTimeSharedClassTable* clone) :
+                      _table(table), _cloned_table(clone) {
+    assert(_table != NULL, "_dumptime_table is NULL");
+    assert(_cloned_table != NULL, "_cloned_table is NULL");
+  }
+  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
+    if (!info.is_excluded()) {
+      bool created;
+      _cloned_table->put_if_absent(k, info.clone(), &created);
+    }
+    return true; // keep on iterating
+  }
+};
+
+class CloneDumpTimeLambdaProxyClassTable: StackObj {
+  DumpTimeLambdaProxyClassDictionary* _table;
+  DumpTimeLambdaProxyClassDictionary* _cloned_table;
+ public:
+  CloneDumpTimeLambdaProxyClassTable(DumpTimeLambdaProxyClassDictionary* table,
+                                     DumpTimeLambdaProxyClassDictionary* clone) :
+                      _table(table), _cloned_table(clone) {
+    assert(_table != NULL, "_dumptime_table is NULL");
+    assert(_cloned_table != NULL, "_cloned_table is NULL");
+  }
+
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    bool created;
+    // make copies then store in _clone_table
+    LambdaProxyClassKey keyCopy = key;
+    _cloned_table->put_if_absent(keyCopy, info.clone(), &created);
+    ++ _cloned_table->_count;
+    return true; // keep on iterating
+  }
+};
+
+void SystemDictionaryShared::clone_dumptime_tables() {
+  Arguments::assert_is_dumping_archive();
+  if (_dumptime_table != NULL) {
+    assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
+    _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+    CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
+    _dumptime_table->iterate(&copy_classes);
+    _cloned_dumptime_table->update_counts();
+  }
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
+           "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
+    _cloned_dumptime_lambda_proxy_class_dictionary =
+                                          new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+    CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
+                                                          _cloned_dumptime_lambda_proxy_class_dictionary);
+    _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
+  }
+}
+
+void SystemDictionaryShared::restore_dumptime_tables() {
+  // FileMapInfo::clean_cloned_shared_path_table();
+  delete _dumptime_table;
+  _dumptime_table = _cloned_dumptime_table;
+  _cloned_dumptime_table = NULL;
+  delete _dumptime_lambda_proxy_class_dictionary;
+  _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
+  _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
