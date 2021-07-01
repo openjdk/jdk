@@ -689,7 +689,7 @@ class ZipFileSystem extends FileSystem {
                 ZipPath childPath = new ZipPath(this, child.name, true);
                 ZipPath childFileName = childPath.getFileName();
                 // ignore "." and ".."
-                if (childFileName != null && !isSelfOrParent(childFileName.getPath())) {
+                if (childFileName != null && !childFileName.isSelfOrParent()) {
                     ZipPath zpath = dir.resolve(childFileName);
                     if (filter == null || filter.accept(zpath)) {
                         list.add(zpath);
@@ -1959,15 +1959,6 @@ class ZipFileSystem extends FileSystem {
         } else {
             return new EntryOutputStream(e, os);
         }
-    }
-
-    // Return true if file name is "." or ".."
-    private static boolean isSelfOrParent(final byte[] nameAsBytes) {
-        if (nameAsBytes[0] == '.') {
-            return (nameAsBytes.length == 1) ||
-                    (nameAsBytes.length == 2 && nameAsBytes[1] == '.');
-        }
-        return false;
     }
 
     private class EntryOutputStream extends FilterOutputStream {
