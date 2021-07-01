@@ -1156,6 +1156,7 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @since 9
      */
     @IntrinsicCandidate
@@ -1194,6 +1195,7 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #multiplyHigh
      * @since 18
      */
     public static long unsignedMultiplyHigh(long x, long y) {

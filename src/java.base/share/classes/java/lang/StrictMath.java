@@ -982,6 +982,7 @@ public final class StrictMath {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @see Math#multiplyHigh(long,long)
      * @since 9
      */
@@ -996,6 +997,8 @@ public final class StrictMath {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #multiplyHigh
+     * @see Math#unsignedMultiplyHigh(long,long)
      * @since 18
      */
     public static long unsignedMultiplyHigh(long x, long y) {
