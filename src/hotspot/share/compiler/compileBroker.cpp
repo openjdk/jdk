@@ -905,8 +905,8 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
 
   // At this point it may be possible that no osthread was created for the
   // JavaThread due to lack of resources. We will handle that failure below.
-
-  if (new_thread->osthread() != NULL) {
+  // Also check new_thread so that static analysis is happy.
+  if (new_thread != NULL && new_thread->osthread() != NULL) {
     Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
 
     if (type == compiler_t) {

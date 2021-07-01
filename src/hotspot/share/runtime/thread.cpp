@@ -3906,6 +3906,9 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 // The Threads_lock is held for the duration.
 void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
                                        Handle thread_oop, ThreadPriority prio) {
+
+  assert(target->osthread()!= NULL, "target thread is not properly initialized");
+
   MutexLocker mu(current, Threads_lock);
 
   // Initialize the fields of the thread_oop first.
