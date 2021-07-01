@@ -716,9 +716,7 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 void G1ConcurrentMark::post_concurrent_mark_start() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
-  // enable ("weak") refs discovery
-  rp->enable_discovery();
-  rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
+  rp->start_discovery(false /* always_clear */);
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   // This is the start of  the marking cycle, we're expected all

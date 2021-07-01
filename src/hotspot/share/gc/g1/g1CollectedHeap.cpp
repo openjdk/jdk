@@ -2990,8 +2990,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // Please see comment in g1CollectedHeap.hpp and
         // G1CollectedHeap::ref_processing_init() to see how
         // reference processing currently works in G1.
-        _ref_processor_stw->enable_discovery();
-        _ref_processor_stw->setup_policy(false);
+        _ref_processor_stw->start_discovery(false /* always_clear */);
 
         // We want to temporarily turn off discovery by the
         // CM ref processor, if necessary, and turn it back on

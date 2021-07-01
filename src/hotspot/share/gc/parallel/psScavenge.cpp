@@ -448,8 +448,7 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::clear();
 #endif
 
-    reference_processor()->enable_discovery();
-    reference_processor()->setup_policy(false);
+    reference_processor()->start_discovery(false /* always_clear */);
 
     const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
