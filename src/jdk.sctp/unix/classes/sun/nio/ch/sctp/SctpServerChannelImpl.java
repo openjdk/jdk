@@ -281,8 +281,8 @@ public class SctpServerChannelImpl extends SctpServerChannel
             if (state == ChannelState.KILLED)
                 return;
             if (state == ChannelState.UNINITIALIZED) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
                 return;
             }
             assert !isOpen() && !isRegistered();
