@@ -2456,24 +2456,32 @@ size_t      JavaThread::_stack_size_at_create = 0;
 bool        Threads::_vm_complete = false;
 #endif
 
-static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
+static inline JavaThread *prefetch_and_load_ptr(JavaThread*const * addr, intx prefetch_interval) {
   Prefetch::read((void*)addr, prefetch_interval);
   return *addr;
 }
 
-// Possibly the ugliest for loop the world has seen. C++ does not allow
-// multiple types in the declaration section of the for loop. In this case
-// we are only dealing with pointers and hence can cast them. It looks ugly
-// but macros are ugly and therefore it's fine to make things absurdly ugly.
-#define DO_JAVA_THREADS(LIST, X)                                                                                          \
-    for (JavaThread *MACRO_scan_interval = (JavaThread*)(uintptr_t)PrefetchScanIntervalInBytes,                           \
-             *MACRO_list = (JavaThread*)(LIST),                                                                           \
-             **MACRO_end = ((JavaThread**)((ThreadsList*)MACRO_list)->threads()) + ((ThreadsList*)MACRO_list)->length(),  \
-             **MACRO_current_p = (JavaThread**)((ThreadsList*)MACRO_list)->threads(),                                     \
-             *X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval);                 \
-         MACRO_current_p != MACRO_end;                                                                                    \
-         MACRO_current_p++,                                                                                               \
-             X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval))
+struct JavaThreadPrefetchedIterator {
+    ThreadsList* _list;
+    JavaThread*const * _end;
+    JavaThread*const * _current;
+
+    JavaThreadPrefetchedIterator(ThreadsList* list) :
+      _list(list), _end(list->threads() + list->length()), _current(list->threads()) {}
+
+    JavaThread* current() {
+      return _current != _end
+        ? prefetch_and_load_ptr(_current, PrefetchScanIntervalInBytes)
+        : NULL;
+    }
+
+    void next() {
+      _current++;
+    }
+  };
+
+#define DO_JAVA_THREADS(LIST, X) \
+  for (JavaThreadPrefetchedIterator iter(LIST); JavaThread* X = iter.current(); iter.next())
 
 // All JavaThreads
 #define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_java_thread_list(), X)
