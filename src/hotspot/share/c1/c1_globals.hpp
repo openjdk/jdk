@@ -294,12 +294,6 @@
   develop(bool, TraceFPURegisterUsage, false,                               \
           "Trace usage of FPU registers at start of blocks (intel only)")   \
                                                                             \
-  develop(bool, OptimizeUnsafes, true,                                      \
-          "Optimize raw unsafe ops")                                        \
-                                                                            \
-  develop(bool, PrintUnsafeOptimization, false,                             \
-          "Print optimization of raw unsafe ops")                           \
-                                                                            \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \
