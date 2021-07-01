@@ -103,7 +103,7 @@ void ServiceThread::initialize() {
                           string,
                           CHECK);
 
-  ServiceThread* thread =  new ServiceThread(&service_thread_entry);
+  ServiceThread* thread = new ServiceThread(&service_thread_entry);
   JavaThread::vm_exit_on_thread_allocation_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);

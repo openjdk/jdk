@@ -904,9 +904,9 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
 
 
   // At this point it may be possible that no osthread was created for the
-  // JavaThread due to lack of memory. We will handle that failure below.
+  // JavaThread due to lack of resources. We will handle that failure below.
 
-  if (new_thread != NULL && new_thread->osthread() != NULL) {
+  if (new_thread->osthread() != NULL) {
     Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
 
     if (type == compiler_t) {
@@ -932,10 +932,10 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
     // definition is limited to Java priorities and not OS priorities.
     JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
 
-  } else { // Allocation failure
+  } else { // osthread initialization failure
     if (UseDynamicNumberOfCompilerThreads && type == compiler_t
         && comp->num_compiler_threads() > 0) {
-      // the new thread is not known to Thread-SMR yet so we can just delete
+      // The new thread is not known to Thread-SMR yet so we can just delete.
       delete new_thread;
       return NULL;
     } else {

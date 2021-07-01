@@ -1330,9 +1330,9 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
   JvmtiAgentThread* new_thread = new JvmtiAgentThread(this, proc, arg);
 
   // At this point it may be possible that no osthread was created for the
-  // JavaThread due to lack of memory.
-  if (new_thread == NULL || new_thread->osthread() == NULL) {
-    // the new thread is not known to Thread-SMR yet so we can just delete
+  // JavaThread due to lack of resources.
+  if (new_thread->osthread() == NULL) {
+    // The new thread is not known to Thread-SMR yet so we can just delete.
     delete new_thread;
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }

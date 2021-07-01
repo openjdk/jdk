@@ -3929,10 +3929,11 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
 
 void JavaThread::vm_exit_on_thread_allocation_failure(JavaThread* thread) {
   // At this point it may be possible that no osthread was created for the
-  // JavaThread due to lack of memory. We would have to throw an exception
-  // in that case. However, since this must work and we do not allow
-  // exceptions anyway, check and abort if this fails.
-  if (thread == nullptr || thread->osthread() == nullptr) {
+  // JavaThread due to lack of resources. However, since this must work
+  // for critical system threads just check and abort if this fails.
+  if (thread->osthread() == nullptr) {
+    // This isn't really an OOM condition, but historically this is what
+    // we report.
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
   }

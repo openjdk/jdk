@@ -50,7 +50,7 @@ static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAP
 
   // At this point it may be possible that no
   // osthread was created for the JavaThread due to lack of memory.
-  if (new_thread == NULL || new_thread->osthread() == NULL) {
+  if (new_thread->osthread() == NULL) {
     delete new_thread;
     JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", THREAD);
     return NULL;

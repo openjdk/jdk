@@ -48,7 +48,7 @@ void MonitorDeflationThread::initialize() {
                           string,
                           CHECK);
 
-  MonitorDeflationThread* thread =  new MonitorDeflationThread(&monitor_deflation_thread_entry);
+  MonitorDeflationThread* thread = new MonitorDeflationThread(&monitor_deflation_thread_entry);
   JavaThread::vm_exit_on_thread_allocation_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
