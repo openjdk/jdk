@@ -31,7 +31,7 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"

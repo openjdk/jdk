@@ -219,6 +219,9 @@ public:
   // Predicate for Thread
   bool is_GC_task_thread() const override { return gang()->are_GC_task_threads(); }
   bool is_ConcurrentGC_thread() const override { return gang()->are_ConcurrentGC_threads(); }
+
+  // Printing
+  const char* type_name() const override { return "GCTaskThread"; }
 };
 
 // A class that acts as a synchronisation barrier. Workers enter

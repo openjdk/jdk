@@ -384,7 +384,6 @@ class ThreadDumpResult : public StackObj {
 
 class DeadlockCycle : public CHeapObj<mtInternal> {
  private:
-  bool _is_deadlock;
   GrowableArray<JavaThread*>* _threads;
   DeadlockCycle*              _next;
  public:
@@ -394,9 +393,7 @@ class DeadlockCycle : public CHeapObj<mtInternal> {
   DeadlockCycle* next()                     { return _next; }
   void           set_next(DeadlockCycle* d) { _next = d; }
   void           add_thread(JavaThread* t)  { _threads->append(t); }
-  void           reset()                    { _is_deadlock = false; _threads->clear(); }
-  void           set_deadlock(bool value)   { _is_deadlock = value; }
-  bool           is_deadlock()              { return _is_deadlock; }
+  void           reset()                    { _threads->clear(); }
   int            num_threads()              { return _threads->length(); }
   GrowableArray<JavaThread*>* threads()     { return _threads; }
   void           print_on_with(ThreadsList * t_list, outputStream* st) const;

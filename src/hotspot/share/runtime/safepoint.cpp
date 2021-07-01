@@ -510,7 +510,7 @@ class ParallelSPCleanupThreadClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
     }
   }
 };
@@ -928,6 +928,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   if( nm->is_at_poll_return(real_return_addr) ) {
     // See if return type is an oop.
     bool return_oop = nm->method()->is_returning_oop();
+    HandleMark hm(self);
     Handle return_value;
     if (return_oop) {
       // The oop result has been saved on the stack together with all

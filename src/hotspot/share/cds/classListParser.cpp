@@ -466,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);

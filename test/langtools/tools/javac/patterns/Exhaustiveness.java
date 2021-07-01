@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891
+ * @bug 8262891 8268871
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -369,49 +369,6 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
-    private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
-        Path current = base.resolve(".");
-        Path libSrc = current.resolve("lib-src");
-        for (String code : libraryCode) {
-            tb.writeJavaFiles(libSrc, code);
-        }
-
-        Path libClasses = current.resolve("libClasses");
-
-        Files.createDirectories(libClasses);
-
-        new JavacTask(tb)
-                .options("--enable-preview",
-                         "-source", JAVA_VERSION)
-                .outdir(libClasses)
-                .files(tb.findJavaFiles(libSrc))
-                .run();
-
-        Path src = current.resolve("src");
-        tb.writeJavaFiles(src, testCode);
-
-        Path classes = current.resolve("libClasses");
-
-        Files.createDirectories(libClasses);
-
-        var log =
-                new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
-                             "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
-                    .outdir(classes)
-                    .files(tb.findJavaFiles(src))
-                    .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
-        if (expectedErrors.length > 0 && !List.of(expectedErrors).equals(log)) {
-            throw new AssertionError("Incorrect errors, expected: " + List.of(expectedErrors) +
-                                      ", actual: " + log);
-        }
-    }
-
     @Test
     public void testInaccessiblePermitted(Path base) throws IOException {
         Path current = base.resolve(".");
@@ -638,6 +595,227 @@ public class Exhaustiveness extends TestRunner {
                    }
                }
                """);
+    }
+
+    @Test
+    public void testExhaustiveTransitive(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public abstract sealed class B implements S permits C, D {}
+                            """,
+                            """
+                            package lib;
+                            public final class C extends B {}
+                            """,
+                            """
+                            package lib;
+                            public final class D extends B {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(S obj, boolean b) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case C c && b -> 0;
+                           case C c -> 0;
+                           case D d -> 0;
+                       };
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testNotExhaustiveTransitive(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public abstract sealed class B implements S permits C, D {}
+                            """,
+                            """
+                            package lib;
+                            public final class C extends B {}
+                            """,
+                            """
+                            package lib;
+                            public final class D extends B {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(S obj, boolean b) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case C c -> 0;
+                           case D d && b -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+    }
+
+    @Test
+    public void testExhaustiveIntersection(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public abstract class Base {}
+                            """,
+                            """
+                            package lib;
+                            public interface Marker {}
+                            """,
+                            """
+                            package lib;
+                            public final class A extends Base implements S, Marker {}
+                            """,
+                            """
+                            package lib;
+                            public abstract sealed class B extends Base implements S permits C, D {}
+                            """,
+                            """
+                            package lib;
+                            public final class C extends B implements Marker {}
+                            """,
+                            """
+                            package lib;
+                            public final class D extends B implements Marker {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private <T extends Base & S & Marker> int test(T obj, boolean b) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case C c && b -> 0;
+                           case C c -> 0;
+                           case D d -> 0;
+                       };
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testNotExhaustiveIntersection(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public abstract class Base {}
+                            """,
+                            """
+                            package lib;
+                            public interface Marker {}
+                            """,
+                            """
+                            package lib;
+                            public final class A extends Base implements S, Marker {}
+                            """,
+                            """
+                            package lib;
+                            public abstract sealed class B extends Base implements S permits C, D {}
+                            """,
+                            """
+                            package lib;
+                            public final class C extends B implements Marker {}
+                            """,
+                            """
+                            package lib;
+                            public final class D extends B implements Marker {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private <T extends Base & S & Marker> int test(T obj, boolean b) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case C c -> 0;
+                           case D d && b -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+    }
+
+    private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
+        Path current = base.resolve(".");
+        Path libSrc = current.resolve("lib-src");
+        for (String code : libraryCode) {
+            tb.writeJavaFiles(libSrc, code);
+        }
+
+        Path libClasses = current.resolve("libClasses");
+
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+                .options("--enable-preview",
+                         "-source", JAVA_VERSION)
+                .outdir(libClasses)
+                .files(tb.findJavaFiles(libSrc))
+                .run();
+
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src, testCode);
+
+        Path classes = current.resolve("libClasses");
+
+        Files.createDirectories(libClasses);
+
+        var log =
+                new JavacTask(tb)
+                    .options("--enable-preview",
+                             "-source", JAVA_VERSION,
+                             "-XDrawDiagnostics",
+                             "-Xlint:-preview",
+                             "--class-path", libClasses.toString())
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+        if (expectedErrors.length > 0 && !List.of(expectedErrors).equals(log)) {
+            throw new AssertionError("Incorrect errors, expected: " + List.of(expectedErrors) +
+                                      ", actual: " + log);
+        }
     }
 
 }

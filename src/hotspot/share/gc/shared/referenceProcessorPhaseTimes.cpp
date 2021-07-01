@@ -98,7 +98,7 @@ RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(WorkerDataArray<double>* work
 
 RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
   double result = os::elapsedTime() - _start_time;
-  _worker_time->set(_worker_id, result);
+  _worker_time->set_or_add(_worker_id, result);
 }
 
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
