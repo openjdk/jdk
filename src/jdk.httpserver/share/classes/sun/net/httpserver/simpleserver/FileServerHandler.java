@@ -84,9 +84,7 @@ public final class FileServerHandler implements HttpHandler {
     private static final HttpHandler METHOD_NOT_ALLOWED_HANDLER =
             HttpHandlers.of(405, Headers.of("Allow", "HEAD, GET"), "");
 
-    public static HttpHandler create(Path root, UnaryOperator<String> mimeTable)
-        throws IOException
-    {
+    public static HttpHandler create(Path root, UnaryOperator<String> mimeTable) {
         var fallbackHandler = HttpHandlers.handleOrElse(
                 r -> UNSUPPORTED_METHODS.contains(r.getRequestMethod()),
                 METHOD_NOT_ALLOWED_HANDLER,

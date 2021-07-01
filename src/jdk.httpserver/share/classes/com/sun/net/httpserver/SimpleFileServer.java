@@ -233,16 +233,11 @@ public final class SimpleFileServer {
      * @throws IllegalArgumentException if root does not exist, is not absolute,
      *         is not a directory, is not readable, or is not associated with
      *         the {@linkplain FileSystems#getDefault system-default file system}
-     * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if the argument is null
      */
     public static HttpHandler createFileHandler(Path root) {
         Objects.requireNonNull(root);
-        try {
-            return FileServerHandler.create(root, MIME_TABLE);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
+        return FileServerHandler.create(root, MIME_TABLE);
     }
 
     /**

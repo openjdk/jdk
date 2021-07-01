@@ -30,6 +30,7 @@
  */
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -60,6 +61,7 @@ public class SimpleFileServerTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<UncheckedIOException> UIOE = UncheckedIOException.class;
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
@@ -366,6 +368,14 @@ public class SimpleFileServerTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testUncheckedIOException() {
+        final var addr = InetSocketAddress.createUnresolved("foo", 8080);
+        final var path = Path.of("/tmp");
+        final var levl = OutputLevel.INFO;
+        assertThrows(UIOE, () -> SimpleFileServer.createFileServer(addr, path, levl));
     }
 
     @Test
