@@ -380,6 +380,8 @@ public class FilterTest {
     static class EchoRequestHeaderHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            assertEquals(exchange.getRequestMethod(), "GET");
+            assertEquals(exchange.getRequestURI(), URI.create("/"));
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
