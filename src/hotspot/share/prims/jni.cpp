@@ -2822,13 +2822,8 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
     *isCopy = JNI_FALSE;
   }
   oop a = lock_gc_or_pin_object(thread, array);
-  assert(a->is_array(), "just checking");
-  BasicType type;
-  if (a->is_objArray()) {
-    type = T_OBJECT;
-  } else {
-    type = TypeArrayKlass::cast(a->klass())->element_type();
-  }
+  assert(a->is_typeArray(), "Primitive array only");
+  BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
   void* ret = arrayOop(a)->base(type);
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
   return ret;
