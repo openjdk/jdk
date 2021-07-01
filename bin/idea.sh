@@ -246,7 +246,12 @@ else
   JAVAC=javac
 fi
 
-$BOOT_JDK/bin/$JAVAC -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE
+EXE_SUFFIX=
+if [ "x$WSL_DISTRO_NAME" != "x" ]; then
+  EXE_SUFFIX=.exe
+fi
+
+$BOOT_JDK/bin/$JAVAC$EXE_SUFFIX -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE
 
 if [ "x$WSL_DISTRO_NAME" != "x" ]; then
   rm -rf $ANT_TEMP
