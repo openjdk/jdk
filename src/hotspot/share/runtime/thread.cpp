@@ -3908,7 +3908,7 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
                                        Handle thread_oop, ThreadPriority prio) {
   MutexLocker mu(current, Threads_lock);
 
-  // Initialize the fields of the thread_oop first
+  // Initialize the fields of the thread_oop first.
 
   java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
 
@@ -3920,14 +3920,14 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
 
   java_lang_Thread::set_daemon(thread_oop());
 
-  // Now bind the thread_oop to the target JavaThread
+  // Now bind the thread_oop to the target JavaThread.
   target->set_threadObj(thread_oop());
 
   Threads::add(target); // target is now visible for safepoint/handshake
   Thread::start(target);
 }
 
-void JavaThread::vm_exit_on_thread_allocation_failure(JavaThread* thread) {
+void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
   // At this point it may be possible that no osthread was created for the
   // JavaThread due to lack of resources. However, since this must work
   // for critical system threads just check and abort if this fails.

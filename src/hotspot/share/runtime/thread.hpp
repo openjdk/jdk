@@ -1599,9 +1599,9 @@ public:
   static void start_internal_daemon(JavaThread* current, JavaThread* target,
                                     Handle thread_oop, ThreadPriority prio);
 
-  // Helper function to do vm_exit_on_initialization for thread allocation
-  // failure.
-  static void vm_exit_on_thread_allocation_failure(JavaThread* thread);
+  // Helper function to do vm_exit_on_initialization for osthread
+  // resource allocation failure.
+  static void vm_exit_on_osthread_failure(JavaThread* thread);
 };
 
 // The active thread queue. It also keeps track of the current used

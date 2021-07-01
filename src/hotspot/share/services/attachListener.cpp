@@ -485,7 +485,7 @@ void AttachListener::init() {
   }
 
   JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
-  JavaThread::vm_exit_on_thread_allocation_failure(thread);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
 }

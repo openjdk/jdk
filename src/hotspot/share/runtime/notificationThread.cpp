@@ -61,7 +61,7 @@ void NotificationThread::initialize() {
                           THREAD);
 
    NotificationThread* thread = new NotificationThread(&notification_thread_entry);
-   JavaThread::vm_exit_on_thread_allocation_failure(thread);
+   JavaThread::vm_exit_on_osthread_failure(thread);
 
    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 }
