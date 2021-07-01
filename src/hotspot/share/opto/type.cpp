@@ -5148,33 +5148,33 @@ intptr_t TypeKlassPtr::get_con() const {
 //------------------------------dump2------------------------------------------
 // Dump Klass Type
 #ifndef PRODUCT
-void TypeKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
-  {
-    const char *name = klass()->name()->as_utf8();
-    if( name ) {
-      st->print("klass %s: " INTPTR_FORMAT, name, p2i(klass()));
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-  switch( _ptr ) {
+void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
+  switch(_ptr) {
   case Constant:
     st->print("precise ");
   case NotNull:
+    {
+      const char *name = klass()->name()->as_utf8();
+      if (name) {
+        st->print("klass %s: " INTPTR_FORMAT, name, p2i(klass()));
+      } else {
+        ShouldNotReachHere();
+      }
+    }
   case BotPTR:
-    if( !WizardMode && !Verbose && _ptr != Constant ) break;
+    if (!WizardMode && !Verbose && _ptr != Constant) break;
   case TopPTR:
   case AnyNull:
     st->print(":%s", ptr_msg[_ptr]);
-    if( _ptr == Constant ) st->print(":exact");
+    if (_ptr == Constant) st->print(":exact");
     break;
   default:
     break;
   }
 
-  if( _offset ) {               // Dump offset, if any
-    if( _offset == OffsetBot )      { st->print("+any"); }
-    else if( _offset == OffsetTop ) { st->print("+unknown"); }
+  if (_offset) {               // Dump offset, if any
+    if (_offset == OffsetBot)      { st->print("+any"); }
+    else if (_offset == OffsetTop) { st->print("+unknown"); }
     else                            { st->print("+%d", _offset); }
   }
 
@@ -5731,14 +5731,17 @@ ciKlass* TypeAryKlassPtr::klass() const {
 // Dump Klass Type
 #ifndef PRODUCT
 void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
-  _elem->dump2(d, depth, st);
-  st->print("[");
-  st->print("]");
-
   switch( _ptr ) {
   case Constant:
     st->print("precise ");
   case NotNull:
+    {
+      st->print("klass ");
+      _elem->dump2(d, depth, st);
+      st->print("[");
+      st->print("]");
+      st->print(": ");
+    }
   case BotPTR:
     if( !WizardMode && !Verbose && _ptr != Constant ) break;
   case TopPTR:
