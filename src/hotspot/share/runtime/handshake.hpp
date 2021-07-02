@@ -36,6 +36,7 @@ class HandshakeOperation;
 class JavaThread;
 class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
+class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -64,6 +65,7 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl, ThreadsListHandle* tlh_p, JavaThread* target);
   static void execute(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
 };
 
