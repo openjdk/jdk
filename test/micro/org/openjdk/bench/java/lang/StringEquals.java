@@ -31,10 +31,13 @@ import java.util.concurrent.TimeUnit;
  * This benchmark naively explores String::equals performance
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Warmup(iterations=3, time=1)
+@Measurement(iterations=5, time=1)
 @State(Scope.Benchmark)
+@Fork(value=1)
 public class StringEquals {
-    @Param({"8", "16", "32", "64", "128"})
+    @Param({"8", "11", "16", "22", "32", "45", "64", "91", "121", "181", "256", "512", "1024"})
     int size;
 
     public String test = new String("0123456789");
@@ -48,12 +51,14 @@ public class StringEquals {
     public String str;
     public String strh;
     public String strt;
+    public String strDup;
 
     @Setup()
     public void init() {
         str = newString(size, 'c', -1, 'a');
         strh = newString(size, 'c', size / 3, 'a');
         strt = newString(size, 'c', size - 1 - size / 3, 'a');
+        strDup = new String (str.toCharArray());
     }
 
     public String newString(int size, char charToFill, int pos, char charDiff) {
@@ -68,79 +73,70 @@ public class StringEquals {
         return "";
     }
 
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean different_simple() {
-        return test.equals(test2);
-    }
-
     public boolean different() {
-        return test.equals(test2);
-    }
-
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean equal_simple() {
-        return test.equals(test3);
-    }
-
-    public boolean equal() {
-        return test.equals(test3);
-    }
-
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean almostEqual_simple() {
-        return test.equals(test6);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test2);
+        }
+        return result;
     }
 
     public boolean almostEqual() {
-        return test.equals(test6);
-    }
-
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean almostEqualUTF16_simple() {
-        return test4.equals(test7);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test6);
+        }
+        return result;
     }
 
     public boolean almostEqualUTF16() {
-        return test4.equals(test7);
-    }
-
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean differentCoders_simple() {
-        return test.equals(test4);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test4.equals(test7);
+        }
+        return result;
     }
 
     public boolean differentCoders() {
-        return test.equals(test4);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test4);
+        }
+        return result;
     }
 
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean equalsUTF16_simple() {
-        return test5.equals(test4);
+    public boolean equalUTF16() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test5.equals(test4);
+        }
+        return result;
     }
 
-    public boolean equalsUTF16() {
-        return test5.equals(test4);
+    public boolean equalDiffAtHead() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strh);
+        }
+        return result;
+    }
+
+    public boolean equalDiffAtTail() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strt);
+        }
+        return result;
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean equalsLenH_simple() {
-        return str.equals(strh);
-    }
-
-    @Benchmark
-    public boolean equalsLenH() {
-        return str.equals(strh);
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UseSimpleStringEquals"})
-    public boolean equalsLenT_simple() {
-        return str.equals(strt);
-    }
-
-    @Benchmark
-    public boolean equalsLenT() {
-        return str.equals(strt);
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean equal() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strDup);
+        }
+        return result;
     }
 }
+

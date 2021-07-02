@@ -4637,12 +4637,11 @@ class StubGenerator: public StubCodeGenerator {
   // result = r0 - return value. Already contains "false"
   // cnt1 = r4 - amount of elements left to check
   address generate_long_string_equals() {
-    Register a1 = r1, a2 = r3, result = r0, cnt1 = r4, tmp1 = rscratch1,
-        tmp2 = rscratch2;
-    Label TAIL, NOT_EQUAL, EQUAL, LOOP, SMALL_LOOP, POST_LOOP;
-    int loopThreshold = 4 * 2 * wordSize;
+    Register a1 = r1, a2 = r3, result = r0, cnt1 = r4;
+    Label NOT_EQUAL, EQUAL, LOOP, SMALL_LOOP, POST_LOOP;
+    int loopThreshold = 4 * wordSize;
 
-    assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
+    assert_different_registers(a1, a2, result, cnt1);
 
     __ align(CodeEntryAlignment);
 
@@ -4651,61 +4650,40 @@ class StubGenerator: public StubCodeGenerator {
     address entry = __ pc();
     __ enter();
 
-    // cnt1 minus wordSize outside of stub
-    __ add(cnt1, cnt1, wordSize);
+    // reset cnt1
+    __ add(cnt1, cnt1, loopThreshold);
 
+    // Main 32 byte comparison loop.
     __ bind(LOOP);
-      __ ldr(v0, __ Q, Address(__ post(a1, wordSize * 2)));
-      __ ldr(v1, __ Q, Address(__ post(a2, wordSize * 2)));
-      __ eor(v0, __ T16B, v0, v1);
-      __ umov(tmp1, v0, __ D, 0);
-      __ umov(tmp2, v0, __ D, 1);
-      __ orr(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
-
-      __ ldr(v2, __ Q, Address(__ post(a1, wordSize * 2)));
-      __ ldr(v3, __ Q, Address(__ post(a2, wordSize * 2)));
-      __ eor(v2, __ T16B, v2, v3);
-      __ umov(tmp1, v2, __ D, 0);
-      __ umov(tmp2, v2, __ D, 1);
-      __ orr(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
-
-      __ ldr(v4, __ Q, Address(__ post(a1, wordSize * 2)));
-      __ ldr(v5, __ Q, Address(__ post(a2, wordSize * 2)));
-      __ eor(v4, __ T16B, v4, v5);
-      __ umov(tmp1, v4, __ D, 0);
-      __ umov(tmp2, v4, __ D, 1);
-      __ orr(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
-
-      __ ldr(v6, __ Q, Address(__ post(a1, wordSize * 2)));
+      __ ld1(v0, v1, __ T2D, Address(__ post(a1, loopThreshold)));
       __ sub(cnt1, cnt1, loopThreshold);
-      __ ldr(v7, __ Q, Address(__ post(a2, wordSize * 2)));
-      __ subs(tmp1, cnt1, loopThreshold);
-      __ eor(v6, __ T16B, v6, v7);
-      __ umov(tmp1, v6, __ D, 0);
-      __ umov(tmp2, v6, __ D, 1);
-      __ orr(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
+      __ ld1(v2, v3, __ T2D, Address(__ post(a2, loopThreshold)));
+      __ subs(zr, cnt1, loopThreshold);
+      __ eor(v0, __ T16B, v0, v2);
+      __ eor(v1, __ T16B, v1, v3);
+      __ orr(v0, __ T16B, v0, v1);
+      __ umov(rscratch1, v0, __ D, 0);
+      __ umov(rscratch2, v0, __ D, 1);
+      __ orr(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
       __ br(__ GE, LOOP);
 
-    __ bind(TAIL);
-      __ cbz(cnt1, EQUAL);
-      __ subs(cnt1, cnt1, wordSize);
-      __ br(__ LE, POST_LOOP);
+    __ cbz(cnt1, EQUAL);
+    __ subs(cnt1, cnt1, wordSize);
+    __ br(__ LE, POST_LOOP);
+
     __ bind(SMALL_LOOP);
-      __ ldr(tmp1, Address(__ post(a1, wordSize)));
-      __ ldr(tmp2, Address(__ post(a2, wordSize)));
+      __ ldr(rscratch1, Address(__ post(a1, wordSize)));
+      __ ldr(rscratch2, Address(__ post(a2, wordSize)));
       __ subs(cnt1, cnt1, wordSize);
-      __ eor(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
+      __ eor(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
       __ br(__ GT, SMALL_LOOP);
     __ bind(POST_LOOP);
-      __ ldr(tmp1, Address(a1, cnt1));
-      __ ldr(tmp2, Address(a2, cnt1));
-      __ eor(tmp1, tmp1, tmp2);
-      __ cbnz(tmp1, NOT_EQUAL);
+      __ ldr(rscratch1, Address(a1, cnt1));
+      __ ldr(rscratch2, Address(a2, cnt1));
+      __ eor(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
 
     __ bind(EQUAL);
       __ mov(result, true);

@@ -4782,25 +4782,37 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   br(LT, SHORT);
 
   if (!UseSimpleStringEquals) {
-    Label STUB, LOOP;
-    subs(zr, cnt1, stubBytesThreshold);
-    br(GE, STUB);
+    Label STUB, B16, B24;
 
-    bind(LOOP); {
-      ldr(tmp1, Address(post(a1, wordSize)));
-      ldr(tmp2, Address(post(a2, wordSize)));
-      subs(cnt1, cnt1, wordSize);
-      eor(tmp1, tmp1, tmp2);
-      cbnz(tmp1, DONE);
-      br(LT, SHORT);
+    subs(cnt1, cnt1, wordSize);
+    br(LE, B16);
+    subs(cnt1, cnt1, wordSize);
+    br(LE, B24);
+    subs(cnt1, cnt1, wordSize);
+    br(GT, STUB);
 
-      ldr(tmp1, Address(post(a1, wordSize)));
-      ldr(tmp2, Address(post(a2, wordSize)));
-      subs(cnt1, cnt1, wordSize);
-      eor(tmp1, tmp1, tmp2);
-      cbnz(tmp1, DONE);
-    } br(GE, LOOP);
-    b(SHORT);
+    ldr(rscratch1, Address(post(a1, wordSize)));
+    ldr(rscratch2, Address(post(a2, wordSize)));
+    eor(rscratch1, rscratch1, rscratch2);
+    cbnz(rscratch1, DONE);
+
+    bind(B24);
+    ldr(rscratch1, Address(post(a1, wordSize)));
+    ldr(rscratch2, Address(post(a2, wordSize)));
+    eor(rscratch2, rscratch1, rscratch2);
+    cbnz(rscratch2, DONE);
+
+    bind(B16);
+    ldr(rscratch1, Address(post(a1, wordSize)));
+    ldr(rscratch2, Address(post(a2, wordSize)));
+    eor(rscratch1, rscratch1, rscratch2);
+    cbnz(rscratch1, DONE);
+
+    ldr(rscratch1, Address(a1, cnt1));
+    ldr(rscratch2, Address(a2, cnt1));
+    eor(rscratch2, rscratch1, rscratch2);
+    cbnz(rscratch2, DONE);
+    b(SAME);
 
     bind(STUB);
     RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::long_string_equals());
