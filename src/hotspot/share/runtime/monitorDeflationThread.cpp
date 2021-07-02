@@ -33,8 +33,6 @@
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 
-MonitorDeflationThread* MonitorDeflationThread::_instance = NULL;
-
 void MonitorDeflationThread::initialize() {
   EXCEPTION_MARK;
 
@@ -50,28 +48,10 @@ void MonitorDeflationThread::initialize() {
                           string,
                           CHECK);
 
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    MonitorDeflationThread* thread =  new MonitorDeflationThread(&monitor_deflation_thread_entry);
+  MonitorDeflationThread* thread = new MonitorDeflationThread(&monitor_deflation_thread_entry);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
-    if (thread == NULL || thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), thread);
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    java_lang_Thread::set_daemon(thread_oop());
-    thread->set_threadObj(thread_oop());
-    _instance = thread;
-
-    Threads::add(thread);
-    Thread::start(thread);
-  }
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 }
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {
