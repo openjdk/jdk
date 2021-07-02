@@ -1156,6 +1156,7 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @since 9
      */
     @IntrinsicCandidate
@@ -1185,6 +1186,24 @@ public final class Math {
             long K = C - A - B;
             return (((B >>> 32) + K) >>> 32) + A;
         }
+    }
+
+    /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see #multiplyHigh
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        // Compute via multiplyHigh() to leverage the intrinsic
+        long result = Math.multiplyHigh(x, y);
+        result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
+        result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
+        return result;
     }
 
     /**
