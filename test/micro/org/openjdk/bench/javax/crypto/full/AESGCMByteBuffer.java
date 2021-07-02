@@ -28,28 +28,21 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidParameterSpecException;
 
 /**
- * This performance test run AES/GCM using heap and direct bytebuffers input
- * and output buffers for single and multi-part testing.
+ * This performance tests runs AES/GCM encryption and decryption using heap and
+ * direct ByteBuffers as input and output buffers for single and multi-part
+ * operations.
+ *
+ * This test rotates the IV and creates a new GCMParameterSpec for each encrypt
+ * benchmark operation
  */
 
 public class AESGCMByteBuffer extends CryptoBase {
-
-    @Param({"AES/GCM/NoPadding"})
-    private String algorithm;
 
     @Param({"128"})
     private int keyLength;
@@ -69,8 +62,8 @@ public class AESGCMByteBuffer extends CryptoBase {
     GCMParameterSpec gcm_spec;
     byte[] iv;
 
-    public static final int IV_BUFFER_SIZE = 32;
-    public static final int IV_MODULO = IV_BUFFER_SIZE - 16;
+    private static final int IV_BUFFER_SIZE = 32;
+    private static final int IV_MODULO = IV_BUFFER_SIZE - 16;
     int iv_index = 0;
     int updateLen = 0;
 
@@ -81,10 +74,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     }
 
     @Setup
-    public void setup() throws NoSuchAlgorithmException, NoSuchPaddingException,
-        InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
-        InvalidAlgorithmParameterException, InvalidParameterSpecException,
-        ShortBufferException {
+    public void setup() throws Exception {
         setupProvider();
 
         // Setup key material
@@ -94,9 +84,9 @@ public class AESGCMByteBuffer extends CryptoBase {
         gcm_spec = new GCMParameterSpec(96, iv, next_iv_index(), 16);
 
         // Setup Cipher classes
-        encryptCipher = makeCipher(prov, algorithm);
+        encryptCipher = makeCipher(prov, "AES/GCM/NoPadding");
         encryptCipher.init(Cipher.ENCRYPT_MODE, ks, gcm_spec);
-        decryptCipher = makeCipher(prov, algorithm);
+        decryptCipher = makeCipher(prov, "AES/GCM/NoPadding");
         decryptCipher.init(Cipher.DECRYPT_MODE, ks,
             encryptCipher.getParameters().
                 getParameterSpec(GCMParameterSpec.class));
@@ -117,7 +107,6 @@ public class AESGCMByteBuffer extends CryptoBase {
             out = ByteBuffer.allocate(encryptedData.capacity());
         }
 
-
         encryptCipher.doFinal(in, encryptedData);
         encryptedData.flip();
         in.flip();
@@ -125,10 +114,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     }
 
     @Benchmark
-    public void encrypt() throws ShortBufferException, BadPaddingException,
-        IllegalBlockSizeException, InvalidAlgorithmParameterException,
-        InvalidKeyException {
-
+    public void encrypt() throws Exception {
         gcm_spec = new GCMParameterSpec(96, iv, next_iv_index(), 16);
         encryptCipher.init(Cipher.ENCRYPT_MODE, ks, gcm_spec);
         encryptCipher.doFinal(in, out);
@@ -137,10 +123,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     }
 
     @Benchmark
-    public void encryptMultiPart() throws ShortBufferException,
-        BadPaddingException, IllegalBlockSizeException,
-        InvalidAlgorithmParameterException, InvalidKeyException {
-
+    public void encryptMultiPart() throws Exception {
         gcm_spec = new GCMParameterSpec(96, iv, next_iv_index(), 16);
         encryptCipher.init(Cipher.ENCRYPT_MODE, ks, gcm_spec);
         in.limit(updateLen);
@@ -152,10 +135,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     }
 
     @Benchmark
-    public void decrypt() throws ShortBufferException, BadPaddingException,
-        IllegalBlockSizeException, InvalidParameterSpecException,
-        InvalidAlgorithmParameterException, InvalidKeyException {
-
+    public void decrypt() throws Exception {
         decryptCipher.init(Cipher.DECRYPT_MODE, ks,
             encryptCipher.getParameters().
                 getParameterSpec(GCMParameterSpec.class));
@@ -165,11 +145,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     }
 
     @Benchmark
-    public void decryptMultiPart() throws ShortBufferException,
-        BadPaddingException, IllegalBlockSizeException,
-        InvalidParameterSpecException, InvalidAlgorithmParameterException,
-        InvalidKeyException {
-
+    public void decryptMultiPart() throws Exception {
         decryptCipher.init(Cipher.DECRYPT_MODE, ks,
             encryptCipher.getParameters().
                 getParameterSpec(GCMParameterSpec.class));
