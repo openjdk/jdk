@@ -71,10 +71,10 @@ void G1BarrierSet::enqueue(oop pre_val) {
 
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
-  if (!_satb_mark_queue_set.is_active()) return;
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
 
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
-  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
 
   T* elem_ptr = dst;
   for (size_t i = 0; i < count; i++, elem_ptr++) {
