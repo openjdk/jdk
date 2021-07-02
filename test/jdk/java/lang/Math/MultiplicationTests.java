@@ -52,7 +52,16 @@ public class MultiplicationTests {
 
     // Calculate high 64 bits of unsigned 128 product using signed multiply
     private static long unsignedMultiplyHigh(long x, long y) {
-        return Math.multiplyHigh(x, y) + ((x >> 63) & y) + ((y >> 63) & x);
+        long x0 = x & 0xffffffffL;
+        long x1 = x >>> 32;
+        long y0 = y & 0xffffffffL;
+        long y1 = y >>> 32;
+
+        long t = x1 * y0 + ((x0 * y0) >>> 32);
+        long z0 = x0 * y1 + (t & 0xffffffffL);
+        long z1 = t >>> 32;
+
+        return x1 * y1 + z1 + (z0 >>> 32);
     }
 
     // Compare results of two functions for a pair of values

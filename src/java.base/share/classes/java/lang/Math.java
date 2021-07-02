@@ -1199,16 +1199,11 @@ public final class Math {
      * @since 18
      */
     public static long unsignedMultiplyHigh(long x, long y) {
-        long x0 = x & 0xffffffffL;
-        long x1 = x >>> 32;
-        long y0 = y & 0xffffffffL;
-        long y1 = y >>> 32;
-
-        long t = x1 * y0 + ((x0 * y0) >>> 32);
-        long z0 = x0 * y1 + (t & 0xffffffffL);
-        long z1 = t >>> 32;
-
-        return x1 * y1 + z1 + (z0 >>> 32);
+        // Compute via multiplyHigh() to leverage the intrinsic
+        long result = Math.multiplyHigh(x, y);
+        result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
+        result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
+        return result;
     }
 
     /**
