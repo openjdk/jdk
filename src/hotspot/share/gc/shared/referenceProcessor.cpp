@@ -100,7 +100,6 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
-  _enqueuing_is_done(false),
   _next_id(0),
   _is_alive_non_header(is_alive_non_header)
 {
@@ -199,7 +198,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   double start_time = os::elapsedTime();
 
-  assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
   disable_discovery();
 
@@ -525,7 +523,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase1, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase1, _phase_times, tracker_id(worker_id));
     size_t const removed = _ref_processor.process_soft_ref_reconsider_work(_ref_processor._discoveredSoftRefs[worker_id],
                                                                            _policy,
                                                                            is_alive,
@@ -563,17 +561,17 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcWorkerTimeTracker t(_phase_times->phase2_worker_time_sec(), worker_id);
+    RefProcWorkerTimeTracker t(_phase_times->phase2_worker_time_sec(), tracker_id(worker_id));
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::SoftRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredSoftRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_SOFT);
     }
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::WeakRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::WeakRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredWeakRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_WEAK);
     }
     {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase2, _phase_times, worker_id);
+      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase2, _phase_times, tracker_id(worker_id));
       run_phase2(worker_id, _ref_processor._discoveredFinalRefs, is_alive, keep_alive, false /* do_enqueue_and_clear */, REF_FINAL);
     }
     // Close the reachable set; needed for collectors which keep_alive_closure do
@@ -594,7 +592,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase3, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::FinalRefSubPhase3, _phase_times, tracker_id(worker_id));
     _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive, complete_gc);
   }
 };
@@ -611,7 +609,7 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::PhantomRefSubPhase4, _phase_times, worker_id);
+    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::PhantomRefSubPhase4, _phase_times, tracker_id(worker_id));
     size_t const removed = _ref_processor.process_phantom_refs_work(_ref_processor._discoveredPhantomRefs[worker_id],
                                                                     is_alive,
                                                                     keep_alive,

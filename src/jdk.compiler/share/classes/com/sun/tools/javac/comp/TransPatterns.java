@@ -186,12 +186,15 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T' N$temp = E; N$temp instanceof typeof($pattern) && <desugared $pattern>)
             //note the pattern desugaring performs binding variable assignments
-            Symbol exprSym = TreeInfo.symbol(tree.expr);
             Type tempType = tree.expr.type.hasTag(BOT) ?
                     syms.objectType
                     : tree.expr.type;
             VarSymbol prevCurrentValue = currentValue;
+            bindingContext = new BasicBindingContext();
             try {
+                JCExpression translatedExpr = translate(tree.expr);
+                Symbol exprSym = TreeInfo.symbol(translatedExpr);
+
                 if (exprSym != null &&
                     exprSym.kind == Kind.VAR &&
                     exprSym.owner.kind.matches(Kinds.KindSelector.VAL_MTH)) {
@@ -203,18 +206,21 @@ public class TransPatterns extends TreeTranslator {
                             currentMethodSym);
                 }
 
-                JCExpression translatedExpr = translate(tree.expr);
                 Type principalType = principalType((JCPattern) tree.pattern);
-                result = makeBinary(Tag.AND,
-                                    makeTypeTest(make.Ident(currentValue), make.Type(principalType)),
-                                    (JCExpression) this.<JCTree>translate(tree.pattern));
+                JCExpression resultExpression=
+                        makeBinary(Tag.AND,
+                                   makeTypeTest(make.Ident(currentValue), make.Type(principalType)),
+                                   (JCExpression) this.<JCTree>translate(tree.pattern));
                 if (currentValue != exprSym) {
-                    result = make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr),
-                                                        (JCExpression)result).setType(syms.booleanType);
-                    ((LetExpr) result).needsCond = true;
+                    resultExpression =
+                            make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr),
+                                                      resultExpression).setType(syms.booleanType);
+                    ((LetExpr) resultExpression).needsCond = true;
                 }
+                result = bindingContext.decorateExpression(resultExpression);
             } finally {
                 currentValue = prevCurrentValue;
+                bindingContext.pop();
             }
         } else {
             super.visitTypeTest(tree);

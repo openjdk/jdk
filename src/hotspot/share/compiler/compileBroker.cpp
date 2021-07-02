@@ -875,90 +875,75 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
 
 JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD) {
   JavaThread* new_thread = NULL;
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    switch (type) {
-      case compiler_t:
-        assert(comp != NULL, "Compiler instance missing.");
-        if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
-          CompilerCounters* counters = new CompilerCounters();
-          new_thread = new CompilerThread(queue, counters);
-        }
-        break;
-      case sweeper_t:
-        new_thread = new CodeCacheSweeperThread();
-        break;
+
+  switch (type) {
+    case compiler_t:
+      assert(comp != NULL, "Compiler instance missing.");
+      if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
+        CompilerCounters* counters = new CompilerCounters();
+        new_thread = new CompilerThread(queue, counters);
+      }
+      break;
+    case sweeper_t:
+      new_thread = new CodeCacheSweeperThread();
+      break;
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
-      case deoptimizer_t:
-        new_thread = new DeoptimizeObjectsALotThread();
-        break;
+    case deoptimizer_t:
+      new_thread = new DeoptimizeObjectsALotThread();
+      break;
 #endif // ASSERT
-      default:
-        ShouldNotReachHere();
-    }
-
-    // At this point the new CompilerThread data-races with this startup
-    // thread (which I believe is the primoridal thread and NOT the VM
-    // thread).  This means Java bytecodes being executed at startup can
-    // queue compile jobs which will run at whatever default priority the
-    // newly created CompilerThread runs at.
-
-
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails. But first release the
-    // lock.
-
-    if (new_thread != NULL && new_thread->osthread() != NULL) {
-
-      java_lang_Thread::set_thread(JNIHandles::resolve_non_null(thread_handle), new_thread);
-
-      // Note that this only sets the JavaThread _priority field, which by
-      // definition is limited to Java priorities and not OS priorities.
-      // The os-priority is set in the CompilerThread startup code itself
-
-      java_lang_Thread::set_priority(JNIHandles::resolve_non_null(thread_handle), NearMaxPriority);
-
-      // Note that we cannot call os::set_priority because it expects Java
-      // priorities and we are *explicitly* using OS priorities so that it's
-      // possible to set the compiler thread priority higher than any Java
-      // thread.
-
-      int native_prio = CompilerThreadPriority;
-      if (native_prio == -1) {
-        if (UseCriticalCompilerThreadPriority) {
-          native_prio = os::java_to_os_priority[CriticalPriority];
-        } else {
-          native_prio = os::java_to_os_priority[NearMaxPriority];
-        }
-      }
-      os::set_native_priority(new_thread, native_prio);
-
-      java_lang_Thread::set_daemon(JNIHandles::resolve_non_null(thread_handle));
-
-      new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
-      if (type == compiler_t) {
-        CompilerThread::cast(new_thread)->set_compiler(comp);
-      }
-      Threads::add(new_thread);
-      Thread::start(new_thread);
-    }
+    default:
+      ShouldNotReachHere();
   }
 
-  // First release lock before aborting VM.
-  if (new_thread == NULL || new_thread->osthread() == NULL) {
-    if (UseDynamicNumberOfCompilerThreads && type == compiler_t && comp->num_compiler_threads() > 0) {
-      if (new_thread != NULL) {
-        new_thread->smr_delete();
+  // At this point the new CompilerThread data-races with this startup
+  // thread (which is the main thread and NOT the VM thread).
+  // This means Java bytecodes being executed at startup can
+  // queue compile jobs which will run at whatever default priority the
+  // newly created CompilerThread runs at.
+
+
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources. We will handle that failure below.
+  // Also check new_thread so that static analysis is happy.
+  if (new_thread != NULL && new_thread->osthread() != NULL) {
+    Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
+
+    if (type == compiler_t) {
+      CompilerThread::cast(new_thread)->set_compiler(comp);
+    }
+
+    // Note that we cannot call os::set_priority because it expects Java
+    // priorities and we are *explicitly* using OS priorities so that it's
+    // possible to set the compiler thread priority higher than any Java
+    // thread.
+
+    int native_prio = CompilerThreadPriority;
+    if (native_prio == -1) {
+      if (UseCriticalCompilerThreadPriority) {
+        native_prio = os::java_to_os_priority[CriticalPriority];
+      } else {
+        native_prio = os::java_to_os_priority[NearMaxPriority];
       }
+    }
+    os::set_native_priority(new_thread, native_prio);
+
+    // Note that this only sets the JavaThread _priority field, which by
+    // definition is limited to Java priorities and not OS priorities.
+    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
+
+  } else { // osthread initialization failure
+    if (UseDynamicNumberOfCompilerThreads && type == compiler_t
+        && comp->num_compiler_threads() > 0) {
+      // The new thread is not known to Thread-SMR yet so we can just delete.
+      delete new_thread;
       return NULL;
+    } else {
+      vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                    os::native_thread_creation_failed_msg());
     }
-    vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                  os::native_thread_creation_failed_msg());
   }
 
-  // Let go of Threads_lock before yielding
   os::naked_yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
 
   return new_thread;
