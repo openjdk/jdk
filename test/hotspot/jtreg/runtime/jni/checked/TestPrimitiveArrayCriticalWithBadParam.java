@@ -24,9 +24,10 @@
 
 /**
  * @test TestPrimitiveArrayCriticalWithBadParam
+ * @bug 8269697
  * @summary -Xcheck:jni should catch wrong parameter passed to GetPrimitiveArrayCritical
  * @library /test/lib
- * @run main/othervm/native TestPrimitiveArrayCriticalWithBadParam
+ * @run main/native TestPrimitiveArrayCriticalWithBadParam
  */
 import java.util.List;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.io.IOException;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 
 public class TestPrimitiveArrayCriticalWithBadParam {
     static {
@@ -54,6 +56,7 @@ public class TestPrimitiveArrayCriticalWithBadParam {
     private static void runTest() {
         List<String> pbArgs = new ArrayList<>();
         pbArgs.add("-Xcheck:jni");
+        pbArgs.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
         pbArgs.add(TestPrimitiveArrayCriticalWithBadParam.class.getName());
         pbArgs.add("test");
         try {
