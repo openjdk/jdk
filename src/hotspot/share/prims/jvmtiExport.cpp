@@ -312,6 +312,7 @@ bool              JvmtiExport::_can_modify_any_class                      = fals
 bool              JvmtiExport::_can_walk_any_space                        = false;
 
 uint64_t          JvmtiExport::_redefinition_count                        = 0;
+bool              JvmtiExport::_all_dependencies_are_recorded             = false;
 
 //
 // field access management
@@ -2205,6 +2206,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   ResourceMark rm(thread);
   HandleMark hm(thread);
 
+  assert(!nm->is_zombie(), "nmethod zombie in post_compiled_method_load");
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
   // Pass inlining information through the void pointer

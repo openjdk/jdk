@@ -54,6 +54,16 @@ void WorkerDataArray<T>::set(uint worker_i, T value) {
 }
 
 template <typename T>
+void WorkerDataArray<T>::set_or_add(uint worker_i, T value) {
+  assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
+  if (_data[worker_i] == uninitialized()) {
+    _data[worker_i] = value;
+  } else {
+    _data[worker_i] += value;
+  }
+}
+
+template <typename T>
 T WorkerDataArray<T>::get(uint worker_i) const {
   assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
   return _data[worker_i];

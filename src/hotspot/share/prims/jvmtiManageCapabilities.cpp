@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,13 @@ void JvmtiManageCapabilities::update() {
        || avail.can_generate_field_modification_events)
   {
     RewriteFrequentPairs = false;
+  }
+
+  // If can_redefine_classes is enabled in the onload phase then we know that the
+  // dependency information recorded by the compiler is complete.
+  if ((avail.can_redefine_classes || avail.can_retransform_classes) &&
+      JvmtiEnv::get_phase() == JVMTI_PHASE_ONLOAD) {
+    JvmtiExport::set_all_dependencies_are_recorded(true);
   }
 
   JvmtiExport::set_can_get_source_debug_extension(avail.can_get_source_debug_extension);

@@ -210,11 +210,11 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
     @Override
     default long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return toLocalDateTime().getLong(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> toLocalDateTime().getLong(field);
+            };
         }
         return field.getFrom(this);
     }

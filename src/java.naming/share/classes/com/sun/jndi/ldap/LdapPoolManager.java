@@ -55,7 +55,6 @@ import jdk.internal.misc.InnocuousThread;
  * @author Rosanna Lee
  */
 
-@SuppressWarnings("removal")
 public final class LdapPoolManager {
     private static final String DEBUG =
         "com.sun.jndi.ldap.connect.pool.debug";
@@ -164,23 +163,28 @@ public final class LdapPoolManager {
         }
 
         if (idleTimeout > 0) {
-            // Create cleaner to expire idle connections
-            PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread t = InnocuousThread.newSystemThread(
-                            "LDAP PoolCleaner",
-                            new PoolCleaner(idleTimeout, pools));
-                    assert t.getContextClassLoader() == null;
-                    t.setDaemon(true);
-                    t.start();
-                    return null;
-                }};
-            AccessController.doPrivileged(pa);
+            startCleanerThread();
         }
 
         if (debug) {
             showStats(System.err);
         }
+    }
+
+    @SuppressWarnings("removal")
+    private static void startCleanerThread() {
+        // Create cleaner to expire idle connections
+        PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
+            public Void run() {
+                Thread t = InnocuousThread.newSystemThread(
+                        "LDAP PoolCleaner",
+                        new PoolCleaner(idleTimeout, pools));
+                assert t.getContextClassLoader() == null;
+                t.setDaemon(true);
+                t.start();
+                return null;
+            }};
+        AccessController.doPrivileged(pa);
     }
 
     // Cannot instantiate one of these
@@ -396,16 +400,19 @@ public final class LdapPoolManager {
         }
     }
 
+    @SuppressWarnings("removal")
     private static final String getProperty(final String propName, final String defVal) {
         PrivilegedAction<String> pa = () -> System.getProperty(propName, defVal);
         return AccessController.doPrivileged(pa);
     }
 
+    @SuppressWarnings("removal")
     private static final int getInteger(final String propName, final int defVal) {
         PrivilegedAction<Integer> pa = () -> Integer.getInteger(propName, defVal);
         return AccessController.doPrivileged(pa);
     }
 
+    @SuppressWarnings("removal")
     private static final long getLong(final String propName, final long defVal) {
         PrivilegedAction<Long> pa = () -> Long.getLong(propName, defVal);
         return AccessController.doPrivileged(pa);
