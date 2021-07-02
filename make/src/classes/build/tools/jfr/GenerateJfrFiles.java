@@ -100,7 +100,7 @@ public class GenerateJfrFiles {
             Metadata metadata = new Metadata(xmlFile, xsdFile);
             metadata.verify();
             metadata.wireUpTypes();
-            metadata.computeEventSizeMode();
+            metadata.computeEventSizeRange();
 
             if (outputMode == OutputMode.headers) {
                 File outputDir = new File(output);
@@ -188,7 +188,7 @@ public class GenerateJfrFiles {
 
         int maxSize = -1;
         int minSize = -1;
-	EventSizeRange sizeRange;
+        EventSizeRange sizeRange;
 
         public void persist(DataOutputStream pos) throws IOException {
             pos.writeInt(fields.size());
@@ -382,13 +382,13 @@ public class GenerateJfrFiles {
             }
         }
 
-        boolean hasStringData(TypeElement te) {
+        boolean hasUncertainSizeField(TypeElement te) {
             for (FieldElement field : te.fields) {
                 String type = field.getFieldType();
                 if (type.equals("const char*")) {
                     return true;
                 } else if (type.startsWith("JfrStruct")) {
-                    if (hasStringData(field.type)) {
+                    if (hasUncertainSizeField(field.type)) {
                         return true;
                     }
                 }
@@ -396,7 +396,7 @@ public class GenerateJfrFiles {
             return false;
         }
 
-        private void computeSize(TypeElement te) {
+        private void computeTypeSize(TypeElement te) {
             if (te.maxSize != -1) {
                 return;
             }
@@ -404,7 +404,7 @@ public class GenerateJfrFiles {
             for (FieldElement field : te.fields) {
                 String type = field.getFieldType();
                 if (type.startsWith("JfrStruct")) {
-                    computeSize(field.type);
+                    computeTypeSize(field.type);
                     te.maxSize += field.type.maxSize;
                     te.minSize += field.type.minSize;
                 } else {
@@ -425,16 +425,17 @@ public class GenerateJfrFiles {
             }
         }
 
-        private void computeEventSizeMode(TypeElement event) {
+        private void computeEventSizeRange(TypeElement event) {
             if (!event.isEvent) {
                 throw new IllegalStateException();
             }
-            if (hasStringData(event)) {
+
+            if (hasUncertainSizeField(event)) {
                 event.sizeRange = EventSizeRange.UNCERTAIN;
                 return;
             }
 
-            computeSize(event);
+            computeTypeSize(event);
             event.maxSize += event.id <= 127 ? 1 : 2;
             event.minSize ++;
 
@@ -465,8 +466,8 @@ public class GenerateJfrFiles {
             }
         }
 
-        void computeEventSizeMode() {
-            getEvents().forEach(this::computeEventSizeMode);
+        void computeEventSizeRange() {
+            getEvents().forEach(this::computeEventSizeRange);
         }
 
         public String getName(long id) {
