@@ -28,6 +28,7 @@
  * @summary Create implementation for NSAccessibilityOutline protocol
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTreeTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import javax.swing.*;

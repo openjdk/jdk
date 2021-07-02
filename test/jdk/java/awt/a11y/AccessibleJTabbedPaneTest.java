@@ -28,6 +28,7 @@
  * @summary Create implementation for NSAccessibilityTabGroup protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTabbedPaneTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import javax.swing.*;

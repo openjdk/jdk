@@ -28,6 +28,7 @@
  * @summary Create implementation for NSAccessibilityNavigableStaticText protocol
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleTextTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import javax.swing.*;

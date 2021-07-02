@@ -28,6 +28,7 @@
  * @summary Create implementation for NSAccessibilityComboBox protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJComboboxTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import javax.swing.*;
