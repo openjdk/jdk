@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Alphabet LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,39 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8262891 8269354
- * @summary Test parenthesized pattern
- * @compile --enable-preview -source ${jdk.version} Parenthesized.java
- * @run main/othervm --enable-preview Parenthesized
+/* @test
+ * @bug 8268592
+ * @summary JDK-8262891 causes an NPE in Lint.augment
+ * @compile T8268592.java
  */
-public class Parenthesized {
-    public static void main(String... args) {
-        new Parenthesized().run();
+
+import java.util.Collection;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+abstract class T {
+
+    abstract <T> T r(Function<String, Supplier<T>> x);
+
+    enum E {
+        ONE
     }
 
-    void run() {
-        Object o = "";
-        switch (o) {
-            case (String s && s.isEmpty()) -> System.err.println("OK: " + s);
-            default -> throw new AssertionError();
-        }
-        System.err.println(switch (o) {
-            case (String s && s.isEmpty()) -> "OK: " + s;
-            default -> throw new AssertionError();
-        });
-        if (o instanceof (String s && s.isEmpty())) {
-            System.err.println("OK: " + s);
-        }
-        boolean b1 = o instanceof (String s && s.isEmpty());
-        boolean b2 = o instanceof String s && s.isEmpty();
-    }
+    abstract <T> Supplier<T> f(Function<T, Supplier<T>> x);
 
+    public void updateAcl(E e, Supplier<Void> v) {
+        r(
+                (String t) -> {
+                    switch (e) {
+                        case ONE:
+                            return f(
+                                    a -> {
+                                        Collection<String> m = null;
+                                        return v;
+                                    });
+                        default:
+                            return v;
+                    }
+                });
+    }
 }

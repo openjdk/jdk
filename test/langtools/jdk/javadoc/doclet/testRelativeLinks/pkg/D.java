@@ -21,33 +21,21 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8262891 8269354
- * @summary Test parenthesized pattern
- * @compile --enable-preview -source ${jdk.version} Parenthesized.java
- * @run main/othervm --enable-preview Parenthesized
- */
-public class Parenthesized {
-    public static void main(String... args) {
-        new Parenthesized().run();
-    }
+package pkg;
 
-    void run() {
-        Object o = "";
-        switch (o) {
-            case (String s && s.isEmpty()) -> System.err.println("OK: " + s);
-            default -> throw new AssertionError();
-        }
-        System.err.println(switch (o) {
-            case (String s && s.isEmpty()) -> "OK: " + s;
-            default -> throw new AssertionError();
-        });
-        if (o instanceof (String s && s.isEmpty())) {
-            System.err.println("OK: " + s);
-        }
-        boolean b1 = o instanceof (String s && s.isEmpty());
-        boolean b2 = o instanceof String s && s.isEmpty();
+/**
+ * {@inheritDoc}
+ *
+ * A class that extends C and inherits some of its comments.
+ */
+public class D extends C {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public D method() {
+        return null;
     }
 
 }
