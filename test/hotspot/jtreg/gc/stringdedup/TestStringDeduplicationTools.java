@@ -50,7 +50,7 @@ class TestStringDeduplicationTools {
     private static Unsafe unsafe;
     private static byte[] dummy;
 
-    private static String overridingGC = null;
+    private static String selectedGC = null;
 
     static {
         try {
@@ -65,10 +65,8 @@ class TestStringDeduplicationTools {
         }
     }
 
-    public static void maybeOverrideGC(String[] args) {
-        if (args.length > 0) {
-            overridingGC = args[0];
-        }
+    public static void selectGC(String[] args) {
+        selectedGC = args[0];
     }
 
     private static Object getValue(String string) {
@@ -234,9 +232,7 @@ class TestStringDeduplicationTools {
         };
 
         ArrayList<String> args = new ArrayList<String>();
-        if (overridingGC != null) {
-            args.add("-XX:+Use" + overridingGC + "GC");
-        }
+        args.add("-XX:+Use" + selectedGC + "GC");
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 

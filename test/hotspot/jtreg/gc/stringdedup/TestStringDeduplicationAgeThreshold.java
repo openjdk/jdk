@@ -27,20 +27,7 @@ package gc.stringdedup;
  * @test TestStringDeduplicationAgeThreshold
  * @summary Test string deduplication age threshold
  * @bug 8029075
- * @requires vm.gc == "G1" | vm.gc == "Shenandoah"
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc:open
- * @modules java.base/java.lang:open
- *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold
- */
-
-/*
- * @test TestStringDeduplicationAgeThreshold
- * @summary Test string deduplication age threshold
- * @bug 8029075
- * @requires vm.gc == "null" & vm.gc.G1
+ * @requires vm.gc.G1
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
@@ -49,9 +36,22 @@ package gc.stringdedup;
  * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold G1
  */
 
+/*
+ * @test TestStringDeduplicationAgeThreshold
+ * @summary Test string deduplication age threshold
+ * @bug 8029075
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold Shenandoah
+ */
+
 public class TestStringDeduplicationAgeThreshold {
     public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.maybeOverrideGC(args);
+        TestStringDeduplicationTools.selectGC(args);
         TestStringDeduplicationTools.testAgeThreshold();
     }
 }
