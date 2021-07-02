@@ -26,26 +26,15 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Collections;
-import java.util.List;
 import java.util.Random;
-import java.util.zip.CRC32;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is intentionally a manual test. The (jtreg) configurations below are here only
@@ -54,8 +43,7 @@ import java.util.zip.ZipOutputStream;
  * @bug 8190753
  * @summary Verify that using zip filesystem for opening an outputstream for a zip entry whose
  * compressed size is large, doesn't run into "Negative initial size" exception
- * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8g)
- * @run testng/othervm -Xmx6g LargeCompressedEntrySizeTest
+ * @run testng/othervm/timeout=300 LargeCompressedEntrySizeTest
  */
 public class LargeCompressedEntrySizeTest {
 
@@ -79,7 +67,6 @@ public class LargeCompressedEntrySizeTest {
      */
     private static void deleteFiles() throws IOException {
         Files.deleteIfExists(Path.of(ZIP_FILE_NAME));
-        Files.deleteIfExists(Path.of(LARGE_FILE_NAME));
     }
 
 
@@ -90,20 +77,22 @@ public class LargeCompressedEntrySizeTest {
     @Test
     public void testLargeCompressedSizeWithZipFS() throws Exception {
         final Path zipFile = Path.of(ZIP_FILE_NAME);
-        final long largeFileSize = (2L * 1024L * 1024L * 1024L) + 1L;
-        final Random random = new Random();
+        final long largeEntrySize = 6L * 1024L * 1024L * 1024L; // large value which exceeds Integer.MAX_VALUE
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, Collections.singletonMap("create", "true"))) {
             try (OutputStream os = Files.newOutputStream(fs.getPath(LARGE_FILE_NAME))) {
-                long remaining = largeFileSize;
+                long remaining = largeEntrySize;
+                // create a chunk of random bytes which we keep writing out
                 final int chunkSize = 102400;
-                for (long l = 0; l < largeFileSize; l+=chunkSize) {
+                final byte[] chunk = new byte[chunkSize];
+                new Random().nextBytes(chunk);
+                final long start = System.currentTimeMillis();
+                for (long l = 0; l < largeEntrySize; l += chunkSize) {
                     final int numToWrite = (int) Math.min(remaining, chunkSize);
-                    final byte[] b = new byte[numToWrite];
-                    // fill with random bytes
-                    random.nextBytes(b);
-                    os.write(b);
-                    remaining -= b.length;
+                    os.write(chunk, 0, numToWrite);
+                    remaining -= numToWrite;
                 }
+                System.out.println("Took " + TimeUnit.SECONDS.toSeconds(System.currentTimeMillis() - start)
+                        + " seconds to generate entry of size " + largeEntrySize);
             }
         }
     }
