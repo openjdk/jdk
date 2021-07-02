@@ -219,6 +219,7 @@ class FixedResourceHashtableStorage : public ResourceObj {
   Node* _table[TABLE_SIZE];
 protected:
   FixedResourceHashtableStorage() : _table() {}
+  ~FixedResourceHashtableStorage() = default;
 
   constexpr unsigned table_size() const {
     return TABLE_SIZE;
