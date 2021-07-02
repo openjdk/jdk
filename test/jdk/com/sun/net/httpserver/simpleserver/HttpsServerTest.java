@@ -122,7 +122,7 @@ public class HttpsServerTest {
     static URI uri(HttpServer server, String path) {
         return URIBuilder.newBuilder()
                 .scheme("https")
-                .host(server.getAddress().getHostName())
+                .host("localhost")
                 .port(server.getAddress().getPort())
                 .path(path)
                 .buildUnchecked();

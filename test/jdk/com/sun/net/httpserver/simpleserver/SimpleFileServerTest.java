@@ -373,7 +373,7 @@ public class SimpleFileServerTest {
     @Test
     public void testUncheckedIOException() {
         final var addr = InetSocketAddress.createUnresolved("foo", 8080);
-        final var path = Path.of("/tmp");
+        final var path = CWD;
         final var levl = OutputLevel.INFO;
         assertThrows(UIOE, () -> SimpleFileServer.createFileServer(addr, path, levl));
     }
