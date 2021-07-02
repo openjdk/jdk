@@ -489,8 +489,8 @@ void FileMapInfo::clone_shared_path_table(TRAPS) {
   assert(jrt != NULL,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
-  // After dynamic dump, _saved_shared_path_table is corrupt, can not be used again.
-  // could not free the corrupt table. May have memory leak but it should be OK since
+  // After dynamic dump, _saved_shared_path_table is corrupt, cannot be used again.
+  // Could not free the corrupt table. May have memory leak but it should be OK since
   // it is not a big leak. This will fail:
   // if (_saved_shared_path_table.size() > 0) {
   //   MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table->_table);

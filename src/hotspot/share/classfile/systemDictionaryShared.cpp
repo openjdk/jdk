@@ -1583,6 +1583,7 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
 
 void SystemDictionaryShared::clone_dumptime_tables() {
   Arguments::assert_is_dumping_archive();
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table != NULL) {
     assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
     _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
@@ -1602,7 +1603,7 @@ void SystemDictionaryShared::clone_dumptime_tables() {
 }
 
 void SystemDictionaryShared::restore_dumptime_tables() {
-  // FileMapInfo::clean_cloned_shared_path_table();
+  assert_lock_strong(DumpTimeTable_lock);
   delete _dumptime_table;
   _dumptime_table = _cloned_dumptime_table;
   _cloned_dumptime_table = NULL;

@@ -164,7 +164,7 @@ public:
 
     post_dump();
 
-    // Restore dumptime talbes
+    // Restore dumptime tables
     SystemDictionaryShared::restore_dumptime_tables();
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
