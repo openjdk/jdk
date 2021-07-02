@@ -108,7 +108,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     // --------------------------------------------------- //
 
-    /** Created and return new IOPipe channel to the debuggee VM.
+    /** Create and return new IOPipe channel to the debuggee VM.
      * The channel should be created before debuggee starts execution,
      * i.e. the method assumes debuggee is started, but suspended before
      * its main class is loaded.
