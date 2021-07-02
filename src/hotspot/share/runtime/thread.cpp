@@ -3900,3 +3900,44 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
    report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
 }
 #endif
+
+// Starts the target JavaThread as a daemon of the given priority, and
+// bound to the given java.lang.Thread instance.
+// The Threads_lock is held for the duration.
+void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
+                                       Handle thread_oop, ThreadPriority prio) {
+
+  assert(target->osthread()!= NULL, "target thread is not properly initialized");
+
+  MutexLocker mu(current, Threads_lock);
+
+  // Initialize the fields of the thread_oop first.
+
+  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
+
+  if (prio != NoPriority) {
+    java_lang_Thread::set_priority(thread_oop(), prio);
+    // Note: we don't call os::set_priority here. Possibly we should,
+    // else all threads should call it themselves when they first run.
+  }
+
+  java_lang_Thread::set_daemon(thread_oop());
+
+  // Now bind the thread_oop to the target JavaThread.
+  target->set_threadObj(thread_oop());
+
+  Threads::add(target); // target is now visible for safepoint/handshake
+  Thread::start(target);
+}
+
+void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources. However, since this must work
+  // for critical system threads just check and abort if this fails.
+  if (thread->osthread() == nullptr) {
+    // This isn't really an OOM condition, but historically this is what
+    // we report.
+    vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                  os::native_thread_creation_failed_msg());
+  }
+}
