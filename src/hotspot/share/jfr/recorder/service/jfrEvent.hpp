@@ -195,23 +195,31 @@ class JfrEvent {
       // most likely a pending OOM
       return;
     }
-    bool large = is_large();
-    if (write_sized_event(buffer, event_thread, tl, large)) {
-      // Event written succesfully
-      return;
-    }
-    if (!large) {
-      // Try large size
-      if (write_sized_event(buffer, event_thread, tl, true)) {
-        // Event written succesfully, use large size from now on
-        set_large();
+
+    if (T::sizeRange == LT_128) {
+      write_sized_event(buffer, event_thread, tl, false);
+    } else if (T::sizeRange == UNCERTAIN) {
+      bool large = is_large();
+      if (write_sized_event(buffer, event_thread, tl, large)) {
+        // Event written succesfully
+        return;
       }
+      if (!large) {
+        // Try large size
+        if (write_sized_event(buffer, event_thread, tl, true)) {
+          // Event written succesfully, use large size from now on
+          set_large();
+        }
+      }
+    } else if (T::sizeRange == GE_128) {
+      write_sized_event(buffer, event_thread, tl, true);
     }
   }
 
+
   bool write_sized_event(JfrBuffer* const buffer, Thread* const event_thread, JfrThreadLocal* const tl, bool large_size) {
     JfrNativeEventWriter writer(buffer, event_thread);
-    writer.begin_event_write(large_size);
+    writer.begin_event_write<T::sizeRange>(large_size);
     writer.write<u8>(T::eventId);
     assert(_start_time != 0, "invariant");
     writer.write(_start_time);
@@ -235,7 +243,7 @@ class JfrEvent {
     }
     // payload
     static_cast<T*>(this)->writeData(writer);
-    return writer.end_event_write(large_size) > 0;
+    return writer.end_event_write<T::sizeRange>(large_size) > 0;
   }
 
 #ifdef ASSERT

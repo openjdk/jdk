@@ -57,4 +57,9 @@ enum JfrCheckpointType {
   THREADS = 8
 };
 
+enum EventSizeRange {
+  LT_128,
+  GE_128,
+  UNCERTAIN
+};
 #endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP

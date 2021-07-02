@@ -100,6 +100,7 @@ public class GenerateJfrFiles {
             Metadata metadata = new Metadata(xmlFile, xsdFile);
             metadata.verify();
             metadata.wireUpTypes();
+            metadata.computeEventSizeMode();
 
             if (outputMode == OutputMode.headers) {
                 File outputDir = new File(output);
@@ -160,6 +161,10 @@ public class GenerateJfrFiles {
         }
     }
 
+    enum EventSizeRange {
+        LT_128, GE_128, UNCERTAIN;
+    }
+
     static class TypeElement {
         List<FieldElement> fields = new ArrayList<>();
         String name;
@@ -180,6 +185,10 @@ public class GenerateJfrFiles {
         boolean supportStruct = false;
         String commitState;
         public boolean primitive;
+
+        int maxSize = -1;
+        int minSize = -1;
+	EventSizeRange sizeRange;
 
         public void persist(DataOutputStream pos) throws IOException {
             pos.writeInt(fields.size());
@@ -371,6 +380,93 @@ public class GenerateJfrFiles {
             for (TypeElement t : getTypes()) {
                 t.id = typeCounter.next();
             }
+        }
+
+        boolean hasStringData(TypeElement te) {
+            for (FieldElement field : te.fields) {
+                String type = field.getFieldType();
+                if (type.equals("const char*")) {
+                    return true;
+                } else if (type.startsWith("JfrStruct")) {
+                    if (hasStringData(field.type)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void computeSize(TypeElement te) {
+            if (te.maxSize != -1) {
+                return;
+            }
+            te.maxSize = te.minSize = 0;
+            for (FieldElement field : te.fields) {
+                String type = field.getFieldType();
+                if (type.startsWith("JfrStruct")) {
+                    computeSize(field.type);
+                    te.maxSize += field.type.maxSize;
+                    te.minSize += field.type.minSize;
+                } else {
+                    te.minSize += 1;
+                    if (type.equals("u8") || type.equals("double") || type.equals("s8") || type.equals("Ticks")
+                        || type.equals("Tickspan") || type.endsWith("*")) {
+                        te.maxSize += 9;
+                    } else if (type.equals("float") || type.equals("s4") || type.equals("unsigned")) {
+                        te.maxSize += 5;
+                    } else if (type.equals("char") || type.equals("s1") || type.equals("u1")) {
+                        te.maxSize += 2;
+                    } else if (type.equals("bool")) {
+                        te.maxSize += 1;
+                    } else {
+                        te.maxSize += 9;
+                    }
+                }
+            }
+        }
+
+        private void computeEventSizeMode(TypeElement event) {
+            if (!event.isEvent) {
+                throw new IllegalStateException();
+            }
+            if (hasStringData(event)) {
+                event.sizeRange = EventSizeRange.UNCERTAIN;
+                return;
+            }
+
+            computeSize(event);
+            event.maxSize += event.id <= 127 ? 1 : 2;
+            event.minSize ++;
+
+            event.maxSize += 9;
+            event.minSize += 1;
+
+            if (!event.startTime || !event.period.isEmpty() || event.cutoff) {
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.thread) {
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.stackTrace) {
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.maxSize < 127) {
+                event.sizeRange = EventSizeRange.LT_128;
+            } else if (event.minSize >=127) {
+                event.sizeRange = EventSizeRange.GE_128;
+            } else {
+                event.sizeRange = EventSizeRange.UNCERTAIN;
+            }
+        }
+
+        void computeEventSizeMode() {
+            getEvents().forEach(this::computeEventSizeMode);
         }
 
         public String getName(long id) {
@@ -827,6 +923,7 @@ public class GenerateJfrFiles {
             out.write("  static const bool hasThrottle = " + event.throttle + ";");
             out.write("  static const bool isRequestable = " + !event.period.isEmpty() + ";");
             out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
+            out.write("  static const EventSizeRange sizeRange = " + event.sizeRange.name() +";");
             out.write("");
         }
         if (!empty) {
