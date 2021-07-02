@@ -1577,6 +1577,10 @@ public class Flow {
         public void visitClassDef(JCClassDecl tree) {
             //skip
         }
+        @Override
+        public void visitLambda(JCLambda tree) {
+            //skip
+        }
         public boolean isAlive() {
             return super.alive != Liveness.DEAD;
         }
