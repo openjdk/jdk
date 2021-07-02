@@ -764,26 +764,26 @@ public class JavacParser implements Parser {
      */
 
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType, boolean inInstanceOf) {
+        JCPattern pattern;
         if (token.kind == LPAREN && parsedType == null) {
             int startPos = token.pos;
             accept(LPAREN);
             JCPattern p = parsePattern(token.pos, null, null, false);
             accept(RPAREN);
-            return toP(F.at(startPos).ParenthesizedPattern(p));
+            pattern = toP(F.at(startPos).ParenthesizedPattern(p));
         } else {
-            JCPattern pattern;
             JCExpression e = parsedType == null ? term(EXPR | TYPE | NOLAMBDA) : parsedType;
             mods = mods != null ? mods : F.at(token.pos).Modifiers(0);
             JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
             pattern = toP(F.at(pos).BindingPattern(var));
-            if (!inInstanceOf && token.kind == AMPAMP) {
-                checkSourceLevel(Feature.PATTERN_SWITCH);
-                nextToken();
-                JCExpression guard = term(EXPR | NOLAMBDA);
-                pattern = F.at(pos).GuardPattern(pattern, guard);
-            }
-            return pattern;
         }
+        if (!inInstanceOf && token.kind == AMPAMP) {
+            checkSourceLevel(Feature.PATTERN_SWITCH);
+            nextToken();
+            JCExpression guard = term(EXPR | NOLAMBDA);
+            pattern = F.at(pos).GuardPattern(pattern, guard);
+        }
+        return pattern;
     }
 
     /**
@@ -1694,12 +1694,16 @@ public class JavacParser implements Parser {
      * method reference or a binary expression. To disambiguate, look for a
      * matching '&gt;' and see if the subsequent terminal is either '.' or '::'.
      */
-    @SuppressWarnings("fallthrough")
     ParensResult analyzeParens() {
+        return analyzeParens(0);
+    }
+
+    @SuppressWarnings("fallthrough")
+    ParensResult analyzeParens(int startLookahead) {
         int depth = 0;
         boolean type = false;
         ParensResult defaultResult = ParensResult.PARENS;
-        outer: for (int lookahead = 0; ; lookahead++) {
+        outer: for (int lookahead = startLookahead; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
             switch (tk) {
                 case COMMA:
@@ -1725,7 +1729,7 @@ public class JavacParser implements Parser {
                     }
                     break;
                 case LPAREN:
-                    if (lookahead != 0) {
+                    if (lookahead != startLookahead) {
                         // '(' in a non-starting position -> parens
                         return ParensResult.PARENS;
                     } else if (peekToken(lookahead, RPAREN)) {
@@ -3065,15 +3069,12 @@ public class JavacParser implements Parser {
         } else {
             if (token.kind == LPAREN) {
                 int lookahead = 0;
-                Token ahead;
-                while ((ahead = S.token(lookahead)).kind != EOF && ahead.kind != RPAREN && ahead.kind != AMPAMP) {
+                while (S.token(lookahead + 1).kind == LPAREN) {
                     lookahead++;
                 }
-                Token twoBack;
-                boolean pattern = S.token(lookahead - 1).kind == IDENTIFIER &&
-                                  ((twoBack = S.token(lookahead - 2)).kind == IDENTIFIER ||
-                                   twoBack.kind == GT || twoBack.kind == GTGT || twoBack.kind == GTGTGT);
+                boolean pattern = analyzeParens(lookahead) == ParensResult.EXPLICIT_LAMBDA;
                 if (pattern) {
+                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
                     return parsePattern(token.pos, null, null, false);
                 } else {
                     return term(EXPR | TYPE | NOLAMBDA);

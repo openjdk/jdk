@@ -62,7 +62,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
@@ -449,8 +448,7 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::clear();
 #endif
 
-    reference_processor()->enable_discovery();
-    reference_processor()->setup_policy(false);
+    reference_processor()->start_discovery(false /* always_clear */);
 
     const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
@@ -486,7 +484,6 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());

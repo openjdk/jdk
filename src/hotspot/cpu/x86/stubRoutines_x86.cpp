@@ -73,6 +73,15 @@ address StubRoutines::x86::_left_shift_mask = NULL;
 address StubRoutines::x86::_and_mask = NULL;
 address StubRoutines::x86::_url_charset = NULL;
 address StubRoutines::x86::_counter_mask_addr = NULL;
+address StubRoutines::x86::_lookup_lo_base64 = NULL;
+address StubRoutines::x86::_lookup_hi_base64 = NULL;
+address StubRoutines::x86::_lookup_lo_base64url = NULL;
+address StubRoutines::x86::_lookup_hi_base64url = NULL;
+address StubRoutines::x86::_pack_vec_base64 = NULL;
+address StubRoutines::x86::_join_0_1_base64 = NULL;
+address StubRoutines::x86::_join_1_2_base64 = NULL;
+address StubRoutines::x86::_join_2_3_base64 = NULL;
+address StubRoutines::x86::_decoding_table_base64 = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
