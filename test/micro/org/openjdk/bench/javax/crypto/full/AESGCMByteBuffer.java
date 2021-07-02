@@ -47,7 +47,7 @@ public class AESGCMByteBuffer extends CryptoBase {
     @Param({"128"})
     private int keyLength;
 
-    @Param({"" + 1024, "" + 1500, "" + 4096})
+    @Param({"" + 1024, "" + 1500, "" + 4096, "" + 16384})
     private int dataSize;
 
     @Param({"direct", "heap"})
