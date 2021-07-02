@@ -25,9 +25,11 @@
  * @bug 8269481
  * @summary Tests that file descriptors are closed
  * @requires (os.family == "linux")
+ * @run main/othervm CloseDescriptors
  */
 
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,25 +62,22 @@ public class CloseDescriptors {
             return;
         }
 
-        int port = 12345;
-        if (args.length == 1) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (Exception e) {
+        try (ServerSocket ss = new ServerSocket(0)) {
+            int port = ss.getLocalPort();
+
+            Thread server = new Server(port);
+            server.start();
+            Thread.sleep(100); // wait for server to be ready
+
+            System.out.println("begin");
+            for (int i = 0; i < 5; ++i) {
+                System.out.println(i);
+                doIt(port);
+                Thread.sleep(100);
             }
+            System.out.println("end");
+            server.join();
         }
-
-        Thread server = new Server(port);
-        server.start();
-        Thread.sleep(100); // wait for server to be ready
-
-        System.out.println("begin");
-        for (int i = 0; i < 5; ++i) {
-            System.out.println(i);
-            doIt(port);
-            Thread.sleep(100);
-        }
-        System.out.println("end");
 
         long pid = ProcessHandle.current().pid();
         ProcessBuilder pb = new ProcessBuilder(
@@ -86,8 +85,6 @@ public class CloseDescriptors {
         Process p = pb.start();
         Object[] lines = p.inputReader().lines().toArray();
         p.waitFor();
-
-        server.join();
 
         int nfds = lines.length - 1;
         if (nfds > 3) {
