@@ -84,7 +84,7 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
   using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
                                      K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
   using Node = ResourceHashtableNode<K, V>;
-
+  NONCOPYABLE(ResizeableResourceHashtable);
 public:
   ResizeableResourceHashtable(unsigned size, unsigned max_size = 0)
   : BASE(size), _max_size(max_size) {

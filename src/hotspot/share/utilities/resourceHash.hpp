@@ -84,10 +84,9 @@ class ResourceHashtableBase : public STORAGE {
  protected:
   Node** table() const { return STORAGE::table(); }
 
- public:
-  ResourceHashtableBase() : _number_of_entries(0) {}
-
+  ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
   ResourceHashtableBase(unsigned size) : STORAGE(size), _number_of_entries(0) {}
+  NONCOPYABLE(ResourceHashtableBase);
 
   ~ResourceHashtableBase() {
     if (ALLOC_TYPE == ResourceObj::C_HEAP) {
@@ -105,6 +104,7 @@ class ResourceHashtableBase : public STORAGE {
     }
   }
 
+ public:
   unsigned table_size() const { return STORAGE::table_size(); }
   int number_of_entries() const { return _number_of_entries; }
 
@@ -218,9 +218,7 @@ class FixedResourceHashtableStorage : public ResourceObj {
 
   Node* _table[TABLE_SIZE];
 protected:
-  FixedResourceHashtableStorage() {
-    memset(_table, 0, TABLE_SIZE * sizeof(Node*));
-  }
+  FixedResourceHashtableStorage() : _table() {}
 
   constexpr unsigned table_size() const {
     return TABLE_SIZE;
@@ -242,6 +240,7 @@ template<
 class ResourceHashtable : public ResourceHashtableBase<
   FixedResourceHashtableStorage<SIZE, K, V>,
     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
+  NONCOPYABLE(ResourceHashtable);
 public:
   ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
                                               K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>() {}
