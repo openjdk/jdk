@@ -41,7 +41,7 @@ import static org.testng.Assert.assertThrows;
 public class HttpContextTest {
 
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
-    
+
     @Test
     public static void test() throws IOException {
         final var server = HttpServer.create(null, 0);
