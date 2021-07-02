@@ -33,7 +33,7 @@ import java.io.IOException;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.HttpServer;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
@@ -44,7 +44,7 @@ public class HttpContextTest {
     
     @Test
     public static void test() throws IOException {
-        final var server = HttpsServer.create(null, 0);
+        final var server = HttpServer.create(null, 0);
         final var path = "/foo/";
 
         assertThrows(IAE, () -> server.removeContext(path));
