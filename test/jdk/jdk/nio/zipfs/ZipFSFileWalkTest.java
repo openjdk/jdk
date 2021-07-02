@@ -83,21 +83,21 @@ public class ZipFSFileWalkTest {
         try (final FileSystem fs = FileSystems.newFileSystem(jar)) {
             // walk using the root path and a relative path
             final List<Path> walkStartPaths = List.of(
-                    fs.getRootDirectories().iterator().next(),
+                    fs.getPath("/"),
                     fs.getPath("./"));
             for (final Path walkStartPath : walkStartPaths) {
                 // paths are relative to the start path of our tree walk
-                final Set<String> expectedDirs = new HashSet<>(Set.of(
-                        walkStartPath.toString(),
-                        walkStartPath.resolve("META-INF").toString(),
-                        walkStartPath.resolve("d1").toString(),
-                        walkStartPath.resolve("d2").toString(),
-                        walkStartPath.resolve("d3.").toString()));
-                final Set<String> expectedFiles = new HashSet<>(Set.of(
-                        walkStartPath.resolve("META-INF/MANIFEST.MF").toString(),
-                        walkStartPath.resolve("d1/file.txt").toString(),
-                        walkStartPath.resolve("file.txt").toString(),
-                        walkStartPath.resolve("d3./..file.txt").toString()));
+                final Set<String> expectedDirs = toString(Set.of(
+                        walkStartPath,
+                        walkStartPath.resolve("META-INF"),
+                        walkStartPath.resolve("d1"),
+                        walkStartPath.resolve("d2"),
+                        walkStartPath.resolve("d3.")));
+                final Set<String> expectedFiles = toString(Set.of(
+                        walkStartPath.resolve("META-INF/MANIFEST.MF"),
+                        walkStartPath.resolve("d1/file.txt"),
+                        walkStartPath.resolve("file.txt"),
+                        walkStartPath.resolve("d3./..file.txt")));
                 final SimpleJarFileVisitor visitor = new SimpleJarFileVisitor(expectedDirs, expectedFiles);
                 System.out.println("Walking file tree starting at " + walkStartPath + " of jar " + jar);
                 Files.walkFileTree(walkStartPath, visitor);
@@ -105,6 +105,12 @@ public class ZipFSFileWalkTest {
                 visitor.assertVisitedAllExpected();
             }
         }
+    }
+
+    private static Set<String> toString(final Set<Path> paths) {
+        final Set<String> converted = new HashSet<>();
+        paths.forEach(p -> converted.add(p.toString()));
+        return converted;
     }
 
     private static final class SimpleJarFileVisitor extends SimpleFileVisitor<Path> {
