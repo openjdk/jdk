@@ -2413,6 +2413,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+     case Op_VectorMaskCmp:
+       if (vlen < 2 || bit_size < 64) {
+         return false;
+      }
+      break;
     default:
       break;
     }

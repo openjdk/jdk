@@ -77,7 +77,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   assert(ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
   set_ref_processor(rp);
-  rp->setup_policy(clear_all_softrefs);
 
   gch->trace_heap_before_gc(_gc_tracer);
 
@@ -198,7 +197,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   {
     GCTraceTime(Debug, gc, phases) tm_m("Reference Processing", gc_timer());
 
-    ref_processor()->setup_policy(clear_all_softrefs);
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
     const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);

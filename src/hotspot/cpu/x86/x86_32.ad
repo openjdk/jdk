@@ -11481,7 +11481,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // Small ClearArray non-AVX512.
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
+              (UseAVX <= 2));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11542,7 +11542,7 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
 // Small ClearArray AVX512 non-constant length.
 instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-               UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
+               UseAVX > 2 &&
                !n->in(2)->bottom_type()->is_int()->is_con());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,17 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.java.lang.invoke.t8150782;
 
-import static java.lang.invoke.MethodHandles.*;
+package pkg2;
 
-public class TestCls {
+import pkg.C;
 
-    public static final Lookup LOOKUP = lookup();
+/**
+ * {@inheritDoc}
+ *
+ * A class that extends pkg.C from onother package and inherits some of its comments.
+ */
+public class E extends C {
 
-    private static class PrivateSIC {}
-    public static Class getPrivateSIC() { return PrivateSIC.class; }
-    public static Lookup getLookupForPrivateSIC() { return lookup(); }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public E method() {
+        return null;
+    }
 
 }
-

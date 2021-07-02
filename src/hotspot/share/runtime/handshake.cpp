@@ -624,8 +624,8 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
 };
 
 bool HandshakeState::suspend_with_handshake() {
-  if (_handshakee->is_exiting() ||
-     _handshakee->threadObj() == NULL) {
+  assert(_handshakee->threadObj() != NULL, "cannot suspend with a NULL threadObj");
+  if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }

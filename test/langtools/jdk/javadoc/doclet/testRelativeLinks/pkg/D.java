@@ -1,13 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,11 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
--->
-<configuration version="2.0" label="TestSettings" description="Configuration for testing promotion failed event" provider="Oracle">
+ */
 
-    <event name="jdk.EvacuationFailed">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-</configuration>
+package pkg;
+
+/**
+ * {@inheritDoc}
+ *
+ * A class that extends C and inherits some of its comments.
+ */
+public class D extends C {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public D method() {
+        return null;
+    }
+
+}

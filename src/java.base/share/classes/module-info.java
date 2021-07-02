@@ -199,6 +199,7 @@ module java.base {
         jdk.attach,
         jdk.charsets,
         jdk.compiler,
+        jdk.crypto.cryptoki,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.jshell,
