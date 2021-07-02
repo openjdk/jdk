@@ -459,7 +459,7 @@ public class GenerateJfrFiles {
 
             if (event.maxSize < 127) {
                 event.sizeRange = EventSizeRange.LT_128;
-            } else if (event.minSize >=127) {
+            } else if (event.minSize >= 127) {
                 event.sizeRange = EventSizeRange.GE_128;
             } else {
                 event.sizeRange = EventSizeRange.UNCERTAIN;
