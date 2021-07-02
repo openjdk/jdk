@@ -11023,8 +11023,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX <= 2));
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11084,10 +11083,9 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-               UseAVX > 2 &&
-               !n->in(2)->bottom_type()->is_long()->is_con());
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
   format %{ $$template
@@ -11146,7 +11144,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_Reg
 instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
-  predicate(UseAVX <=2 && ((ClearArrayNode*)n)->is_large());
+  predicate((UseAVX <=2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11197,7 +11195,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((ClearArrayNode*)n)->is_large());
+  predicate((UseAVX > 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
@@ -11248,9 +11246,9 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, r
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-               n->in(2)->bottom_type()->is_long()->is_con()));
+              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
