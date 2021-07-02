@@ -105,7 +105,7 @@ public final class FileServerHandler implements HttpHandler {
     void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException {
         if (Files.isDirectory(path)) {
-            if (testMissingSlash(exchange)) {
+            if (missingSlash(exchange)) {
                 handleMovedPermanently(exchange);
                 return;
             }
@@ -154,20 +154,14 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    boolean testMissingSlash(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestURI().getPath().endsWith("/")) {
-            handleMovedPermanently(exchange);
-            return true;
-        }
-        return false;
+    boolean missingSlash(HttpExchange exchange) {
+        return !exchange.getRequestURI().getPath().endsWith("/");
     }
 
     Path mapToPath(HttpExchange exchange, Path root) {
         URI rootURI = root.toUri();
         URI requestURI = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();
-        if (!contextPath.endsWith("/"))
-            contextPath += "/";
         String requestPath = URI.create(contextPath).relativize(requestURI).getPath();
         try {
             return Path.of(rootURI.resolve(requestPath)).normalize();
