@@ -239,6 +239,30 @@ public class GenerateJfrFiles {
         private TypeCounter eventCounter;
         private TypeCounter typeCounter;
 
+        static Map<String, Integer> maxSizeMap = new LinkedHashMap<>();
+
+        static {
+            maxSizeMap.put("const PackageEntry*", 9);
+            maxSizeMap.put("const Klass*", 9);
+            maxSizeMap.put("const ModuleEntry*", 9);
+            maxSizeMap.put("const ClassLoaderData*", 9);
+            maxSizeMap.put("const Method*", 9);
+            maxSizeMap.put("u8", 9);
+            maxSizeMap.put("Tickspan", 9);
+            maxSizeMap.put("Ticks", 9);
+            maxSizeMap.put("unsigned", 5);
+            maxSizeMap.put("u2", 3);
+            maxSizeMap.put("u1", 2);
+            maxSizeMap.put("s8", 9);
+            maxSizeMap.put("s4", 5);
+            maxSizeMap.put("s2", 3);
+            maxSizeMap.put("s1", 2);
+            maxSizeMap.put("double", 9);
+            maxSizeMap.put("float", 5);
+            maxSizeMap.put("bool", 1);
+            maxSizeMap.put("char", 2);
+        }
+
         Metadata(File metadataXml, File metadataSchema)
                 throws ParserConfigurationException, SAXException, FileNotFoundException, IOException {
             SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -409,18 +433,11 @@ public class GenerateJfrFiles {
                     te.minSize += field.type.minSize;
                 } else {
                     te.minSize += 1;
-                    if (type.equals("u8") || type.equals("double") || type.equals("s8") || type.equals("Ticks")
-                        || type.equals("Tickspan") || type.endsWith("*")) {
-                        te.maxSize += 9;
-                    } else if (type.equals("float") || type.equals("s4") || type.equals("unsigned")) {
-                        te.maxSize += 5;
-                    } else if (type.equals("char") || type.equals("s1") || type.equals("u1")) {
-                        te.maxSize += 2;
-                    } else if (type.equals("bool")) {
-                        te.maxSize += 1;
-                    } else {
-                        te.maxSize += 9;
+                    Integer maxSize = maxSizeMap.get(type);
+                    if (maxSize == null) {
+                        throw new RuntimeException("Unknown max size for type: " + type);
                     }
+                    te.maxSize += maxSize;
                 }
             }
         }

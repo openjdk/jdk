@@ -62,4 +62,5 @@ enum EventSizeRange {
   GE_128,
   UNCERTAIN
 };
+
 #endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP
