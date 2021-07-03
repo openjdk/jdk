@@ -2013,7 +2013,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   uint old_trip_count = loop_head->trip_count();
   // Verify that unroll policy result is still valid.
   assert(old_trip_count > 1 &&
-      (!adjust_min_trip || 
+      (!adjust_min_trip ||
       (LoopUnrollMaximizeStrideLimit && stride_p <= max_jint / 2 - 2) ||
       (!LoopUnrollMaximizeStrideLimit && stride_p <= (1<<3)*loop_head->unrolled_count())), "sanity");
 
