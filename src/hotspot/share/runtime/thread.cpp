@@ -2462,12 +2462,11 @@ static inline JavaThread *prefetch_and_load_ptr(JavaThread*const * addr, intx pr
 }
 
 struct JavaThreadPrefetchedIterator {
-    ThreadsList* _list;
     JavaThread*const * _end;
     JavaThread*const * _current;
 
     JavaThreadPrefetchedIterator(ThreadsList* list) :
-      _list(list), _end(list->threads() + list->length()), _current(list->threads()) {}
+      _end(list->threads() + list->length()), _current(list->threads()) {}
 
     JavaThread* current() {
       return _current != _end
