@@ -1999,14 +1999,22 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public synchronized void write(int b) throws IOException {
-            out.write(b);
+            try {
+                out.write(b);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             written += 1;
         }
 
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            out.write(b, off, len);
+            try {
+                out.write(b, off, len);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             written += len;
         }
 
@@ -2041,7 +2049,11 @@ class ZipFileSystem extends FileSystem {
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            super.write(b, off, len);
+            try {
+                super.write(b, off, len);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             crc.update(b, off, len);
         }
 
@@ -2164,7 +2176,7 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public synchronized void write(int b) {
+        public synchronized void write(int b) throws UncheckedIOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b);
@@ -2186,7 +2198,7 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public synchronized void write(byte[] b, int off, int len) {
+        public synchronized void write(byte[] b, int off, int len) throws UncheckedIOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b, off, len);
@@ -2214,7 +2226,7 @@ class ZipFileSystem extends FileSystem {
             }
         }
 
-        private void writeToFile(int b) {
+        private void writeToFile(int b) throws UncheckedIOException {
             try {
                 tmpFileOS.write(b);
             } catch (IOException e) {
@@ -2223,7 +2235,7 @@ class ZipFileSystem extends FileSystem {
             totalWritten++;
         }
 
-        private void writeToFile(byte[] b, int off, int len) {
+        private void writeToFile(byte[] b, int off, int len) throws UncheckedIOException {
             try {
                 tmpFileOS.write(b, off, len);
             } catch (IOException e) {
