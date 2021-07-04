@@ -370,7 +370,7 @@ public class TransPatterns extends TreeTranslator {
             ListBuffer<JCStatement> statements = new ListBuffer<>();
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + tree.pos + target.syntheticNameChar() + "temp"),
-                    seltype,
+                    seltype.hasTag(BOT) ? syms.objectType : seltype,
                     currentMethodSym);
             boolean hasNullCase = cases.stream()
                                        .flatMap(c -> c.labels.stream())
