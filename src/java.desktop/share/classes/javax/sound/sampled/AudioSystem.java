@@ -241,7 +241,7 @@ public class AudioSystem {
             }
         }
 
-        return list.toArray(new Line.Info[list.size()]);
+        return list.toArray(new Line.Info[0]);
     }
 
     /**
