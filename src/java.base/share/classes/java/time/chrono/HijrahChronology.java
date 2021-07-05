@@ -518,12 +518,10 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      */
     @Override
     public HijrahEra eraOf(int eraValue) {
-        switch (eraValue) {
-            case 1:
-                return HijrahEra.AH;
-            default:
-                throw new DateTimeException("invalid Hijrah era");
-        }
+        return switch (eraValue) {
+            case 1 -> HijrahEra.AH;
+            default -> throw new DateTimeException("invalid Hijrah era");
+        };
     }
 
     @Override
