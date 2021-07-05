@@ -123,11 +123,9 @@ class ZipFileSystem extends FileSystem {
     private final boolean useTempFile;   // use a temp file for newOS, default
                                          // is to use BAOS for better performance
 
-    private static final int DEFAULT_TEMP_FILE_CREATION_THRESHOLD = 10 * 1024 * 1024; // 10 MB
     // a threshold, in bytes, to decide whether to create a temp file
-    // for outputstream of a zip entry, when useTempFile
-    // isn't explicitly enabled
-    private final int tempFileCreationThreshold;
+    // for outputstream of a zip entry
+    private final int tempFileCreationThreshold = 10 * 1024 * 1024; // 10 MB
 
     private final boolean forceEnd64;
     private final int defaultCompressionMethod; // METHOD_STORED if "noCompression=true"
@@ -153,7 +151,6 @@ class ZipFileSystem extends FileSystem {
             (String)env.get("encoding") : "UTF-8";
         this.noExtt = "false".equals(env.get("zipinfo-time"));
         this.useTempFile  = isTrue(env, "useTempFile");
-        this.tempFileCreationThreshold = initTempFileThreshold(env);
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
@@ -244,24 +241,6 @@ class ZipFileSystem extends FileSystem {
     // returns true if there is a name=true/"true" setting in env
     private static boolean isTrue(Map<String, ?> env, String name) {
         return "true".equals(env.get(name)) || TRUE.equals(env.get(name));
-    }
-
-    private static int initTempFileThreshold(Map<String, ?> env) {
-        final Object val = env.get("tempFileThreshold");
-        if (val == null) {
-            return DEFAULT_TEMP_FILE_CREATION_THRESHOLD;
-        }
-        if (val instanceof String v) {
-            try {
-                return Math.min(Integer.parseInt(v), MAX_ARRAY_SIZE);
-            } catch (NumberFormatException nfe) {
-                return DEFAULT_TEMP_FILE_CREATION_THRESHOLD;
-            }
-        }
-        if (val instanceof Integer v) {
-            return Math.min(v, MAX_ARRAY_SIZE);
-        }
-        return DEFAULT_TEMP_FILE_CREATION_THRESHOLD;
     }
 
     // Initialize the default owner for files inside the zip archive.
@@ -1973,7 +1952,7 @@ class ZipFileSystem extends FileSystem {
         if (zc.isUTF8())
             e.flag |= FLAG_USE_UTF8;
         OutputStream os;
-        if (useTempFile || (tempFileCreationThreshold > 0 && e.size >= tempFileCreationThreshold)) {
+        if (useTempFile || e.size >= tempFileCreationThreshold) {
             e.file = getTempPathForEntry(null);
             os = Files.newOutputStream(e.file, WRITE);
         } else {
@@ -2169,9 +2148,7 @@ class ZipFileSystem extends FileSystem {
         private OutputStream tmpFileOS;
 
         FileRolloverOutputStream(final Entry e) {
-            super(tempFileCreationThreshold <= 0
-                    ? ((e.size > 0 && e.size <= MAX_ARRAY_SIZE) ? (int) e.size : 8192)
-                    : ((e.size > 0 && e.size <= tempFileCreationThreshold) ? (int) e.size : 8192));
+            super(8192);
             this.entry = e;
         }
 
@@ -2182,7 +2159,7 @@ class ZipFileSystem extends FileSystem {
                 writeToFile(b);
                 return;
             }
-            if (tempFileCreationThreshold <= 0 || (totalWritten + 1 < tempFileCreationThreshold)) {
+            if (totalWritten + 1 < tempFileCreationThreshold) {
                 // write to our in-memory byte array
                 super.write(b);
                 totalWritten++;
@@ -2204,7 +2181,7 @@ class ZipFileSystem extends FileSystem {
                 writeToFile(b, off, len);
                 return;
             }
-            if (tempFileCreationThreshold <= 0 || (totalWritten + len < tempFileCreationThreshold)) {
+            if (totalWritten + len < tempFileCreationThreshold) {
                 // write to our in-memory byte array
                 super.write(b, off, len);
                 totalWritten += len;
