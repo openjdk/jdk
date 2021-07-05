@@ -272,7 +272,7 @@ public abstract class URLStreamHandler {
             if (ind < 0) {
                 path = "/";
             } else {
-                path = path.substring(0, ind).concat("/");
+                path = path.substring(0, ind + 1);
             }
         }
         if (path == null)
