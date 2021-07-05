@@ -85,10 +85,8 @@ size_t NonblockingQueue<T, next_ptr>::length() const {
 
 // An append operation atomically exchanges the new tail with the queue tail.
 // It then sets the "next" value of the old tail to the head of the list being
-// appended; it is an invariant that the old tail's "next" value is NULL.
-// But if the old tail is NULL then the queue was empty.  In this case the
-// head of the list being appended is instead stored in the queue head; it is
-// an invariant that the queue head is NULL in this case.
+// appended. If the old tail is NULL then the queue was empty, then the head
+// of the list being appended is instead stored in the queue head.
 //
 // This means there is a period between the exchange and the old tail update
 // where the queue sequence is split into two parts, the list from the queue
@@ -105,12 +103,23 @@ void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
   assert(next(last) == NULL, "precondition");
   set_next(last, end_marker());
   T* old_tail = Atomic::xchg(&_tail, &last);
-  if ((old_tail == NULL) ||
+  bool is_old_tail_null = (old_tail == NULL);
+  if (is_old_tail_null ||
       // Try to install first as old_tail's next.
       !is_end(Atomic::cmpxchg(next_ptr(*old_tail), end_marker(), &first))) {
     // Install first as the new head if either
     // (1) the list was empty, or
     // (2) a concurrent try_pop claimed old_tail, so it is no longer in the list.
+    // Note that multiple concurrent push/append operations cannot modify
+    // _head simultaneously, because the Atomic::xchg() above orders these
+    // push/append operations so they perform Atomic::cmpxchg() on different
+    // old_tail. Thus, the cmpxchg can only fail because of a concurrent try_pop.
+    DEBUG_ONLY(T* old_head = Atomic::load(&_head);)
+    // If old_tail is NULL, old_head could be NULL, or an unseen object
+    // that is being popped.  Otherwise, old_head must be either NULL
+    // or the same as old_tail.
+    assert(is_old_tail_null ||
+           old_head == NULL || old_head == old_tail, "invariant");
     Atomic::store(&_head, &first);
   }
 }
@@ -179,10 +188,13 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
 template<typename T, T* volatile* (*next_ptr)(T&)>
 T* NonblockingQueue<T, next_ptr>::pop() {
   T* result = NULL;
+  // Typically try_pop() will succeed without retrying many times, thus we
+  // omit SpinPause in the loop body.  SpinPause or yield may be worthwhile
+  // in rare, highly contended cases, and client code could implement such
+  // with try_pop().
   while (!try_pop(&result)) {}
   return result;
 }
-
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
 Pair<T*, T*> NonblockingQueue<T, next_ptr>::take_all() {

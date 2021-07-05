@@ -5956,6 +5956,10 @@ class StubGenerator: public StubCodeGenerator {
         acquire = false;
         release = false;
         break;
+      case memory_order_release:
+        acquire = false;
+        release = true;
+        break;
       default:
         acquire = true;
         release = true;
@@ -6036,6 +6040,20 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_8_relaxed
       (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    AtomicStubMark mark_cmpxchg_4_release
+      (_masm, &aarch64_atomic_cmpxchg_4_release_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_release);
+    AtomicStubMark mark_cmpxchg_8_release
+      (_masm, &aarch64_atomic_cmpxchg_8_release_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_release);
+
+    AtomicStubMark mark_cmpxchg_4_seq_cst
+      (_masm, &aarch64_atomic_cmpxchg_4_seq_cst_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_seq_cst);
+    AtomicStubMark mark_cmpxchg_8_seq_cst
+      (_masm, &aarch64_atomic_cmpxchg_8_seq_cst_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_seq_cst);
 
     ICache::invalidate_range(first_entry, __ pc() - first_entry);
   }
@@ -7203,6 +7221,10 @@ DEFAULT_ATOMIC_OP(cmpxchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
 DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
 DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _release)
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _release)
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _seq_cst)
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
 
 #undef DEFAULT_ATOMIC_OP
 

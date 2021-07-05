@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,10 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package q;
 
-package pkg2;
+import p.Foo;
 
-/**
- * Just a dummy class to force the overview page to generate.
- */
-public class Foo {}
+// access protected inner class Foo.T
+public class Bar extends Foo {
+    public static final Class<?> T_CLS = T.class;
+    public static final Class<?> T_ARRAY_CLS = T[].class;
+
+    public static void meth(T[] arr) {
+        System.out.println("called method");
+    }
+}
