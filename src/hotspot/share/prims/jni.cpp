@@ -976,7 +976,7 @@ JNI_ENTRY(jobject, jni_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   HOTSPOT_JNI_NEWOBJECTA_ENTRY(env, clazz, (uintptr_t) methodID);
 
   jobject obj = NULL;
-  DT_RETURN_MARK(NewObjectA, jobject, (const jobject)obj);
+  DT_RETURN_MARK(NewObjectA, jobject, (const jobject&)obj);
 
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   obj = JNIHandles::make_local(THREAD, i);
