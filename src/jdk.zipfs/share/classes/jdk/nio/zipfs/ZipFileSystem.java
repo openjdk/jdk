@@ -106,8 +106,6 @@ class ZipFileSystem extends FileSystem {
     private static final String COMPRESSION_METHOD_DEFLATED = "DEFLATED";
     // Value specified for compressionMethod property to not compress Zip entries
     private static final String COMPRESSION_METHOD_STORED = "STORED";
-    // The maximum size of array to allocate. Some VMs reserve some header words in an array.
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
