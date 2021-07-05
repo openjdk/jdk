@@ -56,7 +56,7 @@ public class ToolProviderPositiveTest {
     static final ToolProvider SIMPLESERVER_TOOL = ToolProvider.findFirst("simpleserver")
             .orElseThrow(() -> new RuntimeException("simpleserver tool not found"));
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
-    static final Path TEST_DIR = CWD.resolve("dir");
+    static final Path TEST_DIR = CWD.resolve("ToolProviderPositiveTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
     static final String TEST_DIR_STR = TEST_DIR.toString();
     static final String TOOL_PROVIDER_CLS_NAME = SimpleServerTool.class.getName();
@@ -73,9 +73,10 @@ public class ToolProviderPositiveTest {
     }
 
     @BeforeTest
-    public void makeTestDirectoryAndFile() throws IOException {
-        if (Files.exists(TEST_DIR))
+    public void setup() throws IOException {
+        if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        }
         Files.createDirectories(TEST_DIR);
         Files.createFile(TEST_FILE);
     }
@@ -186,9 +187,10 @@ public class ToolProviderPositiveTest {
     }
 
     @AfterTest
-    public void deleteTestDirectory() throws IOException {
-        if (Files.exists(TEST_DIR))
+    public void teardown() throws IOException {
+        if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        }
     }
 
     // --- helper methods ---

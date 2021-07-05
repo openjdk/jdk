@@ -154,11 +154,11 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    boolean missingSlash(HttpExchange exchange) {
+    static boolean missingSlash(HttpExchange exchange) {
         return !exchange.getRequestURI().getPath().endsWith("/");
     }
 
-    Path mapToPath(HttpExchange exchange, Path root) {
+    static Path mapToPath(HttpExchange exchange, Path root) {
         URI rootURI = root.toUri();
         URI requestURI = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();
@@ -170,7 +170,7 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    Path indexFile(Path path) {
+    static Path indexFile(Path path) {
         Path html = path.resolve("index.html");
         Path htm = path.resolve("index.htm");
         return Files.exists(html) ? html : Files.exists(htm) ? htm : null;
@@ -225,7 +225,7 @@ public final class FileServerHandler implements HttpHandler {
             </html>
             """;
 
-    String dirListing(HttpExchange exchange, Path path) throws IOException {
+    static String dirListing(HttpExchange exchange, Path path) throws IOException {
         var sb = new StringBuffer(openHTML
                 + "<h1>Directory listing for "
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)

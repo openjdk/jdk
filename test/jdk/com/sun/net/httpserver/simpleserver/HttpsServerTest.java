@@ -39,6 +39,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,17 +92,25 @@ public class HttpsServerTest {
 
     @Test
     public void testCreate() throws IOException {
-        final var s = HttpsServer.create(null, 0, "/foo/", new Handler());
-        assertNull(s.getAddress());
-        s.bind(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
-        assertEquals(s.getAddress().getAddress(), LOOPBACK_ADDR);
-        s.removeContext("/foo/");  // throws if context doesn't exist
+        assertNull(HttpsServer.create().getAddress());
+
+        final var s1 = HttpsServer.create(null, 0);
+        assertNull(s1.getAddress());
+        s1.bind(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
+        assertEquals(s1.getAddress().getAddress(), LOOPBACK_ADDR);
+
+        final var s2 = HttpsServer.create(null, 0, "/foo/", new Handler());
+        assertNull(s2.getAddress());
+        s2.bind(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
+        assertEquals(s2.getAddress().getAddress(), LOOPBACK_ADDR);
+        s2.removeContext("/foo/");  // throws if context doesn't exist
     }
 
     @Test
     public void testExchange() throws Exception {
+        var f = new Filter();
         var s = HttpsServer.create(
-                new InetSocketAddress(LOOPBACK_ADDR, 0), 0, "/test", new Handler());
+                new InetSocketAddress(LOOPBACK_ADDR, 0), 0, "/test", new Handler(), f);
         s.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         s.start();
         try {
@@ -114,6 +124,7 @@ public class HttpsServerTest {
             assertEquals(response.body(), "hello world");
             assertEquals(response.headers().firstValue("content-length").get(),
                     Integer.toString("hello world".length()));
+            assertEquals(response.statusCode(), f.responseCode.get());
         } finally {
             s.stop(0);
         }
@@ -141,6 +152,24 @@ public class HttpsServerTest {
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
             }
+        }
+    }
+
+    /**
+     * A test post-processing filter that captures the response code
+     */
+    static class Filter extends com.sun.net.httpserver.Filter {
+        final AtomicInteger responseCode = new AtomicInteger();
+
+        @Override
+        public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+            chain.doFilter(exchange);
+            responseCode.set(exchange.getResponseCode());
+        }
+
+        @Override
+        public String description() {
+            return "HttpsServerTest Filter";
         }
     }
 }

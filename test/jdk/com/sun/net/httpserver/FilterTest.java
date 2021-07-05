@@ -346,8 +346,13 @@ public class FilterTest {
             e.setAttribute("foo", "bar");
             originalExchange = e;
         });
-        var adaptFilter = Filter.adaptRequest("Add x-foo request header",
-                r -> r.with("x-foo", List.of("bar")));
+        var adaptFilter = Filter.adaptRequest("Add x-foo request header", r -> {
+            // Confirm request state is unchanged
+            assertEquals(r.getRequestHeaders(), originalExchange.getRequestHeaders());
+            assertEquals(r.getRequestURI(), originalExchange.getRequestURI());
+            assertEquals(r.getRequestMethod(), originalExchange.getRequestMethod());
+            return r.with("x-foo", List.of("bar"));
+        });
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(captureFilter);
@@ -406,6 +411,9 @@ public class FilterTest {
             assertEquals(exchange.getResponseBody(), originalExchange.getResponseBody());
             assertEquals(exchange.getAttribute("foo"), originalExchange.getAttribute("foo"));
             assertFalse(exchange.getRequestHeaders().equals(originalExchange.getRequestHeaders()));
+
+            exchange.setAttribute("foo", "barbar");
+            assertEquals(exchange.getAttribute("foo"), originalExchange.getAttribute("foo"));
 
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {

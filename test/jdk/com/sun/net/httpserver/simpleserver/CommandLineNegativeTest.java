@@ -53,13 +53,14 @@ public class CommandLineNegativeTest {
 
     static final String JAVA = System.getProperty("java.home") + "/bin/java";
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
-    static final Path TEST_DIR = CWD.resolve("dir");
+    static final Path TEST_DIR = CWD.resolve("CommandLineNegativeTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
 
     @BeforeTest
-    public void makeTestDirectoryAndFile() throws IOException {
-        if (Files.exists(TEST_DIR))
+    public void setup() throws IOException {
+        if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        }
         Files.createDirectories(TEST_DIR);
         Files.createFile(TEST_FILE);
     }
@@ -232,9 +233,10 @@ public class CommandLineNegativeTest {
     }
 
     @AfterTest
-    public void deleteTestDirectory() throws IOException {
-        if (Files.exists(TEST_DIR))
+    public void teardown() throws IOException {
+        if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        }
     }
 
     // --- helper methods ---
