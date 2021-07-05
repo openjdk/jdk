@@ -928,52 +928,30 @@ public:
 
   // ("Weak") Reference processing support.
   //
-  // G1 has 2 instances of the reference processor class. One
-  // (_ref_processor_cm) handles reference object discovery
-  // and subsequent processing during concurrent marking cycles.
+  // G1 has 2 instances of the reference processor class.
   //
-  // The other (_ref_processor_stw) handles reference object
-  // discovery and processing during full GCs and incremental
-  // evacuation pauses.
+  // One (_ref_processor_cm) handles reference object discovery and subsequent
+  // processing during concurrent marking cycles. Discovery is enabled/disabled
+  // at the start/end of a concurrent marking cycle.
   //
-  // During an incremental pause, reference discovery will be
-  // temporarily disabled for _ref_processor_cm and will be
-  // enabled for _ref_processor_stw. At the end of the evacuation
-  // pause references discovered by _ref_processor_stw will be
-  // processed and discovery will be disabled. The previous
-  // setting for reference object discovery for _ref_processor_cm
-  // will be re-instated.
+  // The other (_ref_processor_stw) handles reference object discovery and
+  // processing during incremental evacuation pauses and full GC pauses.
   //
-  // At the start of marking:
-  //  * Discovery by the CM ref processor is verified to be inactive
-  //    and it's discovered lists are empty.
-  //  * Discovery by the CM ref processor is then enabled.
+  // ## Incremental evacuation pauses
   //
-  // At the end of marking:
-  //  * Any references on the CM ref processor's discovered
-  //    lists are processed (possibly MT).
+  // STW ref processor discovery is enabled/disabled at the start/end of an
+  // incremental evacuation pause. No particular handling of the CM ref
+  // processor is needed, apart from treating the discovered references as
+  // roots; CM discovery does not need to be temporarily disabled as all
+  // marking threads are paused during incremental evacuation pauses.
   //
-  // At the start of full GC we:
-  //  * Disable discovery by the CM ref processor and
-  //    empty CM ref processor's discovered lists
-  //    (without processing any entries).
-  //  * Verify that the STW ref processor is inactive and it's
-  //    discovered lists are empty.
-  //  * Temporarily set STW ref processor discovery as single threaded.
-  //  * Temporarily clear the STW ref processor's _is_alive_non_header
-  //    field.
-  //  * Finally enable discovery by the STW ref processor.
+  // ## Full GC pauses
   //
-  // The STW ref processor is used to record any discovered
-  // references during the full GC.
-  //
-  // At the end of a full GC we:
-  //  * Enqueue any reference objects discovered by the STW ref processor
-  //    that have non-live referents. This has the side-effect of
-  //    making the STW ref processor inactive by disabling discovery.
-  //  * Verify that the CM ref processor is still inactive
-  //    and no references have been placed on it's discovered
-  //    lists (also checked as a precondition during concurrent start).
+  // We abort any ongoing concurrent marking cycle, disable CM discovery, and
+  // temporarily substitute a new closure for the STW ref processor's
+  // _is_alive_non_header field (old value is restored after the full GC). Then
+  // STW ref processor discovery is enabled, and marking & compaction
+  // commences.
 
   // The (stw) reference processor...
   ReferenceProcessor* _ref_processor_stw;
