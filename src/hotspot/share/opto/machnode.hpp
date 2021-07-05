@@ -376,8 +376,8 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
-  void set_removed(){ _removed = true; }
-  bool get_removed(){ return _removed; }
+  void set_removed() { _removed = true; }
+  bool get_removed() { return _removed; }
 
 #ifndef PRODUCT
   virtual const char *Name() const = 0; // Machine-specific name
