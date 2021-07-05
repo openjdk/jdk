@@ -67,6 +67,8 @@
  * The critical point where synchronization is needed are mark word accesses:
  *   1. markword loads are using the "relaxed" loads, due to the reasons above;
  *   2. markword stores that publish new forwardee are marked with "release";
+ *
+ * TODO: When "Consume" is available, load mark words with "consume" for extra safety.
  */
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
