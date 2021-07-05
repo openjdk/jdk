@@ -29,8 +29,6 @@ import java.util.*;
 
 class ContextList {
 
-    final static int MAX_CONTEXTS = 50;
-
     private final LinkedList<HttpContextImpl> list = new LinkedList<>();
 
     public synchronized void add (HttpContextImpl ctx) {
@@ -41,7 +39,7 @@ class ContextList {
         list.add (ctx);
     }
 
-    synchronized boolean contains(HttpContextImpl ctx) {
+    boolean contains(HttpContextImpl ctx) {
         return findContext(ctx.getProtocol(), ctx.getPath(), true) != null;
     }
 

@@ -68,6 +68,20 @@ public class HttpContextTest {
     }
 
     /**
+     * Confirms that it is possible to create a subcontext, a context whose path
+     * shares the prefix of an existing context.
+     */
+    @Test
+    public static void testSubcontext() throws IOException {
+        final var server = HttpServer.create(null, 0);
+        server.createContext("/foo/bar/");
+        server.createContext("/foo/");
+
+        server.createContext("/foo");
+        server.createContext("/foo/bar");
+    }
+
+    /**
      * A no-op handler
      */
     static class Handler implements HttpHandler {
