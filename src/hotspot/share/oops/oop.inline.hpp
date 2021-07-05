@@ -49,11 +49,6 @@ markWord oopDesc::mark() const {
   return markWord(v);
 }
 
-markWord oopDesc::mark_acquire() const {
-  uintptr_t v = HeapAccess<MO_ACQUIRE>::load_at(as_oop(), mark_offset_in_bytes());
-  return markWord(v);
-}
-
 markWord* oopDesc::mark_addr() const {
   return (markWord*) &_mark;
 }
