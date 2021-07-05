@@ -40,10 +40,11 @@ import java.util.concurrent.TimeUnit;
  * This is intentionally a manual test. The (jtreg) configurations below are here only
  * for reference about runtime expectations of this test.
  *
+ * @test
  * @bug 8190753
  * @summary Verify that using zip filesystem for opening an outputstream for a zip entry whose
  * compressed size is large, doesn't run into "Negative initial size" exception
- * @run testng/othervm/timeout=300 LargeCompressedEntrySizeTest
+ * @run testng/manual/othervm LargeCompressedEntrySizeTest
  */
 public class LargeCompressedEntrySizeTest {
 
