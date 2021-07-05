@@ -2833,7 +2833,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         }
 #endif
         // first time here. Set profile type.
-        __ ldr(tmp, mdo_addr);
+        __ str(tmp, mdo_addr);
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
