@@ -671,7 +671,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         if (useSegmentedHeapDump) {
             out.writeByte((byte)HPROF_HEAP_DUMP_SEGMENT);
             out.writeInt(0);
-            out.write(size);
+            out.writeInt(size);
         } else {
             out.writeByte((byte) (HPROF_HEAP_DUMP));
             out.writeInt(0);
