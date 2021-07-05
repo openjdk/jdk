@@ -2137,9 +2137,6 @@ class ZipFileSystem extends FileSystem {
     // byte array, to that newly created file. The temp file is then opened
     // in append mode and any subsequent writes, including the one which triggered
     // the temporary file creation, will be written to the file.
-    // A threshold value of <= 0 implies rollover is disabled, in which case this
-    // FileRolloverOutputStream behaves just like a ByteArrayOutputStream and just passes
-    // on the write operations to the ByteArrayOutputStream implementation.
     private class FileRolloverOutputStream extends ByteArrayOutputStream {
         private final Entry entry;
         private long totalWritten = 0;
