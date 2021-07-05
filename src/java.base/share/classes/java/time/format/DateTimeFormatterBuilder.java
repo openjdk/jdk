@@ -2557,13 +2557,13 @@ public final class DateTimeFormatterBuilder {
         @Override
         public String toString() {
             // using ordinals to avoid javac synthetic inner class
-            switch (ordinal()) {
-                case 0: return "ParseCaseSensitive(true)";
-                case 1: return "ParseCaseSensitive(false)";
-                case 2: return "ParseStrict(true)";
-                case 3: return "ParseStrict(false)";
-            }
-            throw new IllegalStateException("Unreachable");
+            return switch (ordinal()) {
+                case 0 -> "ParseCaseSensitive(true)";
+                case 1 -> "ParseCaseSensitive(false)";
+                case 2 -> "ParseStrict(true)";
+                case 3 -> "ParseStrict(false)";
+                default -> throw new IllegalStateException("Unreachable");
+            };
         }
     }
 
