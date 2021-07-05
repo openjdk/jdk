@@ -912,7 +912,7 @@ jobs:
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
           'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
-          --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
+          --add Microsoft.VisualStudio.Component.VC.14.29.arm64'
 
       - name: Configure
         run: >
@@ -921,7 +921,7 @@ jobs:
           $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION" ;
           & bash configure
           --with-conf-name=windows-aarch64
-          --with-msvc-toolset-version=14.28
+          --with-msvc-toolset-version=14.29
           --openjdk-target=aarch64-unknown-cygwin
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
