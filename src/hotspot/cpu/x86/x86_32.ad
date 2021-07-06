@@ -5021,7 +5021,7 @@ define %{
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
-// Chain instructions needed by selection algorithm.
+// Dummy reg-to-reg vector moves. Removed during post-selection cleanup.
 // Load Float
 instruct MoveF2LEG(legRegF dst, regF src) %{
   match(Set dst src);
