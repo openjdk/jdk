@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class Symbol extends VMObject {
   public long identityHash() {
     long addr_value = getAddress().asLongValue();
     long addr_bits =
-      (addr_value >> (VM.getVM().getLogMinObjAlignmentInBytes() + 3)) & 0xffffffffL;
+      (addr_value >> (VM.getVM().getLogBytesPerWord() + 3)) & 0xffffffffL;
     int  length = (int)getLength();
     int  byte0 = getByteAt(0);
     int  byte1 = getByteAt(1);
