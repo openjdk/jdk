@@ -159,7 +159,11 @@ public abstract class Reader {
                     while ((len = gis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
                     }
-                    // Check dump data header and print stack trace.
+                } catch (Exception e) {
+                    throw new IOException("Can not decompress the compressed hprof file", e);
+                }
+                // Check dump data header and print stack trace.
+                try {
                     PositionDataInputStream in2 = new PositionDataInputStream(
                         new BufferedInputStream(new FileInputStream(out)));
                     i = in2.readInt();
