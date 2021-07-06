@@ -171,7 +171,7 @@ public abstract class Reader {
                         return r.printStackTraces();
                     }
                 } catch (Exception e) {
-                    throw new IOException("Can not decompress the compressed hprof file", e);
+                    throw new IOException("Can not get stack trace from the compressed hprof file", e);
                 }
                 out.delete();
             } else {
