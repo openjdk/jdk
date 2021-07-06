@@ -350,6 +350,7 @@ G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bo
 }
 
 G1MonitoringScope::~G1MonitoringScope() {
-  MemoryService::track_memory_usage();
   _g1mm->update_sizes();
+  // Needs to be called after updating pool sizes.
+  MemoryService::track_memory_usage();
 }
