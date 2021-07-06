@@ -3203,7 +3203,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
 }
 
 void LIRGenerator::increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci) {
-  if (compilation()->count_backedges()) {
+  if (compilation()->is_profiling()) {
 #if defined(X86) && !defined(_LP64)
     // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
     LIR_Opr left_copy = new_register(left->type());
@@ -3589,12 +3589,5 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
   __ cmp(lir_cond_notEqual, layout, LIR_OprFact::intConst(0));
   __ cmove(lir_cond_notEqual, value_fixed, value, value_fixed, T_BYTE);
   value = value_fixed;
-  return value;
-}
-
-LIR_Opr LIRGenerator::maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
-  if (x->check_boolean()) {
-    value = mask_boolean(array, value, null_check_info);
-  }
   return value;
 }

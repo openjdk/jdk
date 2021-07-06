@@ -888,7 +888,6 @@ enum LIR_Code {
   , begin_op0
       , lir_label
       , lir_nop
-      , lir_backwardbranch_target
       , lir_std_entry
       , lir_osr_entry
       , lir_fpop_raw
