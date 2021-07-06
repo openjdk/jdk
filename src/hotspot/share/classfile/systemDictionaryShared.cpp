@@ -1485,6 +1485,8 @@ public:
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
+  assert(no_class_loading_should_happen(), "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
