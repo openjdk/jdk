@@ -394,7 +394,7 @@ public class SharedArchiveConsistency {
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
 
-        OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs); 
+        OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
 
         try {
             TestCommon.checkExecReturn(output, 0, true, HELLO_WORLD);
