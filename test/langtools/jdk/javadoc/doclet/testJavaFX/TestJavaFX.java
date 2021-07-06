@@ -420,7 +420,7 @@ public class TestJavaFX extends JavadocTester {
                 "--javafx",
                 "--disable-javafx-strict-checks",
                 "--no-platform-links",
-                "-Xdoclint:all",
+                "-Xdoclint:all,-missing",
                 "--source-path", "src5",
                 "pkg");
         checkExit(Exit.OK);
