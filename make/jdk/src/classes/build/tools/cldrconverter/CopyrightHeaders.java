@@ -26,6 +26,7 @@
 package build.tools.cldrconverter;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -146,8 +147,14 @@ class CopyrightHeaders {
     }
 
     private static int getYear() {
-        return new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"),
-                                         Locale.US).get(Calendar.YEAR);
+        Date date = new Date();
+        if (System.getenv("SOURCE_DATE_EPOCH") != null) {
+            date = new Date(1000 * Long.valueOf(System.getenv("SOURCE_DATE_EPOCH")));
+        }
+
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"), Locale.US);
+        calendar.setTime(date);
+        return calendar.get(Calendar.YEAR);
     }
 
     // no instantiation
