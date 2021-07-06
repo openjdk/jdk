@@ -2910,6 +2910,7 @@ void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_
 // initially as a reference only, so that we can modify it as needed.
 class G1YoungGCTraceTime {
   G1GCPauseType _pause_type;
+  GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
   char _young_gc_name_data[MaxYoungGCNameLength];
@@ -2919,20 +2920,23 @@ class G1YoungGCTraceTime {
   const char* update_young_gc_name() {
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
-             "Pause Young (%s)%s",
+             "Pause Young (%s) (%s)%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
+             GCCause::to_string(_pause_cause),
              G1CollectedHeap::heap()->evacuation_failed() ? " (Evacuation Failure)" : "");
     return _young_gc_name_data;
   }
 
 public:
-
   G1YoungGCTraceTime(GCCause::Cause cause) :
     // Take snapshot of current pause type at start as it may be modified during gc.
     // The strings for all Concurrent Start pauses are the same, so the parameter
     // does not matter here.
     _pause_type(G1CollectedHeap::heap()->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
-    _tt(update_young_gc_name(), NULL, cause, true) {
+    _pause_cause(cause),
+    // Fake a "no cause" and manually add the correct string in update_young_gc_name()
+    // to make the string look more natural.
+    _tt(update_young_gc_name(), NULL, GCCause::_no_gc, true) {
   }
 
   ~G1YoungGCTraceTime() {
