@@ -113,7 +113,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
   }
 
   // Prevent resurrection of unreachable weak references.
-  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
+  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value) &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked_strong(obj)) {
     return NULL;
