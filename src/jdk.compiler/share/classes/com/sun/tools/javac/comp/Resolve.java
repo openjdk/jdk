@@ -4005,7 +4005,8 @@ public class Resolve {
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.restricted.type", typeName);
+            return diags.create(log.currentSource(), pos,
+                    Errors.IllegalRefToRestrictedType(typeName));
         }
     }
 
@@ -4042,8 +4043,8 @@ public class Resolve {
             }
             if (!location.name.isEmpty()) {
                 if (location.kind == PCK && !site.tsym.exists() && location.name != names.java) {
-                    return diags.create(dkind, log.currentSource(), pos,
-                        "doesnt.exist", location);
+                    return diags.create(log.currentSource(), pos,
+                        Errors.DoesntExist(location));
                 }
                 hasLocation = !location.name.equals(names._this) &&
                         !location.name.equals(names._super);
@@ -4142,15 +4143,14 @@ public class Resolve {
                 }
             }
             Symbol ws = c.fst.asMemberOf(site, types);
-            return diags.create(dkind, log.currentSource(), pos,
-                      "cant.apply.symbol",
-                      kindName(ws),
-                      ws.name == names.init ? ws.owner.name : ws.name,
-                      methodArguments(ws.type.getParameterTypes()),
-                      methodArguments(argtypes),
-                      kindName(ws.owner),
-                      ws.owner.type,
-                      c.snd);
+            return diags.create(log.currentSource(), pos,
+                    Errors.CantApplySymbol(kindName(ws),
+                            ws.name == names.init ? ws.owner.name : ws.name,
+                            methodArguments(ws.type.getParameterTypes()),
+                            methodArguments(argtypes),
+                            kindName(ws.owner),
+                            ws.owner.type,
+                            c.snd).toType(dkind));
         }
 
         @Override
@@ -4201,17 +4201,16 @@ public class Resolve {
             }
             boolean truncatedDiag = candidatesMap.size() != filteredCandidates.size();
             if (filteredCandidates.size() > 1) {
-                JCDiagnostic err = diags.create(dkind,
+                JCDiagnostic err = diags.create(
                         null,
                         truncatedDiag ?
                             EnumSet.of(DiagnosticFlag.COMPRESSED) :
                             EnumSet.noneOf(DiagnosticFlag.class),
-                        log.currentSource(),
-                        pos,
-                        "cant.apply.symbols",
-                        name == names.init ? KindName.CONSTRUCTOR : kind.absentKind(),
-                        name == names.init ? site.tsym.name : name,
-                        methodArguments(argtypes));
+                        log.currentSource(), pos,
+                        Errors.CantApplySymbols(
+                                name == names.init ? KindName.CONSTRUCTOR : kind.absentKind(),
+                                name == names.init ? site.tsym.name : name,
+                                methodArguments(argtypes)).toType(dkind));
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(filteredCandidates, site));
             } else if (filteredCandidates.size() == 1) {
                 Map.Entry<Symbol, JCDiagnostic> _e =
@@ -4334,11 +4333,10 @@ public class Resolve {
                     return simpleDiag;
                 }
             }
-            String key = details == null ?
-                "cant.apply.diamond" :
-                "cant.apply.diamond.1";
-            return diags.create(dkind, log.currentSource(), pos, key,
-                    Fragments.Diamond(site.tsym), details);
+            JCDiagnostic.DiagnosticInfo info = (details == null) ?
+                    Errors.CantApplyDiamond(Fragments.Diamond(site.tsym), null) :
+                    Errors.CantApplyDiamond1(Fragments.Diamond(site.tsym), details).toType(dkind);
+            return diags.create(log.currentSource(), pos, info);
         }
     }
 
@@ -4378,43 +4376,31 @@ public class Resolve {
                 || (env != null && this.site != null
                     && !isAccessible(env, this.site))) {
                 if (sym.owner.kind == PCK) {
-                    return diags.create(dkind, log.currentSource(),
-                            pos, "not.def.access.package.cant.access",
-                        sym, sym.location(), inaccessiblePackageReason(env, sym.packge()));
-                } else if (   sym.packge() != syms.rootPackage
+                    return diags.create(log.currentSource(),
+                            pos, Errors.NotDefAccessPackageCantAccess(sym, sym.location(),
+                                    inaccessiblePackageReason(env, sym.packge())).toType(dkind));
+                } else if (sym.packge() != syms.rootPackage
                            && !symbolPackageVisible(env, sym)) {
-                    return diags.create(dkind, log.currentSource(),
-                            pos, "not.def.access.class.intf.cant.access.reason",
+                    return diags.create(log.currentSource(),
+                            pos, Errors.NotDefAccessClassIntfCantAccessReason(
                             sym, sym.location(), sym.location().packge(),
-                            inaccessiblePackageReason(env, sym.packge()));
+                            inaccessiblePackageReason(env, sym.packge())).toType(dkind));
                 } else {
-                    return diags.create(dkind, log.currentSource(),
-                            pos, "not.def.access.class.intf.cant.access",
-                        sym, sym.location());
+                    return diags.create(log.currentSource(),
+                            pos, Errors.NotDefAccessClassIntfCantAccess(
+                        sym, sym.location()).toType(dkind));
                 }
             }
             else if ((sym.flags() & (PRIVATE | PROTECTED)) != 0) {
-                return diags.create(dkind, log.currentSource(),
-                        pos, "report.access", sym,
+                return diags.create(log.currentSource(),
+                        pos, Errors.ReportAccess(sym,
                         asFlagSet(sym.flags() & (PRIVATE | PROTECTED)),
-                        sym.location());
+                        sym.location()).toType(dkind));
             }
             else {
-                return diags.create(dkind, log.currentSource(),
-                        pos, "not.def.public.cant.access", sym, sym.location());
+                return diags.create(log.currentSource(),
+                        pos, Errors.NotDefPublicCantAccess(sym, sym.location()).toType(dkind));
             }
-        }
-
-        private String toString(Type type) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(type);
-            if (type != null) {
-                sb.append("[tsym:").append(type.tsym);
-                if (type.tsym != null)
-                    sb.append("packge:").append(type.tsym.packge());
-                sb.append("]");
-            }
-            return sb.toString();
         }
     }
 
@@ -4466,8 +4452,8 @@ public class Resolve {
                 }
             }
 
-            return diags.create(dkind, log.currentSource(),
-                    pos, "not.def.access.package.cant.access", sym, sym.packge(), details);
+            return diags.create(log.currentSource(),
+                    pos, Errors.NotDefAccessPackageCantAccess(sym, sym.packge(), details));
         }
     }
 
@@ -4533,8 +4519,7 @@ public class Resolve {
             Symbol errSym = ((sym.kind == TYP && sym.type.hasTag(CLASS))
                 ? types.erasure(sym.type).tsym
                 : sym);
-            return diags.create(dkind, log.currentSource(), pos,
-                    "non-static.cant.be.ref", kindName(sym), errSym);
+            return diags.create(log.currentSource(), pos, Errors.NonStaticCantBeRef(kindName(sym), errSym));
         }
     }
 
@@ -4584,14 +4569,14 @@ public class Resolve {
             Symbol s2 = diagSyms.tail.head;
             Name sname = s1.name;
             if (sname == names.init) sname = s1.owner.name;
-            return diags.create(dkind, log.currentSource(),
-                    pos, "ref.ambiguous", sname,
-                    kindName(s1),
-                    s1,
-                    s1.location(site, types),
-                    kindName(s2),
-                    s2,
-                    s2.location(site, types));
+            return diags.create(log.currentSource(), pos,
+                    Errors.RefAmbiguous(sname,
+                            kindName(s1),
+                            s1,
+                            s1.location(site, types),
+                            kindName(s2),
+                            s2,
+                            s2.location(site, types)).toType(dkind));
         }
 
         /**
@@ -4657,17 +4642,18 @@ public class Resolve {
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-            final String key;
-            if (!unboundLookup) {
-                key = "bad.static.method.in.bound.lookup";
-            } else if (sym.isStatic()) {
-                key = "bad.static.method.in.unbound.lookup";
-            } else {
-                key = "bad.instance.method.in.unbound.lookup";
+            if (sym.kind.isResolutionError()) {
+                return ((ResolveError) sym).getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes);
             }
-            return sym.kind.isResolutionError() ?
-                    ((ResolveError)sym).getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes) :
-                    diags.create(dkind, log.currentSource(), pos, key, Kinds.kindName(sym), sym);
+            JCDiagnostic.DiagnosticInfo info;
+            if (!unboundLookup) {
+                info = Fragments.BadStaticMethodInBoundLookup(Kinds.kindName(sym), sym);
+            } else if (sym.isStatic()) {
+                info = Fragments.BadStaticMethodInUnboundLookup(Kinds.kindName(sym), sym);
+            } else {
+                info = Fragments.BadInstanceMethodInUnboundLookup(Kinds.kindName(sym), sym);
+            }
+            return diags.create(log.currentSource(), pos, info);
         }
     }
 
@@ -4683,8 +4669,8 @@ public class Resolve {
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-           return diags.create(dkind, log.currentSource(), pos,
-                "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
+           return diags.create(log.currentSource(), pos,
+                   Fragments.CantAccessInnerClsConstr(site.tsym.name, argtypes, site.getEnclosingType()));
         }
     }
 
@@ -4700,9 +4686,7 @@ public class Resolve {
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-            JCDiagnostic d = diags.create(dkind, log.currentSource(), pos,
-                "cant.access", ex.sym, ex.getDetailValue());
-
+            JCDiagnostic d = diags.create(log.currentSource(), pos, Errors.CantAccess(ex.sym, ex.getDetailValue()));
             d.setFlag(DiagnosticFlag.NON_DEFERRABLE);
             return d;
         }
