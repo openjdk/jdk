@@ -98,6 +98,7 @@ public class VM {
   private boolean      isLP64;
   private int          bytesPerLong;
   private int          bytesPerWord;
+  private int          logBytesPerWord;
   private int          objectAlignmentInBytes;
   private int          minObjAlignmentInBytes;
   private int          logMinObjAlignmentInBytes;
@@ -477,6 +478,7 @@ public class VM {
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
     bytesPerWord = db.lookupIntConstant("BytesPerWord").intValue();
+    logBytesPerWord = db.lookupIntConstant("LogBytesPerWord").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     Flags_DEFAULT = db.lookupIntConstant("JVMFlagOrigin::DEFAULT").intValue();
     Flags_COMMAND_LINE = db.lookupIntConstant("JVMFlagOrigin::COMMAND_LINE").intValue();
@@ -686,6 +688,10 @@ public class VM {
 
   public int getBytesPerWord() {
     return bytesPerWord;
+  }
+
+  public int getLogBytesPerWord() {
+    return logBytesPerWord;
   }
 
   /** Get minimum object alignment in bytes. */
