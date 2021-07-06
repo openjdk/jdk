@@ -43,7 +43,7 @@ public class AESGCMBench extends CryptoBase {
     @Param({"128"})
     private int keyLength;
 
-    @Param({"" + 1024, "" +  1500, "" + 4096, "" + 16384})
+    @Param({"1024", "1500", "4096", "16384"})
     private int dataSize;
 
     byte[] encryptedData;
