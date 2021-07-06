@@ -48,7 +48,7 @@ import static org.testng.Assert.assertEquals;
 
 /*
  * @test
- * @summary Basic tests for MIME types in response headers
+ * @summary Tests for MIME types in response headers
  * @modules java.base/sun.net.www:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder

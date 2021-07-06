@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Basic tests for the file-server handler
+ * @summary Tests for the FileServerHandler
  * @run testng FileServerHandlerTest
  */
 

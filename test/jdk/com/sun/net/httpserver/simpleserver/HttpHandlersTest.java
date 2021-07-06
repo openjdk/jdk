@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Basic tests for HttpHandlers
+ * @summary Tests for HttpHandlers
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run testng/othervm HttpHandlersTest

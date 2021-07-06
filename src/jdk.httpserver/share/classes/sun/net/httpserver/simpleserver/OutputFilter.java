@@ -70,7 +70,7 @@ public final class OutputFilter extends Filter {
     private final Filter filter;
 
     private OutputFilter(OutputStream os, OutputLevel outputLevel) {
-        printStream = new PrintStream(os, false, UTF_8);
+        printStream = new PrintStream(os, true, UTF_8);
         this.outputLevel = outputLevel;
         var description = "HttpExchange OutputFilter (outputLevel: " + outputLevel + ")";
         this.filter = Filter.afterHandler(description, operation());
@@ -87,8 +87,8 @@ public final class OutputFilter extends Filter {
         return e -> {
             String s = e.getRemoteAddress().getHostString() + " "
                     + "- - "    // rfc931 and authuser
-                    + "[" + OffsetDateTime.now().format(FORMATTER) + "]\" "
-                    + e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
+                    + "[" + OffsetDateTime.now().format(FORMATTER) + "] "
+                    + "\"" + e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
                     + e.getResponseCode() + " -";    // bytes
             printStream.println(s);
 
@@ -105,8 +105,14 @@ public final class OutputFilter extends Filter {
     private void logHeaders(String sign, Headers headers) {
         headers.forEach((name, values) -> {
             var sb = new StringBuilder();
-            values.forEach(v -> sb.append(v).append(" "));
-            printStream.println(sign + " " + name + ": " + sb.toString());
+            var it = values.iterator();
+            while (it.hasNext()) {
+                sb.append(it.next());
+                if (it.hasNext()) {
+                    sb.append(",");
+                }
+            }
+            printStream.println(sign + " " + name + ": " + sb);
         });
         printStream.println(sign);
     }

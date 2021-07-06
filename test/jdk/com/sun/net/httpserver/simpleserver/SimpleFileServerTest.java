@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Basic tests for SimpleFileServerTest
+ * @summary Tests for SimpleFileServer
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.URIBuilder
  * @run testng/othervm SimpleFileServerTest
@@ -518,7 +518,7 @@ public class SimpleFileServerTest {
             }
         }
         {   // not of the default file system
-            Path p = createFileInZipFs(TEST_DIR.resolve("aFile.zip")).toAbsolutePath();
+            Path p = createDirectoryInZipFs(TEST_DIR.resolve("aFile.zip")).toAbsolutePath();
             assert p.getFileSystem() != FileSystems.getDefault();
             try {
                 var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
@@ -529,7 +529,7 @@ public class SimpleFileServerTest {
         }
     }
 
-    static Path createFileInZipFs(Path zipFile) throws Exception {
+    static Path createDirectoryInZipFs(Path zipFile) throws Exception {
         var fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
         var file = fs.getPath("fileInZip");
         if (Files.notExists(file)) {

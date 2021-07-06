@@ -94,15 +94,15 @@ public final class FileServerHandler implements HttpHandler {
                 new FileServerHandler(root, mimeTable), fallbackHandler);
     }
 
-    void handleHEAD(HttpExchange exchange, Path path) throws IOException {
+    private void handleHEAD(HttpExchange exchange, Path path) throws IOException {
         handleSupportedMethod(exchange, path, false);
     }
 
-    void handleGET(HttpExchange exchange, Path path) throws IOException {
+    private void handleGET(HttpExchange exchange, Path path) throws IOException {
         handleSupportedMethod(exchange, path, true);
     }
 
-    void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
+    private void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException {
         if (Files.isDirectory(path)) {
             if (missingSlash(exchange)) {
@@ -119,18 +119,18 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    void handleMovedPermanently(HttpExchange exchange) throws IOException {
+    private void handleMovedPermanently(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Location", "http://"
                 + exchange.getRequestHeaders().getFirst("Host")
                 + exchange.getRequestURI().getPath() + "/");
         exchange.sendResponseHeaders(301, -1);
     }
 
-    void handleForbidden(HttpExchange exchange) throws IOException {
+    private void handleForbidden(HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(403, -1);
     }
 
-    void handleNotFound(HttpExchange exchange) throws IOException {
+    private void handleNotFound(HttpExchange exchange) throws IOException {
         var bytes = (openHTML
                 + "<h1>File not found</h1>\n"
                 + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "</p>\n"
@@ -148,17 +148,17 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    static void discardRequestBody(HttpExchange exchange) throws IOException {
+    private static void discardRequestBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody()) {
             is.readAllBytes();
         }
     }
 
-    static boolean missingSlash(HttpExchange exchange) {
+    private static boolean missingSlash(HttpExchange exchange) {
         return !exchange.getRequestURI().getPath().endsWith("/");
     }
 
-    static Path mapToPath(HttpExchange exchange, Path root) {
+    private static Path mapToPath(HttpExchange exchange, Path root) {
         URI rootURI = root.toUri();
         URI requestURI = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();
@@ -170,13 +170,13 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    static Path indexFile(Path path) {
+    private static Path indexFile(Path path) {
         Path html = path.resolve("index.html");
         Path htm = path.resolve("index.htm");
         return Files.exists(html) ? html : Files.exists(htm) ? htm : null;
     }
 
-    void serveFile(HttpExchange exchange, Path path, boolean writeBody)
+    private void serveFile(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
@@ -194,7 +194,7 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    void listFiles(HttpExchange exchange, Path path, boolean writeBody)
+    private void listFiles(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
@@ -225,7 +225,7 @@ public final class FileServerHandler implements HttpHandler {
             </html>
             """;
 
-    static String dirListing(HttpExchange exchange, Path path) throws IOException {
+    private static String dirListing(HttpExchange exchange, Path path) throws IOException {
         var sb = new StringBuffer(openHTML
                 + "<h1>Directory listing for "
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
@@ -243,15 +243,15 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     // HTTP-Date as per (rfc5322). Example: Sun, 06 Nov 1994 08:49:37 GMT
-    static final DateTimeFormatter HTTP_DATE_FORMATTER =
+    private static final DateTimeFormatter HTTP_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
 
-    static String getLastModified(Path path) throws IOException {
+    private static String getLastModified(Path path) throws IOException {
         var fileTime = Files.getLastModifiedTime(path);
         return fileTime.toInstant().atZone(ZoneId.of("GMT")).format(HTTP_DATE_FORMATTER);
     }
 
-    static boolean isHiddenOrSymLink(Path path) {
+    private static boolean isHiddenOrSymLink(Path path) {
         try {
             return Files.isHidden(path) || Files.isSymbolicLink(path);
         } catch (IOException e) {
@@ -262,17 +262,17 @@ public final class FileServerHandler implements HttpHandler {
     // default for unknown content types, as per RFC 2046
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    String mediaType(String file) {
+    private String mediaType(String file) {
         String type = mimeTable.apply(file);
         return type != null ? type : DEFAULT_CONTENT_TYPE;
     }
 
-    static final BiFunction<String, HashMap<Integer, String>, String> sanitize =
+    private static final BiFunction<String, HashMap<Integer, String>, String> sanitize =
             (file, chars) -> file.chars().collect(StringBuilder::new,
                     (sb, c) -> sb.append(chars.getOrDefault(c, Character.toString(c))),
                     StringBuilder::append).toString();
 
-    static final HashMap<Integer,String> chars = new HashMap<>(Map.of(
+    private static final HashMap<Integer,String> chars = new HashMap<>(Map.of(
             (int) '&'  , "&amp;"   ,
             (int) '<'  , "&lt;"    ,
             (int) '>'  , "&gt;"    ,

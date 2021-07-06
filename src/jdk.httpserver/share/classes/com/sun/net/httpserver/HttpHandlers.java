@@ -25,11 +25,9 @@
 
 package com.sun.net.httpserver;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Predicate;
-import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
  * This class allows customization and retrieval of {@link HttpHandler HttpHandler}
@@ -55,7 +53,7 @@ import sun.net.httpserver.UnmodifiableHeaders;
  *
  * @since 18
  */
-public class HttpHandlers {
+public final class HttpHandlers {
 
     private HttpHandlers() { }
 

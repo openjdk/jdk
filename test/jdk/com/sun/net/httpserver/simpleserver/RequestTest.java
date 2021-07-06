@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @summary Basic tests for Request
- * @run testng/othervm RequestTest
+ * @summary Tests for Request
+ * @run testng RequestTest
  */
 
 import java.io.InputStream;

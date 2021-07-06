@@ -35,7 +35,6 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.test.lib.net.URIBuilder;
-import jdk.test.lib.util.FileUtils;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import org.testng.annotations.AfterTest;
@@ -52,8 +51,8 @@ import static org.testng.Assert.assertTrue;
  * @summary Test idempotency and commutativity of responses with an exhaustive
  *          set of binary request sequences
  * @library /test/lib
- * @build jdk.test.lib.net.URIBuilder jdk.test.lib.util.FileUtils
- * @run testng/othervm  IdempotencyAndCommutativityTest
+ * @build jdk.test.lib.net.URIBuilder
+ * @run testng/othervm IdempotencyAndCommutativityTest
  */
 public class IdempotencyAndCommutativityTest {
 

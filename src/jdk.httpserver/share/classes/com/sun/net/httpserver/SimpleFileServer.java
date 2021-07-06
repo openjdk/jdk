@@ -244,7 +244,7 @@ public final class SimpleFileServer {
      * Creates a {@linkplain Filter#afterHandler(String, Consumer)
      * post-processing Filter} that prints log messages about
      * {@linkplain HttpExchange exchanges}. The log messages are printed to
-     * the given {@code OutputStream}.
+     * the given {@code OutputStream} in {@code UTF-8} encoding.
      *
      * @apiNote
      * To not output any log messages it is recommended to not use a filter.
@@ -256,8 +256,6 @@ public final class SimpleFileServer {
      *                                  is given
      * @throws NullPointerException     if any argument is null
      */
-    // TODO: since we're using an output stream, we should clarity the charset
-    //       used or accept a PrintStream
     public static Filter createOutputFilter(OutputStream out,
                                             OutputLevel outputLevel) {
         Objects.requireNonNull(out);

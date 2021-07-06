@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Basic test to stress directory listings
+ * @summary Test to stress directory listings
  * @library /test/lib
  * @run testng/othervm StressDirListings
  */
