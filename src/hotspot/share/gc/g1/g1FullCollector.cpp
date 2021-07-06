@@ -44,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -183,12 +182,7 @@ void G1FullCollector::prepare_collection() {
   PrepareRegionsClosure cl(this);
   _heap->heap_region_iterate(&cl);
 
-  reference_processor()->enable_discovery();
-  reference_processor()->setup_policy(scope()->should_clear_soft_refs());
-
-  // We should save the marks of the currently locked biased monitors.
-  // The marking doesn't preserve the marks of biased objects.
-  BiasedLocking::preserve_marks();
+  reference_processor()->start_discovery(scope()->should_clear_soft_refs());
 
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
@@ -215,8 +209,6 @@ void G1FullCollector::complete_collection() {
   // When the pointers have been adjusted and moved, we can
   // update the derived pointer table.
   update_derived_pointers();
-
-  BiasedLocking::restore_marks();
 
   _heap->concurrent_mark()->swap_mark_bitmaps();
   // Prepare the bitmap for the next (potentially concurrent) marking.

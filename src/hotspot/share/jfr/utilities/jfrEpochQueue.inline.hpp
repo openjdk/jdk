@@ -68,7 +68,7 @@ JfrEpochQueue<ElementPolicy>::storage_for_element(JfrEpochQueue<ElementPolicy>::
 template <template <typename> class ElementPolicy>
 void JfrEpochQueue<ElementPolicy>::enqueue(JfrEpochQueue<ElementPolicy>::TypePtr t) {
   assert(t != NULL, "invariant");
-  static size_t element_size = _policy.element_size(t);
+  size_t element_size = _policy.element_size(t);
   BufferPtr buffer = storage_for_element(t, element_size);
   assert(buffer != NULL, "invariant");
   _policy.store_element(t, buffer);

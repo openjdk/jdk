@@ -144,7 +144,7 @@ ShenandoahConcurrentMarkThreadClosure::ShenandoahConcurrentMarkThreadClosure(Oop
 
 void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
   assert(thread->is_Java_thread(), "Must be");
-  JavaThread* const jt = thread->as_Java_thread();
+  JavaThread* const jt = JavaThread::cast(thread);
 
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 }
@@ -202,7 +202,7 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
     for (uint i = 0; i < _java_threads.length(); i ++) {
       Thread* thr = _java_threads.thread_at(i);
       if (thr->is_Java_thread()) {
-        ShenandoahStackWatermark* wm = StackWatermarkSet::get<ShenandoahStackWatermark>(thr->as_Java_thread(), StackWatermarkKind::gc);
+        ShenandoahStackWatermark* wm = StackWatermarkSet::get<ShenandoahStackWatermark>(JavaThread::cast(thr), StackWatermarkKind::gc);
         total.update(wm->stats());
       }
     }

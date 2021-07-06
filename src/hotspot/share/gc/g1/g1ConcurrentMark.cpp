@@ -716,9 +716,7 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 void G1ConcurrentMark::post_concurrent_mark_start() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
-  // enable ("weak") refs discovery
-  rp->enable_discovery();
-  rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
+  rp->start_discovery(false /* always_clear */);
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   // This is the start of  the marking cycle, we're expected all
@@ -1125,7 +1123,7 @@ void G1ConcurrentMark::remark() {
 
   bool const mark_finished = !has_overflown();
   if (mark_finished) {
-    weak_refs_work(false /* clear_all_soft_refs */);
+    weak_refs_work();
 
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
@@ -1492,7 +1490,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
+void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
   // Is alive closure.
@@ -1506,8 +1504,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // See the comment in G1CollectedHeap::ref_processing_init()
     // about how reference processing currently works in G1.
 
-    // Set the soft reference policy
-    rp->setup_policy(clear_all_soft_refs);
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
 
     // We need at least one active thread. If reference processing
@@ -1693,7 +1689,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        thread->as_Java_thread()->nmethods_do(&_code_cl);
+        JavaThread::cast(thread)->nmethods_do(&_code_cl);
       }
     }
   }

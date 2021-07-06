@@ -278,10 +278,6 @@ class os: AllStatic {
     return _initial_active_processor_count;
   }
 
-  // Binds the current process to a processor.
-  //    Returns true if it worked, false if it didn't.
-  static bool bind_to_processor(uint processor_id);
-
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
 
