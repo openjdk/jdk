@@ -511,6 +511,12 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public int compareTo(UUID val) {
+        // Compare the timstamps if both UUIDs are timed UUID
+        // Do not do this if the timestamps are the same
+        if (version() == 1 && val.version() == 1 && timestamp() != val.timestamp()) {
+            return Long.compare(timestamp(), val.timestamp());
+        }
+
         // The ordering is intentionally set up so that the UUIDs
         // can simply be numerically compared as two numbers
         return (this.mostSigBits < val.mostSigBits ? -1 :

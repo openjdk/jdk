@@ -279,6 +279,14 @@ public class UUIDTest {
         if (id.compareTo(id) != 0)
             throw new RuntimeException("compareTo failure");
 
+        // Timed UUID comparisons
+        UUID id6 = UUID.fromString("d93ddd70-a355-11eb-8080-808080808080");
+        UUID id7 = UUID.fromString("d93e047f-a355-11eb-7f7f-7f7f7f7f7f7f");
+        UUID id8 = UUID.fromString("77797570-a34d-11eb-8080-808080808080");
+        if ((id6.compareTo(id7) >= 0) ||
+            (id6.compareTo(id8) >= 0) ||
+           ( id7.compareTo(id8) >= 0))
+        throw new RuntimeException("compareTo failure");
     }
 
 }
