@@ -196,9 +196,9 @@ class JfrEvent {
       return;
     }
 
-    if (T::sizeRange == LT_128) {
-      write_sized_event(buffer, event_thread, tl, false);
-    } else if (T::sizeRange == UNCERTAIN) {
+    if (T::sizeRange != UNCERTAIN) {
+      write_sized_event(buffer, event_thread, tl, T::sizeRange == GE_128);
+    } else {
       bool large = is_large();
       if (write_sized_event(buffer, event_thread, tl, large)) {
         // Event written succesfully
@@ -211,8 +211,6 @@ class JfrEvent {
           set_large();
         }
       }
-    } else if (T::sizeRange == GE_128) {
-      write_sized_event(buffer, event_thread, tl, true);
     }
   }
 

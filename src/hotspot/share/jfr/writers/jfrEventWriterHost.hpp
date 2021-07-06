@@ -37,7 +37,7 @@ class EventWriterHost : public WriterHost<BE, IE, WriterPolicyImpl> {
   intptr_t end_write();
   template <EventSizeRange RANGE = UNCERTAIN>
   void begin_event_write(bool large);
-  template <EventSizeRange RANGE= UNCERTAIN>
+  template <EventSizeRange RANGE = UNCERTAIN>
   intptr_t end_event_write(bool large);
 };
 

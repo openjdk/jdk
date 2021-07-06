@@ -59,16 +59,14 @@ inline void EventWriterHost<BE, IE, WriterPolicyImpl>::begin_event_write(bool la
   assert(!this->is_acquired(), "calling begin with writer already in acquired state!");
   this->begin_write();
   // reserve the event size slot
-  if (RANGE == LT_128) {
-    this->reserve(sizeof(u1));
-  } else if (RANGE == UNCERTAIN) {
+  if (RANGE != UNCERTAIN) {
+    this->reserve(RANGE == LT_128 ? sizeof(u1) : sizeof(u4));
+  } else {
     if (large) {
       this->reserve(sizeof(u4));
     } else {
       this->reserve(sizeof(u1));
     }
-  } else if (RANGE == GE_128) {
-    this->reserve(sizeof(u4));
   }
 }
 
@@ -81,12 +79,16 @@ inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write(bool 
     return 0;
   }
   u4 written = (u4)end_write();
-  if (RANGE == LT_128) {
-    if (written > sizeof(u1)) {
-      this->write_at_offset(written, 0);
+  if (RANGE != UNCERTAIN) {
+    if (written > (RANGE == LT_128 ? sizeof(u1) : sizeof(u4))) {
+      if (RANGE == LT_128) {
+        this->write_at_offset(written, 0);
+      } else {
+        this->write_padded_at_offset(written, 0);
+      }
       this->commit();
     }
-  } else if (RANGE == UNCERTAIN) {
+  } else {
     if (large) {
       // size written is larger than header reserve, so commit
       if (written > sizeof(u4)) {
@@ -105,11 +107,6 @@ inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write(bool 
           this->commit();
         }
       }
-    }
-  } else if (RANGE == GE_128) {
-    if (written > sizeof(u4)) {
-      this->write_padded_at_offset(written, 0);
-      this->commit();
     }
   }
   this->release();
