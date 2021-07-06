@@ -70,6 +70,8 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
 
+compiler/vectorapi/VectorCastShape128Test.java 8269952 generic-x64
+compiler/vectorapi/VectorCastShape64Test.java 8269952 generic-x64
 
 #############################################################################
 
