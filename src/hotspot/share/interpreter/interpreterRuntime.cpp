@@ -190,7 +190,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     // The bytecode wrappers aren't GC-safe so construct a new one
     Bytecode_loadconstant ldc2(m, last_frame.bci());
     int rindex = ldc2.cache_index();
-    if (rindex < 0 && m->constants()->resolved_references() != NULL)
+    if (rindex < 0 && m->constants()->resolved_references_or_null() != NULL)
       rindex = m->constants()->cp_to_object_index(ldc2.pool_index());
     if (rindex >= 0) {
       oop coop = m->constants()->resolved_references()->obj_at(rindex);
