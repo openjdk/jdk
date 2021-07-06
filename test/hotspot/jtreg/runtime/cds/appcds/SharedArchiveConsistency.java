@@ -428,14 +428,6 @@ public class SharedArchiveConsistency {
             output.shouldContain(HELLO_WORLD);
         }
 
-        // use the same archive as above, but run with -Xshare:auto or -Xshare:on depends on shareAuto (reverse)
-        System.out.println("\n2b. Corrupt _jvm_ident run with " + (shareAuto ? "-Xshare:on\n" : "-Xshare:auto"));
-        output = shareAuto ? TestCommon.execCommon(execArgs) : TestCommon.execAuto(execArgs);
-        output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
-        if (!shareAuto) {
-          output.shouldContain("Hello World");
-        }
-
         // modify _magic, test should fail
         System.out.println("\n2c. Corrupt _magic, should fail\n");
         modifyHeaderIntField(copyFile(orgJsaFile, "modify-magic"), offset_magic, 0x00000000);
