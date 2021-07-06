@@ -99,7 +99,7 @@ import java.util.Objects;
  * {@code LocalTime} is an immutable date-time object that represents a time,
  * often viewed as hour-minute-second.
  * Time is represented to nanosecond precision.
- * For example, the value "13:45.30.123456789" can be stored in a {@code LocalTime}.
+ * For example, the value "13:45:30.123456789" can be stored in a {@code LocalTime}.
  * <p>
  * This class does not store or represent a date or time-zone.
  * Instead, it is a description of the local time as seen on a wall clock.
