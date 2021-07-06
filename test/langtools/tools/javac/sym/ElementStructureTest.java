@@ -121,29 +121,22 @@ import toolbox.ToolBox;
  */
 public class ElementStructureTest {
 
-    static final byte[] hash6 = new byte[] {
-        (byte) 0x99, (byte) 0x34, (byte) 0x82, (byte) 0xCF,
-        (byte) 0xE0, (byte) 0x53, (byte) 0xF3, (byte) 0x13,
-        (byte) 0x4E, (byte) 0xCF, (byte) 0x49, (byte) 0x32,
-        (byte) 0xB7, (byte) 0x52, (byte) 0x0F, (byte) 0x68
-    };
     static final byte[] hash7 = new byte[] {
-        (byte) 0x3C, (byte) 0x03, (byte) 0xEA, (byte) 0x4A,
-        (byte) 0x62, (byte) 0xD2, (byte) 0x18, (byte) 0xE5,
-        (byte) 0xA5, (byte) 0xC2, (byte) 0xB7, (byte) 0x85,
-        (byte) 0x90, (byte) 0xFA, (byte) 0x98, (byte) 0xCD
+        (byte) 0x65, (byte) 0x41, (byte) 0xC8, (byte) 0x17,
+        (byte) 0xF0, (byte) 0xB1, (byte) 0x62, (byte) 0x9A,
+        (byte) 0xD8, (byte) 0x19, (byte) 0xBA, (byte) 0xB0,
+        (byte) 0xC1, (byte) 0x70, (byte) 0x5E, (byte) 0x3E
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x24, (byte) 0x38, (byte) 0x52, (byte) 0x1C,
-        (byte) 0x5E, (byte) 0x83, (byte) 0x82, (byte) 0xE6,
-        (byte) 0x41, (byte) 0xC2, (byte) 0xDD, (byte) 0x2A,
-        (byte) 0xFD, (byte) 0xFF, (byte) 0x5E, (byte) 0x2F
+        (byte) 0x83, (byte) 0x62, (byte) 0x2F, (byte) 0x1C,
+        (byte) 0x95, (byte) 0x6D, (byte) 0x31, (byte) 0x18,
+        (byte) 0xF5, (byte) 0xB2, (byte) 0x8C, (byte) 0x39,
+        (byte) 0x81, (byte) 0x2E, (byte) 0x2C, (byte) 0x34
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();
 
     static {
-        version2Hash.put("6", hash6);
         version2Hash.put("7", hash7);
         version2Hash.put("8", hash8);
     }
@@ -484,7 +477,7 @@ public class ElementStructureTest {
                 return null;
             try {
                 analyzeElement(e);
-                out.write(String.valueOf(e.getConstantValue()));
+                writeConstant(e.getConstantValue());
                 out.write("\n");
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -512,6 +505,16 @@ public class ElementStructureTest {
         @Override
         public Void visitUnknown(Element e, Void p) {
             throw new IllegalStateException("Should not get here.");
+        }
+
+        private void writeConstant(Object value) throws IOException {
+            if (value instanceof Double) {
+                out.write(Double.toHexString((Double) value));
+            } else if (value instanceof Float) {
+                out.write(Float.toHexString((Float) value));
+            } else {
+                out.write(String.valueOf(value));
+            }
         }
 
     }
