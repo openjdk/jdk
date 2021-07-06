@@ -87,10 +87,9 @@ public class CloseDescriptors {
         p.waitFor();
 
         int nfds = lines.length - 1;
-        if (nfds > 3) {
-            String msg =
-                String.format("Number of open descriptors (%d) > 2%n", nfds);
-            throw new RuntimeException(msg);
+        if (nfds > MAX_DESC) {
+            throw new RuntimeException("Number of open descriptors " +
+                nfds + " > " + MAX_DESC);
         }
     }
 
