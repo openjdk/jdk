@@ -200,7 +200,7 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          {@link RuntimePermission}("shutdownHooks")
+     *          {@link RuntimePermission}{@code ("shutdownHooks")}
      *
      * @see #removeShutdownHook
      * @see #halt(int)
@@ -230,7 +230,7 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          {@link RuntimePermission}("shutdownHooks")
+     *          {@link RuntimePermission}{@code ("shutdownHooks")}
      *
      * @see #addShutdownHook
      * @see #exit(int)
@@ -369,7 +369,7 @@ public class Runtime {
      *
      * <p>More precisely, the {@code command} string is broken
      * into tokens using a {@link StringTokenizer} created by the call
-     * {@code new {@link StringTokenizer}(command)} with no
+     * {@code new StringTokenizer(command)} with no
      * further modification of the character categories.  The tokens
      * produced by the tokenizer are then placed in the new string
      * array {@code cmdarray}, in the same order.

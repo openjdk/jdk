@@ -1367,6 +1367,15 @@ public class TreeInfo {
         };
     }
 
+    public static JCBindingPattern primaryPatternTree(JCPattern pat) {
+        return switch (pat.getTag()) {
+            case BINDINGPATTERN -> (JCBindingPattern) pat;
+            case GUARDPATTERN -> primaryPatternTree(((JCGuardPattern) pat).patt);
+            case PARENTHESIZEDPATTERN -> primaryPatternTree(((JCParenthesizedPattern) pat).pattern);
+            default -> throw new AssertionError();
+        };
+    }
+
     public record PatternPrimaryType(Type type, boolean unconditional) {}
 
 }

@@ -70,25 +70,6 @@
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
   </Event>
 
-  <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
-    stackTrace="true">
-    <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="Thread" name="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation" />
-  </Event>
-
-  <Event name="BiasedLockSelfRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Self Revocation" description="Revoked bias of object biased towards own thread"
-    thread="true" stackTrace="true">
-    <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
-  </Event>
-
-  <Event name="BiasedLockClassRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Class Revocation" description="Revoked biases for all instances of a class"
-    thread="true" stackTrace="true">
-    <Field type="Class" name="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked" />
-    <Field type="boolean" name="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed" />
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-  </Event>
-
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
     description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack" thread="true" stackTrace="true"
     startTime="false">
@@ -627,6 +608,7 @@
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />
+    <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" />
     <Field type="Tickspan" name="objectAge" label="Object Age" />
     <Field type="ulong" contentType="bytes" name="lastKnownHeapUsage" label="Last Known Heap Usage" />
     <Field type="OldObject" name="object" label="Object" />

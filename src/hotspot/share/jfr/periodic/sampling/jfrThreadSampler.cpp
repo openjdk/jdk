@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ void OSThreadSampler::do_task(const os::SuspendedThreadTaskContext& context) {
 * using a signal handler / __try block. Don't take locks, rely on destructors or
 * leave memory (in case of signal / exception) in an inconsistent state. */
 void OSThreadSampler::protected_task(const os::SuspendedThreadTaskContext& context) {
-  JavaThread* jth = context.thread()->as_Java_thread();
+  JavaThread* jth = JavaThread::cast(context.thread());
   // Skip sample if we signaled a thread that moved to other state
   if (!thread_state_in_java(jth)) {
     return;
@@ -343,7 +343,8 @@ class JfrThreadSampler : public NonJavaThread {
  protected:
   virtual void post_run();
  public:
-  virtual char* name() const { return (char*)"JFR Thread Sampler"; }
+  virtual const char* name() const { return "JFR Thread Sampler"; }
+  virtual const char* type_name() const { return "JfrThreadSampler"; }
   bool is_JfrSampler_thread() const { return true; }
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }

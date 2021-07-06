@@ -2512,11 +2512,6 @@ void os::set_native_thread_name(const char *name) {
   return;
 }
 
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 

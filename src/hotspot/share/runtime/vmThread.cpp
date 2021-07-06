@@ -283,7 +283,7 @@ class HandshakeALotClosure : public HandshakeClosure {
   HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
-    thread->as_Java_thread()->verify_states_for_handshake();
+    JavaThread::cast(thread)->verify_states_for_handshake();
 #endif
   }
 };
@@ -522,7 +522,7 @@ void VMThread::execute(VM_Operation* op) {
 
   // JavaThread or WatcherThread
   if (t->is_Java_thread()) {
-    t->as_Java_thread()->check_for_valid_safepoint_state();
+    JavaThread::cast(t)->check_for_valid_safepoint_state();
   }
 
   // New request from Java thread, evaluate prologue

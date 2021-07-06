@@ -1670,13 +1670,7 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
-  if (UseBiasedLocking && Opcode() == Op_Allocate) {
-    Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
-  } else {
-    mark_node = phase->MakeConX(markWord::prototype().value());
-  }
+  mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
 }
 
@@ -1758,7 +1752,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       InitializeNode* init = initialization();
       assert(init != NULL, "initialization not found");
       length = new CastIINode(length, narrow_length_type);
-      length->set_req(0, init->proj_out_or_null(0));
+      length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
     }
   }
 
