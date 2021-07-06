@@ -36,43 +36,58 @@ import java.io.IOException;
  *
  */
 public class GZIPOutputStream extends DeflaterOutputStream {
+
     /**
      * CRC-32 of uncompressed data.
      */
-    protected CRC32 crc = new CRC32();
+    private CRC32 crc = new CRC32();
 
-    /*
-     * GZIP header magic number.
-     */
-    private static final int GZIP_MAGIC = 0x8b1f;
-
-    /*
+    /**
      * Trailer size in bytes.
      *
      */
     private static final int TRAILER_SIZE = 8;
 
-    // Represents the default "unknown" value for OS header, per RFC-1952
-    private static final byte OS_UNKNOWN = (byte) 255;
-
     /**
-     * Creates a new output stream with the specified buffer size.
-     *
-     * <p>The new output stream instance is created as if by invoking
-     * the 3-argument constructor GZIPOutputStream(out, size, false).
+     * Creates a new output stream with the specified buffer size,
+     * flush mode flags and header fields.
      *
      * @param out the output stream
      * @param size the output buffer size
+     * @param syncFlush
+     *        if {@code true} invocation of the inherited
+     *        {@link DeflaterOutputStream#flush() flush()} method of
+     *        this instance flushes the compressor with flush mode
+     *        {@link Deflater#SYNC_FLUSH} before flushing the output
+     *        stream, otherwise only flushes the output stream
+     * @param gzipHeaderData
+     *        The header of Gzip file, contains header members defined
+     *        in RFC 1952. if {@code null}, use default header data.
+     *
      * @throws    IOException If an I/O error has occurred.
-     * @throws    IllegalArgumentException if {@code size <= 0}
+     *
+     * @since 17
      */
-    public GZIPOutputStream(OutputStream out, int size) throws IOException {
-        this(out, size, false);
+    public GZIPOutputStream(OutputStream out,
+                            int size,
+                            boolean syncFlush,
+                            GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)
+            throws IOException
+    {
+        super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true),
+                size,
+                syncFlush);
+        usesDefaultDeflater = true;
+        if (gzipHeaderData == null) {
+            gzipHeaderData = new GZIPHeaderBuilder().build();
+        }
+        writeHeader(gzipHeaderData.headerBytes());
+        crc.reset();
     }
 
     /**
      * Creates a new output stream with the specified buffer size and
-     * flush mode.
+     * flush mode. And leave all other header fields set to default value.
      *
      * @param out the output stream
      * @param size the output buffer size
@@ -88,19 +103,31 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @since 1.7
      */
     public GZIPOutputStream(OutputStream out, int size, boolean syncFlush)
-        throws IOException
+            throws IOException
     {
-        super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null,
-              size,
-              syncFlush);
-        usesDefaultDeflater = true;
-        writeHeader();
-        crc.reset();
+        this(out, size, syncFlush, null);
     }
 
+    /**
+     * Creates a new output stream with the specified buffer size.
+     * And leave all other header fields set to default value.
+     *
+     * <p>The new output stream instance is created as if by invoking
+     * the 3-argument constructor GZIPOutputStream(out, size, false).
+     *
+     * @param out the output stream
+     * @param size the output buffer size
+     * @throws    IOException If an I/O error has occurred.
+     * @throws    IllegalArgumentException if {@code size <= 0}
+     *
+     */
+    public GZIPOutputStream(OutputStream out, int size) throws IOException {
+        this(out, size, false);
+    }
 
     /**
      * Creates a new output stream with a default buffer size.
+     * And leave all other header fields set to default value.
      *
      * <p>The new output stream instance is created as if by invoking
      * the 2-argument constructor GZIPOutputStream(out, false).
@@ -114,7 +141,8 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     /**
      * Creates a new output stream with a default buffer size and
-     * the specified flush mode.
+     * the specified flush mode. And leave all other header fields
+     * set to default value.
      *
      * @param out the output stream
      * @param syncFlush
@@ -132,6 +160,25 @@ public class GZIPOutputStream extends DeflaterOutputStream {
         throws IOException
     {
         this(out, 512, syncFlush);
+    }
+
+    /**
+     * Creates a new output stream with the specified flags.
+     *
+     * @param out the output stream
+     * @param gzipHeaderData
+     *        The header of Gzip file, contains header members defined
+     *        in RFC 1952. if {@code null}, use default header data.
+     * @throws    IOException If an I/O error has occurred.
+     * @throws    IllegalArgumentException if {@code size <= 0}
+     *
+     * @since 17
+     */
+    public GZIPOutputStream(OutputStream out,
+                            GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)
+        throws IOException
+    {
+        this(out, 512, false, gzipHeaderData);
     }
 
     /**
@@ -178,22 +225,11 @@ public class GZIPOutputStream extends DeflaterOutputStream {
         }
     }
 
-    /*
-     * Writes GZIP member header.
+    /**
+     * Writes GZIP header data.
      */
-    private void writeHeader() throws IOException {
-        out.write(new byte[] {
-                      (byte) GZIP_MAGIC,        // Magic number (short)
-                      (byte)(GZIP_MAGIC >> 8),  // Magic number (short)
-                      Deflater.DEFLATED,        // Compression method (CM)
-                      0,                        // Flags (FLG)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Modification time MTIME (int)
-                      0,                        // Extra flags (XFLG)
-                      OS_UNKNOWN                // Operating system (OS)
-                  });
+    private void writeHeader(byte[] headerBytes) throws IOException {
+        out.write(headerBytes);
     }
 
     /*
