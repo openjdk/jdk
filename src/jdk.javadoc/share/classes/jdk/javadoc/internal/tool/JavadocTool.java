@@ -103,6 +103,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     public static JavadocTool make0(Context context) {
         JavadocLog log = null;
         try {
+            // force the use of Javadoc's names/nametable/name
+            JavadocNames.preRegister(context);
+
             // force the use of Javadoc's class finder
             JavadocClassFinder.preRegister(context);
 

@@ -218,6 +218,7 @@ public class Names {
     public final Name.Table table;
 
     public Names(Context context) {
+        context.put(namesKey, this);
         Options options = Options.instance(context);
         table = createTable(options);
 
