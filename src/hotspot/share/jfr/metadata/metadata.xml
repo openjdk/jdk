@@ -1080,6 +1080,9 @@
     <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
     <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
+  <Event name="FinalizerRegistration" category="Java Application" label="Finalizer Registration" thread="false" startTime="false">
+    <Field type="Class" name="finalizerClass" label="Finalizer Class" />
+  </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />

@@ -807,6 +807,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.FinalizerRegistration">
+      <setting name="enabled">true</setting>
+    </event>
+
 
 
 
