@@ -25,7 +25,7 @@
 # Shell script for generating an IDEA project from a given list of modules
 
 usage() {
-      echo "usage: $0 [-h|--help] [-v|--verbose] [-o|--output <path>] [modules]+"
+      echo "usage: $0 [-h|--help] [-v|--verbose] [-o|--output <path>] [-c|--conf <conf_name>] [modules]+"
       exit 1
 }
 
@@ -37,6 +37,7 @@ cd $TOP;
 
 IDEA_OUTPUT=$TOP/.idea
 VERBOSE="false"
+CONF_ARG=
 while [ $# -gt 0 ]
 do
   case $1 in
@@ -50,6 +51,10 @@ do
 
     -o | --output )
       IDEA_OUTPUT=$2/.idea
+      shift
+      ;;
+    -c | --conf )
+      CONF_ARG="CONF_NAME=$2"
       shift
       ;;
 
@@ -91,7 +96,7 @@ if [ "$VERBOSE" = "true" ] ; then
   echo "idea template dir: $IDEA_TEMPLATE"
 fi
 
-cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" || exit 1
+cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" $CONF_ARG || exit 1
 cd $SCRIPT_DIR
 
 . $IDEA_OUTPUT/env.cfg
@@ -148,14 +153,14 @@ add_replacement "###MODULE_NAMES###" "$MODULE_NAMES"
 add_replacement "###VCS_TYPE###" "$VCS_TYPE"
 SPEC_DIR=`dirname $SPEC`
 if [ "x$CYGPATH" != "x" ]; then
-    add_replacement "###BUILD_DIR###" "`cygpath -am $SPEC_DIR`"
-    add_replacement "###IMAGES_DIR###" "`cygpath -am $SPEC_DIR`/images/jdk"
-    add_replacement "###ROOT_DIR###" "`cygpath -am $TOPLEVEL_DIR`"
-    add_replacement "###IDEA_DIR###" "`cygpath -am $IDEA_OUTPUT`"
+    add_replacement "###BUILD_DIR###" "`$CYGPATH -am $SPEC_DIR`"
+    add_replacement "###IMAGES_DIR###" "`$CYGPATH -am $SPEC_DIR`/images/jdk"
+    add_replacement "###ROOT_DIR###" "`$CYGPATH -am $TOPLEVEL_DIR`"
+    add_replacement "###IDEA_DIR###" "`$CYGPATH -am $IDEA_OUTPUT`"
     if [ "x$JT_HOME" = "x" ]; then
       add_replacement "###JTREG_HOME###" ""
     else
-      add_replacement "###JTREG_HOME###" "`cygpath -am $JT_HOME`"
+      add_replacement "###JTREG_HOME###" "`$CYGPATH -am $JT_HOME`"
     fi
 elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
     add_replacement "###BUILD_DIR###" "`wslpath -am $SPEC_DIR`"
@@ -180,7 +185,7 @@ SOURCE_POSTFIX="\" isTestSource=\"false\" />"
 
 for root in $MODULE_ROOTS; do
     if [ "x$CYGPATH" != "x" ]; then
-      root=`cygpath -am $root`
+      root=`$CYGPATH -am $root`
     elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
       root=`wslpath -am $root`
     fi
@@ -220,10 +225,10 @@ CP=$ANT_HOME/lib/ant.jar
 rm -rf $CLASSES; mkdir $CLASSES
 
 if [ "x$CYGPATH" != "x" ] ; then ## CYGPATH may be set in env.cfg
-  JAVAC_SOURCE_FILE=`cygpath -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
-  JAVAC_SOURCE_PATH=`cygpath -am $IDEA_OUTPUT/src`
-  JAVAC_CLASSES=`cygpath -am $CLASSES`
-  JAVAC_CP=`cygpath -am $CP`
+  JAVAC_SOURCE_FILE=`$CYGPATH -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
+  JAVAC_SOURCE_PATH=`$CYGPATH -am $IDEA_OUTPUT/src`
+  JAVAC_CLASSES=`$CYGPATH -am $CLASSES`
+  JAVAC_CP=`$CYGPATH -am $CP`
   JAVAC=javac
 elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
   JAVAC_SOURCE_FILE=`realpath --relative-to=./ $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`

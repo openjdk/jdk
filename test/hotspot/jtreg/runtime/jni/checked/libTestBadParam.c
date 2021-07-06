@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_Defs.hpp"
+#include <jni.h>
+#include <string.h>
 
+static jint* pinned;
+
+JNIEXPORT void JNICALL
+Java_TestPrimitiveArrayCriticalWithBadParam_pin(JNIEnv *env, jclass unused, jarray a) {
+  pinned = (*env)->GetPrimitiveArrayCritical(env, a, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_TestPrimitiveArrayCriticalWithBadParam_unpin(JNIEnv *env, jclass unused, jarray a) {
+  (*env)->ReleasePrimitiveArrayCritical(env, a, pinned, 0);
+}

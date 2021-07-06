@@ -4394,7 +4394,7 @@ public final class Class<T> implements java.io.Serializable,
             return Wrapper.forPrimitiveType(this).basicTypeString();
 
         if (isArray()) {
-            return "[".concat(componentType.descriptorString());
+            return "[" + componentType.descriptorString();
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');

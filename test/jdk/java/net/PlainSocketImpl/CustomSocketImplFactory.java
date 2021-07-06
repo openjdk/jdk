@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8024952
- * @summary ClassCastException in PlainSocketImpl.accept() when using custom socketImpl
+ * @summary ClassCastException in SocketImpl.accept() when using custom socketImpl
  * @run main/othervm CustomSocketImplFactory
  */
 

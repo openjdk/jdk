@@ -795,14 +795,8 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
-  Handle thread_group(THREAD, Universe::system_thread_group());
-  return JavaCalls::construct_new_instance(
-                       vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       CHECK_NH);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK_NH);
+  return thread_oop;
 }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
