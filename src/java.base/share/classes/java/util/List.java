@@ -139,7 +139,7 @@ import java.util.function.UnaryOperator;
  * @since 1.2
  */
 
-public interface List<E> extends Collection<E> {
+public interface List<E> extends ReversibleCollection<E> {
     // Query Operations
 
     /**
@@ -780,6 +780,83 @@ public interface List<E> extends Collection<E> {
             return Spliterators.spliterator(this, Spliterator.ORDERED);
         }
     }
+
+    // ========== ReversibleCollection ==========
+
+    /**
+     * Adds an element at the front of this collection.
+     * @param e the element to be added
+     * @throws NullPointerException if the specified element is null and this
+     *         collection does not permit null elements
+     */
+    default void addFirst(E e) { this.add(0, e); }
+
+    /**
+     * Adds an element at the end of this collection.
+     * Synonymous with add(E).
+     * @param e the element to be added.
+     * @throws NullPointerException if the specified element is null and this
+     *         collection does not permit null elements
+     */
+    default void addLast(E e) { this.add(e); }
+
+    /**
+     * Gets the element at the front of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E getFirst() {
+        if (this.isEmpty())
+            throw new NoSuchElementException();
+        return this.get(0);
+    }
+
+    /**
+     * Gets the element at the end of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E getLast() {
+        if (this.isEmpty())
+            throw new NoSuchElementException();
+        return this.get(this.size()-1);
+    }
+
+    /**
+     * Removes and returns the first element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E removeFirst() {
+        if (this.isEmpty())
+            throw new NoSuchElementException();
+        return this.remove(0);
+    }
+
+    /**
+     * Removes and returns the last element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E removeLast() {
+        if (this.isEmpty())
+            throw new NoSuchElementException();
+        return this.remove(this.size()-1);
+    }
+
+    /**
+     * Returns a reversed-order view of this List. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reverse-ordered view of this List
+     */
+    default List<E> reversed() {
+        return ReverseOrderListView.of(this);
+    }
+
+    // ========== static methods ==========
 
     /**
      * Returns an unmodifiable list containing zero elements.

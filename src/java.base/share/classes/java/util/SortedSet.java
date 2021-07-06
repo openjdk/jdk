@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedSet<E> extends Set<E> {
+public interface SortedSet<E> extends Set<E>, ReversibleSet<E> {
     /**
      * Returns the comparator used to order the elements in this set,
      * or {@code null} if this set uses the {@linkplain Comparable
@@ -260,5 +260,67 @@ public interface SortedSet<E> extends Set<E> {
                 return SortedSet.this.comparator();
             }
         };
+    }
+
+    // ========== ReversibleCollection ==========
+
+    /**
+     * Not supported.
+     * @throws UnsupportedOperationException always
+     */
+    default void addFirst(E e) { throw new UnsupportedOperationException(); }
+
+    /**
+     * Not supported.
+     * @throws UnsupportedOperationException always
+     */
+    default void addLast(E e) { throw new UnsupportedOperationException(); }
+
+    /**
+     * Gets the element at the front of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E getFirst() { return this.first(); }
+
+    /**
+     * Gets the element at the end of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E getLast() { return this.last(); }
+
+    /**
+     * Removes and returns the first element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E removeFirst() {
+        E e = this.first();
+        this.remove(e);
+        return e;
+    }
+
+    /**
+     * Removes and returns the last element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    default E removeLast() {
+        E e = this.last();
+        this.remove(e);
+        return e;
+    }
+
+    /**
+     * Returns a reversed-order view of this collection. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reversed-order view
+     */
+    default SortedSet<E> reversed() {
+        return ReverseOrderSortedSetView.of(this);
     }
 }

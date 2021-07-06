@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ package java.util;
 
 public class LinkedHashSet<E>
     extends HashSet<E>
-    implements Set<E>, Cloneable, java.io.Serializable {
+    implements ReversibleSet<E>, Cloneable, java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -2851667679971038690L;
@@ -192,5 +192,94 @@ public class LinkedHashSet<E>
     @Override
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED);
+    }
+
+    @SuppressWarnings("unchecked")
+    LinkedHashMap<E, Object> map() {
+        return (LinkedHashMap<E, Object>) map;
+    }
+
+    /**
+     * Inserts the specified element at the front of this collection.
+     * @param e the element to add
+     */
+    public void addFirst(E e) {
+        map().putFirst(e, PRESENT);
+    }
+
+    /**
+     * Inserts the specified element at the end of this collection.
+     * @param e the element to add
+     */
+    public void addLast(E e) {
+        map().putLast(e, PRESENT);
+    }
+
+    /**
+     * Gets the element at the front of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E getFirst() {
+        return map().keySet().getFirst();
+    }
+
+    /**
+     * Gets the element at the end of this collection.
+     * @return the retrieved element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E getLast() {
+        return map().keySet().getLast();
+    }
+
+    /**
+     * Removes and returns the first element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E removeFirst() {
+        return map().keySet().removeFirst();
+    }
+
+    /**
+     * Removes and returns the last element of this collection.
+     * @return the removed element
+     * @throws NoSuchElementException if this collection is empty
+     */
+    public E removeLast() {
+        return map().keySet().removeLast();
+    }
+
+    /**
+     * Returns a reversed-order view of this collection. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reversed-order view
+     */
+    public ReversibleSet<E> reversed() {
+        class ReverseLinkedHashSetView extends AbstractSet<E> implements ReversibleSet<E> {
+            public int size()                  { return LinkedHashSet.this.size(); }
+            public Iterator<E> iterator()      { return map().keySet().reversed().iterator(); }
+            public void addFirst(E e)          { LinkedHashSet.this.addLast(e); }
+            public void addLast(E e)           { LinkedHashSet.this.addFirst(e); }
+            public E getFirst()                { return LinkedHashSet.this.getLast(); }
+            public E getLast()                 { return LinkedHashSet.this.getFirst(); }
+            public E removeFirst()             { return LinkedHashSet.this.removeLast(); }
+            public E removeLast()              { return LinkedHashSet.this.removeFirst(); }
+            public ReversibleSet<E> reversed() { return LinkedHashSet.this; }
+            public Object[] toArray() { return map().keysToArray(new Object[map.size()], true); }
+            public <T> T[] toArray(T[] a) { return map().keysToArray(map.prepareArray(a), true); }
+
+            public boolean add(E e) {
+                boolean present = LinkedHashSet.this.contains(e);
+                LinkedHashSet.this.addFirst(e);
+                return ! present;
+            }
+        }
+
+        return new ReverseLinkedHashSetView();
     }
 }

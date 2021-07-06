@@ -320,4 +320,14 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedSet<E> tailSet(E fromElement);
+
+    /**
+     * Returns a reverse order view of the elements contained in this set.
+     * @return a reverse-order view
+     * @implSpec
+     * Returns the result of calling this.descendingSet().
+     */
+    default NavigableSet<E> reversed() {
+        return this.descendingSet();
+    }
 }
