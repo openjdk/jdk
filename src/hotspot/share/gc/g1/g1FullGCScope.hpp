@@ -52,7 +52,7 @@ class G1FullGCScope : public StackObj {
   GCTraceCPUTime          _cpu_time;
   ClearedAllSoftRefs      _soft_refs;
   G1MonitoringScope       _monitoring_scope;
-  G1HeapTransition        _heap_transition;
+  G1CollectedHeap::G1HeapPrinterMark _heap_printer;
   size_t                  _region_compaction_threshold;
 
 public:

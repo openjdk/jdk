@@ -980,7 +980,11 @@ public:
     : _hr_printer(hr_printer) { }
 };
 
-void G1CollectedHeap::print_hrm_post_compaction() {
+void G1CollectedHeap::print_heap_after_full_collection() {
+  // Post collection region logging.
+  // We should do this after we potentially resize the heap so
+  // that all the COMMIT / UNCOMMIT events are generated before
+  // the compaction events.
   if (_hr_printer.is_active()) {
     PostCompactionPrinterClosure cl(hr_printer());
     heap_region_iterate(&cl);
@@ -1090,17 +1094,6 @@ void G1CollectedHeap::verify_after_full_collection() {
   assert(!_ref_processor_cm->discovery_enabled(), "Postcondition");
   _ref_processor_stw->verify_no_references_recorded();
   _ref_processor_cm->verify_no_references_recorded();
-}
-
-void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_transition) {
-  // Post collection logging.
-  // We should do this after we potentially resize the heap so
-  // that all the COMMIT / UNCOMMIT events are generated before
-  // the compaction events.
-  print_hrm_post_compaction();
-  heap_transition->print();
-  print_heap_after_gc();
-  print_heap_regions();
 }
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
@@ -2572,9 +2565,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
 void G1CollectedHeap::gc_prologue(bool full) {
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
-  // This summary needs to be printed before incrementing total collections.
-  rem_set()->print_periodic_summary_info("Before GC RS summary", total_collections());
-
   // Update common counters.
   increment_total_collections(full /* full gc */);
   if (full || collector_state()->in_concurrent_start_gc()) {
@@ -2607,9 +2597,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
     increment_old_marking_cycles_completed(false /* concurrent */, true /* liveness_completed */);
   }
 
-  // We are at the end of the GC. Total collections has already been increased.
-  rem_set()->print_periodic_summary_info("After GC RS summary", total_collections() - 1);
-
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
 #endif
@@ -2622,9 +2609,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
   Universe::heap()->update_capacity_and_used_at_gc();
-
-  // Print NUMA statistics.
-  _numa->print_statistics();
 
   _collection_pause_end = Ticks::now();
 
@@ -2944,6 +2928,25 @@ public:
   }
 };
 
+G1CollectedHeap::G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {
+  // This summary needs to be printed before incrementing total collections.
+  _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary", _g1h->total_collections());
+  _g1h->print_heap_before_gc();
+  _g1h->print_heap_regions();
+}
+
+G1CollectedHeap::G1HeapPrinterMark::~G1HeapPrinterMark() {
+  _g1h->policy()->print_age_table();
+  _g1h->rem_set()->print_coarsen_stats();
+
+  _g1h->print_heap_regions();
+  _g1h->print_heap_after_gc();
+  // We are at the end of the GC. Total collections has already been increased.
+  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
+  // Print NUMA statistics.
+  _g1h->numa()->print_statistics();
+}
+
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   GCIdMark gc_id_mark;
 
@@ -2956,8 +2959,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
   wait_for_root_region_scanning();
 
-  print_heap_before_gc();
-  print_heap_regions();
   trace_heap_before_gc(_gc_tracer_stw);
 
   _verifier->verify_region_sets_optional();
@@ -3000,7 +3001,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
 
-    G1HeapTransition heap_transition(this);
+    G1HeapPrinterMark hpm(this);
 
     {
       IsGCActiveMark x;
@@ -3079,7 +3080,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     }
 
     policy()->print_phases();
-    heap_transition.print();
 
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
@@ -3087,8 +3087,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
-    print_heap_after_gc();
-    print_heap_regions();
     trace_heap_after_gc(_gc_tracer_stw);
 
     gc_tracer_report_gc_end(concurrent_operation_is_full_mark, evacuation_info);
@@ -3821,9 +3819,6 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
   evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
   evacuation_info.set_bytes_used(_bytes_used_during_gc);
-
-  policy()->print_age_table();
-  rem_set()->print_coarsen_stats();
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {

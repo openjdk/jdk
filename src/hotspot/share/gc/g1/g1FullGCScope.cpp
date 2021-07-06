@@ -40,7 +40,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _cpu_time(),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
     _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
-    _heap_transition(_g1h),
+    _heap_printer(_g1h),
     _region_compaction_threshold(do_maximum_compaction ?
                                  HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) {
@@ -71,10 +71,6 @@ STWGCTimer* G1FullGCScope::timer() {
 
 G1FullGCTracer* G1FullGCScope::tracer() {
   return &_tracer;
-}
-
-G1HeapTransition* G1FullGCScope::heap_transition() {
-  return &_heap_transition;
 }
 
 size_t G1FullGCScope::region_compaction_threshold() {

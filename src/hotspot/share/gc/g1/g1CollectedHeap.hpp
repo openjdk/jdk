@@ -317,10 +317,6 @@ private:
   // this method will be found dead by the marking cycle).
   void allocate_dummy_regions() PRODUCT_RETURN;
 
-  // If the HR printer is active, dump the state of the regions in the
-  // heap after a compaction.
-  void print_hrm_post_compaction();
-
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
   static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
@@ -537,7 +533,7 @@ private:
   void prepare_heap_for_mutators();
   void abort_refinement();
   void verify_after_full_collection();
-  void print_heap_after_full_collection(G1HeapTransition* heap_transition);
+  void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
@@ -1476,6 +1472,8 @@ private:
   void print_regions_on(outputStream* st) const;
 
 public:
+  class G1HeapPrinterMark;
+
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
@@ -1491,6 +1489,15 @@ public:
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const;
+};
+
+class G1CollectedHeap::G1HeapPrinterMark : public StackObj {
+  G1CollectedHeap* _g1h;
+  G1HeapTransition _heap_transition;
+
+public:
+  G1HeapPrinterMark(G1CollectedHeap* g1h);
+  ~G1HeapPrinterMark();
 };
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
