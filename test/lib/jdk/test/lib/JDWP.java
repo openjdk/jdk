@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,32 @@
  * questions.
  */
 
-package pkg2;
+package jdk.test.lib;
 
-/**
- * Just a dummy class to force the overview page to generate.
- */
-public class Foo {}
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class JDWP {
+
+    public record ListenAddress(String transport, String address) {
+    }
+
+    // lazy initialized
+    private static Pattern listenRegexp;
+
+    /**
+     * Parses debuggee output to get listening transport and address.
+     * Returns null if the string specified does not contain required info.
+     */
+    public static ListenAddress parseListenAddress(String debuggeeOutput) {
+        if (listenRegexp == null) {
+            listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(.+)\\b");
+        }
+        Matcher m = listenRegexp.matcher(debuggeeOutput);
+        if (m.find()) {
+            return new ListenAddress(m.group(1), m.group(2));
+        }
+        return null;
+    }
+
+}

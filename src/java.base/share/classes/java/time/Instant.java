@@ -558,13 +558,13 @@ public final class Instant
      */
     @Override  // override for Javadoc and performance
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case NANO_OF_SECOND: return nanos;
-                case MICRO_OF_SECOND: return nanos / 1000;
-                case MILLI_OF_SECOND: return nanos / 1000_000;
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case NANO_OF_SECOND -> nanos;
+                case MICRO_OF_SECOND -> nanos / 1000;
+                case MILLI_OF_SECOND -> nanos / 1000_000;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return range(field).checkValidIntValue(field.getFrom(this), field);
     }
@@ -594,14 +594,14 @@ public final class Instant
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case NANO_OF_SECOND: return nanos;
-                case MICRO_OF_SECOND: return nanos / 1000;
-                case MILLI_OF_SECOND: return nanos / 1000_000;
-                case INSTANT_SECONDS: return seconds;
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case NANO_OF_SECOND -> nanos;
+                case MICRO_OF_SECOND -> nanos / 1000;
+                case MILLI_OF_SECOND -> nanos / 1000_000;
+                case INSTANT_SECONDS -> seconds;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }
@@ -705,19 +705,19 @@ public final class Instant
     public Instant with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
             chronoField.checkValidValue(newValue);
-            switch (chronoField) {
-                case MILLI_OF_SECOND: {
+            return switch (chronoField) {
+                case MILLI_OF_SECOND -> {
                     int nval = (int) newValue * 1000_000;
-                    return (nval != nanos ? create(seconds, nval) : this);
+                    yield nval != nanos ? create(seconds, nval) : this;
                 }
-                case MICRO_OF_SECOND: {
+                case MICRO_OF_SECOND -> {
                     int nval = (int) newValue * 1000;
-                    return (nval != nanos ? create(seconds, nval) : this);
+                    yield nval != nanos ? create(seconds, nval) : this;
                 }
-                case NANO_OF_SECOND: return (newValue != nanos ? create(seconds, (int) newValue) : this);
-                case INSTANT_SECONDS: return (newValue != seconds ? create(newValue, nanos) : this);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+                case NANO_OF_SECOND -> newValue != nanos ? create(seconds, (int) newValue) : this;
+                case INSTANT_SECONDS -> newValue != seconds ? create(newValue, nanos) : this;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.adjustInto(this, newValue);
     }
@@ -848,18 +848,18 @@ public final class Instant
      */
     @Override
     public Instant plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plus(amountToAdd / 1000_000, (amountToAdd % 1000_000) * 1000);
-                case MILLIS: return plusMillis(amountToAdd);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_MINUTE));
-                case HOURS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_HOUR));
-                case HALF_DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
-                case DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case NANOS     -> plusNanos(amountToAdd);
+                case MICROS    -> plus(amountToAdd / 1000_000, (amountToAdd % 1000_000) * 1000);
+                case MILLIS    -> plusMillis(amountToAdd);
+                case SECONDS   -> plusSeconds(amountToAdd);
+                case MINUTES   -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_MINUTE));
+                case HOURS     -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_HOUR));
+                case HALF_DAYS -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
+                case DAYS      -> plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1143,17 +1143,17 @@ public final class Instant
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Instant end = Instant.from(endExclusive);
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case NANOS: return nanosUntil(end);
-                case MICROS: return nanosUntil(end) / 1000;
-                case MILLIS: return Math.subtractExact(end.toEpochMilli(), toEpochMilli());
-                case SECONDS: return secondsUntil(end);
-                case MINUTES: return secondsUntil(end) / SECONDS_PER_MINUTE;
-                case HOURS: return secondsUntil(end) / SECONDS_PER_HOUR;
-                case HALF_DAYS: return secondsUntil(end) / (12 * SECONDS_PER_HOUR);
-                case DAYS: return secondsUntil(end) / (SECONDS_PER_DAY);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case NANOS     -> nanosUntil(end);
+                case MICROS    -> nanosUntil(end) / 1000;
+                case MILLIS    -> Math.subtractExact(end.toEpochMilli(), toEpochMilli());
+                case SECONDS   -> secondsUntil(end);
+                case MINUTES   -> secondsUntil(end) / SECONDS_PER_MINUTE;
+                case HOURS     -> secondsUntil(end) / SECONDS_PER_HOUR;
+                case HALF_DAYS -> secondsUntil(end) / (12 * SECONDS_PER_HOUR);
+                case DAYS      -> secondsUntil(end) / (SECONDS_PER_DAY);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.between(this, end);
     }

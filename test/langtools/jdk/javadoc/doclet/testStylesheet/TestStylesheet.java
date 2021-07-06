@@ -140,7 +140,7 @@ public class TestStylesheet extends JavadocTester {
                         overflow: auto;
                     }""",
                 """
-                    .summary-table > div {
+                    .summary-table > div, .details-table > div {
                         text-align:left;
                         padding: 8px 3px 3px 7px;
                     }""",

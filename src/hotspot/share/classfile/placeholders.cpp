@@ -43,21 +43,21 @@
 // result the first thread gets.
 class SeenThread: public CHeapObj<mtInternal> {
 private:
-   Thread *_thread;
+   JavaThread* _thread;
    SeenThread* _stnext;
    SeenThread* _stprev;
 public:
-   SeenThread(Thread *thread) {
+   SeenThread(JavaThread* thread) {
        _thread = thread;
        _stnext = NULL;
        _stprev = NULL;
    }
-   Thread* thread()                const { return _thread;}
-   void set_thread(Thread *thread) { _thread = thread; }
+   JavaThread* thread()          const { return _thread;}
+   void set_thread(JavaThread* thread) { _thread = thread; }
 
-   SeenThread* next()              const { return _stnext;}
-   void set_next(SeenThread *seen) { _stnext = seen; }
-   void set_prev(SeenThread *seen) { _stprev = seen; }
+   SeenThread* next()        const { return _stnext;}
+   void set_next(SeenThread* seen) { _stnext = seen; }
+   void set_prev(SeenThread* seen) { _stprev = seen; }
 
   void print_action_queue(outputStream* st) {
     SeenThread* seen = this;
@@ -107,7 +107,7 @@ void PlaceholderEntry::set_threadQ(SeenThread* seenthread, PlaceholderTable::cla
 // bootstrap loader support:  links in a thread before load_instance_class
 // definers: use as queue of define requestors, including owner of
 // define token. Appends for debugging of requestor order
-void PlaceholderEntry::add_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+void PlaceholderEntry::add_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action) {
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
@@ -128,7 +128,7 @@ void PlaceholderEntry::add_seen_thread(Thread* thread, PlaceholderTable::classlo
   return;
 }
 
-bool PlaceholderEntry::check_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+bool PlaceholderEntry::check_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action) {
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadQ = actionToQueue(action);
   SeenThread* seen = threadQ;
@@ -146,7 +146,7 @@ bool PlaceholderEntry::check_seen_thread(Thread* thread, PlaceholderTable::class
 // SystemDictionary_lock
 // ignores if cleanup has already been done
 // if found, deletes SeenThread
-bool PlaceholderEntry::remove_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action) {
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadQ = actionToQueue(action);
   SeenThread* seen = threadQ;
@@ -288,7 +288,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
                                                  ClassLoaderData* loader_data,
                                                  classloadAction action,
                                                  Symbol* supername,
-                                                 Thread* thread) {
+                                                 JavaThread* thread) {
   assert(action != LOAD_SUPER || supername != NULL, "must have a super class name");
   PlaceholderEntry* probe = get_entry(hash, name, loader_data);
   if (probe == NULL) {
@@ -321,7 +321,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
 void PlaceholderTable::find_and_remove(unsigned int hash,
                                        Symbol* name, ClassLoaderData* loader_data,
                                        classloadAction action,
-                                       Thread* thread) {
+                                       JavaThread* thread) {
     assert_locked_or_safepoint(SystemDictionary_lock);
     PlaceholderEntry *probe = get_entry(hash, name, loader_data);
     if (probe != NULL) {

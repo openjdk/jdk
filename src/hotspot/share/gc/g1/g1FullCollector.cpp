@@ -182,8 +182,7 @@ void G1FullCollector::prepare_collection() {
   PrepareRegionsClosure cl(this);
   _heap->heap_region_iterate(&cl);
 
-  reference_processor()->enable_discovery();
-  reference_processor()->setup_policy(scope()->should_clear_soft_refs());
+  reference_processor()->start_discovery(scope()->should_clear_soft_refs());
 
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
