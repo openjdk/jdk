@@ -49,7 +49,7 @@ public class TestMissingComment extends JavadocTester {
     public void testClass(Path base) throws Exception {
         test(base.resolve("class"), """
                     // no doc comment
-                    public class C { 
+                    public class C {
                         /** . */ C() { }
                     }
                     """,
@@ -100,7 +100,7 @@ public class TestMissingComment extends JavadocTester {
                     /** Class comment. */
                     public class C {
                         // no doc comment
-                        public class Nested { 
+                        public class Nested {
                             /** . */ Nested() { }
                         }
                         /** . */ C() { }
