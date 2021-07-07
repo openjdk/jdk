@@ -126,7 +126,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
         final InetAddress loopback = InetAddress.getLoopbackAddress();
 
         try (XServer server = new XServer(loopback)) {
-            server.start ();
+            server.start();
             URL url = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
@@ -139,6 +139,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
             while (c != -1) {
                 try {
                     c=is.read();
+                    System.out.println("client reads: "+c);
                 } catch (IOException ioe) {
                     is.read ();
                     break;
