@@ -62,7 +62,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             this.previous != null ? this.previous.nativeWrapper : null, entries, isInheritable());
 
         this.closer = cleaner.register(
-            this, new NativeBindingDeleter(this.nativeWrapper));
+            this, new NativeBindingCleaner(this.nativeWrapper));
     }
 
     protected RecordingContextBinding previous() {
@@ -140,11 +140,11 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
         }
     }
 
-    static class NativeBindingDeleter implements Runnable {
+    static class NativeBindingCleaner implements Runnable {
 
         private final NativeBindingWrapper nativeWrapper;
 
-        public NativeBindingDeleter(NativeBindingWrapper nativeWrapper) {
+        public NativeBindingCleaner(NativeBindingWrapper nativeWrapper) {
             this.nativeWrapper = nativeWrapper;
         }
 
