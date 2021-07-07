@@ -1180,16 +1180,16 @@ public final class OffsetTime
         OffsetTime end = OffsetTime.from(endExclusive);
         if (unit instanceof ChronoUnit chronoUnit) {
             long nanosUntil = end.toEpochNano() - toEpochNano();  // no overflow
-            switch (chronoUnit) {
-                case NANOS: return nanosUntil;
-                case MICROS: return nanosUntil / 1000;
-                case MILLIS: return nanosUntil / 1000_000;
-                case SECONDS: return nanosUntil / NANOS_PER_SECOND;
-                case MINUTES: return nanosUntil / NANOS_PER_MINUTE;
-                case HOURS: return nanosUntil / NANOS_PER_HOUR;
-                case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case NANOS     -> nanosUntil;
+                case MICROS    -> nanosUntil / 1000;
+                case MILLIS    -> nanosUntil / 1000_000;
+                case SECONDS   -> nanosUntil / NANOS_PER_SECOND;
+                case MINUTES   -> nanosUntil / NANOS_PER_MINUTE;
+                case HOURS     -> nanosUntil / NANOS_PER_HOUR;
+                case HALF_DAYS -> nanosUntil / (12 * NANOS_PER_HOUR);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.between(this, end);
     }

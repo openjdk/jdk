@@ -222,7 +222,11 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int32(int32_t x) { *((int32_t*) end()) = x; set_end(end() + sizeof(int32_t)); }
+  void emit_int32(int32_t x) {
+    address curr = end();
+    *((int32_t*) curr) = x;
+    set_end(curr + sizeof(int32_t));
+  }
   void emit_int32(int8_t x1, int8_t x2, int8_t x3, int8_t x4)  {
     address curr = end();
     *((int8_t*)  curr++) = x1;
