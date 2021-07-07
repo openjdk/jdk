@@ -63,6 +63,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -153,7 +156,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
   // provider of that code.
   if (thread && thread->is_Java_thread() &&
       !thread->is_hidden_from_external_view()) {
-    if (thread->as_Java_thread()->thread_state() == _thread_in_native) {
+    if (JavaThread::cast(thread)->thread_state() == _thread_in_native) {
       out->print_cr("# The crash happened outside the Java Virtual Machine in native code.\n# See problematic frame for where to report the bug.");
     }
   }
@@ -264,7 +267,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
           break;
         }
         if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map(t->as_Java_thread(), false); // No update
+          RegisterMap map(JavaThread::cast(t), false); // No update
           fr = fr.sender(&map);
         } else {
           // is_first_C_frame() does only simple checks for frame pointer,
@@ -750,7 +753,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing Java stack")
 
      if (_verbose && _thread && _thread->is_Java_thread()) {
-       print_stack_trace(st, _thread->as_Java_thread(), buf, sizeof(buf));
+       print_stack_trace(st, JavaThread::cast(_thread), buf, sizeof(buf));
      }
 
   STEP("printing target Java thread stack")
@@ -759,7 +762,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && _thread && (_thread->is_Named_thread())) {
        Thread* thread = ((NamedThread *)_thread)->processed_thread();
        if (thread != NULL && thread->is_Java_thread()) {
-         JavaThread* jt = thread->as_Java_thread();
+         JavaThread* jt = JavaThread::cast(thread);
          st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
@@ -1273,7 +1276,7 @@ static int expand_and_open(const char* pattern, bool overwrite_existing, char* b
  * Name and location depends on pattern, default_pattern params and access
  * permissions.
  */
-static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen) {
+int VMError::prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen) {
   int fd = -1;
 
   // If possible, use specified pattern to construct log file name
@@ -1583,6 +1586,13 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
     }
   }
+
+#if INCLUDE_JVMCI
+  if (JVMCI::fatal_log_filename() != NULL) {
+    out.print_raw("#\n# The JVMCI shared library error report file is saved as:\n# ");
+    out.print_raw_cr(JVMCI::fatal_log_filename());
+  }
+#endif
 
   static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {

@@ -235,7 +235,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
         if (monitor->owner_is_scalar_replaced()) {
           Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-          st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
+          st->print_cr("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
           Handle obj(current, monitor->owner());
           if (obj() != NULL) {

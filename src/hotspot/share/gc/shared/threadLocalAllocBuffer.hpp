@@ -129,6 +129,10 @@ public:
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
   size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
 
+  // For external inspection.
+  const HeapWord* start_relaxed() const;
+  const HeapWord* top_relaxed() const;
+
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
 

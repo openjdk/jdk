@@ -1771,34 +1771,6 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     Node* sfpt = outer_le->in(0);
     assert(sfpt->Opcode() == Op_SafePoint, "where's the safepoint?");
     Node* inner_out = sfpt->in(0);
-    if (inner_out->outcnt() != 1) {
-      ResourceMark rm;
-      Unique_Node_List wq;
-
-      for (DUIterator_Fast imax, i = inner_out->fast_outs(imax); i < imax; i++) {
-        Node* u = inner_out->fast_out(i);
-        if (u == sfpt) {
-          continue;
-        }
-        wq.clear();
-        wq.push(u);
-        bool found_sfpt = false;
-        for (uint next = 0; next < wq.size() && !found_sfpt; next++) {
-          Node* n = wq.at(next);
-          for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax && !found_sfpt; i++) {
-            Node* u = n->fast_out(i);
-            if (u == sfpt) {
-              found_sfpt = true;
-            }
-            if (!u->is_CFG()) {
-              wq.push(u);
-            }
-          }
-        }
-        assert(found_sfpt, "no node in loop that's not input to safepoint");
-      }
-    }
-
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
     assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
@@ -4041,6 +4013,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // all the code before the peeled area, so the verify pass will always
     // complain about it.
   }
+
+  // Check for bailout, and return
+  if (C->failing()) {
+    return;
+  }
+
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 
@@ -5055,19 +5033,19 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
           }
         }
       }
-      // For Phis only consider Region's inputs that were reached by following the memory edges
-      if (LCA != early) {
-        for (uint i = 0; i < worklist.size(); i++) {
-          Node* s = worklist.at(i);
-          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
-            Node* r = s->in(0);
-            for (uint j = 1; j < s->req(); j++) {
-              Node* in = s->in(j);
-              Node* r_in = r->in(j);
-              // We can't reach any node from a Phi because we don't enqueue Phi's uses above
-              if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
-                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
-              }
+    }
+    // For Phis only consider Region's inputs that were reached by following the memory edges
+    if (LCA != early) {
+      for (uint i = 0; i < worklist.size(); i++) {
+        Node* s = worklist.at(i);
+        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+          Node* r = s->in(0);
+          for (uint j = 1; j < s->req(); j++) {
+            Node* in = s->in(j);
+            Node* r_in = r->in(j);
+            // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+            if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
             }
           }
         }

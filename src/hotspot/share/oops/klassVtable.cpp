@@ -51,7 +51,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && !_klass->is_shared_old_klass();
+  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
 }
 
 
@@ -1094,8 +1094,8 @@ void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
 #ifdef ASSERT
   if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
      !MetaspaceShared::remapped_readwrite() &&
-     !m->method_holder()->can_be_verified_at_dumptime() &&
-     !klass->can_be_verified_at_dumptime()) {
+     m->method_holder()->verified_at_dump_time() &&
+     klass->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.

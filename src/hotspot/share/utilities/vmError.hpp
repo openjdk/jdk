@@ -184,5 +184,10 @@ public:
   // Needed when printing signal handlers.
   NOT_WINDOWS(static const void* crash_handler_address;)
 
+  // Construct file name for a log file and return it's file descriptor.
+  // Name and location depends on pattern, default_pattern params and access
+  // permissions.
+  static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
+
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_17)
+@SupportedSourceVersion(RELEASE_18)
 public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call.

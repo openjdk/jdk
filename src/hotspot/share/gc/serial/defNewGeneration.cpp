@@ -495,9 +495,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
   return result;
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
-                                                bool   is_tlab,
-                                                bool   parallel) {
+HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
   // We don't attempt to expand the young generation (but perhaps we should.)
   return allocate(size, is_tlab);
 }
@@ -586,7 +584,6 @@ void DefNewGeneration::collect(bool   full,
 
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
-  rp->setup_policy(clear_all_soft_refs);
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
   const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);

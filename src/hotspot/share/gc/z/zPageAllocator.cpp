@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
     _used_low(0),
     _reclaimed(0),
     _stalled(),
+    _nstalled(0),
     _satisfied(),
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
@@ -224,7 +225,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   if (AlwaysPreTouch) {
     // Pre-touch page
     ZPreTouchTask task(&_physical, page->start(), page->end());
-    workers->run_parallel(&task);
+    workers->run_all(&task);
   }
 
   free_page(page, false /* reclaimed */);
@@ -283,6 +284,7 @@ void ZPageAllocator::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _reclaimed = 0;
   _used_high = _used_low = _used;
+  _nstalled = 0;
 }
 
 size_t ZPageAllocator::increase_capacity(size_t size) {
@@ -447,6 +449,9 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
 
   // We can only block if the VM is fully initialized
   check_out_of_memory_during_initialization();
+
+  // Increment stalled counter
+  Atomic::inc(&_nstalled);
 
   do {
     // Start asynchronous GC
@@ -648,7 +653,7 @@ retry:
 
   // Update allocation statistics. Exclude worker relocations to avoid
   // artificial inflation of the allocation rate during relocation.
-  if (!flags.worker_relocation()) {
+  if (!flags.worker_relocation() && is_init_completed()) {
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
     const size_t bytes = page->size();
@@ -804,9 +809,8 @@ void ZPageAllocator::pages_do(ZPageClosure* cl) const {
   _cache.pages_do(cl);
 }
 
-bool ZPageAllocator::is_alloc_stalled() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  return !_stalled.is_empty();
+bool ZPageAllocator::has_alloc_stalled() const {
+  return Atomic::load(&_nstalled) != 0;
 }
 
 void ZPageAllocator::check_out_of_memory() {
