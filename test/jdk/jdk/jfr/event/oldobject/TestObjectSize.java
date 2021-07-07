@@ -91,7 +91,6 @@ public class TestObjectSize {
                 recording.stop();
 
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Events.hasEvents(events);
                 for (RecordedEvent e : events) {
                     RecordedObject object = e.getValue("object");
                     RecordedClass type = object.getValue("type");
