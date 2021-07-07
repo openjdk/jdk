@@ -769,6 +769,15 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_VZEROUPPER;
       _features &= ~CPU_AVX512BW;
       _features &= ~CPU_AVX512VL;
+      _features &= ~CPU_AVX512DQ;
+      _features &= ~CPU_AVX512_VNNI;
+      _features &= ~CPU_AVX512_VAES;
+      _features &= ~CPU_AVX512_VPOPCNTDQ;
+      _features &= ~CPU_AVX512_VPCLMULQDQ;
+      _features &= ~CPU_AVX512_VBMI;
+      _features &= ~CPU_AVX512_VBMI2;
+      _features &= ~CPU_CLWB;
+      _features &= ~CPU_FLUSHOPT;
     }
   }
 
@@ -1012,10 +1021,6 @@ void VM_Version::get_processor_features() {
   }
 
   if (!supports_rtm() && UseRTMLocking) {
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
-    // VM_Version_init() is executed after UseBiasedLocking is used
-    // in Thread::allocate().
     vm_exit_during_initialization("RTM instructions are not available on this CPU");
   }
 
@@ -1023,8 +1028,6 @@ void VM_Version::get_processor_features() {
   if (UseRTMLocking) {
     if (!CompilerConfig::is_c2_enabled()) {
       // Only C2 does RTM locking optimization.
-      // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-      // setting during arguments processing. See use_biased_locking().
       vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
     }
     if (is_intel_family_core()) {
@@ -1062,8 +1065,6 @@ void VM_Version::get_processor_features() {
 #else
   if (UseRTMLocking) {
     // Only C2 does RTM locking optimization.
-    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
-    // setting during arguments processing. See use_biased_locking().
     vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
   }
 #endif
@@ -1734,27 +1735,6 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   } else if (vrt == HyperVRole) {
     st->print_cr("Hyper-V role detected");
   }
-}
-
-bool VM_Version::use_biased_locking() {
-#if INCLUDE_RTM_OPT
-  // RTM locking is most useful when there is high lock contention and
-  // low data contention.  With high lock contention the lock is usually
-  // inflated and biased locking is not suitable for that case.
-  // RTM locking code requires that biased locking is off.
-  // Note: we can't switch off UseBiasedLocking in get_processor_features()
-  // because it is used by Thread::allocate() which is called before
-  // VM_Version::initialize().
-  if (UseRTMLocking && UseBiasedLocking) {
-    if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
-      FLAG_SET_DEFAULT(UseBiasedLocking, false);
-    } else {
-      warning("Biased locking is not supported with RTM locking; ignoring UseBiasedLocking flag." );
-      UseBiasedLocking = false;
-    }
-  }
-#endif
-  return UseBiasedLocking;
 }
 
 bool VM_Version::compute_has_intel_jcc_erratum() {

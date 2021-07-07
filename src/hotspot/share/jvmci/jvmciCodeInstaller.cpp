@@ -480,6 +480,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject target,
     JVMCIObject compiled_code,
     CodeBlob*& cb,
+    nmethodLocker& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -537,18 +538,20 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
 
     JVMCIObject mirror = installed_code;
-    nmethod* nm = NULL;
-    result = runtime()->register_method(jvmci_env(), method, nm, entry_bci, &_offsets, _orig_pc_offset, &buffer,
+    result = runtime()->register_method(jvmci_env(), method, nmethod_handle, entry_bci, &_offsets, _orig_pc_offset, &buffer,
                                         stack_slots, _debug_recorder->_oopmaps, &_exception_handler_table, &_implicit_exception_table,
                                         compiler, _debug_recorder, _dependencies, id,
                                         has_unsafe_access, _has_wide_vector, compiled_code, mirror,
                                         failed_speculations, speculations, speculations_len);
-    cb = nm->as_codeblob_or_null();
-    if (nm != NULL && compile_state == NULL) {
-      // This compile didn't come through the CompileBroker so perform the printing here
-      DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
-      nm->maybe_print_nmethod(directive);
-      DirectivesStack::release(directive);
+    if (result == JVMCI::ok) {
+      nmethod* nm = nmethod_handle.code()->as_nmethod_or_null();
+      cb = nm;
+      if (compile_state == NULL) {
+        // This compile didn't come through the CompileBroker so perform the printing here
+        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
+        nm->maybe_print_nmethod(directive);
+        DirectivesStack::release(directive);
+      }
     }
   }
 

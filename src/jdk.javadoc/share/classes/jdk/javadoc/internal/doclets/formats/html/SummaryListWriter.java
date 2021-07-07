@@ -53,7 +53,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
+public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
     private String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -208,12 +208,12 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             TableHeader tableHeader = new TableHeader(
                     contents.getContent(headerKey), contents.descriptionLabel);
 
-            Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(caption)
+                    .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
                     .setColumnStyles(HtmlStyle.colSummaryItemName, HtmlStyle.colLast);
+            addTableTabs(table, headingKey);
             for (Element e : apiList) {
                 Content link;
                 switch (e.getKind()) {
@@ -230,7 +230,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
                 }
                 Content desc = new ContentBuilder();
                 addComments(e, desc);
-                table.addRow(link, desc);
+                table.addRow(e, link, desc);
             }
             // note: singleton list
             contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
@@ -243,7 +243,8 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param e the element for which the summary text should be added
      * @param desc the target to which the text should be added
      */
-    protected abstract void addComments(Element e, Content desc);
+    protected void addComments(Element e, Content desc) {
+    }
 
     protected Content getSummaryLink(Element e) {
         AbstractMemberWriter writer = switch (e.getKind()) {
@@ -277,4 +278,22 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      */
     protected void addExtraIndexLink(L list, Content target) {
     }
+
+    /**
+     * Returns the caption for the table with the given {@code headingKey}.
+     *
+     * @param headingKey the key for the table heading
+     * @return the table caption
+     */
+    protected Content getTableCaption(String headingKey) {
+        return contents.getContent(headingKey);
+    }
+
+    /**
+     * Allow subclasses to add extra tabs to the element tables.
+     *
+     * @param table the element table
+     * @param headingKey the key for the caption (default tab)
+     */
+    protected void addTableTabs(Table table, String headingKey) {}
 }

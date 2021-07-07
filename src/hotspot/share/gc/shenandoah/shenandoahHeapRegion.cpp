@@ -467,7 +467,7 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
   }
 }
 
-void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
+size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Absolute minimums we should not ever break.
   static const size_t MIN_REGION_SIZE = 256*K;
 
@@ -542,13 +542,28 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
     region_size = ShenandoahRegionSize;
   }
 
-  // Make sure region size is at least one large page, if enabled.
-  // The heap sizes would be rounded by heap initialization code by
-  // page size, so we need to round up the region size too, to cover
-  // the heap exactly.
+  // Make sure region size and heap size are page aligned.
+  // If large pages are used, we ensure that region size is aligned to large page size if
+  // heap size is large enough to accommodate minimal number of regions. Otherwise, we align
+  // region size to regular page size.
+
+  // Figure out page size to use, and aligns up heap to page size
+  int page_size = os::vm_page_size();
   if (UseLargePages) {
-    region_size = MAX2(region_size, os::large_page_size());
+    size_t large_page_size = os::large_page_size();
+    max_heap_size = align_up(max_heap_size, large_page_size);
+    if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
+      page_size = (int)large_page_size;
+    } else {
+      // Should have been checked during argument initialization
+      assert(!ShenandoahUncommit, "Uncommit requires region size aligns to large page size");
+    }
+  } else {
+    max_heap_size = align_up(max_heap_size, page_size);
   }
+
+  // Align region size to page size
+  region_size = align_up(region_size, page_size);
 
   int region_size_log = log2i(region_size);
   // Recalculate the region size to make sure it's a power of
@@ -612,6 +627,8 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
+
+  return max_heap_size;
 }
 
 void ShenandoahHeapRegion::do_commit() {

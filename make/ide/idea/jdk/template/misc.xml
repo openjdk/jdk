@@ -6,10 +6,13 @@
   <component name="JTRegService">
     <path>###JTREG_HOME###</path>
     <workDir>###BUILD_DIR###</workDir>
-    <jre alt="true" value="###BUILD_DIR###/images/jdk" />
+    <jre alt="true" value="###IMAGES_DIR###" />
     <options></options>
+    <ant>
+      <target file="file://###ROOT_DIR###/make/ide/idea/jdk/build.xml" name="images" />
+    </ant>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_16" assert-keyword="true" jdk-15="true">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_X" assert-keyword="true" project-jdk-type="JavaSDK">
     <output url="file://###BUILD_DIR###/idea" />
   </component>
 </project>

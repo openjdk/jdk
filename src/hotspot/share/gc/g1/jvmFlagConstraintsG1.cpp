@@ -28,15 +28,15 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-JVMFlag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error G1RemSetArrayOfCardsEntriesConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
-  // Default value of G1RSetRegionEntries=0 means will be set ergonomically.
+  // Default value of G1RemSetArrayOfCardsEntries=0 means will be set ergonomically.
   // Minimum value is 1.
-  if (FLAG_IS_CMDLINE(G1RSetRegionEntries) && (value < 1)) {
+  if (FLAG_IS_CMDLINE(G1RemSetArrayOfCardsEntries) && (value < 1)) {
     JVMFlag::printError(verbose,
-                        "G1RSetRegionEntries (" INTX_FORMAT ") must be "
-                        "greater than or equal to 1\n",
+                        "G1RemSetArrayOfCardsEntries (%u) must be "
+                        "greater than or equal to 1.\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -44,20 +44,35 @@ JVMFlag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error G1RemSetHowlNumBucketsConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
-  // Default value of G1RSetSparseRegionEntries=0 means will be set ergonomically.
-  // Minimum value is 1.
-  if (FLAG_IS_CMDLINE(G1RSetSparseRegionEntries) && (value < 1)) {
-    JVMFlag::printError(verbose,
-                        "G1RSetSparseRegionEntries (" INTX_FORMAT ") must be "
-                        "greater than or equal to 1\n",
-                        value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
+  if (!FLAG_IS_CMDLINE(G1RemSetHowlNumBuckets)) {
     return JVMFlag::SUCCESS;
   }
+  if (value == 0 || !is_power_of_2(G1RemSetHowlNumBuckets)) {
+    JVMFlag::printError(verbose,
+                        "G1RemSetHowlNumBuckets (%u) must be a power of two "
+                        "and greater than or equal to 1.\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose) {
+  if (!UseG1GC) return JVMFlag::SUCCESS;
+
+  if (!FLAG_IS_CMDLINE(G1RemSetHowlMaxNumBuckets)) {
+    return JVMFlag::SUCCESS;
+  }
+  if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
+    JVMFlag::printError(verbose,
+                        "G1RemSetMaxHowlNumBuckets (%u) must be a power of two.\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {

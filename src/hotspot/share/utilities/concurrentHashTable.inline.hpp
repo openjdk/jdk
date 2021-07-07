@@ -37,8 +37,8 @@
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
-// 2^5  = 32 buckets
-#define SIZE_SMALL_LOG2 5
+// 2^2  = 4 buckets
+#define SIZE_SMALL_LOG2 2
 
 // Number from spinYield.hpp. In some loops SpinYield would be unfair.
 #define SPINPAUSES_PER_YIELD 8192
@@ -817,10 +817,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   }
 
   _new_table = new InternalTable(_table->_log2_size + 1);
-
-  if (_new_table->_log2_size == _log2_size_limit) {
-    _size_limit_reached = true;
-  }
+  _size_limit_reached = _new_table->_log2_size == _log2_size_limit;
 
   return true;
 }
@@ -954,6 +951,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 {
   Node* current_node = bucket->first();
   while (current_node != NULL) {
+    Prefetch::read(current_node->next(), 0);
     if (!visitor_f(current_node->value())) {
       return false;
     }
@@ -1030,6 +1028,14 @@ inline ConcurrentHashTable<CONFIG, F>::
   delete _resize_lock;
   free_nodes();
   delete _table;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+inline size_t ConcurrentHashTable<CONFIG, F>::
+  get_mem_size(Thread* thread)
+{
+  ScopedCS cs(thread, this);
+  return sizeof(*this) + _table->get_mem_size();
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1135,8 +1141,6 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // We only allow this method to be used during a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(),
          "must only be called in a safepoint");
-  assert(Thread::current()->is_VM_thread(),
-         "should be in vm thread");
 
   // Here we skip protection,
   // thus no other thread may use this table at the same time.

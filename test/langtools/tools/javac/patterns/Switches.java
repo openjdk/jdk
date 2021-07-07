@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8268333 8268896
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -46,6 +46,8 @@ public class Switches {
         assertTrue(testNullSwitch(""));
         runArrayTypeTest(this::testArrayTypeStatement);
         runArrayTypeTest(this::testArrayTypeExpression);
+        runDefaultTest(this::testDefaultDoesNotDominateStatement);
+        runDefaultTest(this::testDefaultDoesNotDominateExpression);
         runEnumTest(this::testEnumExpression1);
         runEnumTest(this::testEnumExpression2);
         runEnumTest(this::testEnumWithGuards1);
@@ -58,6 +60,8 @@ public class Switches {
         runEnumTest(this::testIntegerWithGuardsExpression1);
         runStringWithConstant(this::testStringWithConstant);
         runStringWithConstant(this::testStringWithConstantExpression);
+        runFallThrough(this::testFallThroughStatement);
+        runFallThrough(this::testFallThroughExpression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
         exhaustiveStatementSane("");
@@ -81,6 +85,13 @@ public class Switches {
         assertEquals("", mapper.apply(1.0));
     }
 
+    void runDefaultTest(Function<Object, String> mapper) {
+        assertEquals("default", mapper.apply(new int[0]));
+        assertEquals("str6", mapper.apply("string"));
+        assertEquals("default", mapper.apply(1));
+        assertEquals("default", mapper.apply(1.0));
+    }
+
     void runEnumTest(Function<E, String> mapper) {
         assertEquals("a", mapper.apply(E.A));
         assertEquals("b", mapper.apply(E.B));
@@ -93,6 +104,10 @@ public class Switches {
         assertEquals(2, mapper.apply("AA"));
         assertEquals(0, mapper.apply(""));
         assertEquals(-1, mapper.apply(null));
+    }
+
+    void runFallThrough(Function<Integer, Integer> mapper) {
+        assertEquals(2, mapper.apply(1));
     }
 
     void npeTest(Consumer<I> testCase) {
@@ -172,6 +187,22 @@ public class Switches {
         };
     }
 
+    String testDefaultDoesNotDominateStatement(Object o) {
+        String res;
+        switch (o) {
+            default -> res = "default";
+            case String str -> res = "str" + str.length();
+        }
+        return res;
+    }
+
+    String testDefaultDoesNotDominateExpression(Object o) {
+        return switch (o) {
+            case default -> "default";
+            case String str -> "str" + str.length();
+        };
+    }
+
     int testStringWithConstant(String str) {
         switch (str) {
             case "A": return 1;
@@ -247,7 +278,7 @@ public class Switches {
     String testStringWithGuards1(E e) {
         switch (e != null ? e.name() : null) {
             case "A": return "a";
-            case "B": return "b";
+            case Switches.ConstantClassClash: return "b";
             case String x && "C".equals(x): return "C";
             case "C": return "broken";
             case null, String x: return String.valueOf(x);
@@ -257,7 +288,7 @@ public class Switches {
     String testStringWithGuardsExpression1(E e) {
         return switch (e != null ? e.name() : null) {
             case "A" -> "a";
-            case "B" -> "b";
+            case ConstantClassClash -> "b";
             case String x && "C".equals(x) -> "C";
             case "C" -> "broken";
             case null, String x -> String.valueOf(x);
@@ -282,6 +313,31 @@ public class Switches {
             case 2 -> "broken";
             case null, Integer x -> String.valueOf(x);
         };
+    }
+
+    Integer testFallThroughStatement(Integer i) {
+        int r = 0;
+
+        switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            default:
+                r = 2;
+        }
+
+        return r;
+    }
+
+    Integer testFallThroughExpression(Integer i) {
+        int r = switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            default:
+                r = 2;
+                yield r;
+        };
+
+        return r;
     }
 
     void npeTestStatement(I i) {
@@ -309,6 +365,12 @@ public class Switches {
             case Object obj, null:; //no break intentionally - should not fall through to any possible default
         }
     }
+
+    //verify that for cases like:
+    //case ConstantClassClash ->
+    //ConstantClassClash is interpreted as a field, not as a class
+    private static final String ConstantClassClash = "B";
+    private static class ConstantClassClash {}
 
     sealed interface I {}
     final class A implements I {}

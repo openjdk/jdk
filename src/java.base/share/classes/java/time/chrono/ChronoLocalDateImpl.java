@@ -198,17 +198,17 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     @SuppressWarnings("unchecked")
     public D plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case DAYS: return plusDays(amountToAdd);
-                case WEEKS: return plusDays(Math.multiplyExact(amountToAdd, 7));
-                case MONTHS: return plusMonths(amountToAdd);
-                case YEARS: return plusYears(amountToAdd);
-                case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
-                case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
-                case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
-                case ERAS: return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case DAYS      -> plusDays(amountToAdd);
+                case WEEKS     -> plusDays(Math.multiplyExact(amountToAdd, 7));
+                case MONTHS    -> plusMonths(amountToAdd);
+                case YEARS     -> plusYears(amountToAdd);
+                case DECADES   -> plusYears(Math.multiplyExact(amountToAdd, 10));
+                case CENTURIES -> plusYears(Math.multiplyExact(amountToAdd, 100));
+                case MILLENNIA -> plusYears(Math.multiplyExact(amountToAdd, 1000));
+                case ERAS      -> with(ERA, Math.addExact(getLong(ERA), amountToAdd));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return (D) ChronoLocalDate.super.plus(amountToAdd, unit);
     }
@@ -377,17 +377,17 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
         Objects.requireNonNull(endExclusive, "endExclusive");
         ChronoLocalDate end = getChronology().date(endExclusive);
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case DAYS: return daysUntil(end);
-                case WEEKS: return daysUntil(end) / 7;
-                case MONTHS: return monthsUntil(end);
-                case YEARS: return monthsUntil(end) / 12;
-                case DECADES: return monthsUntil(end) / 120;
-                case CENTURIES: return monthsUntil(end) / 1200;
-                case MILLENNIA: return monthsUntil(end) / 12000;
-                case ERAS: return end.getLong(ERA) - getLong(ERA);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case DAYS      -> daysUntil(end);
+                case WEEKS     -> daysUntil(end) / 7;
+                case MONTHS    -> monthsUntil(end);
+                case YEARS     -> monthsUntil(end) / 12;
+                case DECADES   -> monthsUntil(end) / 120;
+                case CENTURIES -> monthsUntil(end) / 1200;
+                case MILLENNIA -> monthsUntil(end) / 12000;
+                case ERAS      -> end.getLong(ERA) - getLong(ERA);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         Objects.requireNonNull(unit, "unit");
         return unit.between(this, end);

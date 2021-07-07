@@ -44,6 +44,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
@@ -107,6 +108,19 @@ void StringDedup::threads_do(ThreadClosure* tc) {
   tc->do_thread(_processor);
 }
 
+void StringDedup::forbid_deduplication(oop java_string) {
+  assert(is_enabled(), "precondition");
+  if (java_lang_String::deduplication_forbidden(java_string)) {
+    // DCLP - we don't want a caller's access to the value array to float
+    // before the check; string dedup could change the value and another
+    // thread could set the flag, and this thread uses a stale value.
+    OrderAccess::acquire();
+  } else {
+    MutexLocker ml(StringDedupIntern_lock, Mutex::_no_safepoint_check_flag);
+    java_lang_String::set_deduplication_forbidden(java_string);
+  }
+}
+
 void StringDedup::notify_intern(oop java_string) {
   assert(is_enabled(), "precondition");
   // A String that is interned in the StringTable must not later have its
@@ -114,10 +128,7 @@ void StringDedup::notify_intern(oop java_string) {
   // can still add the byte array to the dedup table for sharing, so add the
   // string to the pending requests.  Triggering request processing is left
   // to the next GC.
-  {
-    MutexLocker ml(StringDedupIntern_lock, Mutex::_no_safepoint_check_flag);
-    java_lang_String::set_deduplication_forbidden(java_string);
-  }
+  forbid_deduplication(java_string);
   StorageUse* requests = Processor::storage_for_requests();
   oop* ref = requests->storage()->allocate();
   if (ref != nullptr) {

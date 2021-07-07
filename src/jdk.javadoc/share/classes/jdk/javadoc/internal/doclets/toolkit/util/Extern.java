@@ -572,7 +572,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
+                if (!utils.elementUtils.isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }

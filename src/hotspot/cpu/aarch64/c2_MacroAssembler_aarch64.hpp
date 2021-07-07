@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,5 +48,9 @@
   void stringL_indexof_char(Register str1, Register cnt1,
                            Register ch, Register result,
                            Register tmp1, Register tmp2, Register tmp3);
+
+  // SIMD&FP comparison
+  void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
+                    FloatRegister src2, int cond, bool isQ);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
