@@ -2618,7 +2618,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   resize_all_tlabs();
   phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 
-  MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
   Universe::heap()->update_capacity_and_used_at_gc();
@@ -2996,6 +2995,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                                                             Threads::number_of_non_daemon_threads());
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+
+    // JStat/MXBeans
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
