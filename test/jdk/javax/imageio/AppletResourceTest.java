@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.ListResourceBundle;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.Objects;
 import java.util.Vector;
 
 import javax.imageio.IIOException;
@@ -115,7 +114,8 @@ public class AppletResourceTest {
         public int getWidth(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            Objects.checkIndex(imageIndex, 5);
+            if (imageIndex >= 5 || imageIndex < 0)
+                throw new IndexOutOfBoundsException();
 
             return 10;
         }
@@ -123,7 +123,8 @@ public class AppletResourceTest {
         public int getHeight(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            Objects.checkIndex(imageIndex, 5);
+            if (imageIndex >= 5 || imageIndex < 0)
+                throw new IndexOutOfBoundsException();
 
             return 15;
         }
@@ -131,7 +132,8 @@ public class AppletResourceTest {
         public Iterator getImageTypes(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            Objects.checkIndex(imageIndex, 5);
+            if (imageIndex >= 5 || imageIndex < 0)
+                throw new IndexOutOfBoundsException();
 
             Vector imageTypes = new Vector();
             imageTypes.add(ImageTypeSpecifier.createFromBufferedImageType
@@ -148,7 +150,8 @@ public class AppletResourceTest {
 
             if (input == null)
                 throw new IllegalStateException();
-            Objects.checkIndex(imageIndex, 5);
+            if (imageIndex >= 5 || imageIndex < 0)
+                throw new IndexOutOfBoundsException();
             if (seekForwardOnly) {
                 if (imageIndex < minIndex)
                     throw new IndexOutOfBoundsException();
@@ -162,7 +165,8 @@ public class AppletResourceTest {
           throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            Objects.checkIndex(imageIndex, 5);
+            if (imageIndex >= 5 || imageIndex < 0)
+                throw new IndexOutOfBoundsException();
             if (seekForwardOnly) {
                 if (imageIndex < minIndex)
                     throw new IndexOutOfBoundsException();

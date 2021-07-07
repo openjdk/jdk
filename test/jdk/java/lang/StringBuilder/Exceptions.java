@@ -64,7 +64,7 @@ public class Exceptions {
             pass(s);
     }
 
-    public static void main(String[] args) {
+    public static void main(String [] args) {
         System.out.println("StringBuilder()");
         tryCatch("  no args", null, new Runnable() {
                 public void run() {
@@ -96,22 +96,22 @@ public class Exceptions {
                  new StringIndexOutOfBoundsException("Range [-1, 2) out of bounds for length 7"),
                  new Runnable() {
                 public void run() {
-                        StringBuilder sb = new StringBuilder("hilbert");
-                        sb.replace(-1, 2, " ");
+                    StringBuilder sb = new StringBuilder("hilbert");
+                    sb.replace(-1, 2, " ");
                 }});
         tryCatch("  7, 8, \" \"",
                  new StringIndexOutOfBoundsException("Range [7, 6) out of bounds for length 6"),
                  new Runnable() {
                 public void run() {
-                        StringBuilder sb = new StringBuilder("banach");
-                        sb.replace(7, 8, " ");
+                    StringBuilder sb = new StringBuilder("banach");
+                    sb.replace(7, 8, " ");
                 }});
         tryCatch("  2, 1, \" \"",
                  new StringIndexOutOfBoundsException("Range [2, 1) out of bounds for length 7"),
                  new Runnable() {
                 public void run() {
-                        StringBuilder sb = new StringBuilder("riemann");
-                        sb.replace(2, 1, " ");
+                    StringBuilder sb = new StringBuilder("riemann");
+                    sb.replace(2, 1, " ");
                 }});
 
         if (!ok) {
