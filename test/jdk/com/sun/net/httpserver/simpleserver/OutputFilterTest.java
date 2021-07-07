@@ -27,7 +27,7 @@
  * @modules java.base/sun.net.www:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run testng/othervm OutputFilterTest
+ * @run testng/othervm -Djdk.httpclient.redirects.retrylimit=1 OutputFilterTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -150,6 +150,13 @@ public class OutputFilterTest {
         }
     }
 
+    /**
+     * Confirms that the output filter captures a throwable that is thrown
+     * during the exchange handling and prints the expected error message.
+     * The "httpclient.redirects.retrylimit" system property is set to 1 to
+     * prevent retries on the client side, which would result in more than one
+     * error message.
+     */
     @Test
     public void testExchangeThrowingHandler() throws Exception {
         var baos = new ByteArrayOutputStream();
@@ -164,9 +171,8 @@ public class OutputFilterTest {
         } finally {
             server.stop(0);
             baos.flush();
-            var filterOutput = baos.toString(UTF_8);
-            // assertEquals(filterOutput, "Error: server exchange handling failed: Throwing Handler IOE");
-            // TODO: Why is the error message printed twice? Why is handle called twice?
+            assertEquals(baos.toString(UTF_8),
+                    "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator());
         }
     }
 
@@ -200,7 +206,7 @@ public class OutputFilterTest {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try (exchange) {
-                throw new IOException("Throwing Handler IOE");
+                throw new IOException("IOE ThrowingHandler");
             }
         }
     }
