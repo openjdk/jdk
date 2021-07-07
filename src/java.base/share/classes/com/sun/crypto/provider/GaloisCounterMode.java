@@ -894,7 +894,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // if src is read only, then we need a copy
                 if (!src.isReadOnly()) {
                     // If using the heap, check underlying byte[] address.
-                    if (!src.array().equals(dst.array()) ) {
+                    if (src.array() != dst.array()) {
                         return dst;
                     }
 

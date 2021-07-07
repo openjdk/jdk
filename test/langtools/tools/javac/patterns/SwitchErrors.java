@@ -26,6 +26,7 @@
  * @bug 8262891
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
+ * @compile/fail/ref=SwitchErrors-no-preview.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
@@ -190,6 +191,12 @@ public class SwitchErrors {
     }
     sealed class SealedNonAbstract permits A {}
     final class A extends SealedNonAbstract {}
+    void errorRecoveryNoPattern1(Object o) {
+        switch (o) {
+            case String: break;
+            case Object obj: break;
+        }
+    }
     Object guardWithMatchingStatement(Object o1, Object o2) {
         switch (o1) {
             case String s && s.isEmpty() || o2 instanceof Number n: return n;

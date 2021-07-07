@@ -962,10 +962,10 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 }
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
-  // Post and destroy queue nodes
+  // Post events while nmethods are still in the queue and can't be unloaded or made zombie
   while (_queue_head != NULL) {
-     JvmtiDeferredEvent event = dequeue();
-     event.post_compiled_method_load_event(env);
+    _queue_head->event().post_compiled_method_load_event(env);
+    dequeue();
   }
 }
 
