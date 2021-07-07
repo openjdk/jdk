@@ -296,9 +296,7 @@ final class ParserFactory {
         @Override
         public Object parse(RecordingInput input) throws IOException {
             final int size = input.readInt();
-            System.err.println("ArrayParser: size = " + size);
             final Object[] array = new Object[size];
-            System.err.println("ArrayParser: elementParser = " + elementParser);
             for (int i = 0; i < size; i++) {
                 array[i] = elementParser.parse(input);
             }
