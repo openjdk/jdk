@@ -160,7 +160,7 @@ public abstract class Reader {
                         fos.write(buffer, 0, len);
                     }
                 } catch (Exception e) {
-                    throw new IOException("Can not decompress the compressed hprof file", e);
+                    throw new IOException("Cannot decompress the compressed hprof file", e);
                 }
                 // Check dump data header and print stack trace.
                 try {
@@ -173,9 +173,11 @@ public abstract class Reader {
                                               true, debugLevel);
                         r.read();
                         return r.printStackTraces();
+                    } else {
+                        throw new IOException("Unrecognized magic number of decompressed data: " + i);
                     }
                 } catch (Exception e) {
-                    throw new IOException("Can not get stack trace from the compressed hprof file", e);
+                    throw new IOException("Cannot get stack trace from the compressed hprof file", e);
                 }
                 out.delete();
             } else {
