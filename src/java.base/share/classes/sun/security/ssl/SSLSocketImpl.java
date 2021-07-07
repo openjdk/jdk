@@ -1780,7 +1780,12 @@ public final class SSLSocketImpl
             // Try to clear the kernel buffer to avoid TCP connection resets.
             if (conContext.inputRecord instanceof SSLSocketInputRecord &&
                 isConnected) {
-                ((SSLSocketInputRecord)(conContext.inputRecord)).deplete(false);
+                appInput.readLock.lock();
+                try {
+                    ((SSLSocketInputRecord) (conContext.inputRecord)).deplete(false);
+                } finally {
+                    appInput.readLock.unlock();
+                }
             }
 
             super.close();
