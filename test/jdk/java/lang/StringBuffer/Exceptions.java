@@ -93,26 +93,26 @@ public class Exceptions {
 
         System.out.println("StringBuffer.replace(int start, int end, String str)");
         tryCatch("  -1, 2, \" \"",
-                new StringIndexOutOfBoundsException("Range [-1, 2) out of bounds for length 7"),
-                new Runnable() {
-                    public void run() {
+                 new StringIndexOutOfBoundsException("Range [-1, 2) out of bounds for length 7"),
+                 new Runnable() {
+                public void run() {
                         StringBuffer sb = new StringBuffer("hilbert");
                         sb.replace(-1, 2, " ");
                     }
                 });
 
         tryCatch("  7, 8, \" \"",
-                new StringIndexOutOfBoundsException("Range [7, 6) out of bounds for length 6"),
-                new Runnable() {
-                    public void run() {
+                 new StringIndexOutOfBoundsException("Range [7, 6) out of bounds for length 6"),
+                 new Runnable() {
+                public void run() {
                         StringBuffer sb = new StringBuffer("banach");
                         sb.replace(7, 8, " ");
                     }
                 });
         tryCatch("  2, 1, \" \"",
-                new StringIndexOutOfBoundsException("Range [2, 1) out of bounds for length 7"),
-                new Runnable() {
-                    public void run() {
+                 new StringIndexOutOfBoundsException("Range [2, 1) out of bounds for length 7"),
+                 new Runnable() {
+                public void run() {
                         StringBuffer sb = new StringBuffer("riemann");
                         sb.replace(2, 1, " ");
                     }
