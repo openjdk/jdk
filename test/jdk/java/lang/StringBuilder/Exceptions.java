@@ -85,8 +85,7 @@ public class Exceptions {
         tryCatch("  null", new NullPointerException(), new Runnable() {
                 public void run() {
                     new StringBuilder(null);
-                }
-        });
+                }});
         tryCatch("  foo", null, new Runnable() {
                 public void run() {
                     new StringBuilder("foo");
