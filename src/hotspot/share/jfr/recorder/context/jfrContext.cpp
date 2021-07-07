@@ -41,7 +41,7 @@ static void copy_entries(JfrContextEntry** lhs_entries, u4 length, const JfrCont
   if (length > 0) {
     *lhs_entries = NEW_C_HEAP_ARRAY(JfrContextEntry, length, mtTracing);
     for (u4 i = 0; i < length; i++) {
-      *lhs_entries[i] = rhs_entries[i];
+      (*lhs_entries)[i] = rhs_entries[i];
     }
   }
 }
@@ -190,12 +190,10 @@ class IterContext : public StackObj {
 bool JfrContext::record_safe(JavaThread* thread, int skip) {
   IterContext iter(_entries, _max_entries, &_nr_of_entries, &_reached_root);
   JfrContextBinding* inheritable_binding = JfrContextBinding::current(true);
-  fprintf(stderr, "inheritable_binding = %p\n", inheritable_binding);
   if (inheritable_binding != NULL) {
     inheritable_binding->iterate(&iter);
   }
   JfrContextBinding* non_inheritable_binding = JfrContextBinding::current(false);
-  fprintf(stderr, "non_inheritable_binding = %p\n", non_inheritable_binding);
   if (non_inheritable_binding != NULL) {
     non_inheritable_binding->iterate(&iter);
   }

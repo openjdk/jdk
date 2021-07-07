@@ -44,7 +44,6 @@ JfrContextBinding::~JfrContextBinding() {
 // }
 
 void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inheritable) {
-  fprintf(stderr, "set_current: current = %p, is_inheritable = %s\n", current, is_inheritable ? "t" : "f");
   JavaThread *thread = Thread::current()->as_Java_thread();
   thread->set_jfr_context_binding(current, is_inheritable);
 }
