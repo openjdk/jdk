@@ -44,6 +44,9 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private final Metrics containerMetrics;
     private long usageTicks = 0; // used for cpu load calculation
     private long totalTicks = 0; // used for cpu load calculation
+    private long processUsageTicks = 0; // used for process cpu load calculation
+    private long processTotalTicks = 0; // used for process cpu load calculation
+
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -217,7 +220,45 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return getCpuLoad0();
     }
 
+    private double getProcessUsageDividesTotal(long usageTicks, long totalTicks) {
+        if (usageTicks < 0 || totalTicks <= 0) {
+            return -1;
+        }
+        long distance = usageTicks - this.processUsageTicks;
+        this.processUsageTicks = usageTicks;
+        long totalDistance = totalTicks - this.processTotalTicks;
+        this.processTotalTicks = totalTicks;
+
+        double processSystemLoad = 0.0;
+        if (distance > 0 && totalDistance > 0) {
+            processSystemLoad = ((double)distance) / totalDistance;
+        }
+        // Ensure the return value is in the range 0.0 -> 1.0
+        processSystemLoad = Math.max(0.0, processSystemLoad);
+        processSystemLoad = Math.min(1.0, processSystemLoad);
+        return processSystemLoad;
+    }
+
     public double getProcessCpuLoad() {
+        if (containerMetrics != null) {
+            long quota = containerMetrics.getCpuQuota();
+            long share = containerMetrics.getCpuShares();
+            long usageNanos = getProcessCpuTime();
+            if (quota > 0) {
+                long numPeriods = containerMetrics.getCpuNumPeriods();
+                long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
+                return getProcessUsageDividesTotal(usageNanos, quotaNanos);
+            } else if (share > 0) {
+                long hostTicks = getHostTotalCpuTicks0();
+                int totalCPUs = getHostOnlineCpuCount0();
+                int containerCPUs = getAvailableProcessors();
+                // scale the total host load to the actual container cpus
+                hostTicks = hostTicks * containerCPUs / totalCPUs;
+                return getProcessUsageDividesTotal(usageNanos, hostTicks);
+            } else {
+                return getProcessCpuLoad0();
+            }
+        }
         return getProcessCpuLoad0();
     }
 
