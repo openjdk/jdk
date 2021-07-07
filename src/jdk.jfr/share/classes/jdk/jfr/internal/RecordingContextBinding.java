@@ -64,7 +64,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             this.previous != null ? this.previous.nativeWrapper : null, entries, isInheritable());
 
         this.closer = cleaner.register(
-            this, new NativeBindingCloser(this.nativeWrapper));
+            this, new NativeBindingDeleter(this.nativeWrapper));
     }
 
     protected RecordingContextBinding previous() {
@@ -73,19 +73,18 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
     protected abstract boolean isInheritable();
 
+    public boolean containsKey(RecordingContextKey key) {
+        if (closed) {
+            throw new UnsupportedOperationException("binding is closed");
+        }
+
+        return nativeWrapper.containsKey(Objects.requireNonNull(key).getName());
+    }
+
     protected static void set(RecordingContextBinding context, boolean isInheritable) {
         NativeBindingWrapper.setCurrent(
             context != null ? context.nativeWrapper : null, isInheritable);
     }
-
-    // public boolean containsKey(RecordingContextKey key) {
-    //     if (closed) {
-    //         throw new UnsupportedOperationException("binding is closed");
-    //     }
-
-    //     return JVM.getJVM().recordingContextContainsKey(cid,
-    //                 Objects.requireNonNull(key).getName());
-    // }
 
     @Override
     public void close() {
@@ -134,6 +133,10 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             setCurrent(this, this.isInheritable);
         }
 
+        public boolean containsKey(String key) {
+            return JVM.getJVM().recordingContextContainsKey(id, Objects.requireNonNull(key));
+        }
+
         public static void setCurrent(NativeBindingWrapper context, boolean isInheritable) {
             if (context != null && context.closed) {
                 throw new UnsupportedOperationException("binding is closed");
@@ -148,21 +151,23 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             closed = true;
 
             setCurrent(previous, isInheritable);
+        }
 
+        public void delete() {
             JVM.getJVM().recordingContextDelete(id);
         }
     }
 
-    static class NativeBindingCloser implements Runnable {
+    static class NativeBindingDeleter implements Runnable {
 
         private final NativeBindingWrapper nativeWrapper;
 
-        public NativeBindingCloser(NativeBindingWrapper nativeWrapper) {
+        public NativeBindingDeleter(NativeBindingWrapper nativeWrapper) {
             this.nativeWrapper = nativeWrapper;
         }
 
         public void run() {
-            this.nativeWrapper.close();
+            this.nativeWrapper.delete();
         }
     }
 }

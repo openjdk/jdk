@@ -44,7 +44,7 @@ class JfrContextBinding : public JfrCHeapObj {
   jlong id() { return (jlong)this; }
   static JfrContextBinding* find(jlong id) { return (JfrContextBinding*)id; }
 
-  // bool contains_key(char* key);
+  bool contains_key(const char* key);
 
   template<class ITER>
   void iterate(ITER* iter) {

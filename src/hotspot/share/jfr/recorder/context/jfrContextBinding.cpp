@@ -39,9 +39,17 @@ JfrContextBinding::~JfrContextBinding() {
   JfrCHeapObj::free(_entries, sizeof(JfrContextEntry) * _entries_len);
 }
 
-// bool JfrContextBinding::contains_key(const char* key) {
-//   return _entries.lookup(key) != NULL;
-// }
+bool JfrContextBinding::contains_key(const char* key) {
+  if (_previous != NULL && _previous->contains_key(key)) {
+    return true;
+  }
+  for (int i = 0; i < _entries_len; i++) {
+    if (_entries[i].contains_key(key)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inheritable) {
   JavaThread *thread = Thread::current()->as_Java_thread();

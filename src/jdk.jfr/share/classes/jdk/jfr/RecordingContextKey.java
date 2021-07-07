@@ -50,11 +50,11 @@ public final class RecordingContextKey {
         return new RecordingContextKey(name, true);
     }
 
-    // public boolean isBound() {
-    //     return isInheritable ?
-    //         InheritableRecordingContextBinding.current().containsKey(this) :
-    //         NonInheritableRecordingContextBinding.current().containsKey(this);
-    // }
+    public boolean isBound() {
+        return isInheritable ?
+            InheritableRecordingContextBinding.current().containsKey(this) :
+            NonInheritableRecordingContextBinding.current().containsKey(this);
+    }
 
     public String getName() {
         return name;

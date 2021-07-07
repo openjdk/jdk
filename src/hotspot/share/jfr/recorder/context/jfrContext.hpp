@@ -53,6 +53,8 @@ class JfrContextEntry {
   bool equals(const JfrContextEntry& rhs) const;
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
+
+  bool contains_key(const char* key);
 };
 
 class JfrContext : public JfrCHeapObj {

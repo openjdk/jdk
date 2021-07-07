@@ -164,7 +164,7 @@ void JNICALL jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong id);
 
 void JNICALL jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id, jboolean is_inheritable);
 
-// jboolean JNICALL jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong context, jstring key, jboolean is_inheritable);
+jboolean JNICALL jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong context, jstring key);
 
 
 #ifdef __cplusplus

@@ -151,6 +151,11 @@ void JfrContextEntry::write(JfrCheckpointWriter& cpw) const {
   write_entry(cpw, _name, _value);
 }
 
+bool JfrContextEntry::contains_key(const char* key) {
+  return (key == NULL && _name == NULL) ||
+         (key != NULL && _name != NULL && strcmp(key, _name) == 0);
+}
+
 Symbol* JfrContext::_recordingContext_walkSnapshot_method;
 Symbol* JfrContext::_recordingContext_walkSnapshot_signature;
 Klass* JfrContext::_recordingContext_klass;

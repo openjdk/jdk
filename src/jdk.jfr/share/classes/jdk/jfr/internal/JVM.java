@@ -661,5 +661,5 @@ public final class JVM {
      *
      * @return whether the current context contains the given key
      */
-    // public native boolean recordingContextContainsKey(long id, String key);
+    public native boolean recordingContextContainsKey(long id, String key);
 }

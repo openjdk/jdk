@@ -96,8 +96,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
       (char*)"recordingContextNew", (char*)"(J[Ljava/lang/String;)J", (void*)jfr_recording_context_new,
       (char*)"recordingContextDelete", (char*)"(J)V", (void*)jfr_recording_context_delete,
-      (char*)"recordingContextSet", (char*)"(JZ)V", (void*)jfr_recording_context_set
-      // (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;Z)Z", (void*)jfr_recording_context_contains_key
+      (char*)"recordingContextSet", (char*)"(JZ)V", (void*)jfr_recording_context_set,
+      (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;)Z", (void*)jfr_recording_context_contains_key
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
