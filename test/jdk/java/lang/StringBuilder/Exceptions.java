@@ -67,33 +67,33 @@ public class Exceptions {
     public static void main(String[] args) {
         System.out.println("StringBuilder()");
         tryCatch("  no args", null, new Runnable() {
-            public void run() {
-                new StringBuilder();
-            }
+                public void run() {
+                    new StringBuilder();
+                }
         });
 
         System.out.println("StringBuilder(int length)");
         tryCatch("  1", null, new Runnable() {
-            public void run() {
-                new StringBuilder(1);
-            }
+                public void run() {
+                    new StringBuilder(1);
+                }
         });
         tryCatch("  -1", new NegativeArraySizeException(), new Runnable() {
-            public void run() {
-                new StringBuilder(-1);
-            }
+                public void run() {
+                    new StringBuilder(-1);
+                }
         });
 
         System.out.println("StringBuilder(String str)");
         tryCatch("  null", new NullPointerException(), new Runnable() {
-            public void run() {
-                new StringBuilder(null);
-            }
+                public void run() {
+                    new StringBuilder(null);
+                }
         });
         tryCatch("  foo", null, new Runnable() {
-            public void run() {
-                new StringBuilder("foo");
-            }
+                public void run() {
+                    new StringBuilder("foo");
+                }
         });
 
         System.out.println("StringBuilder.replace(int start, int end, String str)");

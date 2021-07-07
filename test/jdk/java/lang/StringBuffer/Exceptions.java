@@ -67,33 +67,33 @@ public class Exceptions {
     public static void main(String[] args) {
         System.out.println("StringBuffer()");
         tryCatch("  no args", null, new Runnable() {
-            public void run() {
-                new StringBuffer();
-            }
+                public void run() {
+                    new StringBuffer();
+                }
         });
 
         System.out.println("StringBuffer(int length)");
         tryCatch("  1", null, new Runnable() {
-            public void run() {
-                new StringBuffer(1);
-            }
+                public void run() {
+                    new StringBuffer(1);
+                }
         });
         tryCatch("  -1", new NegativeArraySizeException(), new Runnable() {
-            public void run() {
-                new StringBuffer(-1);
-            }
+                public void run() {
+                    new StringBuffer(-1);
+                }
         });
 
         System.out.println("StringBuffer(String str)");
         tryCatch("  null", new NullPointerException(), new Runnable() {
-            public void run() {
-                new StringBuffer(null);
-            }
+                public void run() {
+                    new StringBuffer(null);
+                }
         });
         tryCatch("  foo", null, new Runnable() {
-            public void run() {
-                new StringBuffer("foo");
-            }
+                public void run() {
+                    new StringBuffer("foo");
+                }
         });
 
         System.out.println("StringBuffer.replace(int start, int end, String str)");
