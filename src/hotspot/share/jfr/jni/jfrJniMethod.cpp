@@ -196,12 +196,21 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   return id;
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jlongArray entries))
+NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jobjectArray entries))
+  ResourceMark rm;
   jsize entries_len = env->GetArrayLength(entries);
-  jlong* entries_content = (jlong*)env->GetPrimitiveArrayCritical(entries, NULL);
-  JfrContextBinding* binding = new JfrContextBinding(JfrContextBinding::find(prev_id), entries_content, entries_len);
+  const char** entries_utf = NEW_RESOURCE_ARRAY(const char*, entries_len);
+  for (int i = 0; i < entries_len; i++) {
+    jstring entry = (jstring)env->GetObjectArrayElement(entries, i);
+    entries_utf[i] = entry != NULL ?
+      env->GetStringUTFChars(entry, NULL) : NULL;
+  }
+  JfrContextBinding* binding = new JfrContextBinding(JfrContextBinding::find(prev_id), entries_utf, entries_len / 2);
   assert(binding != NULL, "invariant");
-  env->ReleasePrimitiveArrayCritical(entries, entries_content, 0);
+  for (int i = 0; i < entries_len; i++) {
+    jstring entry = (jstring)env->GetObjectArrayElement(entries, i);
+    env->ReleaseStringUTFChars(entry, entries_utf[i]);
+  }
   return binding->id();
 NO_TRANSITION_END
 

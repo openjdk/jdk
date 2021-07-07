@@ -33,15 +33,22 @@ class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
+class JfrContextBinding;
 
 class JfrContextEntry {
   friend class ObjectSampleCheckpoint;
  private:
-  jlong _name;
-  jlong _value;
+  char* _name;
+  char* _value;
 
  public:
-  JfrContextEntry(jlong name, jlong value);
+  JfrContextEntry(const char* name, const char* value);
+  ~JfrContextEntry();
+
+  // copy assignement
+  JfrContextEntry& operator=(const JfrContextEntry& other);
+  // move assignement
+  JfrContextEntry& operator=(JfrContextEntry&& other);
 
   bool equals(const JfrContextEntry& rhs) const;
   void write(JfrChunkWriter& cw) const;

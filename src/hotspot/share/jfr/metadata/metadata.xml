@@ -1174,6 +1174,7 @@
   </Type>
 
   <Type name="Context" label="Java Thread Context">
+    <Field type="boolean" name="truncated" label="Truncated" />
     <Field type="ContextEntry" array="true" struct="true" name="entries" label="Context Entries" />
   </Type>
 

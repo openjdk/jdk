@@ -53,7 +53,23 @@ public final class RecordedContext extends RecordedObject {
         if (array == null) {
             return new ArrayList<>(0);
         }
+        for (int i = 0; i < array.length; i++) {
+            if (!(array[i] instanceof RecordedContextEntry)) {
+                throw new RuntimeException("cannot cast from " + array[i].toString() + " to RecordedContextEntry");
+            }
+        }
         List<?> list = Arrays.asList(array);
         return (List<RecordedContextEntry>) list;
+    }
+
+    /**
+     * Returns {@code true} if the stack trace is truncated due to its size,
+     * {@code false} otherwise.
+     *
+     * @return {@code true} if the stack trace is truncated, {@code false}
+     *         otherwise
+     */
+    public boolean isTruncated() {
+        return getTyped("truncated", Boolean.class, true);
     }
 }

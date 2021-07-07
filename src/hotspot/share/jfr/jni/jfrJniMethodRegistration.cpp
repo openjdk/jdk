@@ -94,7 +94,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getHandler", (char*)"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)jfr_get_handler,
       (char*)"setHandler", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/handlers/EventHandler;)Z", (void*)jfr_set_handler,
       (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
-      (char*)"recordingContextNew", (char*)"(J[J)J", (void*)jfr_recording_context_new,
+      (char*)"recordingContextNew", (char*)"(J[Ljava/lang/String;)J", (void*)jfr_recording_context_new,
       (char*)"recordingContextDelete", (char*)"(J)V", (void*)jfr_recording_context_delete,
       (char*)"recordingContextSet", (char*)"(JZ)V", (void*)jfr_recording_context_set
       // (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;Z)Z", (void*)jfr_recording_context_contains_key

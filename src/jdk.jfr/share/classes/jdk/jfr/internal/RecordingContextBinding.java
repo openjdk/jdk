@@ -120,18 +120,16 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
             // convert entries to an array of contiguous pair of String
             //  [ "key1", "value1", "key2", "value2", ... ]
-            long[] entriesAsPooledStrings = new long[entries.size() * 2];
+            String[] entriesAsStrings = new String[entries.size() * 2];
             int i = 0;
             for (RecordingContextEntry entry : entries) {
-                entriesAsPooledStrings[i * 2 + 0] =
-                    StringPool.addStringWithoutPreCache(entry.getKey().getName());
-                entriesAsPooledStrings[i * 2 + 1] =
-                    StringPool.addStringWithoutPreCache(entry.getValue());
+                entriesAsStrings[i * 2 + 0] = entry.getKey().getName();
+                entriesAsStrings[i * 2 + 1] = entry.getValue();
                 i += 1;
             }
 
             this.id = JVM.getJVM().recordingContextNew(this.previous != null ? this.previous.id : 0,
-                            Objects.requireNonNull(entriesAsPooledStrings));
+                            Objects.requireNonNull(entriesAsStrings));
 
             setCurrent(this, this.isInheritable);
         }
@@ -149,7 +147,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             if (closed) return;
             closed = true;
 
-            setCurrent(previous, previous.isInheritable);
+            setCurrent(previous, isInheritable);
 
             JVM.getJVM().recordingContextDelete(id);
         }

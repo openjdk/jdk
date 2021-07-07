@@ -40,12 +40,35 @@ static void copy_entries(JfrContextEntry** lhs_entries, u4 length, const JfrCont
   assert(rhs_entries != NULL, "invariant");
   if (length > 0) {
     *lhs_entries = NEW_C_HEAP_ARRAY(JfrContextEntry, length, mtTracing);
-    memcpy(*lhs_entries, rhs_entries, length * sizeof(JfrContextEntry));
+    for (u4 i = 0; i < length; i++) {
+      *lhs_entries[i] = rhs_entries[i];
+    }
   }
 }
 
-JfrContextEntry::JfrContextEntry(jlong name, jlong value) :
-  _name(name), _value(value) {
+JfrContextEntry::JfrContextEntry(const char* name, const char* value) :
+    _name(JfrCHeapObj::strdup(name)), _value(JfrCHeapObj::strdup(value)) {
+}
+
+JfrContextEntry::~JfrContextEntry() {
+  if (_name != NULL) JfrCHeapObj::free(_name, strlen(_name) + 1);
+  if (_value != NULL) JfrCHeapObj::free(_value, strlen(_value) + 1);
+}
+
+// copy assignement
+JfrContextEntry& JfrContextEntry::operator=(const JfrContextEntry& other) {
+  _name = JfrCHeapObj::strdup(other._name);
+  _value = JfrCHeapObj::strdup(other._value);
+  return *this;
+}
+
+// move assignement
+JfrContextEntry& JfrContextEntry::operator=(JfrContextEntry&& other) {
+  _name = other._name;
+  other._name = NULL;
+  _value = other._value;
+  other._value = NULL;
+  return *this;
 }
 
 JfrContext::JfrContext(JfrContextEntry* entries, u4 max_entries) :
@@ -99,7 +122,7 @@ void JfrContext::write(JfrCheckpointWriter& cpw) const {
 }
 
 bool JfrContextEntry::equals(const JfrContextEntry& rhs) const {
-  return _name == rhs._name && _value == rhs._value;
+  return strcmp(_name, rhs._name) == 0 && strcmp(_value, rhs._value) == 0;
 }
 
 bool JfrContext::equals(const JfrContext& rhs) const {
@@ -115,7 +138,7 @@ bool JfrContext::equals(const JfrContext& rhs) const {
 }
 
 template <typename Writer>
-static void write_entry(Writer& w, jlong name, jlong value) {
+static void write_entry(Writer& w, const char* name, const char* value) {
   w.write(name);
   w.write(value);
 }
@@ -158,7 +181,8 @@ class IterContext : public StackObj {
       *_reached_root = false;
       return false;
     }
-    memcpy(&_entries[*_nr_of_entries++], entry, sizeof(JfrContextEntry));
+    _entries[*_nr_of_entries] = *entry;
+    *_nr_of_entries += 1;
     return true;
   }
 };

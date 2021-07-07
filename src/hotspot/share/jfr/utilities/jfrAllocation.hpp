@@ -68,6 +68,8 @@ class JfrCHeapObj : public CHeapObj<mtTracing> {
     on_memory_allocation(memory, sizeof(T) * size);
     return memory;
   }
+
+  static char* strdup(const char *str);
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRALLOCATION_HPP

@@ -158,7 +158,7 @@ jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobjec
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
 
-jlong JNICALL jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jlongArray entries);
+jlong JNICALL jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jobjectArray entries);
 
 void JNICALL jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong id);
 

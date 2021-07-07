@@ -301,7 +301,7 @@ public final class ChunkParser {
         long thisCP = chunkHeader.getConstantPoolPosition() + chunkHeader.getAbsoluteChunkStart();
         long lastCP = -1;
         long delta = -1;
-        boolean logTrace = Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
+        boolean logTrace = true;// Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
         while (thisCP != abortCP && delta != 0) {
             input.position(thisCP);
             lastCP = thisCP;
@@ -319,7 +319,7 @@ public final class ChunkParser {
             final long logLastCP = lastCP;
             final long logDelta = delta;
             if (logTrace) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE,
+                System.err.println(
                         "New constant pool: startPosition=" + logLastCP +
                         ", size=" + size + ", deltaToNext=" + logDelta +
                         ", flush=" + flush + ", poolCount=" + poolCount);
@@ -327,7 +327,9 @@ public final class ChunkParser {
             for (int i = 0; i < poolCount; i++) {
                 long id = input.readLong(); // type id
                 ConstantLookup lookup = constantLookups.get(id);
+                System.err.println("lookup = " + lookup);
                 Type type = typeMap.get(id);
+                System.err.println("type = " + type);
                 if (lookup == null) {
                     if (type == null) {
                         throw new IOException(
@@ -338,20 +340,25 @@ public final class ChunkParser {
                     constantLookups.put(type.getId(), lookup);
                 }
                 Parser parser = parsers.get(id);
+                System.err.println("parser = " + parser);
                 if (parser == null) {
                     throw new IOException("Could not find constant pool type with id = " + id);
                 }
                 try {
                     int count = input.readInt();
+                    System.err.println("count = " + count);
                     if (count == 0) {
                         throw new InternalError("Pool " + type.getName() + " must contain at least one element ");
                     }
                     if (logTrace) {
-                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, "Constant Pool " + i + ": " + type.getName());
+                        System.err.println("Constant Pool " + i + ": " + type.getName());
                     }
                     for (int j = 0; j < count; j++) {
+                        System.err.println("j = " + j);
                         long key = input.readLong();
+                        System.err.println("key = " + key);
                         Object resolved = lookup.getPreviousResolved(key);
+                        System.err.println("resolved = " + resolved);
                         if (resolved == null) {
                             Object v = parser.parse(input);
                             logConstant(key, v, false);
@@ -374,9 +381,9 @@ public final class ChunkParser {
     }
 
     private void logConstant(long key, Object v, boolean preresolved) {
-        if (!Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE)) {
-            return;
-        }
+        // if (!Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE)) {
+        //     return;
+        // }
         String valueText;
         if (v.getClass().isArray()) {
             Object[] array = (Object[]) v;
@@ -389,7 +396,7 @@ public final class ChunkParser {
             valueText = textify(v);
         }
         String suffix  = preresolved ? " (presolved)" :"";
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, "Constant: " + key + " = " + valueText + suffix);
+        System.err.println("Constant: " + key + " = " + valueText + suffix);
     }
 
     private String textify(Object o) {

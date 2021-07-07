@@ -122,10 +122,12 @@ BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thr
 static const size_t lease_retry = 10;
 
 BufferPtr JfrStringPool::lease(Thread* thread, size_t size /* 0 */) {
+  assert(_instance != NULL, "invariant");
   BufferPtr buffer = mspace_acquire_lease_with_retry(size, instance()._mspace, lease_retry, thread);
   if (buffer == NULL) {
     buffer = mspace_allocate_transient_lease_to_live_list(size,  instance()._mspace, thread);
   }
+  assert(buffer != NULL, "invariant");
   assert(buffer->acquired_by_self(), "invariant");
   assert(buffer->lease(), "invariant");
   return buffer;

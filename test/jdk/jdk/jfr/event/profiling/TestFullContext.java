@@ -23,8 +23,6 @@
 
 package jdk.jfr.event.profiling;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.Recording;
@@ -36,7 +34,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import jdk.test.lib.jfr.RecurseThread;
 
 /**
  * @test
@@ -46,133 +43,82 @@ import jdk.test.lib.jfr.RecurseThread;
  * @run main/othervm jdk.jfr.event.profiling.TestFullContext
  */
 public class TestFullContext {
-    private final static String EVENT_NAME = EventNames.ExecutionSample;
-    private final static int MAX_DEPTH = 64; // currently hardcoded in jvm
 
     private final static RecordingContextKey contextKey =
         RecordingContextKey.inheritableForName("contextKey");
 
+    private static boolean success;
+
     public static void main(String[] args) throws Throwable {
-
-        try (RecordingContext context = RecordingContext.builder().where(contextKey, "contextValue").build()) {
-            RecurseThread[] threads = new RecurseThread[3];
-            for (int i = 0; i < threads.length; ++i) {
-                int depth = MAX_DEPTH - 1 + i;
-                threads[i] = new RecurseThread(depth);
-                threads[i].setName("recursethread-" + depth);
-                threads[i].start();
-            }
-
-            for (RecurseThread thread : threads) {
-                while (!thread.isInRunLoop()) {
-                    Thread.sleep(20);
-                }
-            }
-
-            assertContexts(threads);
-
-            for (RecurseThread thread : threads) {
-                thread.quit();
-                thread.join();
-            }
-        }
-    }
-
-    private static void assertContexts( RecurseThread[] threads) throws Throwable {
-        Recording recording= null;
-        do {
-            recording = new Recording();
-            recording.enable(EVENT_NAME).withPeriod(Duration.ofMillis(50));
+        try (Recording recording = new Recording()) {
+            // recording.enable(EventNames.ThreadStart);
+            // recording.enable(EventNames.ThreadEnd);
+            recording.enable("jdk.ThreadSleep");
             recording.start();
-            Thread.sleep(500);
-            recording.stop();
-        } while (!hasValidContexts(recording, threads));
-    }
 
-    private static boolean hasValidContexts(Recording recording, RecurseThread[] threads) throws Throwable {
-        boolean[] isEventFound = new boolean[threads.length];
+            Thread[] threads = new Thread[0];
+            try (RecordingContext context = RecordingContext.where(contextKey, "contextValue").build()) {
+                success = true;
 
-        for (RecordedEvent event : Events.fromRecording(recording)) {
-            //System.out.println("Event: " + event);
-            String threadName = Events.assertField(event, "sampledThread.javaName").getValue();
-            long threadId = Events.assertField(event, "sampledThread.javaThreadId").getValue();
+                for (int i = 0; i < threads.length; ++i) {
+                    threads[i] = new Thread(() -> {
+                        try {
+                            Thread.sleep(100);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            success = false;
+                        }
+                    });
+                    threads[i].setName("thread-" + i);
+                    threads[i].start();
+                }
 
-            for (int threadIndex = 0; threadIndex < threads.length; ++threadIndex) {
-                RecurseThread currThread = threads[threadIndex];
-                if (threadId == currThread.getId()) {
-                    System.out.println("ThreadName=" + currThread.getName() + ", depth=" + currThread.totalDepth);
-                    Asserts.assertEquals(threadName, currThread.getName(), "Wrong thread name");
-                    RecordedContextEntry first = getFirstContextEntry(event);
-                    if ("contextValue".equals(first.getValue()) && "contextKey".equals(first.getKey())) {
-                        isEventFound[threadIndex] = true;
-                        // checkEvent(event, currThread.totalDepth);
-                        break;
-                    }
+                Thread.sleep(10);
+
+                for (Thread thread : threads) {
+                    thread.join();
                 }
             }
-        }
 
-        for (int i = 0; i < threads.length; ++i) {
-            String msg = "threadIndex=%d, recurseDepth=%d, isEventFound=%b%n";
-            System.out.printf(msg, i, threads[i].totalDepth, isEventFound[i]);
-        }
-        for (int i = 0; i < threads.length; ++i) {
-            if(!isEventFound[i]) {
-               // no assertion, let's retry.
-               // Could be race condition, i.e safe point during Thread.sleep
-               System.out.println("Falied to validate all threads, will retry.");
-               return false;
+            recording.stop();
+
+            int threadSleepCount = 0;
+            for (RecordedEvent event : fromRecording(recording)) {
+                System.out.println("Event: " + event);
+
+                RecordedContextEntry first = getFirstContextEntry(event);
+                if ("contextValue".equals(first.getValue()) && "contextKey".equals(first.getName())) {
+                    threadSleepCount += 1;
+                    // checkEvent(event, currThread.totalDepth);
+                }
             }
+
+            if (threadSleepCount != threads.length + 1) throw new Exception("Failed to validate all threads.");
         }
-        return true;
     }
 
-    public static RecordedContextEntry getFirstContextEntry(RecordedEvent event) {
-        List<RecordedContextEntry> entries = event.getContext().getEntries();
-        Asserts.assertFalse(entries.isEmpty(), "Context Entries was empty");
+    public static RecordedContextEntry getFirstContextEntry(RecordedEvent event) throws Throwable {
+        RecordedContext context = event.getContext();
+        if (context == null) throw new Exception("no context on " + event);
+        List<RecordedContextEntry> entries = context.getEntries();
+        if (entries.isEmpty()) throw new Exception("empty context on " + event);
         return entries.get(0);
     }
 
-    // private static void checkEvent(RecordedEvent event, int expectedDepth) throws Throwable {
-    //     RecordedContext context = null;
-    //     try {
-    //         context = event.getContext();
-    //         List<RecordedContextEntry> frames = context.getEntries();
-    //         Asserts.assertEquals(Math.min(MAX_DEPTH, expectedDepth), frames.size(), "Wrong context depth. Expected:" + expectedDepth);
-    //         List<String> expectedMethods = getExpectedMethods(expectedDepth);
-    //         Asserts.assertEquals(expectedMethods.size(), frames.size(), "Wrong expectedMethods depth. Test error.");
+    private static List<RecordedEvent> fromRecording(Recording recording) throws Throwable {
+        return RecordingFile.readAllEvents(makeCopy(recording));
+    }
 
-    //         for (int i = 0; i < frames.size(); ++i) {
-    //             String name = frames.get(i).getMethod().getName();
-    //             String expectedName = expectedMethods.get(i);
-    //             System.out.printf("method[%d]=%s, expected=%s%n", i, name, expectedName);
-    //             Asserts.assertEquals(name, expectedName, "Wrong method name");
-    //         }
-
-    //         boolean isTruncated = context.isTruncated();
-    //         boolean isTruncateExpected = expectedDepth > MAX_DEPTH;
-    //         Asserts.assertEquals(isTruncated, isTruncateExpected, "Wrong value for isTruncated. Expected:" + isTruncateExpected);
-
-    //         String firstMethod = frames.get(frames.size() - 1).getMethod().getName();
-    //         boolean isFullTrace = "run".equals(firstMethod);
-    //         String msg = String.format("Wrong values for isTruncated=%b, isFullTrace=%b", isTruncated, isFullTrace);
-    //         Asserts.assertTrue(isTruncated != isFullTrace, msg);
-    //     } catch (Throwable t) {
-    //         System.out.println(String.format("context:%n%s", context));
-    //         throw t;
-    //     }
-    // }
-
-    // private static List<String> getExpectedMethods(int depth) {
-    //     List<String> methods = new ArrayList<>();
-    //     methods.add("recurseEnd");
-    //     for (int i = 0; i < depth - 2; ++i) {
-    //         methods.add((i % 2) == 0 ? "recurseA" : "recurseB");
-    //     }
-    //     methods.add("run");
-    //     if (depth > MAX_DEPTH) {
-    //         methods = methods.subList(0, MAX_DEPTH);
-    //     }
-    //     return methods;
-    // }
+    private static Path makeCopy(Recording recording) throws Throwable {
+        Path p = recording.getDestination();
+        if (p == null) {
+            File directory = new File(".");
+            // FIXME: Must come up with a way to give human-readable name
+            // this will at least not clash when running parallel.
+            ProcessHandle h = ProcessHandle.current();
+            p = new File(directory.getAbsolutePath(), "recording-" + recording.getId() + "-pid" + h.pid() + ".jfr").toPath();
+            recording.dump(p);
+        }
+        return p;
+    }
 }

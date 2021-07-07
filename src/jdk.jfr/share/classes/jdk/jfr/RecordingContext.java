@@ -118,8 +118,8 @@ public final class RecordingContext implements AutoCloseable {
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder where(RecordingContextKey key, String value) {
+        return new Builder().where(key, value);
     }
 
     // close

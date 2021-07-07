@@ -26,10 +26,9 @@
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
-JfrContextBinding::JfrContextBinding(JfrContextBinding* previous, const jlong* entries, jsize entries_len)
-    : _previous(previous),
-        _entries(JfrCHeapObj::new_array<JfrContextEntry>(sizeof(JfrContextEntry) * _entries_len)),
-        _entries_len(entries_len) {
+JfrContextBinding::JfrContextBinding(JfrContextBinding* previous, const char** entries, jsize entries_len)
+    : _previous(previous), _entries_len(entries_len),
+        _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
   assert(entries != NULL, "invariant");
   for (int i = 0; i < _entries_len; i++) {
     _entries[i] = JfrContextEntry(entries[i * 2 + 0], entries[i * 2 + 1]);
@@ -45,6 +44,7 @@ JfrContextBinding::~JfrContextBinding() {
 // }
 
 void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inheritable) {
+  fprintf(stderr, "set_current: current = %p, is_inheritable = %s\n", current, is_inheritable ? "t" : "f");
   JavaThread *thread = Thread::current()->as_Java_thread();
   thread->set_jfr_context_binding(current, is_inheritable);
 }

@@ -107,6 +107,11 @@ public class RecordedObject {
             }
 
             @Override
+            public RecordedContextEntry newRecordedContextEntry(ObjectContext objectContext, Object[] values) {
+                return new RecordedContextEntry(objectContext, values);
+            }
+
+            @Override
             public RecordedThreadGroup newRecordedThreadGroup(ObjectContext objectContext, Object[] values) {
                 return new RecordedThreadGroup(objectContext, values);
             }
@@ -385,6 +390,8 @@ public class RecordedObject {
                 // without invoking ObjectFactory for every instance (which may require id)
                 if (isStackFrameType(v.getTypeName())) {
                     structArray[i] = new RecordedFrame(objContext, (Object[]) arrayElement);
+                } else if (isContextEntryType(v.getTypeName())) {
+                    structArray[i] = new RecordedContextEntry(objContext, (Object[]) arrayElement);
                 } else {
                     structArray[i] = new RecordedObject(objContext, (Object[]) arrayElement);
                 }
@@ -400,6 +407,16 @@ public class RecordedObject {
             return true;
         }
         if (ObjectFactory.STACK_FRAME_VERSION_2.equals(typeName)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isContextEntryType(String typeName) {
+        // if (ObjectFactory.CONTEXT_ENTRY_VERSION_1.equals(typeName)) {
+        //     return true;
+        // }
+        if (ObjectFactory.CONTEXT_ENTRY_VERSION_2.equals(typeName)) {
             return true;
         }
         return false;

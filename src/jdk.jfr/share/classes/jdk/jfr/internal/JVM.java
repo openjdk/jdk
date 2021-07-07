@@ -635,7 +635,7 @@ public final class JVM {
      * @param entries the entries in the current recording context binding
      * @param isInheritable whether the current recording context is inheritable
      */
-    public native long recordingContextNew(long prevId, long[] entries);
+    public native long recordingContextNew(long prevId, String[] entries);
 
     /**
      * 

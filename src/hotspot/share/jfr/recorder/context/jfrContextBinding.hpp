@@ -33,18 +33,18 @@ class JfrContextBinding : public JfrCHeapObj {
 
  private:
   JfrContextBinding* _previous;
-  JfrContextEntry* _entries;
   jsize _entries_len;
+  JfrContextEntry* _entries;
 
  public:
   JfrContextBinding(JfrContextBinding* previous,
-    const jlong* entries /* of size entries_len * 2 */, jsize entries_len);
+    const char** entries /* of size entries_len * 2 */, jsize entries_len);
   ~JfrContextBinding();
 
   jlong id() { return (jlong)this; }
   static JfrContextBinding* find(jlong id) { return (JfrContextBinding*)id; }
 
-  // bool contains_key(const jlong key);
+  // bool contains_key(char* key);
 
   template<class ITER>
   void iterate(ITER* iter) {

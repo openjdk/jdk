@@ -137,3 +137,10 @@ void JfrCHeapObj::free(void* p, size_t size) {
 char* JfrCHeapObj::allocate_array_noinline(size_t elements, size_t element_size) {
   return AllocateHeap(elements * element_size, mtTracing, CALLER_PC, AllocFailStrategy::RETURN_NULL);
 }
+
+char* JfrCHeapObj::strdup(const char *str) {
+  size_t size = strlen(str);
+  char *dup_str = new_array<char>(size + 1);
+  strcpy(dup_str, str);
+  return dup_str;
+}
