@@ -160,6 +160,7 @@ public abstract class Reader {
                         fos.write(buffer, 0, len);
                     }
                 } catch (Exception e) {
+                    out.delete();
                     throw new IOException("Cannot decompress the compressed hprof file", e);
                 }
                 // Check dump data header and print stack trace.
@@ -172,14 +173,14 @@ public abstract class Reader {
                             = new HprofReader(deCompressedFile, in2, dumpNumber,
                                               true, debugLevel);
                         r.read();
-                        out.delete();
                         return r.printStackTraces();
                     } else {
                         throw new IOException("Unrecognized magic number of decompressed data: " + i);
                     }
                 } catch (Exception e) {
-                    out.delete();
                     throw new IOException("Cannot get stack trace from the compressed hprof file", e);
+                } finally {
+                    out.delete();
                 }
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
