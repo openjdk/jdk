@@ -1527,7 +1527,7 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float abs(float a) {
-        return (a <= 0.0F) ? 0.0F - a : a;
+        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & 0x7fffffff);
     }
 
     /**
@@ -1552,7 +1552,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double abs(double a) {
-        return (a <= 0.0D) ? 0.0D - a : a;
+        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & 0x7fffffffffffffffL);
+
     }
 
     /**
