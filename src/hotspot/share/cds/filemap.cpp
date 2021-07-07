@@ -478,6 +478,7 @@ void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
   for (int i = 0; i < _shared_path_table.size(); i++) {
     _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, CHECK);
   }
+  _saved_shared_path_table_array = array;
 }
 
 void FileMapInfo::clone_shared_path_table(TRAPS) {
@@ -489,12 +490,10 @@ void FileMapInfo::clone_shared_path_table(TRAPS) {
   assert(jrt != NULL,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
-  // After dynamic dump, _saved_shared_path_table is corrupt, cannot be used again.
-  // Could not free the corrupt table. May have memory leak but it should be OK since
-  // it is not a big leak. This will fail:
-  // if (_saved_shared_path_table.size() > 0) {
-  //   MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table->_table);
-  // }
+  if (_saved_shared_path_table_array != NULL) {
+    MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table_array);
+    _saved_shared_path_table_array = NULL;
+  }
 
   copy_shared_path_table(loader_data, CHECK);
 }
@@ -2170,6 +2169,7 @@ FileMapInfo* FileMapInfo::_dynamic_archive_info = NULL;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 SharedPathTable FileMapInfo::_saved_shared_path_table;
+Array<u8>*      FileMapInfo::_saved_shared_path_table_array = NULL;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;

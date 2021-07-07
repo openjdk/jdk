@@ -346,6 +346,7 @@ private:
   // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
+  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be

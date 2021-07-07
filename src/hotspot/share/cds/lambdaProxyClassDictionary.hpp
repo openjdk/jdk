@@ -161,10 +161,7 @@ class DumpTimeLambdaProxyClassDictionary
                              137, // prime number
                              ResourceObj::C_HEAP> {
 public:
-  // GCC will memset for default ctor. With user defined ctor, data members need manually initialized.
-  // We could not use default ctor, it will destroy allocation_type in debug version and fail to delete.
-  // see bug 8269537
-  DumpTimeLambdaProxyClassDictionary() : _count(0)  {}
+  DumpTimeLambdaProxyClassDictionary() : _count(0) {}
   int _count;
 };
 

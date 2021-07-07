@@ -179,9 +179,6 @@ class DumpTimeSharedClassTable: public ResourceHashtable<
   int _builtin_count;
   int _unregistered_count;
 public:
-  // GCC will memset for default ctor. With user defined ctor, data members need manually initialized.
-  // We could not use default ctor, it will destroy allocation_type in debug version and fail to delete.
-  // see bug 8269537
   DumpTimeSharedClassTable() {
     _builtin_count = 0;
     _unregistered_count = 0;
