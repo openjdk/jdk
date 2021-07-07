@@ -48,8 +48,6 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
     private final Cleanable closer;
 
-    private boolean closed = false;
-
     protected RecordingContextBinding(RecordingContextBinding previous, Set<RecordingContextEntry> entries) {
         this.previous = previous;
         if (this.previous != null) {
@@ -74,10 +72,6 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
     protected abstract boolean isInheritable();
 
     public boolean containsKey(RecordingContextKey key) {
-        if (closed) {
-            throw new UnsupportedOperationException("binding is closed");
-        }
-
         return nativeWrapper.containsKey(Objects.requireNonNull(key).getName());
     }
 
@@ -88,9 +82,6 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
     @Override
     public void close() {
-        if (closed) return;
-        closed = true;
-
         // close any outer layer of the onion
         if (next != null) {
             // we didn't peel the onion properly, make sure any outer layer is closed properly
@@ -110,8 +101,6 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
         private final long id;
         private final NativeBindingWrapper previous;
         private final boolean isInheritable;
-
-        private boolean closed = false;
 
         public NativeBindingWrapper(NativeBindingWrapper previous, Set<RecordingContextEntry> entries, boolean isInheritable) {
             this.previous = previous;
@@ -138,18 +127,11 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
         }
 
         public static void setCurrent(NativeBindingWrapper context, boolean isInheritable) {
-            if (context != null && context.closed) {
-                throw new UnsupportedOperationException("binding is closed");
-            }
-
             JVM.getJVM().recordingContextSet(context != null ? context.id : 0, isInheritable);
         }
 
         @Override
         public void close() {
-            if (closed) return;
-            closed = true;
-
             setCurrent(previous, isInheritable);
         }
 
