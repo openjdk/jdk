@@ -69,20 +69,17 @@ public class Exceptions {
         tryCatch("  no args", null, new Runnable() {
                 public void run() {
                     new StringBuilder();
-                }
-        });
+                }});
 
         System.out.println("StringBuilder(int length)");
         tryCatch("  1", null, new Runnable() {
                 public void run() {
                     new StringBuilder(1);
-                }
-        });
+                }});
         tryCatch("  -1", new NegativeArraySizeException(), new Runnable() {
                 public void run() {
                     new StringBuilder(-1);
-                }
-        });
+                }});
 
         System.out.println("StringBuilder(String str)");
         tryCatch("  null", new NullPointerException(), new Runnable() {
@@ -93,8 +90,7 @@ public class Exceptions {
         tryCatch("  foo", null, new Runnable() {
                 public void run() {
                     new StringBuilder("foo");
-                }
-        });
+                }});
 
         System.out.println("StringBuilder.replace(int start, int end, String str)");
         tryCatch("  -1, 2, \" \"",
