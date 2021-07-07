@@ -47,7 +47,6 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private long processUsageTicks = 0; // used for process cpu load calculation
     private long processTotalTicks = 0; // used for process cpu load calculation
 
-
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
         this.containerMetrics = jdk.internal.platform.Container.metrics();
