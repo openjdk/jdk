@@ -237,23 +237,34 @@ CompressionBackend::~CompressionBackend() {
   delete _lock;
 }
 
-void CompressionBackend::deactivate() {
-  assert(_active, "Must be active");
-
-  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+void CompressionBackend::flush_buffer(MonitorLocker* ml) {
 
   // Make sure we write the last partially filled buffer.
   if ((_current != NULL) && (_current->_in_used > 0)) {
     _current->_id = _next_id++;
     _to_compress.add_last(_current);
     _current = NULL;
-    ml.notify_all();
+    ml->notify_all();
   }
 
   // Wait for the threads to drain the compression work list and do some work yourself.
   while (!_to_compress.is_empty()) {
     do_foreground_work();
   }
+}
+
+void CompressionBackend::flush_buffer() {
+  assert(_active, "Must be active");
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  flush_buffer(&ml);
+}
+
+void CompressionBackend::deactivate() {
+  assert(_active, "Must be active");
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  flush_buffer(&ml);
 
   _active = false;
   ml.notify_all();
@@ -365,16 +376,39 @@ WriteWork* CompressionBackend::get_work() {
   return _to_compress.remove_first();
 }
 
-void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max) {
+void CompressionBackend::flush_external_buffer(char* buffer, size_t used, size_t max) {
+  assert(buffer != NULL && used != 0 && max != 0, "Invalid data send to compression backend");
+  assert(_active == true, "Backend must be active when flushing external buffer");
+  char* buf;
+  size_t tmp_used = 0;
+  size_t tmp_max = 0;
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  // First try current buffer. Use it if empty.
+  if (_current->_in_used == 0) {
+    buf = _current->_in;
+  } else {
+    // If current buffer is not clean, flush it.
+    MutexUnlocker ml(_lock, Mutex::_no_safepoint_check_flag);
+    get_new_buffer(&buf, &tmp_used, &tmp_max, true);
+  }
+  assert (_current->_in != NULL && _current->_in_max >= max &&
+          _current->_in_used == 0, "Invalid buffer from compression backend");
+  // Copy data to backend buffer.
+  memcpy(buf, buffer, used);
+
+  assert(_current->_in == buf, "Must be current");
+  _current->_in_used += used;
+}
+
+void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max, bool force_reset) {
   if (_active) {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-
-    if (*used > 0) {
+    if (*used > 0 || force_reset) {
       _current->_in_used += *used;
-
       // Check if we do not waste more than _max_waste. If yes, write the buffer.
       // Otherwise return the rest of the buffer as the new buffer.
-      if (_current->_in_max - _current->_in_used <= _max_waste) {
+      if (_current->_in_max - _current->_in_used <= _max_waste || force_reset) {
         _current->_id = _next_id++;
         _to_compress.add_last(_current);
         _current = NULL;
@@ -383,7 +417,6 @@ void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max
         *buffer = _current->_in + _current->_in_used;
         *used = 0;
         *max = _current->_in_max - _current->_in_used;
-
         return;
       }
     }
