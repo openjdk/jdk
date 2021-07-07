@@ -387,8 +387,6 @@ class GraphBuilder {
 
   // Shortcuts to profiling control.
   bool is_profiling()          { return _compilation->is_profiling();          }
-  bool count_invocations()     { return _compilation->count_invocations();     }
-  bool count_backedges()       { return _compilation->count_backedges();       }
   bool profile_branches()      { return _compilation->profile_branches();      }
   bool profile_calls()         { return _compilation->profile_calls();         }
   bool profile_inlined_calls() { return _compilation->profile_inlined_calls(); }
