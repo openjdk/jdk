@@ -33,11 +33,11 @@ public class Exceptions {
     private static void fail(Throwable ex, String s, Throwable got) {
         ok = false;
         System.err.println("expected "
-                + ex.getClass().getName() + ": " + ex.getMessage()
-                + " for " + s
-                + " got "
-                + got.getClass().getName() + ": " + got.getMessage()
-                + " - FAILED");
+                           + ex.getClass().getName() + ": " + ex.getMessage()
+                           + " for " + s
+                           + " got "
+                           + got.getClass().getName() + ": " + got.getMessage()
+                           + " - FAILED");
     }
 
     private static void pass(String s) {
@@ -98,24 +98,21 @@ public class Exceptions {
                 public void run() {
                         StringBuilder sb = new StringBuilder("hilbert");
                         sb.replace(-1, 2, " ");
-                    }
-                });
+                }});
         tryCatch("  7, 8, \" \"",
                  new StringIndexOutOfBoundsException("Range [7, 6) out of bounds for length 6"),
                  new Runnable() {
                 public void run() {
                         StringBuilder sb = new StringBuilder("banach");
                         sb.replace(7, 8, " ");
-                    }
-                });
+                }});
         tryCatch("  2, 1, \" \"",
                  new StringIndexOutOfBoundsException("Range [2, 1) out of bounds for length 7"),
                  new Runnable() {
                 public void run() {
                         StringBuilder sb = new StringBuilder("riemann");
                         sb.replace(2, 1, " ");
-                    }
-                });
+                }});
 
         if (!ok) {
             throw new RuntimeException("Some tests FAILED");
