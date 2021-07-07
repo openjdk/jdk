@@ -54,11 +54,11 @@ public:
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
 
   static bool is_strong_access(DecoratorSet decorators) {
-    return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) == 0;
+    return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) == 0;
   }
 
   static bool is_weak_access(DecoratorSet decorators) {
-    return (decorators & ON_WEAK_OOP_REF) != 0;
+    return (decorators & (ON_WEAK_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0;
   }
 
   static bool is_phantom_access(DecoratorSet decorators) {

@@ -113,7 +113,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
   }
 
   // Prevent resurrection of unreachable weak references.
-  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value) &&
+  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked_strong(obj)) {
     return NULL;
@@ -267,7 +267,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(res, NULL);
+  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators & ~ON_UNKNOWN_OOP_REF, T>(res, NULL);
   bs->satb_enqueue(res);
   return res;
 }
