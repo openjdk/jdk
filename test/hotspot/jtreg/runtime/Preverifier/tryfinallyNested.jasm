@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/* Nested Try-catch-finally with JSR and RET */
+super class tryfinallyNested
+	version 45:3
+{
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+	
+  }
+  public static Method main:"([Ljava/lang/String;)V"
+	stack 2 locals 4
+  {
+		try t2;
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Try!";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		try t0, t1;
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Nested Try!";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		endtry t0;
+		jsr	L35;
+		goto	L46;
+		catch t0 java/lang/NullPointerException;
+		astore_1;
+		jsr	L35;
+		goto	L46;
+		endtry t1;
+		catch t1 #0;
+		astore_2;
+		jsr	L35;
+		aload_2;
+		athrow;
+	L35:	astore_3;
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Finally!";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		ret	3;
+		endtry t2;
+	L46:	goto	L58;
+		catch t2 java/lang/RuntimeException;
+		astore_1;
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Catch!";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+	L58:	return;
+	
+  }
+
+} // end Class tryfinallyNested
