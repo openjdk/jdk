@@ -2839,6 +2839,8 @@ G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() con
 }
 
 void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyType type) {
+  _verifier->verify_region_sets_optional();
+  _verifier->verify_dirty_young_regions();
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets before GC]");
     VerifyRegionRemSetClosure v_cl;
@@ -2861,6 +2863,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   _verifier->verify_after_gc(type);
   _verifier->check_bitmaps("GC End");
   verify_numa_regions("GC End");
+  _verifier->verify_region_sets_optional();
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){
@@ -2958,9 +2961,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   print_heap_before_gc();
   print_heap_regions();
   trace_heap_before_gc(_gc_tracer_stw);
-
-  _verifier->verify_region_sets_optional();
-  _verifier->verify_dirty_young_regions();
 
   // We should not be doing concurrent start unless the concurrent mark thread is running
   if (!_cm_thread->should_terminate()) {
@@ -3081,9 +3081,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     policy()->print_phases();
     heap_transition.print();
-
-    _hrm.verify_optional();
-    _verifier->verify_region_sets_optional();
 
     TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
