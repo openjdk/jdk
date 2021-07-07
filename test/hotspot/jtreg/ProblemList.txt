@@ -101,8 +101,6 @@ runtime/os/TestTracePageSizes.java#with-G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#with-Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#with-Serial 8267460 linux-aarch64
 
-runtime/jni/checked/TestPrimitiveArrayCriticalWithBadParam.java 8269923 windows-x64
-
 #############################################################################
 
 # :hotspot_serviceability
