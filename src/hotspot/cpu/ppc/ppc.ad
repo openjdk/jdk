@@ -2108,6 +2108,8 @@ const bool Matcher::match_rule_supported(int opcode) {
   switch (opcode) {
     case Op_SqrtD:
       return VM_Version::has_fsqrt();
+    case Op_RoundDoubleMode:
+      return VM_Version::has_vsx();
     case Op_CountLeadingZerosI:
     case Op_CountLeadingZerosL:
       return UseCountLeadingZerosInstructionsPPC64;
@@ -13961,7 +13963,7 @@ instruct roundD_reg(regD dst, regD src, immI8 rmode) %{
   ins_encode %{
     switch ($rmode$$constant) {
       case RoundDoubleModeNode::rmode_rint:
-        __ frin($dst$$FloatRegister, $src$$FloatRegister);
+        __ xvrdpic($dst$$FloatRegister->to_vsr(), $src$$FloatRegister->to_vsr());
         break;
       case RoundDoubleModeNode::rmode_floor:
         __ frim($dst$$FloatRegister, $src$$FloatRegister);
@@ -13985,7 +13987,7 @@ instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
   ins_encode %{
     switch ($rmode$$constant) {
       case RoundDoubleModeNode::rmode_rint:
-        __ xvrdpi($dst$$VectorSRegister, $src$$VectorSRegister);
+        __ xvrdpic($dst$$VectorSRegister, $src$$VectorSRegister);
         break;
       case RoundDoubleModeNode::rmode_floor:
         __ xvrdpim($dst$$VectorSRegister, $src$$VectorSRegister);
