@@ -2618,7 +2618,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   resize_all_tlabs();
   phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 
-  MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
   Universe::heap()->update_capacity_and_used_at_gc();
@@ -2909,31 +2908,37 @@ void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_
 
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
+// The code relies on the fact that GCTraceTimeWrapper stores the string passed
+// initially as a reference only, so that we can modify it as needed.
 class G1YoungGCTraceTime {
   G1GCPauseType _pause_type;
+  GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
   char _young_gc_name_data[MaxYoungGCNameLength];
 
   GCTraceTime(Info, gc) _tt;
 
-  char* update_young_gc_name() {
+  const char* update_young_gc_name() {
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
-             "Pause Young (%s)%s",
+             "Pause Young (%s) (%s)%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
+             GCCause::to_string(_pause_cause),
              G1CollectedHeap::heap()->evacuation_failed() ? " (Evacuation Failure)" : "");
     return _young_gc_name_data;
   }
 
 public:
-
   G1YoungGCTraceTime(GCCause::Cause cause) :
     // Take snapshot of current pause type at start as it may be modified during gc.
     // The strings for all Concurrent Start pauses are the same, so the parameter
     // does not matter here.
     _pause_type(G1CollectedHeap::heap()->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
-    _tt(update_young_gc_name(), NULL, cause, true) {
+    _pause_cause(cause),
+    // Fake a "no cause" and manually add the correct string in update_young_gc_name()
+    // to make the string look more natural.
+    _tt(update_young_gc_name(), NULL, GCCause::_no_gc, true) {
   }
 
   ~G1YoungGCTraceTime() {
@@ -2990,6 +2995,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                                                             Threads::number_of_non_daemon_threads());
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+
+    // JStat/MXBeans
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
@@ -3010,7 +3017,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // Please see comment in g1CollectedHeap.hpp and
         // G1CollectedHeap::ref_processing_init() to see how
         // reference processing currently works in G1.
-        _ref_processor_stw->enable_discovery();
+        _ref_processor_stw->start_discovery(false /* always_clear */);
 
         // We want to temporarily turn off discovery by the
         // CM ref processor, if necessary, and turn it back on
@@ -3281,8 +3288,6 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   pss->set_ref_discoverer(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
-  // Setup the soft refs policy...
-  rp->setup_policy(false);
 
   ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
 
@@ -4216,8 +4221,12 @@ class RegisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   nmethod* _nm;
 
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
+public:
+  RegisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p) {
+    oop heap_oop = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
@@ -4231,20 +4240,19 @@ class RegisterNMethodOopClosure: public OopClosure {
     }
   }
 
-public:
-  RegisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
-    _g1h(g1h), _nm(nm) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 class UnregisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   nmethod* _nm;
 
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
+public:
+  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p) {
+    oop heap_oop = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
@@ -4257,12 +4265,7 @@ class UnregisterNMethodOopClosure: public OopClosure {
     }
   }
 
-public:
-  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
-    _g1h(g1h), _nm(nm) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 void G1CollectedHeap::register_nmethod(nmethod* nm) {

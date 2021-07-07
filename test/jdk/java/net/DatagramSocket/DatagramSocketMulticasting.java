@@ -29,8 +29,6 @@
  *        jdk.test.lib.net.IPSupport
  * @run main/othervm DatagramSocketMulticasting
  * @run main/othervm -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
- * @run main/othervm -Djdk.usePlainDatagramSocketImpl=true DatagramSocketMulticasting
- * @run main/othervm -Djdk.usePlainDatagramSocketImpl=true -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
  */
 
 import java.io.IOException;

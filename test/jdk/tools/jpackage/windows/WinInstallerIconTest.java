@@ -25,7 +25,6 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 import javax.swing.Icon;
 import javax.swing.filechooser.FileSystemView;
 import jdk.jpackage.test.PackageTest;
@@ -67,31 +66,23 @@ public class WinInstallerIconTest {
         BufferedImage[] defaultInstallerIconImg = new BufferedImage[1];
 
         // Create installer with the default icon
-        createInstaller(null, "WithDefaultIcon", installerIconImg -> {
-            defaultInstallerIconImg[0] = installerIconImg;
-        }, null, null);
-
-        BufferedImage[] customInstallerIconImg = new BufferedImage[1];
+        long size1 = createInstaller(null, "WithDefaultIcon");
 
         // Create installer with custom icon.
-        // This installer icon should differ from the icon
-        // of the installer created with the default icon.
-        createInstaller(customIcon, "2", installerIconImg -> {
-            customInstallerIconImg[0] = installerIconImg;
-        }, null, defaultInstallerIconImg[0]);
+        long size2 = createInstaller(customIcon, "WithCustomIcon");
 
-        // Create installer with custom icon again.
-        // This installer icon should differ from the icon
-        // of the installer created with the default icon and should have
-        // the same icon as the icon of installer created with custom icon.
-        createInstaller(customIcon, null, null,
-                customInstallerIconImg[0], defaultInstallerIconImg[0]);
+        // Create another installer with custom icon.
+        long size3 = createInstaller(customIcon, null);
+
+        TKit.assertTrue(size2 < size1, "Installer 2 built with custom icon " +
+                "should  be smaller than Installer 1 built with default icon");
+
+        TKit.assertTrue(size3 < size1, "Installer 3 built with custom icon " +
+                "should be smaller than Installer 1 built with default icon");
+
     }
 
-    private void createInstaller(Path icon, String nameSuffix,
-            Consumer<BufferedImage> installerIconImgConsumer,
-            BufferedImage expectedInstallerIconImg,
-            BufferedImage unexpectedInstallerIconImg) throws IOException {
+    private long createInstaller(Path icon, String nameSuffix) throws IOException {
 
         PackageTest test = new PackageTest()
                 .forTypes(PackageType.WIN_EXE)
@@ -112,67 +103,19 @@ public class WinInstallerIconTest {
 
         test.addBundleVerifier(cmd -> {
             installerExePath[0] = cmd.outputBundle();
-
-            Icon actualIcon = FileSystemView.getFileSystemView().getSystemIcon(
-                    installerExePath[0].toFile());
-
-            BufferedImage actualInstallerIconImg = loadIcon(actualIcon);
-
-            if (installerIconImgConsumer != null) {
-                installerIconImgConsumer.accept(actualInstallerIconImg);
-            }
-
-            if (expectedInstallerIconImg != null) {
-                TKit.assertTrue(imageEquals(expectedInstallerIconImg,
-                        actualInstallerIconImg), String.format(
-                                "Check icon of %s installer is matching expected value",
-                                installerExePath[0]));
-            }
-
-            if (unexpectedInstallerIconImg != null) {
-                TKit.assertFalse(imageEquals(unexpectedInstallerIconImg,
-                        actualInstallerIconImg), String.format(
-                                "Check icon of %s installer is NOT matching unexpected value",
-                                installerExePath[0]));
-            }
         });
 
         test.run(CREATE);
 
-        if (installerExePath[0] != null && nameSuffix != null) {
-            TKit.deleteIfExists(installerExePath[0]);
-        }
-    }
-
-    private BufferedImage loadIcon(Icon icon) {
-        TKit.assertNotEquals(0, icon.getIconWidth(),
-                "Check icon has not empty width");
-        TKit.assertNotEquals(0, icon.getIconHeight(),
-                "Check icon has not empty height");
-        BufferedImage img = new BufferedImage(
-                icon.getIconWidth(),
-                icon.getIconHeight(),
-                BufferedImage.TYPE_INT_RGB);
-        Graphics g = img.createGraphics();
-        icon.paintIcon(null, g, 0, 0);
-        g.dispose();
-        return img;
-    }
-
-    private static boolean imageEquals(BufferedImage imgA, BufferedImage imgB) {
-        if (imgA.getWidth() == imgB.getWidth() && imgA.getHeight()
-                == imgB.getHeight()) {
-            for (int x = 0; x < imgA.getWidth(); x++) {
-                for (int y = 0; y < imgA.getHeight(); y++) {
-                    if (imgA.getRGB(x, y) != imgB.getRGB(x, y)) {
-                        return false;
-                    }
-                }
+        long size = 0L;
+        if (installerExePath[0] != null) {
+            size = installerExePath[0].toFile().length();
+            TKit.trace(" installer: " + installerExePath[0] + " - size: " + size);
+            if (nameSuffix != null) {
+                TKit.deleteIfExists(installerExePath[0]);
             }
-        } else {
-            return false;
         }
-        return true;
+        return size;
     }
 
     private static Path iconPath(String name) {

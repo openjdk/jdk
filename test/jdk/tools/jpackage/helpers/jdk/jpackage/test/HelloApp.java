@@ -399,8 +399,11 @@ public final class HelloApp {
 
         public void executeAndVerifyOutput(boolean removePath,
                 List<String> launcherArgs, List<String> appArgs) {
-            getExecutor(launcherArgs.toArray(new String[0])).dumpOutput()
-                    .setRemovePath(removePath).execute();
+            final int attempts = 3;
+            final int waitBetweenAttemptsSeconds = 5;
+            getExecutor(launcherArgs.toArray(new String[0])).dumpOutput().setRemovePath(
+                    removePath).executeAndRepeatUntilExitCode(0, attempts,
+                            waitBetweenAttemptsSeconds);
             Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
             verifyOutputFile(outputFile, appArgs, params);
         }

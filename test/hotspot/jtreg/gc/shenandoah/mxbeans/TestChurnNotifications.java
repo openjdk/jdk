@@ -25,6 +25,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -41,6 +42,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -52,6 +54,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -63,6 +66,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -74,6 +78,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -85,6 +90,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -104,6 +110,8 @@ import javax.management.*;
 import java.lang.management.*;
 import javax.management.openmbean.*;
 
+import jdk.test.lib.Utils;
+
 import com.sun.management.GarbageCollectionNotificationInfo;
 
 public class TestChurnNotifications {
@@ -121,6 +129,8 @@ public class TestChurnNotifications {
     static volatile Object sink;
 
     public static void main(String[] args) throws Exception {
+        final long startTime = System.currentTimeMillis();
+
         final AtomicLong churnBytes = new AtomicLong();
 
         NotificationListener listener = new NotificationListener() {
@@ -159,17 +169,28 @@ public class TestChurnNotifications {
 
         System.gc();
 
-        // Wait until notifications start arriving, and then wait some more
-        // to catch the ones arriving late.
-        while (churnBytes.get() == 0) {
-            Thread.sleep(1000);
-        }
-        Thread.sleep(5000);
-
-        long actual = churnBytes.get();
-
         long minExpected = PRECISE ? (mem - HEAP_MB * 1024 * 1024) : 1;
         long maxExpected = mem + HEAP_MB * 1024 * 1024;
+        long actual = 0;
+
+        // Look at test timeout to figure out how long we can wait without breaking into timeout.
+        // Default to 1/4 of the remaining time in 1s steps.
+        final long STEP_MS = 1000;
+        long spentTime = System.currentTimeMillis() - startTime;
+        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - spentTime) / STEP_MS / 4;
+
+        // Wait until enough notifications are accrued to match minimum boundary.
+        long tries = 0;
+        while (tries++ < maxTries) {
+            actual = churnBytes.get();
+            if (minExpected <= actual) {
+                // Wait some more to test if we are breaking the maximum boundary.
+                Thread.sleep(5000);
+                actual = churnBytes.get();
+                break;
+            }
+            Thread.sleep(STEP_MS);
+        }
 
         String msg = "Expected = [" + minExpected / M + "; " + maxExpected / M + "] (" + mem / M + "), actual = " + actual / M;
         if (minExpected <= actual && actual <= maxExpected) {

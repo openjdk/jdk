@@ -202,7 +202,6 @@ private:
                                         // other collectors in configuration
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
-  bool        _enqueuing_is_done;       // true if all weak references enqueued
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
@@ -286,6 +285,12 @@ private:
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc);
 
+
+  void setup_policy(bool always_clear) {
+    _current_soft_ref_policy = always_clear ?
+                               _always_clear_soft_ref_policy : _default_soft_ref_policy;
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
+  }
 public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
@@ -293,11 +298,9 @@ public:
   uint max_num_queues() const              { return _max_num_queues; }
   void set_active_mt_degree(uint v);
 
-  ReferencePolicy* setup_policy(bool always_clear) {
-    _current_soft_ref_policy = always_clear ?
-      _always_clear_soft_ref_policy : _default_soft_ref_policy;
-    _current_soft_ref_policy->setup();   // snapshot the policy threshold
-    return _current_soft_ref_policy;
+  void start_discovery(bool always_clear) {
+    enable_discovery();
+    setup_policy(always_clear);
   }
 
   // "Preclean" all the discovered reference lists by removing references that
@@ -404,10 +407,6 @@ public:
 
   // Whether we are in a phase when _processing_ is MT.
   bool processing_is_mt() const;
-
-  // whether all enqueueing of weak references is complete
-  bool enqueuing_is_done()  { return _enqueuing_is_done; }
-  void set_enqueuing_is_done(bool v) { _enqueuing_is_done = v; }
 
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
@@ -573,6 +572,10 @@ protected:
   ReferenceProcessor& _ref_processor;
   ReferenceProcessorPhaseTimes* _phase_times;
 
+  // Used for tracking how much time a worker spends in a (sub)phase.
+  uint tracker_id(uint worker_id) const {
+    return _ref_processor.processing_is_mt() ? worker_id : 0;
+  }
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)

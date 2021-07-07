@@ -114,8 +114,8 @@ header extends java/lang/Object implements java/lang/annotation/Annotation flags
 class name java/lang/System
 -method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
 -method name getSecurityManager descriptor ()Ljava/lang/SecurityManager;
-method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 method name getSecurityManager descriptor ()Ljava/lang/SecurityManager; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")@Ljdk/internal/reflect/CallerSensitive;
 
 class name java/lang/Thread
 -method name checkAccess descriptor ()V

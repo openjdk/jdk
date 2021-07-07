@@ -4013,6 +4013,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // all the code before the peeled area, so the verify pass will always
     // complain about it.
   }
+
+  // Check for bailout, and return
+  if (C->failing()) {
+    return;
+  }
+
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 
@@ -5027,19 +5033,19 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
           }
         }
       }
-      // For Phis only consider Region's inputs that were reached by following the memory edges
-      if (LCA != early) {
-        for (uint i = 0; i < worklist.size(); i++) {
-          Node* s = worklist.at(i);
-          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
-            Node* r = s->in(0);
-            for (uint j = 1; j < s->req(); j++) {
-              Node* in = s->in(j);
-              Node* r_in = r->in(j);
-              // We can't reach any node from a Phi because we don't enqueue Phi's uses above
-              if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
-                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
-              }
+    }
+    // For Phis only consider Region's inputs that were reached by following the memory edges
+    if (LCA != early) {
+      for (uint i = 0; i < worklist.size(); i++) {
+        Node* s = worklist.at(i);
+        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+          Node* r = s->in(0);
+          for (uint j = 1; j < s->req(); j++) {
+            Node* in = s->in(j);
+            Node* r_in = r->in(j);
+            // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+            if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
             }
           }
         }

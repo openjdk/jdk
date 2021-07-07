@@ -45,9 +45,7 @@ define_pd_global(intx, CompileThreshold,             10000);
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);
 // C2 gets to use all the float/double registers
-define_pd_global(intx, FLOATPRESSURE,                30);
 define_pd_global(intx, FreqInlineSize,               175);
-define_pd_global(intx, INTPRESSURE,                  12);
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.

@@ -256,6 +256,7 @@ public class CDS {
     * @param fileName user input archive name, can be null.
     */
     private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+        String cwd = new File("").getAbsolutePath(); // current dir used for printing message.
         String currentPid = String.valueOf(ProcessHandle.current().pid());
         String archiveFileName =  fileName != null ? fileName :
             "java_pid" + currentPid + (isStatic ? "_static.jsa" : "_dynamic.jsa");
@@ -299,8 +300,8 @@ public class CDS {
             Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
 
             // Drain stdout/stderr to files in new threads.
-            String stdOutFile = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);
-            String stdErrFile = drainOutput(proc.getErrorStream(), proc.pid(), "stderr", cmds);
+            String stdOutFileName = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);
+            String stdErrFileName = drainOutput(proc.getErrorStream(), proc.pid(), "stderr", cmds);
 
             proc.waitFor();
             // done, delete classlist file.
@@ -311,14 +312,15 @@ public class CDS {
             if (!tempArchiveFile.exists()) {
                 throw new RuntimeException("Archive file " + tempArchiveFileName +
                                            " is not created, please check stdout file " +
-                                            stdOutFile + " or stderr file " +
-                                            stdErrFile + " for more detail");
+                                            cwd + File.separator + stdOutFileName + " or stderr file " +
+                                            cwd + File.separator + stdErrFileName + " for more detail");
             }
         } else {
             dumpDynamicArchive(tempArchiveFileName);
             if (!tempArchiveFile.exists()) {
                 throw new RuntimeException("Archive file " + tempArchiveFileName +
-                                           " is not created, please check process " +
+                                           " is not created, please check current working directory " +
+                                           cwd  + " for process " +
                                            currentPid + " output for more detail");
             }
         }
@@ -331,6 +333,6 @@ public class CDS {
             throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
         }
         // Everyting goes well, print out the file name.
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFileName);
+        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + cwd + File.separator + archiveFileName);
     }
 }
