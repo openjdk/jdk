@@ -65,7 +65,7 @@ public class TestPrimitiveArrayCriticalWithBadParam {
 
             // -Xcheck:jni should warn the bad parameter
             analyzer.shouldContain("FATAL ERROR in native method: Primitive type array expected but not received for JNI array operation");
-            analyzer.shouldHaveExitValue(134);
+            analyzer.shouldNotHaveExitValue(0);
         } catch (IOException e) {
             throw  new RuntimeException(e);
         }

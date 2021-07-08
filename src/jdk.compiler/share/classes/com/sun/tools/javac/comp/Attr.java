@@ -1871,14 +1871,7 @@ public class Attr extends JCTree.Visitor {
     }
         // where
         private boolean isValueBased(Type t) {
-            if (t != null && t.tsym != null) {
-                for (Attribute.Compound a: t.tsym.getDeclarationAttributes()) {
-                    if (a.type.tsym == syms.valueBasedType.tsym) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
         }
 
 

@@ -190,6 +190,9 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   delete _special_refs;
+  if (_shared_rs.is_reserved()) {
+    _shared_rs.release();
+  }
 }
 
 bool ArchiveBuilder::is_dumping_full_module_graph() {
