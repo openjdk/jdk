@@ -456,10 +456,12 @@ public class GenerateJfrFiles {
             event.maxSize += event.id <= 127 ? 1 : 2;
             event.minSize ++;
 
+            // start time
             event.maxSize += 9;
             event.minSize += 1;
 
-            if (!event.startTime || !event.period.isEmpty() || event.cutoff) {
+            if (!(!event.startTime || !event.period.isEmpty()) || event.cutoff) {
+                // end time
                 event.maxSize += 9;
                 event.minSize += 1;
             }
