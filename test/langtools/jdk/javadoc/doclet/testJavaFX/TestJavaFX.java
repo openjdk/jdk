@@ -374,7 +374,7 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
 
         // make sure the doclet indeed emits the warning
-        checkOutput(Output.OUT, true, "C.java:31: warning: invalid usage of tag <");
+        checkOutput(Output.OUT, true, "C.java:31: warning: invalid input: '<'");
     }
 
     /*
