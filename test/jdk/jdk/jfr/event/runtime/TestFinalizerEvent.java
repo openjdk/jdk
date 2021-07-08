@@ -39,7 +39,6 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @build jdk.jfr.event.runtime.TestClasses
  * @run main/othervm -Xlog:class+unload -Xlog:gc -Xmx16m jdk.jfr.event.runtime.TestFinalizerEvent
  */
 
