@@ -333,6 +333,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -659,6 +669,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -920,6 +940,15 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // Ensure that the CertificateRequest has not been sent prior
+            // to EncryptedExtensions
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(chc, message);
