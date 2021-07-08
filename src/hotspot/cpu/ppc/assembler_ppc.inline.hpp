@@ -848,6 +848,7 @@ inline void Assembler::xvmsubadp( VectorSRegister d, VectorSRegister a, VectorSR
 inline void Assembler::xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBASP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBADP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvrdpi(    VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPI_OPCODE  | vsrt(d) | vsrb(b)); }
+inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIC_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
