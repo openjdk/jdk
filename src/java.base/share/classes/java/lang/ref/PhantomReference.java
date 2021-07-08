@@ -43,6 +43,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <p> In order to ensure that a reclaimable object remains so, the referent of
  * a phantom reference may not be retrieved: The {@code get} method of a
  * phantom reference always returns {@code null}.
+ * The {@link #refersTo(Object) refersTo} method can be used to test
+ * whether some object is the referent of a phantom reference.
  *
  * @author   Mark Reinhold
  * @since    1.2
@@ -75,9 +77,7 @@ public class PhantomReference<T> extends Reference<T> {
      * is registered with the given queue.
      *
      * <p> It is possible to create a phantom reference with a {@code null}
-     * queue, but such a reference is completely useless: Its {@code get}
-     * method will always return {@code null} and, since it does not have a queue,
-     * it will never be enqueued.
+     * queue.  Such a reference will never be enqueued.
      *
      * @param referent the object the new phantom reference will refer to
      * @param q the queue with which the reference is to be registered,

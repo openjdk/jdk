@@ -1835,6 +1835,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorMaskCmp:
+      if (vlen < 2 || size_in_bits < 32) {
+        return false;
+      }
+      break;
   }
   return true;  // Per default match rules are supported.
 }
@@ -6906,7 +6911,7 @@ instruct evcmpFD(vec dst, vec src1, vec src2, immI8 cond, rRegP scratch, kReg kt
 instruct vcmp(legVec dst, legVec src1, legVec src2, immI8 cond, rRegP scratch) %{
   predicate((UseAVX <= 2 || !VM_Version::supports_avx512vl()) &&
             !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
-            vector_length_in_bytes(n->in(1)->in(1)) >=  8 && // src1
+            vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_integral_type(vector_element_basic_type(n->in(1)->in(1)))); // src1
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
@@ -7442,7 +7447,8 @@ instruct cmpvptest_anytrue_evex(rFlagsReg cr, legVec src1, legVec src2, immI_0 z
 
 //------------------------------------- LoadMask --------------------------------------------
 
-instruct loadMask(vec dst, vec src) %{
+instruct loadMask(legVec dst, legVec src) %{
+  predicate(!VM_Version::supports_avx512vlbw());
   match(Set dst (VectorLoadMask src));
   effect(TEMP dst);
   format %{ "vector_loadmask_byte $dst,$src\n\t" %}
@@ -7450,7 +7456,21 @@ instruct loadMask(vec dst, vec src) %{
     int vlen_in_bytes = vector_length_in_bytes(this);
     BasicType elem_bt = vector_element_basic_type(this);
 
-    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt);
+    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt, true);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct loadMask_evex(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorLoadMask src));
+  effect(TEMP dst);
+  format %{ "vector_loadmask_byte $dst,$src\n\t" %}
+  ins_encode %{
+    int vlen_in_bytes = vector_length_in_bytes(this);
+    BasicType elem_bt = vector_element_basic_type(this);
+
+    __ load_vector_mask($dst$$XMMRegister, $src$$XMMRegister, vlen_in_bytes, elem_bt, false);
   %}
   ins_pipe( pipe_slow );
 %}

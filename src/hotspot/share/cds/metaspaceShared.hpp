@@ -101,17 +101,12 @@ public:
     _archive_loading_failed = true;
   }
 
-  static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding any
   // mapped shared heap regions.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
-  }
-
-  static address shared_metaspace_top() {
-    return (address)MetaspaceObj::shared_metaspace_top();
   }
 
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;

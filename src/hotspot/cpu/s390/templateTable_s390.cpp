@@ -3768,9 +3768,8 @@ void TemplateTable::_new() {
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;
-  const int mask = 1 << Klass::_lh_instance_slow_path_bit;
   __ z_llgf(Rsize, Address(iklass, Klass::layout_helper_offset()));
-  __ z_tmll(Rsize, mask);
+  __ z_tmll(Rsize, Klass::_lh_instance_slow_path_bit);
   __ z_btrue(slow_case);
 
   // Allocate the instance
