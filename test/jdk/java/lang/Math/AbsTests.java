@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,26 @@
  */
 
 import java.util.function.*;
+import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.FloatConsts;
 
 /*
  * @test
- * @bug 8241374
+ * @bug 6506405 8241374
  * @summary Test abs and absExact for Math and StrictMath
+ * @modules java.base/jdk.internal.math
  */
 public class AbsTests {
+    private static final float  EULER_F   = (float)Math.exp(1.0);
+    private static final float  GELFOND_F = (float)Math.exp(Math.PI);
+    private static final float  PI_F      = (float)Math.PI;
+    private static final float  TAU_F     = 2.0F*PI_F;
+
+    private static final double EULER_D   = Math.exp(1.0);
+    private static final double GELFOND_D = Math.exp(Math.PI);
+    private static final double PI_D      = Math.PI;
+    private static final double TAU_D     = 2.0*PI_D;
+
     private static int errors = 0;
 
     public static void main(String... args) {
@@ -36,11 +49,15 @@ public class AbsTests {
         errors += testIntMinValue();
         errors += testInRangeLongAbs();
         errors += testLongMinValue();
+        errors += testInRangeFloatAbs();
+        errors += testInRangeDoubleAbs();
 
         if (errors > 0) {
             throw new RuntimeException(errors + " errors found testing abs.");
         }
     }
+
+    // --------------------------------------------------------------------
 
     private static int testInRangeIntAbs() {
         int errors = 0;
@@ -137,6 +154,92 @@ public class AbsTests {
         long result = absFunc.applyAsLong(argument);
         if (result != expected) {
             System.err.printf("Unexpected long abs result %d for argument %d%n",
+                                result, argument);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // --------------------------------------------------------------------
+
+    private static float testInRangeFloatAbs() {
+        int errors = 0;
+        float[][] testCases  = {
+            // Argument to abs, expected result
+            {+0.0F, 0.0F},
+            {-0.0F, 0.0F},
+            {-Float.MIN_VALUE, Float.MIN_VALUE},
+            {-Float.MIN_NORMAL, Float.MIN_NORMAL},
+            {Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY},
+            {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
+            {Float.intBitsToFloat(FloatConsts.SIGN_BIT_MASK |
+                (1 << FloatConsts.SIGNIFICAND_WIDTH) |
+               ((1 << FloatConsts.SIGNIFICAND_WIDTH) - 1)),
+             Float.intBitsToFloat((1 << FloatConsts.SIGNIFICAND_WIDTH) |
+               ((1 << FloatConsts.SIGNIFICAND_WIDTH) - 1))},
+            {FloatConsts.SIGN_BIT_MASK | (FloatConsts.MAG_BIT_MASK >>> 1),
+                FloatConsts.MAG_BIT_MASK >>> 1},
+            {-EULER_F, EULER_F},
+            {-GELFOND_F, GELFOND_F},
+            {-PI_F, PI_F},
+            {-TAU_F, TAU_F}
+        };
+
+        for(var testCase : testCases) {
+            errors += testFloatAbs(Math::abs,      testCase[0], testCase[1]);
+        }
+        return errors;
+    }
+
+    private static int testFloatAbs(UnaryOperator<Float> absFunc,
+                           float argument, float expected) {
+        float result = absFunc.apply(argument);
+        if (result != expected) {
+            System.err.printf("Unexpected float abs result %f for argument %f%n",
+                                result, argument);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // --------------------------------------------------------------------
+
+    private static double testInRangeDoubleAbs() {
+        int errors = 0;
+        double[][] testCases  = {
+            // Argument to abs, expected result
+            {+0.0, 0.0},
+            {-0.0, 0.0},
+            {-Double.MIN_VALUE, Double.MIN_VALUE},
+            {-Double.MIN_NORMAL, Double.MIN_NORMAL},
+            {Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY},
+            {Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY},
+            {Double.longBitsToDouble(DoubleConsts.SIGN_BIT_MASK |
+                (1 << DoubleConsts.SIGNIFICAND_WIDTH) |
+               ((1 << DoubleConsts.SIGNIFICAND_WIDTH) - 1)),
+             Double.longBitsToDouble((1 << DoubleConsts.SIGNIFICAND_WIDTH) |
+               ((1 << DoubleConsts.SIGNIFICAND_WIDTH) - 1))},
+            {DoubleConsts.SIGN_BIT_MASK | (DoubleConsts.MAG_BIT_MASK >>> 1),
+                DoubleConsts.MAG_BIT_MASK >>> 1},
+            {-EULER_D, EULER_D},
+            {-GELFOND_D, GELFOND_D},
+            {-PI_D, PI_D},
+            {-TAU_D, TAU_D}
+        };
+
+        for(var testCase : testCases) {
+            errors += testDoubleAbs(Math::abs,      testCase[0], testCase[1]);
+        }
+        return errors;
+    }
+
+    private static int testDoubleAbs(DoubleUnaryOperator absFunc,
+                           double argument, double expected) {
+        double result = absFunc.applyAsDouble(argument);
+        if (result != expected) {
+            System.err.printf("Unexpected double abs result %f for argument %f%n",
                                 result, argument);
             return 1;
         } else {
