@@ -94,7 +94,7 @@ public interface Reporter {
      * The positions are all 0-based character offsets from the beginning of string.
      * The positions should satisfy the relation {@code start <= pos <= end}.
      *
-     * @implNote
+     * @implSpec
      * This implementation ignores the {@code (start, pos, end)} values and simply calls
      * {@link #print(Diagnostic.Kind, DocTreePath,String) print(kind, path, message)};
      *
