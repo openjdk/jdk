@@ -24,7 +24,6 @@
 /* @test TestStringCriticalWithDedup
  * @summary Test string deduplication should not cause string critical to crash VM
  * @requires vm.gc.Shenandoah
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
@@ -41,7 +40,6 @@
 /* @test TestPinnedGarbage
  * @summary Test string deduplication should not cause string critical to crash VM
  * @requires vm.gc.Shenandoah
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
@@ -59,19 +57,13 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.lang.reflect.*;
-import sun.misc.*;
 
 public class TestStringCriticalWithDedup {
     private static Field valueField;
-    private static Unsafe U;
 
     static {
         System.loadLibrary("TestStringCriticalWithDedup");
         try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            U = (Unsafe) field.get(null);
-
             valueField = String.class.getDeclaredField("value");
             valueField.setAccessible(true);
         } catch (Exception e) {
