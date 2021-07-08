@@ -208,7 +208,7 @@ abstract class HelloCookieManager {
             byte[] target = md.digest(secret);      // 32 bytes
             target[0] = cookie[0];
 
-            return Arrays.equals(target, cookie);
+            return MessageDigest.isEqual(target, cookie);
         }
     }
 
@@ -361,7 +361,7 @@ abstract class HelloCookieManager {
             md.update(headerBytes);
             byte[] headerCookie = md.digest(secret);
 
-            if (!Arrays.equals(headerCookie, prevHeadCookie)) {
+            if (!MessageDigest.isEqual(headerCookie, prevHeadCookie)) {
                 return false;
             }
 

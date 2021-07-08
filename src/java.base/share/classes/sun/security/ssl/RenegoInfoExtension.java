@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
@@ -37,6 +38,7 @@ import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import static sun.security.ssl.SSLExtension.SH_RENEGOTIATION_INFO;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.util.ByteArrays;
 
 /**
  * Pack of the "renegotiation_info" extensions [RFC 5746].
@@ -239,7 +241,7 @@ final class RenegoInfoExtension {
                             "renegotiation");
                 } else {
                     // verify the client_verify_data value
-                    if (!Arrays.equals(shc.conContext.clientVerifyData,
+                    if (!MessageDigest.isEqual(shc.conContext.clientVerifyData,
                             spec.renegotiatedConnection)) {
                         throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Invalid renegotiation_info extension data: " +
@@ -459,14 +461,14 @@ final class RenegoInfoExtension {
                 }
 
                 byte[] cvd = chc.conContext.clientVerifyData;
-                if (!Arrays.equals(spec.renegotiatedConnection,
+                if (!ByteArrays.isEqual(spec.renegotiatedConnection,
                         0, cvd.length, cvd, 0, cvd.length)) {
                     throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid renegotiation_info in ServerHello: " +
                         "unmatched client_verify_data value");
                 }
                 byte[] svd = chc.conContext.serverVerifyData;
-                if (!Arrays.equals(spec.renegotiatedConnection,
+                if (!ByteArrays.isEqual(spec.renegotiatedConnection,
                         cvd.length, infoLen, svd, 0, svd.length)) {
                     throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid renegotiation_info in ServerHello: " +
