@@ -45,40 +45,6 @@ import java.io.IOException;
 
 public class recursiveJSRTest {
 	public static void main(String[] args) throws Throwable {
-        String fileName = "recursiveJSR";
-		Class<?> newClass;
-        try {
-            newClass = Class.forName(fileName);
-            Method m = newClass.getMethod("test");
-            m.invoke(newClass.newInstance());
-            byte[] newClassBytes = Preverifier.patch(
-                new String[]{newClass.getProtectionDomain()
-                .getCodeSource().getLocation().getPath() + fileName}
-            );
-            try {
-                Path tmpDir;
-                if (!Files.exists(Path.of("/tmp/preverifier/"))) {
-                    tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));   
-                    try {
-                        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                            "/tmp/preverifier/" + fileName);
-                        throw new RuntimeException(
-                            "StackMapCheck failed, BadMap did not throw VerifyError");
-                    } catch (Exception e) {
-                        System.out.println("recursiveJSR passed, error thrown");
-                    }
-                }
-                else {
-                    tmpDir = Path.of("/tmp/preverifier/");
-                }
-                Path tmpFile = Path.of(tmpDir.toString() + fileName + ".class");
-                Files.write(tmpFile, newClassBytes, 
-                    StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            } catch (IOException e) {
-                throw new Error("Cannot write file", e);
-            }
-        } catch (Exception e) {
-            System.out.println("Class not found");
-        }
+        TestWithError.test("recursiveJSR", "recursiveJSR passed, error thrown", "recursiveJSR failed, error not thrown");
 	}
 }

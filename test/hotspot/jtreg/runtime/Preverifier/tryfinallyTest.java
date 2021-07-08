@@ -28,12 +28,12 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          java.base/jdk.internal.vm
- * @compile tryfinallyBytecode.jasm
+ * @compile tryfinally.jasm
             testPatch.java
- * @run main/othervm -Xverify:all tryfinallyBytecodeTest
+ * @run main/othervm -Xverify:all tryfinallyTest
  */
-public class tryfinallyBytecodeTest {
+public class tryfinallyTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("tryfinallyBytecode", "");
+		testPatch.test("tryfinally", "");
 	}
 }
