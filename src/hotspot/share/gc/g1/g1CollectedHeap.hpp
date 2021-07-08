@@ -804,7 +804,7 @@ private:
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
-  void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
+  void calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
@@ -830,8 +830,8 @@ private:
   void evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states);
 
 public:
-  void pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
-  void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info,
+  void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
+  void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
                                     G1RedirtyCardsQueueSet* rdcqs,
                                     G1ParScanThreadStateSet* pss);
 

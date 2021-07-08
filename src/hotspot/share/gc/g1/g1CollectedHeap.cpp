@@ -2797,10 +2797,10 @@ void G1CollectedHeap::start_new_collection_set() {
   phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
-void G1CollectedHeap::calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms) {
+void G1CollectedHeap::calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms) {
 
   _collection_set.finalize_initial_collection_set(target_pause_time_ms, &_survivor);
-  evacuation_info.set_collectionset_regions(collection_set()->region_length() +
+  evacuation_info->set_collectionset_regions(collection_set()->region_length() +
                                             collection_set()->optional_region_length());
 
   _cm->verify_no_collection_set_oops();
@@ -2940,12 +2940,12 @@ G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_tr
 G1HeapPrinterMark::~G1HeapPrinterMark() {
   _g1h->policy()->print_age_table();
   _g1h->rem_set()->print_coarsen_stats();
+  // We are at the end of the GC. Total collections has already been increased.
+  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
 
   _heap_transition.print();
   _g1h->print_heap_regions();
   _g1h->print_heap_after_gc();
-  // We are at the end of the GC. Total collections has already been increased.
-  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
   // Print NUMA statistics.
   _g1h->numa()->print_statistics();
 }
@@ -3067,7 +3067,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // of the collection set!).
         _allocator->release_mutator_alloc_regions();
 
-        calculate_collection_set(*jtm.evacuation_info(), target_pause_time_ms);
+        calculate_collection_set(jtm.evacuation_info(), target_pause_time_ms);
 
         G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
         G1ParScanThreadStateSet per_thread_states(this,
@@ -3075,7 +3075,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                                                   workers()->active_workers(),
                                                   collection_set()->young_region_length(),
                                                   collection_set()->optional_region_length());
-        pre_evacuate_collection_set(*jtm.evacuation_info(), &per_thread_states);
+        pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
         bool may_do_optional_evacuation = _collection_set.optional_region_length() != 0;
         // Actually do the work...
@@ -3084,7 +3084,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         if (may_do_optional_evacuation) {
           evacuate_optional_collection_set(&per_thread_states);
         }
-        post_evacuate_collection_set(*jtm.evacuation_info(), &rdcqs, &per_thread_states);
+        post_evacuate_collection_set(jtm.evacuation_info(), &rdcqs, &per_thread_states);
 
         start_new_collection_set();
 
@@ -3103,7 +3103,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
         // Need to report the collection pause now since record_collection_pause_end()
         // modifies it to the next state.
-        _gc_tracer_stw->report_young_gc_pause(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
+        jtm.report_pause_type(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
 
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
@@ -3549,7 +3549,7 @@ public:
   }
 };
 
-void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   _bytes_used_during_gc = 0;
 
   _expand_heap_after_alloc_failure = true;
@@ -3817,7 +3817,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
   _collection_set.abandon_optional_collection_set(per_thread_states);
 }
 
-void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info,
+void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
                                                    G1RedirtyCardsQueueSet* rdcqs,
                                                    G1ParScanThreadStateSet* per_thread_states) {
   G1GCPhaseTimes* p = phase_times();
@@ -3838,7 +3838,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
   post_evacuate_cleanup_1(per_thread_states, rdcqs);
 
-  post_evacuate_cleanup_2(&_preserved_marks_set, rdcqs, &evacuation_info, per_thread_states->surviving_young_words());
+  post_evacuate_cleanup_2(&_preserved_marks_set, rdcqs, evacuation_info, per_thread_states->surviving_young_words());
 
   assert_used_and_recalculate_used_equal(this);
 
@@ -3846,8 +3846,8 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
   record_obj_copy_mem_stats();
 
-  evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
-  evacuation_info.set_bytes_used(_bytes_used_during_gc);
+  evacuation_info->set_collectionset_used_before(collection_set()->bytes_used_before());
+  evacuation_info->set_bytes_used(_bytes_used_during_gc);
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {

@@ -68,7 +68,6 @@ public:
                 bool explicit_gc,
                 bool clear_soft,
                 bool do_maximal_compaction);
-  ~G1FullGCScope() { }
 
   bool is_explicit_gc();
   bool should_clear_soft_refs();
