@@ -3019,12 +3019,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         // reference processing currently works in G1.
         _ref_processor_stw->start_discovery(false /* always_clear */);
 
-        // We want to temporarily turn off discovery by the
-        // CM ref processor, if necessary, and turn it back on
-        // on again later if we do. Using a scoped
-        // NoRefDiscovery object will do this.
-        NoRefDiscovery no_cm_discovery(_ref_processor_cm);
-
         policy()->record_collection_pause_start(sample_start_time_sec);
 
         // Forget the current allocation region (we might even choose it to be part
