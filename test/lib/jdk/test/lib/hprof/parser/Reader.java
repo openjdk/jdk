@@ -177,8 +177,6 @@ public abstract class Reader {
                     } else {
                         throw new IOException("Unrecognized magic number of decompressed data: " + i);
                     }
-                } catch (Exception e) {
-                    throw new IOException("Cannot get stack trace from the compressed hprof file", e);
                 } finally {
                     out.delete();
                 }
