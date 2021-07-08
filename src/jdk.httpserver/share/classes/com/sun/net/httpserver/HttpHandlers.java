@@ -30,26 +30,39 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * This class allows customization and retrieval of {@link HttpHandler HttpHandler}
- * instances via static methods.
+ * Implementations of {@link com.sun.net.httpserver.HttpHandler HttpHandler}
+ * that implement various useful handlers, such as a static response handler,
+ * or a conditional handler that complements one handler with another.
+ *
+ * <p> The factory method {@link #of(int, Headers, String)} provides a
+ * means to create handlers with pre-set static response state. For example, a
+ * {@code jsonHandler} that always returns <i>200</i> with the same json:
+ * <pre>{@code
+ *   HttpHandlers.of(200,
+ *                   Headers.of("Content-Type", "application/json"),
+ *                   Files.readString(Path.of("some.json")));
+ * }</pre>
+ * or a {@code notAllowedHandler} that always replies with <i>405</i> -
+ * Method Not Allowed, and indicates the set of methods that are allowed:
+ * <pre>{@code
+ *   HttpHandlers.of(405, Headers.of("Allow", "GET"), "");
+ * }</pre>
  *
  * <p> The functionality of a handler can be extended or enhanced through the
  * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
- * which allows to complement a given handler. The factory method
- * {@link #of(int, Headers, String)} provides a means to create handlers with
- * pre-set response state.
+ * which allows to complement a given handler. For example, complementing a
+ * {@code jsonHandler} with <i>notAllowedHandler</i>:
  *
- * <p> Example of complementing a handler with a <i>fallbackHandler</i>:
  * <pre>{@code
  *   Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
- *   var fallbackHandler = HttpHandlers.of(405, Headers.of("Allow", "GET"), "");
- *   var handler = HttpHandlers.handleOrElse(IS_GET, new GetHandler(), fallbackHandler);
+ *   var handler = HttpHandlers.handleOrElse(IS_GET, jsonHandler,
+ *                                           notAllowedHandler);
  * }</pre>
  *
  * The above <i>handleOrElse</i> {@code handler} offers an if-else like construct;
  * if the request method is "GET" then handling of the exchange is delegated to
- * the {@code GetHandler}, otherwise handling of the exchange is delegated to
- * the {@code fallbackHandler}.
+ * the {@code jsonHandler}, otherwise handling of the exchange is delegated to
+ * the {@code notAllowedHandler}.
  *
  * @since 18
  */
