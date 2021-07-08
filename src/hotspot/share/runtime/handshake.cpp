@@ -341,13 +341,17 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
+  ThreadsListHandle tlh;
+  Handshake::execute(hs_cl, &tlh, target);
+}
+
+void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh_p, JavaThread* target) {
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
+  if (tlh_p->includes(target)) {
     target->handshake_state()->add_operation(&op);
   } else {
     char buf[128];
