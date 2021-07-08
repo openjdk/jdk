@@ -220,10 +220,9 @@ class InstanceKlass: public Klass {
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
-  // _is_marked_dependent and _has_registered_finalizer can be set concurrently, thus cannot be part of the
+  // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
-  JFR_ONLY(bool   _is_finalizer_serialized;) // for reporting usage of finalizer methods
 
   // Class states are defined as ClassState (see above).
   // Place the _init_state here to utilize the unused 2-byte after
@@ -928,9 +927,6 @@ public:
 
   // Helper function
   static instanceOop register_finalizer(instanceOop i, TRAPS);
-  JFR_ONLY(bool is_finalizer_serialized() const;)
-  JFR_ONLY(void set_is_finalizer_serialized();)
-  JFR_ONLY(void clear_is_finalizer_serialized();)
 
   // Check whether reflection/jni/jvm code is allowed to instantiate this class;
   // if not, throw either an Error or an Exception.

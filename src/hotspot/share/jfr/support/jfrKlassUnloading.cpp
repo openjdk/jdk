@@ -113,9 +113,8 @@ static void send_finalizer_event(const Klass* k) {
     return;
   }
   const InstanceKlass* const ik = InstanceKlass::cast(k);
-  if (ik->has_finalizer() && !ik->is_finalizer_serialized()) {
-    const_cast<InstanceKlass*>(ik)->set_is_finalizer_serialized();
-    EventFinalizerOverride event;
+  if (ik->has_finalizer()) {
+    EventFinalizer event;
     event.set_overridingClass(ik);
     event.commit();
   }

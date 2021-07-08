@@ -22,14 +22,33 @@
  *
  */
 
-#ifndef SHARE_JFR_PERIODIC_JFRFINALIZEROVERRIDEEVENT_HPP
-#define SHARE_JFR_PERIODIC_JFRFINALIZEROVERRIDEEVENT_HPP
+#include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerEvent.hpp"
+#include "jfr/utilities/jfrTime.hpp"
+#include "oops/instanceKlass.hpp"
+#include "runtime/mutexLocker.hpp"
 
-#include "memory/allocation.hpp"
+// All finalizer events generated during the same pass will have the same timestamp.
+static JfrTicks invocation_time;
 
-class JfrFinalizerOverrideEvent : AllStatic {
- public:
-  static void generate_events();
-};
+static void finalizer_event_callback(Klass* klass) {
+  assert(klass != NULL, "invariant");
+  if (!klass->is_instance_klass()) {
+    return;
+  }
+  InstanceKlass* const ik = InstanceKlass::cast(klass);
+  if (ik->has_finalizer()) {
+    EventFinalizer event(UNTIMED);
+    event.set_endtime(invocation_time);
+    event.set_overridingClass(ik);
+    event.commit();
+  }
+}
 
-#endif // SHARE_JFR_PERIODIC_JFRFINALIZEROVERRIDEEVENT_HPP
+void JfrFinalizerEvent::generate_events() {
+  invocation_time = JfrTicks::now();
+  MutexLocker cld_lock(ClassLoaderDataGraph_lock);
+  ClassLoaderDataGraph::classes_do(&finalizer_event_callback);
+}

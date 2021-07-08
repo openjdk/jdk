@@ -92,3 +92,4 @@ class TestClass {
         Class<?> arrayOfHidden = Array.newInstance(clh, 10).getClass(); // HAS ISSUES?
     }
 }
+

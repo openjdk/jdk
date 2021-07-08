@@ -807,7 +807,7 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.FinalizerOverride">
+    <event name="jdk.Finalizer">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
     </event>

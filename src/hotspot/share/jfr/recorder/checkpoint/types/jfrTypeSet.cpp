@@ -441,13 +441,6 @@ static void register_klass(Klass* klass) {
   assert(klass != NULL, "invariant");
   assert(_subsystem_callback != NULL, "invariant");
   do_previous_epoch_artifact(_subsystem_callback, klass);
-  if (!klass->is_instance_klass()) {
-    return;
-  }
-  InstanceKlass* const ik = InstanceKlass::cast(klass);
-  if (ik->is_finalizer_serialized()) {
-    InstanceKlass::cast(klass)->clear_is_finalizer_serialized();
-  }
 }
 
 static void register_klasses() {

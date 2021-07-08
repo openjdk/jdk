@@ -1396,27 +1396,6 @@ objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   return o;
 }
 
-#if INCLUDE_JFR
-bool InstanceKlass::is_finalizer_serialized() const {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  return _is_finalizer_serialized;
-}
-
-void InstanceKlass::set_is_finalizer_serialized() {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  assert(has_finalizer(), "invariant");
-  assert(!_is_finalizer_serialized, "invariant");
-  _is_finalizer_serialized = true;
-}
-
-void InstanceKlass::clear_is_finalizer_serialized() {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  assert(!Jfr::is_recording(), "invariant");
-  assert(has_finalizer(), "invariant");
-  _is_finalizer_serialized = false;
-}
-#endif // INCLUDE_JFR
-
 instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   if (TraceFinalizerRegistration) {
     tty->print("Registered ");

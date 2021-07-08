@@ -37,7 +37,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "jfr/periodic/jfrFinalizerOverrideEvent.hpp"
+#include "jfr/periodic/jfrFinalizerEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
@@ -645,6 +645,6 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #endif
 }
 
-TRACE_REQUEST_FUNC(FinalizerOverride) {
-  JfrFinalizerOverrideEvent::generate_events();
+TRACE_REQUEST_FUNC(Finalizer) {
+  JfrFinalizerEvent::generate_events();
 }
