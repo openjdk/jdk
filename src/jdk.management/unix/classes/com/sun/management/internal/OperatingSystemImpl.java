@@ -46,7 +46,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private CpuTicks processLoadTicks = new CpuTicks();
 
     private class CpuTicks {
-        long usageTicks = 0; 
+        long usageTicks = 0;
         long totalTicks = 0;
     }
 
