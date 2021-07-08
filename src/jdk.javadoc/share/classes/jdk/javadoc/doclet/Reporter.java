@@ -105,6 +105,9 @@ public interface Reporter {
      * @param end     the end of the enclosing range
      * @param message the message to be printed
      *
+     * @throws IllegalArgumentException if {@code start}, {@code pos} and {@code end} do
+     *          not form a valid range.
+     *
      * @since 18
      */
     default void print(Diagnostic.Kind kind, DocTreePath path, int start, int pos, int end, String message) {
