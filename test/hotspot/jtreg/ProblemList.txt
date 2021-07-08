@@ -114,6 +114,11 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.j
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
+serviceability/sa/ClhsdbCDSCore.java 8269982 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#id1 8269982 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#id3 8269982 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#id1 8269982 macosx-aarch64
+
 #############################################################################
 
 # :hotspot_misc

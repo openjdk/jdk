@@ -185,4 +185,9 @@ public class SwitchErrors {
             default -> null;
         };
     }
+    void exhaustiveAndNull(String s) {
+        switch (s) {
+            case null: break;
+        }
+    }
 }
