@@ -151,9 +151,8 @@ public abstract class Reader {
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 // Decompress to get dump file.
-                try {
-                    GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
-                    FileOutputStream fos = new FileOutputStream(out);
+                try (GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
+                     FileOutputStream fos = new FileOutputStream(out)) {
                     byte[] buffer = new byte[1024 * 1024];
                     int len = 0;
                     while ((len = gis.read(buffer)) > 0) {
@@ -164,9 +163,8 @@ public abstract class Reader {
                     throw new IOException("Cannot decompress the compressed hprof file", e);
                 }
                 // Check dump data header and print stack trace.
-                try {
-                    PositionDataInputStream in2 = new PositionDataInputStream(
-                        new BufferedInputStream(new FileInputStream(out)));
+                try (PositionDataInputStream in2 = new PositionDataInputStream(
+                        new BufferedInputStream(new FileInputStream(out)))) {
                     i = in2.readInt();
                     if (i == HprofReader.MAGIC_NUMBER) {
                         HprofReader r
