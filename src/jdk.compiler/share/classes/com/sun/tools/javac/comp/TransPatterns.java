@@ -386,6 +386,7 @@ public class TransPatterns extends TreeTranslator {
                     hasNullCase = true;
                 }
             }
+            selector = translate(selector);
             statements.append(make.at(tree.pos).VarDef(temp, !hasNullCase ? attr.makeNullCheck(selector)
                                                                           : selector));
             VarSymbol index = new VarSymbol(Flags.SYNTHETIC,
@@ -469,6 +470,8 @@ public class TransPatterns extends TreeTranslator {
                         currentValue = prevCurrentValue;
                         bindingContext.pop();
                     }
+                } else {
+                    c.stats = translate(c.stats);
                 }
                 if (enumSwitch) {
                     var labels = c.labels;

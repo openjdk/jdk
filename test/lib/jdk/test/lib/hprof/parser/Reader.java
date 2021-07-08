@@ -159,7 +159,12 @@ public abstract class Reader {
                     while ((len = gis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
                     }
-                    // Check dump data header and print stack trace.
+                } catch (Exception e) {
+                    out.delete();
+                    throw new IOException("Cannot decompress the compressed hprof file", e);
+                }
+                // Check dump data header and print stack trace.
+                try {
                     PositionDataInputStream in2 = new PositionDataInputStream(
                         new BufferedInputStream(new FileInputStream(out)));
                     i = in2.readInt();
@@ -169,15 +174,15 @@ public abstract class Reader {
                                               true, debugLevel);
                         r.read();
                         return r.printStackTraces();
+                    } else {
+                        throw new IOException("Unrecognized magic number found in decompressed data: " + i);
                     }
-                } catch (Exception e) {
-                    throw new IOException("Can not decompress the compressed hprof file", e);
+                } finally {
+                    out.delete();
                 }
-                out.delete();
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
             }
         }
-        return null;
     }
 }
