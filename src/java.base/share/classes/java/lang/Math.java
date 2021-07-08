@@ -1527,7 +1527,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float abs(float a) {
-        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & 0x7fffffff);
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & FloatConsts.MAG_BIT_MASK);
     }
 
     /**
@@ -1552,7 +1553,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double abs(double a) {
-        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & 0x7fffffffffffffffL);
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & DoubleConsts.MAG_BIT_MASK);
 
     }
 
