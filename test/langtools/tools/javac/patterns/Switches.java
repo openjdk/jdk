@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896
+ * @bug 8262891 8268333 8268896 8269113
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -44,6 +44,7 @@ public class Switches {
         run(this::testBooleanSwitchExpression);
         assertFalse(testNullSwitch(null));
         assertTrue(testNullSwitch(""));
+        assertFalse(testNullSelector());
         runArrayTypeTest(this::testArrayTypeStatement);
         runArrayTypeTest(this::testArrayTypeExpression);
         runDefaultTest(this::testDefaultDoesNotDominateStatement);
@@ -64,6 +65,7 @@ public class Switches {
         runFallThrough(this::testFallThroughExpression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
+        npeTest(this::npeTestNullSelector);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
     }
@@ -162,6 +164,13 @@ public class Switches {
 
     boolean testNullSwitch(Object o) {
         return switch (o) {
+            case null -> false;
+            default -> true;
+        };
+    }
+
+    boolean testNullSelector() {
+        return switch (null) {
             case null -> false;
             default -> true;
         };
@@ -352,6 +361,12 @@ public class Switches {
             case A a -> 0;
             case B b -> 1;
         };
+    }
+
+    void npeTestNullSelector(Object o) {
+        switch (null) {
+            default:
+        }
     }
 
     void exhaustiveStatementSane(Object o) {
