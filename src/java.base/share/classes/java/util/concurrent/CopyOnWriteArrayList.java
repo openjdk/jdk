@@ -561,8 +561,7 @@ public class CopyOnWriteArrayList<E>
             Object[] es = getArray();
             int len = es.length;
 
-            if (fromIndex < 0 || toIndex > len || toIndex < fromIndex)
-                throw new IndexOutOfBoundsException();
+            Objects.checkFromToIndex(fromIndex, toIndex, len);
             int newlen = len - (toIndex - fromIndex);
             int numMoved = len - toIndex;
             if (numMoved == 0)
@@ -1173,8 +1172,7 @@ public class CopyOnWriteArrayList<E>
             Object[] es = getArray();
             int len = es.length;
             int size = toIndex - fromIndex;
-            if (fromIndex < 0 || toIndex > len || size < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkFromToIndex(fromIndex, toIndex, len);
             return new COWSubList(es, fromIndex, size);
         }
     }
@@ -1457,8 +1455,7 @@ public class CopyOnWriteArrayList<E>
         public List<E> subList(int fromIndex, int toIndex) {
             synchronized (lock) {
                 checkForComodification();
-                if (fromIndex < 0 || toIndex > size || fromIndex > toIndex)
-                    throw new IndexOutOfBoundsException();
+                Objects.checkFromToIndex(fromIndex, toIndex, size);
                 return new COWSubList(expectedArray, fromIndex + offset, toIndex - fromIndex);
             }
         }
