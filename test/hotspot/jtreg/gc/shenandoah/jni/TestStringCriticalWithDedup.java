@@ -27,12 +27,12 @@
  * @modules java.base/java.lang:open
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication -XX:-CompactStrings
  *      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication -XX:-CompactStrings
  *      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  */
@@ -43,12 +43,12 @@
  * @modules java.base/java.lang:open
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -XX:+UseStringDeduplication -XX:-CompactStrings
  *      -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m
- *      -XX:+UseShenandoahGC -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-CompactStrings
  *      -XX:ShenandoahTargetNumRegions=4096 -XX:+ShenandoahVerify
  *      TestStringCriticalWithDedup
  */
@@ -71,10 +71,9 @@ public class TestStringCriticalWithDedup {
         }
     }
 
-    private static final int NUM_RUNS      = 1_000;
+    private static final int NUM_RUNS      = 100;
     private static final int STRING_COUNT    = 1 << 16;
     private static final int LITTLE_GARBAGE_COUNT = 1 << 5;
-    private static final int GARBAGE_COUNT = 1 << 18;
     private static final int PINNED_STRING_COUNT = 1 << 4;
 
     private static native long pin(String s);
@@ -118,10 +117,6 @@ public class TestStringCriticalWithDedup {
             pissiblePinString(rng, pinnedStrings, strArray[i]);
         }
 
-        for (int i = 0; i < GARBAGE_COUNT; i++) {
-           sink = new MyClass();
-        }
-
         // Let deduplication thread to run a bit
         try {
             Thread.sleep(10);
@@ -132,6 +127,7 @@ public class TestStringCriticalWithDedup {
             Tuple p = pinnedStrings.get(i);
             String s = p.getString();
             if (getValue(s) != p.getValue()) {
+                System.out.println(getValue(s) + " != " + p.getValue());
                 throw new RuntimeException("String value should be pinned");
             }
             unpin(p.getString(), p.getValuePointer());

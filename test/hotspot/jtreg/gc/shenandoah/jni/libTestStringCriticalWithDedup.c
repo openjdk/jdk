@@ -23,26 +23,16 @@
 
 #include <jni.h>
 #include <string.h>
-#include <assert.h>
-
-static const char* PREFIX = "Hello";
-
-static void verify(const jchar* a) {
-  for (int index = 0; index < 5; index ++) {
-    char c = (char)(a[index] & 0xff);
-    assert(c == PREFIX[index]);
-  }
-}
+#include <stdint.h>
 
 JNIEXPORT jlong JNICALL
 Java_TestStringCriticalWithDedup_pin(JNIEnv *env, jclass unused, jstring s) {
   const jchar* a = (*env)->GetStringCritical(env, s, NULL);
-  verify(a);
-  return (long)a;
+  return (jlong)(uintptr_t)a;
 }
 
 JNIEXPORT void JNICALL
 Java_TestStringCriticalWithDedup_unpin(JNIEnv *env, jclass unused, jstring s, jlong v) {
-  jchar* a = (jchar*)v;
+  jchar* a = (jchar*)(uintptr_t)v;
   (*env)->ReleaseStringCritical(env, s, a);
 }
