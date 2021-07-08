@@ -180,7 +180,7 @@ public class AppImageFile {
                  String name = getAttribute(item, "name");
                  String shortcut = getAttribute(item, "shortcut");
                  String menu = getAttribute(item, "menu");
-                 
+
                  launcherInfos.add(new LauncherInfo(name,
                          !("false".equals(shortcut)),
                          !("false".equals(menu))));
