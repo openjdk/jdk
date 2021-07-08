@@ -175,7 +175,7 @@ public abstract class Reader {
                         r.read();
                         return r.printStackTraces();
                     } else {
-                        throw new IOException("Unrecognized magic number of decompressed data: " + i);
+                        throw new IOException("Unrecognized magic number found in decompressed data: " + i);
                     }
                 } finally {
                     out.delete();
