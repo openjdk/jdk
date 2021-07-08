@@ -1926,7 +1926,10 @@ oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  heap_region_containing(o)->record_unpin();
+  ShenandoahHeapRegion* r = heap_region_containing(o);
+  assert(r != NULL, "Sanity");
+  assert(r->pin_count() > 0, "Must have been pinned");
+  r->record_unpin();
 }
 
 void ShenandoahHeap::sync_pinned_region_status() {
