@@ -34,6 +34,7 @@
  */
 public class nestedSameRetTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("nestedSameRet", "Not done yet!\nHello world!");
+		//testPatch.test("nestedSameRet", "Not done yet!\nHello world!");
+        TestWithError.test("nestedSameRet", "nestedSameRet passed, error thrown", "nestedSameRet failed, did now throw error");
 	}
 }

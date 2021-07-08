@@ -34,6 +34,6 @@
  */
 public class sameRetTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("sameRet", "Hello Hello World!");
+		testPatch.test("sameRet", "Hello\nHello\nWorld!");
 	}
 }
