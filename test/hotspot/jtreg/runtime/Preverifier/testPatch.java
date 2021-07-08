@@ -22,18 +22,6 @@
  */
 
  /* Test helloworldjsr */
-
-/*
- * @test
- * @library /test/lib
- * @summary Check that hello world with JSR and RET runs the same after instructions are replaced.
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          java.base/jdk.internal.vm
- * @compile helloworldjsr.jasm
- * @run main/othervm -Xverify:all helloworldjsrTest
- */
-
 import java.lang.reflect.Method;
 import java.io.File;
 import jdk.test.lib.process.ProcessTools;
