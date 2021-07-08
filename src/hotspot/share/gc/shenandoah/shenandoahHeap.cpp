@@ -1928,7 +1928,7 @@ oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
   ShenandoahHeapRegion* r = heap_region_containing(o);
   assert(r != NULL, "Sanity");
-  assert(r->pin_count() > 0, "Must have been pinned");
+  assert(r->pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", r->index());
   r->record_unpin();
 }
 

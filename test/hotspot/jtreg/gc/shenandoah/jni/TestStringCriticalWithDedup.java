@@ -24,49 +24,70 @@
 /* @test TestStringCriticalWithDedup
  * @summary Test string deduplication should not cause string critical to crash VM
  * @requires vm.gc.Shenandoah
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication
- *      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC
+ *      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive -XX:+UseStringDeduplication
- *      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC
+ *      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  */
 
 /* @test TestPinnedGarbage
  * @summary Test string deduplication should not cause string critical to crash VM
  * @requires vm.gc.Shenandoah
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -XX:+UseStringDeduplication
+ *      -XX:ShenandoahTargetNumRegions=4096
  *      TestStringCriticalWithDedup
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m
  *      -XX:+UseShenandoahGC -XX:+UseStringDeduplication
- *      -XX:+ShenandoahVerify
+ *      -XX:ShenandoahTargetNumRegions=4096 -XX:+ShenandoahVerify
  *      TestStringCriticalWithDedup
  */
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.lang.reflect.*;
+import sun.misc.*;
 
 public class TestStringCriticalWithDedup {
+    private static Field valueField;
+    private static Unsafe U;
+
     static {
         System.loadLibrary("TestStringCriticalWithDedup");
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            U = (Unsafe) field.get(null);
+
+            valueField = String.class.getDeclaredField("value");
+            valueField.setAccessible(true);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final int NUM_RUNS      = 1_000;
-    private static final int OBJS_COUNT    = 1 << 10;
+    private static final int STRING_COUNT    = 1 << 16;
     private static final int LITTLE_GARBAGE_COUNT = 1 << 5;
     private static final int GARBAGE_COUNT = 1 << 18;
     private static final int PINNED_STRING_COUNT = 1 << 4;
 
     private static native long pin(String s);
     private static native void unpin(String s, long p);
+
 
     private static volatile MyClass sink;
     public static void main(String[] args) {
@@ -76,18 +97,27 @@ public class TestStringCriticalWithDedup {
         }
     }
 
-    private static void pissiblePinString(ThreadLocalRandom rng, List<Pair> pinnedList, String s) {
-        int oneInCounter = OBJS_COUNT / PINNED_STRING_COUNT;
+    private static Object getValue(String string) {
+        try {
+            return valueField.get(string);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void pissiblePinString(ThreadLocalRandom rng, List<Tuple> pinnedList, String s) {
+        int oneInCounter = STRING_COUNT / PINNED_STRING_COUNT;
         if (rng.nextInt(oneInCounter) == 1) {
             long v = pin(s);
-            pinnedList.add(new Pair(s, v));
+            Object value = getValue(s);
+            pinnedList.add(new Tuple(s, value, v));
         }
     }
 
     private static void test(ThreadLocalRandom rng) {
-        String[] strArray = new String[OBJS_COUNT];
-        List<Pair> pinnedStrings = new ArrayList<>(PINNED_STRING_COUNT);
-        for (int i = 0; i < OBJS_COUNT; i++) {
+        String[] strArray = new String[STRING_COUNT];
+        List<Tuple> pinnedStrings = new ArrayList<>(PINNED_STRING_COUNT);
+        for (int i = 0; i < STRING_COUNT; i++) {
             // Create some garbage inbetween, so strings can be scattered in
             // different regions
             createLittleGarbage(rng);
@@ -107,8 +137,12 @@ public class TestStringCriticalWithDedup {
         }
 
         for (int i = 0; i < pinnedStrings.size(); i ++) {
-            Pair p = pinnedStrings.get(i);
-            unpin(p.getString(), p.getValue());
+            Tuple p = pinnedStrings.get(i);
+            String s = p.getString();
+            if (getValue(s) != p.getValue()) {
+                throw new RuntimeException("String value should be pinned");
+            }
+            unpin(p.getString(), p.getValuePointer());
         }
     }
 
@@ -119,24 +153,26 @@ public class TestStringCriticalWithDedup {
         }
     }
 
-    private static class Pair {
+    private static class Tuple {
         String s;
-        long   v;
-        public Pair(String s, long v) {
+        Object value;
+        long   valuePointer;
+        public Tuple(String s, Object value, long vp) {
             this.s = s;
-            this.v = v;
+            this.value = value;
+            this.valuePointer = vp;
         }
 
         public String getString() {
             return s;
         }
-
-        public long getValue() {
-            return v;
+        public Object getValue() { return value; }
+        public long getValuePointer() {
+            return valuePointer;
         }
     }
 
     private static class MyClass {
-        public long[] payload = new long[100];
+        public long[] payload = new long[10];
     }
 }
