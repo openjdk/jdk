@@ -640,7 +640,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
       load_store = kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, access.decorators() & ~ON_UNKNOWN_OOP_REF));
+    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, access.decorators()));
     return load_store;
   }
   return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
