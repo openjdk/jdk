@@ -38,10 +38,10 @@ import java.io.IOException;
 public class testPatch {
     public static void test(String fileName, String expectedOutput) throws Throwable {
 		Class<?> newClass;
-		try {
+		//try {
         	newClass = Class.forName(fileName);
-			Method m = newClass.getMethod("test");
-			m.invoke(newClass.newInstance());
+			// Method m = newClass.getMethod("test");
+			// m.invoke(newClass.newInstance());
 			byte[] newClassBytes = Preverifier.patch(
 				new String[]{newClass.getProtectionDomain()
 				.getCodeSource().getLocation().getPath() + fileName}
@@ -54,22 +54,22 @@ public class testPatch {
         		else {
         			tmpDir = Path.of("/tmp/preverifier/");
         		}
-        		Path tmpFile = Path.of(tmpDir.toString() + fileName + ".class");
+        		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
         		Files.write(tmpFile, newClassBytes, 
 					StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 try {
                         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                            "/tmp/preverifier/" + fileName);
+                            "-cp", "/tmp/preverifier/", fileName);
                         OutputAnalyzer output = new OutputAnalyzer(pb.start());
                         output.shouldContain(expectedOutput);
                     } catch (Exception e) {
-                        System.out.println("Class not found");
+                        throw new RuntimeException("Incorrect output");
                     }
-        	} catch (IOException e) {
-            	throw new Error("Cannot write file", e);
+        	} catch (IOException ex) {
+            	throw new Error("Cannot write file", ex);
         	}
-		} catch (Exception e) {
+		/*} catch (Exception f) {
 			System.out.println("Class not found");
-		}
+		}*/
     }
 }
