@@ -45,40 +45,6 @@ import java.io.IOException;
 
 public class noAstoreTest {
 	public static void main(String[] args) throws Throwable {
-        String fileName = "noAstore";
-		Class<?> newClass;
-        try {
-            newClass = Class.forName(fileName);
-            Method m = newClass.getMethod("test");
-            m.invoke(newClass.newInstance());
-            byte[] newClassBytes = Preverifier.patch(
-                new String[]{newClass.getProtectionDomain()
-                .getCodeSource().getLocation().getPath() + fileName}
-            );
-            try {
-                Path tmpDir;
-                if (!Files.exists(Path.of("/tmp/preverifier/"))) {
-                    tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));   
-                    try {
-                        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                            "/tmp/preverifier/" + fileName);
-                        throw new RuntimeException(
-                            "noAstore failed, did not throw VerifyError");
-                    } catch (Exception e) {
-                        System.out.println("noAstore passed, error thrown");
-                    }
-                }
-                else {
-                    tmpDir = Path.of("/tmp/preverifier/");
-                }
-                Path tmpFile = Path.of(tmpDir.toString() + fileName + ".class");
-                Files.write(tmpFile, newClassBytes, 
-                    StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            } catch (IOException e) {
-                throw new Error("Cannot write file", e);
-            }
-        } catch (Exception e) {
-            System.out.println("Class not found");
-        }
+        TestWithError.test("noAstore", "noAstore passed, error thrown", "noAstore failed, did now throw error");
 	}
 }

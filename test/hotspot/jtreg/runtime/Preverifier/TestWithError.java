@@ -59,7 +59,7 @@ public class TestWithError {
                         "-cp", "/tmp/preverifier/", fileName);
                     throw new RuntimeException(
                             failMsg);
-                } catch (Exception e) {
+                } catch (java.lang.VerifyError e) {
                     System.out.println(passMsg);
                 }
     	} catch (IOException ex) {

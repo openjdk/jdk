@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile helloworldjsrW.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main/othervm -Xverify:all helloworldjsrWTest
  */
 public class helloworldJsrWTest {
 	public static void main(String[] args) throws Throwable {
