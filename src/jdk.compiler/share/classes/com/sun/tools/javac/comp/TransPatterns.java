@@ -768,7 +768,7 @@ public class TransPatterns extends TreeTranslator {
         VarSymbol bindingDeclared(BindingSymbol varSymbol) {
             VarSymbol res = parent.bindingDeclared(varSymbol);
             if (res == null) {
-                res = new VarSymbol(varSymbol.flags(), varSymbol.name, varSymbol.type, varSymbol.owner);
+                res = new VarSymbol(varSymbol.flags(), varSymbol.name, varSymbol.type, currentMethodSym);
                 res.setTypeAttributes(varSymbol.getRawTypeAttributes());
                 hoistedVarMap.put(varSymbol, res);
             }
