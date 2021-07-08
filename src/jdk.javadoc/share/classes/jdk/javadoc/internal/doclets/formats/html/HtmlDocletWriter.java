@@ -184,11 +184,6 @@ public class HtmlDocletWriter {
     protected boolean printedAnnotationHeading = false;
 
     /**
-     * To check whether annotation field heading is printed or not.
-     */
-    protected boolean printedAnnotationFieldHeading = false;
-
-    /**
      * To check whether the repeated annotations is documented or not.
      */
     private boolean isAnnotationDocumented = false;
@@ -1647,13 +1642,41 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return true if relative links should not be redirected.
+     * Returns true if relative links should be redirected.
      *
-     * @return Return true if a relative link should not be redirected.
+     * @return true if a relative link should be redirected.
      */
-    private boolean shouldNotRedirectRelativeLinks() {
-        return  this instanceof ClassWriter ||
-                this instanceof PackageSummaryWriter;
+    private boolean shouldRedirectRelativeLinks(Element element) {
+        if (element == null || utils.isOverviewElement(element)) {
+            // Can't redirect unless there is a valid source element.
+            return false;
+        }
+        // Retrieve the element of this writer if it is a "primary" writer for an element.
+        // Note: It would be nice to have getCurrentPageElement() return package and module elements
+        // in their respective writers, but other uses of the method are only interested in TypeElements.
+        Element currentPageElement = getCurrentPageElement();
+        if (currentPageElement == null) {
+            if (this instanceof PackageWriterImpl packageWriter) {
+                currentPageElement = packageWriter.packageElement;
+            } else if (this instanceof ModuleWriterImpl moduleWriter) {
+                currentPageElement = moduleWriter.mdle;
+            }
+        }
+        // Redirect link if the current writer is not the primary writer for the source element.
+        return currentPageElement == null
+                || (currentPageElement != element
+                    &&  currentPageElement != utils.getEnclosingTypeElement(element));
+    }
+
+    /**
+     * Returns true if element lives in the same package as the type or package
+     * element of this writer.
+     */
+    private boolean inSamePackage(Element element) {
+        Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
+                ? packageWriter.packageElement : getCurrentPageElement();
+        return currentPageElement != null && !utils.isModule(element)
+                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
     }
 
     /**
@@ -1681,47 +1704,66 @@ public class HtmlDocletWriter {
      */
     private String redirectRelativeLinks(Element element, TextTree tt) {
         String text = tt.getBody();
-        if (element == null || utils.isOverviewElement(element) || shouldNotRedirectRelativeLinks()) {
-            return text;
-        }
-
-        DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
-            @Override
-            public DocPath visitType(TypeElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            public DocPath visitPackage(PackageElement e, Void p) {
-                return docPaths.forPackage(e);
-            }
-
-            @Override
-            public DocPath visitVariable(VariableElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            public DocPath visitExecutable(ExecutableElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            protected DocPath defaultAction(Element e, Void p) {
-                return null;
-            }
-        }.visit(element);
-        if (redirectPathFromRoot == null) {
+        if (!shouldRedirectRelativeLinks(element)) {
             return text;
         }
         String lower = Utils.toLowerCase(text);
-        if (!(lower.startsWith("mailto:")
+        if (lower.startsWith("mailto:")
                 || lower.startsWith("http:")
                 || lower.startsWith("https:")
-                || lower.startsWith("file:"))) {
-            text = "{@" + (new DocRootTaglet()).getName() + "}/"
-                    + redirectPathFromRoot.resolve(text).getPath();
-            text = replaceDocRootDir(text);
+                || lower.startsWith("file:")) {
+            return text;
+        }
+        if (text.startsWith("#")) {
+            // Redirected fragment link: prepend HTML file name to make it work
+            if (utils.isModule(element)) {
+                text = "module-summary.html" + text;
+            } else if (utils.isPackage(element)) {
+                text = DocPaths.PACKAGE_SUMMARY.getPath() + text;
+            } else {
+                TypeElement typeElement = element instanceof TypeElement
+                        ? (TypeElement) element : utils.getEnclosingTypeElement(element);
+                text = docPaths.forName(typeElement).getPath() + text;
+            }
+        }
+
+        if (!inSamePackage(element)) {
+            DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
+                @Override
+                public DocPath visitType(TypeElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitPackage(PackageElement e, Void p) {
+                    return docPaths.forPackage(e);
+                }
+
+                @Override
+                public DocPath visitVariable(VariableElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitExecutable(ExecutableElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitModule(ModuleElement e, Void p) {
+                    return DocPaths.forModule(e);
+                }
+
+                @Override
+                protected DocPath defaultAction(Element e, Void p) {
+                    return null;
+                }
+            }.visit(element);
+            if (redirectPathFromRoot != null) {
+                text = "{@" + (new DocRootTaglet()).getName() + "}/"
+                        + redirectPathFromRoot.resolve(text).getPath();
+                return replaceDocRootDir(text);
+            }
         }
         return text;
     }

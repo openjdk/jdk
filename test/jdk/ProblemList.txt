@@ -580,7 +580,7 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 
@@ -822,6 +822,7 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 

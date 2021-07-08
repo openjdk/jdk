@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266459 8268349
+ * @bug 8266459 8268349 8269543
  * @summary check various warnings
  * @library /test/lib
  */
@@ -62,7 +62,9 @@ public class SecurityManagerWarnings {
 
             JarUtils.createJarFile(Path.of("a.jar"),
                     Path.of(testClasses),
-                    Path.of("SecurityManagerWarnings.class"));
+                    Path.of("SecurityManagerWarnings.class"),
+                    Path.of("A.class"),
+                    Path.of("B.class"));
 
             allowTest(null, "a.jar");
         } else {
@@ -72,7 +74,12 @@ public class SecurityManagerWarnings {
             // to the original System.err and will not be swallowed.
             System.setErr(new PrintStream(new ByteArrayOutputStream()));
             try {
-                System.setSecurityManager(new SecurityManager());
+                // Run A.run() twice will show only one warning
+                // (setSecurityManager(null) to ensure the next set is permitted)
+                // Run B.run() and a new warning will appear
+                A.run();    // System.setSecurityManager(null);
+                A.run();    // System.setSecurityManager(null);
+                B.run();    // System.setSecurityManager(new SecurityManager());
             } catch (Exception e) {
                 // Exception messages must show in original stderr
                 e.printStackTrace(oldErr);
@@ -113,9 +120,12 @@ public class SecurityManagerWarnings {
         String uri = new File(cp).toURI().toString();
         return oa
                 .stderrShouldContain("WARNING: A terminally deprecated method in java.lang.System has been called")
-                .stderrShouldContain("WARNING: System::setSecurityManager has been called by SecurityManagerWarnings (" + uri + ")")
-                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of SecurityManagerWarnings")
-                .stderrShouldContain("WARNING: System::setSecurityManager will be removed in a future release");
+                .stderrShouldContain("WARNING: System::setSecurityManager has been called by A (" + uri + ")")
+                .stderrShouldContain("WARNING: System::setSecurityManager has been called by B (" + uri + ")")
+                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of A")
+                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of B")
+                .stderrShouldContain("WARNING: System::setSecurityManager will be removed in a future release")
+                .stderrShouldNotMatch("(?s)by A.*by A");    // "by A" appears only once
     }
 
     static OutputAnalyzer run(String prop, String cp) throws Exception {
@@ -133,6 +143,19 @@ public class SecurityManagerWarnings {
                     "-Djava.security.policy=policy",
                     "SecurityManagerWarnings", "run");
         }
-        return ProcessTools.executeProcess(pb);
+        return ProcessTools.executeProcess(pb)
+                .stderrShouldNotContain("AccessControlException");
+    }
+}
+
+class A {
+    static void run() {
+        System.setSecurityManager(null);
+    }
+}
+
+class B {
+    static void run() {
+        System.setSecurityManager(new SecurityManager());
     }
 }

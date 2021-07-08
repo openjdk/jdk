@@ -285,6 +285,12 @@ private:
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc);
 
+
+  void setup_policy(bool always_clear) {
+    _current_soft_ref_policy = always_clear ?
+                               _always_clear_soft_ref_policy : _default_soft_ref_policy;
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
+  }
 public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
@@ -292,11 +298,9 @@ public:
   uint max_num_queues() const              { return _max_num_queues; }
   void set_active_mt_degree(uint v);
 
-  ReferencePolicy* setup_policy(bool always_clear) {
-    _current_soft_ref_policy = always_clear ?
-      _always_clear_soft_ref_policy : _default_soft_ref_policy;
-    _current_soft_ref_policy->setup();   // snapshot the policy threshold
-    return _current_soft_ref_policy;
+  void start_discovery(bool always_clear) {
+    enable_discovery();
+    setup_policy(always_clear);
   }
 
   // "Preclean" all the discovered reference lists by removing references that
@@ -449,27 +453,6 @@ public:
 
   virtual bool do_object_b(oop obj) {
     return _span.contains(obj);
-  }
-};
-
-// A utility class to disable reference discovery in
-// the scope which contains it, for given ReferenceProcessor.
-class NoRefDiscovery: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool _was_discovering_refs;
- public:
-  NoRefDiscovery(ReferenceProcessor* rp) : _rp(rp) {
-    _was_discovering_refs = _rp->discovery_enabled();
-    if (_was_discovering_refs) {
-      _rp->disable_discovery();
-    }
-  }
-
-  ~NoRefDiscovery() {
-    if (_was_discovering_refs) {
-      _rp->enable_discovery(false /*check_no_refs*/);
-    }
   }
 };
 

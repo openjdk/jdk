@@ -967,13 +967,12 @@ public final class OffsetDateTime
     @Override
     public OffsetDateTime with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
-                case OFFSET_SECONDS: {
-                    return with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
-                }
-            }
-            return with(dateTime.with(field, newValue), offset);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
+                case OFFSET_SECONDS ->
+                     with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
+                default -> with(dateTime.with(field, newValue), offset);
+            };
         }
         return field.adjustInto(this, newValue);
     }
