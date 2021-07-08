@@ -50,14 +50,6 @@ public class testPatch {
         		Path tmpDir;
         		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
         			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
-        			try {
-        				ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-							"/tmp/preverifier/" + fileName);
-        				OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        				output.shouldContain(expectedOutput);
-        			} catch (Exception e) {
-            			System.out.println("Class not found");
-        			}
         		}
         		else {
         			tmpDir = Path.of("/tmp/preverifier/");
@@ -65,6 +57,14 @@ public class testPatch {
         		Path tmpFile = Path.of(tmpDir.toString() + fileName + ".class");
         		Files.write(tmpFile, newClassBytes, 
 					StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                try {
+                        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                            "/tmp/preverifier/" + fileName);
+                        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+                        output.shouldContain(expectedOutput);
+                    } catch (Exception e) {
+                        System.out.println("Class not found");
+                    }
         	} catch (IOException e) {
             	throw new Error("Cannot write file", e);
         	}

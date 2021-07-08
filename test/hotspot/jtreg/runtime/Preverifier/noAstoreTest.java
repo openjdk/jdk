@@ -63,7 +63,7 @@ public class noAstoreTest {
                         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                             "/tmp/preverifier/" + fileName);
                         throw new RuntimeException(
-                            "StackMapCheck failed, BadMap did not throw VerifyError");
+                            "noAstore failed, did not throw VerifyError");
                     } catch (Exception e) {
                         System.out.println("noAstore passed, error thrown");
                     }
