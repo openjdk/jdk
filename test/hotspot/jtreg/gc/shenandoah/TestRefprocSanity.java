@@ -65,7 +65,7 @@ import java.lang.ref.*;
 public class TestRefprocSanity {
 
     static final long TARGET_MB = Long.getLong("target", 1_000); // 1 Gb allocation
-    static final int WINDOW = 10_000;
+    static final int WINDOW = 1_000;
 
     static final Reference<MyObject>[] refs = new Reference[WINDOW];
 
