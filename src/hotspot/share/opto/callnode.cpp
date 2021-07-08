@@ -1411,8 +1411,14 @@ Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
-  if( in(TypeFunc::Control)->is_SafePoint() )
-    return in(TypeFunc::Control);
+  if (in(TypeFunc::Control)->is_SafePoint()) {
+    Node* out_c = unique_ctrl_out();
+    // This can be the safepoint of an outer strip mined loop if the inner loop's backedge was removed. Replacing the
+    // outer loop's safepoint could confuse removal of the outer loop.
+    if (out_c != NULL && !out_c->is_OuterStripMinedLoopEnd()) {
+      return in(TypeFunc::Control);
+    }
+  }
 
   // Transforming long counted loops requires a safepoint node. Do not
   // eliminate a safepoint until loop opts are over.
