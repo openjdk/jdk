@@ -42,10 +42,13 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
     private final Metrics containerMetrics;
-    private long usageTicks = 0; // used for cpu load calculation
-    private long totalTicks = 0; // used for cpu load calculation
-    private long processUsageTicks = 0; // used for process cpu load calculation
-    private long processTotalTicks = 0; // used for process cpu load calculation
+    private CpuTicks systemLoadTicks = new CpuTicks();
+    private CpuTicks processLoadTicks = new CpuTicks();
+
+    private class CpuTicks {
+        long usageTicks = 0; 
+        long totalTicks = 0;
+    }
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -136,7 +139,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return getMaxFileDescriptorCount0();
     }
 
-    private double getUsageDividesTotal(long usageTicks, long totalTicks) {
+    private double getUsageDividesTotal(long usageTicks, long totalTicks, CpuTicks cpuTicks) {
         // If cpu quota or cpu shares are in effect calculate the cpu load
         // based on the following formula (similar to how
         // getCpuLoad0() is being calculated):
@@ -153,11 +156,10 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (usageTicks < 0 || totalTicks <= 0) {
             return -1;
         }
-        long distance = usageTicks - this.usageTicks;
-        this.usageTicks = usageTicks;
-        long totalDistance = totalTicks - this.totalTicks;
-        this.totalTicks = totalTicks;
-
+        long distance = usageTicks - cpuTicks.usageTicks;
+        cpuTicks.usageTicks = usageTicks;
+        long totalDistance = totalTicks - cpuTicks.totalTicks;
+        cpuTicks.totalTicks = totalTicks;
         double systemLoad = 0.0;
         if (distance > 0 && totalDistance > 0) {
             systemLoad = ((double)distance) / totalDistance;
@@ -176,14 +178,14 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
             if (quota > 0) {
                 long numPeriods = containerMetrics.getCpuNumPeriods();
                 long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
-                return getUsageDividesTotal(usageNanos, quotaNanos);
+                return getUsageDividesTotal(usageNanos, quotaNanos, this.systemLoadTicks);
             } else if (share > 0) {
                 long hostTicks = getHostTotalCpuTicks0();
                 int totalCPUs = getHostOnlineCpuCount0();
                 int containerCPUs = getAvailableProcessors();
                 // scale the total host load to the actual container cpus
                 hostTicks = hostTicks * containerCPUs / totalCPUs;
-                return getUsageDividesTotal(usageNanos, hostTicks);
+                return getUsageDividesTotal(usageNanos, hostTicks, this.systemLoadTicks);
             } else {
                 // If CPU quotas and shares are not active then find the average system load for
                 // all online CPUs that are allowed to run this container.
@@ -219,25 +221,6 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return getCpuLoad0();
     }
 
-    private double getProcessUsageDividesTotal(long usageTicks, long totalTicks) {
-        if (usageTicks < 0 || totalTicks <= 0) {
-            return -1;
-        }
-        long distance = usageTicks - this.processUsageTicks;
-        this.processUsageTicks = usageTicks;
-        long totalDistance = totalTicks - this.processTotalTicks;
-        this.processTotalTicks = totalTicks;
-
-        double processLoad = 0.0;
-        if (distance > 0 && totalDistance > 0) {
-            processLoad = ((double)distance) / totalDistance;
-        }
-        // Ensure the return value is in the range 0.0 -> 1.0
-        processLoad = Math.max(0.0, processLoad);
-        processLoad = Math.min(1.0, processLoad);
-        return processLoad;
-    }
-
     public double getProcessCpuLoad() {
         if (containerMetrics != null) {
             long quota = containerMetrics.getCpuQuota();
@@ -246,16 +229,31 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
             if (quota > 0) {
                 long numPeriods = containerMetrics.getCpuNumPeriods();
                 long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
-                return getProcessUsageDividesTotal(usageNanos, quotaNanos);
+                return getUsageDividesTotal(usageNanos, quotaNanos, this.processLoadTicks);
             } else if (share > 0) {
                 long hostTicks = getHostTotalCpuTicks0();
                 int totalCPUs = getHostOnlineCpuCount0();
                 int containerCPUs = getAvailableProcessors();
                 // scale the total host load to the actual container cpus
                 hostTicks = hostTicks * containerCPUs / totalCPUs;
-                return getProcessUsageDividesTotal(usageNanos, hostTicks);
+                return getUsageDividesTotal(usageNanos, hostTicks, this.processLoadTicks);
             } else {
-                return getProcessCpuLoad0();
+                if (isCpuSetSameAsHostCpuSet()) {
+                    return getProcessCpuLoad0();
+                } else {
+                    int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
+                    if (cpuSet == null || cpuSet.length <= 0) {
+                        cpuSet = containerMetrics.getCpuSetCpus();
+                    }
+                    if (cpuSet == null) {
+                        return getProcessCpuLoad0();
+                    } else if (cpuSet.length > 0) {
+                        int totalCPUs = getHostOnlineCpuCount0();
+                        int containerCPUs = getAvailableProcessors();
+                        return getProcessCpuLoad0() * totalCPUs / containerCPUs;
+                    }
+                    return -1;
+                }
             }
         }
         return getProcessCpuLoad0();
