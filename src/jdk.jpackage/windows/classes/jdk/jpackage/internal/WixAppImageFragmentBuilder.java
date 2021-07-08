@@ -413,14 +413,14 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 Path launcherPath = addExeSuffixToPath(installedAppImage
                         .launchersDirectory().resolve(launcher.getName()));
 
-                if ((launcher.isMenu() && 
+                if ((launcher.isMenu() &&
                         (folder.equals(ShortcutsFolder.ProgramMenu))) ||
-                    (launcher.isShortcut() && 
+                    (launcher.isShortcut() &&
                         (folder.equals(ShortcutsFolder.Desktop)))) {
 
                     String componentId = addShortcutComponent(xml, launcherPath,
                             folder);
-                 
+
                     if (componentId != null) {
                         defineShortcutFolders.add(folder);
                         componentIds.add(componentId);
