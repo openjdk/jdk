@@ -35,6 +35,9 @@ import sun.awt.image.ByteComponentRaster;
 import sun.awt.image.IntegerComponentRaster;
 import sun.awt.image.ShortComponentRaster;
 
+import static java.lang.Math.addExact;
+import static java.lang.Math.multiplyExact;
+
 final class LCMSImageLayout {
 
     public static int BYTES_SH(int x) {
@@ -95,7 +98,7 @@ final class LCMSImageLayout {
         width = np;
         height = 1;
         nextPixelOffset = pixelSize;
-        nextRowOffset = safeMult(pixelSize, np);
+        nextRowOffset = multiplyExact(pixelSize, np);
         offset = 0;
     }
 
@@ -107,7 +110,7 @@ final class LCMSImageLayout {
         this.width = width;
         this.height = height;
         nextPixelOffset = pixelSize;
-        nextRowOffset = safeMult(pixelSize, width);
+        nextRowOffset = multiplyExact(pixelSize, width);
         offset = 0;
     }
 
@@ -162,14 +165,12 @@ final class LCMSImageLayout {
     /* This method creates a layout object for given image.
      * Returns null if the image is not supported by current implementation.
      */
-    public static LCMSImageLayout createImageLayout(BufferedImage image) throws ImageLayoutException {
+    static LCMSImageLayout createImageLayout(BufferedImage image)
+            throws ImageLayoutException {
         LCMSImageLayout l = new LCMSImageLayout();
 
         switch (image.getType()) {
             case BufferedImage.TYPE_INT_RGB:
-                l.pixelType = PT_ARGB_8;
-                l.isIntPacked = true;
-                break;
             case BufferedImage.TYPE_INT_ARGB:
                 l.pixelType = PT_ARGB_8;
                 l.isIntPacked = true;
@@ -222,81 +223,67 @@ final class LCMSImageLayout {
         l.height = image.getHeight();
 
         switch (image.getType()) {
-            case BufferedImage.TYPE_INT_RGB:
-            case BufferedImage.TYPE_INT_ARGB:
-            case BufferedImage.TYPE_INT_BGR:
-                do {
-                    IntegerComponentRaster intRaster = (IntegerComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = safeMult(4, intRaster.getScanlineStride());
-                    l.nextPixelOffset = safeMult(4, intRaster.getPixelStride());
-                    l.offset = safeMult(4, intRaster.getDataOffset(0));
-                    l.dataArray = intRaster.getDataStorage();
-                    l.dataArrayLength = 4 * intRaster.getDataStorage().length;
-                    l.dataType = DT_INT;
+            case BufferedImage.TYPE_INT_RGB, BufferedImage.TYPE_INT_ARGB,
+                 BufferedImage.TYPE_INT_BGR ->
+            {
+                var intRaster = (IntegerComponentRaster) image.getRaster();
+                l.nextRowOffset = multiplyExact(4, intRaster.getScanlineStride());
+                l.nextPixelOffset = multiplyExact(4, intRaster.getPixelStride());
+                l.offset = multiplyExact(4, intRaster.getDataOffset(0));
+                l.dataArray = intRaster.getDataStorage();
+                l.dataArrayLength = 4 * intRaster.getDataStorage().length;
+                l.dataType = DT_INT;
 
-                    if (l.nextRowOffset == l.width * 4 * intRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
+                if (l.nextRowOffset == l.width * 4 * intRaster.getPixelStride()) {
+                    l.imageAtOnce = true;
+                }
+            }
+            case BufferedImage.TYPE_3BYTE_BGR, BufferedImage.TYPE_4BYTE_ABGR ->
+            {
+                var byteRaster = (ByteComponentRaster) image.getRaster();
+                l.nextRowOffset = byteRaster.getScanlineStride();
+                l.nextPixelOffset = byteRaster.getPixelStride();
 
-            case BufferedImage.TYPE_3BYTE_BGR:
-            case BufferedImage.TYPE_4BYTE_ABGR:
-                do {
-                    ByteComponentRaster byteRaster = (ByteComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = byteRaster.getScanlineStride();
-                    l.nextPixelOffset = byteRaster.getPixelStride();
+                int firstBand = image.getSampleModel().getNumBands() - 1;
+                l.offset = byteRaster.getDataOffset(firstBand);
+                l.dataArray = byteRaster.getDataStorage();
+                l.dataArrayLength = byteRaster.getDataStorage().length;
+                l.dataType = DT_BYTE;
+                if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
+                    l.imageAtOnce = true;
+                }
+            }
+            case BufferedImage.TYPE_BYTE_GRAY -> {
+                var byteRaster = (ByteComponentRaster) image.getRaster();
+                l.nextRowOffset = byteRaster.getScanlineStride();
+                l.nextPixelOffset = byteRaster.getPixelStride();
 
-                    int firstBand = image.getSampleModel().getNumBands() - 1;
-                    l.offset = byteRaster.getDataOffset(firstBand);
-                    l.dataArray = byteRaster.getDataStorage();
-                    l.dataArrayLength = byteRaster.getDataStorage().length;
-                    l.dataType = DT_BYTE;
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
+                l.dataArrayLength = byteRaster.getDataStorage().length;
+                l.offset = byteRaster.getDataOffset(0);
+                l.dataArray = byteRaster.getDataStorage();
+                l.dataType = DT_BYTE;
 
-            case BufferedImage.TYPE_BYTE_GRAY:
-                do {
-                    ByteComponentRaster byteRaster = (ByteComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = byteRaster.getScanlineStride();
-                    l.nextPixelOffset = byteRaster.getPixelStride();
+                if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
+                    l.imageAtOnce = true;
+                }
+            }
+            case BufferedImage.TYPE_USHORT_GRAY -> {
+                var shortRaster = (ShortComponentRaster) image.getRaster();
+                l.nextRowOffset = multiplyExact(2, shortRaster.getScanlineStride());
+                l.nextPixelOffset = multiplyExact(2, shortRaster.getPixelStride());
 
-                    l.dataArrayLength = byteRaster.getDataStorage().length;
-                    l.offset = byteRaster.getDataOffset(0);
-                    l.dataArray = byteRaster.getDataStorage();
-                    l.dataType = DT_BYTE;
+                l.offset = multiplyExact(2, shortRaster.getDataOffset(0));
+                l.dataArray = shortRaster.getDataStorage();
+                l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
+                l.dataType = DT_SHORT;
 
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-
-            case BufferedImage.TYPE_USHORT_GRAY:
-                do {
-                    ShortComponentRaster shortRaster = (ShortComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = safeMult(2, shortRaster.getScanlineStride());
-                    l.nextPixelOffset = safeMult(2, shortRaster.getPixelStride());
-
-                    l.offset = safeMult(2, shortRaster.getDataOffset(0));
-                    l.dataArray = shortRaster.getDataStorage();
-                    l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
-                    l.dataType = DT_SHORT;
-
-                    if (l.nextRowOffset == l.width * 2 * shortRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-            default:
+                if (l.nextRowOffset == l.width * 2 * shortRaster.getPixelStride()) {
+                    l.imageAtOnce = true;
+                }
+            }
+            default -> {
                 return null;
+            }
         }
         l.verify();
         return l;
@@ -350,41 +337,23 @@ final class LCMSImageLayout {
             throw new ImageLayoutException("Invalid image layout");
         }
 
-        int lastScanOffset = safeMult(nextRowOffset, (height - 1));
+        int lastScanOffset = multiplyExact(nextRowOffset, (height - 1));
 
-        int lastPixelOffset = safeMult(nextPixelOffset, (width -1 ));
+        int lastPixelOffset = multiplyExact(nextPixelOffset, (width -1 ));
 
-        lastPixelOffset = safeAdd(lastPixelOffset, lastScanOffset);
+        lastPixelOffset = addExact(lastPixelOffset, lastScanOffset);
 
-        int off = safeAdd(offset, lastPixelOffset);
+        int off = addExact(offset, lastPixelOffset);
 
         if (off < 0 || off >= dataArrayLength) {
             throw new ImageLayoutException("Invalid image layout");
         }
     }
 
-    static int safeAdd(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res += b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-        return (int)res;
-    }
-
-    static int safeMult(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res *= b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-        return (int)res;
-    }
-
     @SuppressWarnings("serial") // JDK-implementation class
-    public static class ImageLayoutException extends Exception {
-        public ImageLayoutException(String message) {
-            super(message);
+    static final class ImageLayoutException extends ArithmeticException {
+        private ImageLayoutException(String s) {
+            super(s);
         }
     }
     public static LCMSImageLayout createImageLayout(Raster r) {
