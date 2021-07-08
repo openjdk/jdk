@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,18 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @library /test/lib
- * @summary Check that hello world with JSR and RET runs the same after instructions are replaced.
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          java.base/jdk.internal.vm
- * @compile retNoJsr.jasm
-            testPatch.java
- * @run main/othervm -Xverify:all retNoJsrTest
- */
-
+ /* Test helloworldjsr */
 import java.lang.reflect.Method;
 import java.io.File;
 import jdk.test.lib.process.ProcessTools;
@@ -43,8 +32,38 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 
-public class retNoJsrTest {
-	public static void main(String[] args) throws Throwable {
-		TestWithError.test("retNoJsr", "retNoJsr passed, error thrown", "retNoJsr failed, did now throw error");
-	}
+/**
+ * Modular test for jasm files that throw errors
+ */
+public class TestWithError {
+    public static void test(String fileName, String passMsg, String failMsg) throws Throwable {
+		Class<?> newClass;
+    	newClass = Class.forName(fileName);
+		byte[] newClassBytes = Preverifier.patch(
+			new String[]{newClass.getProtectionDomain()
+			.getCodeSource().getLocation().getPath() + fileName}
+		);
+		try {
+    		Path tmpDir;
+    		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
+    			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
+    		}
+    		else {
+    			tmpDir = Path.of("/tmp/preverifier/");
+    		}
+    		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
+    		Files.write(tmpFile, newClassBytes, 
+				StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            try {
+                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                        "-cp", "/tmp/preverifier/", fileName);
+                    throw new RuntimeException(
+                            failMsg);
+                } catch (Exception e) {
+                    System.out.println(passMsg);
+                }
+    	} catch (IOException ex) {
+        	throw new Error("Cannot write file", ex);
+    	}
+    }
 }

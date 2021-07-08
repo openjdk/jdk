@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile nestedJSRW.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main/othervm -Xverify:all nestedJSRWTest
  */
 public class nestedJSRWTest {
 	public static void main(String[] args) throws Throwable {

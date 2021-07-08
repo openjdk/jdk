@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile tryfinallyNested.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main/othervm -Xverify:all tryfinallyNestedTest
  */
 public class tryfinallyNestedTest {
 	public static void main(String[] args) throws Throwable {

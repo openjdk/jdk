@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile nestedCopyJSR.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main/othervm -Xverify:all nestedCopyJSRTest
  */
 public class nestedCopyJSRTest {
 	public static void main(String[] args) throws Throwable {
