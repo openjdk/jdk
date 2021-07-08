@@ -14,5 +14,6 @@ import java.util.List;
 /**{@link List
  */
 public class UnfinishedInlineTagTest {
+    /** . */ private UnfinishedInlineTagTest() { }
 }
 

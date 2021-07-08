@@ -9,7 +9,7 @@
  */
 
 /** . */
-public class EmptyReturnTest {
+public class EmptyReturnTest { /** . */ EmptyReturnTest() { }
     /** @return */
     int emptyReturn() { return 0; }
 }

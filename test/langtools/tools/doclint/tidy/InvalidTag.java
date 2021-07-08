@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref InvalidTag.out InvalidTag.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref InvalidTag.out InvalidTag.java
  */
 
 // tidy: Error: <.*> is not recognized!

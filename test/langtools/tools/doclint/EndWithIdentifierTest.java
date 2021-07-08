@@ -29,5 +29,8 @@ public class EndWithIdentifierTest {
 
     /**<a name*/
     private void attribute() {}
+
+    /** . */
+    EndWithIdentifierTest() { }
 }
 

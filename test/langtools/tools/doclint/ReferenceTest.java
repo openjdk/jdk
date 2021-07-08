@@ -18,7 +18,7 @@ public class ReferenceTest {
     /**
      * @param x description
      */
-    public class InvalidParam { }
+    public class InvalidParam { /** . */ private InvalidParam() { } }
 
     /**
      * @param x description
@@ -28,7 +28,7 @@ public class ReferenceTest {
     /**
      * @param <X> description
      */
-    public class typaram_name_not_found { }
+    public class typaram_name_not_found { /** . */ private typaram_name_not_found() { } }
 
     /**
      * @see Object#tooStrong()
@@ -75,5 +75,8 @@ public class ReferenceTest {
      * @see not.Found[]
      */
     public void invalid_array_types() { }
+
+    /** . */
+    private ReferenceTest() { }
 }
 
