@@ -2618,7 +2618,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   resize_all_tlabs();
   phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 
-  MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
   Universe::heap()->update_capacity_and_used_at_gc();
@@ -2840,6 +2839,8 @@ G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() con
 }
 
 void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyType type) {
+  _verifier->verify_region_sets_optional();
+  _verifier->verify_dirty_young_regions();
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets before GC]");
     VerifyRegionRemSetClosure v_cl;
@@ -2862,6 +2863,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   _verifier->verify_after_gc(type);
   _verifier->check_bitmaps("GC End");
   verify_numa_regions("GC End");
+  _verifier->verify_region_sets_optional();
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){
@@ -2875,17 +2877,6 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
     }
     phase_times()->record_expand_heap_time(expand_ms);
   }
-}
-
-void G1CollectedHeap::set_young_gc_name(char* young_gc_name) {
-  G1GCPauseType pause_type =
-    // The strings for all Concurrent Start pauses are the same, so the parameter
-    // does not matter here.
-    collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */);
-  snprintf(young_gc_name,
-           MaxYoungGCNameLength,
-           "Pause Young (%s)",
-           G1GCPauseTypeHelper::to_string(pause_type));
 }
 
 bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
@@ -2915,6 +2906,46 @@ void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_
   _gc_timer_stw->time_partitions());
 }
 
+// GCTraceTime wrapper that constructs the message according to GC pause type and
+// GC cause.
+// The code relies on the fact that GCTraceTimeWrapper stores the string passed
+// initially as a reference only, so that we can modify it as needed.
+class G1YoungGCTraceTime {
+  G1GCPauseType _pause_type;
+  GCCause::Cause _pause_cause;
+
+  static const uint MaxYoungGCNameLength = 128;
+  char _young_gc_name_data[MaxYoungGCNameLength];
+
+  GCTraceTime(Info, gc) _tt;
+
+  const char* update_young_gc_name() {
+    snprintf(_young_gc_name_data,
+             MaxYoungGCNameLength,
+             "Pause Young (%s) (%s)%s",
+             G1GCPauseTypeHelper::to_string(_pause_type),
+             GCCause::to_string(_pause_cause),
+             G1CollectedHeap::heap()->evacuation_failed() ? " (Evacuation Failure)" : "");
+    return _young_gc_name_data;
+  }
+
+public:
+  G1YoungGCTraceTime(GCCause::Cause cause) :
+    // Take snapshot of current pause type at start as it may be modified during gc.
+    // The strings for all Concurrent Start pauses are the same, so the parameter
+    // does not matter here.
+    _pause_type(G1CollectedHeap::heap()->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
+    _pause_cause(cause),
+    // Fake a "no cause" and manually add the correct string in update_young_gc_name()
+    // to make the string look more natural.
+    _tt(update_young_gc_name(), NULL, GCCause::_no_gc, true) {
+  }
+
+  ~G1YoungGCTraceTime() {
+    update_young_gc_name();
+  }
+};
+
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   GCIdMark gc_id_mark;
 
@@ -2930,9 +2961,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   print_heap_before_gc();
   print_heap_regions();
   trace_heap_before_gc(_gc_tracer_stw);
-
-  _verifier->verify_region_sets_optional();
-  _verifier->verify_dirty_young_regions();
 
   // We should not be doing concurrent start unless the concurrent mark thread is running
   if (!_cm_thread->should_terminate()) {
@@ -2960,16 +2988,15 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     GCTraceCPUTime tcpu;
 
-    char young_gc_name[MaxYoungGCNameLength];
-    set_young_gc_name(young_gc_name);
-
-    GCTraceTime(Info, gc) tm(young_gc_name, NULL, gc_cause(), true);
+    G1YoungGCTraceTime tm(gc_cause());
 
     uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
                                                             workers()->active_workers(),
                                                             Threads::number_of_non_daemon_threads());
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+
+    // JStat/MXBeans
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
@@ -3052,16 +3079,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
       gc_epilogue(false);
     }
 
-    // Print the remainder of the GC log output.
-    if (evacuation_failed()) {
-      log_info(gc)("To-space exhausted");
-    }
-
     policy()->print_phases();
     heap_transition.print();
-
-    _hrm.verify_optional();
-    _verifier->verify_region_sets_optional();
 
     TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
