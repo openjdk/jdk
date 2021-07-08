@@ -32,7 +32,7 @@
             testPatch.java
  * @run main/othervm -Xverify:all helloworldjsrWTest
  */
-public class helloworldJsrWTest {
+public class helloworldjsrWTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("helloworldjsrW", "Hello world!");
 	}

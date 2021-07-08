@@ -37,33 +37,37 @@ import java.io.IOException;
  */
 public class TestWithError {
     public static void test(String fileName, String passMsg, String failMsg) throws Throwable {
-		Class<?> newClass;
-    	newClass = Class.forName(fileName);
-		byte[] newClassBytes = Preverifier.patch(
-			new String[]{newClass.getProtectionDomain()
-			.getCodeSource().getLocation().getPath() + fileName}
-		);
 		try {
-    		Path tmpDir;
-    		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
-    			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
-    		}
-    		else {
-    			tmpDir = Path.of("/tmp/preverifier/");
-    		}
-    		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
-    		Files.write(tmpFile, newClassBytes, 
-				StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            try {
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                        "-cp", "/tmp/preverifier/", fileName);
-                    throw new RuntimeException(
-                            failMsg);
-                } catch (java.lang.VerifyError e) {
-                    System.out.println(passMsg);
-                }
-    	} catch (IOException ex) {
-        	throw new Error("Cannot write file", ex);
-    	}
+            Class<?> newClass;
+        	newClass = Class.forName(fileName);
+    		byte[] newClassBytes = Preverifier.patch(
+    			new String[]{newClass.getProtectionDomain()
+    			.getCodeSource().getLocation().getPath() + fileName}
+    		);
+    		try {
+        		Path tmpDir;
+        		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
+        			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
+        		}
+        		else {
+        			tmpDir = Path.of("/tmp/preverifier/");
+        		}
+        		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
+        		Files.write(tmpFile, newClassBytes, 
+    				StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                try {
+                        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                            "-cp", "/tmp/preverifier/", fileName);
+                        throw new RuntimeException(
+                                failMsg);
+                    } catch (java.lang.VerifyError e) {
+                        System.out.println(passMsg);
+                    }
+        	} catch (IOException ex) {
+            	throw new Error("Cannot write file", ex);
+        	}
+        } catch (java.lang.VerifyError f) {
+            System.out.println("This file should throw an error");
+        }
     }
 }
