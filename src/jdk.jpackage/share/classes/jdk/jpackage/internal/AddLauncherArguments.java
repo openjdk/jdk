@@ -32,6 +32,8 @@ import java.util.List;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
+import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 
 /*
  * AddLauncherArguments
@@ -119,6 +121,15 @@ class AddLauncherArguments {
         String value = getOptionValue(CLIOptions.ICON);
         Arguments.putUnlessNull(bundleParams, CLIOptions.ICON.getId(),
                 (value == null) ? null : Path.of(value));
+
+        Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),
+                getOptionValue(CLIOptions.WIN_SHORTCUT_HINT));
+
+        Arguments.putUnlessNull(bundleParams, MENU_HINT.getID(),
+                getOptionValue(CLIOptions.WIN_MENU_HINT));
+
+        Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),
+                getOptionValue(CLIOptions.LINUX_SHORTCUT_HINT));
 
         // "arguments" and "java-options" even if value is null:
         if (allArgs.containsKey(CLIOptions.ARGUMENTS.getId())) {

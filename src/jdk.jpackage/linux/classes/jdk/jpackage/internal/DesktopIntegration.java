@@ -138,20 +138,22 @@ final class DesktopIntegration {
         // Read launchers information from predefine app image
         if (launchers.isEmpty() &&
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            List<String> launcherPaths = AppImageFile.getLauncherNames(
+            List<AppImageFile.LauncherInfo> launchers = AppImageFile.getLaunchers(
                     PREDEFINED_APP_IMAGE.fetchFrom(params), params);
-            if (!launcherPaths.isEmpty()) {
-                launcherPaths.remove(0); // Remove main launcher
+            if (!launchers.isEmpty()) {
+                launchers.remove(0); // Remove main launcher
             }
-            for (var launcherPath : launcherPaths) {
+            for (var launcher : launchers) {
                 Map<String, ? super Object> launcherParams = new HashMap<>();
                 Arguments.putUnlessNull(launcherParams, CLIOptions.NAME.getId(),
-                        launcherPath);
+                        launcher.getName());
                 launcherParams = AddLauncherArguments.merge(params, launcherParams,
                     ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
                     FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
-                nestedIntegrations.add(new DesktopIntegration(thePackage,
-                        launcherParams, params));
+                if (launcher.isShortcut()) {
+                    nestedIntegrations.add(new DesktopIntegration(thePackage,
+                            launcherParams, params));
+                }
             }
         } else {
             for (var launcherParams : launchers) {

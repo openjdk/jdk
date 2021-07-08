@@ -81,6 +81,16 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
+        if (TKit.isLinux()) {
+            addRawProperties(Map.entry("linux-shortcut", "" + menu));
+        } else if (TKit.isWindows()) {
+            addRawProperties(Map.entry("win-menu", "" + menu));
+            addRawProperties(Map.entry("win-shortcut", "" + desktop));
+        }
+        return this;
+    }
+
     public AdditionalLauncher setIcon(Path iconPath) {
         if (iconPath == NO_ICON) {
             throw new IllegalArgumentException();
