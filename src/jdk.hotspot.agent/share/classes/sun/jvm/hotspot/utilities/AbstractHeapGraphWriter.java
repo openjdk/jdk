@@ -59,7 +59,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
 
                     public boolean doObj(Oop oop) {
                         try {
-                            writeHeapRecordPrologue();
+                            writeHeapRecordPrologue(calculateOopDumpRecordSize(oop));
                             if (oop instanceof TypeArray) {
                                 writePrimitiveArray((TypeArray)oop);
                             } else if (oop instanceof ObjArray) {
@@ -125,6 +125,18 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         } catch (RuntimeException re) {
             handleRuntimeException(re);
         }
+    }
+
+    protected int calculateGlobalJNIHandlesDumpRecordSize() {
+        return 0;
+    }
+
+    protected int calculateJavaThreadsDumpRecordSize() {
+        return 0;
+    }
+
+    protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
+        return 0;
     }
 
     protected void writeJavaThreads() throws IOException {
@@ -418,6 +430,9 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
     }
 
     protected void writeHeapRecordPrologue() throws IOException {
+    }
+
+    protected void writeHeapRecordPrologue(int size) throws IOException {
     }
 
     protected void writeHeapRecordEpilogue() throws IOException {
