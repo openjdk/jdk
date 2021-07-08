@@ -134,7 +134,8 @@ protected:
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
   void  operator delete(void* p);
 
-  // Fast allocate in the arena.  Common case is: pointer test + increment.
+  // Fast allocate in the arena.  Common case aligns to the size of long which is 64 bits
+  // on both 32 and 64 bit platforms. Required for atomic long operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
     x = ARENA_ALIGN(x);
@@ -149,30 +150,16 @@ protected:
       return old;
     }
   }
-  // Further assume size is padded out to words
+
+  // Allocate in the arena, assuming the size has been aligned to size of pointer, which
+  // is 4 bytes on 32 bits, hence the name.
   void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
+    assert((x & (sizeof(char*)-1)) == 0, "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
       return NULL;
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
-  }
-
-  // Allocate with 'double' alignment. It is 8 bytes on sparc.
-  // In other cases Amalloc_D() should be the same as Amalloc_4().
-  void* Amalloc_D(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-    debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
     } else {
       char *old = _hwm;
       _hwm += x;
