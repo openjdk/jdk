@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile sameRet.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main sameRetTest
  */
 public class sameRetTest {
 	public static void main(String[] args) throws Throwable {
