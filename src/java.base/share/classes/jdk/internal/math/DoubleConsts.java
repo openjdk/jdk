@@ -77,7 +77,7 @@ public class DoubleConsts {
      * Bit mask to isolate the magnitude bits (combined exponent and
      * significand fields) of a {@code double}.
      */
-    public static final long    MAG_BIT_MASK = 0x7FFFFFFFFFFFFFFFL;
+    public static final long    MAG_BIT_MASK = ~SIGN_BIT_MASK;
 
     static {
         // verify bit masks cover all bit positions and that the bit
