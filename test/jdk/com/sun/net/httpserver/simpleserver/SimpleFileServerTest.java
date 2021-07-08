@@ -148,63 +148,6 @@ public class SimpleFileServerTest {
         }
     }
 
-    @DataProvider
-    public Object[][] indexFiles() {
-        var fileContent = """
-                <!DOCTYPE html>
-                <html>
-                <body>
-                <h1>This is an index file</h1>
-                </body>
-                </html>
-                """;
-        var dirListing = """
-                <!DOCTYPE html>
-                <html>
-                <body>
-                <h1>Directory listing for &#x2F;</h1>
-                <ul>
-                </ul>
-                </body>
-                </html>
-                """;
-        return new Object[][] {
-                {"index.html", "text/html",                "77", fileContent, true},
-                {"index.htm",  "text/html",                "77", fileContent, true},
-                {"index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
-        };
-    }
-
-    @Test(dataProvider = "indexFiles")
-    public void testDirectoryWithIndexGET(String filename,
-                                          String contentType,
-                                          String contentLength,
-                                          String expectedContent,
-                                          boolean serveIndexFile) throws Exception {
-        var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"));
-        var lastModified = getLastModified(root);
-        if (serveIndexFile) {
-            Files.writeString(root.resolve(filename), expectedContent, CREATE);
-        }
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
-        ss.start();
-        try {
-            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
-            var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().firstValue("content-type").get(), contentType);
-            assertEquals(response.headers().firstValue("content-length").get(), contentLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), expectedContent);
-        } finally {
-            ss.stop(0);
-            if (serveIndexFile) {
-                Files.delete(root.resolve(filename));
-            }
-        }
-    }
-
     @Test
     public void testFileHEAD() throws Exception {
         var root = Files.createDirectory(TEST_DIR.resolve("testFileHEAD"));
@@ -264,28 +207,65 @@ public class SimpleFileServerTest {
         }
     }
 
-    @Test
-    public void testMovedPermanently() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testMovedPermanently"));
-        Files.createDirectory(root.resolve("aDirectory"));
+    @DataProvider
+    public Object[][] indexFiles() {
+        var fileContent = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>This is an index file</h1>
+                </body>
+                </html>
+                """;
+        var dirListing = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>Directory listing for &#x2F;</h1>
+                <ul>
+                </ul>
+                </body>
+                </html>
+                """;
+        return new Object[][] {
+                {"index.html", "text/html",                "77", fileContent, true},
+                {"index.htm",  "text/html",                "77", fileContent, true},
+                {"index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
+        };
+    }
 
+    @Test(dataProvider = "indexFiles")
+    public void testDirectoryWithIndexGET(String filename,
+                                          String contentType,
+                                          String contentLength,
+                                          String expectedContent,
+                                          boolean serveIndexFile) throws Exception {
+        var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"));
+        var lastModified = getLastModified(root);
+        if (serveIndexFile) {
+            Files.writeString(root.resolve(filename), expectedContent, CREATE);
+        }
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var uri = uri(ss, "aDirectory");
-            var request = HttpRequest.newBuilder(uri).build();
+            var request = HttpRequest.newBuilder(uri(ss, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 301);
-            assertEquals(response.headers().firstValue("content-length").get(), "0");
-            assertEquals(response.headers().firstValue("location").get(), "%s/".formatted(uri));
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.headers().firstValue("content-type").get(), contentType);
+            assertEquals(response.headers().firstValue("content-length").get(), contentLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.body(), expectedContent);
         } finally {
             ss.stop(0);
+            if (serveIndexFile) {
+                Files.delete(root.resolve(filename));
+            }
         }
     }
 
     @Test
-    public void testForbidden() throws Exception {
+    public void testForbiddenGET() throws Exception {
         if (!Platform.isWindows()) {  // not applicable on Windows
             var root = Files.createDirectory(TEST_DIR.resolve("testForbidden"));
             var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
@@ -305,6 +285,35 @@ public class SimpleFileServerTest {
                 ss.stop(0);
                 file.toFile().setReadable(true, false);
             }
+        }
+    }
+
+    @Test
+    public void testInvalidRequestURI() throws Exception {
+        var expectedBody = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>File not found</h1>
+                <p>&#x2F;aFile?#.txt</p>
+                </body>
+                </html>
+                """;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(TEST_DIR.resolve("testInvalidRequestURI"));
+        var file = Files.writeString(root.resolve("aFile?#.txt"), "some text", CREATE);
+
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "aFile?#.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            ss.stop(0);
         }
     }
 
@@ -380,11 +389,7 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(TEST_DIR.resolve("testSymlinkGET"));
         var symlink = root.resolve("symlink");
         var target = Files.writeString(root.resolve("target.txt"), "some text", CREATE);
-        try {
-            Files.createSymbolicLink(symlink, target);
-        } catch (IOException x) {
-            System.err.println(x);
-        }
+        Files.createSymbolicLink(symlink, target);
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -405,7 +410,6 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(TEST_DIR.resolve("testHiddenFileGET"));
         var file = createHiddenFile(root);
         var fileName = file.getFileName().toString();
-        System.out.println(fileName);
         var expectedBody = """
                 <!DOCTYPE html>
                 <html>
@@ -446,6 +450,26 @@ public class SimpleFileServerTest {
     }
 
     @Test
+    public void testMovedPermanently() throws Exception {
+        var root = Files.createDirectory(TEST_DIR.resolve("testMovedPermanently"));
+        Files.createDirectory(root.resolve("aDirectory"));
+
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var uri = uri(ss, "aDirectory");
+            var request = HttpRequest.newBuilder(uri).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 301);
+            assertEquals(response.headers().firstValue("content-length").get(), "0");
+            assertEquals(response.headers().firstValue("location").get(), "%s/".formatted(uri));
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
     public void testNull() {
         final var addr = InetSocketAddress.createUnresolved("foo", 8080);
         final var path = Path.of("/tmp");
@@ -468,7 +492,7 @@ public class SimpleFileServerTest {
     @Test
     public void testInitialSlashContext() {
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.INFO);
-        ss.removeContext("/"); // throws if no context.
+        ss.removeContext("/"); // throws if no context
         ss.stop(0);
     }
 

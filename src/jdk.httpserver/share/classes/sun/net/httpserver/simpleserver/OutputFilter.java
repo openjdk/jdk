@@ -93,9 +93,9 @@ public final class OutputFilter extends Filter {
             printStream.println(s);
 
             if (outputLevel.equals(OutputLevel.VERBOSE)) {
-                var requestPath = e.getAttribute("request-path");
-                if (requestPath != null)
+                if (e.getAttribute("request-path") instanceof String requestPath) {
                     printStream.println("Resource requested: " + requestPath);
+                }
                 logHeaders(">", e.getRequestHeaders());
                 logHeaders("<", e.getResponseHeaders());
             }
@@ -109,7 +109,7 @@ public final class OutputFilter extends Filter {
             while (it.hasNext()) {
                 sb.append(it.next());
                 if (it.hasNext()) {
-                    sb.append(",");
+                    sb.append(", ");
                 }
             }
             printStream.println(sign + " " + name + ": " + sb);

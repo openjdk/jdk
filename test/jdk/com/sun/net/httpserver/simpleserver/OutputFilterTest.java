@@ -41,6 +41,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +50,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -101,7 +104,7 @@ public class OutputFilterTest {
     @Test
     public void testExchange() throws Exception {
         var baos = new ByteArrayOutputStream();
-        var handler = new EchoHandler();
+        var handler = new SetStateHandler();
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
         server.start();
@@ -110,7 +113,7 @@ public class OutputFilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().map().size(), 2);
+            assertEquals(response.headers().map().size(), 3);
             assertEquals(response.body(), "hello world");
         } finally {
             server.stop(0);
@@ -143,10 +146,11 @@ public class OutputFilterTest {
             assertTrue(filterOutput[6].startsWith("> User-agent: Java-http-client/"));
             assertEquals(filterOutput[7], "> Content-length: 0");
             assertEquals(filterOutput[8], ">");
-            assertTrue(filterOutput[9].startsWith("< Date: "));
-            assertEquals(filterOutput[10], "< Content-length: 11");
-            assertEquals(filterOutput[11], "<");
-            assertEquals(filterOutput.length, 12);
+            assertEquals(filterOutput[9], "< Foo: bar, bar");
+            assertTrue(filterOutput[10].startsWith("< Date: "));
+            assertEquals(filterOutput[11], "< Content-length: 11");
+            assertEquals(filterOutput[12], "<");
+            assertEquals(filterOutput.length, 13);
         }
     }
 
@@ -176,22 +180,57 @@ public class OutputFilterTest {
         }
     }
 
+    /**
+     * Confirms that the output filter prints the expected message if the request
+     * URI cannot be resolved. This only applies if the filter is used in
+     * combination with the SimpleFileServer file-handler, which sets the
+     * necessary "request-path" attribute.
+     */
+    @Test
+    public void testCannotResolveRequestURI() throws Exception {
+        var baos = new ByteArrayOutputStream();
+        var handler = SimpleFileServer.createFileHandler(Path.of(".").toAbsolutePath());
+        var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 0, "/", handler, filter);
+        server.start();
+        try (baos) {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().map().size(), 3);
+        } finally {
+            server.stop(0);
+            baos.flush();
+            var filterOutput = baos.toString(UTF_8).split(System.getProperty("line.separator"));
+            assertTrue(filterOutput[0].startsWith("127.0.0.1 - - ["));
+            assertTrue(filterOutput[0].endsWith("] \"GET /aFile%3F%23.txt HTTP/1.1\" 404 -"));
+            assertEquals(filterOutput[1], "Resource requested: could not resolve request URI");
+        }
+    }
+
     // --- infra ---
 
     static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 
     /**
-     * A test handler that discards the request and sends a response
+     * A handler that sets some exchange state and sends a response.
      */
-    static class EchoHandler implements HttpHandler {
+    static class SetStateHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
                 exchange.setAttribute("request-path", "/foo/bar");
+                exchange.getResponseHeaders().put("Foo", List.of("bar", "bar"));
                 var resp = "hello world".getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
@@ -200,7 +239,7 @@ public class OutputFilterTest {
     }
 
     /**
-     * A test handler that throws an IOException
+     * A handler that throws an IOException.
      */
     static class ThrowingHandler implements HttpHandler {
         @Override
