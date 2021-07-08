@@ -194,7 +194,6 @@ public class AppImageFile {
             return file;
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
-Log.verbose(ex);
             throw new RuntimeException(ex);
         }
     }
