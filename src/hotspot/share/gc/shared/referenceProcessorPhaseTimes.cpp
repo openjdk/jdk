@@ -117,9 +117,7 @@ RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
   assert(_phase_times != NULL, "Invariant");
 
   _start_ticks.stamp();
-  if (_phase_times->gc_timer() != NULL) {
-    _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
-  }
+  _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
 }
 
 Ticks RefProcPhaseTimeBaseTracker::end_ticks() {
@@ -138,10 +136,8 @@ double RefProcPhaseTimeBaseTracker::elapsed_time() {
 }
 
 RefProcPhaseTimeBaseTracker::~RefProcPhaseTimeBaseTracker() {
-  if (_phase_times->gc_timer() != NULL) {
-    Ticks ticks = end_ticks();
-    _phase_times->gc_timer()->register_gc_phase_end(ticks);
-  }
+  Ticks ticks = end_ticks();
+  _phase_times->gc_timer()->register_gc_phase_end(ticks);
 }
 
 RefProcBalanceQueuesTimeTracker::RefProcBalanceQueuesTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
@@ -175,7 +171,7 @@ RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
 
 ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads) :
   _processing_is_mt(false), _gc_timer(gc_timer) {
-
+  assert(gc_timer != nullptr, "pre-condition");
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
   }
