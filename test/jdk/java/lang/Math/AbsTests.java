@@ -21,7 +21,8 @@
  * questions.
  */
 
-import java.util.function.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.DoubleStream;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 
@@ -32,15 +33,35 @@ import jdk.internal.math.FloatConsts;
  * @modules java.base/jdk.internal.math
  */
 public class AbsTests {
-    private static final float  EULER_F   = (float)Math.exp(1.0);
-    private static final float  GELFOND_F = (float)Math.exp(Math.PI);
-    private static final float  PI_F      = (float)Math.PI;
-    private static final float  TAU_F     = 2.0F*PI_F;
+    private static final double GELFOND = Math.exp(Math.PI);
+    private static final double TAU     = 2.0*Math.PI;
 
-    private static final double EULER_D   = Math.exp(1.0);
-    private static final double GELFOND_D = Math.exp(Math.PI);
-    private static final double PI_D      = Math.PI;
-    private static final double TAU_D     = 2.0*PI_D;
+    // Values for testing float and double abs
+    private static final double[] FLOATING_POINT_VALUES = new double[] {
+        0.0,
+        -0.0,
+        +0.0,
+        Double.MIN_VALUE,
+        Double.MIN_NORMAL,
+        Double.NEGATIVE_INFINITY,
+        Double.POSITIVE_INFINITY,
+        Double.NaN,
+        Float.MIN_VALUE,
+        Float.MIN_NORMAL,
+        Float.NEGATIVE_INFINITY,
+        Float.POSITIVE_INFINITY,
+        Float.NaN,
+        Double.longBitsToDouble((1 << DoubleConsts.SIGNIFICAND_WIDTH) |
+           ((1 << DoubleConsts.SIGNIFICAND_WIDTH) - 1)),
+        DoubleConsts.MAG_BIT_MASK >>> 1,
+        Float.intBitsToFloat((1 << FloatConsts.SIGNIFICAND_WIDTH) |
+           ((1 << FloatConsts.SIGNIFICAND_WIDTH) - 1)),
+        FloatConsts.MAG_BIT_MASK >>> 1,
+        Math.E,
+        GELFOND,
+        Math.PI,
+        TAU
+    };
 
     private static int errors = 0;
 
@@ -49,8 +70,8 @@ public class AbsTests {
         errors += testIntMinValue();
         errors += testInRangeLongAbs();
         errors += testLongMinValue();
-        errors += testInRangeFloatAbs();
-        errors += testInRangeDoubleAbs();
+        errors += testFloatAbs();
+        errors += testDoubleAbs();
 
         if (errors > 0) {
             throw new RuntimeException(errors + " errors found testing abs.");
@@ -163,41 +184,24 @@ public class AbsTests {
 
     // --------------------------------------------------------------------
 
-    private static float testInRangeFloatAbs() {
-        int errors = 0;
-        float[][] testCases  = {
-            // Argument to abs, expected result
-            {+0.0F, 0.0F},
-            {-0.0F, 0.0F},
-            {-Float.MIN_VALUE, Float.MIN_VALUE},
-            {-Float.MIN_NORMAL, Float.MIN_NORMAL},
-            {Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY},
-            {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
-            {Float.intBitsToFloat(FloatConsts.SIGN_BIT_MASK |
-                (1 << FloatConsts.SIGNIFICAND_WIDTH) |
-               ((1 << FloatConsts.SIGNIFICAND_WIDTH) - 1)),
-             Float.intBitsToFloat((1 << FloatConsts.SIGNIFICAND_WIDTH) |
-               ((1 << FloatConsts.SIGNIFICAND_WIDTH) - 1))},
-            {FloatConsts.SIGN_BIT_MASK | (FloatConsts.MAG_BIT_MASK >>> 1),
-                FloatConsts.MAG_BIT_MASK >>> 1},
-            {-EULER_F, EULER_F},
-            {-GELFOND_F, GELFOND_F},
-            {-PI_F, PI_F},
-            {-TAU_F, TAU_F}
-        };
+    private static int testFloatAbs() {
+        DoubleStream doubles = DoubleStream.of(FLOATING_POINT_VALUES);
 
-        for(var testCase : testCases) {
-            errors += testFloatAbs(Math::abs,      testCase[0], testCase[1]);
-        }
-        return errors;
+        final AtomicInteger errors = new AtomicInteger();
+        doubles.mapToObj(d -> (float)d).
+            forEach(f -> {errors.addAndGet(testFloatAbs(Math::abs, f));});
+
+        return errors.get();
     }
 
-    private static int testFloatAbs(UnaryOperator<Float> absFunc,
-                           float argument, float expected) {
-        float result = absFunc.apply(argument);
-        if (result != expected) {
+    private static int testFloatAbs(UnaryOperator<Float> absFunc, float f) {
+        float result = absFunc.apply(-f);
+        if (Float.isNaN(f)) {
+            return Float.floatToRawIntBits(result) !=
+                Float.floatToRawIntBits(f) ? 1 : 0;
+        } else if ((f >= 0 && result != f) || (f < 0 && result != -f)) {
             System.err.printf("Unexpected float abs result %f for argument %f%n",
-                                result, argument);
+                              result, f);
             return 1;
         } else {
             return 0;
@@ -206,41 +210,23 @@ public class AbsTests {
 
     // --------------------------------------------------------------------
 
-    private static double testInRangeDoubleAbs() {
-        int errors = 0;
-        double[][] testCases  = {
-            // Argument to abs, expected result
-            {+0.0, 0.0},
-            {-0.0, 0.0},
-            {-Double.MIN_VALUE, Double.MIN_VALUE},
-            {-Double.MIN_NORMAL, Double.MIN_NORMAL},
-            {Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY},
-            {Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY},
-            {Double.longBitsToDouble(DoubleConsts.SIGN_BIT_MASK |
-                (1 << DoubleConsts.SIGNIFICAND_WIDTH) |
-               ((1 << DoubleConsts.SIGNIFICAND_WIDTH) - 1)),
-             Double.longBitsToDouble((1 << DoubleConsts.SIGNIFICAND_WIDTH) |
-               ((1 << DoubleConsts.SIGNIFICAND_WIDTH) - 1))},
-            {DoubleConsts.SIGN_BIT_MASK | (DoubleConsts.MAG_BIT_MASK >>> 1),
-                DoubleConsts.MAG_BIT_MASK >>> 1},
-            {-EULER_D, EULER_D},
-            {-GELFOND_D, GELFOND_D},
-            {-PI_D, PI_D},
-            {-TAU_D, TAU_D}
-        };
+    private static int testDoubleAbs() {
+        DoubleStream doubles = DoubleStream.of(FLOATING_POINT_VALUES);
 
-        for(var testCase : testCases) {
-            errors += testDoubleAbs(Math::abs,      testCase[0], testCase[1]);
-        }
-        return errors;
+        final AtomicInteger errors = new AtomicInteger();
+        doubles.forEach(d -> {errors.addAndGet(testDoubleAbs(Math::abs, d));});
+
+        return errors.get();
     }
 
-    private static int testDoubleAbs(DoubleUnaryOperator absFunc,
-                           double argument, double expected) {
-        double result = absFunc.applyAsDouble(argument);
-        if (result != expected) {
+    private static int testDoubleAbs(DoubleUnaryOperator absFunc, double d) {
+        double result = absFunc.applyAsDouble(-d);
+        if (Double.isNaN(d)) {
+            return Double.doubleToRawLongBits(result) !=
+                Double.doubleToRawLongBits(d) ? 1 : 0;
+        } else if ((d >= 0 && result != d) || (d < 0 && result != -d)) {
             System.err.printf("Unexpected double abs result %f for argument %f%n",
-                                result, argument);
+                              result, d);
             return 1;
         } else {
             return 0;
