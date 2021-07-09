@@ -456,27 +456,6 @@ public:
   }
 };
 
-// A utility class to disable reference discovery in
-// the scope which contains it, for given ReferenceProcessor.
-class NoRefDiscovery: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool _was_discovering_refs;
- public:
-  NoRefDiscovery(ReferenceProcessor* rp) : _rp(rp) {
-    _was_discovering_refs = _rp->discovery_enabled();
-    if (_was_discovering_refs) {
-      _rp->disable_discovery();
-    }
-  }
-
-  ~NoRefDiscovery() {
-    if (_was_discovering_refs) {
-      _rp->enable_discovery(false /*check_no_refs*/);
-    }
-  }
-};
-
 // A utility class to temporarily mutate the subject discovery closure of the
 // given ReferenceProcessor in the scope that contains it.
 class ReferenceProcessorSubjectToDiscoveryMutator : StackObj {
