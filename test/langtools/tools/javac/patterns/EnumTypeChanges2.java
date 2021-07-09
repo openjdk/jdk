@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.javax.crypto.small;
 
-import org.openjdk.jmh.annotations.Param;
-
-public class AESGCMBench extends
-    org.openjdk.bench.javax.crypto.full.AESGCMBench {
-
-    @Param({"128"})
-    private int keyLength;
-
-    @Param({"1024"})
-    private int dataSize;
-
+enum EnumTypeChangesEnum {
+    A,
+    C;
 }
