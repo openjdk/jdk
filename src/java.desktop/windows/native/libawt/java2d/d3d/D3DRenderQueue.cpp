@@ -866,7 +866,8 @@ void D3DRQ_FlushBuffer(void *pParam)
 
     if (!JNU_IsNull(env, pFlush->runnable)) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "  executing runnable");
-        JNU_CallMethodByName(env, NULL, pFlush->runnable, "run", "()V");
+        jboolean ignoreException;
+        JNU_CallMethodByName(env, &ignoreException, pFlush->runnable, "run", "()V");
     }
 }
 

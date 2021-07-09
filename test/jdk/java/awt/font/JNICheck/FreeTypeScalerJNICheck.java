@@ -26,6 +26,7 @@
  * @bug 8269223
  * @summary Verifies that -Xcheck:jni issues no warnings from freetypeScaler.c
  * @library /test/lib
+ * @key headful
  * @run main FreeTypeScalerJNICheck
  */
 import javax.swing.*;
