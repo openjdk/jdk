@@ -351,7 +351,7 @@ void DynamicArchive::prepare_for_dynamic_dumping() {
   ResourceMark rm(THREAD);
   MetaspaceShared::link_shared_classes(THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    log_error(cds)("ArchiveClassesAtExit has failed");
+    log_error(cds)("Dynamic dump has failed");
     log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
     // We cannot continue to dump the archive anymore.
@@ -366,7 +366,9 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
   ArchiveClassesAtExit = archive_name;
   if (Arguments::init_shared_archive_paths()) {
     prepare_for_dynamic_dumping();
-    dump(CHECK);
+    if (DynamicDumpSharedSpaces) {
+      dump(CHECK);
+    }
   } else {
     ArchiveClassesAtExit = nullptr;
     THROW_MSG(vmSymbols::java_lang_RuntimeException(),
