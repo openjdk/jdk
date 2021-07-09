@@ -45,6 +45,7 @@ import java.util.function.Predicate;
 import static java.io.ObjectInputFilter.Status.*;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * Filter classes, array lengths, and graph metrics during deserialization.
@@ -308,10 +309,12 @@ public interface ObjectInputFilter {
      *     <li>Otherwise, return {@code otherStatus}.</li>
      * </ul>
      * <p>
-     * Example, to create a filter that will allow any class loaded from the platform classloader.
+     * Example, to create a filter that will allow any class loaded from the platform
+     * or bootstrap classloaders.
      * <pre><code>
-     *     ObjectInputFilter f = allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader()
-     *                                          || cl.getClassLoader() == null, Status.UNDECIDED);
+     *     ObjectInputFilter f
+     *         = allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader() ||
+     *                       cl.getClassLoader() == null, Status.UNDECIDED);
      * </code></pre>
      *
      * @param predicate a predicate to test a non-null Class
@@ -527,23 +530,17 @@ public interface ObjectInputFilter {
      * The syntax for the property value is the same as for the
      * {@link #createFilter(String) createFilter} method.
      *
-     * <p> If only `jdk.serialFilter` is set and not `jdk.serialFilterFactory` the builtin
-     * filter factory, compatible with previous versions, is set and can not be replaced,
-     * see below to override the builtin filter factory.
      * <p>
      * If the Java virtual machine is started with the system property
      * {@systemProperty jdk.serialFilterFactory} or the {@link java.security.Security} property
      * of the same name, its value names the class to configure the JVM-wide deserialization
-     * filter factory or the special value `OVERRIDE`.
+     * filter factory.
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilterFactory} is defined then it is used to configure the filter factory.
-     *
-     * If the value is `OVERRIDE`, the filter factory can be set by the application before
-     * the first deserialization using {@link Config#setSerialFilterFactory(BinaryOperator)};
      * If it remains unset, the filter factory is a builtin filter factory compatible
      * with previous versions.
      *
-     * <p>If not `OVERRIDE`, the class must be public, must have a public zero-argument constructor, implement the
+     * <p>The class must be public, must have a public zero-argument constructor, implement the
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
      * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
      * If the filter factory constructor is not invoked successfully, an {@link ExceptionInInitializerError}
@@ -580,11 +577,6 @@ public interface ObjectInputFilter {
         private static final String SERIAL_FILTER_FACTORY_PROPNAME = "jdk.serialFilterFactory";
 
         /**
-         * The property name to enable tracing of filters.
-         */
-        private static final String SERIAL_FILTER_TRACE_PROPNAME = "jdk.serialFilterTrace";
-
-        /**
          * Current static filter.
          */
         private static volatile ObjectInputFilter serialFilter;
@@ -599,33 +591,29 @@ public interface ObjectInputFilter {
          * Boolean to indicate that the filter factory can not be set or replaced.
          * - an ObjectInputStream has already been created using the current filter factory
          * - has been set on the command line
-         * - jdk.serialFilter is set and jdk.serialFilterFactory is unset, the builtin can not be replaced
          * @see Config#setSerialFilterFactory(BinaryOperator)
          */
         private static final AtomicBoolean filterFactoryNoReplace = new AtomicBoolean();
 
         /**
-         * Debug: Logger
+         * Debug and Trace Logger
          */
         private static final System.Logger configLog;
-
-        /**
-         * True when tracing of filters is enabled.
-         */
-        private static final boolean traceFilters;
 
         static {
             /*
              * Initialize the configuration containing the filter factory, static filter, and logger.
              * <ul>
+             * <li>The logger is created.
              * <li>The property 'jdk.serialFilter" is read, either as a system property or a security property,
              *     and if set, defines the configured static JVM-wide filter and is logged.
              * <li>The property jdk.serialFilterFactory is read, either as a system property or a security property,
              *     and if set, defines the initial filter factory and is logged.
-             * <li>The property jdk.serialFilterTrace, is read, and if set enables tracing of filters.
-             * <li>If either property is defined or tracing is enabled, the logger is created.
              * </ul>
              */
+
+            // Initialize the logger.
+            configLog = System.getLogger("java.io.serialization");
 
             // Get the values of the system properties, if they are defined
             String factoryClassName = StaticProperty.jdkSerialFilterFactory();
@@ -642,12 +630,6 @@ public interface ObjectInputFilter {
                         Security.getProperty(SERIAL_FILTER_PROPNAME));
             }
 
-            traceFilters = GetBooleanAction.privilegedGetProperty(SERIAL_FILTER_TRACE_PROPNAME);
-
-            // Initialize the logger if either filter factory or filter property is set
-            configLog = (filterString != null || factoryClassName != null || traceFilters)
-                    ? System.getLogger("java.io.serialization") : null;
-
             // Initialize the static filter if the jdk.serialFilter is present
             ObjectInputFilter filter = null;
             if (filterString != null) {
@@ -656,7 +638,7 @@ public interface ObjectInputFilter {
                 try {
                     filter = createFilter(filterString);
                 } catch (RuntimeException re) {
-                    configLog.log(System.Logger.Level.ERROR,
+                    configLog.log(ERROR,
                             "Error configuring filter: {0}", re);
                 }
             }
@@ -664,45 +646,32 @@ public interface ObjectInputFilter {
 
             // Initialize the filter factory if the jdk.serialFilterFactory is defined
             // otherwise use the builtin filter factory.
-            if (factoryClassName == null || "OVERRIDE".equals(factoryClassName)) {
+            if (factoryClassName == null) {
                 serialFilterFactory = new BuiltinFilterFactory();
-                if (serialFilter != null && factoryClassName == null) {
-                    // Ensure backward compatibility, unless factory is explicitly allowed to override
-                    // Do not allow factory to be overridden by Config.setSerialFilterFactory
-                    filterFactoryNoReplace.set(true);
-                }
-
             } else {
-                configLog.log(DEBUG,
-                        "Creating deserialization filter factory for {0}", factoryClassName);
                 try {
                     // Load using the system class loader, the named class may be an application class.
-                    // The static initialization of the class or constructor may create a race
-                    // if either calls Config.setSerialFilterFactory; the command line configured
-                    // Class should not be overridden.
+                    // Cause Config.setSerialFilterFactory to throw {@link IllegalStateException}
+                    // if Config.setSerialFilterFactory is called as a side effect of the
+                    // static initialization of the class or constructor.
+                    filterFactoryNoReplace.set(true);
+
                     Class<?> factoryClass = Class.forName(factoryClassName, true,
                             ClassLoader.getSystemClassLoader());
                     @SuppressWarnings("unchecked")
-                    BinaryOperator<ObjectInputFilter> f =
+                    BinaryOperator<ObjectInputFilter> factory =
                             (BinaryOperator<ObjectInputFilter>)
                             factoryClass.getConstructor().newInstance(new Object[0]);
-                    if (serialFilterFactory != null) {
-                        // Init cycle if Config.setSerialFilterFactory called from class initialization
-                        configLog.log(System.Logger.Level.ERROR,
-                                "FilterFactory provided on the command line can not be overridden");
-                        // Do not continue if configuration not initialized
-                        throw new ExceptionInInitializerError(
-                                "FilterFactory provided on the command line can not be overridden");
-                    }
-                    serialFilterFactory = f;
-                    filterFactoryNoReplace.set(true);
+                    configLog.log(DEBUG,
+                            "Creating deserialization filter factory for {0}", factoryClassName);
+                    serialFilterFactory = factory;
                 } catch (RuntimeException | ClassNotFoundException | NoSuchMethodException |
                         IllegalAccessException | InstantiationException | InvocationTargetException ex) {
-                    configLog.log(System.Logger.Level.ERROR,
-                            "Error configuring filter factory", ex);
+                    Throwable th = (ex instanceof InvocationTargetException ite) ? ite.getCause() : ex;
+                    configLog.log(ERROR,
+                            "Error configuring filter factory: {0}", (Object)th);
                     // Do not continue if configuration not initialized
-                    throw new ExceptionInInitializerError(
-                            "FilterFactory configuration: jdk.serialFilterFactory: " + ex.getMessage());
+                    throw new ExceptionInInitializerError(th);
                 }
             }
             // Setup shared secrets for RegistryImpl to use.
@@ -719,9 +688,7 @@ public interface ObjectInputFilter {
          * Logger for filter actions.
          */
         private static void traceFilter(String msg, Object... args) {
-            if (traceFilters && configLog != null) {
-                configLog.log(TRACE, msg, args);
-            }
+            configLog.log(TRACE, msg, args);
         }
 
         /**
@@ -840,12 +807,14 @@ public interface ObjectInputFilter {
             if (sm != null) {
                 sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
             }
-            if (serialFilterFactory == null)
-                throw new IllegalStateException("Serial filter factory initialization incomplete");
             if (filterFactoryNoReplace.getAndSet(true)) {
-                throw new IllegalStateException("Cannot replace filter factory: " +
-                        serialFilterFactory.getClass().getName());
+                final String msg = serialFilterFactory != null
+                        ? serialFilterFactory.getClass().getName()
+                        : "initialization incomplete";
+                throw new IllegalStateException("Cannot replace filter factory: " + msg);
             }
+            configLog.log(DEBUG,
+                    "Setting deserialization filter factory to {0}", filterFactory.getClass().getName());
             serialFilterFactory = filterFactory;
         }
 
@@ -1163,7 +1132,7 @@ public interface ObjectInputFilter {
                         }
                         if (!checkComponentType) {
                             // As revised; do not check the component type for arrays
-                            traceFilter("Pattern array class: {0}, filter: {1}", clazz, this);
+                            traceFilter("Pattern filter array class: {0}, filter: {1}", clazz, this);
                             return Status.UNDECIDED;
                         }
                         do {
@@ -1174,7 +1143,7 @@ public interface ObjectInputFilter {
 
                     if (clazz.isPrimitive())  {
                         // Primitive types are undecided; let someone else decide
-                        traceFilter("Pattern UNDECIDED, primitive class: {0}, filter: {1}", clazz, this);
+                        traceFilter("Pattern filter UNDECIDED, primitive class: {0}, filter: {1}", clazz, this);
                         return UNDECIDED;
                     } else {
                         // Find any filter that allowed or rejected the class
@@ -1184,7 +1153,7 @@ public interface ObjectInputFilter {
                                 .filter(p -> p != Status.UNDECIDED)
                                 .findFirst();
                         Status s = status.orElse(Status.UNDECIDED);
-                        traceFilter("Pattern {0}, class: {1}, filter: {2}", s, cl, this);
+                        traceFilter("Pattern filter {0}, class: {1}, filter: {2}", s, cl, this);
                         return s;
                     }
                 }
@@ -1283,18 +1252,18 @@ public interface ObjectInputFilter {
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
                Status firstStatus = Objects.requireNonNull(first.checkInput(info), "status");
                 if (REJECTED.equals(firstStatus)) {
-                    traceFilter("MergeFilter REJECT first: {0}, filter: {1}",
+                    traceFilter("MergeFilter REJECTED first: {0}, filter: {1}",
                             firstStatus, this);
                     return REJECTED;
                 }
                 Status secondStatus = Objects.requireNonNull(second.checkInput(info), "other status");
                 if (REJECTED.equals(secondStatus)) {
-                    traceFilter("MergeFilter REJECT {0}, {1}, filter: {2}",
+                    traceFilter("MergeFilter REJECTED {0}, {1}, filter: {2}",
                             firstStatus, secondStatus, this);
                     return REJECTED;
                 }
                 if (ALLOWED.equals(firstStatus) || ALLOWED.equals(secondStatus)) {
-                    traceFilter("MergeFilter ALLOW either: {0}, {1}, filter: {2}",
+                    traceFilter("MergeFilter ALLOWED either: {0}, {1}, filter: {2}",
                             firstStatus, secondStatus, this);
                     return ALLOWED;
                 }
@@ -1332,7 +1301,6 @@ public interface ObjectInputFilter {
                 Class<?> clazz = info.serialClass();
                 if (clazz == null || !UNDECIDED.equals(status))
                     return status;
-                status = REJECTED;
                 // Find the base component type
                 while (clazz.isArray()) {
                     clazz = clazz.getComponentType();
