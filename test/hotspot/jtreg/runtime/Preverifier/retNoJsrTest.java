@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile retNoJsr.jasm
             testPatch.java
- * @run main/othervm -Xverify:all retNoJsrTest
+ * @run main/othervm -Xverify:all RetNoJsrTest
  */
 
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 
-public class retNoJsrTest {
+public class RetNoJsrTest {
 	public static void main(String[] args) throws Throwable {
 		TestWithError.test("retNoJsr", "retNoJsr passed, error thrown", "retNoJsr failed, did now throw error");
 	}

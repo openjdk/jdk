@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile sameRet.jasm
             testPatch.java
- * @run main sameRetTest
+ * @run main SameRetTest
  */
-public class sameRetTest {
+public class SameRetTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("sameRet", "Hello\nHello\nWorld!");
 	}

@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile tryfinallyNested.jasm
             testPatch.java
- * @run main/othervm -Xverify:all tryfinallyNestedTest
+ * @run main/othervm -Xverify:all TryfinallyNestedTest
  */
-public class tryfinallyNestedTest {
+public class TryfinallyNestedTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("tryfinallyNested", "Try!\nNested Try!\nFinally!");
 	}

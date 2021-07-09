@@ -22,7 +22,7 @@
  */
 
 // Test basic try-finally block. This should be compiled in Java 1.3 to ensure JSRs and RETs appear in the bytecode
-class tryfinally {
+class Tryfinally {
 	public static void main(String[] args) {
 		tryCatchFinally();
 	}

@@ -22,7 +22,7 @@
  */
 
 // Test nested try-finally blocks. This should be compiled in Java 1.3 to ensure JSRs and RETs appear in the bytecode
-class tryfinallyNested {
+class TryfinallyNested {
 	public static void main(String[] args) {
 		try {
 		  System.out.println("Try!");

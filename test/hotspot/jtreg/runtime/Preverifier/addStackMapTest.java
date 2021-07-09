@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile addStackMap.jasm
             testPatch.java
- * @run main/othervm -Xverify:all addStackMapTest
+ * @run main/othervm -Xverify:all AddStackMapTest
  */
-public class addStackMapTest {
+public class AddStackMapTest {
     public static void main(String[] args) throws Throwable {
         testPatch.test("addStackMap", "Hello world!");
     }
