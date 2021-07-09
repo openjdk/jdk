@@ -2254,7 +2254,8 @@ instruct vmask_truecount$1(iRegINoSp dst, $2 src, $2 tmp) %{
   format %{ "addv $tmp, $src\n\t"
             "umov $dst, $tmp, B, 0\t# vector ($1)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
+    // Input "src" is a vector of boolean represented as bytes with
+    // 0x00/0x01 as element values.
     __ addv(as_FloatRegister($tmp$$reg), __ T$1, as_FloatRegister($src$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
   %}
@@ -2274,9 +2275,14 @@ instruct vmask_firsttrue_LT8B(iRegINoSp dst, vecD src, rFlagsReg cr) %{
   ins_cost(7 * INSN_COST);
   format %{ "vmask_firsttrue $dst, $src\t# vector (4I/4S/2I)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
-    // Reverse the bits and count the leading zero bytes. Get the maximum
-    // value between the vector length and the leading zero bytes.
+    // Returns the index of the first active lane of the
+    // vector mask, or VLENGTH if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by reversing the bits and counting the leading
+    // zero bytes.
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
     __ rbit($dst$$Register, $dst$$Register);
     __ clz($dst$$Register, $dst$$Register);
@@ -2295,8 +2301,14 @@ instruct vmask_firsttrue8B(iRegINoSp dst, vecD src) %{
   ins_cost(4 * INSN_COST);
   format %{ "vmask_firsttrue $dst, $src\t# vector (8B)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
-    // Reverse the bits and count the leading zero bytes.
+    // Returns the index of the first active lane of the
+    // vector mask, or 8 (VLENGTH) if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by reversing the bits and counting the leading
+    // zero bytes.
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
     __ rbit($dst$$Register, $dst$$Register);
     __ clz($dst$$Register, $dst$$Register);
@@ -2311,22 +2323,24 @@ instruct vmask_firsttrue16B(iRegINoSp dst, vecX src) %{
   ins_cost(6 * INSN_COST);
   format %{ "vmask_firsttrue $dst, $src\t# vector (16B)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
+    // Returns the index of the first active lane of the
+    // vector mask, or 16 (VLENGTH) if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
 
     Label FIRST_TRUE_INDEX;
 
-    // Move the lower 64-bits to a general register and check whether the
-    // value is zero.
+    // Try to compute the result from lower 64 bits.
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
     __ movw(rscratch1, zr);
     __ cbnz($dst$$Register, FIRST_TRUE_INDEX);
 
-    // If the lower half part is zero, compute the result from the higher
-    // 64-bits.
+    // Compute the result from the higher 64 bits.
     __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
     __ movw(rscratch1, 8);
 
-    // Reverse the bits, count the leading zero bytes and add it with 8/0.
+    // Reverse the bits and count the leading zero bytes.
     __ bind(FIRST_TRUE_INDEX);
     __ rbit($dst$$Register, $dst$$Register);
     __ clz($dst$$Register, $dst$$Register);
@@ -2341,8 +2355,14 @@ instruct vmask_lasttrue8B(iRegINoSp dst, vecD src) %{
   ins_cost(4 * INSN_COST);
   format %{ "vmask_lasttrue $dst, $src\t# vector (8B)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
-    // Count the leading zero bytes and substract it by 7.
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by counting the leading zero bytes and
+    // substracting it by 7 (VLENGTH - 1).
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
     __ clz($dst$$Register, $dst$$Register);
     __ movw(rscratch1, 7);
@@ -2357,22 +2377,24 @@ instruct vmask_lasttrue16B(iRegINoSp dst, vecX src) %{
   ins_cost(5 * INSN_COST);
   format %{ "vmask_lasttrue $dst, $src\t# vector (16B)" %}
   ins_encode %{
-    // Input "src" is a vector of boolean with "0/1" as the element values.
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
 
     Label LAST_TRUE_INDEX;
 
-    // Move the higher 64-bits to a general register and check whether the
-    // value is zero.
+    // Try to compute the result from higher 64 bits.
     __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
     __ movw(rscratch1, 16 - 1);
     __ cbnz($dst$$Register, LAST_TRUE_INDEX);
 
-    // If the higher half part value is zero, compute the result from the
-    // lower 64-bits.
+    // Compute the result from the lower 64 bits.
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
     __ movw(rscratch1, 8 - 1);
 
-    // Count the leading zero bytes and substract it by the 15/7.
+    // Count the leading zero bytes and substract it by 15 (VLENGTH - 1).
     __ bind(LAST_TRUE_INDEX);
     __ clz($dst$$Register, $dst$$Register);
     __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
