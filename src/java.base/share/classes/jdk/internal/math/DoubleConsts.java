@@ -86,7 +86,7 @@ public class DoubleConsts {
                (((SIGN_BIT_MASK & EXP_BIT_MASK) == 0L) &&
                 ((SIGN_BIT_MASK & SIGNIF_BIT_MASK) == 0L) &&
                 ((EXP_BIT_MASK & SIGNIF_BIT_MASK) == 0L)) &&
-                ((SIGN_BIT_MASK | MAG_BIT_MASK) == ~0));
+                ((SIGN_BIT_MASK | MAG_BIT_MASK) == ~0L));
 
     }
 }

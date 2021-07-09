@@ -22,6 +22,10 @@
  */
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntUnaryOperator;
+import java.util.function.LongUnaryOperator;
+import java.util.function.UnaryOperator;
 import java.util.stream.DoubleStream;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
@@ -189,23 +193,28 @@ public class AbsTests {
 
         final AtomicInteger errors = new AtomicInteger();
         doubles.mapToObj(d -> (float)d).
-            forEach(f -> {errors.addAndGet(testFloatAbs(Math::abs, f));});
+            forEach(f -> {errors.addAndGet(testFloatAbs(f));});
 
         return errors.get();
     }
 
-    private static int testFloatAbs(UnaryOperator<Float> absFunc, float f) {
+    private static int testFloatAbs(float f) {
+        int errors  = testFloatAbs("Math.abs", Math::abs, f);
+        errors     += testFloatAbs("Math.abs", Math::abs, -f);
+        errors     += testFloatAbs("StrictMath.abs", StrictMath::abs, f);
+        errors     += testFloatAbs("StrictMath.abs", StrictMath::abs, -f);
+        return errors;
+    }
+
+    private static int testFloatAbs(String testName,
+                                    UnaryOperator<Float> absFunc, float f) {
         float result = absFunc.apply(-f);
-        if (Float.isNaN(f)) {
-            return Float.floatToRawIntBits(result) !=
-                Float.floatToRawIntBits(f) ? 1 : 0;
-        } else if ((f >= 0 && result != f) || (f < 0 && result != -f)) {
-            System.err.printf("Unexpected float abs result %f for argument %f%n",
-                              result, f);
-            return 1;
-        } else {
+        if (Float.isNaN(f) && Float.isNaN(result)) {
             return 0;
         }
+
+        float expected = f == -0.0F ? 0.0F : (f < 0.0F ? -f : f);
+        return Tests.test(testName, f, result, expected);
     }
 
     // --------------------------------------------------------------------
@@ -214,22 +223,27 @@ public class AbsTests {
         DoubleStream doubles = DoubleStream.of(FLOATING_POINT_VALUES);
 
         final AtomicInteger errors = new AtomicInteger();
-        doubles.forEach(d -> {errors.addAndGet(testDoubleAbs(Math::abs, d));});
+        doubles.forEach(d -> {errors.addAndGet(testDoubleAbs(d));});
 
         return errors.get();
     }
 
-    private static int testDoubleAbs(DoubleUnaryOperator absFunc, double d) {
+    private static int testDoubleAbs(double d) {
+        int errors  = testDoubleAbs("Math.abs", Math::abs, d);
+        errors     += testDoubleAbs("Math.abs", Math::abs, -d);
+        errors     += testDoubleAbs("StrictMath.abs", StrictMath::abs, d);
+        errors     += testDoubleAbs("StrictMath.abs", StrictMath::abs, -d);
+        return errors;
+    }
+
+    private static int testDoubleAbs(String testName,
+                                     DoubleUnaryOperator absFunc, double d) {
         double result = absFunc.applyAsDouble(-d);
-        if (Double.isNaN(d)) {
-            return Double.doubleToRawLongBits(result) !=
-                Double.doubleToRawLongBits(d) ? 1 : 0;
-        } else if ((d >= 0 && result != d) || (d < 0 && result != -d)) {
-            System.err.printf("Unexpected double abs result %f for argument %f%n",
-                              result, d);
-            return 1;
-        } else {
+        if (Double.isNaN(d) && Double.isNaN(result)) {
             return 0;
         }
+
+        double expected = d == -0.0F ? 0.0F : (d < 0.0F ? -d : d);
+        return Tests.test(testName, d, result, expected);
     }
 }
