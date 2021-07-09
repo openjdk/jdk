@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,39 +28,22 @@ import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.CfgFile;
 
 /**
  * Test --add-launcher parameter with shortcuts (platform permitting).
  * Output of the test should be AddLShortcutTest*.* installer.
  * The output installer should provide the same functionality as the
  * default installer (see description of the default installer in
- * SimplePackageTest.java) plus install three extra application launchers.
+ * SimplePackageTest.java) plus install extra application launchers with and
+ * without various shortcuts to be tested manually.
  */
 
 /*
  * @test
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
- * @requires (jpackage.test.SQETest != null)
- * @library ../helpers
- * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile AddLShortcutTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=AddLShortcutTest.test
- */
-
-/*
- * @test
- * @summary jpackage with --add-launcher
- * @key jpackagePlatformPackage
- * @requires (jpackage.test.SQETest == null)
  * @library ../helpers
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal

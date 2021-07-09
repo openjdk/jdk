@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,13 +250,8 @@ public class AppImageFile {
         // this should never be the case, but maintaining behavior of
         // creating default launchers without AppImageFile present
 
-        List<String> names = new ArrayList<>();
-        names.add(APP_NAME.fetchFrom(params));
-        ADD_LAUNCHERS.fetchFrom(params).stream().map(APP_NAME::fetchFrom).forEach(
-                names::add);
-        for (var name : names) {
-            launchers.add(new LauncherInfo(name, true, true));
-        }
+        ADD_LAUNCHERS.fetchFrom(params).stream().map(APP_NAME::fetchFrom).map(
+                name -> new LauncherInfo(name, true, true)).forEach(launchers::add);
         return launchers;
     }
 
