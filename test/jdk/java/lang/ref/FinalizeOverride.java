@@ -33,6 +33,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @summary Basic test of the finalize method
  */
 
+/* @test
+ * @bug 8266936
+ * @summary Test with finalization JFR event
+ * @requires vm.hasJFR
+ * @run main/othervm -XX:StartFlightRecording=dumponexit=true FinalizeOverride
+ */
 public class FinalizeOverride {
     // finalizedCount is incremented when the finalize method is invoked
     private static AtomicInteger finalizedCount = new AtomicInteger();
