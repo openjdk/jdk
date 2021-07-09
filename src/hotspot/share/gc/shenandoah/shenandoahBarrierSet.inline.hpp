@@ -224,6 +224,7 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
+  assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "must be absent");
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_load(decorators, addr);
 }
@@ -231,6 +232,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap(T* addr) {
+  assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "must be absent");
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_load(decorators, addr);
 }
@@ -271,6 +273,8 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
 }
@@ -278,12 +282,16 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
+  assert((decorators & (ON_STRONG_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   return bs->oop_cmpxchg(resolved_decorators, AccessInternal::oop_field_addr<decorators>(base, offset), compare_value, new_value);
@@ -292,6 +300,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_xchg(decorators, addr, new_value);
 }
@@ -299,12 +309,16 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap(T* addr, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_xchg(decorators, addr, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "must be present");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   return bs->oop_xchg(resolved_decorators, AccessInternal::oop_field_addr<decorators>(base, offset), new_value);
