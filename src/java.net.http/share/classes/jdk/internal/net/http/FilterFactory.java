@@ -38,7 +38,7 @@ class FilterFactory {
     }
 
     List<HeaderFilter> getFilterChain() {
-        List<HeaderFilter> l = new ArrayList<>();
+        List<HeaderFilter> l = new ArrayList<>(filterClasses.size());
         for (Class<? extends HeaderFilter> clazz : filterClasses) {
             try {
                 // Requires a public no arg constructor.
