@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile nestedSameRet.jasm
             testPatch.java
- * @run main/othervm -Xverify:all nestedSameRetTest
+ * @run main/othervm -Xverify:all NestedSameRetTest
  */
-public class nestedSameRetTest {
+public class NestedSameRetTest {
 	public static void main(String[] args) throws Throwable {
 		//testPatch.test("nestedSameRet", "Not done yet!\nHello world!");
         TestWithError.test("nestedSameRet", "nestedSameRet passed, error thrown", "nestedSameRet failed, did now throw error");

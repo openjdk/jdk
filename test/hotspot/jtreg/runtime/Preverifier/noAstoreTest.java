@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile noAstore.jasm
             testPatch.java
- * @run main/othervm -Xverify:all noAstoreTest
+ * @run main/othervm -Xverify:all NoAstoreTest
  */
 
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 
-public class noAstoreTest {
+public class NoAstoreTest {
 	public static void main(String[] args) throws Throwable {
         TestWithError.test("noAstore", "noAstore passed, error thrown", "noAstore failed, did now throw error");
 	}

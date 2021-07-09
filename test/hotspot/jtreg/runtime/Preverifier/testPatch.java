@@ -35,7 +35,7 @@ import java.io.IOException;
 /**
  * Modular test for jasm files that print on execution and do not throw errors
  */
-public class testPatch {
+public class TestPatch {
     public static void test(String fileName, String expectedOutput) throws Throwable {
 		Class<?> newClass;
 		//try {

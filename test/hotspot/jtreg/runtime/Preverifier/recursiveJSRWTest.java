@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.vm
  * @compile recursiveJSRW.jasm
             testPatch.java
- * @run main/othervm -Xverify:all recursiveJSRWTest
+ * @run main/othervm -Xverify:all RecursiveJSRWTest
  */
 
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 
-public class recursiveJSRWTest {
+public class RecursiveJSRWTest {
 	public static void main(String[] args) throws Throwable {
         TestWithError.test("recursiveJSRW", "recursiveJSR passed, error thrown", "recursiveJSR failed, error not thrown");
 	}

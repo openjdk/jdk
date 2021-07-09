@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile helloworldjsr.jasm
             testPatch.java
- * @run main/othervm -Xverify:all helloworldjsrTest
+ * @run main/othervm -Xverify:all HelloworldjsrTest
  */
-public class helloworldjsrTest {
+public class HelloworldjsrTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("helloworldjsr", "Hello world!");
 	}

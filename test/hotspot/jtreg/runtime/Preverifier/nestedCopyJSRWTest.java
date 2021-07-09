@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile nestedCopyJSRW.jasm
             testPatch.java
- * @run main/othervm -Xverify:all nestedCopyJSRWTest
+ * @run main/othervm -Xverify:all NestedCopyJSRWTest
  */
-public class nestedCopyJSRWTest {
+public class NestedCopyJSRWTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("nestedCopyJSRW", "Not done yet!\nHello world!");
 	}

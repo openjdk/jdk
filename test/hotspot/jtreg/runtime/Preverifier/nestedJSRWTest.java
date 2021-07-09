@@ -30,9 +30,9 @@
  *          java.base/jdk.internal.vm
  * @compile nestedJSRW.jasm
             testPatch.java
- * @run main/othervm -Xverify:all nestedJSRWTest
+ * @run main/othervm -Xverify:all NestedJSRWTest
  */
-public class nestedJSRWTest {
+public class NestedJSRWTest {
 	public static void main(String[] args) throws Throwable {
 		testPatch.test("nestedJSRW", "Not done yet!\nHello world!");
 	}
