@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -73,6 +73,9 @@ public class Switches {
         npeTest(this::npeTestExpression);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
+        exhaustiveStatementSane2(null);
+        exhaustiveStatementSane2(new A());
+        exhaustiveStatementSane2(new B());
         switchNestingTest(this::switchNestingStatementStatement);
         switchNestingTest(this::switchNestingStatementExpression);
         switchNestingTest(this::switchNestingExpressionStatement);
@@ -449,6 +452,17 @@ public class Switches {
         }
         switch (o) {
             case Object obj, null:; //no break intentionally - should not fall through to any possible default
+        }
+    }
+
+    void exhaustiveStatementSane2(I i) {
+        switch (i) {
+            case A a: break;
+            case null, B b:; //no break intentionally - should not fall through to any possible default
+        }
+        switch (i) {
+            case A a -> {}
+            case null, B b -> {}
         }
     }
 
