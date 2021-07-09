@@ -6602,7 +6602,7 @@ instruct vcastBtoX(vec dst, vec src) %{
 %}
 
 instruct castStoX(vec dst, vec src, rRegP scratch) %{
-  predicate(UseAVX <= 2 &&
+  predicate((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
             vector_length(n->in(1)) <= 8 && // src
             vector_element_basic_type(n) == T_BYTE);
   effect(TEMP scratch);
@@ -6618,7 +6618,7 @@ instruct castStoX(vec dst, vec src, rRegP scratch) %{
 %}
 
 instruct vcastStoX(vec dst, vec src, vec vtmp, rRegP scratch) %{
-  predicate(UseAVX <= 2 &&
+  predicate((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
             vector_length(n->in(1)) == 16 && // src
             vector_element_basic_type(n) == T_BYTE);
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
@@ -6636,7 +6636,7 @@ instruct vcastStoX(vec dst, vec src, vec vtmp, rRegP scratch) %{
 %}
 
 instruct vcastStoX_evex(vec dst, vec src) %{
-  predicate(UseAVX > 2 ||
+  predicate((UseAVX > 2 && VM_Version::supports_avx512vlbw()) ||
             (vector_length_in_bytes(n) >= vector_length_in_bytes(n->in(1)))); // dst >= src
   match(Set dst (VectorCastS2X src));
   format %{ "vector_cast_s2x $dst,$src\t!" %}
@@ -6751,13 +6751,13 @@ instruct vcastItoX_evex(vec dst, vec src) %{
         __ evpmovdw($dst$$XMMRegister, $src$$XMMRegister, src_vlen_enc);
         break;
       case T_FLOAT:
-        __ vcvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister, dst_vlen_enc);
+        __ vcvtdq2ps($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       case T_LONG:
         __ vpmovsxdq($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       case T_DOUBLE:
-        __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, dst_vlen_enc);
+        __ vcvtdq2pd($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       default:
         ShouldNotReachHere();
