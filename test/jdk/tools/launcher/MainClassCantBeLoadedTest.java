@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class MainClassCantBeLoadedTest extends TestHelper {
         bClass.delete();
 
         // if A is executed
-        TestResult trExecution = doExec(javaCmd, "-cp", "out", "A");
+        TestResult trExecution = doExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "-cp", "out", "A");
         // then this error message should be generated
         trExecution.contains("Error: Could not find or load main class A");
         trExecution.contains("Caused by: java.lang.NoClassDefFoundError: B");
@@ -134,6 +134,7 @@ public class MainClassCantBeLoadedTest extends TestHelper {
 
         // Execute C with security manager will fail with AccessControlException
         trExecution = doExec(javaCmd,
+            "-Duser.language=en", "-Duser.country=US",
             "-Djava.security.manager",
             "--add-exports", "java.base/com.sun.crypto.provider=ALL-UNNAMED",
             "-cp", "out", "C");

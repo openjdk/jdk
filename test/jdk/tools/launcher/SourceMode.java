@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,7 @@ public class SourceMode extends TestHelper {
         show(tr1);
         // verify access succeeds with --add-exports
         TestResult tr2 = doExec(javaCmd,
+            "-Duser.language=en", "-Duser.country=US",
             "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
             exportJava.toString(), "--help");
         if (!tr2.isOK())
@@ -268,7 +269,7 @@ public class SourceMode extends TestHelper {
         Path classes = base.resolve("classes");
         compile("-d", classes.toString(), srcfile.toString());
         TestResult tr =
-            doExec(javaCmd, "--source", thisVersion, "-cp", classes.toString(), "HelloWorld");
+            doExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "--source", thisVersion, "-cp", classes.toString(), "HelloWorld");
         if (tr.isOK())
             error(tr, "Command succeeded unexpectedly");
         if (!tr.contains("file not found: HelloWorld"))
