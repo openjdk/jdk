@@ -2169,9 +2169,9 @@ public final class String
      * ignoring case if and only if {@code ignoreCase} is true.
      * The sequences {@code tsequence} and {@code osequence} are compared,
      * where {@code tsequence} is the sequence produced as if by calling
-     * {@code this.substring(toffset, len).codePoints()} and {@code osequence}
-     * is the sequence produced as if by calling
-     * {@code other.substring(ooffset, len).codePoints()}.
+     * {@code this.substring(toffset, toffset + len).codePoints()} and
+     * {@code osequence} is the sequence produced as if by calling
+     * {@code other.substring(ooffset, ooffset + len).codePoints()}.
      * The result is {@code true} if and only if all of the following
      * are true:
      * <ul><li>{@code toffset} is non-negative.

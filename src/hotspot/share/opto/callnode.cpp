@@ -1411,8 +1411,14 @@ Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
-  if( in(TypeFunc::Control)->is_SafePoint() )
-    return in(TypeFunc::Control);
+  if (in(TypeFunc::Control)->is_SafePoint()) {
+    Node* out_c = unique_ctrl_out();
+    // This can be the safepoint of an outer strip mined loop if the inner loop's backedge was removed. Replacing the
+    // outer loop's safepoint could confuse removal of the outer loop.
+    if (out_c != NULL && !out_c->is_OuterStripMinedLoopEnd()) {
+      return in(TypeFunc::Control);
+    }
+  }
 
   // Transforming long counted loops requires a safepoint node. Do not
   // eliminate a safepoint until loop opts are over.
@@ -1670,13 +1676,7 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
-  if (UseBiasedLocking && Opcode() == Op_Allocate) {
-    Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
-  } else {
-    mark_node = phase->MakeConX(markWord::prototype().value());
-  }
+  mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
 }
 

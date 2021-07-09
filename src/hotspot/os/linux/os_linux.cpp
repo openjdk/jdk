@@ -412,7 +412,7 @@ void os::init_system_properties_values() {
   //        ...
   //        7: The default directories, normally /lib and /usr/lib.
 #ifndef OVERRIDE_LIBPATH
-  #if defined(AMD64) || (defined(_LP64) && defined(SPARC)) || defined(PPC64) || defined(S390)
+  #if defined(_LP64)
     #define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
   #else
     #define DEFAULT_LIBPATH "/lib:/usr/lib"
@@ -4790,11 +4790,6 @@ void os::set_native_thread_name(const char *name) {
     // ERANGE should not happen; all other errors should just be ignored.
     assert(rc != ERANGE, "pthread_setname_np failed");
   }
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -899,6 +899,7 @@ public class Basic {
         } catch (Throwable t) { unexpected(t); return ""; }
     }
 
+    @SuppressWarnings("removal")
     static void testIORedirection() throws Throwable {
         final File ifile = new File("ifile");
         final File ofile = new File("ofile");
@@ -1303,6 +1304,7 @@ public class Basic {
 
     }
 
+    @SuppressWarnings("removal")
     private static void realMain(String[] args) throws Throwable {
         if (Windows.is())
             System.out.println("This appears to be a Windows system.");
@@ -2184,7 +2186,9 @@ public class Basic {
                             }
                             if (r >= 0) {
                                 // The child sent unexpected output; print it to diagnose
-                                System.out.println("Unexpected child output:");
+                                System.out.println("Unexpected child output, to: " +
+                                        ((action & 0x1) == 0 ? "getInputStream" : "getErrorStream"));
+                                System.out.println("Child args: " + childArgs);
                                 if ((action & 0x2) == 0) {
                                     System.out.write(r);    // Single character
 
@@ -2205,7 +2209,7 @@ public class Basic {
 
                 thread.start();
                 latch.await();
-                Thread.sleep(10);
+                Thread.sleep(30);
 
                 if (s instanceof BufferedInputStream) {
                     // Wait until after the s.read occurs in "thread" by
@@ -2662,6 +2666,7 @@ public class Basic {
     //----------------------------------------------------------------
     // A Policy class designed to make permissions fiddling very easy.
     //----------------------------------------------------------------
+    @SuppressWarnings("removal")
     private static class Policy extends java.security.Policy {
         static final java.security.Policy DEFAULT_POLICY = java.security.Policy.getPolicy();
 

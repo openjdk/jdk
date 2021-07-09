@@ -1011,6 +1011,33 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       adjusted_lim = igvn->transform(new SubINode(hi, lo));
     }
     hook->destruct(igvn);
+
+    int lo = igvn->type(adjusted_lim)->is_int()->_lo;
+    if (lo < 0) {
+      // If range check elimination applies to this comparison, it includes code to protect from overflows that may
+      // cause the main loop to be skipped entirely. Delay this transformation.
+      // Example:
+      // for (int i = 0; i < limit; i++) {
+      //   if (i < max_jint && i > min_jint) {...
+      // }
+      // Comparisons folded as:
+      // i - min_jint - 1 <u -2
+      // when RC applies, main loop limit becomes:
+      // min(limit, max(-2 + min_jint + 1, min_jint))
+      // = min(limit, min_jint)
+      // = min_jint
+      if (!igvn->C->post_loop_opts_phase()) {
+        if (adjusted_val->outcnt() == 0) {
+          igvn->remove_dead_node(adjusted_val);
+        }
+        if (adjusted_lim->outcnt() == 0) {
+          igvn->remove_dead_node(adjusted_lim);
+        }
+        igvn->C->record_for_post_loop_opts_igvn(this);
+        return false;
+      }
+    }
+
     Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
