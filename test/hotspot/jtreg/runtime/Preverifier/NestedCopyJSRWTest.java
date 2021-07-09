@@ -34,6 +34,6 @@
  */
 public class NestedCopyJSRWTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("nestedCopyJSRW", "Not done yet!\nHello world!");
+		TestPatch.test("nestedCopyJSRW", "Not done yet!\nHello world!");
 	}
 }
