@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Alphabet LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,21 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-
-/**
+/*
  * @test
- * @bug 8006547 8261088
- * @compile NoTargetOnContainer.java
+ * @bug 8261088
+ * @summary Repeatable annotations without Target cannot have containers that target module declarations
+ * @compile T8261088.java
  */
 
-@interface FooContainer {
-  Foo[] value();
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Target;
+
+@Target(ElementType.MODULE)
+@interface TC {
+    T[] value() default {};
 }
 
-@Target({
-    ElementType.CONSTRUCTOR,
-    ElementType.PARAMETER,
-    ElementType.TYPE,
-    ElementType.METHOD,
-    ElementType.LOCAL_VARIABLE,
-    ElementType.PACKAGE,
-    ElementType.ANNOTATION_TYPE,
-    ElementType.FIELD,
-    ElementType.RECORD_COMPONENT,
-    ElementType.MODULE,
-})
-@Repeatable(FooContainer.class)
-@interface Foo {}
-
-class NoTargetOnContainer {}
+@Repeatable(TC.class)
+@interface T {}
