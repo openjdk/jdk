@@ -359,8 +359,8 @@ public interface Metrics {
     /**
      * Returns the maximum number of tasks that may be created in the Isolation Group.
      *
-     * @return The maximum number of tasks or -1 if the metric is not available.
-     *         Returns -3 if it is unlimited ("max")
+     * @return The maximum number of tasks, -1 if the quota is unlimited or
+     *         -2 if not supported.
      *
      */
     public long getPidsMax();

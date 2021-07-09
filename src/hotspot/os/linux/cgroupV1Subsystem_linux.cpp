@@ -264,6 +264,5 @@ char* CgroupV1Subsystem::pids_max_val() {
 jlong CgroupV1Subsystem::pids_max() {
   if (_pids == NULL) return OSCONTAINER_ERROR;
   char * pidsmax_str = pids_max_val();
-  jlong pidsmax = limit_from_str(pidsmax_str);
-  return pidsmax;
+  return limit_from_str(pidsmax_str);
 }

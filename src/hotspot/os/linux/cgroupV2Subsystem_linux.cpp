@@ -246,7 +246,6 @@ char* CgroupV2Subsystem::pids_max_val() {
  */
 jlong CgroupV2Subsystem::pids_max() {
   char * pidsmax_str = pids_max_val();
-  jlong pidsmax = limit_from_str(pidsmax_str);
-  return pidsmax;
+  return limit_from_str(pidsmax_str);
 }
 

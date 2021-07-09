@@ -556,8 +556,8 @@ jlong CgroupSubsystem::limit_from_str(char* limit_str) {
   if (limit_str == NULL) {
     return OSCONTAINER_ERROR;
   }
-  // Unlimited memory in Cgroups V2 is the literal string 'max'
-  // it is also found in the pids controller
+  // Unlimited memory in cgroups is the literal string 'max' for
+  // some controllers, for example the pids controller.
   if (strcmp("max", limit_str) == 0) {
     os::free(limit_str);
     return (jlong)-1;
