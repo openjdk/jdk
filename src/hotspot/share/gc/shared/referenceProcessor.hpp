@@ -160,26 +160,26 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcPhase1Task;
   friend class RefProcPhase2Task;
   friend class RefProcPhase3Task;
+  friend class RefProcPhase4Task;
 public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
   enum RefProcSubPhases {
-    SoftRefSubPhase1,
-    WeakRefSubPhase1,
-    FinalRefSubPhase1,
+    SoftRefSubPhase2,
+    WeakRefSubPhase2,
     FinalRefSubPhase2,
-    PhantomRefSubPhase3,
+    FinalRefSubPhase3,
+    PhantomRefSubPhase4,
     RefSubPhaseMax
   };
 
   // Main phases of reference processing.
   enum RefProcPhases {
-    RefPhase1,
     RefPhase2,
     RefPhase3,
+    RefPhase4,
     RefPhaseMax
   };
 
@@ -234,16 +234,16 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Phase 1: Drop Soft/Weak/Final references with a NULL or live referent, and clear
+  // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                     ReferenceProcessorPhaseTimes& phase_times);
 
-  // Phase 2: Keep alive followers of Final references, and enqueue.
+  // Phase 3: Keep alive followers of Final references, and enqueue.
   void process_final_keep_alive(RefProcProxyTask& proxy_task,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
-  // Phase 3: Drop and keep alive live Phantom references, or clear and enqueue if dead.
+  // Phase 4: Drop and keep alive live Phantom references, or clear and enqueue if dead.
   void process_phantom_refs(RefProcProxyTask& proxy_task,
                             ReferenceProcessorPhaseTimes& phase_times);
 
