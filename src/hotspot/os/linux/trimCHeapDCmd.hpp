@@ -34,10 +34,10 @@ class TrimCLibcHeapDCmd : public DCmd {
 public:
   TrimCLibcHeapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
-    return "System.glibc_trim_heap";
+    return "System.trim_native_heap";
   }
   static const char* description() {
-    return "Attempts to free up memory by trimming the glibc C-heap.";
+    return "Attempts to free up memory by trimming the C-heap.";
   }
   static const char* impact() {
     return "Low";
