@@ -107,16 +107,16 @@ public final class TestFinalizerEvent {
 
     static class TestClassOverridingFinalize {
         public boolean finalized = false;
-    
+
         @Override
         protected void finalize() {
             finalized = true;
         }
     }
-    
+
     static class TestClassUnloadOverridingFinalize {
         public boolean finalized = false;
-    
+
         @Override
         protected void finalize() {
             finalized = true;
