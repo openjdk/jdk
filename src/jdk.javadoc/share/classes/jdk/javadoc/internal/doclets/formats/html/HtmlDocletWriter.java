@@ -75,6 +75,7 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -1515,9 +1516,16 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitErroneous(ErroneousTree node, Content c) {
-                    messages.warning(ch.getDocTreePath(node),
-                            "doclet.tag.invalid_usage", node);
-                    result.add(new RawHtml(node.toString()));
+                    DocTreePath dtp = ch.getDocTreePath(node);
+                    if (dtp != null) {
+                        String body = node.getBody();
+                        if (body.matches("(?i)\\{@[a-z]+.*")) {
+                            messages.warning(dtp,"doclet.tag.invalid_usage", body);
+                        } else {
+                            messages.warning(dtp, "doclet.tag.invalid_input", body);
+                        }
+                    }
+                    result.add(Text.of(node.toString()));
                     return false;
                 }
 
@@ -1542,7 +1550,10 @@ public class HtmlDocletWriter {
                 public Boolean visitLink(LinkTree node, Content c) {
                     var inTags = context.inTags;
                     if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
-                        messages.warning(ch.getDocTreePath(node), "doclet.see.nested_link", "{@" + node.getTagName() + "}");
+                        DocTreePath dtp = ch.getDocTreePath(node);
+                        if (dtp != null) {
+                            messages.warning(dtp, "doclet.see.nested_link", "{@" + node.getTagName() + "}");
+                        }
                         Content label = commentTagsToContent(node, element, node.getLabel(), context);
                         if (label.isEmpty()) {
                             label = Text.of(node.getReference().getSignature());

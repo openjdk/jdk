@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ class Symbol : public MetaspaceObj {
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogMinObjAlignmentInBytes + 3));
+    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogBytesPerWord + 3));
     return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }

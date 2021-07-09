@@ -1872,6 +1872,11 @@ public final class System {
      * There is no guarantee that this effort will recycle any particular
      * number of unused objects, reclaim any particular amount of space, or
      * complete at any particular time, if at all, before the method returns or ever.
+     * There is also no guarantee that this effort will determine
+     * the change of reachability in any particular number of objects,
+     * or that any particular number of {@link java.lang.ref.Reference Reference}
+     * objects will be cleared and enqueued.
+     *
      * <p>
      * The call {@code System.gc()} is effectively equivalent to the
      * call:

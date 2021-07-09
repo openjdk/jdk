@@ -46,8 +46,13 @@
                            Register tmp1, Register tmp2, Register tmp3);
 
   void stringL_indexof_char(Register str1, Register cnt1,
-                           Register ch, Register result,
-                           Register tmp1, Register tmp2, Register tmp3);
+                            Register ch, Register result,
+                            Register tmp1, Register tmp2, Register tmp3);
+
+  void string_indexof_char_sve(Register str1, Register cnt1,
+                               Register ch, Register result,
+                               FloatRegister ztmp1, FloatRegister ztmp2,
+                               PRegister pgtmp, PRegister ptmp, bool isL);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,

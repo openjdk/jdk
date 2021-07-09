@@ -664,7 +664,11 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
-            Set<Symbol> constants = tree.patternSwitch ? new HashSet<>() : null;
+            boolean exhaustiveSwitch = tree.patternSwitch ||
+                                       tree.cases.stream()
+                                                 .flatMap(c -> c.labels.stream())
+                                                 .anyMatch(l -> TreeInfo.isNull(l));
+            Set<Symbol> constants = exhaustiveSwitch ? new HashSet<>() : null;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
@@ -686,7 +690,7 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            if (!tree.hasTotalPattern && tree.patternSwitch &&
+            if (!tree.hasTotalPattern && exhaustiveSwitch &&
                 !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
                 (constants == null || !isExhaustive(tree.selector.type, constants))) {
                 log.error(tree, Errors.NotExhaustiveStatement);
