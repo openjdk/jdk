@@ -24,15 +24,15 @@
 package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Provides external entry points (tool and programmatic) to start the
- * simpleserver tool.
+ * Programmatic entry point to start the simpleserver tool.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ *  This code and its internal interface are subject to change or deletion
+ *  without notice.</b>
  */
 public class Main {
 
@@ -50,23 +50,6 @@ public class Main {
      *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
-        start(new PrintWriter(System.out, true), args);
-    }
-
-    /**
-     * Programmatic interface.
-     *
-     * <p>A status code of 0 means that the server has been started successfully;
-     * any other value indicates that an error occurred during option parsing or
-     * server start-up.
-     *
-     * @param writer a writer to which output should be written
-     * @param args the command-line options
-     * @return The status code
-     * @throws NullPointerException if any of the arguments are {@code null},
-     *         or if there are any {@code null} values in the {@code args} array
-     */
-    public static int start(PrintWriter writer, String[] args) {
-        return SimpleFileServerImpl.start(writer, args);
+        SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), args);
     }
 }

@@ -65,7 +65,8 @@ final class SimpleFileServerImpl {
     private static final int PORT = 8000;
     private static final Path ROOT = Path.of("").toAbsolutePath();
     private static final OutputLevel OUTPUT_LEVEL = OutputLevel.INFO;
-    private static PrintWriter out;
+
+    private SimpleFileServerImpl() { throw new AssertionError(); }
 
     /**
      * Starts a simple HTTP file server created on a directory.
@@ -74,13 +75,14 @@ final class SimpleFileServerImpl {
      * @param  args the command line options
      * @throws NullPointerException if any of the arguments are {@code null},
      *         or if there are any {@code null} values in the {@code args} array
+     * @return startup status code
      */
     static int start(PrintWriter writer, String[] args) {
         Objects.requireNonNull(args);
         for (var arg : args) {
             Objects.requireNonNull(arg);
         }
-        out = Objects.requireNonNull(writer);
+        Out out = new Out(writer);
 
         InetAddress addr = ADDR;
         int port = PORT;
@@ -96,8 +98,8 @@ final class SimpleFileServerImpl {
                 option = options.next();
                 switch (option) {
                     case "-?", "-h", "--help" -> {
-                        showHelp();
-                        return Result.OK.statusCode;
+                        out.showHelp();
+                        return Startup.OK.statusCode;
                     }
                     case "-b", "--bind-address" ->
                         addr = InetAddress.getByName(optionArg = options.next());
@@ -112,16 +114,16 @@ final class SimpleFileServerImpl {
                 }
             }
         } catch (AssertionError ae) {
-            reportError(getMessage("err.unknown.option", option));
-            showUsage();
-            return Result.CMDERR.statusCode;
+            out.reportError(getMessage("err.unknown.option", option));
+            out.showUsage();
+            return Startup.CMDERR.statusCode;
         } catch (NoSuchElementException nsee) {
-            reportError(getMessage("err.missing.arg", option));
-            return Result.CMDERR.statusCode;
+            out.reportError(getMessage("err.missing.arg", option));
+            return Startup.CMDERR.statusCode;
         } catch (Exception e) {
-            reportError(getMessage("err.invalid.arg", option, optionArg));
-            e.printStackTrace(out);
-            return Result.CMDERR.statusCode;
+            out.reportError(getMessage("err.invalid.arg", option, optionArg));
+            e.printStackTrace(out.writer);
+            return Startup.CMDERR.statusCode;
         } finally {
             out.flush();
         }
@@ -132,43 +134,57 @@ final class SimpleFileServerImpl {
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
-            printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
+            out.printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
         } catch (Throwable t) {
-            reportError(getMessage("err.server.config.failed", t.getMessage()));
-            return Result.SYSERR.statusCode;
+            out.reportError(getMessage("err.server.config.failed", t.getMessage()));
+            return Startup.SYSERR.statusCode;
         } finally {
             out.flush();
         }
-        return Result.OK.statusCode;
+        return Startup.OK.statusCode;
     }
 
-    private static void printStartMessage(Path root, InetAddress inetAddr, int port)
-            throws UnknownHostException {
-        var isAnyLocal = inetAddr.isAnyLocalAddress();
-        var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress()
-                : inetAddr.getHostAddress();
-        if (isAnyLocal)
-            out.printf("""
-                    Serving %s and subdirectories on 0.0.0.0:%d
-                    http://%s:%d/ ...
-                    """, root, port, addr, port);
-        else
-            out.printf("""
+    private final static class Out {
+        private final PrintWriter writer;
+        private Out() { throw new AssertionError(); }
+
+        Out(PrintWriter writer) {
+            this.writer = Objects.requireNonNull(writer);
+        }
+
+        void printStartMessage(Path root, InetAddress inetAddr, int port)
+                throws UnknownHostException {
+            var isAnyLocal = inetAddr.isAnyLocalAddress();
+            var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress() : inetAddr.getHostAddress();
+            if (isAnyLocal) {
+                writer.printf("""
+                        Serving %s and subdirectories on 0.0.0.0:%d
+                        http://%s:%d/ ...
+                        """, root, port, addr, port);
+            } else {
+                writer.printf("""
                     Serving %s and subdirectories on
                     http://%s:%d/ ...
                     """, root, addr, port);
-    }
+            }
+        }
 
-    private static void showUsage() {
-        out.println(getMessage("usage")); }
+        void showUsage() {
+            writer.println(getMessage("usage"));
+        }
 
-    private static void showHelp() {
-        out.println(getMessage("usage"));
-        out.println(getMessage("options"));
-    }
+        void showHelp() {
+            writer.println(getMessage("usage"));
+            writer.println(getMessage("options"));
+        }
 
-    private static void reportError(String message) {
-        out.println(getMessage("error.prefix") + " " + message);
+        void reportError(String message) {
+            writer.println(getMessage("error.prefix") + " " + message);
+        }
+
+        void flush() {
+            writer.flush();
+        }
     }
 
     private static String getMessage(String key, Object... args) {
@@ -191,15 +207,15 @@ final class SimpleFileServerImpl {
         }
     }
 
-    enum Result {
-        /** Completed with no errors */
+    enum Startup {
+        /** Started with no errors */
         OK(0),
-        /** Bad command-line arguments */
+        /** Not started, bad command-line arguments */
         CMDERR(1),
-        /** System error or resource exhaustion */
+        /** Not started, system error or resource exhaustion */
         SYSERR(2);
 
-        Result(int statusCode) {
+        Startup(int statusCode) {
             this.statusCode = statusCode;
         }
 
