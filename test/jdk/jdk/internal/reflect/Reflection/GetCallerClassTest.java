@@ -27,8 +27,7 @@
  * @summary Test if the VM enforces Reflection.getCallerClass
  *          be called by system methods annotated with CallerSensitive plus
  *          test reflective and method handle based invocation of caller-sensitive
- *          methods with or without alternative cs$method entrypoints
- *          - using DirectMethodAccessorImpl
+ *          methods with or without the CSM adapter method
  * @modules java.base/jdk.internal.reflect
  * @build SetupGetCallerClass boot.GetCallerClass
  * @run driver SetupGetCallerClass

@@ -39,8 +39,8 @@ import jdk.internal.misc.Unsafe;
 abstract class UnsafeFieldAccessorImpl extends FieldAccessorImpl {
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    protected final boolean isFinal;
     protected final long    fieldOffset;
+    protected final boolean isFinal;
     UnsafeFieldAccessorImpl(Field field) {
         super(field);
         int mods = field.getModifiers();

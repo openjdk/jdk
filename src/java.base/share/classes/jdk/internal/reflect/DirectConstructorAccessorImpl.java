@@ -48,14 +48,15 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
     }
 
     protected final Constructor<?> ctor;
+    protected final int paramCount;
+
     @Stable protected final MethodHandle target;
     @Stable protected final MHMethodAccessor invoker;
-    protected final int paramCount;
     DirectConstructorAccessorImpl(Constructor<?> ctor, MethodHandle target) {
         this.ctor = ctor;
+        this.paramCount = ctor.getParameterCount();
         this.target = target;
         this.invoker = new MHMethodAccessorDelegate(target);
-        this.paramCount = ctor.getParameterCount();
     }
 
     @ForceInline

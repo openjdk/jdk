@@ -52,6 +52,7 @@ abstract class DirectMethodAccessorImpl extends MethodAccessorImpl {
 
         boolean isStatic = Modifier.isStatic(method.getModifiers());
         if (ReflectionFactory.noInflation()) {
+            // fast invoker
             var mhInvoker = MethodHandleAccessorFactory.newMethodHandleAccessor(method, target, false);
             return isStatic ? new StaticMethodAccessor(method, target, mhInvoker, false)
                             : new InstanceMethodAccessor(method, target, mhInvoker, false);
@@ -104,10 +105,10 @@ abstract class DirectMethodAccessorImpl extends MethodAccessorImpl {
 
     DirectMethodAccessorImpl(Method method, MethodHandle target, MHMethodAccessor invoker, boolean hasCallerParameter) {
         this.method = method;
-        this.target = target;
-        this.invoker = invoker;
         this.paramCount = method.getParameterCount();
         this.hasCallerParameter = hasCallerParameter;
+        this.target = target;
+        this.invoker = invoker;
     }
 
     @ForceInline
@@ -115,6 +116,10 @@ abstract class DirectMethodAccessorImpl extends MethodAccessorImpl {
         return invoker;
     }
 
+    /**
+     * Returns a MHMethodAccessor that invokes the given target method handle
+     * from a hidden class.
+     */
     MHMethodAccessor spinMHMethodAccessor() {
         return MethodHandleAccessorFactory.newMethodHandleAccessor(method, target, hasCallerParameter);
     }

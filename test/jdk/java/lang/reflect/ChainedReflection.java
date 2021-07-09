@@ -76,6 +76,12 @@ public class ChainedReflection {
         throw npe;
     }
 
+    /**
+     * Tests the target method being invoked via core reflection that
+     * throws NullPointerException allocated via Constructor::newInstance.
+     * The newly allocated NPE thrown by the target method should be
+     * wrapped by InvocationTargetException.
+     */
     @Test
     public void methodCallNewInstance() throws ReflectiveOperationException {
         Method m = ChainedReflection.class.getMethod("npe");
@@ -91,6 +97,12 @@ public class ChainedReflection {
         }
     }
 
+    /**
+     * Tests a constructor C calling the method "throwNPE" that throws
+     * a new instance of NullPointerException.
+     * C::newInstance should wrap NullPointerException thrown by
+     * Method::invoke on "throwNPE"  by InvocationTargetException.
+     */
     @Test
     public void ctorCallMethodInvoke() throws ReflectiveOperationException {
         Constructor<?> ctor = ChainedReflection.class.getDeclaredConstructor(Void.class);

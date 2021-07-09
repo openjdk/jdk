@@ -28,7 +28,7 @@ package jdk.internal.reflect;
 /**
  * Defines the invoke method for Method::invoke(Object obj, Object[] args)
  * and other variants for example taking a caller class parameter and
- * specialized for the methods whose have <= 2 formal parameters.
+ * specialized for the methods whose have <= 3 formal parameters.
  *
  * The static methods are also specialized to drop the receiver parameter.
  *

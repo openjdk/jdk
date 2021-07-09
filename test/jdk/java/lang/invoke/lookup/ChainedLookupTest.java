@@ -70,9 +70,6 @@ public class ChainedLookupTest {
 
         MethodHandle mh = lookup().findVirtual(Method.class, "invoke",
                                                methodType(Object.class, Object.class, Object[].class));
-        // ## TODO
-        // Lookup lookup = (Lookup)mh.invoke(m);
-        // throw   java.lang.invoke.WrongMethodTypeException: cannot build collector
         Lookup lookup = (Lookup)mh.invoke(m, (Object)null, (Object[])null);
         test(lookup, "Lookup produced via Method::invoke via MethodHandle");
     }

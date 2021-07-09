@@ -36,7 +36,7 @@ import java.lang.reflect.Method;
  * caller class argument.
  *
  * When a caller-sensitive method is called,
- * Method::invoke(Class<?> caller, Object target, Object[] args) will
+ * Method::invoke(Object target, Object[] args, Class<?> caller) will
  * be invoked with the caller class.  If an adapter is present,
  * the adapter method with the caller class parameter will be called
  * instead.

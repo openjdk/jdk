@@ -254,10 +254,11 @@ public class ReflectionFactory {
                 if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
                     return new BootstrapConstructorAccessorImpl(c);
                 }
-                return new MethodAccessorGenerator().generateConstructor(c.getDeclaringClass(),
-                        c.getParameterTypes(),
-                        c.getExceptionTypes(),
-                        c.getModifiers());
+                return new MethodAccessorGenerator().
+                        generateConstructor(c.getDeclaringClass(),
+                                            c.getParameterTypes(),
+                                            c.getExceptionTypes(),
+                                            c.getModifiers());
             } else {
                 NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
                 DelegatingConstructorAccessorImpl res = new DelegatingConstructorAccessorImpl(acc);
