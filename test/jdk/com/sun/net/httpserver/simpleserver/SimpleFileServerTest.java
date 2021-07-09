@@ -289,7 +289,7 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testInvalidRequestURI() throws Exception {
+    public void testInvalidRequestURIGET() throws Exception {
         var expectedBody = """
                 <!DOCTYPE html>
                 <html>
@@ -300,8 +300,7 @@ public class SimpleFileServerTest {
                 </html>
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
-        var root = Files.createDirectory(TEST_DIR.resolve("testInvalidRequestURI"));
-        var file = Files.writeString(root.resolve("aFile?#.txt"), "some text", CREATE);
+        var root = Files.createDirectory(TEST_DIR.resolve("testInvalidRequestURIGET"));
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();

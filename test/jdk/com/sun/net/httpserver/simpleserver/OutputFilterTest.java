@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -83,6 +84,7 @@ public class OutputFilterTest {
 
     @Test
     public void testNull() {
+        assertThrows(NPE, () -> SimpleFileServer.createOutputFilter(null, null));
         assertThrows(NPE, () -> SimpleFileServer.createOutputFilter(null, VERBOSE));
         assertThrows(NPE, () -> SimpleFileServer.createOutputFilter(OUT, null));
     }
@@ -101,6 +103,10 @@ public class OutputFilterTest {
         assertThrows(IAE, () -> SimpleFileServer.createOutputFilter(OUT, NONE));
     }
 
+    /**
+     * Confirms that the output filter produces the expected output for
+     * a successful exchange.
+     */
     @Test
     public void testExchange() throws Exception {
         var baos = new ByteArrayOutputStream();
@@ -118,39 +124,34 @@ public class OutputFilterTest {
         } finally {
             server.stop(0);
             baos.flush();
-            var filterOutput = baos.toString(UTF_8).split(System.getProperty("line.separator"));
+            var filterOutput = baos.toString(UTF_8);
+            var pattern = Pattern.compile("""
+                    127\\.0\\.0\\.1 - - \\[[\\s\\S]+] "GET / HTTP/1\\.1" 200 -
+                    Resource requested: /foo/bar
+                    (>[\\s\\S]+:[\\s\\S]+)+
+                    >
+                    (<[\\s\\S]+:[\\s\\S]+)+
+                    <
+                    """);
+            assertTrue(pattern.matcher(filterOutput).matches());
 
-            //    Expected output format:
-            //         """
-            //         127.0.0.1 - - [06/Jul/2021:12:56:47 +0100] "GET / HTTP/1.1" 200 -
-            //         Resource requested: /foo/bar
-            //         > Connection: Upgrade, HTTP2-Settings
-            //         > Http2-settings: AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA
-            //         > Host: localhost:59146
-            //         > Upgrade: h2c
-            //         > User-agent: Java-http-client/18-internal
-            //         > Content-length: 0
-            //         >
-            //         < Date: Tue, 06 Jul 2021 11:56:47 GMT
-            //         < Content-length: 11
-            //         <
-            //         """;
-
-            assertTrue(filterOutput[0].startsWith("127.0.0.1 - - ["));
-            assertTrue(filterOutput[0].endsWith("] \"GET / HTTP/1.1\" 200 -"));
-            assertEquals(filterOutput[1], "Resource requested: /foo/bar");
-            assertEquals(filterOutput[2], "> Connection: Upgrade, HTTP2-Settings");
-            assertTrue(filterOutput[3].startsWith("> Http2-settings: "));
-            assertTrue(filterOutput[4].startsWith("> Host: localhost:"));
-            assertEquals(filterOutput[5], "> Upgrade: h2c");
-            assertTrue(filterOutput[6].startsWith("> User-agent: Java-http-client/"));
-            assertEquals(filterOutput[7], "> Content-length: 0");
-            assertEquals(filterOutput[8], ">");
-            assertEquals(filterOutput[9], "< Foo: bar, bar");
-            assertTrue(filterOutput[10].startsWith("< Date: "));
-            assertEquals(filterOutput[11], "< Content-length: 11");
-            assertEquals(filterOutput[12], "<");
-            assertEquals(filterOutput.length, 13);
+            /*
+             * Expected output format:
+             *     """
+             *     127.0.0.1 - - [06/Jul/2021:12:56:47 +0100] "GET / HTTP/1.1" 200 -
+             *     Resource requested: /foo/bar
+             *     > Connection: Upgrade, HTTP2-Settings
+             *     > Http2-settings: AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA
+             *     > Host: localhost:59146
+             *     > Upgrade: h2c
+             *     > User-agent: Java-http-client/18-internal
+             *     > Content-length: 0
+             *     >
+             *     < Date: Tue, 06 Jul 2021 11:56:47 GMT
+             *     < Content-length: 11
+             *     <
+             *     """;
+             */
         }
     }
 
@@ -176,7 +177,8 @@ public class OutputFilterTest {
             server.stop(0);
             baos.flush();
             assertEquals(baos.toString(UTF_8),
-                    "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator());
+                    "Error: server exchange handling failed: IOE ThrowingHandler"
+                            + System.lineSeparator());
         }
     }
 
@@ -202,10 +204,16 @@ public class OutputFilterTest {
         } finally {
             server.stop(0);
             baos.flush();
-            var filterOutput = baos.toString(UTF_8).split(System.getProperty("line.separator"));
-            assertTrue(filterOutput[0].startsWith("127.0.0.1 - - ["));
-            assertTrue(filterOutput[0].endsWith("] \"GET /aFile%3F%23.txt HTTP/1.1\" 404 -"));
-            assertEquals(filterOutput[1], "Resource requested: could not resolve request URI");
+            var filterOutput = baos.toString(UTF_8);
+            var pattern = Pattern.compile("""
+                    127\\.0\\.0\\.1 - - \\[[\\s\\S]+] "GET /aFile%3F%23\\.txt HTTP/1\\.1" 404 -
+                    Resource requested: could not resolve request URI
+                    (>[\\s\\S]+:[\\s\\S]+)+
+                    >
+                    (<[\\s\\S]+:[\\s\\S]+)+
+                    <
+                    """);
+            assertTrue(pattern.matcher(filterOutput).matches());
         }
     }
 
