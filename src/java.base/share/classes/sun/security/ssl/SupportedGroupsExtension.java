@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
@@ -88,25 +89,25 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: insufficient data"));
             }
 
-            byte[] ngs = Record.getBytes16(m);
+            int ngLen = Record.getInt16(m);
+            if ((ngLen == 0) || (ngLen % 2 != 0)) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid supported_groups extension: incomplete data"));
+            }
+
+            IntStream.Builder ngBldr = IntStream.builder();
+            for (int i = 0; i < ngLen; i += 2) {
+                ngBldr.accept(Short.toUnsignedInt(m.getShort()));
+            }
+
             if (m.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_groups extension: unknown extra data"));
             }
 
-            if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid supported_groups extension: incomplete data"));
-            }
-
-            int[] ids = new int[ngs.length / 2];
-            for (int i = 0, j = 0; i < ngs.length;) {
-                ids[j++] = ((ngs[i++] & 0xFF) << 8) | (ngs[i++] & 0xFF);
-            }
-
-            this.namedGroupsIds = ids;
+            this.namedGroupsIds = ngBldr.build().distinct().toArray();
         }
 
         @Override

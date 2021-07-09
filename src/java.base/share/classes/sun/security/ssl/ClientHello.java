@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -35,6 +36,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -177,21 +180,27 @@ final class ClientHello {
                 this.cookie = null;
             }
 
-            byte[] encodedIds = Record.getBytes16(m);
-            if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
+            int csLen = Short.toUnsignedInt(m.getShort());
+            if (csLen == 0 || (csLen & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(
                         Alert.ILLEGAL_PARAMETER,
                         "Invalid ClientHello message");
             }
-
-            this.cipherSuiteIds = new int[encodedIds.length >> 1];
-            for (int i = 0, j = 0; i < encodedIds.length; i++, j++) {
-                cipherSuiteIds[j] =
-                    ((encodedIds[i++] & 0xFF) << 8) | (encodedIds[i] & 0xFF);
+            IntStream.Builder csBldr = IntStream.builder();
+            for (int i = 0; i < csLen; i += 2) {
+                csBldr.accept(Short.toUnsignedInt(m.getShort()));
             }
-            this.cipherSuites = getCipherSuites(cipherSuiteIds);
+            this.cipherSuiteIds = csBldr.build().distinct().toArray();
+            this.cipherSuites = getCipherSuites(this.cipherSuiteIds);
 
-            this.compressionMethod = Record.getBytes8(m);
+            int cmpLen = Byte.toUnsignedInt(m.get());
+            Stream.Builder<Byte> bbldr = Stream.builder();
+            for (int i = 0; i < cmpLen; i++) {
+                bbldr.accept(m.get());
+            }
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bbldr.build().distinct().forEach(bVal -> bos.write(bVal));
+            this.compressionMethod = bos.toByteArray();
             // In TLS 1.3, use of certain extensions is mandatory.
             if (m.hasRemaining()) {
                 this.extensions =

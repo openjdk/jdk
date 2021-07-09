@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -89,27 +90,25 @@ final class SignatureAlgorithmsExtension {
                     "Invalid signature_algorithms: insufficient data"));
             }
 
-            byte[] algs = Record.getBytes16(buffer);
+            int algsLen = Record.getInt16(buffer);
+            if (algsLen == 0 || (algsLen & 0x01) != 0) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid signature_algorithms: incomplete data"));
+            }
+
+            IntStream.Builder schBldr = IntStream.builder();
+            for (int i = 0; i < algsLen; i += 2) {
+                schBldr.accept(Short.toUnsignedInt(buffer.getShort()));
+            }
+
             if (buffer.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid signature_algorithms: unknown extra data"));
             }
 
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid signature_algorithms: incomplete data"));
-            }
-
-            int[] schemes = new int[algs.length / 2];
-            for (int i = 0, j = 0; i < algs.length;) {
-                byte hash = algs[i++];
-                byte sign = algs[i++];
-                schemes[j++] = ((hash & 0xFF) << 8) | (sign & 0xFF);
-            }
-
-            this.signatureSchemes = schemes;
+            this.signatureSchemes = schBldr.build().distinct().toArray();
         }
 
         @Override

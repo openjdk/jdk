@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SUPPORTED_VERSIONS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -82,27 +83,25 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: insufficient data"));
             }
 
-            byte[] vbs = Record.getBytes8(m);   // Get the version bytes.
+            int versLen = Record.getInt8(m);   // Get the version bytes.
+            if (versLen == 0 || (versLen & 0x01) != 0) {
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                                "Invalid supported_versions extension: incomplete data"));
+            }
+
+            IntStream.Builder pvBldr = IntStream.builder();
+            for (int i = 0; i < versLen; i += 2) {
+                pvBldr.accept(Short.toUnsignedInt(m.getShort()));
+            }
+
             if (m.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_versions extension: unknown extra data"));
             }
 
-            if (vbs == null || vbs.length == 0 || (vbs.length & 0x01) != 0) {
-                throw hc.conContext.fatal(Alert.DECODE_ERROR,
-                        new SSLProtocolException(
-                    "Invalid supported_versions extension: incomplete data"));
-            }
-
-            int[] protocols = new int[vbs.length >> 1];
-            for (int i = 0, j = 0; i < vbs.length;) {
-                byte major = vbs[i++];
-                byte minor = vbs[i++];
-                protocols[j++] = ((major & 0xFF) << 8) | (minor & 0xFF);
-            }
-
-            this.requestedProtocols = protocols;
+            this.requestedProtocols = pvBldr.build().distinct().toArray();
         }
 
         @Override
