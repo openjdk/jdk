@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile recursiveJSRW.jasm
-            testPatch.java
+            TestWithError.java
  * @run main/othervm -Xverify:all RecursiveJSRWTest
  */
 

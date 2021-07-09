@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile addStackMap.jasm
-            testPatch.java
+            TestPatch.java
  * @run main/othervm -Xverify:all AddStackMapTest
  */
 public class AddStackMapTest {
