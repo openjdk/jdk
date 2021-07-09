@@ -34,6 +34,7 @@
 
 class G1CMBitMap;
 class G1FullCollector;
+class SlidingForwarding;
 
 class G1FullGCPrepareTask : public G1FullGCTask {
 protected:
@@ -76,6 +77,7 @@ protected:
 
   class G1PrepareCompactLiveClosure : public StackObj {
     G1FullGCCompactionPoint* _cp;
+    SlidingForwarding* const _forwarding;
 
   public:
     G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp);
@@ -85,12 +87,14 @@ protected:
   class G1RePrepareClosure : public StackObj {
     G1FullGCCompactionPoint* _cp;
     HeapRegion* _current;
+    SlidingForwarding* const _forwarding;
 
   public:
     G1RePrepareClosure(G1FullGCCompactionPoint* hrcp,
                        HeapRegion* hr) :
         _cp(hrcp),
-        _current(hr) { }
+        _current(hr),
+        _forwarding(G1CollectedHeap::heap()->forwarding()) { }
 
     size_t apply(oop object);
   };

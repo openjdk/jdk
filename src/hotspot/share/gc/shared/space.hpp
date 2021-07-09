@@ -50,6 +50,7 @@ class CompactibleSpace;
 class BlockOffsetTable;
 class CardTableRS;
 class DirtyCardToOopClosure;
+class SlidingForwarding;
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.
@@ -432,7 +433,7 @@ public:
   // function of the then-current compaction space, and updates "cp->threshold
   // accordingly".
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
-                    HeapWord* compact_top);
+                    HeapWord* compact_top, SlidingForwarding* const forwarding);
 
   // Return a size with adjustments as required of the space.
   virtual size_t adjust_object_size_v(size_t size) const { return size; }

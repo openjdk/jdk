@@ -102,6 +102,7 @@ class G1HeapVerifier;
 class G1HeapSizingPolicy;
 class G1HeapSummary;
 class G1EvacSummary;
+class SlidingForwarding;
 
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
@@ -247,6 +248,8 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _g1mm;
 
+  SlidingForwarding* _forwarding;
+
   // Records whether the region at the given index is (still) a
   // candidate for eager reclaim.  Only valid for humongous start
   // regions; other regions have unspecified values.  Humongous start
@@ -278,6 +281,10 @@ public:
 
   bool should_sample_collection_set_candidates() const;
   void set_collection_set_candidates_stats(G1CardSetMemoryStats& stats);
+
+  SlidingForwarding* forwarding() const {
+    return _forwarding;
+  }
 
 private:
 

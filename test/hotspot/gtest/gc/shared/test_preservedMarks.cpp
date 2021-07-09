@@ -78,6 +78,9 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   ASSERT_EQ(o2.get_oop()->forwardee(), o4.get_oop());
   // Adjust will update the PreservedMarks stack to
   // make sure the mark is updated at the new location.
+  // TODO: This is the only use of PM::adjust_during_full_gc().
+  // GCs use the variant with a forwarding structure here,
+  // test that variant, and remove the method.
   pm.adjust_during_full_gc();
 
   // Restore all preserved and verify that the changed

@@ -40,6 +40,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -300,13 +301,15 @@ void G1FullCollector::phase1_mark_live_objects() {
 
 void G1FullCollector::phase2_prepare_compaction() {
   GCTraceTime(Info, gc, phases) info("Phase 2: Prepare for compaction", scope()->timer());
+  _heap->forwarding()->clear();
   G1FullGCPrepareTask task(this);
   run_task(&task);
 
   // To avoid OOM when there is memory left.
-  if (!task.has_freed_regions()) {
-    task.prepare_serial_compaction();
-  }
+  // TODO: Disabled for now because it violates sliding-forwarding assumption.
+  // if (!task.has_freed_regions()) {
+  //   task.prepare_serial_compaction();
+  // }
 }
 
 void G1FullCollector::phase3_adjust_pointers() {

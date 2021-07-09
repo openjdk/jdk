@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -347,7 +348,7 @@ void CompactibleSpace::clear(bool mangle_space) {
 }
 
 HeapWord* CompactibleSpace::forward(oop q, size_t size,
-                                    CompactPoint* cp, HeapWord* compact_top) {
+                                    CompactPoint* cp, HeapWord* compact_top, SlidingForwarding* const forwarding) {
   // q is alive
   // First check if we should switch compaction space
   assert(this == cp->space, "'this' should be current compaction space.");
@@ -370,7 +371,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
 
   // store the forwarding pointer into the mark word
   if (cast_from_oop<HeapWord*>(q) != compact_top) {
-    q->forward_to(cast_to_oop(compact_top));
+    forwarding->forward_to(q, cast_to_oop(compact_top));
     assert(q->is_gc_marked(), "encoding the pointer should preserve the mark");
   } else {
     // if the object isn't moving we can just set the mark to the default

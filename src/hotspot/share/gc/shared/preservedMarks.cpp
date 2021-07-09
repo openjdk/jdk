@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -39,6 +40,8 @@ void PreservedMarks::restore() {
   assert_empty();
 }
 
+// TODO: This method is unused, except in the gunit test. Change the test
+// to exercise the updated method below instead, and remove this one.
 void PreservedMarks::adjust_during_full_gc() {
   StackIterator<OopAndMarkWord, mtGC> iter(_stack);
   while (!iter.is_empty()) {
@@ -47,6 +50,18 @@ void PreservedMarks::adjust_during_full_gc() {
     oop obj = elem->get_oop();
     if (obj->is_forwarded()) {
       elem->set_oop(obj->forwardee());
+    }
+  }
+}
+
+void PreservedMarks::adjust_during_full_gc(const SlidingForwarding* const forwarding) {
+  StackIterator<OopAndMarkWord, mtGC> iter(_stack);
+  while (!iter.is_empty()) {
+    OopAndMarkWord* elem = iter.next_addr();
+
+    oop obj = elem->get_oop();
+    if (obj->is_forwarded()) {
+      elem->set_oop(forwarding->forwardee(obj));
     }
   }
 }

@@ -33,6 +33,7 @@
 class AbstractGangTask;
 class PreservedMarksSet;
 class WorkGang;
+class SlidingForwarding;
 
 class PreservedMarks {
 private:
@@ -63,7 +64,11 @@ public:
   void restore();
   // Iterate over the stack, adjust all preserved marks according
   // to their forwarding location stored in the mark.
+  // TODO: This method is unused, except in the gunit test. Change the test
+  // to exercise the updated method below instead, and remove this one.
   void adjust_during_full_gc();
+
+  void adjust_during_full_gc(const SlidingForwarding* const forwarding);
 
   void restore_and_increment(volatile size_t* const _total_size_addr);
   inline static void init_forwarded_mark(oop obj);

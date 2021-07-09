@@ -49,7 +49,7 @@ import jdk.test.lib.Utils;
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc
- *   -Xmx1G -XX:G1HeapRegionSize=8m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 60 16
+ *   -Xmx1100M -XX:G1HeapRegionSize=8m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 60 16
  *
  * @run main/othervm/timeout=700 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc

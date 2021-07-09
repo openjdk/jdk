@@ -32,6 +32,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/tlab_globals.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -190,6 +191,8 @@ jint ShenandoahHeap::initialize() {
 
   assert((((size_t) base()) & ShenandoahHeapRegion::region_size_bytes_mask()) == 0,
          "Misaligned heap: " PTR_FORMAT, p2i(base()));
+
+  _forwarding = new SlidingForwarding(_heap_region, ShenandoahHeapRegion::region_size_words_shift());
 
 #if SHENANDOAH_OPTIMIZED_MARKTASK
   // The optimized ShenandoahMarkTask takes some bits away from the full object bits.

@@ -26,6 +26,7 @@
 #include "compiler/compileBroker.hpp"
 #include "gc/serial/markSweep.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -62,7 +63,6 @@ MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
 MarkAndPushClosure MarkSweep::mark_and_push_closure;
 CLDToOopClosure    MarkSweep::follow_cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
-CLDToOopClosure    MarkSweep::adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_strong);
 
 template <class T> inline void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
   mark_and_push(p);
@@ -144,8 +144,8 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
 void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
 void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
-void PreservedMark::adjust_pointer() {
-  MarkSweep::adjust_pointer(&_obj);
+void PreservedMark::adjust_pointer(const SlidingForwarding* const forwarding) {
+  MarkSweep::adjust_pointer(forwarding, &_obj);
 }
 
 void PreservedMark::restore() {
@@ -173,22 +173,22 @@ void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
   mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }
 
-AdjustPointerClosure MarkSweep::adjust_pointer_closure;
-
 void MarkSweep::adjust_marks() {
   assert( _preserved_oop_stack.size() == _preserved_mark_stack.size(),
          "inconsistent preserved oop stacks");
 
+  const SlidingForwarding* const forwarding = GenCollectedHeap::heap()->forwarding();
+
   // adjust the oops we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
-    _preserved_marks[i].adjust_pointer();
+    _preserved_marks[i].adjust_pointer(forwarding);
   }
 
   // deal with the overflow stack
   StackIterator<oop, mtGC> iter(_preserved_oop_stack);
   while (!iter.is_empty()) {
     oop* p = iter.next_addr();
-    adjust_pointer(p);
+    adjust_pointer(forwarding, p);
   }
 }
 

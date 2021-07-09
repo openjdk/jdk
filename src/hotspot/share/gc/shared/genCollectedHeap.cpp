@@ -52,6 +52,7 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -120,6 +121,7 @@ jint GenCollectedHeap::initialize() {
   }
 
   initialize_reserved_region(heap_rs);
+  _forwarding = new SlidingForwarding(_reserved);
 
   _rem_set = create_rem_set(heap_rs.region());
   _rem_set->initialize();
@@ -1088,6 +1090,7 @@ GenCollectedHeap* GenCollectedHeap::heap() {
 void GenCollectedHeap::prepare_for_compaction() {
   // Start by compacting into same gen.
   CompactPoint cp(_old_gen);
+  _forwarding->clear();
   _old_gen->prepare_for_compaction(&cp);
   _young_gen->prepare_for_compaction(&cp);
 }

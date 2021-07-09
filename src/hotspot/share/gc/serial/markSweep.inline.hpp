@@ -27,6 +27,7 @@
 
 #include "gc/serial/markSweep.hpp"
 
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
@@ -74,7 +75,7 @@ inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 inline void MarkAndPushClosure::do_klass(Klass* k)           { MarkSweep::follow_klass(k); }
 inline void MarkAndPushClosure::do_cld(ClassLoaderData* cld) { MarkSweep::follow_cld(cld); }
 
-template <class T> inline void MarkSweep::adjust_pointer(T* p) {
+template <class T> inline void MarkSweep::adjust_pointer(const SlidingForwarding* const forwarding, T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
@@ -82,7 +83,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
 
     markWord header = obj->mark();
     if (header.is_marked()) {
-      oop new_obj = cast_to_oop(header.decode_pointer());
+      oop new_obj = forwarding->forwardee(obj);
       assert(new_obj != NULL, "must be forwarded");
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
@@ -91,13 +92,14 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
 }
 
 template <typename T>
-void AdjustPointerClosure::do_oop_work(T* p)           { MarkSweep::adjust_pointer(p); }
+void AdjustPointerClosure::do_oop_work(T* p)           { MarkSweep::adjust_pointer(_forwarding, p); }
 inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 
-inline int MarkSweep::adjust_pointers(oop obj) {
-  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
+inline int MarkSweep::adjust_pointers(const SlidingForwarding* const forwarding, oop obj) {
+  AdjustPointerClosure cl(forwarding);
+  return obj->oop_iterate_size(&cl);
 }
 
 #endif // SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
