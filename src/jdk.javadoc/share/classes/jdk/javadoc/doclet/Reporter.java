@@ -96,7 +96,7 @@ public interface Reporter {
      *
      * @implSpec
      * This implementation ignores the {@code (start, pos, end)} values and simply calls
-     * {@link #print(Diagnostic.Kind, DocTreePath,String) print(kind, path, message)};
+     * {@link #print(Diagnostic.Kind, DocTreePath, String) print(kind, path, message)}.
      *
      * @param kind    the kind of diagnostic
      * @param path    the path for the tree node
