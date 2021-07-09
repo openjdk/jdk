@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile nestedCopyJSR.jasm
-            testPatch.java
+            TestPatch.java
  * @run main/othervm -Xverify:all NestedCopyJSRTest
  */
 public class NestedCopyJSRTest {

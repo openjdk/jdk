@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile sameRetW.jasm
-            testPatch.java
+            TestPatch.java
  * @run main SameRetWTest
  */
 public class SameRetWTest {

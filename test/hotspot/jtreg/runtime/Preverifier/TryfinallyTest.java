@@ -29,11 +29,11 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile tryfinally.jasm
-            testPatch.java
+            TestPatch.java
  * @run main/othervm -Xverify:all TryfinallyTest
  */
 public class TryfinallyTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("tryfinally", "");
+		TestPatch.test("tryfinally", "");
 	}
 }

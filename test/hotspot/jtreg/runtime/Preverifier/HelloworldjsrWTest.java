@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile helloworldjsrW.jasm
-            testPatch.java
+            TestPatch.java
  * @run main/othervm -Xverify:all HelloworldjsrWTest
  */
 public class HelloworldjsrWTest {
