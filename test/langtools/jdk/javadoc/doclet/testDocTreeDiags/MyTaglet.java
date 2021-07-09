@@ -47,7 +47,7 @@ import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
 
 /**
- * A taglet to be called in the context of the sdtandard doclet.
+ * A taglet to be called in the context of the standard doclet.
  * When invoked, it scans the entire enclosing doc comment, and
  * reports diagnostics at all instances of selected node kinds,
  * so that a test can verify the contents of the diagnostics.
@@ -110,7 +110,7 @@ public class MyTaglet implements Taglet {
 
     /**
      * Scans a DocCommentTree, generating diagnostics for selected nodes.
-     * Information about the expected position is encodinged within the
+     * Information about the expected position is encoded within the
      * text of the diagnostic, surrounded by {@code >>> <<<}.
      *
      * @param dtp the path to scan
