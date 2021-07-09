@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.FilePermission;
 import java.util.*;
 
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -47,13 +48,11 @@ import static sun.nio.fs.UnixConstants.*;
 public abstract class UnixFileSystemProvider
     extends AbstractFileSystemProvider
 {
-    private static final String USER_DIR = "user.dir";
     private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
     public UnixFileSystemProvider() {
-        String userDir = System.getProperty(USER_DIR);
-        theFileSystem = newFileSystem(userDir);
+        theFileSystem = newFileSystem(StaticProperty.userDir());
     }
 
     UnixFileSystem theFileSystem() {
