@@ -26,7 +26,7 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -98,7 +98,7 @@ public final class TimeZoneNameUtility {
 
         // Performs per-ID retrieval.
         Set<String> zoneIDs = LocaleProviderAdapter.forJRE().getLocaleResources(locale).getZoneIDs();
-        List<String[]> zones = new LinkedList<>();
+        List<String[]> zones = new ArrayList<>();
         for (String key : zoneIDs) {
             String[] names = retrieveDisplayNamesImpl(key, locale);
             if (names != null) {

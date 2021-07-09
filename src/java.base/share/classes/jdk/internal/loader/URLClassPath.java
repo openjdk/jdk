@@ -54,7 +54,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -219,7 +218,7 @@ public class URLClassPath {
         if (closed) {
             return Collections.emptyList();
         }
-        List<IOException> result = new LinkedList<>();
+        List<IOException> result = new ArrayList<>();
         for (Loader loader : loaders) {
             try {
                 loader.close();
@@ -961,7 +960,7 @@ public class URLClassPath {
             Resource res;
             String[] jarFiles;
             int count = 0;
-            LinkedList<String> jarFilesList = null;
+            List<String> jarFilesList;
 
             /* If there no jar files in the index that can potential contain
              * this resource then return immediately.
