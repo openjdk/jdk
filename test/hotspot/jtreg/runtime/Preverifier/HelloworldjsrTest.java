@@ -34,6 +34,6 @@
  */
 public class HelloworldjsrTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("helloworldjsr", "Hello world!");
+		TestPatch.test("helloworldjsr", "Hello world!");
 	}
 }

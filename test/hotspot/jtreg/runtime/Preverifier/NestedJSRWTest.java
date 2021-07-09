@@ -34,6 +34,6 @@
  */
 public class NestedJSRWTest {
 	public static void main(String[] args) throws Throwable {
-		testPatch.test("nestedJSRW", "Not done yet!\nHello world!");
+		TestPatch.test("nestedJSRW", "Not done yet!\nHello world!");
 	}
 }

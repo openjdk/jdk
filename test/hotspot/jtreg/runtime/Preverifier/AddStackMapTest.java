@@ -34,6 +34,6 @@
  */
 public class AddStackMapTest {
     public static void main(String[] args) throws Throwable {
-        testPatch.test("addStackMap", "Hello world!");
+        TestPatch.test("addStackMap", "Hello world!");
     }
 }
