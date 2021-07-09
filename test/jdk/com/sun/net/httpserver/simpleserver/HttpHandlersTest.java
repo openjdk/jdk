@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.*;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,6 +54,7 @@ public class HttpHandlersTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<RuntimeException> RE = RuntimeException.class;
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
     static final boolean ENABLE_LOGGING = true;
@@ -154,6 +156,63 @@ public class HttpHandlersTest {
         }
     }
 
+    @DataProvider
+    public Object[][] responseBodies() {
+        return new Object[][] { {"hello world"}, {""} };
+    }
+
+    @Test(dataProvider = "responseBodies")
+    public void testOfThrowingExchange(String body) {
+        var h = HttpHandlers.of(200, Headers.of(), body);
+        {
+            var exchange = new ThrowingHttpExchange() {
+                public InputStream getRequestBody() {
+                    throw new RuntimeException("getRequestBody");
+                }
+            };
+            var t = expectThrows(RE, () -> h.handle(exchange));
+            assertEquals(t.getMessage(), "getRequestBody");
+        }
+        {
+            var exchange = new ThrowingHttpExchange() {
+                public Headers getResponseHeaders() {
+                    throw new RuntimeException("getResponseHeaders");
+                }
+            };
+            var t = expectThrows(RE, () -> h.handle(exchange));
+            assertEquals(t.getMessage(), "getResponseHeaders");
+        }
+        {
+            var exchange = new ThrowingHttpExchange() {
+                public void sendResponseHeaders(int rCode, long responseLength) {
+                    throw new RuntimeException("sendResponseHeaders");
+                }
+            };
+            var t = expectThrows(RE, () -> h.handle(exchange));
+            assertEquals(t.getMessage(), "sendResponseHeaders");
+        }
+        {
+            var exchange = new ThrowingHttpExchange() {
+                public OutputStream getResponseBody() {
+                    throw new RuntimeException("getResponseBody");
+                }
+            };
+            if (!body.isEmpty()) {  // getResponseBody not called if no responseBody
+                var t = expectThrows(RE, () -> h.handle(exchange));
+                assertEquals(t.getMessage(), "getResponseBody");
+            }
+        }
+        {
+            var exchange = new ThrowingHttpExchange() {
+                public void close() {
+                    throw new RuntimeException("close");
+                }
+            };
+            var t = expectThrows(RE, () -> h.handle(exchange));
+            assertEquals(t.getMessage(), "close");
+        }
+    }
+
     @Test
     public void testHandleOrElseTrue() throws Exception {
         var h1 = new TestHandler("TestHandler-1");
@@ -240,5 +299,41 @@ public class HttpHandlersTest {
                 .scheme("http")
                 .path("/" + path)
                 .buildUnchecked();
+    }
+
+    static class ThrowingHttpExchange extends HttpExchange {
+        volatile int rCode;
+        volatile long responseLength;
+        volatile Headers responseHeaders;
+        volatile InputStream requestBody;
+
+        ThrowingHttpExchange() {
+            responseHeaders = new Headers();
+            this.requestBody = InputStream.nullInputStream();
+        }
+
+        @Override public Headers getResponseHeaders() { return responseHeaders; }
+        @Override public InputStream getRequestBody() { return requestBody; }
+        @Override public void sendResponseHeaders(int rCode, long responseLength) {
+            this.rCode = rCode;
+            this.responseLength = responseLength;
+        }
+        @Override public OutputStream getResponseBody() {
+            return OutputStream.nullOutputStream();
+        }
+
+        @Override public Headers getRequestHeaders() { return null; }
+        @Override public URI getRequestURI() { return null; }
+        @Override public String getRequestMethod() { return null; }
+        @Override public HttpContext getHttpContext() { return null; }
+        @Override public void close() { }
+        @Override public InetSocketAddress getRemoteAddress() { return null; }
+        @Override public int getResponseCode() { return 0; }
+        @Override public InetSocketAddress getLocalAddress() { return null; }
+        @Override public String getProtocol() { return null; }
+        @Override public Object getAttribute(String name) { return null; }
+        @Override public void setAttribute(String name, Object value) { }
+        @Override public void setStreams(InputStream i, OutputStream o) { }
+        @Override public HttpPrincipal getPrincipal() { return null; }
     }
 }

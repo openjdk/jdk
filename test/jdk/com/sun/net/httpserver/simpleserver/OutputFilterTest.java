@@ -51,8 +51,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.*;
@@ -104,13 +106,13 @@ public class OutputFilterTest {
     }
 
     /**
-     * Confirms that the output filter produces the expected output for
-     * a successful exchange.
+     * Confirms that the output filter produces the expected output for a
+     * successful exchange (with the request-path attribute set.)
      */
     @Test
     public void testExchange() throws Exception {
         var baos = new ByteArrayOutputStream();
-        var handler = new SetStateHandler();
+        var handler = new RequestPathHandler();
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
         server.start();
@@ -156,18 +158,67 @@ public class OutputFilterTest {
     }
 
     /**
+     * Confirms that the output filter produces the expected output for
+     * a successful exchange (without the request-path attribute set.)
+     */
+    @Test
+    public void testExchangeWithoutRequestPath() throws Exception {
+        var baos = new ByteArrayOutputStream();
+        var handler = new NoRequestPathHandler();
+        var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
+        server.start();
+        try (baos) {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.headers().map().size(), 2);
+            assertEquals(response.body(), "hello world");
+        } finally {
+            server.stop(0);
+            baos.flush();
+            var filterOutput = baos.toString(UTF_8);
+            var pattern = Pattern.compile("""
+                    127\\.0\\.0\\.1 - - \\[[\\s\\S]+] "GET / HTTP/1\\.1" 200 -
+                    (>[\\s\\S]+:[\\s\\S]+)+
+                    >
+                    (<[\\s\\S]+:[\\s\\S]+)+
+                    <
+                    """);
+            System.out.println(filterOutput);
+            assertTrue(pattern.matcher(filterOutput).matches());
+        }
+    }
+
+    @DataProvider
+    public Object[][] throwingHandler() {
+        return new Object[][] {
+                {VERBOSE, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},
+                {INFO, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},
+                {NONE, ""}
+        };
+    }
+
+    /**
      * Confirms that the output filter captures a throwable that is thrown
      * during the exchange handling and prints the expected error message.
      * The "httpclient.redirects.retrylimit" system property is set to 1 to
      * prevent retries on the client side, which would result in more than one
      * error message.
      */
-    @Test
-    public void testExchangeThrowingHandler() throws Exception {
+    @Test(dataProvider = "throwingHandler")
+    public void testExchangeThrowingHandler(OutputLevel level,
+                                            String expectedOutput) throws Exception {
         var baos = new ByteArrayOutputStream();
         var handler = new ThrowingHandler();
-        var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
-        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
+        HttpServer server;
+        if (level.equals(NONE)) {
+            server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10, "/", handler);
+        } else {
+            var filter = SimpleFileServer.createOutputFilter(baos, level);
+            server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10, "/", handler, filter);
+        }
         server.start();
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -176,9 +227,7 @@ public class OutputFilterTest {
         } finally {
             server.stop(0);
             baos.flush();
-            assertEquals(baos.toString(UTF_8),
-                    "Error: server exchange handling failed: IOE ThrowingHandler"
-                            + System.lineSeparator());
+            assertEquals(baos.toString(UTF_8), expectedOutput);
         }
     }
 
@@ -186,7 +235,7 @@ public class OutputFilterTest {
      * Confirms that the output filter prints the expected message if the request
      * URI cannot be resolved. This only applies if the filter is used in
      * combination with the SimpleFileServer file-handler, which sets the
-     * necessary "request-path" attribute.
+     * necessary request-path attribute.
      */
     @Test
     public void testCannotResolveRequestURI() throws Exception {
@@ -229,9 +278,10 @@ public class OutputFilterTest {
     }
 
     /**
-     * A handler that sets some exchange state and sends a response.
+     * A handler that sets the request-path attribute and a custom header
+     * and sends a response.
      */
-    static class SetStateHandler implements HttpHandler {
+    static class RequestPathHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try (InputStream is = exchange.getRequestBody();
@@ -239,6 +289,22 @@ public class OutputFilterTest {
                 is.readAllBytes();
                 exchange.setAttribute("request-path", "/foo/bar");
                 exchange.getResponseHeaders().put("Foo", List.of("bar", "bar"));
+                var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                os.write(resp);
+            }
+        }
+    }
+
+    /**
+     * A handler that sets no request-path attribute and sends a response.
+     */
+    static class NoRequestPathHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                is.readAllBytes();
                 var resp = "hello world".getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
