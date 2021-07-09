@@ -135,14 +135,14 @@ protected:
   void  operator delete(void* p);
 
   // Fast allocate in the arena.  Common case aligns to the size of long which is 64 bits
-  // on both 32 and 64 bit platforms. Required for atomic long operations on 32 bits.
+  // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
+    STATIC_ASSERT(is_power_of_2(ARENA_AMALLOC_ALIGNMENT));
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
+    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode)) {
       return NULL;
-    if (_hwm + x > _max) {
+    } else if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
     } else {
       char *old = _hwm;
@@ -154,11 +154,11 @@ protected:
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
   // is 4 bytes on 32 bits, hence the name.
   void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert((x & (sizeof(char*)-1)) == 0, "misaligned size");
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
+    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode)) {
       return NULL;
-    if (_hwm + x > _max) {
+    } else if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
     } else {
       char *old = _hwm;
