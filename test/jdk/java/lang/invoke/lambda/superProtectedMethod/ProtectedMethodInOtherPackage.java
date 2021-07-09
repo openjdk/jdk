@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8227415 8254975
+ * @bug 8227415 8254975 8270056
  * @run testng/othervm p.SuperMethodTest
  * @summary method reference to a protected method inherited from its
  *          superclass in a different runtime package where
@@ -101,6 +101,30 @@ public class SuperMethodTest  {
         ((Runnable) get.invoke(b)).run();
     }
 
+    @Test
+    public static void splitPackage1() throws Throwable {
+        ClassLoader parent = new Loader("loader-A1", null, A1.class);
+        ClassLoader loader = new Loader("loader-B1", parent, B1.class);
+        Class<?> aClass1 = Class.forName(A1.class.getName(), false, loader);
+        Class<?> bClass1 = Class.forName(B1.class.getName(), false, loader);
+        assertTrue(aClass1.getClassLoader() == parent);
+        assertTrue(bClass1.getClassLoader() == loader);
+        assertEquals(aClass1.getPackageName(), bClass1.getPackageName());
+
+        // verify subclass can access a static protected method inherited from
+        // its superclass in a split package
+        MethodHandle test = MethodHandles.lookup()
+                .findStatic(bClass1, "test", MethodType.methodType(void.class));
+        test.invoke();
+
+        // verify lambda can access a static protected method inherited from
+        // a superclass of the host class where the superclass is in
+        // a split package (not the same runtime package as the host class)
+        MethodHandle get = MethodHandles.lookup()
+                .findStatic(bClass1, "get", MethodType.methodType(Runnable.class));
+        ((Runnable) get.invoke()).run();
+    }
+
     static class Loader extends URLClassLoader {
         static final Path CLASSES_DIR = Paths.get(System.getProperty("test.class.path"));
         private final Class<?> c;
@@ -135,6 +159,19 @@ public class SuperMethodTest  {
             return this::func;
         }
         public void test() {
+            func();
+        }
+    }
+
+    public static class A1 {
+        protected static void func() { }
+    }
+
+    public static class B1 extends A1 {
+        public static Runnable get() {
+            return A1::func;
+        }
+        public static void test() {
             func();
         }
     }
