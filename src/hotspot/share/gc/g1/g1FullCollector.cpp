@@ -44,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -171,9 +170,6 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->print_heap_before_gc();
-  _heap->print_heap_regions();
-
   _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
@@ -183,12 +179,7 @@ void G1FullCollector::prepare_collection() {
   PrepareRegionsClosure cl(this);
   _heap->heap_region_iterate(&cl);
 
-  reference_processor()->enable_discovery();
-  reference_processor()->setup_policy(scope()->should_clear_soft_refs());
-
-  // We should save the marks of the currently locked biased monitors.
-  // The marking doesn't preserve the marks of biased objects.
-  BiasedLocking::preserve_marks();
+  reference_processor()->start_discovery(scope()->should_clear_soft_refs());
 
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
@@ -216,8 +207,6 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  BiasedLocking::restore_marks();
-
   _heap->concurrent_mark()->swap_mark_bitmaps();
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
@@ -229,7 +218,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->verify_after_full_collection();
 
-  _heap->print_heap_after_full_collection(scope()->heap_transition());
+  _heap->print_heap_after_full_collection();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {

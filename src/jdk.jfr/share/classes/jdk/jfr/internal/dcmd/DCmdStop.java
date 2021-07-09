@@ -29,7 +29,9 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
+import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.WriteableUserPath;
 
 /**
  * JFR.stop
@@ -44,8 +46,9 @@ final class DCmdStop extends AbstractDCmd {
         String name = parser.getOption("name");
         String filename = parser.getOption("filename");
         try {
-            SafePath safePath = null;
             Recording recording = findRecording(name);
+            WriteableUserPath path = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
+            SafePath safePath = path == null ? null : new SafePath(path.getRealPathText());
             if (filename != null) {
                 try {
                     // Ensure path is valid. Don't generate safePath if filename == null, as a user may

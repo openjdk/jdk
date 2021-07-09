@@ -399,10 +399,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         // Any SIGBREAK operations added here should make sure to flush
         // the output stream (e.g. tty->flush()) after output.  See 4803766.
         // Each module also prints an extra carriage return after its output.
-        VM_PrintThreads op;
+        VM_PrintThreads op(tty, PrintConcurrentLocks, false /* no extended info */, true /* print JNI handle info */);
         VMThread::execute(&op);
-        VM_PrintJNI jni_op;
-        VMThread::execute(&jni_op);
         VM_FindDeadlocks op1(tty);
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
@@ -471,47 +469,14 @@ void os::init_before_ergo() {
 void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    const char thread_name[] = "Signal Dispatcher";
-    Handle string = java_lang_String::create_from_str(thread_name, CHECK);
+    const char* name = "Signal Dispatcher";
+    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
 
-    // Initialize thread_oop to put it into the system threadGroup
-    Handle thread_group (THREAD, Universe::system_thread_group());
-    Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
-                           vmSymbols::threadgroup_string_void_signature(),
-                           thread_group,
-                           string,
-                           CHECK);
+    JavaThread* thread = new JavaThread(&signal_thread_entry);
+    JavaThread::vm_exit_on_osthread_failure(thread);
 
-    Klass* group = vmClasses::ThreadGroup_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                            thread_group,
-                            group,
-                            vmSymbols::add_method_name(),
-                            vmSymbols::thread_void_signature(),
-                            thread_oop,
-                            CHECK);
+    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 
-    { MutexLocker mu(THREAD, Threads_lock);
-      JavaThread* signal_thread = new JavaThread(&signal_thread_entry);
-
-      // At this point it may be possible that no osthread was created for the
-      // JavaThread due to lack of memory. We would have to throw an exception
-      // in that case. However, since this must work and we do not allow
-      // exceptions anyway, check and abort if this fails.
-      if (signal_thread == NULL || signal_thread->osthread() == NULL) {
-        vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                      os::native_thread_creation_failed_msg());
-      }
-
-      java_lang_Thread::set_thread(thread_oop(), signal_thread);
-      java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-      java_lang_Thread::set_daemon(thread_oop());
-
-      signal_thread->set_threadObj(thread_oop());
-      Threads::add(signal_thread);
-      Thread::start(signal_thread);
-    }
     // Handle ^BREAK
     os::signal(SIGBREAK, os::user_handler());
   }
@@ -1469,7 +1434,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  address limit = thread->as_Java_thread()->stack_end() +
+  address limit = JavaThread::cast(thread)->stack_end() +
                   (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
 
   return sp > (limit + framesize_in_bytes);

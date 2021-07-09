@@ -44,14 +44,17 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.CharacterCodingException;
-import java.security.AccessControlContext;
-import java.security.ProtectionDomain;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.Charset;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +62,7 @@ import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -324,6 +328,23 @@ public final class System {
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
 
+    private static class CallersHolder {
+        // Remember callers of setSecurityManager() here so that warning
+        // is only printed once for each different caller
+        final static Map<Class<?>, Boolean> callers
+            = Collections.synchronizedMap(new WeakHashMap<>());
+    }
+
+    // Remember initial System.err. setSecurityManager() warning goes here
+    private static volatile @Stable PrintStream initialErrStream;
+
+    private static URL codeSource(Class<?> clazz) {
+        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
+        @SuppressWarnings("removal")
+        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        return (cs != null) ? cs.getLocation() : null;
+    }
+
     /**
      * Sets the system-wide security manager.
      *
@@ -362,16 +383,31 @@ public final class System {
      *       method.
      */
     @Deprecated(since="17", forRemoval=true)
+    @CallerSensitive
     public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (allowSecurityManager()) {
-            System.err.println("WARNING: java.lang.System::setSecurityManager" +
-                    " is deprecated and will be removed in a future release.");
+            var callerClass = Reflection.getCallerClass();
+            if (CallersHolder.callers.putIfAbsent(callerClass, true) == null) {
+                URL url = codeSource(callerClass);
+                final String source;
+                if (url == null) {
+                    source = callerClass.getName();
+                } else {
+                    source = callerClass.getName() + " (" + url + ")";
+                }
+                initialErrStream.printf("""
+                        WARNING: A terminally deprecated method in java.lang.System has been called
+                        WARNING: System::setSecurityManager has been called by %s
+                        WARNING: Please consider reporting this to the maintainers of %s
+                        WARNING: System::setSecurityManager will be removed in a future release
+                        """, source, callerClass.getName());
+            }
             implSetSecurityManager(sm);
         } else {
             // security manager not allowed
             if (sm != null) {
                 throw new UnsupportedOperationException(
-                    "Runtime configured to disallow security manager");
+                    "The Security Manager is deprecated and will be removed in a future release");
             }
         }
     }
@@ -1836,6 +1872,11 @@ public final class System {
      * There is no guarantee that this effort will recycle any particular
      * number of unused objects, reclaim any particular amount of space, or
      * complete at any particular time, if at all, before the method returns or ever.
+     * There is also no guarantee that this effort will determine
+     * the change of reachability in any particular number of objects,
+     * or that any particular number of {@link java.lang.ref.Reference Reference}
+     * objects will be cleared and enqueued.
+     *
      * <p>
      * The call {@code System.gc()} is effectively equivalent to the
      * call:
@@ -2191,9 +2232,12 @@ public final class System {
         }
 
         if (needWarning) {
-            System.err.println("WARNING: The Security Manager is deprecated" +
-                    " and will be removed in a future release.");
+            System.err.println("""
+                    WARNING: A command line option has enabled the Security Manager
+                    WARNING: The Security Manager is deprecated and will be removed in a future release""");
         }
+
+        initialErrStream = System.err;
 
         // initializing the system class loader
         VM.initLevel(3);

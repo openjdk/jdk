@@ -576,6 +576,7 @@ class Assembler : public AbstractAssembler {
     XVNMSUBASP_OPCODE=(60u<< OPCODE_SHIFT |  209u << 3),
     XVNMSUBADP_OPCODE=(60u<< OPCODE_SHIFT |  241u << 3),
     XVRDPI_OPCODE  = (60u << OPCODE_SHIFT |  201u << 2),
+    XVRDPIC_OPCODE = (60u << OPCODE_SHIFT |  235u << 2),
     XVRDPIM_OPCODE = (60u << OPCODE_SHIFT |  249u << 2),
     XVRDPIP_OPCODE = (60u << OPCODE_SHIFT |  233u << 2),
 
@@ -2384,6 +2385,7 @@ class Assembler : public AbstractAssembler {
   inline void xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvrdpi(   VectorSRegister d, VectorSRegister b);
+  inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
 

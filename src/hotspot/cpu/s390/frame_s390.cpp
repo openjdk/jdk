@@ -208,6 +208,11 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return fr;
 }
 
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers sender_sp as unextended_sp.
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));

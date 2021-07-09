@@ -112,7 +112,7 @@ private:
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
     if (thread->is_Java_thread()) {
-       _jthread = thread->as_Java_thread();
+       _jthread = JavaThread::cast(thread);
        _saved_state = _jthread->thread_state();
        if (_saved_state == _thread_in_Java) {
          ThreadStateTransition::transition_from_java(_jthread, _thread_in_native);
@@ -2206,6 +2206,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   ResourceMark rm(thread);
   HandleMark hm(thread);
 
+  assert(!nm->is_zombie(), "nmethod zombie in post_compiled_method_load");
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
   // Pass inlining information through the void pointer
@@ -2308,7 +2309,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
     NoSafepointVerifier no_sfpt;
     // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
-    JvmtiThreadState *state = thread->as_Java_thread()->jvmti_thread_state();
+    JvmtiThreadState *state = JavaThread::cast(thread)->jvmti_thread_state();
     if (state != NULL) {
       // state is non NULL when VMObjectAllocEventCollector is enabled.
       JvmtiVMObjectAllocEventCollector *collector;
@@ -2332,7 +2333,7 @@ void JvmtiExport::record_sampled_internal_object_allocation(oop obj) {
     NoSafepointVerifier no_sfpt;
     // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
-    JvmtiThreadState *state = thread->as_Java_thread()->jvmti_thread_state();
+    JvmtiThreadState *state = JavaThread::cast(thread)->jvmti_thread_state();
     if (state != NULL) {
       // state is non NULL when SampledObjectAllocEventCollector is enabled.
       JvmtiSampledObjectAllocEventCollector *collector;
@@ -2868,7 +2869,7 @@ NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(NULL) {
   }
   Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread())  {
-    JavaThread* current_thread = thread->as_Java_thread();
+    JavaThread* current_thread = JavaThread::cast(thread);
     JvmtiThreadState *state = current_thread->jvmti_thread_state();
     if (state != NULL) {
       JvmtiVMObjectAllocEventCollector *collector;
