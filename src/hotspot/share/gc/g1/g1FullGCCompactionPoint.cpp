@@ -111,7 +111,7 @@ void G1FullGCCompactionPoint::forward(SlidingForwarding* const forwarding, oop o
     // used to do the same check. However, it is more reliable to first check the lower bits (is_forwarded())
     // instead before accepting the forwardee. The code in G1FullCompactTask has been changed accordingly,
     // which should make this block superfluous.
-    if ((cast_from_oop<uintptr_t>(object->forwardee()) & 0x00000000ffffffff) != 0) {
+    if ((reinterpret_cast<uintptr_t>(object->mark().decode_pointer()) & 0x00000000ffffffff) != 0) {
       // Object should not move but mark-word is used so it looks like the
       // object is forwarded. Need to clear the mark and it's no problem
       // since it will be restored by preserved marks.
@@ -124,7 +124,7 @@ void G1FullGCCompactionPoint::forward(SlidingForwarding* const forwarding, oop o
              "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
              p2i(object), object->mark().value(), markWord::prototype().value());
     }
-    assert((cast_from_oop<uintptr_t>(object->forwardee()) & 0x00000000ffffffff) == 0, "should be forwarded to NULL");
+    assert((reinterpret_cast<uintptr_t>(object->mark().decode_pointer()) & 0x00000000ffffffff) == 0, "should be forwarded to NULL");
   }
 
   // Update compaction values.

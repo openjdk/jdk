@@ -72,8 +72,8 @@ private:
 
   static const size_t NUM_REGIONS = ONE << NUM_REGION_BITS;
 
-  // We need the lowest two bits to indicate a forwarded object.
-  static const int BASE_SHIFT = 2;
+  // We need the lowest three bits to indicate a forwarded object and self-forwarding.
+  static const int BASE_SHIFT = 3;
 
   // The compressed address bits start here.
   static const int COMPRESSED_BITS_SHIFT = BASE_SHIFT + NUM_REGION_BITS;
