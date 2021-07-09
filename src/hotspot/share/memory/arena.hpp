@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -34,11 +35,7 @@
 
 // The byte alignment to be used by Arena::Amalloc.
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
-static_assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT), "is aligned");
-
-#define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
-#define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
-#define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)
+#define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
