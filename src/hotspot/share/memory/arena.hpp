@@ -34,6 +34,7 @@
 
 // The byte alignment to be used by Arena::Amalloc.
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
+static_assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT), "is aligned");
 
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
@@ -134,10 +135,9 @@ protected:
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
   void  operator delete(void* p);
 
-  // Fast allocate in the arena.  Common case aligns to the size of long which is 64 bits
+  // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    STATIC_ASSERT(is_power_of_2(ARENA_AMALLOC_ALIGNMENT));
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode)) {
@@ -153,7 +153,7 @@ protected:
 
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
   // is 4 bytes on 32 bits, hence the name.
-  void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+  void* Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode)) {
