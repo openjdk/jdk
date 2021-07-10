@@ -31,8 +31,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.Iterator;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -324,14 +325,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -341,7 +342,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -390,14 +391,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -407,7 +408,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -486,24 +487,24 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
         return null;
     }
 
-    synchronized Enumeration<MenuShortcut> shortcuts() {
-        Vector<MenuShortcut> shortcuts = new Vector<>();
+    synchronized Iterator<MenuShortcut> shortcuts() {
+        ArrayList<MenuShortcut> shortcuts = new ArrayList<>();
         int nitems = getItemCount();
         for (int i = 0 ; i < nitems ; i++) {
             MenuItem mi = getItem(i);
             if (mi instanceof Menu) {
-                Enumeration<MenuShortcut> e = ((Menu)mi).shortcuts();
-                while (e.hasMoreElements()) {
-                    shortcuts.addElement(e.nextElement());
+                Iterator<MenuShortcut> e = ((Menu)mi).shortcuts();
+                while (e.hasNext()) {
+                    shortcuts.add(e.next());
                 }
             } else {
                 MenuShortcut ms = mi.getShortcut();
                 if (ms != null) {
-                    shortcuts.addElement(ms);
+                    shortcuts.add(ms);
                 }
             }
         }
-        return shortcuts.elements();
+        return shortcuts.iterator();
     }
 
     void deleteShortcut(MenuShortcut s) {

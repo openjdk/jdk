@@ -29,11 +29,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Vector;
 
 /**
  * Class {@code MimeType} encapsulates a Multipurpose Internet Mail Extensions
@@ -571,10 +571,9 @@ class MimeType implements Serializable, Cloneable {
             throw new NullPointerException();
         }
         LexicalAnalyzer theLexer = new LexicalAnalyzer (s);
-        int theLexemeType;
-        Vector<String> thePieces = new Vector<>();
-        boolean mediaTypeIsText = false;
-        boolean parameterNameIsCharset = false;
+        ArrayList<String> thePieces = new ArrayList<>();
+        boolean mediaTypeIsText;
+        boolean parameterNameIsCharset;
 
         // Parse media type.
         if (theLexer.getLexemeType() == TOKEN_LEXEME) {
