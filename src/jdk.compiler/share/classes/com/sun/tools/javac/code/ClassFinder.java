@@ -637,7 +637,7 @@ public class ClassFinder {
         sourceKinds.remove(JavaFileObject.Kind.CLASS);
         boolean wantSourceFiles = !sourceKinds.isEmpty();
 
-        boolean haveSourcePath = includeSourcePath && fileManager.hasLocation(SOURCE_PATH);
+        boolean haveSourcePath = fileManager.hasLocation(SOURCE_PATH);
 
         if (verbose && verbosePath) {
             verbosePath = false; // print once per compile
@@ -669,13 +669,36 @@ public class ClassFinder {
         }
 
         String packageName = p.fullname.toString();
-        if (wantSourceFiles && !haveSourcePath) {
-            fillIn(p, CLASS_PATH,
-                   list(CLASS_PATH,
-                        p,
-                        packageName,
-                        kinds));
+        if (!haveSourcePath) {
+            // The `hasSourcePath` is false, so we have no source path.
+            // We always scans source files and class files from class path.
+            if (wantClassFiles)
+                fillIn(p, CLASS_PATH,
+                       list(CLASS_PATH,
+                            p,
+                            packageName,
+                            classKinds));
+            if (wantSourceFiles)
+                fillIn(p, CLASS_PATH,
+                       list(CLASS_PATH,
+                            p,
+                            packageName,
+                            sourceKinds));
+        } else if (!includeSourcePath) {
+            // The `hasSourcePath` is true and the `includeSourcePath` is false.
+            // The `hasSourcePath` == true means that we have source path.
+            // So we should scan source files from source path instead of class path.
+            // And the `includeSourcePath` == false means that we should skip the source path.
+            // So we actually don't need the source path and source files here.
+            if (wantClassFiles)
+                fillIn(p, CLASS_PATH,
+                       list(CLASS_PATH,
+                            p,
+                            packageName,
+                            classKinds));
         } else {
+            // Both the `hasSourcePath` and `includeSourcePath` are true.
+            // We scan source files from source path and scan class files from class path.
             if (wantClassFiles)
                 fillIn(p, CLASS_PATH,
                        list(CLASS_PATH,
