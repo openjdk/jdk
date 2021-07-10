@@ -54,10 +54,10 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                 public class C {
                     /** Dummy class. */
                     public static class BooleanProperty { }
-                    
+
                     // no comment
                     private BooleanProperty value;
-                    
+
                     /**
                      * The value property (property method comment).
                      * @return the property object
@@ -65,7 +65,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     public BooleanProperty valueProperty() {
                         return value;
                     }
-                    
+
                     // no comment
                     public boolean getValue() {
                         return true;
@@ -110,10 +110,10 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                 public class C {
                     /** Dummy class. */
                     public static class BooleanProperty { }
-                    
+
                     /** The value property (field comment). */
                     private BooleanProperty value;
-                    
+
                     /**
                      * The value property (property method comment).
                      * @return the property object
@@ -121,7 +121,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     public BooleanProperty valueProperty() {
                         return value;
                     }
-                    
+
                     // no comment
                     public boolean getValue() {
                         return true;
