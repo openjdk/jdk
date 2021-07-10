@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,10 +241,8 @@ public class PKCS9Attributes {
 
     private byte[] generateDerEncoding() throws IOException {
         DerOutputStream out = new DerOutputStream();
-        Object[] attribVals = attributes.values().toArray();
-
-        out.putOrderedSetOf(DerValue.tag_SetOf,
-                            castToDerEncoder(attribVals));
+        DerEncoder[] attribVals = attributes.values().toArray(new DerEncoder[0]);
+        out.putOrderedSetOf(DerValue.tag_SetOf, attribVals);
         return out.toByteArray();
     }
 
@@ -348,17 +346,4 @@ public class PKCS9Attributes {
         return sb.toString();
     }
 
-    /**
-     * Cast an object array whose components are
-     * <code>DerEncoder</code>s to <code>DerEncoder[]</code>.
-     */
-    static DerEncoder[] castToDerEncoder(Object[] objs) {
-
-        DerEncoder[] encoders = new DerEncoder[objs.length];
-
-        for (int i=0; i < encoders.length; i++)
-            encoders[i] = (DerEncoder) objs[i];
-
-        return encoders;
-    }
 }
