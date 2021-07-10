@@ -5410,8 +5410,7 @@ address generate_avx_ghash_processBlocks() {
 
     const Register length = r14;
     const Register encode_table = r13;
-    Label L_process3, L_exit, L_processdata, L_vbmiLoop, L_not512,
-      L_32byteLoop;
+    Label L_process3, L_exit, L_processdata, L_vbmiLoop, L_not512, L_32byteLoop;
 
     // calculate length from offsets
     __ movl(length, end_offset);
@@ -5431,7 +5430,7 @@ address generate_avx_ghash_processBlocks() {
       __ addptr(encode_table, isURL);
       __ shrl(isURL, 6); // restore isURL
 
-      __ mov64(rax, 0x3036242a1016040a); // Shifts
+      __ mov64(rax, 0x3036242a1016040aull); // Shifts
       __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()), Assembler::AVX_512bit, r15);
       __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
       __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
@@ -5474,10 +5473,10 @@ address generate_avx_ghash_processBlocks() {
       __ jcc(Assembler::belowEqual, L_process3);
 
       // Set up supporting constant table data
-      __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()));
+      __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()), rax);
       // 6-bit mask for 2nd and 4th (and multiples) 6-bit values
       __ movl(rax, 0x0fc0fc00);
-      __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()));
+      __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()), rax);
       __ evpbroadcastd(xmm8, rax, Assembler::AVX_256bit);
 
       // Multiplication constant for "shifting" right by 6 and 10
@@ -5669,10 +5668,12 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 31);
       __ jcc(Assembler::above, L_32byteLoop);
 
+      __ BIND(L_process3);
       __ vzeroupper();
+    } else {
+      __ BIND(L_process3);
     }
 
-    __ BIND(L_process3);
     __ cmpl(length, 3);
     __ jcc(Assembler::below, L_exit);
 
