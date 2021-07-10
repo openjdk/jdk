@@ -33,7 +33,7 @@
 volatile size_t ThreadStackTracker::_thread_count = 0;
 SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = NULL;
 
-bool ThreadStackTracker::late_initialize(NMT_TrackingLevel level) {
+bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
   if (level == NMT_detail && !track_as_vm()) {
     _simple_thread_stacks = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
       SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>();

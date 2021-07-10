@@ -29,7 +29,7 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
+MallocSiteHashtableEntry** MallocSiteTable::_table = NULL;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
 
@@ -50,6 +50,13 @@ NOT_PRODUCT(int MallocSiteTable::_peak_count = 0;)
  */
 bool MallocSiteTable::initialize() {
   assert((size_t)table_size <= MAX_MALLOCSITE_TABLE_SIZE, "Hashtable overflow");
+
+  // Allocate space for the hash table. We use raw malloc here to prevent
+  // circularities.
+  _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry));
+  if (_table == NULL) {
+    return false;
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");

@@ -98,7 +98,8 @@ tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
   gtest/MetaspaceGtests.java \
-  gtest/LargePageGtests.java
+  gtest/LargePageGtests.java \
+  gtest/NMTGtests.java \
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -475,7 +476,8 @@ hotspot_runtime_minimalvm = \
   runtime/logging
 
 hotspot_nmt = \
-  runtime/NMT
+  runtime/NMT \
+  gtest/NMTGtests.java
 
 hotspot_rest_runtime = \
   :hotspot_runtime \

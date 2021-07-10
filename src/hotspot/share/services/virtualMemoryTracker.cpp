@@ -32,13 +32,7 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/ostream.hpp"
 
-size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
-
-void VirtualMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
-  // Use placement operator new to initialize static data area.
-  ::new ((void*)_snapshot) VirtualMemorySnapshot();
-}
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
   // Only if thread stack is backed by virtual memory
@@ -321,16 +315,12 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
-    VirtualMemorySummary::initialize();
-  }
-  return true;
-}
-
-bool VirtualMemoryTracker::late_initialize(NMT_TrackingLevel level) {
-  if (level >= NMT_summary) {
+    assert(_reserved_regions == NULL, "only call once");
     _reserved_regions = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
-      SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
-    return (_reserved_regions != NULL);
+                        SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
+    if (_reserved_regions == NULL) {
+      return false;
+    }
   }
   return true;
 }

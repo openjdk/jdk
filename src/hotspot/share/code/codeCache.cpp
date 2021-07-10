@@ -614,9 +614,6 @@ void CodeCache::commit(CodeBlob* cb) {
 }
 
 bool CodeCache::contains(void *p) {
-  // S390 uses contains() in current_frame(), which is used before
-  // code cache initialization if NativeMemoryTracking=detail is set.
-  S390_ONLY(if (_heaps == NULL) return false;)
   // It should be ok to call contains without holding a lock.
   FOR_ALL_HEAPS(heap) {
     if ((*heap)->contains(p)) {

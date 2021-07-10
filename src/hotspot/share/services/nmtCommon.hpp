@@ -32,12 +32,48 @@
 #define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
+//
+// unknown: pre-init phase (before parsing NMT arguments)
+//
+// off:     after initialization - NMT confirmed off.
+//           - nothing is tracked
+//           - no malloc headers are used
+//
+// minimal: after shutdown - NMT had been on at some point but has been switched off
+//           - nothing is tracked
+//           - malloc headers are allocated but not initialized not used
+//
+// summary: after initialization with NativeMemoryTracking=summary - NMT in summary mode
+//           - category summaries per tag are tracked
+//           - thread stacks are tracked
+//           - malloc headers are used
+//           - malloc call site table is allocated and used
+//
+// detail:  after initialization with NativeMemoryTracking=detail - NMT in detail mode
+//           - category summaries per tag are tracked
+//           - malloc details per call site are tracked
+//           - virtual memory mapping info is tracked
+//           - thread stacks are tracked
+//           - malloc headers are used
+//           - malloc call site table is allocated and used
+//
+// Valid state transitions
+//
+// unknown ----> off
+//          |
+//          |--> summary --
+//          |              |
+//          |--> detail  --+--> minimal
+//
+// Please keep numerical values:
+// unknown < off < minimal < summary < detail
+//
 enum NMT_TrackingLevel {
-  NMT_unknown = 0xFF,
-  NMT_off     = 0x00,
-  NMT_minimal = 0x01,
-  NMT_summary = 0x02,
-  NMT_detail  = 0x03
+  NMT_unknown = 0,
+  NMT_off     = 1,
+  NMT_minimal = 2,
+  NMT_summary = 3,
+  NMT_detail  = 4
 };
 
 // Number of stack frames to capture. This is a

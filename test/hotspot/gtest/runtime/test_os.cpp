@@ -26,6 +26,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -412,11 +413,13 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && !defined(AARCH64) // JDK-8267339
-  TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
-  TEST_VM(os, release_multi_mappings) {
-#endif
+TEST_VM(os, release_multi_mappings) {
+
+  // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
+  if (MemTracker::tracking_level() > NMT_off) {
+    return;
+  }
+
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;
