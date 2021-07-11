@@ -33,6 +33,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.lang.Runtime.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -119,6 +120,11 @@ class ZipFileSystem extends FileSystem {
     private final boolean noExtt;        // see readExtra()
     private final boolean useTempFile;   // use a temp file for newOS, default
                                          // is to use BAOS for better performance
+
+    // a threshold, in bytes, to decide whether to create a temp file
+    // for outputstream of a zip entry
+    private final int tempFileCreationThreshold = 10 * 1024 * 1024; // 10 MB
+
     private final boolean forceEnd64;
     private final int defaultCompressionMethod; // METHOD_STORED if "noCompression=true"
                                                 // METHOD_DEFLATED otherwise
@@ -1944,11 +1950,11 @@ class ZipFileSystem extends FileSystem {
         if (zc.isUTF8())
             e.flag |= FLAG_USE_UTF8;
         OutputStream os;
-        if (useTempFile) {
+        if (useTempFile || e.size >= tempFileCreationThreshold) {
             e.file = getTempPathForEntry(null);
             os = Files.newOutputStream(e.file, WRITE);
         } else {
-            os = new ByteArrayOutputStream((e.size > 0)? (int)e.size : 8192);
+            os = new FileRolloverOutputStream(e);
         }
         if (e.method == METHOD_DEFLATED) {
             return new DeflatingEntryOutputStream(e, os);
@@ -1970,14 +1976,22 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public synchronized void write(int b) throws IOException {
-            out.write(b);
+            try {
+                out.write(b);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             written += 1;
         }
 
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            out.write(b, off, len);
+            try {
+                out.write(b, off, len);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             written += len;
         }
 
@@ -1988,8 +2002,9 @@ class ZipFileSystem extends FileSystem {
             }
             isClosed = true;
             e.size = written;
-            if (out instanceof ByteArrayOutputStream)
-                e.bytes = ((ByteArrayOutputStream)out).toByteArray();
+            if (out instanceof FileRolloverOutputStream fros && fros.tmpFileOS == null) {
+                e.bytes = fros.toByteArray();
+            }
             super.close();
             update(e);
         }
@@ -2011,7 +2026,11 @@ class ZipFileSystem extends FileSystem {
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            super.write(b, off, len);
+            try {
+                super.write(b, off, len);
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
             crc.update(b, off, len);
         }
 
@@ -2024,8 +2043,9 @@ class ZipFileSystem extends FileSystem {
             e.size  = def.getBytesRead();
             e.csize = def.getBytesWritten();
             e.crc = crc.getValue();
-            if (out instanceof ByteArrayOutputStream)
-                e.bytes = ((ByteArrayOutputStream)out).toByteArray();
+            if (out instanceof FileRolloverOutputStream fros && fros.tmpFileOS == null) {
+                e.bytes = fros.toByteArray();
+            }
             super.close();
             update(e);
             releaseDeflater(def);
@@ -2104,6 +2124,110 @@ class ZipFileSystem extends FileSystem {
             e.csize = def.getBytesWritten();
             e.crc = crc.getValue();
             releaseDeflater(def);
+        }
+    }
+
+    // A wrapper around the ByteArrayOutputStream. This FileRolloverOutputStream
+    // uses a threshold size to decide if the contents being written need to be
+    // rolled over into a temporary file. Until the threshold is reached, writes
+    // on this outputstream just write it to the internal in-memory byte array
+    // held by the ByteArrayOutputStream. Once the threshold is reached, the
+    // write operation on this outputstream first (and only once) creates a temporary file
+    // and transfers the data that has so far been written in the internal
+    // byte array, to that newly created file. The temp file is then opened
+    // in append mode and any subsequent writes, including the one which triggered
+    // the temporary file creation, will be written to the file.
+    private class FileRolloverOutputStream extends ByteArrayOutputStream {
+        private final Entry entry;
+        private long totalWritten = 0;
+        private OutputStream tmpFileOS;
+
+        FileRolloverOutputStream(final Entry e) {
+            super(8192);
+            this.entry = e;
+        }
+
+        @Override
+        public synchronized void write(int b) throws UncheckedIOException {
+            if (tmpFileOS != null) {
+                // already rolled over, write to the file that has been created previously
+                writeToFile(b);
+                return;
+            }
+            if (totalWritten + 1 < tempFileCreationThreshold) {
+                // write to our in-memory byte array
+                super.write(b);
+                totalWritten++;
+                return;
+            }
+            // rollover into a file
+            try {
+                transferToFile();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            writeToFile(b);
+        }
+
+        @Override
+        public synchronized void write(byte[] b, int off, int len) throws UncheckedIOException {
+            if (tmpFileOS != null) {
+                // already rolled over, write to the file that has been created previously
+                writeToFile(b, off, len);
+                return;
+            }
+            if (totalWritten + len < tempFileCreationThreshold) {
+                // write to our in-memory byte array
+                super.write(b, off, len);
+                totalWritten += len;
+                return;
+            }
+            // rollover into a file
+            try {
+                transferToFile();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            writeToFile(b, off, len);
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (tmpFileOS != null) {
+                tmpFileOS.close();
+            }
+        }
+
+        private void writeToFile(int b) throws UncheckedIOException {
+            try {
+                tmpFileOS.write(b);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            totalWritten++;
+        }
+
+        private void writeToFile(byte[] b, int off, int len) throws UncheckedIOException {
+            try {
+                tmpFileOS.write(b, off, len);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            totalWritten += len;
+        }
+
+        private void transferToFile() throws IOException {
+            // create a tempfile
+            entry.file = getTempPathForEntry(null);
+            // transfer the already written data from the byte array buffer into this tempfile
+            try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(entry.file))) {
+                new ByteArrayInputStream(buf, 0, count).transferTo(os);
+            }
+            // clear the in-memory buffer and shrink the buffer
+            reset();
+            buf = new byte[0];
+            // append any further data to the file with buffering enabled
+            tmpFileOS = new BufferedOutputStream(Files.newOutputStream(entry.file, APPEND));
         }
     }
 
