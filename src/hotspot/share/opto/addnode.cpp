@@ -326,18 +326,15 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Convert "a*b+a*c into a *(b+c)
     if (in1->in(1) == in2->in(1)) {
       Node* add = phase->transform(new AddINode(in1->in(2), in2->in(2)));
-      Node* mul = phase->transform(new MulINode(in1->in(1), add));
-      return mul;
+      return new MulINode(in1->in(1), add);
     } else if (in1->in(2) == in2->in(1)) {
       // Convert a*b+b*c into b*(a+c)
       Node* add = phase->transform(new AddINode(in1->in(1), in2->in(2)));
-      Node* mul = phase->transform(new MulINode(in1->in(2), add));
-      return mul;
+      return new MulINode(in1->in(2), add);
     } else if (in1->in(2) == in2->in(2)) {
       // Convert a*c+b*c into (a+b)*c
       Node* add = phase->transform(new AddINode(in1->in(1), in2->in(1)));
-      Node* mul = phase->transform(new MulINode(in1->in(2), add));
-      return mul;
+      return new MulINode(in1->in(2), add);
     }
   }
 
@@ -494,18 +491,15 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Convert "a*b+a*c into a *(b+c)
     if (in1->in(1) == in2->in(1)) {
       Node* add = phase->transform(new AddLNode(in1->in(2), in2->in(2)));
-      Node* mul = phase->transform(new MulLNode(in1->in(1), add));
-      return mul;
+      return new MulLNode(in1->in(1), add);
     } else if (in1->in(2) == in2->in(1)) {
       // Convert a*b+b*c into b*(a+c)
       Node* add = phase->transform(new AddLNode(in1->in(1), in2->in(2)));
-      Node* mul = phase->transform(new MulLNode(in1->in(2), add));
-      return mul;
+      return new MulLNode(in1->in(2), add);
     } else if (in1->in(2) == in2->in(2)) {
       // Convert a*c+b*c into (a+b)*c
       Node* add = phase->transform(new AddLNode(in1->in(1), in2->in(1)));
-      Node* mul = phase->transform(new MulLNode(in1->in(2), add));
-      return mul;
+      return new MulLNode(in1->in(2), add);
     }
   }
 
