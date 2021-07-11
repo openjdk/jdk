@@ -352,7 +352,11 @@ public class FcFontConfiguration extends FontConfiguration {
             String userDir = System.getProperty("user.home");
             String version = System.getProperty("java.version");
             String fs = File.separator;
-            String dir = userDir+fs+".java"+fs+"fonts"+fs+version;
+            String baseDir = System.getenv("XDG_DATA_HOME");
+            if (baseDir == null) {
+                baseDir = userDir + "/.local/share";
+            }
+            String dir = userDir+fs+"java"+fs+"fonts"+fs+version;
             Locale locale = SunToolkit.getStartupLocale();
             String lang = locale.getLanguage();
             String country = locale.getCountry();
