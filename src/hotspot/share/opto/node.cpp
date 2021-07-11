@@ -308,7 +308,7 @@ inline int Node::Init(int req) {
   // Allocate memory for the necessary number of edges.
   if (req > 0) {
     // Allocate space for _in array to have double alignment.
-    _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
+    _in = (Node **) ((char *) (C->node_arena()->Amalloc_4(req * sizeof(void*))));
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
@@ -499,7 +499,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 Node *Node::clone() const {
   Compile* C = Compile::current();
   uint s = size_of();           // Size of inherited Node
-  Node *n = (Node*)C->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
+  Node *n = (Node*)C->node_arena()->Amalloc_4(size_of() + _max*sizeof(Node*));
   Copy::conjoint_words_to_lower((HeapWord*)this, (HeapWord*)n, s);
   // Set the new input pointer array
   n->_in = (Node**)(((char*)n)+s);

@@ -442,7 +442,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask) * NOF_STACK_MASKS);
+  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_4(sizeof(RegMask) * NOF_STACK_MASKS);
 
   // Initialize empty placeholder masks into the newly allocated arena
   for (int i = 0; i < NOF_STACK_MASKS; i++) {
