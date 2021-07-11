@@ -101,20 +101,17 @@ protected:
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
   debug_only(void* malloc(size_t size);)
-  debug_only(void* internal_malloc_4(size_t x);)
 
-  void signal_out_of_memory(size_t request, const char* whence) const;
-
-  bool check_for_overflow(size_t request, const char* whence,
-      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) const {
-    if (UINTPTR_MAX - request < (uintptr_t)_hwm) {
-      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-        return false;
-      }
-      signal_out_of_memory(request, whence);
+  void* internal_malloc_words(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
+    if (pointer_delta(_max, _hwm, 1) >= x) {
+      char *old = _hwm;
+      _hwm += x;
+      return old;
+    } else {
+      return grow(x, alloc_failmode);
     }
-    return true;
- }
+  }
 
  public:
   Arena(MEMFLAGS memflag);
@@ -137,31 +134,15 @@ protected:
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode)) {
-      return NULL;
-    } else if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+    return internal_malloc_words(x, alloc_failmode);
   }
 
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
   // is 4 bytes on 32 bits, hence the name.
-  void* Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+  void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode)) {
-      return NULL;
-    } else if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+    return internal_malloc_words(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
