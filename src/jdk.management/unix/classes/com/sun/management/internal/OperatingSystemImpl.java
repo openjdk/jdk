@@ -30,6 +30,8 @@ import sun.management.BaseOperatingSystemImpl;
 import sun.management.VMManagement;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleSupplier;
+import java.util.function.ToDoubleFunction;
 /**
  * Implementation class for the operating system.
  * Standard and committed hotspot-specific metrics if any.
@@ -48,6 +50,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private class CpuTicks {
         long usageTicks = 0;
         long totalTicks = 0;
+    }
+
+    private enum CpuLoadTarget {
+        CPU_LOAD_VM_ONLY,
+        CPU_LOAD_GLOBAL
     }
 
     OperatingSystemImpl(VMManagement vm) {
@@ -170,91 +177,77 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return systemLoad;
     }
 
-    public double getCpuLoad() {
-        if (containerMetrics != null) {
-            long quota = containerMetrics.getCpuQuota();
-            long share = containerMetrics.getCpuShares();
-            long usageNanos = containerMetrics.getCpuUsage();
-            if (quota > 0) {
-                long numPeriods = containerMetrics.getCpuNumPeriods();
-                long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
-                return getUsageDividesTotal(usageNanos, quotaNanos, this.systemLoadTicks);
-            } else if (share > 0) {
-                long hostTicks = getHostTotalCpuTicks0();
+    public double getCpuLoadWithTarget(CpuLoadTarget cpuLoadTarget) {
+        long usageNanos = -1;
+        CpuTicks cpuTicks = null;
+        DoubleSupplier defaultCpuSupplier = null;
+        ToDoubleFunction<int[]> cpuSetFunction = null;
+        if(cpuLoadTarget == CpuLoadTarget.CPU_LOAD_GLOBAL) {
+            usageNanos = containerMetrics.getCpuUsage();
+            cpuTicks = this.systemLoadTicks;
+            defaultCpuSupplier = () -> getCpuLoad0();
+            cpuSetFunction = (int[] cpuSet) ->{
+                double systemLoad = 0.0;
+                for (int cpu : cpuSet) {
+                    double cpuLoad = getSingleCpuLoad0(cpu);
+                    if (cpuLoad < 0) {
+                        return -1;
+                    }
+                    systemLoad += cpuLoad;
+                }
+                return systemLoad / cpuSet.length;
+            };
+        } else if (cpuLoadTarget == CpuLoadTarget.CPU_LOAD_VM_ONLY) {
+            usageNanos = getProcessCpuTime();
+            cpuTicks = this.processLoadTicks;
+            defaultCpuSupplier = ()-> getProcessCpuLoad0();
+            cpuSetFunction = (int[] cpuSet) ->{
                 int totalCPUs = getHostOnlineCpuCount0();
                 int containerCPUs = getAvailableProcessors();
-                // scale the total host load to the actual container cpus
-                hostTicks = hostTicks * containerCPUs / totalCPUs;
-                return getUsageDividesTotal(usageNanos, hostTicks, this.systemLoadTicks);
+                return getProcessCpuLoad0() * totalCPUs / containerCPUs;
+            };
+        }
+        long quota = containerMetrics.getCpuQuota();
+        long share = containerMetrics.getCpuShares();
+        if (quota > 0) {
+            long numPeriods = containerMetrics.getCpuNumPeriods();
+            long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
+            return getUsageDividesTotal(usageNanos, quotaNanos, cpuTicks);
+        } else if (share > 0) {
+            long hostTicks = getHostTotalCpuTicks0();
+            int totalCPUs = getHostOnlineCpuCount0();
+            int containerCPUs = getAvailableProcessors();
+            // scale the total host load to the actual container cpus
+            hostTicks = hostTicks * containerCPUs / totalCPUs;
+            return getUsageDividesTotal(usageNanos, hostTicks, cpuTicks);
+        } else {
+            if (isCpuSetSameAsHostCpuSet()) {
+                return defaultCpuSupplier.getAsDouble();
             } else {
-                // If CPU quotas and shares are not active then find the average system load for
-                // all online CPUs that are allowed to run this container.
-
-                // If the cpuset is the same as the host's one there is no need to iterate over each CPU
-                if (isCpuSetSameAsHostCpuSet()) {
-                    return getCpuLoad0();
-                } else {
-                    int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
-                    // in case the effectiveCPUSetCpus are not available, attempt to use just cpusets.cpus
-                    if (cpuSet == null || cpuSet.length <= 0) {
-                        cpuSet = containerMetrics.getCpuSetCpus();
-                    }
-                    if (cpuSet == null) {
-                        // cgroups is mounted, but CPU resource is not limited.
-                        // We can assume the VM is run on the host CPUs.
-                        return getCpuLoad0();
-                    } else if (cpuSet.length > 0) {
-                        double systemLoad = 0.0;
-                        for (int cpu : cpuSet) {
-                            double cpuLoad = getSingleCpuLoad0(cpu);
-                            if (cpuLoad < 0) {
-                                return -1;
-                            }
-                            systemLoad += cpuLoad;
-                        }
-                        return systemLoad / cpuSet.length;
-                    }
-                    return -1;
+                int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
+                if (cpuSet == null || cpuSet.length <= 0) {
+                    cpuSet = containerMetrics.getCpuSetCpus();
                 }
+                if (cpuSet == null) {
+                    return defaultCpuSupplier.getAsDouble();
+                } else if (cpuSet.length > 0) {
+                    return cpuSetFunction.applyAsDouble(cpuSet);
+                }
+                return -1;
             }
+        }
+    }
+
+    public double getCpuLoad() {
+        if (containerMetrics != null) {
+            return getCpuLoadWithTarget(CpuLoadTarget.CPU_LOAD_GLOBAL);
         }
         return getCpuLoad0();
     }
 
     public double getProcessCpuLoad() {
         if (containerMetrics != null) {
-            long quota = containerMetrics.getCpuQuota();
-            long share = containerMetrics.getCpuShares();
-            long usageNanos = getProcessCpuTime();
-            if (quota > 0) {
-                long numPeriods = containerMetrics.getCpuNumPeriods();
-                long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
-                return getUsageDividesTotal(usageNanos, quotaNanos, this.processLoadTicks);
-            } else if (share > 0) {
-                long hostTicks = getHostTotalCpuTicks0();
-                int totalCPUs = getHostOnlineCpuCount0();
-                int containerCPUs = getAvailableProcessors();
-                // scale the total host load to the actual container cpus
-                hostTicks = hostTicks * containerCPUs / totalCPUs;
-                return getUsageDividesTotal(usageNanos, hostTicks, this.processLoadTicks);
-            } else {
-                if (isCpuSetSameAsHostCpuSet()) {
-                    return getProcessCpuLoad0();
-                } else {
-                    int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
-                    if (cpuSet == null || cpuSet.length <= 0) {
-                        cpuSet = containerMetrics.getCpuSetCpus();
-                    }
-                    if (cpuSet == null) {
-                        return getProcessCpuLoad0();
-                    } else if (cpuSet.length > 0) {
-                        int totalCPUs = getHostOnlineCpuCount0();
-                        int containerCPUs = getAvailableProcessors();
-                        return getProcessCpuLoad0() * totalCPUs / containerCPUs;
-                    }
-                    return -1;
-                }
-            }
+            return getCpuLoadWithTarget(CpuLoadTarget.CPU_LOAD_VM_ONLY);
         }
         return getProcessCpuLoad0();
     }
