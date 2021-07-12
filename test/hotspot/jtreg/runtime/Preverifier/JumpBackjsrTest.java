@@ -34,6 +34,6 @@
  */
 public class JumpBackjsrTest {
 	public static void main(String[] args) throws Throwable {
-		TestPatch.test("jumpBackjsr", "Hello World!");
+		TestPatch.test("jumpBackjsr", "Hello world!");
 	}
 }
