@@ -470,7 +470,7 @@ public:
   MachOper* specialize_vector_operand(MachNode* m, uint opnd_idx);
 
   static MachOper* pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp);
-  static bool is_generic_reg2reg_move(MachNode* m);
+  static bool is_reg2reg_move(MachNode* m);
   static bool is_generic_vector(MachOper* opnd);
 
   const RegMask* regmask_for_ideal_register(uint ideal_reg, Node* ret);

@@ -1838,8 +1838,8 @@ void G1CollectedHeap::ref_processing_init() {
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
                            ParallelGCThreads,                              // degree of mt processing
-                           (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
-                           MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
+                           (ConcGCThreads > 1),                            // mt discovery
+                           ConcGCThreads,                                  // degree of mt discovery
                            false,                                          // Reference discovery is not atomic
                            &_is_alive_closure_cm);                         // is alive closure
 
@@ -2823,6 +2823,10 @@ G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() con
 }
 
 void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyType type) {
+  if (!VerifyBeforeGC) {
+    return;
+  }
+  Ticks start = Ticks::now();
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
   if (VerifyRememberedSets) {
@@ -2833,9 +2837,15 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   _verifier->verify_before_gc(type);
   _verifier->check_bitmaps("GC Start");
   verify_numa_regions("GC Start");
+  phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
 void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType type) {
+  if (!VerifyAfterGC) {
+    return;
+  }
+  Ticks start = Ticks::now();
+  // Inject evacuation failure tag into type if needed.
   if (evacuation_failed()) {
     type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
   }
@@ -2848,6 +2858,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   _verifier->check_bitmaps("GC End");
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
+  phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){

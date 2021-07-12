@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891
+ * @bug 8262891 8269146
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
@@ -184,6 +184,38 @@ public class SwitchErrors {
             case String s && s.isEmpty() || o2 instanceof Number n -> n;
             default -> null;
         };
+    }
+    void test8269146a(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and constant:
+            case Integer o && o != null, 1:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269146b(Integer i) {
+        switch (i) {
+            //error - illegal combination of null and pattern other than type pattern:
+            case null, Integer o && o != null:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269146c(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and default:
+            case Integer o, default:
+                break;
+        }
+    }
+    void test8269301(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case Integer o && o != null, 1, default:
+                break;
+        }
     }
     void exhaustiveAndNull(String s) {
         switch (s) {

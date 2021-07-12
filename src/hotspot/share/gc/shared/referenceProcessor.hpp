@@ -160,7 +160,6 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcPhase1Task;
   friend class RefProcPhase2Task;
   friend class RefProcPhase3Task;
   friend class RefProcPhase4Task;
@@ -168,7 +167,6 @@ public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
   enum RefProcSubPhases {
-    SoftRefSubPhase1,
     SoftRefSubPhase2,
     WeakRefSubPhase2,
     FinalRefSubPhase2,
@@ -179,7 +177,6 @@ public:
 
   // Main phases of reference processing.
   enum RefProcPhases {
-    RefPhase1,
     RefPhase2,
     RefPhase3,
     RefPhase4,
@@ -237,10 +234,6 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Phase 1: Re-evaluate soft ref policy.
-  void process_soft_ref_reconsider(RefProcProxyTask& proxy_task,
-                                   ReferenceProcessorPhaseTimes& phase_times);
-
   // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
@@ -256,15 +249,6 @@ private:
 
   // Work methods used by the process_* methods. All methods return the number of
   // removed elements.
-
-  // (SoftReferences only) Traverse the list and remove any SoftReferences whose
-  // referents are not alive, but that should be kept alive for policy reasons.
-  // Keep alive the transitive closure of all such referents.
-  size_t process_soft_ref_reconsider_work(DiscoveredList&     refs_list,
-                                          ReferencePolicy*    policy,
-                                          BoolObjectClosure*  is_alive,
-                                          OopClosure*         keep_alive,
-                                          VoidClosure*        complete_gc);
 
   // Traverse the list and remove any Refs whose referents are alive,
   // or NULL if discovery is not atomic. Enqueue and clear the reference for
