@@ -91,13 +91,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * will not overflow the range of values of the computation.
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
- * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
- * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
- * throw an {@code ArithmeticException} when the results overflow.
- * For the arithmetic operations divide and absolute value, overflow
- * occurs only with a specific minimum or maximum value and
- * should be checked against the minimum or maximum as appropriate.
+ * overflow errors need to be detected, the methods whose names end with
+ * {@code Exact} throw an {@code ArithmeticException} when the results overflow.
  *
  * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
  * Operations</a></h2>
@@ -1005,6 +1000,53 @@ public final class Math {
             }
         }
         return r;
+    }
+
+    /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows an {@code int}.  Such overflow can occur if and only
+     * if either {@code y} is zero, or both {@code x} is
+     * {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.  In contrast,
+     * if {@code Integer.MIN_VALUE / -1} were evaluated directly, the result
+     * would be {@code Integer.MIN_VALUE} and no exception would be thrown.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if the quotient overflows an int
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static int divideExact(int x, int y) {
+        // * This conditional is slower than the straightfoward one below.
+        // HD 2nd. Ed. p. 44 section 2-13 Overflow Detection: Division
+        // int z = (x ^ Integer.MIN_VALUE) | (y + 1);
+        // if (((y | -y) & (z | -z)) >= 0)
+
+        if (x == Integer.MIN_VALUE && y == -1)
+            throw new ArithmeticException("integer overflow");
+        return x / y; // if y == 0, ArithmeticException is thrown here
+    }
+
+    /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows a {@code long}.  Such overflow can occur if and only
+     * if either {@code y} is zero, or both {@code x} is
+     * {@link Long#MIN_VALUE} and {@code y} is {@code -1}.  In contrast,
+     * if {@code Long.MIN_VALUE / -1} were evaluated directly, the result
+     * would be {@code Long.MIN_VALUE} and no exception would be thrown.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if the quotient overflows a long
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static long divideExact(long x, long y) {
+        if (x == Long.MIN_VALUE && y == -1L)
+            throw new ArithmeticException("long overflow");
+        return x / y; // if y == 0, ArithmeticException is thrown here
     }
 
     /**
