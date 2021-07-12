@@ -1406,7 +1406,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     if ( offset == Type::OffsetBot || (offset >= 0 && (size_t)offset < sizeof(Klass)) ) {
 
       tj = tk = TypeKlassPtr::make(TypePtr::NotNull,
-                                   TypeKlassPtr::OBJECT->klass(),
+                                   TypeInstKlassPtr::OBJECT->klass(),
                                    offset);
     }
 
@@ -1453,7 +1453,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
     case Type::AryPtr:   // do not distinguish arrays at all
     case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
-    case Type::KlassPtr: tj = TypeKlassPtr::OBJECT; break;
+    case Type::AryKlassPtr:
+    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
     case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
     default: ShouldNotReachHere();
     }

@@ -49,13 +49,13 @@ public class IRNode {
     private static final String MID = ".*)+(\\s){2}===.*";
     private static final String END = ")";
 
-    public static final String ALLOC = "(.*precise klass .*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_instance_Java" + END;
-    public static final String ALLOC_OF = "(.*precise klass .*";
-    public static final String ALLOC_ARRAY = "(.*precise klass \\[L.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
-    public static final String ALLOC_ARRAY_OF = "(.*precise klass \\[L.*";
+    public static final String ALLOC = "(.*precise .*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_OF = "(.*precise .*";
+    public static final String ALLOC_ARRAY = "(.*precise \\[.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
+    public static final String ALLOC_ARRAY_OF = "(.*precise \\[.*";
 
-    public static final String CHECKCAST_ARRAY = "(cmp.*precise klass \\[.*;:" + END;
-    public static final String CHECKCAST_ARRAY_OF = "(cmp.*precise klass \\[.*";
+    public static final String CHECKCAST_ARRAY = "(cmp.*precise \\[.*:" + END;
+    public static final String CHECKCAST_ARRAY_OF = "(cmp.*precise \\[.*";
     public static final String CHECKCAST_ARRAYCOPY = "(.*call_leaf_nofp,runtime  checkcast_arraycopy.*" + END;
 
     public static final String FIELD_ACCESS = "(.*Field: *" + END;
@@ -125,8 +125,8 @@ public class IRNode {
 
 
     private static final String ALLOC_OF_POSTFIX =  ":.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_instance_Java" + END;
-    private static final String ALLOC_ARRAY_OF_POSTFIX = ";:.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
-    private static final String CHECKCAST_ARRAY_OF_POSTFIX = ";:" + END;
+    private static final String ALLOC_ARRAY_OF_POSTFIX = ":.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
+    private static final String CHECKCAST_ARRAY_OF_POSTFIX = ":" + END;
     private static final String STORE_OF_FIELD_POSTFIX = ",.*" + END;
     private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
