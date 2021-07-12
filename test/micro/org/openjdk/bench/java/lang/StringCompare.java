@@ -32,20 +32,24 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 public class StringCompare {
-    @Param({"64", "72", "80", "91", "101", "121", "181", "256"})
+    //@Param({"64", "72", "80", "91", "101", "121", "181", "256"})
+    @Param({"128"})
     int size;
 
     //@Param({"8", "16", "24", "32", "40", "48", "56", "64", "72", "80", "88", "96", "104", "112", "120"})
+    @Param({"7", "15", "31", "47", "63"})
     int diff_pos = 0;
 
 
     private String str;
     private String strDup;
+    private String str2;
 
     @Setup(Level.Trial)
     public void init() {
         str = newString(size, 'c', diff_pos, '1');
         strDup = new String(str.toCharArray());
+        str2 = newString(size, 'c', diff_pos, '2');
     }
 
     public String newString(int length, char charToFill, int diff_pos, char diff_char) {
@@ -60,7 +64,7 @@ public class StringCompare {
         }
         return "";
     }
-
+    /*
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public int compareLL() {
@@ -103,6 +107,37 @@ public class StringCompare {
         }
         return result;
     }
+    */
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int compareLLDiffStrings() {
+        int result = 0;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.compareTo(str2);
+        }
+        return result;
+    }
 
+    @Benchmark
+    @Fork(jvmArgsAppend = { "-XX:+UseStringCompareWithLdp"})
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int compareLLDiffStringsWithLdp() {
+        int result = 0;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.compareTo(str2);
+        }
+        return result;
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend = { "-XX:+UseStringCompareRefactor"})
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int compareLLDiffStringsWithRefactor() {
+        int result = 0;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.compareTo(str2);
+        }
+        return result;
+    }
 }
 
