@@ -30,6 +30,8 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.lang.StackWalker.*;
+import java.util.stream.Stream;
 
 /**
  * The JCE security manager.
@@ -39,15 +41,11 @@ import java.util.concurrent.ConcurrentMap;
  * algorithm, by consulting the configured jurisdiction policy files and
  * the cryptographic permissions bundled with the applet/application.
  *
- * <p>Note that this security manager is never installed, only instantiated.
- *
  * @author Jan Luehe
  *
  * @since 1.4
  */
-
-@SuppressWarnings("removal")
-final class JceSecurityManager extends SecurityManager {
+final class JceSecurityManager {
 
     private static final CryptoPermissions defaultPolicy;
     private static final CryptoPermissions exemptPolicy;
@@ -66,12 +64,15 @@ final class JceSecurityManager extends SecurityManager {
         defaultPolicy = JceSecurity.getDefaultPolicy();
         exemptPolicy = JceSecurity.getExemptPolicy();
         allPerm = CryptoAllPermission.INSTANCE;
-        INSTANCE = AccessController.doPrivileged(
+
+        @SuppressWarnings("removal")
+        JceSecurityManager dummy = AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public JceSecurityManager run() {
                         return new JceSecurityManager();
                     }
                 });
+        INSTANCE = dummy;
     }
 
     private JceSecurityManager() {
@@ -83,6 +84,7 @@ final class JceSecurityManager extends SecurityManager {
      * applet/application, for the given algorithm.
      */
     CryptoPermission getCryptoPermission(String alg) {
+
         // Need to convert to uppercase since the crypto perm
         // lookup is case sensitive.
         alg = alg.toUpperCase(Locale.ENGLISH);
@@ -100,11 +102,15 @@ final class JceSecurityManager extends SecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        Class<?>[] context = getClassContext();
+        PrivilegedAction<StackWalker> pa =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
+        List<StackFrame> stack =
+                AccessController.doPrivileged(pa).walk(Stream::toList);
+
         URL callerCodeBase = null;
-        int i;
-        for (i=0; i<context.length; i++) {
-            Class<?> cls = context[i];
+        for (StackFrame stackFrame : stack) {
+            Class<?> cls = stackFrame.getDeclaringClass();
             callerCodeBase = JceSecurity.getCodeBase(cls);
             if (callerCodeBase != null) {
                 break;
@@ -118,7 +124,7 @@ final class JceSecurityManager extends SecurityManager {
             }
         }
 
-        if (i == context.length) {
+        if (callerCodeBase == null) {
             return defaultPerm;
         }
 
@@ -232,13 +238,17 @@ final class JceSecurityManager extends SecurityManager {
     // objects being constructed by untrusted code (See bug 4341369 &
     // 4334690 for more info).
     boolean isCallerTrusted(Provider provider) {
-        // Get the caller and its codebase.
-        Class<?>[] context = getClassContext();
-        if (context.length >= 3) {
+        PrivilegedAction<StackWalker> pa =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
+        Optional<StackFrame> stackFrame = AccessController.doPrivileged(pa)
+                .walk((s) -> s.skip(2).findFirst());
+
+        if (stackFrame.isPresent()) {
             // context[0]: class javax.crypto.JceSecurityManager
             // context[1]: class javax.crypto.Cipher (or other JCE API class)
             // context[2]: this is what we are gonna check
-            Class<?> caller = context[2];
+            Class<?> caller = stackFrame.get().getDeclaringClass();
             URL callerCodeBase = JceSecurity.getCodeBase(caller);
             if (callerCodeBase == null) {
                 return true;
