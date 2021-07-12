@@ -69,10 +69,6 @@ public class Preverifier extends ClassVisitor {
 	private static ClassNode cn;
 	private static String fileName;
 
-	// public static void main(String[] args) {
-	// 	patch(args);
-	// }
-
 	/**
 	 * Reads class file, locates all JSR/RET instructions, and writes new class file 
 	 * with new valid instructions
@@ -103,22 +99,8 @@ public class Preverifier extends ClassVisitor {
 			System.out.println(fileName+".class");
 			throw new Error("File not found", e);
 		}
-        //ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
-        // try {
-        // 	Path tmpDir;
-        // 	if (!Files.exists(Path.of("/tmp/preverifier/"))) {
-        // 		tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
-        // 	}
-        // 	else {
-        // 		tmpDir = Path.of("/tmp/preverifier/");
-        // 	}
-        // 	Path tmpFile = Path.of(tmpDir.toString() + fileName + ".class");
-        // 	Files.write(tmpFile, cw.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        // } catch (IOException e) {
-        //     throw new Error("Cannot write file", e);
-        // }
         return cw.toByteArray();
     }
 
@@ -156,10 +138,8 @@ public class Preverifier extends ClassVisitor {
 		List<MethodNode> mns = cn.methods;
 		boolean mustExpand = false; // Flag for expanding bytecode when JSRs and RETs overlap
 		System.out.println("Class name: " + cn.name + "\nMethods: " + mns.size());
+		boolean continueScanning = true;
 		for (MethodNode mn : mns) {
-			// for (TryCatchBlockNode s : mn.tryCatchBlocks) {
-			// 	System.out.println(s);
-			// }
 			InsnList inList = mn.instructions;
 			// New list of instructions that should replace the previous list
 			InsnList newInst = new InsnList();
@@ -172,6 +152,8 @@ public class Preverifier extends ClassVisitor {
 			// Set of ASTORE instructions that must be removed
 			HashSet<VarInsnNode> astoreToRemove = new HashSet<>();
 			boolean hasJSR = false;
+			while (continueScanning) {
+			//continueScanning = false;
 			System.out.println("Method name: " + mn.name + " Instructions: " + inList.size()); 				
 			for (int i = 0; i < inList.size(); i++) {
 				mustExpand = false;
@@ -195,6 +177,7 @@ public class Preverifier extends ClassVisitor {
 								mustExpand = true;
 							}
 							else {
+								System.out.println("Matching RET found");
 								retLb = new LabelNode(new Label());
 								retLabelMap.put(inList.get(j), retLb);
 							}
@@ -240,9 +223,15 @@ public class Preverifier extends ClassVisitor {
 					System.out.println("Replacing RET...");
 					// Replace RET with GOTO which jumps to the label corresponding to its associated JSR
 					if (!retLabelMap.containsKey(inList.get(i))) {
-						throw new Error("Verifier Error. RET has no matching JSR");
+						//throw new Error("Verifier Error. RET has no matching JSR");
+						System.out.println("RET has no matching JSR yet");
+						newInst.add(inList.get(i));
+						continueScanning = true;
 					}
-					newInst.add(new JumpInsnNode(Opcodes.GOTO, retLabelMap.get(inList.get(i))));
+					else {
+						continueScanning = false; 
+						newInst.add(new JumpInsnNode(Opcodes.GOTO, retLabelMap.get(inList.get(i))));
+					}
 				}
 				else if (inList.get(i).getOpcode() == Opcodes.ASTORE) {
 					if (astoreToRemove.contains(inList.get(i))) {
@@ -257,13 +246,13 @@ public class Preverifier extends ClassVisitor {
 				}
 			}
 			if (astoreToRemove.isEmpty() && hasJSR) {
-				throw new Error("Verifier Error");
+				throw new Error("Verifier Error, no astore to remove");
 			}
 			// Replace instructions in the method
 			inList.clear();
 			inList.add(newInst);
 			inList.resetLabels(); // Don't know if this is necessary
-		} 
+		}} 
 		return cn;
     }
 }
