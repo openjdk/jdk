@@ -496,18 +496,27 @@ void TemplateTable::ldc2_w() {
   __ cmp(Rtemp, JVM_CONSTANT_Double);
   __ b(NotDouble, ne);
   __ ldr_double(D0_tos, Address(Rbase, base_offset));
-
   __ push(dtos);
   __ b(exit);
-  __ bind(NotDouble);
-#endif
 
+  __ bind(NotDouble);
   __ cmp(Rtemp, JVM_CONSTANT_Long);
   __ b(Condy, ne);
   __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
   __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
   __ push(ltos);
   __ b(exit);
+#else // !__ABI_HARD__
+  __ cmp(Rtemp, JVM_CONSTANT_Long);
+  __ cond_cmp(Rtemp, JVM_CONSTANT_Double, ne);
+  __ b(Condy, ne);
+  __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
+  __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
+  // doubles and longs are placed on the stack in the same way
+  // without VFP, we can push(ltos) to transfer a double value
+  __ push(ltos);
+  __ b(exit);
+#endif // __ABI_HARD__
 
   __ bind(Condy);
   condy_helper(exit);
