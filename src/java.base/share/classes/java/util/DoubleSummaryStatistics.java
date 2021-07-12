@@ -243,7 +243,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      */
     public final double getSum() {
         // Better error bounds to add both terms as the final sum
-        double tmp =  sum + sumCompensation;
+        double tmp =  sum - sumCompensation;
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             // If the compensated sum is spuriously NaN from
             // accumulating one or more same-signed infinite values,

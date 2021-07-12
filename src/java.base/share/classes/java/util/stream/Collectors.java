@@ -767,7 +767,7 @@ public final class Collectors {
      */
     static double computeFinalSum(double[] summands) {
         // Better error bounds to add both terms as the final sum
-        double tmp = summands[0] + summands[1];
+        double tmp = summands[0] - summands[1];
         double simpleSum = summands[summands.length - 1];
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             return simpleSum;
