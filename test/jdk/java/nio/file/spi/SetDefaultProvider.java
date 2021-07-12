@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8266345
  * @modules jdk.jartool
  * @library /test/lib
  * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
@@ -69,6 +70,22 @@ public class SetDefaultProvider {
         String testClasses = System.getProperty("test.classes");
         String classpath = moduleClasses + File.pathSeparator + testClasses;
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
+        assertTrue(exitValue == 0);
+    }
+
+    /**
+     * Test override of default FileSystemProvider with the main application
+     * on the class path and a SecurityManager enabled.
+     */
+    public void testClassPathWithSecurityManager() throws Exception {
+        String moduleClasses = moduleClasses();
+        String testClasses = System.getProperty("test.classes");
+        String classpath = moduleClasses + File.pathSeparator + testClasses;
+        String policyFile = System.getProperty("test.src", ".")
+            + File.separator + "fs.policy";
+        int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath,
+            "-Dtest.classes=" + testClasses, "-Djava.security.manager",
+            "-Djava.security.policy==" + policyFile, "p.Main");
         assertTrue(exitValue == 0);
     }
 
