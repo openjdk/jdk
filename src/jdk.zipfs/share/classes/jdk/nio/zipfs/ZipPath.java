@@ -932,6 +932,18 @@ final class ZipPath implements Path {
             copyToTarget(target, options);
     }
 
+    /**
+     * @return Returns true if the path represented by this instance is
+     * {@code .} or {@code ..}. Else returns false.
+     */
+    boolean isSelfOrParent() {
+        if (this.path.length > 0 && this.path[0] == '.') {
+            return (this.path.length == 1) ||
+                    (this.path.length == 2 && this.path[1] == '.');
+        }
+        return false;
+    }
+
     private void copyToTarget(ZipPath target, CopyOption... options)
         throws IOException
     {
