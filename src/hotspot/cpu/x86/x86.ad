@@ -1873,10 +1873,18 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   switch (m->rule()) {
     case MoveVec2Leg_rule:
     case MoveLeg2Vec_rule:
+    case MoveF2VL_rule:
+    case MoveF2LEG_rule:
+    case MoveVL2F_rule:
+    case MoveLEG2F_rule:
+    case MoveD2VL_rule:
+    case MoveD2LEG_rule:
+    case MoveVL2D_rule:
+    case MoveLEG2D_rule:
       return true;
     default:
       return false;
