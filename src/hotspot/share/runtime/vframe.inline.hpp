@@ -36,6 +36,16 @@ inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread, bool process_f
 
 inline intptr_t* vframeStreamCommon::frame_id() const        { return _frame.id(); }
 
+inline int vframeStreamCommon::vframe_id() const {
+  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
+  return _vframe_id;
+}
+
+inline int vframeStreamCommon::decode_offset() const {
+  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
+  return _decode_offset;
+}
+
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 
 inline bool vframeStreamCommon::is_entry_frame() const       { return _frame.is_entry_frame(); }
