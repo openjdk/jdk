@@ -56,14 +56,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -1206,7 +1204,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         filters.addFilter(f);
     }
 
-    final LinkedList<HeaderFilter> filterChain() {
+    final List<HeaderFilter> filterChain() {
         return filters.getFilterChain();
     }
 
