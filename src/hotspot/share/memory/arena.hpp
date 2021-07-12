@@ -102,7 +102,7 @@ protected:
 
   debug_only(void* malloc(size_t size);)
 
-  void* internal_malloc_only(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+  void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     if (pointer_delta(_max, _hwm, 1) >= x) {
       char *old = _hwm;
@@ -134,7 +134,7 @@ protected:
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     debug_only(if (UseMallocOnly) return malloc(x);)
-    return internal_malloc_only(x, alloc_failmode);
+    return internal_amalloc(x, alloc_failmode);
   }
 
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
@@ -142,7 +142,7 @@ protected:
   void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
-    return internal_malloc_only(x, alloc_failmode);
+    return internal_amalloc(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)

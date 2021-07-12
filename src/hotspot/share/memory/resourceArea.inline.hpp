@@ -34,7 +34,7 @@ inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failm
   verify_has_resource_mark();
   if (UseMallocOnly) {
     // use malloc, but save pointer in res. area for later freeing
-    char** save = (char**)internal_malloc_only(sizeof(char*));
+    char** save = (char**)internal_amalloc(sizeof(char*));
     return (*save = (char*)os::malloc(size, mtThread, CURRENT_PC));
   }
 #endif // ASSERT

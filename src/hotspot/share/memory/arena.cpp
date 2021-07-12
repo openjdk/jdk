@@ -449,7 +449,7 @@ bool Arena::contains( const void *ptr ) const {
 void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
-  char** save = (char**)internal_malloc_only(sizeof(char*));
+  char** save = (char**)internal_amalloc(sizeof(char*));
   return (*save = (char*)os::malloc(size, mtChunk));
 }
 #endif
