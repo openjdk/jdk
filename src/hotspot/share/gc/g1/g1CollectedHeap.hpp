@@ -800,7 +800,7 @@ private:
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
 
-  void set_default_active_worker_threads();
+  void set_young_collection_default_active_worker_threads();
 
   bool determine_start_concurrent_mark_gc();
 

@@ -2987,10 +2987,10 @@ bool G1CollectedHeap::determine_start_concurrent_mark_gc(){
   return collector_state()->in_concurrent_start_gc();
 }
 
-void G1CollectedHeap::set_default_active_worker_threads(){
+void G1CollectedHeap::set_young_collection_default_active_worker_threads(){
   uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
-          workers()->active_workers(),
-          Threads::number_of_non_daemon_threads());
+                                                          workers()->active_workers(),
+                                                          Threads::number_of_non_daemon_threads());
   active_workers = workers()->update_active_workers(active_workers);
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 }
@@ -3030,9 +3030,14 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool concurrent_operation_is_full_mark = false;
 
   // Verification may use the gang workers, so they must be set up before.
-  set_default_active_worker_threads();
+  // Individual parallel phases may override this.
+  set_young_collection_default_active_worker_threads();
 
   {
+    // Do timing/tracing/statistics/pre- and post-logging/verification work not
+    // directly related to the collection. They should not be accounted for in
+    // collection work timing.
+
     // The G1YoungGCTraceTime message depends on collector state, so must come after
     // determining collector state.
     G1YoungGCTraceTime tm(gc_cause());
@@ -3051,6 +3056,10 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     G1HeapVerifier::G1VerifyType verify_type = young_collection_verify_type();
     verify_before_young_collection(verify_type);
     {
+      // Actual collection work starts and is executed (only) in this scope.
+
+      // The elapsed time induced by the start time below deliberately elides
+      // the possible verification above.
       double sample_start_time_sec = os::elapsedTime();
       policy()->record_collection_pause_start(sample_start_time_sec);
 
