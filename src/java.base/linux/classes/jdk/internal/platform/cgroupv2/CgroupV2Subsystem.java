@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     private final CgroupSubsystemController unified;
     private static final String PROVIDER_NAME = "cgroupv2";
     private static final int PER_CPU_SHARES = 1024;
-    private static final String MAX_VAL = "max";
     private static final Object EMPTY_STR = "";
     private static final long NO_SWAP = 0;
 
@@ -149,14 +148,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
         String quota = tokens[tokenIdx];
-        return limitFromString(quota);
-    }
-
-    private long limitFromString(String strVal) {
-        if (strVal == null || MAX_VAL.equals(strVal)) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        }
-        return Long.parseLong(strVal);
+        return CgroupSubsystem.limitFromString(quota);
     }
 
     @Override
@@ -251,7 +243,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getMemoryLimit() {
         String strVal = CgroupSubsystemController.getStringValue(unified, "memory.max");
-        return limitFromString(strVal);
+        return CgroupSubsystem.limitFromString(strVal);
     }
 
     @Override
@@ -279,7 +271,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         if (strVal == null) {
             return getMemoryLimit();
         }
-        long swapLimit = limitFromString(strVal);
+        long swapLimit = CgroupSubsystem.limitFromString(strVal);
         if (swapLimit >= 0) {
             long memoryLimit = getMemoryLimit();
             assert memoryLimit >= 0;
@@ -310,7 +302,13 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getMemorySoftLimit() {
         String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.low");
-        return limitFromString(softLimitStr);
+        return CgroupSubsystem.limitFromString(softLimitStr);
+    }
+
+    @Override
+    public long getPidsMax() {
+        String pidsMaxStr = CgroupSubsystemController.getStringValue(unified, "pids.max");
+        return CgroupSubsystem.limitFromString(pidsMaxStr);
     }
 
     @Override
