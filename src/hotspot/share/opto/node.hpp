@@ -220,8 +220,7 @@ class Node {
   friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
-  Node(const Node&);            // not defined; linker error to use these
-  Node &operator=(const Node &rhs);
+  NONCOPYABLE(Node);
 
 public:
   friend class Compile;
