@@ -734,7 +734,8 @@ public final class Collectors {
                             a[2] += val;},
                 (a, b) -> { sumWithCompensation(a, b[0]);
                             a[2] += b[2];
-                            return sumWithCompensation(a, b[1]); },
+                            //Negating this value because low-order bits are in negated form
+                            return sumWithCompensation(a, -b[1]); },
                 a -> computeFinalSum(a),
                 CH_NOID);
     }
@@ -840,13 +841,19 @@ public final class Collectors {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
+         * the negated low-order bits of the sum computed via compensated
          * summation, and index 2 holds the number of values seen.
          */
         return new CollectorImpl<>(
                 () -> new double[4],
                 (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
-                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
+                (a, b) -> {
+                    sumWithCompensation(a, b[0]);
+                    //Negating this value because low-order bits are in negated form
+                    sumWithCompensation(a, -b[1]);
+                    a[2] += b[2]; a[3] += b[3];
+                    return a;
+                    },
                 a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]),
                 CH_NOID);
     }
