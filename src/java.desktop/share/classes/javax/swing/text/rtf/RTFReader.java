@@ -1002,19 +1002,27 @@ class StylesheetDestination
             return true;
         }
 
-        public Style realize()
+        public Style realize() {
+            return realize(null);
+        }
+
+        private Style realize(Set<Integer> alreadyMetBasisIndexSet)
         {
             Style basis = null;
             Style next = null;
 
+            if (alreadyMetBasisIndexSet == null) {
+                alreadyMetBasisIndexSet = new HashSet<>();
+            }
+
             if (realizedStyle != null)
                 return realizedStyle;
 
-            if (basedOn != STYLENUMBER_NONE) {
+            if (basedOn != STYLENUMBER_NONE && alreadyMetBasisIndexSet.add(basedOn)) {
                 StyleDefiningDestination styleDest;
-                styleDest = definedStyles.get(Integer.valueOf(basedOn));
+                styleDest = definedStyles.get(basedOn);
                 if (styleDest != null && styleDest != this) {
-                    basis = styleDest.realize();
+                    basis = styleDest.realize(alreadyMetBasisIndexSet);
                 }
             }
 
