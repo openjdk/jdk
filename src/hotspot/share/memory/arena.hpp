@@ -102,7 +102,7 @@ protected:
 
   debug_only(void* malloc(size_t size);)
 
-  void* internal_malloc_words(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+  void* internal_malloc_only(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     if (pointer_delta(_max, _hwm, 1) >= x) {
       char *old = _hwm;
@@ -132,9 +132,9 @@ protected:
   // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    x = ARENA_ALIGN(x);
+    x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     debug_only(if (UseMallocOnly) return malloc(x);)
-    return internal_malloc_words(x, alloc_failmode);
+    return internal_malloc_only(x, alloc_failmode);
   }
 
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
@@ -142,7 +142,7 @@ protected:
   void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
-    return internal_malloc_words(x, alloc_failmode);
+    return internal_malloc_only(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
