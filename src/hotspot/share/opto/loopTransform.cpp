@@ -881,7 +881,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   const int initial_stride_sz = MAX2(1<<2, Matcher::max_vector_size(T_BYTE) / 2);
   // Maximum stride size should protect against overflow, when doubling stride unroll_count times
   const int max_stride_size = MIN2(max_jint / 2 - 2, initial_stride_sz * future_unroll_cnt);
-  // No abs() use; abs(min_jint) = 1
+  // No abs() use; abs(min_jint) = 1 (or min_jint)
   if (stride_con < -max_stride_size || stride_con > max_stride_size) return false;
 
   // Don't unroll if the next round of unrolling would push us
@@ -2007,7 +2007,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   uint old_trip_count = loop_head->trip_count();
   // Verify that unroll policy result is still valid.
   assert(old_trip_count > 1 && (!adjust_min_trip || stride_p <=
-    MIN2(max_jint / 2 - 2, MAX2(1<<2, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
+    MIN2(max_jint / 2 - 2, MAX2(1<<3, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
 
   update_main_loop_skeleton_predicates(ctrl, loop_head, init, stride_con);
 
