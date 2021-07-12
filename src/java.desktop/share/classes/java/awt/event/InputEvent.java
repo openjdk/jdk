@@ -43,9 +43,9 @@ import sun.util.logging.PlatformLogger;
  * processed normally by the source where they originated.
  * This allows listeners and component subclasses to "consume"
  * the event so that the source will not process them in their
- * default manner.  For example, consuming mousePressed events
- * on a Button component will prevent the Button from being
- * activated.
+ * default manner.  For example, consuming keyTyped events
+ * on a TextField component will prevent the TextField from being
+ * updated.
  *
  * @author Carl Quinn
  *
