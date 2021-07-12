@@ -116,7 +116,7 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
          (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
   size_t index = _bot->index_for(addr);
   // We must make sure that the offset table entry we use is valid.  If
-  // "addr" is past the end, start at the last known one and go forward.
+  // "addr" is past the end, start at the last valid index.
   index = MIN2(index, _next_offset_index - 1);
 
   HeapWord* q = _bot->address_for_index(index);
