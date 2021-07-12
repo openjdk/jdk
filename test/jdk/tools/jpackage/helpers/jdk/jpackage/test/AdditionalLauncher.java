@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,16 @@ public final class AdditionalLauncher {
     public AdditionalLauncher addRawProperties(
             Collection<Map.Entry<String, String>> v) {
         rawProperties.addAll(v);
+        return this;
+    }
+
+    public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
+        if (TKit.isLinux()) {
+            addRawProperties(Map.entry("linux-shortcut", "" + menu));
+        } else if (TKit.isWindows()) {
+            addRawProperties(Map.entry("win-menu", "" + menu));
+            addRawProperties(Map.entry("win-shortcut", "" + desktop));
+        }
         return this;
     }
 
