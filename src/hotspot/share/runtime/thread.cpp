@@ -3258,7 +3258,7 @@ void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
   // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_and_cleanup_shared_classes to
+  // it will cause MetaspaceShared::link_shared_classes to
   // fail for dynamic dump.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
@@ -3269,7 +3269,7 @@ void JavaThread::invoke_shutdown_hooks() {
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
+    DynamicArchive::prepare_for_dynamic_dumping();
   }
 #endif
 
@@ -3900,3 +3900,81 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
    report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
 }
 #endif
+
+// Helper function to create the java.lang.Thread object for a
+// VM-internal thread. The thread will have the given name, be
+// part of the System ThreadGroup and if is_visible is true will be
+// discoverable via the system ThreadGroup.
+Handle JavaThread::create_system_thread_object(const char* name,
+                                               bool is_visible, TRAPS) {
+  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
+
+  // Initialize thread_oop to put it into the system threadGroup.
+  // This is done by calling the Thread(ThreadGroup tg, String name)
+  // constructor, which adds the new thread to the group as an unstarted
+  // thread.
+  Handle thread_group(THREAD, Universe::system_thread_group());
+  Handle thread_oop =
+    JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
+                                      vmSymbols::threadgroup_string_void_signature(),
+                                      thread_group,
+                                      string,
+                                      CHECK_NH);
+
+  // If the Thread is intended to be visible then we have to mimic what
+  // Thread.start() would do, by adding it to its ThreadGroup: tg.add(t).
+  if (is_visible) {
+    Klass* group = vmClasses::ThreadGroup_klass();
+    JavaValue result(T_VOID);
+    JavaCalls::call_special(&result,
+                            thread_group,
+                            group,
+                            vmSymbols::add_method_name(),
+                            vmSymbols::thread_void_signature(),
+                            thread_oop,
+                            CHECK_NH);
+  }
+
+  return thread_oop;
+}
+
+// Starts the target JavaThread as a daemon of the given priority, and
+// bound to the given java.lang.Thread instance.
+// The Threads_lock is held for the duration.
+void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
+                                       Handle thread_oop, ThreadPriority prio) {
+
+  assert(target->osthread() != NULL, "target thread is not properly initialized");
+
+  MutexLocker mu(current, Threads_lock);
+
+  // Initialize the fields of the thread_oop first.
+
+  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
+
+  if (prio != NoPriority) {
+    java_lang_Thread::set_priority(thread_oop(), prio);
+    // Note: we don't call os::set_priority here. Possibly we should,
+    // else all threads should call it themselves when they first run.
+  }
+
+  java_lang_Thread::set_daemon(thread_oop());
+
+  // Now bind the thread_oop to the target JavaThread.
+  target->set_threadObj(thread_oop());
+
+  Threads::add(target); // target is now visible for safepoint/handshake
+  Thread::start(target);
+}
+
+void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources. However, since this must work
+  // for critical system threads just check and abort if this fails.
+  if (thread->osthread() == nullptr) {
+    // This isn't really an OOM condition, but historically this is what
+    // we report.
+    vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                  os::native_thread_creation_failed_msg());
+  }
+}

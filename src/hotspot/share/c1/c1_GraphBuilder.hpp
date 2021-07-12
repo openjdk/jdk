@@ -373,12 +373,10 @@ class GraphBuilder {
   void pop_scope();
   void pop_scope_for_jsr();
 
-  void append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_get_raw(ciMethod* callee, BasicType t);
-  void append_unsafe_put_raw(ciMethod* callee, BasicType t);
+  void append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile);
   void append_unsafe_CAS(ciMethod* callee);
-  void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
+  void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
@@ -389,8 +387,6 @@ class GraphBuilder {
 
   // Shortcuts to profiling control.
   bool is_profiling()          { return _compilation->is_profiling();          }
-  bool count_invocations()     { return _compilation->count_invocations();     }
-  bool count_backedges()       { return _compilation->count_backedges();       }
   bool profile_branches()      { return _compilation->profile_branches();      }
   bool profile_calls()         { return _compilation->profile_calls();         }
   bool profile_inlined_calls() { return _compilation->profile_inlined_calls(); }

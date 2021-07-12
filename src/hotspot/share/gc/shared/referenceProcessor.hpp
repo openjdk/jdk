@@ -160,7 +160,6 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcPhase1Task;
   friend class RefProcPhase2Task;
   friend class RefProcPhase3Task;
   friend class RefProcPhase4Task;
@@ -168,7 +167,6 @@ public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
   enum RefProcSubPhases {
-    SoftRefSubPhase1,
     SoftRefSubPhase2,
     WeakRefSubPhase2,
     FinalRefSubPhase2,
@@ -179,7 +177,6 @@ public:
 
   // Main phases of reference processing.
   enum RefProcPhases {
-    RefPhase1,
     RefPhase2,
     RefPhase3,
     RefPhase4,
@@ -237,10 +234,6 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Phase 1: Re-evaluate soft ref policy.
-  void process_soft_ref_reconsider(RefProcProxyTask& proxy_task,
-                                   ReferenceProcessorPhaseTimes& phase_times);
-
   // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
@@ -256,15 +249,6 @@ private:
 
   // Work methods used by the process_* methods. All methods return the number of
   // removed elements.
-
-  // (SoftReferences only) Traverse the list and remove any SoftReferences whose
-  // referents are not alive, but that should be kept alive for policy reasons.
-  // Keep alive the transitive closure of all such referents.
-  size_t process_soft_ref_reconsider_work(DiscoveredList&     refs_list,
-                                          ReferencePolicy*    policy,
-                                          BoolObjectClosure*  is_alive,
-                                          OopClosure*         keep_alive,
-                                          VoidClosure*        complete_gc);
 
   // Traverse the list and remove any Refs whose referents are alive,
   // or NULL if discovery is not atomic. Enqueue and clear the reference for
@@ -285,6 +269,12 @@ private:
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc);
 
+
+  void setup_policy(bool always_clear) {
+    _current_soft_ref_policy = always_clear ?
+                               _always_clear_soft_ref_policy : _default_soft_ref_policy;
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
+  }
 public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
@@ -292,11 +282,9 @@ public:
   uint max_num_queues() const              { return _max_num_queues; }
   void set_active_mt_degree(uint v);
 
-  ReferencePolicy* setup_policy(bool always_clear) {
-    _current_soft_ref_policy = always_clear ?
-      _always_clear_soft_ref_policy : _default_soft_ref_policy;
-    _current_soft_ref_policy->setup();   // snapshot the policy threshold
-    return _current_soft_ref_policy;
+  void start_discovery(bool always_clear) {
+    enable_discovery();
+    setup_policy(always_clear);
   }
 
   // "Preclean" all the discovered reference lists by removing references that
@@ -449,27 +437,6 @@ public:
 
   virtual bool do_object_b(oop obj) {
     return _span.contains(obj);
-  }
-};
-
-// A utility class to disable reference discovery in
-// the scope which contains it, for given ReferenceProcessor.
-class NoRefDiscovery: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool _was_discovering_refs;
- public:
-  NoRefDiscovery(ReferenceProcessor* rp) : _rp(rp) {
-    _was_discovering_refs = _rp->discovery_enabled();
-    if (_was_discovering_refs) {
-      _rp->disable_discovery();
-    }
-  }
-
-  ~NoRefDiscovery() {
-    if (_was_discovering_refs) {
-      _rp->enable_discovery(false /*check_no_refs*/);
-    }
   }
 };
 

@@ -170,9 +170,6 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->print_heap_before_gc();
-  _heap->print_heap_regions();
-
   _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
@@ -182,8 +179,7 @@ void G1FullCollector::prepare_collection() {
   PrepareRegionsClosure cl(this);
   _heap->heap_region_iterate(&cl);
 
-  reference_processor()->enable_discovery();
-  reference_processor()->setup_policy(scope()->should_clear_soft_refs());
+  reference_processor()->start_discovery(scope()->should_clear_soft_refs());
 
   // Clear and activate derived pointer collection.
   clear_and_activate_derived_pointers();
@@ -222,7 +218,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->verify_after_full_collection();
 
-  _heap->print_heap_after_full_collection(scope()->heap_transition());
+  _heap->print_heap_after_full_collection();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {

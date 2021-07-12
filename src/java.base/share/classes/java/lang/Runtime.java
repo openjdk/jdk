@@ -655,6 +655,10 @@ public class Runtime {
      * There is no guarantee that this effort will recycle any particular
      * number of unused objects, reclaim any particular amount of space, or
      * complete at any particular time, if at all, before the method returns or ever.
+     * There is also no guarantee that this effort will determine
+     * the change of reachability in any particular number of objects,
+     * or that any particular number of {@link java.lang.ref.Reference Reference}
+     * objects will be cleared and enqueued.
      * <p>
      * The name {@code gc} stands for "garbage
      * collector". The Java Virtual Machine performs this recycling
