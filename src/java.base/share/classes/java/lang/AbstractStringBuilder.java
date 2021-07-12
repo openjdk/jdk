@@ -223,7 +223,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     private void ensureCapacityInternal(int minimumCapacity) {
         // overflow-conscious code
-        int oldCapacity = value.length >> coder;
+        int oldCapacity = capacity();
         if (minimumCapacity - oldCapacity > 0) {
             value = Arrays.copyOf(value,
                     newCapacity(minimumCapacity) << coder);
@@ -348,9 +348,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     @Override
     public char charAt(int index) {
-        checkIndex(index, count);
         if (isLatin1()) {
-            return (char)(value[index] & 0xff);
+            return StringLatin1.charAt(value, index);
         }
         return StringUTF16.charAt(value, index);
     }

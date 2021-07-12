@@ -27,11 +27,9 @@ package java.lang;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
@@ -40,14 +38,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.checkOffset;
+import static java.lang.String.checkIndex;
 
 final class StringLatin1 {
 
     public static char charAt(byte[] value, int index) {
-        if (index < 0 || index >= value.length) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
-        return (char)(value[index] & 0xff);
+        checkIndex(index, value.length);
+        return getChar(value, index);
     }
 
     public static boolean canEncode(int cp) {
