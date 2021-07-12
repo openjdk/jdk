@@ -132,6 +132,7 @@ public:
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
+
   public:
     // Heap oop accesses. These accessors get resolved when
     // IN_HEAP is set (e.g. when using the HeapAccess API), it is
