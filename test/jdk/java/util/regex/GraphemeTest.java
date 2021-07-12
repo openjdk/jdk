@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7071819 8221431 8239383
+ * @bug 7071819 8221431 8239383 8268081
  * @summary tests Unicode Extended Grapheme support
  * @library /lib/testlibrary/java/lang
  * @run testng GraphemeTest
@@ -215,8 +215,9 @@ public class GraphemeTest {
             if (cp == 0x200D)
                 return ZWJ;
             if (cp >= 0x0600 && cp <= 0x0605 ||
-                cp == 0x06DD || cp == 0x070F || cp == 0x08E2 ||
-                cp == 0x110BD || cp == 0x110CD)
+                cp == 0x06DD || cp == 0x070F ||
+                cp >= 0x0890 && cp <= 0x0891 ||
+                cp == 0x08E2 || cp == 0x110BD || cp == 0x110CD)
                 return PREPEND;
             return CONTROL;
         case Character.NON_SPACING_MARK:
@@ -298,9 +299,15 @@ public class GraphemeTest {
 
     // from generated java.util.regex.EmojiData.java
     static boolean isExtendedPictographic(int cp) {
+        if (cp < 0x2000) {
+            return cp == 0x00A9 || cp == 0x00AE;
+        } else {
+            return isHigh(cp);
+        }
+    }
+
+    private static boolean isHigh(int cp) {
         return
-                cp == 0x00A9 ||
-                cp == 0x00AE ||
                 cp == 0x203C ||
                 cp == 0x2049 ||
                 cp == 0x2122 ||
@@ -384,5 +391,6 @@ public class GraphemeTest {
                (cp >= 0x1F93C && cp <= 0x1F945) ||
                (cp >= 0x1F947 && cp <= 0x1FAFF) ||
                (cp >= 0x1FC00 && cp <= 0x1FFFD);
+
     }
 }
