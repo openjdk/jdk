@@ -1,12 +1,11 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,33 +22,31 @@
  * questions.
  */
 
-#import "GroupAccessibility.h"
-#import "JNIUtilities.h"
+#import "CellAccessibility.h"
 #import "ThreadUtilities.h"
-/*
- * This is the protocol for the components that contain children.
- * Basic logic of accessibilityChildren might be overridden in the specific implementing
- * classes reflecting the logic of the class.
- */
-@implementation GroupAccessibility
-- (NSAccessibilityRole _Nonnull)accessibilityRole
+
+@implementation CellAccessibility
+
+// NSAccessibilityElement protocol methods
+
+- (NSAccessibilityRole)accessibilityRole
 {
-    return NSAccessibilityGroupRole;
+    return NSAccessibilityCellRole;;
 }
 
-/*
- * Return all non-ignored children.
- */
-- (NSArray *)accessibilityChildren {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-
-    NSArray *children = [CommonComponentAccessibility childrenOfParent:self
-                                                             withEnv:env
-                                                    withChildrenCode:JAVA_AX_ALL_CHILDREN
-                                                        allowIgnored:NO];
-
-    if ([children count] == 0) {
-        return nil;
+- (NSArray *)accessibilityChildren
+{
+    NSArray *children = [super accessibilityChildren];
+    if (children == NULL) {
+        NSString *javaRole = [self  javaRole];
+        CommonComponentAccessibility *newChild = [CommonComponentAccessibility createWithParent:self
+                                                                       accessible:self->fAccessible
+                                                                             role:javaRole
+                                                                            index:self->fIndex
+                                                                          withEnv:[ThreadUtilities getJNIEnv]
+                                                                         withView:self->fView
+                                                                        isWrapped:YES];
+        return [NSArray arrayWithObject:newChild];
     } else {
         return children;
     }

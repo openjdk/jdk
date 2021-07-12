@@ -1,12 +1,11 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,44 +22,37 @@
  * questions.
  */
 
-#import "SliderAccessibility.h"
+#import "ListAccessibility.h"
+#import "JavaAccessibilityUtilities.h"
+#import "ThreadUtilities.h"
 
-#define INCREMENT 0
-#define DECREMENT 1
+@implementation ListAccessibility
 
-/*
- * Implementation of the accessibility peer for the slider role
- */
-@implementation SliderAccessibility
-- (NSAccessibilityRole _Nonnull)accessibilityRole
+// NSAccessibilityElement protocol methods
+
+- (nullable NSArray<id<NSAccessibilityRow>> *)accessibilityRows
 {
-    return NSAccessibilitySliderRole;
+    return [self accessibilityChildren];
 }
 
-- (NSString * _Nullable)accessibilityLabel
+- (nullable NSArray<id<NSAccessibilityRow>> *)accessibilitySelectedRows
 {
-    return [super accessibilityLabel];
+    return [self accessibilitySelectedChildren];
 }
 
-- (id _Nullable)accessibilityValue
+- (NSString *)accessibilityLabel
 {
-    return [super accessibilityValue];
+    return [super accessibilityLabel] == NULL ? @"list" : [super accessibilityLabel];
 }
 
-- (BOOL)accessibilityPerformIncrement
-{
-    return [self performAccessibleAction:INCREMENT];
-}
-
-- (BOOL)accessibilityPerformDecrement
-{
-    return [self performAccessibleAction:DECREMENT];
-}
+// to avoid warning (why?): method in protocol 'NSAccessibilityElement' not implemented
 
 - (NSRect)accessibilityFrame
 {
     return [super accessibilityFrame];
 }
+
+// to avoid warning (why?): method in protocol 'NSAccessibilityElement' not implemented
 
 - (id)accessibilityParent
 {
@@ -68,3 +60,4 @@
 }
 
 @end
+

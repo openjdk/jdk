@@ -1,12 +1,11 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,48 +22,12 @@
  * questions.
  */
 
-#import "SliderAccessibility.h"
+#import "ListRowAccessibility.h"
 
-#define INCREMENT 0
-#define DECREMENT 1
+@interface OutlineRowAccessibility : ListRowAccessibility
 
-/*
- * Implementation of the accessibility peer for the slider role
- */
-@implementation SliderAccessibility
-- (NSAccessibilityRole _Nonnull)accessibilityRole
-{
-    return NSAccessibilitySliderRole;
-}
+@property(readwrite) int accessibleLevel;
 
-- (NSString * _Nullable)accessibilityLabel
-{
-    return [super accessibilityLabel];
-}
-
-- (id _Nullable)accessibilityValue
-{
-    return [super accessibilityValue];
-}
-
-- (BOOL)accessibilityPerformIncrement
-{
-    return [self performAccessibleAction:INCREMENT];
-}
-
-- (BOOL)accessibilityPerformDecrement
-{
-    return [self performAccessibleAction:DECREMENT];
-}
-
-- (NSRect)accessibilityFrame
-{
-    return [super accessibilityFrame];
-}
-
-- (id)accessibilityParent
-{
-    return [super accessibilityParent];
-}
+- (jobject)currentAccessibleWithENV:(JNIEnv *)env;
 
 @end

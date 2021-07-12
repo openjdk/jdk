@@ -53,23 +53,6 @@ static jmethodID sjm_getAccessibleEditableText = NULL;
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleEditableText, sjc_CAccessibleText, "getAccessibleEditableText", \
               "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleEditableText;", ret);
 
-
-/*
- * Converts an int array to an NSRange wrapped inside an NSValue
- * takes [start, end] values and returns [start, end - start]
- */
-NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
-    jint *values = (*env)->GetIntArrayElements(env, array, 0);
-    if (values == NULL) {
-        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
-        NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
-        return nil;
-    };
-    NSValue *value = [NSValue valueWithRange:NSMakeRange(values[0], values[1] - values[0])];
-    (*env)->ReleaseIntArrayElements(env, array, values, 0);
-    return value;
-}
-
 @implementation JavaTextAccessibility
 
 // based strongly upon NSTextViewAccessibility:accessibilityAttributeNames

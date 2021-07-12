@@ -1,12 +1,11 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +22,33 @@
  * questions.
  */
 
-#import "RadiobuttonAccessibility.h"
-#import "JNIUtilities.h"
+#import "OutlineAccessibility.h"
+#import "JavaAccessibilityUtilities.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
-/*
- * Implementation of the accessibility peer for the radiobutton role
- */
-@implementation RadiobuttonAccessibility
-- (NSAccessibilityRole _Nonnull)accessibilityRole
+static jclass sjc_CAccessibility = NULL;
+
+static jmethodID sjm_isTreeRootVisible = NULL;
+#define GET_ISTREEROOTVISIBLE_METHOD_RETURN(ret) \
+    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
+    GET_STATIC_METHOD_RETURN(sjm_isTreeRootVisible, sjc_CAccessibility, "isTreeRootVisible", \
+                     "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Z", ret);
+
+@implementation OutlineAccessibility
+
+- (BOOL)isTreeRootVisible
 {
-    return NSAccessibilityRadioButtonRole;
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_ISTREEROOTVISIBLE_METHOD_RETURN(NO);
+    return (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, sjm_isTreeRootVisible, fAccessible, fComponent);
 }
 
-- (id _Nonnull) accessibilityValue
+// NSAccessibilityElement protocol methods
+
+- (NSString *)accessibilityLabel
 {
-    AWT_ASSERT_APPKIT_THREAD;
-    return [super accessibilityValue];
+    return [[super accessibilityLabel] isEqualToString:@"list"] ? @"tree" : [super accessibilityLabel];
 }
 
 @end
