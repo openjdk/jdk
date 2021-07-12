@@ -33,6 +33,7 @@
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.function.Function;
 
 @TestAnnotation
 public class EqualityTest {
@@ -59,7 +60,8 @@ public class EqualityTest {
 
 @Retention(RetentionPolicy.RUNTIME)
 @interface TestAnnotation {
-    // Trigger creation of synthetic method to initialize r.
+    // Trigger creation of synthetic method to initialize r and f.
     public static final Runnable r = () -> {};
+    public static final Function<Integer,Integer> f = x -> x;
 }
 

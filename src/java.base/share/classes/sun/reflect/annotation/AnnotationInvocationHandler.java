@@ -502,9 +502,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
             // similar construct. A static initializer may be used for
             // purposes such as initializing a lambda stored in an
             // interface field.
+            // Methods that have no arguments (lambdas without parameters)
+            // as well as methods with arguments (lambdas with parameters)
+            // should be skipped.
             if (method.isSynthetic() &&
-                (modifiers & (Modifier.STATIC | Modifier.PRIVATE)) != 0 &&
-                method.getParameterCount() == 0) {
+                (modifiers & (Modifier.STATIC | Modifier.PRIVATE)) != 0) {
                 continue;
             }
 
