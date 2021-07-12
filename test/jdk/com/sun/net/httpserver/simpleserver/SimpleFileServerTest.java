@@ -565,6 +565,7 @@ public class SimpleFileServerTest {
     public void testUncheckedIOException() {
         var addr = InetSocketAddress.createUnresolved("foo", 8080);
         assertThrows(UIOE, () -> SimpleFileServer.createFileServer(addr, TEST_DIR, OutputLevel.INFO));
+        assertThrows(UIOE, () -> SimpleFileServer.createFileServer(addr, TEST_DIR, OutputLevel.NONE));
     }
 
     @Test

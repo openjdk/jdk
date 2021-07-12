@@ -207,7 +207,7 @@ final class SimpleFileServerImpl {
         }
     }
 
-    enum Startup {
+    private enum Startup {
         /** Started with no errors */
         OK(0),
         /** Not started, bad command-line arguments */
@@ -218,12 +218,6 @@ final class SimpleFileServerImpl {
         Startup(int statusCode) {
             this.statusCode = statusCode;
         }
-
         public final int statusCode;
-
-        @Override
-        public String toString() {
-            return name() + '(' + statusCode + ')';
-        }
     }
 }

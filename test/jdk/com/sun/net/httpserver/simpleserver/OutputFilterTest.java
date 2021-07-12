@@ -134,7 +134,7 @@ public class OutputFilterTest {
                     >
                     (<[\\s\\S]+:[\\s\\S]+)+
                     <
-                    """);
+                    """.replaceAll("\n", System.lineSeparator()));
             assertTrue(pattern.matcher(filterOutput).matches());
 
             /*
@@ -185,9 +185,20 @@ public class OutputFilterTest {
                     >
                     (<[\\s\\S]+:[\\s\\S]+)+
                     <
-                    """);
-            System.out.println(filterOutput);
+                    """.replaceAll("\n", System.lineSeparator()));
             assertTrue(pattern.matcher(filterOutput).matches());
+
+            //127.0.0.1 - - [12/Jul/2021:10:05:10 +0000] "GET / HTTP/1.1" 200 -
+            //> Connection: Upgrade, HTTP2-Settings
+            //> Http2-settings: AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA
+            //> Host: localhost:57931
+            //> Upgrade: h2c
+            //> User-agent: Java-http-client/18-internal
+            //> Content-length: 0
+            //>
+            //< Date: Mon, 12 Jul 2021 10:05:10 GMT
+            //< Content-length: 11
+            //<
         }
     }
 
@@ -261,7 +272,7 @@ public class OutputFilterTest {
                     >
                     (<[\\s\\S]+:[\\s\\S]+)+
                     <
-                    """);
+                    """.replaceAll("\n", System.lineSeparator()));
             assertTrue(pattern.matcher(filterOutput).matches());
         }
     }
