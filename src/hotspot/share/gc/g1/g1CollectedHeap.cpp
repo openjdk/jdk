@@ -3053,6 +3053,11 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     G1HeapPrinterMark hpm(this);
 
+    // Wait for root region scan here to make sure that it is done before any
+    // use of the STW work gang to maximize cpu use (i.e. all cores are available
+    // just to do that).
+    wait_for_root_region_scanning();
+
     G1HeapVerifier::G1VerifyType verify_type = young_collection_verify_type();
     verify_before_young_collection(verify_type);
     {
@@ -3539,8 +3544,6 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
 
   _expand_heap_after_alloc_failure = true;
   Atomic::store(&_num_regions_failed_evacuation, 0u);
-
-  wait_for_root_region_scanning();
 
   gc_prologue(false);
 
