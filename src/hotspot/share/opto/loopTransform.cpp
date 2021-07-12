@@ -880,7 +880,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // Check for initial stride being a small enough constant
   const int initial_stride_sz = MAX2(1<<2, Matcher::max_vector_size(T_BYTE) / 2);
   // Maximum stride size should protect against overflow, when doubling stride unroll_count times
-  const int max_stride_size = MIN2(max_jint / 2 - 2, initial_stride_sz * future_unroll_cnt);
+  const int max_stride_size = MIN2<int>(max_jint / 2 - 2, initial_stride_sz * future_unroll_cnt);
   // No abs() use; abs(min_jint) = 1 (or min_jint)
   if (stride_con < -max_stride_size || stride_con > max_stride_size) return false;
 
