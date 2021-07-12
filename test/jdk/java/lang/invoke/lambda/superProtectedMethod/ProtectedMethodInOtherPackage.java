@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8227415 8254975 8270056
- * @run testng/othervm p.SuperMethodTest
+ * @run testng/othervm p.ProtectedMethodInOtherPackage
  * @summary method reference to a protected method inherited from its
  *          superclass in a different runtime package where
  *          lambda proxy class has no access to it.
@@ -50,7 +50,7 @@ import java.util.function.Function;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-public class SuperMethodTest  {
+public class ProtectedMethodInOtherPackage  {
     @Test
     public static void remotePackageSameLoader() {
         Sub_I sub = new Sub_I();
@@ -102,7 +102,7 @@ public class SuperMethodTest  {
     }
 
     @Test
-    public static void splitPackage1() throws Throwable {
+    public static void protectedStaticMethodInSplitPackage() throws Throwable {
         ClassLoader parent = new Loader("loader-A1", null, A1.class);
         ClassLoader loader = new Loader("loader-B1", parent, B1.class);
         Class<?> aClass1 = Class.forName(A1.class.getName(), false, loader);
