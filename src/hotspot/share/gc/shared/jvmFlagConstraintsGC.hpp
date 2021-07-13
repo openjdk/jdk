@@ -42,7 +42,6 @@
  */
 #define SHARED_GC_CONSTRAINTS(f)                               \
  f(uint,   ParallelGCThreadsConstraintFunc)                    \
- f(uint,   ConcGCThreadsConstraintFunc)                        \
  f(size_t, YoungPLABSizeConstraintFunc)                        \
  f(size_t, OldPLABSizeConstraintFunc)                          \
  f(uintx,  MinHeapFreeRatioConstraintFunc)                     \
