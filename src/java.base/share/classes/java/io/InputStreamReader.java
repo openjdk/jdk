@@ -35,7 +35,7 @@ import sun.nio.cs.StreamDecoder;
  * An InputStreamReader is a bridge from byte streams to character streams: It
  * reads bytes and decodes them into characters using a specified {@link
  * java.nio.charset.Charset charset}.  The charset that it uses
- * may be specified by name or may be given explicitly, or the platform's
+ * may be specified by name or may be given explicitly, or the
  * {@link Charset#defaultCharset() default charset} may be accepted.
  *
  * <p> Each invocation of one of an InputStreamReader's read() methods may

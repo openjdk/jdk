@@ -797,6 +797,15 @@ public final class System {
      *     <td>The module name of the initial/main module</td></tr>
      * <tr><th scope="row">{@systemProperty jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
+     * <tr><th scope="row">{@systemProperty file.encoding}</th>
+     *     <td>The name of the default charset. Users may specify
+     *     {@code UTF-8} or {@code COMPAT} on the command line to the value.
+     *     Specifying {@code COMPAT} provides the compatible behavior with
+     *     JDKs prior to 18. In that case, the value will be replaced with the
+     *     one from {@code native.encoding} system property during runtime startup.
+     *     Specifying it to {@code UTF-8}, or no value is set, defaults to use
+     *     {@code UTF-8}.
+     *     </td></tr>
      * </tbody>
      * </table>
      *
