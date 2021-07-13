@@ -247,7 +247,6 @@ void G1GCPhaseTimes::record_gc_pause_end() {
       ASSERT_PHASE_UNINITIALIZED(Termination);
     }
   }
-  print();
 }
 
 #undef ASSERT_PHASE_UNINITIALIZED
