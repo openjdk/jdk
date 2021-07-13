@@ -146,6 +146,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
 
+  friend class G1YoungGCVerifierMark;
+
   // Closures used in implementation.
   friend class G1ParScanThreadState;
   friend class G1ParScanThreadStateSet;

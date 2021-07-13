@@ -113,8 +113,8 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _collection_set->start_incremental_building();
 }
 
-void G1Policy::note_gc_start() {
-  phase_times()->note_gc_start();
+void G1Policy::note_young_gc_pause_start() {
+  phase_times()->record_gc_pause_start();
 }
 
 class G1YoungLengthPredictor {
@@ -517,7 +517,8 @@ void G1Policy::record_concurrent_refinement_stats() {
   }
 }
 
-void G1Policy::record_collection_pause_start(double start_time_sec) {
+void G1Policy::record_young_collection_start() {
+  Ticks now = Ticks::now();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -528,7 +529,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
-  phase_times()->record_cur_collection_start_sec(start_time_sec);
+  phase_times()->record_cur_collection_start_sec(now.seconds());
 
   record_concurrent_refinement_stats();
 
@@ -628,11 +629,12 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark) {
   G1GCPhaseTimes* p = phase_times();
 
-  double end_time_sec = os::elapsedTime();
-  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double start_time_s = phase_times()->cur_collection_start_sec();
+  double end_time_s = Ticks::now().seconds();
+  double pause_time_ms = (end_time_s - start_time_s) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
 
@@ -644,7 +646,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
     maybe_start_marking();
   }
 
-  double app_time_ms = (start_time_sec * 1000.0 - _analytics->prev_collection_pause_end_ms());
+  double app_time_ms = (start_time_s * 1000.0 - _analytics->prev_collection_pause_end_ms());
   if (app_time_ms < MIN_TIMER_GRANULARITY) {
     // This usually happens due to the timer not having the required
     // granularity. Some Linuxes are the usual culprits.
@@ -666,7 +668,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec);
+  record_pause(this_pause, start_time_s, end_time_s);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -889,7 +891,8 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::print_phases() {
+void G1Policy::note_young_gc_pause_end() {
+  phase_times()->record_gc_pause_end();
   phase_times()->print();
 }
 

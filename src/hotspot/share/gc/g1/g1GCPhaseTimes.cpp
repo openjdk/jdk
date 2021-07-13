@@ -192,7 +192,7 @@ void G1GCPhaseTimes::reset() {
   _weak_phase_times.reset();
 }
 
-void G1GCPhaseTimes::note_gc_start() {
+void G1GCPhaseTimes::record_gc_pause_start() {
   _gc_start_counter = os::elapsed_counter();
   reset();
 }
@@ -211,7 +211,7 @@ double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
   return 0.0;
 }
 
-void G1GCPhaseTimes::note_gc_end() {
+void G1GCPhaseTimes::record_gc_pause_end() {
   _gc_pause_time_ms = TimeHelper::counter_to_millis(os::elapsed_counter() - _gc_start_counter);
 
   double uninitialized = WorkerDataArray<double>::uninitialized();
@@ -247,6 +247,7 @@ void G1GCPhaseTimes::note_gc_end() {
       ASSERT_PHASE_UNINITIALIZED(Termination);
     }
   }
+  print();
 }
 
 #undef ASSERT_PHASE_UNINITIALIZED
@@ -519,8 +520,6 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print() {
-  note_gc_end();
-
   if (_cur_verify_before_time_ms > 0.0) {
     debug_time("Verify Before", _cur_verify_before_time_ms);
   }
