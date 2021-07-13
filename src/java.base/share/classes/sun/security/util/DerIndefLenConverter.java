@@ -340,6 +340,10 @@ class DerIndefLenConverter {
                 return null;
             }
             parseValue(len);
+            if (dataPos < 0 || dataPos > dataSize) {
+                // parseValue can overflow dataPos or exceed dataSize.
+                return null;
+            }
             if (unresolved == 0) {
                 unused = dataSize - dataPos;
                 dataSize = dataPos;
