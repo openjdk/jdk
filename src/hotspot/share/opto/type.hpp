@@ -189,7 +189,7 @@ public:
   inline void* operator new( size_t x ) throw() {
     Compile* compile = Compile::current();
     compile->set_type_last_size(x);
-    return compile->type_arena()->Amalloc_4(x);
+    return compile->type_arena()->AmallocWords(x);
   }
   inline void operator delete( void* ptr ) {
     Compile* compile = Compile::current();

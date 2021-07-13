@@ -498,27 +498,27 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin);
   TypeLong::TYPE_DOMAIN  = TypeLong::LONG;
 
-  const Type **fboth =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fboth[0] = Type::CONTROL;
   fboth[1] = Type::CONTROL;
   TypeTuple::IFBOTH = TypeTuple::make( 2, fboth );
 
-  const Type **ffalse =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **ffalse =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   ffalse[0] = Type::CONTROL;
   ffalse[1] = Type::TOP;
   TypeTuple::IFFALSE = TypeTuple::make( 2, ffalse );
 
-  const Type **fneither =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **fneither =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fneither[0] = Type::TOP;
   fneither[1] = Type::TOP;
   TypeTuple::IFNEITHER = TypeTuple::make( 2, fneither );
 
-  const Type **ftrue =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **ftrue =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   ftrue[0] = Type::TOP;
   ftrue[1] = Type::CONTROL;
   TypeTuple::IFTRUE = TypeTuple::make( 2, ftrue );
 
-  const Type **floop =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **floop =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   floop[0] = Type::CONTROL;
   floop[1] = TypeInt::INT;
   TypeTuple::LOOPBODY = TypeTuple::make( 2, floop );
@@ -533,7 +533,7 @@ void Type::Initialize_shared(Compile* current) {
   const Type **fmembar = TypeTuple::fields(0);
   TypeTuple::MEMBAR = TypeTuple::make(TypeFunc::Parms+0, fmembar);
 
-  const Type **fsc = (const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
+  const Type **fsc = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fsc[0] = TypeInt::CC;
   fsc[1] = Type::MEMORY;
   TypeTuple::STORECONDITIONAL = TypeTuple::make(2, fsc);
@@ -2056,7 +2056,7 @@ const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
 // Subroutine call type with space allocated for argument types
 // Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
 const Type **TypeTuple::fields( uint arg_cnt ) {
-  const Type **flds = (const Type **)(Compile::current()->type_arena()->Amalloc_4((TypeFunc::Parms+arg_cnt)*sizeof(Type*) ));
+  const Type **flds = (const Type **)(Compile::current()->type_arena()->AmallocWords((TypeFunc::Parms+arg_cnt)*sizeof(Type*) ));
   flds[TypeFunc::Control  ] = Type::CONTROL;
   flds[TypeFunc::I_O      ] = Type::ABIO;
   flds[TypeFunc::Memory   ] = Type::MEMORY;
@@ -2084,7 +2084,7 @@ const Type *TypeTuple::xmeet( const Type *t ) const {
   case Tuple: {                 // Meeting 2 signatures?
     const TypeTuple *x = t->is_tuple();
     assert( _cnt == x->_cnt, "" );
-    const Type **fields = (const Type **)(Compile::current()->type_arena()->Amalloc_4( _cnt*sizeof(Type*) ));
+    const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
     for( uint i=0; i<_cnt; i++ )
       fields[i] = field_at(i)->xmeet( x->field_at(i) );
     return TypeTuple::make(_cnt,fields);
@@ -2098,7 +2098,7 @@ const Type *TypeTuple::xmeet( const Type *t ) const {
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeTuple::xdual() const {
-  const Type **fields = (const Type **)(Compile::current()->type_arena()->Amalloc_4( _cnt*sizeof(Type*) ));
+  const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
   for( uint i=0; i<_cnt; i++ )
     fields[i] = _fields[i]->dual();
   return new TypeTuple(_cnt,fields);

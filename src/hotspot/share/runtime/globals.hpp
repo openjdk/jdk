@@ -453,7 +453,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena)")   \
+          "Use only malloc/free for allocation (no resource area/arena). "  \
+          "Used to help diagnose memory stomping bugs.")                    \
                                                                             \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \

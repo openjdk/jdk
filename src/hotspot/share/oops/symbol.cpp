@@ -89,7 +89,7 @@ void* Symbol::operator new(size_t sz, int len) throw() {
 
 void* Symbol::operator new(size_t sz, int len, Arena* arena) throw() {
   int alloc_size = size(len)*wordSize;
-  address res = (address)arena->Amalloc_4(alloc_size);
+  address res = (address)arena->AmallocWords(alloc_size);
   return res;
 }
 

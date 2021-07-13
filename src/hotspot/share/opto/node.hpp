@@ -238,7 +238,7 @@ public:
 
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    Node* n = (Node*)C->node_arena()->Amalloc_4(x);
+    Node* n = (Node*)C->node_arena()->AmallocWords(x);
     return (void*)n;
   }
 
