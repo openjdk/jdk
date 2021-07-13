@@ -313,14 +313,14 @@ bool DefNewGeneration::expand(size_t bytes) {
   return success;
 }
 
-size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
-                                                    size_t new_size_before,
-                                                    size_t alignment) const {
+size_t DefNewGeneration::adjust_for_thread_increase(size_t  new_size_candidate,
+                                                    size_t  new_size_before,
+                                                    size_t  alignment,
+                                                    int&    threads_count,
+                                                    size_t& thread_increase_size) const {
   size_t desired_new_size = new_size_before;
 
   if (NewSizeThreadIncrease > 0) {
-    int threads_count;
-    size_t thread_increase_size = 0;
 
     // 1. Check an overflow at 'threads_count * NewSizeThreadIncrease'.
     threads_count = Threads::number_of_non_daemon_threads();
@@ -370,7 +370,8 @@ void DefNewGeneration::compute_new_size() {
   size_t new_size_candidate = old_size / NewRatio;
   // Compute desired new generation size based on NewRatio and NewSizeThreadIncrease
   // and reverts to previous value if any overflow happens
-  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before, alignment);
+  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before, alignment,
+                                                       threads_count, thread_increase_size);
 
   // Adjust new generation size
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);

@@ -272,8 +272,8 @@ void CardGeneration::compute_new_size() {
                                initial_size() / (double) K, maximum_desired_capacity / (double) K);
       log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
                                shrink_bytes / (double) K,
-                               current_shrink_factor,
-                               _shrink_factor,
+                               ShrinkHeapInSteps ? current_shrink_factor : 100,
+                               ShrinkHeapInSteps ? _shrink_factor : 100,
                                _min_heap_delta_bytes / (double) K);
     }
   }

@@ -339,9 +339,11 @@ protected:
 
   // Return adjusted new size for NewSizeThreadIncrease.
   // If any overflow happens, revert to previous new size.
-  size_t adjust_for_thread_increase(size_t new_size_candidate,
-                                    size_t new_size_before,
-                                    size_t alignment) const;
+  size_t adjust_for_thread_increase(size_t  new_size_candidate,
+                                    size_t  new_size_before,
+                                    size_t  alignment,
+                                    int&    threads_count,
+                                    size_t& thread_increase_size) const;
 
 
   // Scavenge support
