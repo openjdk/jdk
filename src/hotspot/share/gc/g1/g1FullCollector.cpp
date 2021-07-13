@@ -174,6 +174,7 @@ void G1FullCollector::prepare_collection() {
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
   _heap->gc_prologue(true);
+  _heap->retire_tlabs();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -213,12 +214,12 @@ void G1FullCollector::complete_collection() {
 
   _heap->prepare_heap_for_mutators();
 
+  _heap->resize_all_tlabs();
+
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();
-
-  _heap->print_heap_after_full_collection();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
