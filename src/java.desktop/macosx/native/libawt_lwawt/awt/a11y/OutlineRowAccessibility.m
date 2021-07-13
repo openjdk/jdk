@@ -44,11 +44,13 @@ static jclass sjc_CAccessible = NULL;
     jclass axContextClass = (*env)->GetObjectClass(env, jAxContext);
     DECLARE_METHOD_RETURN(jm_getCurrentComponent, axContextClass, "getCurrentComponent", "()Ljava/awt/Component;", NULL);
     jobject newComponent = (*env)->CallObjectMethod(env, jAxContext, jm_getCurrentComponent);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jAxContext);
     if (newComponent != NULL) {
         GET_CACCESSIBLE_CLASS_RETURN(NULL);
         DECLARE_STATIC_METHOD_RETURN(sjm_getCAccessible, sjc_CAccessible, "getCAccessible", "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;", NULL);
         jobject currentAccessible = (*env)->CallStaticObjectMethod(env, sjc_CAccessible, sjm_getCAccessible, newComponent);
+        CHECK_EXCEPTION();
         (*env)->DeleteLocalRef(env, newComponent);
         return currentAccessible;
     } else {

@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8264287
- * @summary Create implementation for NSAccessibilityComboBox protocol peer
+ * @summary Test implementation of NSAccessibilityComboBox protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJComboboxTest
  * @requires (os.family == "windows" | os.family == "mac")

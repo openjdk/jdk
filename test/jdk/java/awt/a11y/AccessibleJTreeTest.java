@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8267387
- * @summary Create implementation for NSAccessibilityOutline protocol
+ * @summary Test implementation of NSAccessibilityOutLine protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTreeTest
  * @requires (os.family == "windows" | os.family == "mac")

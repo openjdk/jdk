@@ -629,7 +629,7 @@ static jobject sAccessibilityClass = NULL;
     NSArray *children = [CommonComponentAccessibility childrenOfParent:self
                                                     withEnv:env
                                                     withChildrenCode:childCode
-                                                    allowIgnored:([[self accessibilityRole] isEqualToString:NSAccessibilityListRole] || [[self accessibilityRole] isEqualToString:NSAccessibilityOutlineRole])
+                                                    allowIgnored:([[self accessibilityRole] isEqualToString:NSAccessibilityListRole] || [[self accessibilityRole] isEqualToString:NSAccessibilityOutlineRole] || [[self accessibilityRole] isEqualToString:NSAccessibilityTableRole])
                                                              recursive:[[self accessibilityRole] isEqualToString:NSAccessibilityOutlineRole]];
 
     NSArray *value = nil;

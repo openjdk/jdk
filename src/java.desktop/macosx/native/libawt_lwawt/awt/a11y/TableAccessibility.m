@@ -31,75 +31,58 @@
 #import "ColumnAccessibility.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
+#import "CellAccessibility.h"
+
+#define JAVA_AX_ROWS (1)
+#define JAVA_AX_COLS (2)
+
+static jclass sjc_CAccessibility = NULL;
+
+static jmethodID sjm_getAccessibleName = NULL;
+#define GET_ACCESSIBLENAME_METHOD_RETURN(ret) \
+    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
+    GET_STATIC_METHOD_RETURN(sjm_getAccessibleName, sjc_CAccessibility, "getAccessibleName", \
+                     "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", ret);
 
 @implementation TableAccessibility
 
-- (int)accessibleRowCount
+- (id)getTableInfo:(jint)info
 {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return 0;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getAccessibleRowCount, clsInfo, "getAccessibleRowCount", "()I", 0);
-    jint javaRowsCount = (*env)->CallIntMethod(env, axContext, jm_getAccessibleRowCount);
-    (*env)->DeleteLocalRef(env, axContext);
-    return (int)javaRowsCount;
+    if (fAccessible == NULL) return 0;
+
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
+    DECLARE_STATIC_METHOD_RETURN(jm_getTableInfo, sjc_CAccessibility, "getTableInfo",
+                          "(Ljavax/accessibility/Accessible;Ljava/awt/Component;I)I", nil);
+    jint count = (*env)->CallStaticIntMethod(env, sjc_CAccessibility, jm_getTableInfo, fAccessible,
+                                        fComponent, info);
+    CHECK_EXCEPTION();
+    NSNumber *index = [NSNumber numberWithInt:count];
+    return index;
 }
 
-- (int)accessibleColCount
+- (NSArray<NSNumber *> *)getTableSelectedInfo:(jint)info
 {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return 0;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getAccessibleColumnCount, clsInfo, "getAccessibleColumnCount", "()I", 0);
-    jint javaColsCount = (*env)->CallIntMethod(env, axContext, jm_getAccessibleColumnCount);
-    (*env)->DeleteLocalRef(env, axContext);
-    return (int)javaColsCount;
-}
+    if (fAccessible == NULL) return 0;
 
-- (NSArray<NSNumber *> *)selectedAccessibleRows
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return nil;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getSelectedAccessibleRows, clsInfo, "getSelectedAccessibleRows", "()[I", nil);
-    jintArray selectedRowNumbers = (*env)->CallObjectMethod(env, axContext, jm_getSelectedAccessibleRows);
-    (*env)->DeleteLocalRef(env, axContext);
-    if (selectedRowNumbers == NULL) {
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
+    DECLARE_STATIC_METHOD_RETURN(jm_getTableSelectedInfo, sjc_CAccessibility, "getTableSelectedInfo",
+                          "(Ljavax/accessibility/Accessible;Ljava/awt/Component;I)[I", nil);
+    jintArray selected = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getTableSelectedInfo, fAccessible,
+                                        fComponent, info);
+    CHECK_EXCEPTION();
+    if (selected == NULL) {
         return nil;
     }
-    jsize arrayLen = (*env)->GetArrayLength(env, selectedRowNumbers);
-    jint *indexsis = (*env)->GetIntArrayElements(env, selectedRowNumbers, 0);
-    NSMutableArray<NSNumber *> *nsArraySelectedRowNumbers = [NSMutableArray<NSNumber *> arrayWithCapacity:arrayLen];
+    jsize arrayLen = (*env)->GetArrayLength(env, selected);
+    jint *indexsis = (*env)->GetIntArrayElements(env, selected, 0);
+    NSMutableArray<NSNumber *> *nsArraySelected = [NSMutableArray<NSNumber *> arrayWithCapacity:arrayLen];
     for (int i = 0; i < arrayLen; i++) {
-        [nsArraySelectedRowNumbers addObject:[NSNumber numberWithInt:indexsis[i]]];
+        [nsArraySelected addObject:[NSNumber numberWithInt:indexsis[i]]];
     }
-    (*env)->DeleteLocalRef(env, selectedRowNumbers);
-    return [NSArray<NSNumber *> arrayWithArray:nsArraySelectedRowNumbers];
-}
-
-- (NSArray<NSNumber *> *)selectedAccessibleColumns
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return nil;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getSelectedAccessibleColumns, clsInfo, "getSelectedAccessibleColumns", "()[I", nil);
-    jintArray selectedColumnNumbers = (*env)->CallObjectMethod(env, axContext, jm_getSelectedAccessibleColumns);
-    (*env)->DeleteLocalRef(env, axContext);
-    if (selectedColumnNumbers == NULL) {
-        return nil;
-    }
-    jsize arrayLen = (*env)->GetArrayLength(env, selectedColumnNumbers);
-    jint *indexsis = (*env)->GetIntArrayElements(env, selectedColumnNumbers, 0);
-    NSMutableArray<NSNumber *> *nsArraySelectedColumnNumbers = [NSMutableArray<NSNumber *> arrayWithCapacity:arrayLen];
-    for (int i = 0; i < arrayLen; i++) {
-        [nsArraySelectedColumnNumbers addObject:[NSNumber numberWithInt:indexsis[i]]];
-    }
-    (*env)->DeleteLocalRef(env, selectedColumnNumbers);
-    return [NSArray<NSNumber *> arrayWithArray:nsArraySelectedColumnNumbers];
+    (*env)->DeleteLocalRef(env, selected);
+    return [NSArray<NSNumber *> arrayWithArray:nsArraySelected];
 }
 
 - (int)accessibleRowAtIndex:(int)index
@@ -110,6 +93,7 @@
     jclass clsInfo = (*env)->GetObjectClass(env, axContext);
     DECLARE_METHOD_RETURN(jm_getAccessibleRowAtIndex, clsInfo, "getAccessibleRowAtIndex", "(I)I", -1);
     jint rowAtIndex = (*env)->CallIntMethod(env, axContext, jm_getAccessibleRowAtIndex, (jint)index);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, axContext);
     return (int)rowAtIndex;
 }
@@ -122,6 +106,7 @@
     jclass clsInfo = (*env)->GetObjectClass(env, axContext);
     DECLARE_METHOD_RETURN(jm_getAccessibleColumnAtIndex, clsInfo, "getAccessibleColumnAtIndex", "(I)I", -1);
     jint columnAtIndex = (*env)->CallIntMethod(env, axContext, jm_getAccessibleColumnAtIndex, (jint)index);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, axContext);
     return (int)columnAtIndex;
 }
@@ -134,6 +119,7 @@
     jclass clsInfo = (*env)->GetObjectClass(env, axContext);
     DECLARE_METHOD_RETURN(jm_isAccessibleChildSelected, clsInfo, "isAccessibleChildSelected", "(I)Z", NO);
     jboolean isAccessibleChildSelected = (*env)->CallIntMethod(env, axContext, jm_isAccessibleChildSelected, (jint)index);
+    CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, axContext);
     return isAccessibleChildSelected;
 }
@@ -142,12 +128,7 @@
 
 - (NSArray *)accessibilityChildren
 {
-    NSArray *children = [self accessibilityRows];
-    NSArray *columns = [self accessibilityColumns];
-    NSMutableArray *results = [NSMutableArray arrayWithCapacity:[children count] + [columns count]];
-    [results addObjectsFromArray:children];
-    [results addObjectsFromArray:columns];
-    return [NSArray arrayWithArray:results];
+    return [self accessibilityRows];
 }
 
 - (NSArray *)accessibilitySelectedChildren
@@ -157,7 +138,7 @@
 
 - (NSArray *)accessibilityRows
 {
-    int rowCount = [self accessibleRowCount];
+    int rowCount = [self accessibilityRowCount];
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:rowCount];
     for (int i = 0; i < rowCount; i++) {
         [children addObject:[[TableRowAccessibility alloc] initWithParent:self
@@ -172,7 +153,7 @@
 
 - (nullable NSArray<id<NSAccessibilityRow>> *)accessibilitySelectedRows
 {
-    NSArray<NSNumber *> *selectedRowIndexses = [self selectedAccessibleRows];
+    NSArray<NSNumber *> *selectedRowIndexses = [self getTableSelectedInfo:JAVA_AX_ROWS];
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:[selectedRowIndexses count]];
     for (NSNumber *index in selectedRowIndexses) {
         [children addObject:[[TableRowAccessibility alloc] initWithParent:self
@@ -202,7 +183,7 @@
 
 - (nullable NSArray *)accessibilityColumns
 {
-    int colCount = [self accessibleColCount];
+    int colCount = [self accessibilityColumnCount];
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:colCount];
     for (int i = 0; i < colCount; i++) {
         [columns addObject:[[ColumnAccessibility alloc] initWithParent:self
@@ -217,7 +198,7 @@
 
 - (nullable NSArray *)accessibilitySelectedColumns
 {
-    NSArray<NSNumber *> *indexes = [self selectedAccessibleColumns];
+    NSArray<NSNumber *> *indexes = [self getTableSelectedInfo:JAVA_AX_COLS];
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[indexes count]];
     for (NSNumber *i in indexes) {
         [columns addObject:[[ColumnAccessibility alloc] initWithParent:self
@@ -230,16 +211,29 @@
     return [NSArray arrayWithArray:columns];
 }
 
-/* Other optional NSAccessibilityTable Methods
-- (nullable NSArray<id<NSAccessibilityRow>> *)accessibilityVisibleRows;
-- (nullable NSArray *)accessibilityColumns;
-- (nullable NSArray *)accessibilitySelectedColumns;
-- (nullable NSArray *)accessibilityVisibleColumns;
+- (NSInteger)accessibilityRowCount
+{
+    return [[self getTableInfo:JAVA_AX_ROWS] integerValue];
+}
 
- - (nullable NSArray *)accessibilitySelectedCells;
-- (nullable NSArray *)accessibilityVisibleCells;
-- (nullable NSArray *)accessibilityRowHeaderUIElements;
-- (nullable NSArray *)accessibilityColumnHeaderUIElements;
- */
+- (NSInteger)accessibilityColumnCount
+{
+    return [[self getTableInfo:JAVA_AX_COLS] integerValue];
+}
+
+- (nullable NSArray *)accessibilitySelectedCells;
+{
+    NSArray *children = [super accessibilitySelectedChildren];
+    NSMutableArray *cells = [NSMutableArray arrayWithCapacity:[children count]];
+    for (CommonComponentAccessibility *child in children) {
+        [cells addObject:[[CellAccessibility alloc] initWithParent:self
+                                                           withEnv:[ThreadUtilities getJNIEnv]
+                                                    withAccessible:child->fAccessible
+                                                         withIndex:child->fIndex
+                                                          withView:fView
+                                                      withJavaRole:child->fJavaRole]];
+    }
+    return [NSArray arrayWithArray:cells];
+}
 
 @end

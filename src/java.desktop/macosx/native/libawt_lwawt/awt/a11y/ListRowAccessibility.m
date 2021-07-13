@@ -49,7 +49,7 @@
                                                                           withEnv:[ThreadUtilities getJNIEnv]
                                                                          withView:self->fView
                                                                         isWrapped:YES];
-        return [NSArray arrayWithObject:[newChild autorelease]];
+        return [NSArray arrayWithObject:newChild];
     } else {
         return children;
     }

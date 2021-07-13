@@ -25,9 +25,10 @@
 /*
  * @test
  * @bug 8267388
- * @summary Create implementation for NSAccessibilityTable protocol
+ * @summary Test implementation of NSAccessibilityTable protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTableTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import javax.swing.*;

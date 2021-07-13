@@ -52,11 +52,6 @@ static jmethodID jm_getChildrenAndRoles = NULL;
     return NSAccessibilityTableRowSubrole;
 }
 
-- (BOOL)isAccessibilityEnabled
-{
-    return YES;
-}
-
 - (NSArray *)accessibilityChildren
 {
     NSArray *children = [super accessibilityChildren];
@@ -73,9 +68,9 @@ static jmethodID jm_getChildrenAndRoles = NULL;
         jsize arrayLen = (*env)->GetArrayLength(env, jchildrenAndRoles);
         NSMutableArray *childrenCells = [NSMutableArray arrayWithCapacity:arrayLen/2];
 
-        NSUInteger childIndex = [self rowNumberInTable] * [(TableAccessibility *)parent accessibleColCount];
+        NSUInteger childIndex = [self rowNumberInTable] * [(TableAccessibility *)parent accessibilityColumnCount];
         NSInteger i = childIndex * 2;
-        NSInteger n = ([self rowNumberInTable] + 1) * [(TableAccessibility *)parent accessibleColCount] * 2;
+        NSInteger n = ([self rowNumberInTable] + 1) * [(TableAccessibility *)parent accessibilityColumnCount] * 2;
         for(i; i < n; i+=2)
         {
             jobject /* Accessible */ jchild = (*env)->GetObjectArrayElement(env, jchildrenAndRoles, i);
@@ -97,7 +92,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
                                                                        withIndex:childIndex
                                                                         withView:self->fView
                                                                     withJavaRole:childJavaRole];
-            [childrenCells addObject:[child autorelease]];
+            [childrenCells addObject:[[child retain] autorelease]];
 
             (*env)->DeleteLocalRef(env, jchild);
             (*env)->DeleteLocalRef(env, jchildJavaRole);
@@ -113,7 +108,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 
 - (NSInteger)accessibilityIndex
 {
-    return [[self accessibilityParent] accessibilityIndexOfChild:self];
+    return self->fIndex;
 }
 
 - (NSString *)accessibilityLabel

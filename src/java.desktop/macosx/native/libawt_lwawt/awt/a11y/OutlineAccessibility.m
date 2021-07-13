@@ -41,7 +41,9 @@ static jmethodID sjm_isTreeRootVisible = NULL;
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     GET_ISTREEROOTVISIBLE_METHOD_RETURN(NO);
-    return (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, sjm_isTreeRootVisible, fAccessible, fComponent);
+    bool isTreeRootVisible = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, sjm_isTreeRootVisible, fAccessible, fComponent);
+    CHECK_EXCEPTION();
+    return isTreeRootVisible;
 }
 
 // NSAccessibilityElement protocol methods

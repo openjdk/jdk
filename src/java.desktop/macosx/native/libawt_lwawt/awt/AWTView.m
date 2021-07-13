@@ -676,7 +676,7 @@ static BOOL shouldUsePressAndHold() {
 
 - (void)setAccessibilitySelectedText:(NSString *)accessibilitySelectedText {
     id focused = [self accessibilityFocusedUIElement];
-    if ([focused respondsToSelector:@selector(setAccessibilitySelectedText)]) {
+    if ([focused respondsToSelector:@selector(setAccessibilitySelectedText:)]) {
     [focused setAccessibilitySelectedText:accessibilitySelectedText];
 }
 }

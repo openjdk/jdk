@@ -66,7 +66,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 
         NSUInteger childIndex = [self columnNumberInTable];
 
-        int inc = [(TableAccessibility *)[self accessibilityParent] accessibleColCount] * 2;
+        int inc = [(TableAccessibility *)[self accessibilityParent] accessibilityRowCount] * 2;
         NSInteger i = childIndex * 2;
         for(i; i < arrayLen; i += inc)
         {
@@ -89,7 +89,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
                                                                        withIndex:childIndex
                                                                         withView:self->fView
                                                                     withJavaRole:childJavaRole];
-            [childrenCells addObject:[child autorelease]];
+            [childrenCells addObject:[[child retain] autorelease]];
 
             (*env)->DeleteLocalRef(env, jchild);
             (*env)->DeleteLocalRef(env, jchildJavaRole);

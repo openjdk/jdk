@@ -769,6 +769,23 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
+    private static int[] getTableSelectedInfo(final Accessible a, final Component c,
+                                              final int info) {
+        if (a == null) return null;
+        return invokeAndWait(() -> {
+            AccessibleContext ac = a.getAccessibleContext();
+            AccessibleTable table = ac.getAccessibleTable();
+            if (table != null) {
+                if (info == JAVA_AX_COLS) {
+                    return table.getSelectedAccessibleColumns();
+                } else if (info == JAVA_AX_ROWS) {
+                    return table.getSelectedAccessibleRows();
+                }
+            }
+            return null;
+        }, c);
+    }
+
     private static AccessibleRole getAccessibleRoleForLabel(JLabel l, AccessibleRole fallback) {
         String text = l.getText();
         if (text != null && text.length() > 0) {

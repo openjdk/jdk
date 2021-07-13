@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8264303
- * @summary Create implementation for NSAccessibilityTabGroup protocol peer
+ * @summary Test implementation of NSAccessibilityTabPanel protocol peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTabbedPaneTest
  * @requires (os.family == "windows" | os.family == "mac")

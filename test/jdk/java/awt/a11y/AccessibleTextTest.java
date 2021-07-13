@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8262031
- * @summary Create implementation for NSAccessibilityNavigableStaticText protocol
+ * @summary Test implementation of NSAccessibilityNavigableStaticTest and NSAccessibilityStaticText protocols peer
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleTextTest
  * @requires (os.family == "windows" | os.family == "mac")

@@ -26,10 +26,6 @@
 
 @interface TableAccessibility : CommonComponentAccessibility <NSAccessibilityTable>
 
-@property(readonly) int accessibleRowCount;
-@property(readonly) int accessibleColCount;
-@property(readonly) NSArray<NSNumber *> *selectedAccessibleRows;
-@property(readonly) NSArray<NSNumber *> *selectedAccessibleColumns;
 - (BOOL)isAccessibleChildSelectedFromIndex:(int)index;
 - (int) accessibleRowAtIndex:(int)index;
 - (int) accessibleColumnAtIndex:(int)index;
