@@ -378,7 +378,6 @@ public class Platform {
                  isWindows()) &&
                 !isZero()    &&
                 !isMinimal() &&
-                !isAArch64() &&
                 !isARM());
     }
 

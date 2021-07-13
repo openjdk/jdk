@@ -4820,6 +4820,87 @@ define
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
+// Dummy reg-to-reg vector moves. Removed during post-selection cleanup.
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 //----------Load/Store/Move Instructions---------------------------------------
 //----------Load Instructions--------------------------------------------------
 
@@ -5233,46 +5314,6 @@ instruct loadF(regF dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
-// Load Float
-instruct MoveF2VL(vlRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveF2LEG(legRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveVL2F(regF dst, vlRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveLEG2F(regF dst, legRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Load Double
 instruct loadD_partial(regD dst, memory mem)
 %{
@@ -5300,45 +5341,6 @@ instruct loadD(regD dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
-// Load Double
-instruct MoveD2VL(vlRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveD2LEG(legRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveVL2D(regD dst, vlRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveLEG2D(regD dst, legRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
 
 // Following pseudo code describes the algorithm for max[FD]:
 // Min algorithm is on similar lines
@@ -11100,7 +11102,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 %}
 
 // Small ClearArray AVX512 non-constant length.
-instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
+instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2));
@@ -11212,7 +11214,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 %}
 
 // Large ClearArray AVX512.
-instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, regD tmp, kReg ktmp, rax_RegI zero,
+instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX > 2) && ((ClearArrayNode*)n)->is_large());

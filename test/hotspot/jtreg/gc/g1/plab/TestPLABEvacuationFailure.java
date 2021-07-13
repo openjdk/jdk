@@ -68,7 +68,7 @@ public class TestPLABEvacuationFailure {
             "failure wasted"));
 
     private static final String[] COMMON_OPTIONS = {
-        "-Xlog:gc=debug,gc+phases=trace",
+        "-Xlog:gc,gc+plab=debug",
         "-XX:+UseG1GC",
         "-XX:InitiatingHeapOccupancyPercent=100",
         "-XX:-G1UseAdaptiveIHOP",
