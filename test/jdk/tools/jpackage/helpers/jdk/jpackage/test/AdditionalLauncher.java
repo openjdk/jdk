@@ -81,12 +81,14 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
+    public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
+        withMenuShortcut = menu;
+        withShortcut = shortcut;
         if (TKit.isLinux()) {
-            addRawProperties(Map.entry("linux-shortcut", "" + menu));
+            addRawProperties(Map.entry("linux-shortcut", "" + shortcut));
         } else if (TKit.isWindows()) {
             addRawProperties(Map.entry("win-menu", "" + menu));
-            addRawProperties(Map.entry("win-shortcut", "" + desktop));
+            addRawProperties(Map.entry("win-shortcut", "" + shortcut));
         }
         return this;
     }
@@ -188,7 +190,7 @@ public final class AdditionalLauncher {
                 () -> iconInResourceDir(cmd, name));
         while (effectiveIcon != NO_ICON) {
             if (effectiveIcon != null) {
-                withLinuxDesktopFile = true;
+                withLinuxDesktopFile = Boolean.FALSE != withShortcut;
                 verifier.setExpectedIcon(effectiveIcon);
                 break;
             }
@@ -196,7 +198,7 @@ public final class AdditionalLauncher {
             Path customMainLauncherIcon = cmd.getArgumentValue("--icon",
                     () -> iconInResourceDir(cmd, null), Path::of);
             if (customMainLauncherIcon != null) {
-                withLinuxDesktopFile = true;
+                withLinuxDesktopFile = Boolean.FALSE != withShortcut;
                 verifier.setExpectedIcon(customMainLauncherIcon);
                 break;
             }
@@ -207,8 +209,8 @@ public final class AdditionalLauncher {
 
         if (TKit.isLinux() && !cmd.isImagePackageType()) {
             if (effectiveIcon != NO_ICON && !withLinuxDesktopFile) {
-                withLinuxDesktopFile = Stream.of("--linux-shortcut").anyMatch(
-                        cmd::hasArgument);
+                withLinuxDesktopFile = (Boolean.FALSE != withShortcut) &&
+                        Stream.of("--linux-shortcut").anyMatch(cmd::hasArgument);
                 verifier.setExpectedDefaultIcon();
             }
             Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
@@ -222,8 +224,21 @@ public final class AdditionalLauncher {
         verifier.applyTo(cmd);
     }
 
+    private void verifyShortcuts(JPackageCommand cmd) throws IOException {
+        if (TKit.isLinux() && !cmd.isImagePackageType()
+                && withShortcut != null) {
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            if (withShortcut) {
+                TKit.assertFileExists(desktopFile);
+            } else {
+                TKit.assertPathExists(desktopFile, false);
+            }
+        }
+    }
+
     private void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
+        verifyShortcuts(cmd);
 
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -250,6 +265,8 @@ public final class AdditionalLauncher {
     private final String name;
     private final List<Map.Entry<String, String>> rawProperties;
     private BiConsumer<Path, List<Map.Entry<String, String>>> createFileHandler;
+    private Boolean withMenuShortcut;
+    private Boolean withShortcut;
 
     private final static Path NO_ICON = Path.of("");
 }
