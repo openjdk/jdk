@@ -1081,6 +1081,10 @@
     <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
+  <Event name="Finalizer" category="Java Application" label="Finalizer" thread="false" startTime="false" period="endChunk">
+    <Field type="Class" name="overridingClass" label="Class Overriding Finalize" />
+  </Event>
+
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />
   </Type>
