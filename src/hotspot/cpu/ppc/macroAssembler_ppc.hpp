@@ -88,6 +88,9 @@ class MacroAssembler: public Assembler {
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
 
+  // Align prefix opcode to make sure it's not on the last word of a 64-byte block
+  void align_prefix();
+
   //
   // Constants, loading constants, TOC support
   //
