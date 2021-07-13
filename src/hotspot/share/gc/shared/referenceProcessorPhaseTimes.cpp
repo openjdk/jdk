@@ -172,7 +172,7 @@ ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, ui
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
   }
-  _SoftWeakFinalRefsPhase_worker_time_sec = new WorkerDataArray<double>(NULL, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
+  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(NULL, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
 
   reset();
 }
@@ -208,7 +208,7 @@ void ReferenceProcessorPhaseTimes::reset() {
     _balance_queues_time_ms[i] = uninitialized();
   }
 
-  _SoftWeakFinalRefsPhase_worker_time_sec->reset();
+  _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
     _ref_cleared[i] = 0;
@@ -224,7 +224,7 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
   for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     delete _sub_phases_worker_time_sec[i];
   }
-  delete _SoftWeakFinalRefsPhase_worker_time_sec;
+  delete _soft_weak_final_refs_phase_worker_time_sec;
 }
 
 double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
@@ -340,7 +340,7 @@ void ReferenceProcessorPhaseTimes::print_phase(ReferenceProcessor::RefProcPhases
         ShouldNotReachHere();
     }
     if (phase == ReferenceProcessor::SoftWeakFinalRefsPhase) {
-      print_worker_time(&ls, _SoftWeakFinalRefsPhase_worker_time_sec, SoftWeakFinalRefsPhaseSerWorkTitle, indent + 1);
+      print_worker_time(&ls, _soft_weak_final_refs_phase_worker_time_sec, SoftWeakFinalRefsPhaseSerWorkTitle, indent + 1);
     }
   }
 }
