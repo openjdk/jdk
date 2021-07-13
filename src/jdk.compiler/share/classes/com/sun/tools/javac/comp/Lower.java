@@ -3598,7 +3598,7 @@ public class Lower extends TreeTranslator {
             JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
                                                   List.nil()));
             JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
-            cases = cases.append(c);
+            cases = cases.prepend(c);
         }
 
         return cases;

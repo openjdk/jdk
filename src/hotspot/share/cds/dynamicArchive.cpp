@@ -346,12 +346,12 @@ public:
   }
 };
 
-void DynamicArchive::prepare_for_dynamic_dumping_at_exit() {
+void DynamicArchive::prepare_for_dynamic_dumping() {
   EXCEPTION_MARK;
   ResourceMark rm(THREAD);
-  MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+  MetaspaceShared::link_shared_classes(THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    log_error(cds)("ArchiveClassesAtExit has failed");
+    log_error(cds)("Dynamic dump has failed");
     log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
     // We cannot continue to dump the archive anymore.
@@ -365,7 +365,10 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
   ArchiveClassesAtExit = archive_name;
   if (Arguments::init_shared_archive_paths()) {
-    dump(CHECK);
+    prepare_for_dynamic_dumping();
+    if (DynamicDumpSharedSpaces) {
+      dump(CHECK);
+    }
   } else {
     ArchiveClassesAtExit = nullptr;
     THROW_MSG(vmSymbols::java_lang_RuntimeException(),
