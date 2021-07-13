@@ -76,7 +76,7 @@ final class DCmdStart extends AbstractDCmd {
         Long delay = parser.getOption("delay");
         Long duration = parser.getOption("duration");
         Boolean disk = parser.getOption("disk");
-        String path = parser.getOption("filename");
+        String path = expandFilename(parser.getOption("filename"));
         Long maxAge = parser.getOption("maxage");
         Long maxSize = parser.getOption("maxsize");
         Long flush = parser.getOption("flush-interval");
@@ -338,6 +338,10 @@ final class DCmdStart extends AbstractDCmd {
                                  filename may also be a directory in which case, the filename is
                                  generated from the PID and the current date in the specified
                                  directory. (STRING, no default value)
+
+                                 Note: If a filename is given, '%%p' in the filename will be
+                                 replaced by the PID, and '%%t' will be replaced by the time in
+                                 'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage          (Optional) Maximum time to keep the recorded data on disk. This
                                  parameter is valid only when the disk parameter is set to true.
