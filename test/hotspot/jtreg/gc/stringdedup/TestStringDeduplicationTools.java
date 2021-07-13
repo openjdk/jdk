@@ -50,6 +50,8 @@ class TestStringDeduplicationTools {
     private static Unsafe unsafe;
     private static byte[] dummy;
 
+    private static String overridingGC = null;
+
     static {
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
@@ -60,6 +62,12 @@ class TestStringDeduplicationTools {
             valueField.setAccessible(true);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void maybeOverrideGC(String[] args) {
+        if (args.length > 0) {
+            overridingGC = args[0];
         }
     }
 
@@ -226,6 +234,9 @@ class TestStringDeduplicationTools {
         };
 
         ArrayList<String> args = new ArrayList<String>();
+        if (overridingGC != null) {
+            args.add("-XX:+Use" + overridingGC + "GC");
+        }
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 
