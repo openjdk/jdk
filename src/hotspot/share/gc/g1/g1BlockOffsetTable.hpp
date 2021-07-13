@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,7 @@ private:
   inline size_t block_size(const HeapWord* p) const;
 
   // Returns the address of a block whose start is at most "addr".
-  // If "has_max_index" is true, "assumes "max_index" is the last valid one
-  // in the array.
-  inline HeapWord* block_at_or_preceding(const void* addr,
-                                         bool has_max_index,
-                                         size_t max_index) const;
+  inline HeapWord* block_at_or_preceding(const void* addr) const;
 
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
   // next block (or the end of the space.)  Return the address of the
