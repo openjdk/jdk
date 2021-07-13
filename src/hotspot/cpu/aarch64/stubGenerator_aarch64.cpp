@@ -4632,6 +4632,69 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  // a1 = r1 - string1 address
+  // a2 = r3 - string2 address
+  // result = r0 - return value. Already contains "false"
+  // cnt1 = r4 - amount of elements left to check
+  address generate_long_string_equals() {
+    Register a1 = r1, a2 = r3, result = r0, cnt1 = r4;
+    Label NOT_EQUAL, EQUAL, LOOP, SMALL_LOOP, POST_LOOP;
+    int loopThreshold = 4 * wordSize;
+
+    assert_different_registers(a1, a2, result, cnt1);
+
+    __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "long_string_equals");
+
+    address entry = __ pc();
+    __ enter();
+
+    // reset cnt1
+    __ add(cnt1, cnt1, loopThreshold);
+
+    // Main 32 byte comparison loop.
+    __ bind(LOOP);
+      __ ld1(v0, v1, __ T2D, Address(__ post(a1, loopThreshold)));
+      __ sub(cnt1, cnt1, loopThreshold);
+      __ ld1(v2, v3, __ T2D, Address(__ post(a2, loopThreshold)));
+      __ subs(zr, cnt1, loopThreshold);
+      __ eor(v0, __ T16B, v0, v2);
+      __ eor(v1, __ T16B, v1, v3);
+      __ orr(v0, __ T16B, v0, v1);
+      __ umov(rscratch1, v0, __ D, 0);
+      __ umov(rscratch2, v0, __ D, 1);
+      __ orr(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
+      __ br(__ GE, LOOP);
+
+    __ cbz(cnt1, EQUAL);
+    __ subs(cnt1, cnt1, wordSize);
+    __ br(__ LE, POST_LOOP);
+
+    __ bind(SMALL_LOOP);
+      __ ldr(rscratch1, Address(__ post(a1, wordSize)));
+      __ ldr(rscratch2, Address(__ post(a2, wordSize)));
+      __ subs(cnt1, cnt1, wordSize);
+      __ eor(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
+      __ br(__ GT, SMALL_LOOP);
+    __ bind(POST_LOOP);
+      __ ldr(rscratch1, Address(a1, cnt1));
+      __ ldr(rscratch2, Address(a2, cnt1));
+      __ eor(rscratch1, rscratch1, rscratch2);
+      __ cbnz(rscratch1, NOT_EQUAL);
+
+    __ bind(EQUAL);
+      __ mov(result, true);
+
+    __ bind(NOT_EQUAL);
+      __ leave();
+      __ ret(lr);
+
+    return entry;
+  }
+
   address generate_dsin_dcos(bool isCos) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isCos ? "libmDcos" : "libmDsin");
@@ -7083,6 +7146,11 @@ class StubGenerator: public StubCodeGenerator {
     // array equals stub for large arrays.
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
+    }
+
+    // string equals stub for long strings.
+    if (!UseSimpleStringEquals) {
+      StubRoutines::aarch64::_long_string_equals = generate_long_string_equals();
     }
 
     generate_compare_long_strings();

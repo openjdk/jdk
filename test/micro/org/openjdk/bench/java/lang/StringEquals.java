@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,22 @@
 package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.*;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /*
  * This benchmark naively explores String::equals performance
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Warmup(iterations=3, time=1)
+@Measurement(iterations=5, time=1)
 @State(Scope.Benchmark)
+@Fork(value=1)
 public class StringEquals {
+    @Param({"8", "11", "16", "22", "32", "45", "64", "91", "121", "181", "256", "512", "1024"})
+    int size;
 
     public String test = new String("0123456789");
     public String test2 = new String("tgntogjnrognagronagroangroarngorngaorng");
@@ -41,34 +48,95 @@ public class StringEquals {
     public String test6 = new String("0123456780");
     public String test7 = new String("0123\u01FE");
 
-    @Benchmark
+    public String str;
+    public String strh;
+    public String strt;
+    public String strDup;
+
+    @Setup()
+    public void init() {
+        str = newString(size, 'c', -1, 'a');
+        strh = newString(size, 'c', size / 3, 'a');
+        strt = newString(size, 'c', size - 1 - size / 3, 'a');
+        strDup = new String (str.toCharArray());
+    }
+
+    public String newString(int size, char charToFill, int pos, char charDiff) {
+        if (size > 0) {
+            char[] array = new char[size];
+            Arrays.fill(array, charToFill);
+            if (pos >= 0) {
+                array[pos] = charDiff;
+            }
+            return new String(array);
+        }
+        return "";
+    }
+
     public boolean different() {
-        return test.equals(test2);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test2);
+        }
+        return result;
     }
 
-    @Benchmark
-    public boolean equal() {
-        return test.equals(test3);
-    }
-
-    @Benchmark
     public boolean almostEqual() {
-        return test.equals(test6);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test6);
+        }
+        return result;
     }
 
-    @Benchmark
     public boolean almostEqualUTF16() {
-        return test4.equals(test7);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test4.equals(test7);
+        }
+        return result;
     }
 
-    @Benchmark
     public boolean differentCoders() {
-        return test.equals(test4);
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test.equals(test4);
+        }
+        return result;
+    }
+
+    public boolean equalUTF16() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= test5.equals(test4);
+        }
+        return result;
+    }
+
+    public boolean equalDiffAtHead() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strh);
+        }
+        return result;
+    }
+
+    public boolean equalDiffAtTail() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strt);
+        }
+        return result;
     }
 
     @Benchmark
-    public boolean equalsUTF16() {
-        return test5.equals(test4);
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean equal() {
+        boolean result = false;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str.equals(strDup);
+        }
+        return result;
     }
 }
 
