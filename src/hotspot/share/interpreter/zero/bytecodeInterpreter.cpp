@@ -107,7 +107,7 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                                         \
+#define RETURN_SAFEPOINT                                                                                  \
     if (SafepointMechanism::should_process(THREAD)) {                                                     \
       HandleMarkCleaner __hmc(THREAD);                                                                    \
       CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
@@ -1331,34 +1331,20 @@ run:
       CASE(_areturn):
       CASE(_ireturn):
       CASE(_freturn):
-      {
-          // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
-
-          goto handle_return;
-      }
-
       CASE(_lreturn):
       CASE(_dreturn):
-      {
+      CASE(_return): {
           // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
+          RETURN_SAFEPOINT;
           goto handle_return;
       }
 
       CASE(_return_register_finalizer): {
-
           oop rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
           if (rcvr->klass()->has_finalizer()) {
             CALL_VM(InterpreterRuntime::register_finalizer(THREAD, rcvr), handle_exception);
           }
-          goto handle_return;
-      }
-      CASE(_return): {
-
-          // Allow a safepoint before returning to frame manager.
-          SAFEPOINT;
           goto handle_return;
       }
 
