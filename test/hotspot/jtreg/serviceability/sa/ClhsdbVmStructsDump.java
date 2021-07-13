@@ -58,7 +58,6 @@ public class ClhsdbVmStructsDump {
                 "type ClassLoaderData* null",
                 "field JavaThread _osthread OSThread*",
                 "type TenuredGeneration CardGeneration",
-                "field JVMState _bci",
                 "type Universe null",
                 "type ConstantPoolCache MetaspaceObj"));
             test.run(theApp.getPid(), cmds, expStrMap, null);
