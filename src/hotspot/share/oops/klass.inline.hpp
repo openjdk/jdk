@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_KLASS_INLINE_HPP
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "oops/klass.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
@@ -48,11 +49,6 @@ inline bool Klass::is_non_strong_hidden() const {
 // unloading, and hence during concurrent class unloading.
 inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
-}
-
-inline void Klass::set_prototype_header(markWord header) {
-  assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");
-  _prototype_header = header;
 }
 
 inline oop Klass::java_mirror() const {

@@ -258,6 +258,7 @@ class ServerImpl implements TimeSource {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
+    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InetSocketAddress>() {
@@ -654,11 +655,11 @@ class ServerImpl implements TimeSource {
                  * They are linked together by a LinkHandler
                  * so that they can both be invoked in one call.
                  */
-                List<Filter> sf = ctx.getSystemFilters();
-                List<Filter> uf = ctx.getFilters();
+                final List<Filter> sf = ctx.getSystemFilters();
+                final List<Filter> uf = ctx.getFilters();
 
-                Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
+                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
 
                 /* set up the two stream references */
                 tx.getRequestBody();

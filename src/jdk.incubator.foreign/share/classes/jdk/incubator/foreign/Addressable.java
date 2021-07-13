@@ -28,12 +28,7 @@ package jdk.incubator.foreign;
 /**
  * Represents a type which is <em>addressable</em>. An addressable type is one which can be projected down to
  * a memory address instance (see {@link #address()}). Examples of addressable types are {@link MemorySegment},
- * {@link MemoryAddress}, {@link LibraryLookup.Symbol} and {@link CLinker.VaList}.
- *
- * @apiNote In the future, if the Java language permits, {@link Addressable}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types, such as {@link MemorySegment}, {@link MemoryAddress}, {@link LibraryLookup.Symbol}
- * and {@link CLinker.VaList}.
+ * {@link MemoryAddress} and {@link CLinker.VaList}.
  *
  * @implSpec
  * Implementations of this interface are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

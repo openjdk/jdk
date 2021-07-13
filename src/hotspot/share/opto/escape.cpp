@@ -1024,6 +1024,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       is_arraycopy = (call->Opcode() == Op_ArrayCopy) ||
         call->as_CallLeaf()->is_call_to_arraycopystub();
       // fall through
+    case Op_CallLeafVector:
     case Op_CallLeaf: {
       // Stub calls, objects do not escape but they are not scale replaceable.
       // Adjust escape state for outgoing arguments.
@@ -1107,7 +1108,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerRightShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerLeftShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "galoisCounterMode_AESCrypt") == 0 )
+                  strcmp(call->as_CallLeaf()->_name, "galoisCounterMode_AESCrypt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0)
                  ))) {
             call->dump();
             fatal("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name);

@@ -137,6 +137,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isAssignableFrom(ResolvedJavaType other);
 
     /**
+     * Returns {@code null} since support for VM anonymous class was removed by JDK-8243287.
+     * This method is preserved for JVMCI backwards compatibility.
+     */
+    @Deprecated
+    default ResolvedJavaType getHostClass() {
+        return null;
+    }
+
+    /**
      * Returns true if this type is exactly the type {@link java.lang.Object}.
      */
     default boolean isJavaLangObject() {

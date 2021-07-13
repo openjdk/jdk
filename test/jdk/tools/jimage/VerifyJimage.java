@@ -196,7 +196,11 @@ public class VerifyJimage {
     }
 
     private static Set<String> EXCLUDED_MODULES =
-        Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
+        Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
+            // All JVMCI packages other than jdk.vm.ci.services are dynamically
+            // exported to jdk.internal.vm.compiler
+            "jdk.internal.vm.compiler"
+        );
 
     private boolean accept(String entry) {
         int index = entry.indexOf('/', 1);

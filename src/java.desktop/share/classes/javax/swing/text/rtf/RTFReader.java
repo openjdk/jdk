@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,6 +567,7 @@ getCharacterSet(final String name)
 {
     char[] set = characterSets.get(name);
     if (set == null) {
+        @SuppressWarnings("removal")
         InputStream charsetStream = AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {
                     public InputStream run() {

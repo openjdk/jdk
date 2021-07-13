@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  * <p>
  * Any change to the compilation status of a snippet is reported with a
  * {@link jdk.jshell.SnippetEvent}.  There are three major kinds of
- * changes to the status of a snippet: it can created with <code>eval</code>,
+ * changes to the status of a snippet: it can be created with <code>eval</code>,
  * it can be dropped from the active source state with
  * {@link jdk.jshell.JShell#drop(jdk.jshell.Snippet)}, and it can have
  * its status updated as a result of a status change in another snippet.

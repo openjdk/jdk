@@ -340,7 +340,7 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  THREAD->as_Java_thread()->check_possible_safepoint();
+  THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 

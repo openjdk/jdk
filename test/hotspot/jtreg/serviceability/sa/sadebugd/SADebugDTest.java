@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run main/othervm SADebugDTest
+ * @run driver SADebugDTest
  */
 
 import java.util.concurrent.TimeUnit;

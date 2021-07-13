@@ -540,6 +540,28 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
   return early;
 }
 
+// This function is used by insert_anti_dependences to find unrelated loads for stores in implicit null checks.
+bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
+  // We expect an anti-dependence edge from 'load' to 'store', except when
+  // implicit_null_check() has hoisted 'store' above its early block to
+  // perform an implicit null check, and 'load' is placed in the null
+  // block. In this case it is safe to ignore the anti-dependence, as the
+  // null block is only reached if 'store' tries to write to null object and
+  // 'load' read from non-null object (there is preceding check for that)
+  // These objects can't be the same.
+  Block* store_block = get_block_for_node(store);
+  Block* load_block = get_block_for_node(load);
+  Node* end = store_block->end();
+  if (end->is_MachNullCheck() && (end->in(1) == store) && store_block->dominates(load_block)) {
+    Node* if_true = end->find_out_with(Op_IfTrue);
+    assert(if_true != NULL, "null check without null projection");
+    Node* null_block_region = if_true->find_out_with(Op_Region);
+    assert(null_block_region != NULL, "null check without null region");
+    return get_block_for_node(null_block_region) == load_block;
+  }
+  return false;
+}
+
 //--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
 // For each nearby store, either insert an "anti-dependence" edge
@@ -759,7 +781,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // will find him on the non_early_stores list and stick him
       // with a precedence edge.
       // (But, don't bother if LCA is already raised all the way.)
-      if (LCA != early) {
+      if (LCA != early && !unrelated_load_in_store_null_block(store, load)) {
         store_block->set_raise_LCA_mark(load_index);
         must_raise_LCA = true;
         non_early_stores.push(store);
@@ -770,23 +792,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // Add an anti-dep edge, and squeeze 'load' into the highest block.
       assert(store != load->find_exact_control(load->in(0)), "dependence cycle found");
       if (verify) {
-#ifdef ASSERT
-        // We expect an anti-dependence edge from 'load' to 'store', except when
-        // implicit_null_check() has hoisted 'store' above its early block to
-        // perform an implicit null check, and 'load' is placed in the null
-        // block. In this case it is safe to ignore the anti-dependence, as the
-        // null block is only reached if 'store' tries to write to null.
-        Block* store_null_block = NULL;
-        Node* store_null_check = store->find_out_with(Op_MachNullCheck);
-        if (store_null_check != NULL) {
-          Node* if_true = store_null_check->find_out_with(Op_IfTrue);
-          assert(if_true != NULL, "null check without null projection");
-          Node* null_block_region = if_true->find_out_with(Op_Region);
-          assert(null_block_region != NULL, "null check without null region");
-          store_null_block = get_block_for_node(null_block_region);
-        }
-#endif
-        assert(LCA == store_null_block || store->find_edge(load) != -1,
+        assert(store->find_edge(load) != -1 || unrelated_load_in_store_null_block(store, load),
                "missing precedence edge");
       } else {
         store->add_prec(load);

@@ -170,6 +170,8 @@ public class Basic {
                         conceals = stringToSet(line);
                     } else if (line.contains("VM warning:")) {
                         continue;  // ignore server vm warning see#8196748
+                    } else if (line.contains("WARNING: JNI access from module not specified in --enable-native-access:")) {
+                        continue;
                     } else {
                         throw new AssertionError("Unknown value " + line);
                     }

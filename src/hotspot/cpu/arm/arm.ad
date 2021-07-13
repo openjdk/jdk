@@ -977,14 +977,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   // TODO
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
+  bool ret_value = match_rule_supported(opcode) && vector_size_supported(bt, vlen);
   // Add rules here.
 
   return ret_value;  // Per default match rules are supported.
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  return false;
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -995,25 +991,19 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return VM_Version::has_simd();
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
 }
 
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
-}
-
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
 }
 
 // Vector width in bytes
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   return MaxVectorSize;
-}
-
-const bool Matcher::supports_scalable_vector() {
-  return false;
 }
 
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
@@ -1042,15 +1032,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return 8/type2aelembytes(bt);
 }
 
-// ARM doesn't support misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return false;
-}
-
-const bool Matcher::convL2FSupported(void) {
-  return false;
-}
-
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -1065,39 +1046,12 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return false;
 }
 
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
-  return false;
-}
-
-// No scaling for the parameter the ClearArray node.
-const bool Matcher::init_array_count_is_in_bytes = true;
-
-// Needs 2 CMOV's for longs.
-const int Matcher::long_cmove_cost() { return 2; }
-
-// CMOVF/CMOVD are expensive on ARM.
-const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
-
-// Does the CPU require late expand (see block.cpp for description of late expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-// FIXME: does this handle vector shifts as well?
-const bool Matcher::need_masked_shift_count = true;
-
-const bool Matcher::convi2l_type_required = true;
-
-// No support for generic vector operands.
-const bool Matcher::supports_generic_vector_operands  = false;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -1123,60 +1077,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return clone_base_plus_offset_address(m, mstack, address_visited);
 }
 
-bool Matcher::narrow_oop_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedOops, "only for compressed oops code");
-  return false;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedClassPointers, "only for compressed klass code");
-  return false;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  NOT_LP64(ShouldNotCallThis());
-  return true;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  NOT_LP64(ShouldNotCallThis());
-  return true;
-}
-
-// Is it better to copy float constants, or load them directly from memory?
-// Intel can load a float constant from a direct address, requiring no
-// extra registers.  Most RISCs will have to materialize an address into a
-// register first, so they would do better to copy the constant from stack.
-const bool Matcher::rematerialize_float_constants = false;
-
-// If CPU can load and store mis-aligned doubles directly then no fixup is
-// needed.  Else we split the double into 2 integer pieces and move it
-// piece-by-piece.  Only happens when passing doubles into C code as the
-// Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = false;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
-// Are floats converted to double when stored to stack during deoptimization?
-// ARM does not handle callee-save floats.
-bool Matcher::float_in_double() {
-  return false;
-}
-
-// Do ints take an entire long register or just half?
-// Note that we if-def off of _LP64.
-// The relevant question is how the int is callee-saved.  In _LP64
-// the whole long is written but de-opt'ing will have to extract
-// the relevant 32 bits, in not-_LP64 only the low 32 bits is written.
-#ifdef _LP64
-const bool Matcher::int_in_long = true;
-#else
-const bool Matcher::int_in_long = false;
-#endif
-
 // Return whether or not this register is ever used as an argument.  This
 // function is used on startup to build the trampoline stubs in generateOptoStub.
 // Registers not mentioned will be killed by the VM call in the trampoline, and
@@ -1194,6 +1094,16 @@ bool Matcher::can_be_java_arg( int reg ) {
 
 bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 12 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
@@ -5288,6 +5198,39 @@ instruct castLL( iRegL dst ) %{
   ins_pipe(empty);
 %}
 
+instruct castFF( regF dst ) %{
+  match(Set dst (CastFF dst));
+  format %{ "! castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castDD( regD dst ) %{
+  match(Set dst (CastDD dst));
+  format %{ "! castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castVVD( vecD dst ) %{
+  match(Set dst (CastVV dst));
+  format %{ "! castVV of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castVVX( vecX dst ) %{
+  match(Set dst (CastVV dst));
+  format %{ "! castVV of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+
 //----------Arithmetic Instructions--------------------------------------------
 // Addition Instructions
 // Register Addition
@@ -5517,7 +5460,6 @@ instruct storeXConditional( memoryex mem, iRegX oldval, iRegX newval, iRegX tmp,
     __ cmp($tmp$$Register, 1, eq);
     __ b(loop, eq);
     __ teq($tmp$$Register, 0);
-    // used by biased locking only. Requires a membar.
     __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadStore | MacroAssembler::LoadLoad), noreg);
   %}
   ins_pipe( long_memory_op );
@@ -9017,7 +8959,6 @@ instruct partialSubtypeCheck( R0RegP index, R1RegP sub, R2RegP super, flagsRegP 
 instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRegP scratch )
 %{
   match(Set pcc (FastLock object box));
-  predicate(!(UseBiasedLocking && !UseOptoBiasInlining));
 
   effect(TEMP scratch, TEMP scratch2);
   ins_cost(DEFAULT_COST*3);
@@ -9028,22 +8969,6 @@ instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRe
   %}
   ins_pipe(long_memory_op);
 %}
-
-instruct cmpFastLock_noBiasInline(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2,
-                                  iRegP scratch, iRegP scratch3) %{
-  match(Set pcc (FastLock object box));
-  predicate(UseBiasedLocking && !UseOptoBiasInlining);
-
-  effect(TEMP scratch, TEMP scratch2, TEMP scratch3);
-  ins_cost(DEFAULT_COST*5);
-
-  format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $scratch3" %}
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $scratch$$Register, $scratch2$$Register, $scratch3$$Register);
-  %}
-  ins_pipe(long_memory_op);
-%}
-
 
 instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRegP scratch ) %{
   match(Set pcc (FastUnlock object box));

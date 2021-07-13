@@ -31,9 +31,9 @@
 @interface SliderAccessibility : CommonComponentAccessibility <NSAccessibilitySlider> {
 
 };
-
-- (nullable NSString *)accessibilityLabel;
-- (nullable id)accessibilityValue;
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+- (NSString * _Nullable)accessibilityLabel;
+- (id _Nullable)accessibilityValue;
 - (BOOL)accessibilityPerformDecrement;
 - (BOOL)accessibilityPerformIncrement;
 @end

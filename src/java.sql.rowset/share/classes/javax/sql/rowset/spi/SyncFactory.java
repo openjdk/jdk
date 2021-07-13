@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,6 +328,7 @@ public class SyncFactory {
     private static String colon = ":";
     private static String strFileSep = "/";
 
+    @SuppressWarnings("removal")
     private static synchronized void initMapIfNecessary() throws SyncFactoryException {
 
         // Local implementation class names and keys from Properties
@@ -564,7 +565,7 @@ public class SyncFactory {
 
         try {
             ReflectUtil.checkPackageAccess(providerID);
-        } catch (java.security.AccessControlException e) {
+        } catch (@SuppressWarnings("removal") java.security.AccessControlException e) {
             SyncFactoryException sfe = new SyncFactoryException();
             sfe.initCause(e);
             throw sfe;
@@ -636,6 +637,7 @@ public class SyncFactory {
      */
     public static void setLogger(Logger logger) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
@@ -673,6 +675,7 @@ public class SyncFactory {
      */
     public static void setLogger(Logger logger, Level level) {
         // singleton
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
@@ -723,6 +726,7 @@ public class SyncFactory {
      */
     public static synchronized void setJNDIContext(javax.naming.Context ctx)
             throws SyncFactoryException {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_SYNCFACTORY_PERMISSION);

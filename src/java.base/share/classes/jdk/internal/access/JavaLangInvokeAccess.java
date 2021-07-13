@@ -132,4 +132,11 @@ public interface JavaLangInvokeAccess {
      * @return the native method handle
      */
     MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
+
+    /**
+     * Ensure given method handle is customized
+     *
+     * @param mh the method handle
+     */
+    void ensureCustomized(MethodHandle mh);
 }

@@ -316,8 +316,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 fullBody.addAll(cmtutils.makeFirstSentenceTree(text));
             }
             List<? extends DocTree> propertyTags = utils.getBlockTags(property,
-                    t -> (t instanceof UnknownBlockTagTree)
-                            && ((UnknownBlockTagTree) t).getTagName().equals("propertyDescription"));
+                    t -> (t instanceof UnknownBlockTagTree tree)
+                            && (tree.getTagName().equals("propertyDescription")));
             if (propertyTags.isEmpty()) {
                 List<? extends DocTree> comment = utils.getFullBody(property);
                 blockTags.addAll(cmtutils.makePropertyDescriptionTree(comment));
@@ -331,8 +331,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         blockTags.addAll(tags);
 
         List<? extends DocTree> bTags = utils.getBlockTags(property,
-                t -> (t instanceof UnknownBlockTagTree)
-                        && ((UnknownBlockTagTree) t).getTagName().equals("defaultValue"));
+                t -> (t instanceof UnknownBlockTagTree tree)
+                        && (tree.getTagName().equals("defaultValue")));
         blockTags.addAll(bTags);
 
         //add @see tags

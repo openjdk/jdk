@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -87,6 +87,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 
 /**
@@ -111,7 +112,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Elena Litani IBM
  * @author Andy Clark IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
- * @LastModified: Apr 2020
+ * @LastModified: May 2021
  */
 public class XMLSchemaValidator
     implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler, XSElementDeclHelper {
@@ -263,9 +264,9 @@ public class XMLSchemaValidator
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
-    protected static final String OVERRIDE_PARSER = JdkXmlUtils.OVERRIDE_PARSER;
+    protected static final String OVERRIDE_PARSER = JdkConstants.OVERRIDE_PARSER;
 
     protected static final String USE_CATALOG = XMLConstants.USE_CATALOG;
 
@@ -323,7 +324,7 @@ public class XMLSchemaValidator
         null,
         null,
         null,
-        JdkXmlUtils.OVERRIDE_PARSER_DEFAULT,
+        JdkConstants.OVERRIDE_PARSER_DEFAULT,
         JdkXmlUtils.USE_CATALOG_DEFAULT
     };
 
@@ -346,13 +347,13 @@ public class XMLSchemaValidator
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
             JdkXmlUtils.CATALOG_RESOLVE,
-            JdkXmlUtils.CDATA_CHUNK_SIZE
+            JdkConstants.CDATA_CHUNK_SIZE
         };
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS =
         { null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null, null, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT };
+            null, null, null, null, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT };
 
     // this is the number of valuestores of each kind
     // we expect an element to have.  It's almost

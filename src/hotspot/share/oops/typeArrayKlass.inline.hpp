@@ -25,10 +25,11 @@
 #ifndef SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP
 #define SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP
 
+#include "oops/typeArrayKlass.hpp"
+
 #include "oops/arrayKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 
 class OopIterateClosure;

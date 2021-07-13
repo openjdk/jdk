@@ -551,10 +551,9 @@ class JarVerifier {
      * Match CodeSource to a CodeSigner[] in the signer cache.
      */
     private CodeSigner[] findMatchingSigners(CodeSource cs) {
-        if (cs instanceof VerifierCodeSource) {
-            VerifierCodeSource vcs = (VerifierCodeSource) cs;
+        if (cs instanceof VerifierCodeSource vcs) {
             if (vcs.isSameDomain(csdomain)) {
-                return ((VerifierCodeSource) cs).getPrivateSigners();
+                return vcs.getPrivateSigners();
             }
         }
 
@@ -617,8 +616,7 @@ class JarVerifier {
             if (obj == this) {
                 return true;
             }
-            if (obj instanceof VerifierCodeSource) {
-                VerifierCodeSource that = (VerifierCodeSource) obj;
+            if (obj instanceof VerifierCodeSource that) {
 
                 /*
                  * Only compare against other per-signer singletons constructed

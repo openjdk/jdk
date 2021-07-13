@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/instanceOop.hpp"
@@ -72,7 +71,7 @@ class StubGenerator: public StubCodeGenerator {
     intptr_t*        parameters,
     int              parameter_words,
     TRAPS) {
-    JavaThread *thread = THREAD->as_Java_thread();
+    JavaThread *thread = THREAD;
     ZeroStack *stack = thread->zero_stack();
 
     // Make sure we have no pending exceptions
@@ -316,7 +315,7 @@ EntryFrame *EntryFrame::build(const intptr_t*  parameters,
                               JavaCallWrapper* call_wrapper,
                               TRAPS) {
 
-  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
+  ZeroStack *stack = THREAD->zero_stack();
   stack->overflow_check(header_words + parameter_words, CHECK_NULL);
 
   stack->push(0); // next_frame, filled in later

@@ -458,7 +458,8 @@ public class DocCommentParser {
             nextChar();
         }
 
-        if (depth != 0)
+        // depth < 0 will be caught and reported by ReferenceParser#parse
+        if (depth > 0)
             throw new ParseException("dc.unterminated.signature");
 
         String sig = newString(pos, bp);

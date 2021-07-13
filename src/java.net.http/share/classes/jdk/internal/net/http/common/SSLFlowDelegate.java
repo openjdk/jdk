@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ public class SSLFlowDelegate {
 
         Reader() {
             super();
-            scheduler = SequentialScheduler.synchronizedScheduler(
+            scheduler = SequentialScheduler.lockingScheduler(
                     new ReaderDownstreamPusher());
             this.readBuf = ByteBuffer.allocate(1024);
             readBuf.limit(0); // keep in read mode
@@ -777,10 +777,10 @@ public class SSLFlowDelegate {
             try {
                 if (debugw.on())
                     debugw.log("processData, writeList remaining:"
-                                + Utils.remaining(writeList) + ", hsTriggered:"
+                                + Utils.synchronizedRemaining(writeList) + ", hsTriggered:"
                                 + hsTriggered() + ", needWrap:" + needWrap());
 
-                while (Utils.remaining(writeList) > 0 || hsTriggered() || needWrap()) {
+                while (Utils.synchronizedRemaining(writeList) > 0 || hsTriggered() || needWrap()) {
                     ByteBuffer[] outbufs = writeList.toArray(Utils.EMPTY_BB_ARRAY);
                     EngineResult result = wrapBuffers(outbufs);
                     if (debugw.on())
@@ -823,7 +823,7 @@ public class SSLFlowDelegate {
                         }
                     }
                 }
-                if (completing && Utils.remaining(writeList) == 0) {
+                if (completing && Utils.synchronizedRemaining(writeList) == 0) {
                     if (!completed) {
                         completed = true;
                         writeList.clear();

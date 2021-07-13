@@ -1021,11 +1021,17 @@ void PhaseIterGVN::shuffle_worklist() {
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
+    ResourceMark rm;
+    VectorSet visited;
+    Node_List worklist;
+
     _verify_window[_verify_counter % _verify_window_size] = n;
     ++_verify_counter;
     if (C->unique() < 1000 || 0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
       ++_verify_full_passes;
-      Node::verify(C->root(), -1);
+      worklist.push(C->root());
+      Node::verify(-1, visited, worklist);
+      return;
     }
     for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
@@ -1038,8 +1044,11 @@ void PhaseIterGVN::verify_step(Node* n) {
         continue;
       }
       // Typical fanout is 1-2, so this call visits about 6 nodes.
-      Node::verify(n, 4);
+      if (!visited.test_set(n->_idx)) {
+        worklist.push(n);
+      }
     }
+    Node::verify(4, visited, worklist);
   }
 }
 
@@ -1238,7 +1247,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
   if (VerifyIterativeGVN) {
-   assert(!_table.find_index(n->_idx), "found duplicate entry in table");
+    assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 
   // Apply the Ideal call in a loop until it no longer applies

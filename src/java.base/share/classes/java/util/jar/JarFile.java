@@ -190,19 +190,18 @@ public class JarFile extends ZipFile {
         String enableMultiRelease = GetPropertyAction
                 .privilegedGetProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
-            case "true":
-            default:
-                MULTI_RELEASE_ENABLED = true;
-                MULTI_RELEASE_FORCED = false;
-                break;
-            case "false":
+            case "false" -> {
                 MULTI_RELEASE_ENABLED = false;
                 MULTI_RELEASE_FORCED = false;
-                break;
-            case "force":
+            }
+            case "force" -> {
                 MULTI_RELEASE_ENABLED = true;
                 MULTI_RELEASE_FORCED = true;
-                break;
+            }
+            default -> {
+                MULTI_RELEASE_ENABLED = true;
+                MULTI_RELEASE_FORCED = false;
+            }
         }
     }
 

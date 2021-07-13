@@ -39,8 +39,8 @@ class JVMCIRuntime;
 class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
-  JavaThread* thread=JavaThread::current(); \
-  Thread* THREAD = thread;
+  JavaThread* thread = JavaThread::current(); \
+  JavaThread* THREAD = thread; // For exception macros.
 
 // Helper to log more context on a JNI exception
 #define JVMCI_EXCEPTION_CHECK(env, ...) \

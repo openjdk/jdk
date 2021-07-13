@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID JavaVM Echo EchoImpl EchoImpl_Stub
+ * @build TestLibrary JavaVM Echo EchoImpl EchoImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=120 UseCustomSocketFactory
  */
 
@@ -63,7 +63,8 @@ public class UseCustomSocketFactory {
         for (String protocol : protocols) {
             System.err.println("test policy: " +
                     TestParams.defaultPolicy);
-            JavaVM serverVM = new JavaVM("EchoImpl", "-Djava.security.policy=" +
+            JavaVM serverVM = new JavaVM("EchoImpl",
+                    "-Djava.security.manager=allow -Djava.security.policy=" +
                     TestParams.defaultPolicy +
                     " -Drmi.registry.port=" +
                     registryPort, protocol);

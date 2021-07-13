@@ -96,13 +96,32 @@ class x86 {
 
  private:
   static address _verify_fpu_cntrl_wrd_entry;
+  static address _d2i_wrapper;
+  static address _d2l_wrapper;
+
+  static jint    _fpu_cntrl_wrd_std;
+  static jint    _fpu_cntrl_wrd_24;
+  static jint    _fpu_cntrl_wrd_trunc;
+
+  static jint    _fpu_subnormal_bias1[3];
+  static jint    _fpu_subnormal_bias2[3];
 
  public:
   static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
+  static address d2i_wrapper()                { return _d2i_wrapper; }
+  static address d2l_wrapper()                { return _d2l_wrapper; }
+  static address addr_fpu_cntrl_wrd_std()     { return (address)&_fpu_cntrl_wrd_std;   }
+  static address addr_fpu_cntrl_wrd_24()      { return (address)&_fpu_cntrl_wrd_24;    }
+  static address addr_fpu_cntrl_wrd_trunc()   { return (address)&_fpu_cntrl_wrd_trunc; }
+  static address addr_fpu_subnormal_bias1()   { return (address)&_fpu_subnormal_bias1; }
+  static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
 
+  static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
 #endif // !LP64
 
  private:
+  static jint    _mxcsr_std;
+
   static address _verify_mxcsr_entry;
   // shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers
   static address _key_shuffle_mask_addr;
@@ -119,6 +138,9 @@ class x86 {
   static juint    _crc_by128_masks_avx512[];
   static juint    _crc_table_avx512[];
   static juint    _shuf_table_crc32_avx512[];
+  static juint    _adler32_shuf0_table[];
+  static juint    _adler32_shuf1_table[];
+  static juint    _adler32_ascale_table[];
 #endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
@@ -169,6 +191,15 @@ class x86 {
   static address _left_shift_mask;
   static address _and_mask;
   static address _url_charset;
+  static address _lookup_lo_base64;
+  static address _lookup_hi_base64;
+  static address _lookup_lo_base64url;
+  static address _lookup_hi_base64url;
+  static address _pack_vec_base64;
+  static address _join_0_1_base64;
+  static address _join_1_2_base64;
+  static address _join_2_3_base64;
+  static address _decoding_table_base64;
   static address _ghash_poly512_addr;
 #endif
   // byte flip mask for sha256
@@ -217,6 +248,7 @@ class x86 {
   static address _ones_adr;
 
  public:
+  static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
   static address counter_shuffle_mask_addr() { return _counter_shuffle_mask_addr; }
@@ -315,6 +347,15 @@ class x86 {
   static address base64_left_shift_mask_addr() { return _left_shift_mask; }
   static address base64_and_mask_addr() { return _and_mask; }
   static address counter_mask_addr() { return _counter_mask_addr; }
+  static address base64_vbmi_lookup_lo_addr() { return _lookup_lo_base64; }
+  static address base64_vbmi_lookup_hi_addr() { return _lookup_hi_base64; }
+  static address base64_vbmi_lookup_lo_url_addr() { return _lookup_lo_base64url; }
+  static address base64_vbmi_lookup_hi_url_addr() { return _lookup_hi_base64url; }
+  static address base64_vbmi_pack_vec_addr() { return _pack_vec_base64; }
+  static address base64_vbmi_join_0_1_addr() { return _join_0_1_base64; }
+  static address base64_vbmi_join_1_2_addr() { return _join_1_2_base64; }
+  static address base64_vbmi_join_2_3_addr() { return _join_2_3_base64; }
+  static address base64_decoding_table_addr() { return _decoding_table_base64; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

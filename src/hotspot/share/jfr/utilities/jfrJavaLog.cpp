@@ -100,7 +100,7 @@ static void log_config_change_internal(bool init, TRAPS) {
 }
 
 static void log_config_change() {
-  Thread* t = Thread::current();
+  JavaThread* t = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   log_config_change_internal(false, t);
 }

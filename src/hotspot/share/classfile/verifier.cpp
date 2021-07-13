@@ -175,7 +175,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
   // Timer includes any side effects of class verification (resolution,
   // etc), but not recursive calls to Verifier::verify().
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
   PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
                            ClassLoader::perf_class_verify_selftime(),
                            ClassLoader::perf_classes_verified(),
@@ -301,7 +301,7 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
 
 Symbol* Verifier::inference_verify(
     InstanceKlass* klass, char* message, size_t message_len, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
 
   verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 
@@ -1890,6 +1890,12 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
         catch_type_index, cp, CHECK_VERIFY(this));
       VerificationType throwable =
         VerificationType::reference_type(vmSymbols::java_lang_Throwable());
+      // If the catch type is Throwable pre-resolve it now as the assignable check won't
+      // do that, and we need to avoid a runtime resolution in case we are trying to
+      // catch OutOfMemoryError.
+      if (cp->klass_name_at(catch_type_index) == vmSymbols::java_lang_Throwable()) {
+        cp->klass_at(catch_type_index, CHECK);
+      }
       bool is_subclass = throwable.is_assignable_from(
         catch_type, this, false, CHECK_VERIFY(this));
       if (!is_subclass) {

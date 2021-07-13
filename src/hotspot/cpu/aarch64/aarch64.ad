@@ -2400,6 +2400,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   } else { // NEON
     // Special cases
     switch (opcode) {
+    case Op_VectorMaskCmp:
+    // We don't have VectorReinterpret with bit_size less than 64 support for
+    // now, even for byte type. To be refined with fully VectorCast support.
+    case Op_VectorReinterpret:
+      if (vlen < 2 || bit_size < 64) {
+        return false;
+      }
+      break;
     case Op_MulAddVS2VI:
       if (bit_size < 128) {
         return false;
@@ -2413,15 +2421,28 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    // Some types of VectorCast are not implemented for now.
+    case Op_VectorCastI2X:
+      if (bt == T_BYTE) {
+        return false;
+      }
+      break;
+    case Op_VectorCastS2X:
+      if (vlen < 4 || bit_size < 64) {
+        return false;
+      }
+      break;
+    case Op_VectorCastF2X:
+    case Op_VectorCastD2X:
+      if (bt == T_INT || bt == T_SHORT || bt == T_BYTE || bt == T_LONG) {
+        return false;
+      }
+      break;
     default:
       break;
     }
   }
   return true; // Per default match rules are supported.
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  return UseSVE > 0;
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2432,16 +2453,14 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(elemTy, length);
 }
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return true;
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
 }
 
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
-}
-
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -2452,17 +2471,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   // The passed offset is relative to address of the branch.
 
   return (-32768 <= offset && offset < 32768);
-}
-
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
-  // Probably always true, even if a temp register is required.
-  return true;
-}
-
-// true just means we have fast l2f conversion
-const bool Matcher::convL2FSupported(void) {
-  return true;
 }
 
 // Vector width in bytes.
@@ -2500,10 +2508,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   }
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return UseSVE > 0;
-}
-
 // Actual max scalable vector register length.
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
@@ -2525,41 +2529,12 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-// aarch64 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-// false => size gets scaled to BytesPerLong, ok.
-const bool Matcher::init_array_count_is_in_bytes = false;
-
-// Use conditional move (CMOVL)
-const int Matcher::long_cmove_cost() {
-  // long cmoves are no more expensive than int cmoves
-  return 0;
-}
-
-const int Matcher::float_cmove_cost() {
-  // float cmoves are no more expensive than int cmoves
-  return 0;
-}
-
-// Does the CPU require late expand (see block.cpp for description of late expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-const bool Matcher::need_masked_shift_count = false;
-
-// No support for generic vector operands.
-const bool Matcher::supports_generic_vector_operands  = false;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -2568,62 +2543,6 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
-
-// This affects two different things:
-//  - how Decode nodes are matched
-//  - how ImplicitNullCheck opportunities are recognized
-// If true, the matcher will try to remove all Decodes and match them
-// (as operands) into nodes. NullChecks are not prepared to deal with
-// Decodes by final_graph_reshaping().
-// If false, final_graph_reshaping() forces the decode behind the Cmp
-// for a NullCheck. The matcher matches the Decode node into a register.
-// Implicit_null_check optimization moves the Decode along with the
-// memory operation back up before the NullCheck.
-bool Matcher::narrow_oop_use_complex_address() {
-  return CompressedOops::shift() == 0;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-// TODO
-// decide whether we need to set this to true
-  return false;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return CompressedOops::base() == NULL;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return CompressedKlassPointers::base() == NULL;
-}
-
-// Is it better to copy float constants, or load them directly from
-// memory?  Intel can load a float constant from a direct address,
-// requiring no extra registers.  Most RISCs will have to materialize
-// an address into a register first, so they would do better to copy
-// the constant from stack.
-const bool Matcher::rematerialize_float_constants = false;
-
-// If CPU can load and store mis-aligned doubles directly then no
-// fixup is needed.  Else we split the double into 2 integer pieces
-// and move it piece-by-piece.  Only happens when passing doubles into
-// C code as the Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = true;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
-// Are floats converted to double when stored to stack during
-// deoptimization?
-bool Matcher::float_in_double() { return false; }
-
-// Do ints take an entire long register or just half?
-// The relevant question is how the int is callee-saved:
-// the whole long is written but de-opt'ing will have to extract
-// the relevant 32 bits.
-const bool Matcher::int_in_long = true;
 
 // Return whether or not this register is ever used as an argument.
 // This function is used on startup to build the trampoline stubs in
@@ -2654,6 +2573,31 @@ bool Matcher::can_be_java_arg(int reg)
 bool Matcher::is_spillable_arg(int reg)
 {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  // JDK-8183543: When taking the number of available registers as int
+  // register pressure threshold, the jtreg test:
+  // test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+  // failed due to C2 compilation failure with
+  // "COMPILE SKIPPED: failed spill-split-recycle sanity check".
+  //
+  // A derived pointer is live at CallNode and then is flagged by RA
+  // as a spilled LRG. Spilling heuristics(Spill-USE) explicitly skip
+  // derived pointers and lastly fail to spill after reaching maximum
+  // number of iterations. Lowering the default pressure threshold to
+  // (_NO_SPECIAL_REG32_mask.Size() minus 1) forces CallNode to become
+  // a high register pressure area of the code so that split_DEF can
+  // generate DefinitionSpillCopy for the derived pointer.
+  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  return (INTPRESSURE == -1) ? default_int_pressure_threshold : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  // _FLOAT_REG_mask is generated by adlc from the float_reg register class.
+  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.Size() : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
@@ -2700,8 +2644,6 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   }
   return true;
 }
-
-const bool Matcher::convi2l_type_required = false;
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
@@ -3871,10 +3813,6 @@ encode %{
       __ br(Assembler::NE, cont);
     }
 
-    if (UseBiasedLocking && !UseOptoBiasInlining) {
-      __ biased_locking_enter(box, oop, disp_hdr, tmp, true, cont);
-    }
-
     // Check for existing monitor
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
@@ -3944,10 +3882,6 @@ encode %{
     Label object_has_monitor;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
-
-    if (UseBiasedLocking && !UseOptoBiasInlining) {
-      __ biased_locking_exit(oop, tmp, cont);
-    }
 
     // Find the lock address and load the displaced header from the stack.
     __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
@@ -5556,6 +5490,15 @@ operand vRegD_V31()
 %{
   constraint(ALLOC_IN_RC(v31_reg));
   match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pReg()
+%{
+  constraint(ALLOC_IN_RC(pr_reg));
+  match(RegVectMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -8849,6 +8792,61 @@ instruct castLL(iRegL dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castFF(vRegF dst)
+%{
+  match(Set dst (CastFF dst));
+
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castDD(vRegD dst)
+%{
+  match(Set dst (CastDD dst));
+
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVD(vecD dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVX(vecX dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVV(vReg dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 // ============================================================================
 // Atomic operation instructions
 //
@@ -8915,11 +8913,6 @@ instruct storePConditional(memory8 heap_top_ptr, iRegP oldval, iRegP newval, rFl
   ins_pipe(pipe_serial);
 %}
 
-
-// storeLConditional is used by PhaseMacroExpand::expand_lock_node
-// when attempting to rebias a lock towards the current thread.  We
-// must use the acquire form of cmpxchg in order to guarantee acquire
-// semantics in this case.
 instruct storeLConditional(indirect mem, iRegLNoSp oldval, iRegLNoSp newval, rFlagsReg cr)
 %{
   match(Set cr (StoreLConditional mem (Binary oldval newval)));
@@ -16676,11 +16669,11 @@ instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
-                              iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                              iRegINoSp tmp3, rFlagsReg cr)
+                             iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                             iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
+  predicate((UseSVE == 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
@@ -16699,7 +16692,7 @@ instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
                               iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  predicate((UseSVE == 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
@@ -16707,8 +16700,8 @@ instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
 
   ins_encode %{
     __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
-                           $result$$Register, $tmp1$$Register, $tmp2$$Register,
-                           $tmp3$$Register);
+                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
+                            $tmp3$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}

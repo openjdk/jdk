@@ -54,7 +54,6 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   assert(ik != NULL, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    assert(THREAD->is_Java_thread(), "must be JavaThread");
 
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = NULL;
@@ -119,7 +118,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   assert(stream != NULL, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    const JavaThread* jt = THREAD->as_Java_thread();
+    const JavaThread* jt = THREAD;
 
     Handle class_loader(THREAD, loader_data->class_loader());
 
@@ -171,7 +170,6 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 TRAPS) {
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
-  assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);

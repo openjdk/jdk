@@ -239,7 +239,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
-          "Large page size (0 to let VM choose the page size)")             \
+          "Maximum large page size used (0 will use the default large "     \
+          "page size for the environment as the maximum)")                  \
           range(0, max_uintx)                                               \
                                                                             \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
@@ -452,7 +453,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena)")   \
+          "Use only malloc/free for allocation (no resource area/arena). "  \
+          "Used to help diagnose memory stomping bugs.")                    \
                                                                             \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \
@@ -676,11 +678,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
-  product(bool, AlwaysLockClassLoader, false,                               \
-          "(Deprecated) Require the VM to acquire the class loader lock "   \
-          "before calling loadClass() even for class loaders registering "  \
-          "as parallel capable")                                            \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
@@ -711,7 +708,7 @@ const intx ObjectAlignmentInBytes = 8;
           "at one time (minimum is 1024).")                      \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
+  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
           "or AsyncDeflationInterval.")                                     \
@@ -797,37 +794,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, RestrictContended, true,                                    \
           "Restrict @Contended to trusted classes")                         \
-                                                                            \
-  product(bool, UseBiasedLocking, false,                                    \
-          "(Deprecated) Enable biased locking in JVM")                      \
-                                                                            \
-  product(intx, BiasedLockingStartupDelay, 0,                               \
-          "(Deprecated) Number of milliseconds to wait before enabling "    \
-          "biased locking")                                                 \
-          range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
-          constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
-                                                                            \
-  product(bool, PrintBiasedLockingStatistics, false, DIAGNOSTIC,            \
-          "(Deprecated) Print statistics of biased locking in JVM")         \
-                                                                            \
-  product(intx, BiasedLockingBulkRebiasThreshold, 20,                       \
-          "(Deprecated) Threshold of number of revocations per type to "    \
-          "try to rebias all objects in the heap of that type")             \
-          range(0, max_intx)                                                \
-          constraint(BiasedLockingBulkRebiasThresholdFunc,AfterErgo)        \
-                                                                            \
-  product(intx, BiasedLockingBulkRevokeThreshold, 40,                       \
-          "(Deprecated) Threshold of number of revocations per type to "    \
-          "permanently revoke biases of all objects in the heap of that "   \
-          "type")                                                           \
-          range(0, max_intx)                                                \
-          constraint(BiasedLockingBulkRevokeThresholdFunc,AfterErgo)        \
-                                                                            \
-  product(intx, BiasedLockingDecayTime, 25000,                              \
-          "(Deprecated) Decay time (in milliseconds) to re-enable bulk "    \
-          "rebiasing of a type after previous bulk rebias")                 \
-          range(500, max_intx)                                              \
-          constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
   product(intx, DiagnoseSyncOnValueBasedClasses, 0, DIAGNOSTIC,             \
              "Detect and take action upon identifying synchronization on "  \
@@ -1465,6 +1431,10 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
+  develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
+          "Force the class space to be allocated at this address or "       \
+          "fails VM initialization (requires -Xshare=off.")                 \
+                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
@@ -1940,16 +1910,39 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
                                                                             \
-  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+  product(uint, StringDeduplicationAgeThreshold, 3,                         \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
           range(1, markWord::max_age)                                       \
                                                                             \
-  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
-          "Force table resize every time the table is scanned")             \
+  product(size_t, StringDeduplicationInitialTableSize, 500, EXPERIMENTAL,   \
+          "Approximate initial number of buckets in the table")             \
+          range(1, 1 * G)                                                   \
                                                                             \
-  product(bool, StringDeduplicationRehashALot, false, DIAGNOSTIC,           \
-          "Force table rehash every time the table is scanned")             \
+  product(double, StringDeduplicationGrowTableLoad, 14.0, EXPERIMENTAL,     \
+          "Entries per bucket above which the table should be expanded")    \
+          range(0.1, 1000.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationShrinkTableLoad, 1.0, EXPERIMENTAL,    \
+          "Entries per bucket below which the table should be shrunk")      \
+          range(0.01, 100.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationTargetTableLoad, 7.0, EXPERIMENTAL,    \
+          "Desired entries per bucket when resizing the table")             \
+          range(0.01, 1000.0)                                               \
+                                                                            \
+  product(size_t, StringDeduplicationCleanupDeadMinimum, 100, EXPERIMENTAL, \
+          "Minimum number of dead table entries for cleaning the table")    \
+                                                                            \
+  product(int, StringDeduplicationCleanupDeadPercent, 5, EXPERIMENTAL,      \
+          "Minimum percentage of dead table entries for cleaning the table") \
+          range(1, 100)                                                     \
+                                                                            \
+  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
+          "Force more frequent table resizing")                             \
+                                                                            \
+  product(uint64_t, StringDeduplicationHashSeed, 0, DIAGNOSTIC,             \
+          "Seed for the table hashing function; 0 requests computed seed")  \
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
@@ -1991,6 +1984,11 @@ const intx ObjectAlignmentInBytes = 8;
   product_pd(bool, PreserveFramePointer,                                    \
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
+                                                                            \
+  product(size_t, AsyncLogBufferSize, 2*M,                                  \
+          "Memory budget (in bytes) for the buffer of Asynchronous "        \
+          "Logging (-Xlog:async).")                                         \
+          range(100*K, 50*M)                                                \
                                                                             \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \
@@ -2051,6 +2049,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 

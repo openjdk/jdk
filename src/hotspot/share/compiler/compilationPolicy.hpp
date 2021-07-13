@@ -206,7 +206,7 @@ class CompilationPolicy : AllStatic {
   // determines whether we should do that.
   inline static bool should_create_mdo(const methodHandle& method, CompLevel cur_level);
   // Create MDO if necessary.
-  static void create_mdo(const methodHandle& mh, Thread* thread);
+  static void create_mdo(const methodHandle& mh, JavaThread* THREAD);
   // Is method profiled enough?
   static bool is_method_profiled(const methodHandle& method);
 

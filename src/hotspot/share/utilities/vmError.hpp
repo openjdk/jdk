@@ -109,6 +109,10 @@ class VMError : public AllStatic {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
 
+  static bool should_submit_bug_report(unsigned int id) {
+    return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
+  }
+
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
@@ -179,6 +183,11 @@ public:
 
   // Needed when printing signal handlers.
   NOT_WINDOWS(static const void* crash_handler_address;)
+
+  // Construct file name for a log file and return it's file descriptor.
+  // Name and location depends on pattern, default_pattern params and access
+  // permissions.
+  static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

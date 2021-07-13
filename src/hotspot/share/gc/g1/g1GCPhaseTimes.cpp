@@ -28,7 +28,6 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -41,6 +40,8 @@
 #include "runtime/os.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
+
+constexpr const char* G1GCPhaseTimes::GCMergeRSWorkItemsStrings[];
 
 G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
@@ -72,16 +73,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeER] = new WorkerDataArray<double>("MergeER", "Eager Reclaim (ms):", max_gc_threads);
 
   _gc_par_phases[MergeRS] = new WorkerDataArray<double>("MergeRS", "Remembered Sets (ms):", max_gc_threads);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
+    _gc_par_phases[MergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
+  }
 
   _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>("OptMergeRS", "Optional Remembered Sets (ms):", max_gc_threads);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
+    _gc_par_phases[OptMergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
+  }
 
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>("MergeLB", "Log Buffers (ms):", max_gc_threads);
   if (G1HotCardCache::default_use_cache()) {
@@ -135,17 +134,11 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed", EagerlyReclaimNumReclaimed);
 
+  _gc_par_phases[SampleCollectionSetCandidates] = new WorkerDataArray<double>("SampleCandidates", "Sample CSet Candidates (ms):", max_gc_threads);
+
   _gc_par_phases[Termination]->create_thread_work_items("Termination Attempts:");
 
   _gc_par_phases[OptTermination]->create_thread_work_items("Optional Termination Attempts:");
-
-  if (UseStringDeduplication) {
-    _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>("StringDedupQueueFixup", "Queue Fixup (ms):", max_gc_threads);
-    _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>("StringDedupTableFixup", "Table Fixup (ms):", max_gc_threads);
-  } else {
-    _gc_par_phases[StringDedupQueueFixup] = NULL;
-    _gc_par_phases[StringDedupTableFixup] = NULL;
-  }
 
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
@@ -166,7 +159,6 @@ void G1GCPhaseTimes::reset() {
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
-  _cur_string_deduplication_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
   _cur_resize_tlab_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
@@ -180,6 +172,7 @@ void G1GCPhaseTimes::reset() {
   _recorded_clear_claimed_marks_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
+  _recorded_sample_collection_set_candidates_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
@@ -459,7 +452,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
-                        _cur_string_deduplication_time_ms +
+                        _recorded_sample_collection_set_candidates_time_ms +
                         _cur_post_evacuate_cleanup_1_time_ms +
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
@@ -475,12 +468,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   _weak_phase_times.log_total(2);
   _weak_phase_times.log_subtotals(3);
 
-  if (G1StringDedup::is_enabled()) {
-    debug_time("String Deduplication", _cur_string_deduplication_time_ms);
-    debug_phase(_gc_par_phases[StringDedupQueueFixup], 1);
-    debug_phase(_gc_par_phases[StringDedupTableFixup], 1);
-  }
-
   debug_time("Post Evacuate Cleanup 1", _cur_post_evacuate_cleanup_1_time_ms);
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
@@ -489,6 +476,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
   }
 
+  debug_time("Sample Collection Set Candidates", _recorded_sample_collection_set_candidates_time_ms);
+  trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (G1CollectedHeap::heap()->evacuation_failed()) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
@@ -502,10 +491,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   if (G1CollectedHeap::heap()->should_do_eager_reclaim()) {
     debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
   }
+  if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
+    debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
+  }
   debug_phase(_gc_par_phases[RedirtyCards], 1);
   debug_phase(_gc_par_phases[FreeCollectionSet], 1);
-  trace_phase(_gc_par_phases[YoungFreeCSet], true, 2);
-  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 2);
+  trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
+  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
 
   trace_time("Serial Free Collection Set", _recorded_serial_free_cset_time_ms);
 

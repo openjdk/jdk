@@ -415,9 +415,11 @@ public:
 };
 
 TEST_VM(os_linux, reserve_memory_special_concurrent) {
-  ReserveMemorySpecialRunnable runnable;
-  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
-  testRunner.run();
+  if (UseLargePages) {
+    ReserveMemorySpecialRunnable runnable;
+    ConcurrentTestRunner testRunner(&runnable, 5, 3000);
+    testRunner.run();
+  }
 }
 
 #endif

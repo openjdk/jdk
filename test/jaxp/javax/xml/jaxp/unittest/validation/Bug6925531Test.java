@@ -51,8 +51,8 @@ import org.xml.sax.SAXNotSupportedException;
  * @test
  * @bug 6925531
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6925531Test
- * @run testng/othervm validation.Bug6925531Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6925531Test
+ * @run testng/othervm -Djava.security.manager=allow validation.Bug6925531Test
  * @summary Test Validator can validate SAXSource when SecurityManager is set or FEATURE_SECURE_PROCESSING is on.
  */
 @Listeners({jaxp.library.BasePolicy.class})

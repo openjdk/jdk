@@ -314,7 +314,7 @@ jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
 jboolean JfrOptionSet::_sample_protection = JNI_TRUE;
 #endif
 
-bool JfrOptionSet::initialize(Thread* thread) {
+bool JfrOptionSet::initialize(JavaThread* thread) {
   register_parser_options();
   if (!parse_flight_recorder_options_internal(thread)) {
     return false;

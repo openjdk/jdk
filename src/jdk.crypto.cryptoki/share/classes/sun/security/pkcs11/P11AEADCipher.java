@@ -39,6 +39,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * P11 AEAD Cipher implementation class. This class currently supports
@@ -355,9 +356,13 @@ final class P11AEADCipher extends CipherSpi {
                 encrypt = false;
                 requireReinit = false;
                 break;
-            default:
-                throw new InvalidAlgorithmParameterException
+            case Cipher.WRAP_MODE:
+            case Cipher.UNWRAP_MODE:
+                throw new UnsupportedOperationException
                         ("Unsupported mode: " + opmode);
+            default:
+                // should never happen; checked by Cipher.init()
+                throw new AssertionError("Unknown mode: " + opmode);
         }
 
         // decryption without parameters is checked in all engineInit() calls

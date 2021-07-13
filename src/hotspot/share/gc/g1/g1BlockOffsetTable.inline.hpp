@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"

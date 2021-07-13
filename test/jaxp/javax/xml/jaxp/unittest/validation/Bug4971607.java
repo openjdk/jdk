@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4971607
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4971607
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4971607
  * @run testng/othervm validation.Bug4971607
  * @summary Test ValidatorHandler.getFeature(...) throws NullPointerException when name parameter is null.
  */

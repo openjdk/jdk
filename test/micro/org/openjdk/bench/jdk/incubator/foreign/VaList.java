@@ -23,8 +23,9 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.SymbolLookup;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -49,21 +50,24 @@ import static jdk.incubator.foreign.CLinker.asVarArg;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "-Dforeign.restricted=permit" })
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
 public class VaList {
 
     static final CLinker linker = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofLibrary("VaList");
+    static {
+        System.loadLibrary("VaList");
+    }
 
     static final MethodHandle MH_ellipsis;
     static final MethodHandle MH_vaList;
 
     static {
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_ellipsis = linker.downcallHandle(lookup.lookup("ellipsis").get(),
                 MethodType.methodType(void.class, int.class, int.class, double.class, long.class),
                 FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONG_LONG)));
         MH_vaList = linker.downcallHandle(lookup.lookup("vaList").get(),
-                MethodType.methodType(void.class, int.class, VaList.class),
+                MethodType.methodType(void.class, int.class, CLinker.VaList.class),
                 FunctionDescriptor.ofVoid(C_INT, C_VA_LIST));
     }
 
@@ -75,13 +79,13 @@ public class VaList {
 
     @Benchmark
     public void vaList() throws Throwable {
-        try (CLinker.VaList vaList = CLinker.VaList.make(b ->
-            b.vargFromInt(C_INT, 1)
-             .vargFromDouble(C_DOUBLE, 2D)
-             .vargFromLong(C_LONG_LONG, 3L)
-        )) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            CLinker.VaList vaList = CLinker.VaList.make(b ->
+                    b.vargFromInt(C_INT, 1)
+                            .vargFromDouble(C_DOUBLE, 2D)
+                            .vargFromLong(C_LONG_LONG, 3L), scope);
             MH_vaList.invokeExact(3,
-                                  vaList);
+                    vaList);
         }
     }
 }

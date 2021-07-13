@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -247,6 +248,18 @@ public abstract class BaseOptions {
      * used. Default is don't show version information.
      */
     private boolean showVersion = false;
+
+    /**
+     * Argument for command line option {@code --since}.
+     * Specifies a list of release names for which to document API changes.
+     */
+    private List<String> since = List.of();
+
+    /**
+     * Argument for command line option {@code --since-label}.
+     * Specifies custom text to use as heading of New API page.
+     */
+    private String sinceLabel;
 
     /**
      * Argument for command-line option {@code -sourcetab}.
@@ -472,6 +485,22 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         serialWarn = true;
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        since = Arrays.stream(args.get(0).split(",")).map(String::trim).toList();
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--since-label", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        sinceLabel = args.get(0);
                         return true;
                     }
                 },
@@ -893,6 +922,20 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Arguments for command line option {@code --since}.
+     */
+    public List<String> since() {
+        return Collections.unmodifiableList(since);
+    }
+
+    /**
+     * Arguments for command line option {@code --since-label}.
+     */
+    public String sinceLabel() {
+        return sinceLabel;
+    }
+
+    /**
      * Argument for command-line option {@code -sourcetab}.
      * The specified amount of space between tab stops.
      */
@@ -932,7 +975,7 @@ public abstract class BaseOptions {
         protected Option(Resources resources, String keyBase, String name, int argCount) {
             this.names = name.trim().split("\\s+");
             if (keyBase == null) {
-                keyBase = "doclet.usage." + names[0].toLowerCase().replaceAll("^-+", "");
+                keyBase = "doclet.usage." + Utils.toLowerCase(names[0]).replaceAll("^-+", "");
             }
             String desc = getOptionsMessage(resources, keyBase + ".description");
             if (desc.isEmpty()) {
@@ -995,7 +1038,7 @@ public abstract class BaseOptions {
                 } else if (matchCase) {
                     return name.equals(option);
                 }
-                return name.toLowerCase().equals(option.toLowerCase());
+                return name.equalsIgnoreCase(option);
             }
             return false;
         }

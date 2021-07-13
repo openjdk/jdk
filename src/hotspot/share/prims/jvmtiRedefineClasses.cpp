@@ -1380,7 +1380,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Thread* THREAD = current;  // for exception processing
+    JavaThread* THREAD = current; // For exception macros.
     ExceptionMark em(THREAD);
     Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
@@ -1852,9 +1852,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  // Save fields from the old_cp.
-  merge_cp->copy_fields(old_cp());
-  scratch_cp->copy_fields(old_cp());
+  // Set dynamic constants attribute from the original CP.
+  if (old_cp->has_dynamic_constant()) {
+    scratch_cp->set_has_dynamic_constant();
+  }
+  // Copy attributes from scratch_cp to merge_cp
+  merge_cp->copy_fields(scratch_cp());
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
@@ -2108,7 +2111,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  Thread* THREAD = Thread::current();  // For exception processing
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ExceptionMark em(THREAD);
 
   // rewrite constant pool references in the methods:
@@ -4065,7 +4068,7 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
 }
 
-// Deoptimize all compiled code that depends on this class.
+// Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
 // phase then the compiler has recorded all dependencies from startup.
@@ -4080,18 +4083,6 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // subsequent calls to RedefineClasses need only throw away code
 // that depends on the class.
 //
-
-// First step is to walk the code cache for each class redefined and mark
-// dependent methods.  Wait until all classes are processed to deoptimize everything.
-void VM_RedefineClasses::mark_dependent_code(InstanceKlass* ik) {
-  assert_locked_or_safepoint(Compile_lock);
-
-  // All dependencies have been recorded from startup or this is a second or
-  // subsequent use of RedefineClasses
-  if (JvmtiExport::all_dependencies_are_recorded()) {
-    CodeCache::mark_for_evol_deoptimization(ik);
-  }
-}
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
@@ -4217,9 +4208,6 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class);
-
-  // Mark all compiled code that depends on this class
-  mark_dependent_code(the_class);
 
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();
@@ -4396,6 +4384,16 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
   swap_annotations(the_class, scratch_class);
 
+  // Replace minor version number of class file
+  u2 old_minor_version = the_class->constants()->minor_version();
+  the_class->constants()->set_minor_version(scratch_class->constants()->minor_version());
+  scratch_class->constants()->set_minor_version(old_minor_version);
+
+  // Replace major version number of class file
+  u2 old_major_version = the_class->constants()->major_version();
+  the_class->constants()->set_major_version(scratch_class->constants()->major_version());
+  scratch_class->constants()->set_major_version(old_major_version);
+
   // Replace CP indexes for class and name+type of enclosing method
   u2 old_class_idx  = the_class->enclosing_method_class_index();
   u2 old_method_idx = the_class->enclosing_method_method_index();
@@ -4420,7 +4418,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     the_class->oop_map_cache()->flush_obsolete_entries();
   }
 
-  increment_class_counter((InstanceKlass *)the_class);
+  increment_class_counter(the_class);
 
   if (EventClassRedefinition::is_enabled()) {
     EventClassRedefinition event;
@@ -4449,24 +4447,20 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
 // Increment the classRedefinedCount field in the specific InstanceKlass
 // and in all direct and indirect subclasses.
-void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik) {
-  oop class_mirror = ik->java_mirror();
-  Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
-  int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
-  java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
+void VM_RedefineClasses::increment_class_counter(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    // Only update instanceKlasses
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      oop class_mirror = InstanceKlass::cast(sub)->java_mirror();
+      Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
+      int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
+      java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
-  if (class_oop != _the_class) {
-    // _the_class count is printed at end of redefine_single_class()
-    log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
-  }
-
-  for (Klass *subk = ik->subklass(); subk != NULL;
-       subk = subk->next_sibling()) {
-    if (subk->is_instance_klass()) {
-      // Only update instanceKlasses
-      InstanceKlass *subik = InstanceKlass::cast(subk);
-      // recursively do subclasses of the current subclass
-      increment_class_counter(subik);
+      if (class_oop != _the_class) {
+        // _the_class count is printed at end of redefine_single_class()
+        log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
+      }
     }
   }
 }

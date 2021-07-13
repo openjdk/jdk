@@ -714,6 +714,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     case os::vm_thread:
     case os::pgc_thread:
     case os::cgc_thread:
+    case os::asynclog_thread:
     case os::watcher_thread:
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
       break;
@@ -884,7 +885,61 @@ uint os::processor_id() {
   return (uint)GetCurrentProcessorNumber();
 }
 
+// For dynamic lookup of SetThreadDescription API
+typedef HRESULT (WINAPI *SetThreadDescriptionFnPtr)(HANDLE, PCWSTR);
+typedef HRESULT (WINAPI *GetThreadDescriptionFnPtr)(HANDLE, PWSTR*);
+static SetThreadDescriptionFnPtr _SetThreadDescription = NULL;
+DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = NULL;)
+
+// forward decl.
+static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
+
 void os::set_native_thread_name(const char *name) {
+
+  // From Windows 10 and Windows 2016 server, we have a direct API
+  // for setting the thread name/description:
+  // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreaddescription
+
+  if (_SetThreadDescription != NULL) {
+    // SetThreadDescription takes a PCWSTR but we have conversion routines that produce
+    // LPWSTR. The only difference is that PCWSTR is a pointer to const WCHAR.
+    LPWSTR unicode_name;
+    errno_t err = convert_to_unicode(name, &unicode_name);
+    if (err == ERROR_SUCCESS) {
+      HANDLE current = GetCurrentThread();
+      HRESULT hr = _SetThreadDescription(current, unicode_name);
+      if (FAILED(hr)) {
+        log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
+        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+      } else {
+        log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
+
+#ifdef ASSERT
+        // For verification purposes in a debug build we read the thread name back and check it.
+        PWSTR thread_name;
+        HRESULT hr2 = _GetThreadDescription(current, &thread_name);
+        if (FAILED(hr2)) {
+          log_debug(os, thread)("set_native_thread_name: GetThreadDescription failed!");
+        } else {
+          int res = CompareStringW(LOCALE_USER_DEFAULT,
+                                   0, // no special comparison rules
+                                   unicode_name,
+                                   -1, // null-terminated
+                                   thread_name,
+                                   -1  // null-terminated
+                                   );
+          assert(res == CSTR_EQUAL,
+                 "Name strings were not the same - set: %ls, but read: %ls", unicode_name, thread_name);
+          LocalFree(thread_name);
+        }
+#endif
+        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        return;
+      }
+    } else {
+      log_debug(os, thread)("set_native_thread_name: convert_to_unicode failed - falling back to debugger method");
+    }
+  }
 
   // See: http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
   //
@@ -894,6 +949,7 @@ void os::set_native_thread_name(const char *name) {
 
   // If there is no debugger attached skip raising the exception
   if (!IsDebuggerPresent()) {
+    log_debug(os, thread)("set_native_thread_name: no debugger present so unable to set thread name");
     return;
   }
 
@@ -913,11 +969,6 @@ void os::set_native_thread_name(const char *name) {
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
   } __except(EXCEPTION_EXECUTE_HANDLER) {}
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 void os::win32::initialize_performance_counter() {
@@ -2232,7 +2283,7 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
 
   // Save pc in thread
   if (thread != nullptr && thread->is_Java_thread()) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+    JavaThread::cast(thread)->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
   }
 
   // Set pc to handler
@@ -2377,7 +2428,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_OVERFLOW:
   case EXCEPTION_FLT_STACK_CHECK:
   case EXCEPTION_FLT_UNDERFLOW:
-    jint fp_control_word = (* (jint*) StubRoutines::addr_fpu_cntrl_wrd_std());
+    jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
     if (fp_control_word != ctx->FloatSave.ControlWord) {
       // Restore FPCW and mask out FLT exceptions
       ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;
@@ -2397,7 +2448,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // See also CR 6192333
   //
   jint MxCsr = INITIAL_MXCSR;
-  // we can't use StubRoutines::addr_mxcsr_std()
+  // we can't use StubRoutines::x86::addr_mxcsr_std()
   // because in Win64 mxcsr is not saved there
   if (MxCsr != ctx->MxCsr) {
     ctx->MxCsr = MxCsr;
@@ -2526,7 +2577,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = t->as_Java_thread();
+    JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
@@ -3274,48 +3325,105 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
-                                    bool exec) {
-  assert(UseLargePages, "only for large pages");
-  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
-
-  if (!is_aligned(bytes, page_size) || alignment > page_size) {
-    return NULL; // Fallback to small pages.
-  }
+static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
+  log_debug(pagesize)("Reserving large pages individually.");
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
+  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
+  if (p_buf == NULL) {
+    // give an appropriate warning message
+    if (UseNUMAInterleaving) {
+      warning("NUMA large page allocation failed, UseLargePages flag ignored");
+    }
+    if (UseLargePagesIndividualAllocation) {
+      warning("Individually allocated large pages failed, "
+              "use -XX:-UseLargePagesIndividualAllocation to turn off");
+    }
+    return NULL;
+  }
+  return p_buf;
+}
+
+static char* reserve_large_pages_single_range(size_t size, char* req_addr, bool exec) {
+  log_debug(pagesize)("Reserving large pages in a single large chunk.");
+
+  const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+  const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+
+  return (char *) virtualAlloc(req_addr, size, flags, prot);
+}
+
+static char* reserve_large_pages(size_t size, char* req_addr, bool exec) {
   // with large pages, there are two cases where we need to use Individual Allocation
   // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
   // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
   if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
-    log_debug(pagesize)("Reserving large pages individually.");
-
-    char * p_buf = allocate_pages_individually(bytes, addr, flags, prot, LargePagesIndividualAllocationInjectError);
-    if (p_buf == NULL) {
-      // give an appropriate warning message
-      if (UseNUMAInterleaving) {
-        warning("NUMA large page allocation failed, UseLargePages flag ignored");
-      }
-      if (UseLargePagesIndividualAllocation) {
-        warning("Individually allocated large pages failed, "
-                "use -XX:-UseLargePagesIndividualAllocation to turn off");
-      }
-      return NULL;
-    }
-
-    return p_buf;
-
-  } else {
-    log_debug(pagesize)("Reserving large pages in a single large chunk.");
-
-    // normal policy just allocate it all at once
-    DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)virtualAlloc(addr, bytes, flag, prot);
-
-    return res;
+    return reserve_large_pages_individually(size, req_addr, exec);
   }
+  return reserve_large_pages_single_range(size, req_addr, exec);
+}
+
+static char* find_aligned_address(size_t size, size_t alignment) {
+  // Temporary reserve memory large enough to ensure we can get the requested
+  // alignment and still fit the reservation.
+  char* addr = (char*) virtualAlloc(NULL, size + alignment, MEM_RESERVE, PAGE_NOACCESS);
+  // Align the address to the requested alignment.
+  char* aligned_addr = align_up(addr, alignment);
+  // Free the temporary reservation.
+  virtualFree(addr, 0, MEM_RELEASE);
+
+  return aligned_addr;
+}
+
+static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" SIZE_FORMAT "%s",
+                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+
+  // Will try to find a suitable address at most 20 times. The reason we need to try
+  // multiple times is that between finding the aligned address and trying to commit
+  // the large pages another thread might have reserved an overlapping region.
+  const int attempts_limit = 20;
+  for (int attempts = 0; attempts < attempts_limit; attempts++)  {
+    // Find aligned address.
+    char* aligned_address = find_aligned_address(size, alignment);
+
+    // Try to do the large page reservation using the aligned address.
+    aligned_address = reserve_large_pages(size, aligned_address, exec);
+    if (aligned_address != NULL) {
+      // Reservation at the aligned address succeeded.
+      guarantee(is_aligned(aligned_address, alignment), "Must be aligned");
+      return aligned_address;
+    }
+  }
+
+  log_debug(pagesize)("Failed reserving large pages at aligned address");
+  return NULL;
+}
+
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
+                                    bool exec) {
+  assert(UseLargePages, "only for large pages");
+  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
+  assert(is_aligned(addr, alignment), "Must be");
+  assert(is_aligned(addr, page_size), "Must be");
+
+  if (!is_aligned(bytes, page_size)) {
+    // Fallback to small pages, Windows does not support mixed mappings.
+    return NULL;
+  }
+
+  // The requested alignment can be larger than the page size, for example with G1
+  // the alignment is bound to the heap region size. So this reservation needs to
+  // ensure that the requested alignment is met. When there is a requested address
+  // this solves it self, since it must be properly aligned already.
+  if (addr == NULL && alignment > page_size) {
+    return reserve_large_pages_aligned(bytes, alignment, exec);
+  }
+
+  // No additional requirements, just reserve the large pages.
+  return reserve_large_pages(bytes, addr, exec);
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {
@@ -4135,6 +4243,7 @@ extern "C" {
 
 static jint initSock();
 
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
@@ -4252,6 +4361,24 @@ jint os::init_2(void) {
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  // Lookup SetThreadDescription - the docs state we must use runtime-linking of
+  // kernelbase.dll, so that is what we do.
+  HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
+  if (_kernelbase != NULL) {
+    _SetThreadDescription =
+      reinterpret_cast<SetThreadDescriptionFnPtr>(
+                                                  GetProcAddress(_kernelbase,
+                                                                 "SetThreadDescription"));
+#ifdef ASSERT
+    _GetThreadDescription =
+      reinterpret_cast<GetThreadDescriptionFnPtr>(
+                                                  GetProcAddress(_kernelbase,
+                                                                 "GetThreadDescription"));
+#endif
+  }
+  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == NULL ? " not" : "");
+
 
   return JNI_OK;
 }
@@ -4674,9 +4801,7 @@ bool os::dir_is_empty(const char* path) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  if (!rewrite_existing) {
-    oflags |= _O_EXCL;
-  }
+  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
   return ::open(path, oflags, _S_IREAD | _S_IWRITE);
 }
 

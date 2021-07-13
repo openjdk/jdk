@@ -31,7 +31,7 @@
 @interface ScrollAreaAccessibility : CommonComponentAccessibility {
 
 };
-- (NSString * _Nonnull)accessibilityRole;
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
 - (NSArray * _Nullable)accessibilityContents;
 - (id _Nullable)accessibilityHorizontalScrollBar;
 - (id _Nullable)accessibilityVerticalScrollBar;

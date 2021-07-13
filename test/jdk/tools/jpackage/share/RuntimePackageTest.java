@@ -151,6 +151,7 @@ public class RuntimePackageTest {
             final Path prefsDir = Path.of(".systemPrefs");
             return files.map(root::relativize)
                     .filter(x -> !x.startsWith(prefsDir))
+                    .filter(x -> !x.endsWith(".DS_Store"))
                     .collect(Collectors.toSet());
         }
     }

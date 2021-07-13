@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ final class XTaskbarPeer implements TaskbarPeer {
     private static boolean isUnity;
 
     static {
+        @SuppressWarnings("removal")
         String de = AccessController.doPrivileged(
                         (PrivilegedAction<String>) ()
                                 -> System.getenv("XDG_CURRENT_DESKTOP"));
@@ -54,6 +55,7 @@ final class XTaskbarPeer implements TaskbarPeer {
         XToolkit.awtLock();
         try {
             if (!initExecuted) {
+                @SuppressWarnings("removal")
                 String dname = AccessController.doPrivileged(
                                 new GetPropertyAction("java.desktop.appName", ""));
                 nativeLibraryLoaded = init(dname,

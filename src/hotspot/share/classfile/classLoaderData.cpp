@@ -103,8 +103,7 @@ void ClassLoaderData::init_null_class_loader_data() {
 // and klass are available after the class_loader oop is no longer alive,
 // during unloading.
 void ClassLoaderData::initialize_name(Handle class_loader) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
+  ResourceMark rm;
 
   // Obtain the class loader's name.  If the class loader's name was not
   // explicitly set during construction, the CLD's _name field will be null.
@@ -551,6 +550,21 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
+  // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
+  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
+  // This is done intentionally because native code (e.g. JVMTI agent) holding
+  // jmethod_ids may access them after the associated classes and class loader
+  // are unloaded. The Java Native Interface Specification says "method ID
+  // does not prevent the VM from unloading the class from which the ID has
+  // been derived. After the class is unloaded, the method or field ID becomes
+  // invalid". In real world usages, the native code may rely on jmethod_ids
+  // being NULL after class unloading. Hence, it is unsafe to free the memory
+  // from the VM side without knowing when native code is going to stop using
+  // them.
+  if (_jmethod_ids != NULL) {
+    Method::clear_jmethod_ids(this);
+  }
+
   // Clean up global class iterator for compiler
   ClassLoaderDataGraph::adjust_saved_class(this);
 }
@@ -695,15 +709,7 @@ ClassLoaderData::~ClassLoaderData() {
     _metaspace = NULL;
     delete m;
   }
-  // Clear all the JNI handles for methods
-  // These aren't deallocated and are going to look like a leak, but that's
-  // needed because we can't really get rid of jmethodIDs because we don't
-  // know when native code is going to stop using them.  The spec says that
-  // they're "invalid" but existing programs likely rely on their being
-  // NULL after class unloading.
-  if (_jmethod_ids != NULL) {
-    Method::clear_jmethod_ids(this);
-  }
+
   // Delete lock
   delete _metaspace_lock;
 
@@ -800,6 +806,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != NULL) {
     return;
   } else {
+    record_modified_oops();
     dest = _handles.add(h());
   }
 }

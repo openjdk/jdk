@@ -526,6 +526,7 @@ java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 
 ############################################################################
 
@@ -541,13 +542,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_foreign
 
 java/foreign/TestMismatch.java 8249684 macosx-all
-
-java/foreign/StdLibTest.java 8263512 macosx-aarch64
-java/foreign/TestDowncall.java 8265292 macosx-aarch64
-java/foreign/TestIntrinsics.java 8265183 macosx-aarch64
-java/foreign/TestUpcall.java 8265182 macosx-aarch64
-java/foreign/TestVarArgs.java 8263512 macosx-aarch64
-java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
 
 ############################################################################
 
@@ -586,7 +580,7 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 
@@ -597,6 +591,8 @@ sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-a
 javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
+
+javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 ############################################################################
 
@@ -611,13 +607,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/Socket/UdpSocket.java                                  8265362 macosx-aarch64
-
-java/net/httpclient/websocket/PendingBinaryPongClose.java       8265367 macosx-aarch64
-java/net/httpclient/websocket/PendingBinaryPingClose.java       8265367 macosx-aarch64
-java/net/httpclient/websocket/PendingPongBinaryClose.java       8265367 macosx-aarch64
-
-java/net/MulticastSocket/Promiscuous.java                       8265369 macosx-aarch64
 
 ############################################################################
 
@@ -638,12 +627,6 @@ java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generi
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
 
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
-
-java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
-
-java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java 8169569 windows-all
-
-java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java 8170562 generic-all
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
@@ -675,7 +658,7 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.java                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
@@ -703,7 +686,6 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
-sun/security/ssl/SSLSocketImpl/SSLSocketImplThrowsWrongExceptions.java 8262409 linux-all,macosx-x64
 
 ############################################################################
 
@@ -760,6 +742,7 @@ javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JRootPane/4670486/bug4670486.java 8042381 macosx-all
 javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
+javax/swing/JFileChooser/FileSystemView/SystemIconTest.java 8268280 windows-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
@@ -802,8 +785,6 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
-
 ############################################################################
 
 # jdk_instrument
@@ -818,6 +799,10 @@ sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
+sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 ############################################################################
 
@@ -836,6 +821,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 
@@ -877,7 +864,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8260331 linux-x64
 
 
 ############################################################################

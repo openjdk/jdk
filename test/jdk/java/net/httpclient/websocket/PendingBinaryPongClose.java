@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @build DummyWebSocketServer
  * @run testng/othervm
+ *      -Djdk.httpclient.sendBufferSize=8192
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.internal.httpclient.websocket.debug=true
  *       PendingBinaryPongClose
@@ -50,8 +51,9 @@ public class PendingBinaryPongClose extends PendingOperations {
     public void pendingBinaryPongClose(boolean last) throws Exception {
         repeatable(() -> {
             server = Support.notReadingServer();
+            server.setReceiveBufferSize(1024);
             server.open();
-            webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+            webSocket = httpClient().newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
             ByteBuffer data = ByteBuffer.allocate(65536);

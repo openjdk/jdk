@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         "Via"
     };
 
+    @SuppressWarnings("removal")
     private static String getNetProperty(String name) {
         PrivilegedAction<String> pa = () -> NetProperties.get(name);
         return AccessController.doPrivileged(pa);
@@ -454,6 +455,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * privileged request password authentication
      *
      */
+    @SuppressWarnings("removal")
     private static PasswordAuthentication
     privilegedRequestPasswordAuthentication(
                             final Authenticator authenticator,
@@ -766,6 +768,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     private boolean checkSetHost() {
+        @SuppressWarnings("removal")
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             String name = s.getClass().getName();
@@ -786,6 +789,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     private void checkURLFile() {
+        @SuppressWarnings("removal")
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             String name = s.getClass().getName();
@@ -909,6 +913,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return u;
     }
 
+    @SuppressWarnings("removal")
     protected HttpURLConnection(URL u, Proxy p, Handler handler)
             throws IOException {
         super(checkURL(u));
@@ -1008,6 +1013,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     //
     // Same as java.net.URL.hostsEqual
     //
+    @SuppressWarnings("removal")
     private static boolean hostsEqual(URL u1, URL u2) {
         final String h1 = u1.getHost();
         final String h2 = u2.getHost();
@@ -1066,6 +1072,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return false;
     }
 
+    @SuppressWarnings("removal")
     private String getHostAndPort(URL url) {
         String host = url.getHost();
         final String hostarg = host;
@@ -1092,6 +1099,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return host + ":" + Integer.toString(port);
     }
 
+    @SuppressWarnings("removal")
     protected void plainConnect() throws IOException {
         lock();
         try {
@@ -1133,6 +1141,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return socketPermission;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
 
         if (sm == null) {
@@ -1205,6 +1214,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 /**
                  * Do we have to use a proxy?
                  */
+                @SuppressWarnings("removal")
                 ProxySelector sel =
                     java.security.AccessController.doPrivileged(
                         new java.security.PrivilegedAction<>() {
@@ -1367,6 +1377,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * - get input, [read input,] get output, [write output]
      */
 
+    @SuppressWarnings("removal")
     @Override
     public OutputStream getOutputStream() throws IOException {
         lock();
@@ -1554,6 +1565,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } // end of getting cookies
     }
 
+    @SuppressWarnings("removal")
     @Override
     public InputStream getInputStream() throws IOException {
         lock();
@@ -2025,6 +2037,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private IOException getChainedException(final IOException rememberedException) {
         try {
             final Object[] args = { rememberedException.getMessage() };
+            @SuppressWarnings("removal")
             IOException chainedException =
                 java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedExceptionAction<>() {
@@ -2340,7 +2353,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets the authentication for an HTTP proxy, and applies it to
      * the connection.
      */
-    @SuppressWarnings("fallthrough")
+    @SuppressWarnings({"removal","fallthrough"})
     private AuthenticationInfo getHttpProxyAuthentication(AuthenticationHeader authhdr) {
 
         assert isLockHeldByCurrentThread();
@@ -2731,6 +2744,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * resets the url, re-connects, and resets the request
      * property.
      */
+    @SuppressWarnings("removal")
     private boolean followRedirect() throws IOException {
         if (!getInstanceFollowRedirects()) {
             return false;
@@ -2815,6 +2829,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             String proxyHost = locUrl.getHost();
             int proxyPort = locUrl.getPort();
 
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkConnect(proxyHost, proxyPort);

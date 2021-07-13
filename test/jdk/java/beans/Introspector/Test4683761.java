@@ -25,6 +25,7 @@
  * @test
  * @bug 4683761
  * @summary Tests that all public methods in a public class
+ * @run main/othervm -Djava.security.manager=allow Test4683761
  * @author Sergey Malenkov
  */
 

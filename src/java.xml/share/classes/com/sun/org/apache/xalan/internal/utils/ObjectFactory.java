@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -57,6 +57,7 @@ public class ObjectFactory {
      * Figure out which ClassLoader to use.  For JDK 1.2 and later use
      * the context ClassLoader.
      */
+    @SuppressWarnings("removal")
     public static ClassLoader findClassLoader()
     {
         if (System.getSecurityManager()!=null) {
@@ -122,6 +123,7 @@ public class ObjectFactory {
     public static Object newInstance(String className, boolean doFallback)
         throws ConfigurationError
     {
+        @SuppressWarnings("removal")
         ClassLoader cl = System.getSecurityManager()!=null ? null : findClassLoader();
         try{
             Class<?> providerClass = findProviderClass(className, cl, doFallback);
@@ -159,6 +161,7 @@ public class ObjectFactory {
     {
         //throw security exception if the calling thread is not allowed to access the
         //class. Restrict the access to the package classes as specified in java.security policy.
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         try{
             if (security != null){

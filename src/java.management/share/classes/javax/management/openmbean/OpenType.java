@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ public abstract class OpenType<T> implements Serializable {
         this.isArray     = isArray;
     }
 
+    @SuppressWarnings("removal")
     private void checkClassNameOverride() throws SecurityException {
         if (this.getClass().getClassLoader() == null)
             return;  // We trust bootstrap classes.
@@ -206,6 +207,7 @@ public abstract class OpenType<T> implements Serializable {
         }
     }
 
+    @SuppressWarnings("removal")
     private static boolean overridesGetClassName(final Class<?> c) {
         return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
             public Boolean run() {

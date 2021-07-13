@@ -63,7 +63,7 @@ import java.util.stream.Stream;
  * @summary tests LogManager.updateConfiguration(bin)
  * @modules java.logging/java.util.logging:open
  * @run main/othervm UpdateConfigurationTest UNSECURE
- * @run main/othervm UpdateConfigurationTest SECURE
+ * @run main/othervm -Djava.security.manager=allow UpdateConfigurationTest SECURE
  * @author danielfuchs
  */
 public class UpdateConfigurationTest {

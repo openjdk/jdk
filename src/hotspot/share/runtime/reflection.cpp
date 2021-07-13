@@ -764,7 +764,6 @@ static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
   return Handle(THREAD, nt);
 }
 
-
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
   // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
   assert(!method()->is_initializer() ||
@@ -1002,9 +1001,7 @@ static oop invoke(InstanceKlass* klass,
           CLEAR_PENDING_EXCEPTION;
           // JVMTI has already reported the pending exception
           // JVMTI internal flag reset is needed in order to report InvocationTargetException
-          if (THREAD->is_Java_thread()) {
-            JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
-          }
+          JvmtiExport::clear_detected_exception(THREAD);
           JavaCallArguments args(Handle(THREAD, resolution_exception));
           THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
                       vmSymbols::throwable_void_signature(),
@@ -1116,9 +1113,7 @@ static oop invoke(InstanceKlass* klass,
     CLEAR_PENDING_EXCEPTION;
     // JVMTI has already reported the pending exception
     // JVMTI internal flag reset is needed in order to report InvocationTargetException
-    if (THREAD->is_Java_thread()) {
-      JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
-    }
+    JvmtiExport::clear_detected_exception(THREAD);
 
     JavaCallArguments args(Handle(THREAD, target_exception));
     THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),

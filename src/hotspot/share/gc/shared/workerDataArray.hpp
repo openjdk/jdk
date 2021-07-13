@@ -34,7 +34,7 @@ template <class T>
 class WorkerDataArray  : public CHeapObj<mtGC> {
   friend class WDAPrinter;
 public:
-  static const uint MaxThreadWorkItems = 6;
+  static const uint MaxThreadWorkItems = 9;
 private:
   T*          _data;
   uint        _length;
@@ -67,6 +67,7 @@ private:
   static T uninitialized();
 
   void set(uint worker_i, T value);
+  void set_or_add(uint worker_i, T value);
   T get(uint worker_i) const;
 
   void add(uint worker_i, T value);

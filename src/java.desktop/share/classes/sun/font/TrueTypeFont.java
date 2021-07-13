@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,7 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
+                @SuppressWarnings("removal")
                 RandomAccessFile raf = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<RandomAccessFile>() {
                         public RandomAccessFile run() throws FileNotFoundException {
@@ -660,6 +661,7 @@ public class TrueTypeFont extends FileFont {
     };
 
     private static String defaultCodePage = null;
+    @SuppressWarnings("removal")
     static String getCodePage() {
 
         if (defaultCodePage != null) {
