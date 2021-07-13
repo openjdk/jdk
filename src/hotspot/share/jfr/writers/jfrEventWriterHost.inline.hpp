@@ -53,19 +53,25 @@ inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_write(void) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
+template <EventSizeRange RANGE>
 inline void EventWriterHost<BE, IE, WriterPolicyImpl>::begin_event_write(bool large) {
   assert(this->is_valid(), "invariant");
   assert(!this->is_acquired(), "calling begin with writer already in acquired state!");
   this->begin_write();
   // reserve the event size slot
-  if (large) {
-    this->reserve(sizeof(u4));
+  if (RANGE != UNCERTAIN) {
+    this->reserve(RANGE == LT_128 ? sizeof(u1) : sizeof(u4));
   } else {
-    this->reserve(sizeof(u1));
+    if (large) {
+      this->reserve(sizeof(u4));
+    } else {
+      this->reserve(sizeof(u1));
+    }
   }
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
+template <EventSizeRange RANGE>
 inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write(bool large) {
   assert(this->is_acquired(), "invariant");
   if (!this->is_valid()) {
@@ -73,22 +79,33 @@ inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write(bool 
     return 0;
   }
   u4 written = (u4)end_write();
-  if (large) {
-    // size written is larger than header reserve, so commit
-    if (written > sizeof(u4)) {
-      this->write_padded_at_offset(written, 0);
+  if (RANGE != UNCERTAIN) {
+    if (written > (RANGE == LT_128 ? sizeof(u1) : sizeof(u4))) {
+      if (RANGE == LT_128) {
+        this->write_at_offset(written, 0);
+      } else {
+        this->write_padded_at_offset(written, 0);
+      }
       this->commit();
     }
   } else {
-    // abort if event size will not fit in one byte (compressed)
-    if (written > 127) {
-      this->reset();
-      written = 0;
-    } else {
+    if (large) {
       // size written is larger than header reserve, so commit
-      if (written > sizeof(u1)) {
-        this->write_at_offset(written, 0);
+      if (written > sizeof(u4)) {
+        this->write_padded_at_offset(written, 0);
         this->commit();
+      }
+    } else {
+      // abort if event size will not fit in one byte (compressed)
+      if (written > 127) {
+        this->reset();
+        written = 0;
+      } else {
+        // size written is larger than header reserve, so commit
+        if (written > sizeof(u1)) {
+          this->write_at_offset(written, 0);
+          this->commit();
+        }
       }
     }
   }

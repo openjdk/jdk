@@ -100,6 +100,7 @@ public class GenerateJfrFiles {
             Metadata metadata = new Metadata(xmlFile, xsdFile);
             metadata.verify();
             metadata.wireUpTypes();
+            metadata.computeEventSizeRange();
 
             if (outputMode == OutputMode.headers) {
                 File outputDir = new File(output);
@@ -160,6 +161,10 @@ public class GenerateJfrFiles {
         }
     }
 
+    enum EventSizeRange {
+        LT_128, GE_128, UNCERTAIN;
+    }
+
     static class TypeElement {
         List<FieldElement> fields = new ArrayList<>();
         String name;
@@ -180,6 +185,10 @@ public class GenerateJfrFiles {
         boolean supportStruct = false;
         String commitState;
         public boolean primitive;
+
+        int maxSize = -1;
+        int minSize = -1;
+        EventSizeRange sizeRange;
 
         public void persist(DataOutputStream pos) throws IOException {
             pos.writeInt(fields.size());
@@ -229,6 +238,30 @@ public class GenerateJfrFiles {
         int lastEventId;
         private TypeCounter eventCounter;
         private TypeCounter typeCounter;
+
+        static Map<String, Integer> maxSizeMap = new LinkedHashMap<>();
+
+        static {
+            maxSizeMap.put("const PackageEntry*", 9);
+            maxSizeMap.put("const Klass*", 9);
+            maxSizeMap.put("const ModuleEntry*", 9);
+            maxSizeMap.put("const ClassLoaderData*", 9);
+            maxSizeMap.put("const Method*", 9);
+            maxSizeMap.put("u8", 9);
+            maxSizeMap.put("Tickspan", 9);
+            maxSizeMap.put("Ticks", 9);
+            maxSizeMap.put("unsigned", 5);
+            maxSizeMap.put("u2", 3);
+            maxSizeMap.put("u1", 2);
+            maxSizeMap.put("s8", 9);
+            maxSizeMap.put("s4", 5);
+            maxSizeMap.put("s2", 3);
+            maxSizeMap.put("s1", 2);
+            maxSizeMap.put("double", 9);
+            maxSizeMap.put("float", 5);
+            maxSizeMap.put("bool", 1);
+            maxSizeMap.put("char", 2);
+        }
 
         Metadata(File metadataXml, File metadataSchema)
                 throws ParserConfigurationException, SAXException, FileNotFoundException, IOException {
@@ -371,6 +404,89 @@ public class GenerateJfrFiles {
             for (TypeElement t : getTypes()) {
                 t.id = typeCounter.next();
             }
+        }
+
+        boolean hasUncertainSizeField(TypeElement te) {
+            for (FieldElement field : te.fields) {
+                String type = field.getFieldType();
+                if (type.equals("const char*")) {
+                    return true;
+                } else if (type.startsWith("JfrStruct")) {
+                    if (hasUncertainSizeField(field.type)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void computeTypeSize(TypeElement te) {
+            if (te.maxSize != -1) {
+                return;
+            }
+            te.maxSize = te.minSize = 0;
+            for (FieldElement field : te.fields) {
+                String type = field.getFieldType();
+                if (type.startsWith("JfrStruct")) {
+                    computeTypeSize(field.type);
+                    te.maxSize += field.type.maxSize;
+                    te.minSize += field.type.minSize;
+                } else {
+                    te.minSize += 1;
+                    Integer maxSize = maxSizeMap.get(type);
+                    if (maxSize == null) {
+                        throw new RuntimeException("Unknown max size for type: " + type);
+                    }
+                    te.maxSize += maxSize;
+                }
+            }
+        }
+
+        private void computeEventSizeRange(TypeElement event) {
+            if (!event.isEvent) {
+                throw new IllegalStateException();
+            }
+
+            if (hasUncertainSizeField(event)) {
+                event.sizeRange = EventSizeRange.UNCERTAIN;
+                return;
+            }
+
+            computeTypeSize(event);
+            event.maxSize += event.id <= 127 ? 1 : 2;
+            event.minSize ++;
+
+            // start time
+            event.maxSize += 9;
+            event.minSize += 1;
+
+            if (!(!event.startTime || !event.period.isEmpty()) || event.cutoff) {
+                // end time
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.thread) {
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.stackTrace) {
+                event.maxSize += 9;
+                event.minSize += 1;
+            }
+
+            if (event.maxSize < 127) {
+                event.sizeRange = EventSizeRange.LT_128;
+            } else if (event.minSize >= 127) {
+                event.sizeRange = EventSizeRange.GE_128;
+            } else {
+                event.sizeRange = EventSizeRange.UNCERTAIN;
+            }
+        }
+
+        void computeEventSizeRange() {
+            getEvents().forEach(this::computeEventSizeRange);
         }
 
         public String getName(long id) {
@@ -827,6 +943,7 @@ public class GenerateJfrFiles {
             out.write("  static const bool hasThrottle = " + event.throttle + ";");
             out.write("  static const bool isRequestable = " + !event.period.isEmpty() + ";");
             out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
+            out.write("  static const EventSizeRange sizeRange = " + event.sizeRange.name() +";");
             out.write("");
         }
         if (!empty) {
