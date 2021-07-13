@@ -584,7 +584,6 @@ void DefNewGeneration::collect(bool   full,
 
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
-  rp->setup_policy(clear_all_soft_refs);
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
   const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);

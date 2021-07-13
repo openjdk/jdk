@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,38 @@
  * questions.
  */
 
-package pkg2;
+package compiler.vectorapi;
 
-/**
- * Just a dummy class to force the overview page to generate.
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.VectorShuffle;
+
+/*
+ * @test
+ * @bug 8265907
+ * @modules jdk.incubator.vector
+ * @run main/othervm compiler.vectorapi.TestVectorShuffleIota
  */
-public class Foo {}
+
+public class TestVectorShuffleIota {
+    static final VectorSpecies<Integer> SPECIESi = IntVector.SPECIES_128;
+
+    static final int INVOC_COUNT = 50000;
+
+    static int[] ai = {87, 65, 78, 71};
+
+    static void testShuffleI() {
+        IntVector iv = (IntVector) VectorShuffle.iota(SPECIESi, 0, 2, false).toVector();
+        iv.intoArray(ai, 0);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < INVOC_COUNT; i++) {
+            testShuffleI();
+        }
+        for (int i = 0; i < ai.length; i++) {
+            System.out.print(ai[i] + ", ");
+        }
+        System.out.println();
+    }
+}

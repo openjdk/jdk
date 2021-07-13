@@ -39,6 +39,7 @@ innerclass innerClass jdk/incubator/foreign/CLinker$VaList$Builder outerClass jd
 -method name toCString descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;Ljdk/incubator/foreign/NativeScope;)Ljdk/incubator/foreign/MemorySegment;
 -method name toJavaStringRestricted descriptor (Ljdk/incubator/foreign/MemoryAddress;)Ljava/lang/String;
 -method name toJavaStringRestricted descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljava/nio/charset/Charset;)Ljava/lang/String;
+-method name toJavaString descriptor (Ljdk/incubator/foreign/MemorySegment;Ljava/nio/charset/Charset;)Ljava/lang/String;
 -method name allocateMemoryRestricted descriptor (J)Ljdk/incubator/foreign/MemoryAddress;
 -method name freeMemoryRestricted descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
 method name getInstance descriptor ()Ljdk/incubator/foreign/CLinker; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
@@ -47,10 +48,7 @@ method name downcallHandle descriptor (Ljava/lang/invoke/MethodType;Ljdk/incubat
 method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/MemoryAddress; flags 401
 method name toCString descriptor (Ljava/lang/String;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment; flags 9
 method name toCString descriptor (Ljava/lang/String;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/MemorySegment; flags 9
-method name toCString descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment; flags 9
-method name toCString descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/MemorySegment; flags 9
 method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;)Ljava/lang/String; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
-method name toJavaString descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljava/nio/charset/Charset;)Ljava/lang/String; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name allocateMemory descriptor (J)Ljdk/incubator/foreign/MemoryAddress; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name freeMemory descriptor (Ljdk/incubator/foreign/MemoryAddress;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name systemLookup descriptor ()Ljdk/incubator/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;

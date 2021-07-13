@@ -580,7 +580,7 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 

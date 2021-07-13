@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,9 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_ValueSet.hpp"
+package pkg2;
 
+import pkg.C;
+
+/**
+ * {@inheritDoc}
+ *
+ * A class that extends pkg.C from onother package and inherits some of its comments.
+ */
+public class E extends C {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public E method() {
+        return null;
+    }
+
+}

@@ -971,11 +971,6 @@ void os::set_native_thread_name(const char *name) {
   } __except(EXCEPTION_EXECUTE_HANDLER) {}
 }
 
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
-}
-
 void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   QueryPerformanceFrequency(&count);
