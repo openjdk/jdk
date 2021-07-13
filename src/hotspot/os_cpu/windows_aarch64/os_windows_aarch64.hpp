@@ -26,6 +26,7 @@
 #define OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_HPP
 
   static void setup_fpu();
+  static bool stub_use_cmath_impl(int intrinsicID);
   static bool supports_sse();
 
   static bool      register_code_area(char *low, char *high) {
