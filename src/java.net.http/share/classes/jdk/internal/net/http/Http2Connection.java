@@ -121,7 +121,6 @@ class Http2Connection  {
 
     static private final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     static private final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
-    static private final int BUFFER = 8; // added as an upper bound
 
     /**
      * Flag set when no more streams to be opened on this connection.
