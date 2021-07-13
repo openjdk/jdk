@@ -6106,7 +6106,7 @@ address generate_avx_ghash_processBlocks() {
       __ vpternlogd(input0, 0xfe, input1, input2, Assembler::AVX_512bit);
 
       __ vpternlogd(input3, 0xfe, translated0, translated1, Assembler::AVX_512bit);
-      __ vpternlogd(input0, 0xfe, translated1, translated2, Assembler::AVX_512bit);
+      __ vpternlogd(input0, 0xfe, translated2, translated3, Assembler::AVX_512bit);
       __ vpor(errorvec, input3, input0, Assembler::AVX_512bit);
 
       // Check if there was an error - if so, try 64-byte chunks
