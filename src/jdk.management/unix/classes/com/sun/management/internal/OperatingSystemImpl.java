@@ -130,7 +130,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
             return (int[] cpuSet) -> {
                 int totalCPUs = getHostOnlineCpuCount0();
                 int containerCPUs = getAvailableProcessors();
-                return getProcessCpuLoad0() * totalCPUs / containerCPUs;
+                return Math.min(1.0, getProcessCpuLoad0() * totalCPUs / containerCPUs);
             };
         }
 
