@@ -59,6 +59,32 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
 }
 #endif
 
+bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, bool check_bcast) {
+    bool is_supported = true;
+    if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/) ||
+        (check_bcast && !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+      is_supported = false;
+    }
+    int lshiftopc = VectorNode::opcode(elem_bt == T_LONG ? Op_LShiftL : Op_LShiftI, elem_bt);
+    auto urshiftopc = [&]() {
+      switch(elem_bt) {
+        case T_INT: return Op_URShiftI;
+        case T_LONG: return Op_URShiftL;
+        case T_BYTE: return Op_URShiftB;
+        case T_SHORT: return Op_URShiftS;
+        default: return (Opcodes)0;
+      }
+    };
+    int rshiftopc = VectorNode::opcode(urshiftopc(), elem_bt);
+    if (!is_supported &&
+        arch_supports_vector(lshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(rshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
+      is_supported = true;
+    }
+    return is_supported;
+}
+
 Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception) {
   assert(EnableVectorSupport, "");
 
@@ -296,15 +322,27 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
-  // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
-  if ((sopc != 0) &&
-      !arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
-                    n, sopc, num_elem, type2name(elem_bt),
-                    is_vector_mask(vbox_klass) ? 1 : 0);
+  if (VectorNode::is_rotate_opcode(opc)) {
+    if ((sopc != 0) &&
+        !arch_supports_vector_rotate(sopc, num_elem, elem_bt, false)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
+                      n, sopc, num_elem, type2name(elem_bt),
+                      is_vector_mask(vbox_klass) ? 1 : 0);
+      }
+      return false; // not supported
     }
-    return false; // not supported
+  } else {
+    // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
+    if ((sopc != 0) &&
+        !arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
+                      n, sopc, num_elem, type2name(elem_bt),
+                      is_vector_mask(vbox_klass) ? 1 : 0);
+      }
+      return false; // not supported
+    }
   }
 
   Node* opd1 = NULL; Node* opd2 = NULL; Node* opd3 = NULL;
@@ -1500,7 +1538,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
-  if (opc == 0 || !VectorNode::is_shift_opcode(opc)) {
+  bool is_shift  = VectorNode::is_shift_opcode(opc);
+  bool is_rotate = VectorNode::is_rotate_opcode(opc);
+  if (opc == 0 || (!is_shift && !is_rotate)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** operation not supported: op=%d bt=%s", opr->get_con(), type2name(elem_bt));
     }
@@ -1513,18 +1553,44 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
     return false; // operation not supported
   }
+  Node* cnt  = argument(5);
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-
-  if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
-                    sopc, num_elem, type2name(elem_bt));
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+  bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
+                         -0x80 <= cnt_type->get_con() && cnt_type->get_con() < 0x80;
+  if (is_rotate) {
+    if (!arch_supports_vector_rotate(sopc, num_elem, elem_bt, !is_const_rotate)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
+                      sopc, num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
     }
-    return false; // not supported
+  } else {
+    if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
+                      sopc, num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
   }
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = vector_shift_count(argument(5), opc, elem_bt, num_elem);
+  Node* opd2 = NULL;
+  if (is_shift) {
+    opd2 = vector_shift_count(cnt, opc, elem_bt, num_elem);
+  } else {
+    assert(is_rotate, "unexpected operation");
+    if (!is_const_rotate) {
+      const Type * type_bt = Type::get_const_basic_type(elem_bt);
+      cnt = elem_bt == T_LONG ? gvn().transform(new ConvI2LNode(cnt)) : cnt;
+      opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, type_bt));
+    } else {
+      // constant shift.
+      opd2 = cnt;
+    }
+  }
   if (opd1 == NULL || opd2 == NULL) {
     return false;
   }
