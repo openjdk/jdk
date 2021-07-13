@@ -5002,118 +5002,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same_refactor(Label &DIFF) {
-    Register str1 = r1, str2 = r3, tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
-    __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
-    __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
-    __ cmp(tmp1, tmp2);
-    __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-    __ br(__ NE, DIFF);
-  }
-
-  // r0  = result
-  // r1  = str1
-  // r2  = cnt1
-  // r3  = str2
-  // r4  = cnt2
-  // r10 = tmp1
-  // r11 = tmp2
-  address generate_compare_long_string_same_encoding_refactor(bool isLL) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", isLL
-        ? "compare_long_string_same_encoding LL"
-        : "compare_long_string_same_encoding UU");
-    address entry = __ pc();
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-        tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
-    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, TAIL,
-        LENGTH_DIFF, DIFF, CALCULATE_DIFFERENCE;
-    // exit from large loop when less than 64 bytes left to read or we're about
-    // to prefetch memory behind array border
-    int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
-
-    // before jumping to stub, pre-load 8 bytes already, so do comparison directly
-    __ eor(rscratch2, tmp1, tmp2);
-    __ cbnz(rscratch2, CALCULATE_DIFFERENCE);
-
-    __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
-    // update pointers, because of previous read
-    __ add(str1, str1, wordSize);
-    __ add(str2, str2, wordSize);
-    if (SoftwarePrefetchHintDistance >= 0) {
-      __ bind(LARGE_LOOP_PREFETCH);
-        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
-        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
-        compare_string_16_bytes_same_refactor(DIFF);
-        compare_string_16_bytes_same_refactor(DIFF);
-        __ sub(cnt2, cnt2, isLL ? 64 : 32);
-        compare_string_16_bytes_same_refactor(DIFF);
-        __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        compare_string_16_bytes_same_refactor(DIFF);
-        __ br(__ GT, LARGE_LOOP_PREFETCH);
-        __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
-    }
-    // less than 16 bytes left?
-    __ subs(cnt2, cnt2, isLL ? 16 : 8);
-    __ br(__ LT, TAIL);
-    __ align(OptoLoopAlignment);
-    __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same_refactor(DIFF);
-      __ subs(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, SMALL_LOOP);
-    __ bind(TAIL);
-      __ adds(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ EQ, LENGTH_DIFF);
-      __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, CHECK_LAST);
-
-      __ ldr(tmp1, Address(__ post(str1, 8)));
-      __ ldr(tmp2, Address(__ post(str2, 8)));
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, CALCULATE_DIFFERENCE);
-      __ sub(cnt2, cnt2, isLL ? 8 : 4);
-    __ bind(CHECK_LAST);
-      if (!isLL) {
-        __ add(cnt2, cnt2, cnt2); // now in bytes
-      }
-
-      __ ldr(tmp1, Address(str1, cnt2));
-      __ ldr(tmp2, Address(str2, cnt2));
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbz(rscratch2, LENGTH_DIFF);
-      __ b(CALCULATE_DIFFERENCE);
-
-    __ bind(DIFF);
-      __ cmp(tmp1, tmp2);
-      __ csel(tmp1, tmp1, tmp1h, Assembler::NE);
-      __ csel(tmp2, tmp2, tmp2h, Assembler::NE);
-      // reuse rscratch2 register for the result of eor instruction
-      __ eor(rscratch2, tmp1, tmp2);
-
-    // Find the first different characters in the longwords and
-    // compute their difference.
-    __ bind(CALCULATE_DIFFERENCE);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      // reuse tmp1 and tmp2 register, which are the chars to be compared and loaded from str1 and str2 respectively
-      __ lsrv(tmp1, tmp1, rscratch2);
-      __ lsrv(tmp2, tmp2, rscratch2);
-      if (isLL) {
-        __ uxtbw(tmp1, tmp1);
-        __ uxtbw(tmp2, tmp2);
-      } else {
-        __ uxthw(tmp1, tmp1);
-        __ uxthw(tmp2, tmp2);
-      }
-      __ subw(result, tmp1, tmp2);
-
-    __ bind(LENGTH_DIFF);
-      __ ret(lr);
-    return entry;
-  }
-
 
   // r0  = result
   // r1  = str1
@@ -5229,9 +5117,6 @@ class StubGenerator: public StubCodeGenerator {
       if (UseStringCompareWithLdp) {
           StubRoutines::aarch64::_compare_long_string_LL = generate_compare_long_string_same_encoding_withLdp(true);
           StubRoutines::aarch64::_compare_long_string_UU = generate_compare_long_string_same_encoding_withLdp(false);
-      } else if (UseStringCompareRefactor) {
-          StubRoutines::aarch64::_compare_long_string_LL = generate_compare_long_string_same_encoding_refactor(true);
-          StubRoutines::aarch64::_compare_long_string_UU = generate_compare_long_string_same_encoding_refactor(false);
       } else {
           StubRoutines::aarch64::_compare_long_string_LL = generate_compare_long_string_same_encoding(true);
           StubRoutines::aarch64::_compare_long_string_UU = generate_compare_long_string_same_encoding(false);

@@ -29,26 +29,22 @@ import java.util.concurrent.TimeUnit;
  * This benchmark naively explores String::compare performance
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 public class StringCompare {
-    //@Param({"64", "72", "80", "91", "101", "121", "181", "256"})
     @Param({"128"})
     int size;
 
-    //@Param({"8", "16", "24", "32", "40", "48", "56", "64", "72", "80", "88", "96", "104", "112", "120"})
-    @Param({"7", "15", "31", "47", "63"})
-    int diff_pos = 0;
+    @Param({"7", "15", "31", "47", "63", "127"})
+    int diff_pos;
 
 
-    private String str;
-    private String strDup;
+    private String str1;
     private String str2;
 
     @Setup(Level.Trial)
     public void init() {
-        str = newString(size, 'c', diff_pos, '1');
-        strDup = new String(str.toCharArray());
+        str1 = newString(size, 'c', diff_pos, '1');
         str2 = newString(size, 'c', diff_pos, '2');
     }
 
@@ -64,56 +60,13 @@ public class StringCompare {
         }
         return "";
     }
-    /*
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareLL() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(strDup);
-        }
-        return result;
-    }
 
-    @Benchmark
-    @Fork(jvmArgsAppend = { "-XX:+UseStringCompareWithLdp"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareLLWithLdp() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(strDup);
-        }
-        return result;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:-CompactStrings"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareUU() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(strDup);
-        }
-        return result;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:-CompactStrings", "-XX:+UseStringCompareWithLdp"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareUUWithLdp() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(strDup);
-        }
-        return result;
-    }
-    */
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public int compareLLDiffStrings() {
         int result = 0;
         for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(str2);
+            result ^= str1.compareTo(str2);
         }
         return result;
     }
@@ -124,18 +77,29 @@ public class StringCompare {
     public int compareLLDiffStringsWithLdp() {
         int result = 0;
         for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(str2);
+            result ^= str1.compareTo(str2);
         }
         return result;
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = { "-XX:+UseStringCompareRefactor"})
+    @Fork(jvmArgsAppend = {"-XX:-CompactStrings"})
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareLLDiffStringsWithRefactor() {
+    public int compareUUDiffStrings() {
         int result = 0;
         for (int i = 0; i < 1000; i++) {
-            result ^= str.compareTo(str2);
+            result ^= str1.compareTo(str2);
+        }
+        return result;
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend = {"-XX:-CompactStrings", "-XX:+UseStringCompareWithLdp"})
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int compareUUDiffStringsWithLdp() {
+        int result = 0;
+        for (int i = 0; i < 1000; i++) {
+            result ^= str1.compareTo(str2);
         }
         return result;
     }
