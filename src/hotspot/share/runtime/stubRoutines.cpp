@@ -214,10 +214,8 @@ void StubRoutines::initialize1() {
   if (_code1 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
-    if (_code1 == NULL) {
-      vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
-    }
+    _code1 = StubRoutinesBlob::create("StubRoutines (1)", code_size1);
+    assert(_code1, "invariant");
     CodeBuffer buffer(_code1);
     StubGenerator_generate(&buffer, false);
     // When new stubs added we need to make sure there is some space left
@@ -268,10 +266,8 @@ void StubRoutines::initialize2() {
   if (_code2 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
-    if (_code2 == NULL) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
-    }
+    _code2 = StubRoutinesBlob::create("StubRoutines (2)", code_size2);
+    assert(_code2, "invariant");
     CodeBuffer buffer(_code2);
     StubGenerator_generate(&buffer, true);
     // When new stubs added we need to make sure there is some space left

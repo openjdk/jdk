@@ -64,13 +64,8 @@
 // ITS CORRECTNESS! THIS CODE IS MORE SUBTLE THAN IT LOOKS!
 
 
-StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
-                     Mutex* lock, const char* name) : _mutex(lock) {
-  intptr_t size = align_up(buffer_size, 2*BytesPerWord);
-  BufferBlob* blob = BufferBlob::create(name, size);
-  if( blob == NULL) {
-    vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", name);
-  }
+StubQueue::StubQueue(StubInterface* stub_interface, BufferBlob* blob,
+                     Mutex* lock) : _mutex(lock) {
   _stub_interface  = stub_interface;
   _buffer_size     = blob->content_size();
   _buffer_limit    = blob->content_size();

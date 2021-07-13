@@ -140,7 +140,12 @@ void ICStub::print() {
 
 void InlineCacheBuffer::initialize() {
   if (_buffer != NULL) return; // already initialized
-  _buffer = new StubQueue(new ICStubInterface, 10*K, InlineCacheBuffer_lock, "InlineCacheBuffer");
+  int code_size = align_up((int)(10*K), 2*BytesPerWord);
+  BufferBlob* blob = BufferBlob::create("InlineCacheBuffer", code_size);
+  if (blob == NULL) {
+    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for InlineCacheBuffer");
+  }
+  _buffer = new StubQueue(new ICStubInterface, blob, InlineCacheBuffer_lock);
   assert (_buffer != NULL, "cannot allocate InlineCacheBuffer");
 }
 
