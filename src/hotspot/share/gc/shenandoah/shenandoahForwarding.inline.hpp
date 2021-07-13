@@ -31,6 +31,46 @@
 #include "oops/markWord.hpp"
 #include "runtime/thread.hpp"
 
+/*
+ * Implementation note on memory ordering:
+ *
+ * Since concurrent GC like Shenandoah effectively publishes the forwardee copy
+ * to concurrently running mutators, we need to consider the memory ordering
+ * that comes with it. Most crucially, we need to ensure that all the stores to
+ * the forwardee before its publication are visible to readers of the forwardee.
+ * This is the GC hotpath, and thus the weakest synchronization should be used.
+ *
+ * Because the whole thing is the pointer-mediated publishing, the weakest way
+ * to achieve this is Release-Consume ordering. But, because:
+ *   a) we do not have "Consume" for in Hotspot;
+ *   b) "Consume" gets promoted to "Acquire" by most current compilers
+ *      (because doing otherwise requires tracking load dependencies);
+ *   c) the use of "Consume" is generally discouraged in current C++;
+ *
+ * ...Release-Acquire ordering might be considered. But, on weakly-ordered
+ * architectures, doing "Acquire" on hot-path would significantly penalize users.
+ *
+ * We can recognize that C++ GC code hardly ever accesses the object contents after
+ * the evacuation: the marking is done by the time evacuations happen, the evacuation
+ * code only reads the contents of the from-copy (that is not protected by
+ * synchronization anyhow), and update-refs only writes the object pointers themselves.
+ * Therefore, "Relaxed" still works, "Consume" is good as the additional safety measure,
+ * but the cost of "Acquire" is too high.
+ *
+ * The mutator code accesses forwarded objects through runtime interface, which
+ * among other things inhibits the problematic C++ optimizations that are otherwise
+ * would require "Consume".
+ *
+ * Hand-written arch-specific assembly code for barriers uses data dependencies to
+ * provide "Consume" semantics that would not be affected by C++ compilers.
+ *
+ * The critical point where synchronization is needed are mark word accesses:
+ *   1. markword loads are using the "relaxed" loads, due to the reasons above;
+ *   2. markword stores that publish new forwardee are marked with "release";
+ *
+ * TODO: When "Consume" is available, load mark words with "consume" for extra safety.
+ */
+
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
   shenandoah_assert_in_heap(NULL, obj);
   return get_forwardee_raw_unchecked(obj);
@@ -82,7 +122,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_release);
   if (prev_mark == old_mark) {
     return update;
   } else {

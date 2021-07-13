@@ -212,6 +212,11 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   assert_different_registers(tmp, dst);
 
   Label done;
+
+  // Load the forwardee with "consume" semantics, which in this case
+  // can be done with just a plain load, as AArch64 maintains ordering
+  // with address dependencies. See ShenandoahForwarding helpers for
+  // more discussion.
   __ ldr(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
   __ eon(tmp, tmp, zr);
   __ ands(zr, tmp, markWord::lock_mask_in_place);
