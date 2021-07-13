@@ -2035,6 +2035,11 @@ const intx ObjectAlignmentInBytes = 8;
   JFR_ONLY(product(ccstr, StartFlightRecording, NULL,                       \
           "Start flight recording with options"))                           \
                                                                             \
+  JFR_ONLY(product(ccstr, JFREmergencyDumpPath, NULL,                       \
+          "The path for JFR emergency dump. "                               \
+          "Flight record will be dumped there "                             \
+          "when the error (OOM, stack overflow, crash) happens."))          \
+                                                                            \
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \

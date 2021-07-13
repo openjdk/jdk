@@ -105,7 +105,14 @@ static void close_emergency_dump_file() {
 static const char* create_emergency_dump_path() {
   assert(is_path_empty(), "invariant");
 
-  const size_t path_len = get_current_directory();
+  size_t path_len = 0;
+  if (JFREmergencyDumpPath == NULL) {
+    path_len = get_current_directory();
+  } else {
+    if (strlen(JFREmergencyDumpPath) < (sizeof(_path_buffer) - 1)) {
+      path_len = jio_snprintf(_path_buffer, sizeof(_path_buffer), "%s%s", JFREmergencyDumpPath, os::file_separator());
+    }
+  }
   if (path_len == 0) {
     return NULL;
   }
