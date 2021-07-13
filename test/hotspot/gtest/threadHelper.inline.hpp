@@ -26,10 +26,28 @@
 
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "unittest.hpp"
+
+static void startTestThread(JavaThread* thread, const char* name) {
+  EXCEPTION_MARK;
+  HandleMark hm(THREAD);
+  Handle thread_oop;
+
+  // This code can be called from the main thread, which is _thread_in_native,
+  // or by an existing JavaTestThread, which is _thread_in_vm.
+  if (THREAD->thread_state() == _thread_in_native) {
+    ThreadInVMfromNative tivfn(THREAD);
+    thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
+    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
+  } else {
+    thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
+    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
+  }
+}
 
 class VM_StopSafepoint : public VM_Operation {
 public:
@@ -44,38 +62,29 @@ public:
 
 // This class and thread keep the non-safepoint op running while we do our testing.
 class VMThreadBlocker : public JavaThread {
-public:
   Semaphore _ready;
   Semaphore _unblock;
-  VMThreadBlocker() {}
-  virtual ~VMThreadBlocker() {}
-  const char* get_thread_name_string(char* buf, int buflen) const {
-    return "VMThreadBlocker";
-  }
-  void run() {
-    this->set_thread_state(_thread_in_vm);
-    {
-      MutexLocker ml(Threads_lock);
-      Threads::add(this);
-    }
-    VM_StopSafepoint ss(&_ready, &_unblock);
+
+  static void blocker_thread_entry(JavaThread* thread, TRAPS) {
+    VMThreadBlocker* t = static_cast<VMThreadBlocker*>(thread);
+    VM_StopSafepoint ss(&t->_ready, &t->_unblock);
     VMThread::execute(&ss);
   }
 
-  // Override as JavaThread::post_run() calls JavaThread::exit which
-  // expects a valid thread object oop.
-  virtual void post_run() {
-    Threads::remove(this, false);
-    this->smr_delete();
+  VMThreadBlocker() : JavaThread(&blocker_thread_entry) {};
+
+  virtual ~VMThreadBlocker() {}
+
+public:
+  // Convenience method for client code
+  static VMThreadBlocker* start() {
+    const char* name = "VMThreadBlocker";
+    VMThreadBlocker* thread = new VMThreadBlocker();
+    JavaThread::vm_exit_on_osthread_failure(thread);
+    startTestThread(thread, name);
+    return thread;
   }
 
-  void doit() {
-    if (os::create_thread(this, os::os_thread)) {
-      os::start_thread(this);
-    } else {
-      ASSERT_TRUE(false);
-    }
-  }
   void ready() {
     _ready.wait();
   }
@@ -86,52 +95,34 @@ public:
 
 // For testing in a real JavaThread.
 class JavaTestThread : public JavaThread {
-public:
   Semaphore* _post;
+
+protected:
   JavaTestThread(Semaphore* post)
-    : _post(post) {
+    : JavaThread(&test_thread_entry), _post(post) {
+    JavaThread::vm_exit_on_osthread_failure(this);
   }
   virtual ~JavaTestThread() {}
 
-  const char* get_thread_name_string(char* buf, int buflen) const {
-    return "JavaTestThread";
-  }
-
-  void pre_run() {
-    this->set_thread_state(_thread_in_vm);
-    {
-      MutexLocker ml(Threads_lock);
-      Threads::add(this);
-    }
+public:
+  // simplified starting for callers and subclasses
+  void doit() {
+    startTestThread(this, "JavaTestThread");
   }
 
   virtual void main_run() = 0;
 
-  void run() {
-    main_run();
-  }
-
-  // Override as JavaThread::post_run() calls JavaThread::exit which
-  // expects a valid thread object oop. And we need to call signal.
-  void post_run() {
-    Threads::remove(this, false);
-    _post->signal();
-    this->smr_delete();
-  }
-
-  void doit() {
-    if (os::create_thread(this, os::os_thread)) {
-      os::start_thread(this);
-    } else {
-      ASSERT_TRUE(false);
-    }
+  static void test_thread_entry(JavaThread* thread, TRAPS) {
+    JavaTestThread* t = static_cast<JavaTestThread*>(thread);
+    t->main_run();
+    t->_post->signal();
   }
 };
 
 template <typename FUNC>
 class SingleTestThread : public JavaTestThread {
-public:
   FUNC& _f;
+public:
   SingleTestThread(Semaphore* post, FUNC& f)
     : JavaTestThread(post), _f(f) {
   }
@@ -147,8 +138,8 @@ template <typename TESTFUNC>
 static void nomt_test_doer(TESTFUNC &f) {
   Semaphore post;
 
-  VMThreadBlocker* blocker = new VMThreadBlocker();
-  blocker->doit();
+  VMThreadBlocker* blocker = VMThreadBlocker::start();
+
   blocker->ready();
 
   SingleTestThread<TESTFUNC>* stt = new SingleTestThread<TESTFUNC>(&post, f);
@@ -162,8 +153,8 @@ template <typename RUNNER>
 static void mt_test_doer() {
   Semaphore post;
 
-  VMThreadBlocker* blocker = new VMThreadBlocker();
-  blocker->doit();
+  VMThreadBlocker* blocker = VMThreadBlocker::start();
+
   blocker->ready();
 
   RUNNER* runner = new RUNNER(&post);
