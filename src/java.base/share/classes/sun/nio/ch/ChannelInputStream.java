@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,4 +142,96 @@ public class ChannelInputStream
         ch.close();
     }
 
+    private static final int TRANSFER_SIZE = 8192;
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        if (out instanceof ChannelOutputStream cos) {
+            WritableByteChannel oc = cos.channel();
+
+            if (ch instanceof FileChannel fc) {
+                return transfer(fc, oc);
+            }
+
+            if (oc instanceof FileChannel fc) {
+                if (ch instanceof SeekableByteChannel sbc) {
+                    return transfer(sbc, fc);
+                }
+
+                return transfer(ch, fc);
+            }
+
+            return transfer(ch, oc);
+        }
+
+        return super.transferTo(out);
+    }
+
+    private static long transfer(FileChannel src, WritableByteChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long srcPos = src.position();
+        long srcSize = src.size();
+        try {
+            for (long n = srcSize - srcPos; bytesWritten < n;)
+                bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dest);
+            return bytesWritten;
+        } finally {
+            src.position(srcPos + bytesWritten);
+        }
+    }
+
+    private static long transfer(SeekableByteChannel src, FileChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long destPos = dest.position();
+        long srcPos = src.position();
+        long srcSize = src.size();
+        try {
+            for (long n = srcSize - srcPos; bytesWritten < n;)
+                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+            return bytesWritten;
+        } finally {
+            dest.position(destPos + bytesWritten);
+        }
+    }
+
+    private static long transfer(ReadableByteChannel src, FileChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        long destPos = dest.position();
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+        try {
+            int r;
+            do {
+                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+                r = src.read(bb); // detect end-of-stream
+                if (r > -1) {
+                    bb.flip();
+                    while (bb.hasRemaining())
+                        dest.write(bb);
+                    bb.clear();
+                    bytesWritten += r;
+                }
+            } while (r > -1);
+            return bytesWritten;
+        } finally {
+            dest.position(destPos + bytesWritten);
+            Util.releaseTemporaryDirectBuffer(bb);
+        }
+    }
+
+    private static long transfer(ReadableByteChannel src, WritableByteChannel dest) throws IOException {
+        long bytesWritten = 0L;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+        try {
+            for (int r = src.read(bb); r > -1; r = src.read(bb)) {
+                bb.flip();
+                while (bb.hasRemaining())
+                    dest.write(bb);
+                bb.clear();
+                bytesWritten += r;
+            }
+            return bytesWritten;
+        } finally {
+            Util.releaseTemporaryDirectBuffer(bb);
+        }
+    }
 }
