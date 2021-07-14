@@ -1671,7 +1671,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_RotateRightV:
     case Op_RotateLeftV:
-      if (is_subword_type(bt)) {
+      if (bt != T_INT && bt != T_LONG) {
         return false;
       } // fallthrough
     case Op_MacroLogicV:
