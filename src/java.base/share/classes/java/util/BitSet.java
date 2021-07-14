@@ -1037,7 +1037,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         for (int i = wordsInUse; --i >= 0; )
             h ^= words[i] * (i + 1);
 
-        return Long.hashCode(h);
+        return (int)((h >> 32) ^ h);
     }
 
     /**
