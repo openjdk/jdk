@@ -271,22 +271,35 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
   // Associative
   if (op1 == Op_MulI && op2 == Op_MulI) {
-    // Convert "a*b-a*c into a*(b-c)
+    Node* sub_in1 = NULL;
+    Node* sub_in2 = NULL;
+    Node* mul_in = NULL;
+
     if (in1->in(1) == in2->in(1)) {
-      Node* sub = phase->transform(new SubINode(in1->in(2), in2->in(2)));
-      return new MulINode(in1->in(1), sub);
+      // Convert "a*b-a*c into a*(b-c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(1);
     } else if (in1->in(2) == in2->in(1)) {
       // Convert a*b-b*c into b*(a-c)
-      Node* sub = phase->transform(new SubINode(in1->in(1), in2->in(2)));
-      return new MulINode(in1->in(2), sub);
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(2);
     } else if (in1->in(2) == in2->in(2)) {
       // Convert a*c-b*c into (a-b)*c
-      Node* sub = phase->transform(new SubINode(in1->in(1), in2->in(1)));
-      return new MulINode(sub, in1->in(2));
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(2);
     } else if (in1->in(1) == in2->in(2)) {
       // Convert a*b-c*a into a*(b-c)
-      Node* sub = phase->transform(new SubINode(in1->in(2), in2->in(1)));
-      return new MulINode(in1->in(1), sub);
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* sub = phase->transform(new SubINode(sub_in1, sub_in2));
+      return new MulINode(mul_in, sub);
     }
   }
 
@@ -416,22 +429,35 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Associative
   if (op1 == Op_MulL && op2 == Op_MulL) {
-    // Convert "a*b-a*c into a*(b+c)
+    Node* sub_in1 = NULL;
+    Node* sub_in2 = NULL;
+    Node* mul_in = NULL;
+
     if (in1->in(1) == in2->in(1)) {
-      Node* sub = phase->transform(new SubLNode(in1->in(2), in2->in(2)));
-      return new MulLNode(in1->in(1), sub);
+      // Convert "a*b-a*c into a*(b+c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(1);
     } else if (in1->in(2) == in2->in(1)) {
       // Convert a*b-b*c into b*(a-c)
-      Node* sub = phase->transform(new SubLNode(in1->in(1), in2->in(2)));
-      return new MulLNode(in1->in(2), sub);
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(2);
     } else if (in1->in(2) == in2->in(2)) {
       // Convert a*c-b*c into (a-b)*c
-      Node* sub = phase->transform(new SubLNode(in1->in(1), in2->in(1)));
-      return new MulLNode(sub, in1->in(2));
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(2);
     } else if (in1->in(1) == in2->in(2)) {
       // Convert a*b-c*a into a*(b-c)
-      Node* sub = phase->transform(new SubLNode(in1->in(2), in2->in(1)));
-      return new MulLNode(in1->in(1), sub);
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* sub = phase->transform(new SubLNode(sub_in1, sub_in2));
+      return new MulLNode(mul_in, sub);
     }
   }
 
