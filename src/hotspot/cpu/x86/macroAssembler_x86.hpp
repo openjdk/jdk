@@ -957,7 +957,7 @@ public:
   void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
                       Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                      Register processInChunks, Register state, Register subkeyHtbl, Register counter);
+                      Register state, Register subkeyHtbl, Register counter);
 
 #endif
 

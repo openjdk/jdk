@@ -548,7 +548,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_counterMode_AESCrypt(intrinsic_id());
 
   case vmIntrinsics::_galoisCounterMode_AESCrypt:
-    return inline_galoisCounterMode_AESCrypt(intrinsic_id());
+    return inline_galoisCounterMode_AESCrypt();
 
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
@@ -6685,27 +6685,24 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
 }
 
 //------------------------------inline_galoisCounterMode_AESCrypt-----------------------
-bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
+bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   assert(UseAES, "need AES instruction support");
   address stubAddr = NULL;
   const char *stubName = NULL;
-  if (id == vmIntrinsics::_galoisCounterMode_AESCrypt) {
-    stubAddr = StubRoutines::galoisCounterMode_AESCrypt();
-    stubName = "galoisCounterMode_AESCrypt";
-  }
+  stubAddr = StubRoutines::galoisCounterMode_AESCrypt();
+  stubName = "galoisCounterMode_AESCrypt";
+
   if (stubAddr == NULL) return false;
 
-  Node* galoisCounterMode_object = argument(0);
-  Node* in      = argument(1);
-  Node* inOfs   = argument(2);
-  Node* len     = argument(3);
-  Node* ct      = argument(4);
-  Node* ctOfs   = argument(5);
-  Node* out     = argument(6);
-  Node* outOfs  = argument(7);
-  Node* processInChunks = argument(8);
-  Node* gctr_object = argument(9);
-  Node* ghash_object = argument(10);
+  Node* in      = argument(0);
+  Node* inOfs   = argument(1);
+  Node* len     = argument(2);
+  Node* ct      = argument(3);
+  Node* ctOfs   = argument(4);
+  Node* out     = argument(5);
+  Node* outOfs  = argument(6);
+  Node* gctr_object = argument(7);
+  Node* ghash_object = argument(8);
 
   // (1) in, ct and out are arrays.
   const Type* in_type = in->Value(&_gvn);
@@ -6733,15 +6730,18 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
   // (because of the predicated logic executed earlier).
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
-  Node* embeddedCipherObj = load_field_from_object(galoisCounterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
+  Node* embeddedCipherObj = load_field_from_object(gctr_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   Node* counter = load_field_from_object(gctr_object, "counter", "[B");
   Node* subkeyHtbl = load_field_from_object(ghash_object, "subkeyHtbl", "[J");
   Node* state = load_field_from_object(ghash_object, "state", "[J");
-  if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) return false;
+
+  if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) {
+      return false;
+  }
   // cast it to what we know it will be at runtime
-  const TypeInstPtr* tinst = _gvn.type(galoisCounterMode_object)->isa_instptr();
-  assert(tinst != NULL, "GCM obj is null");
-  assert(tinst->klass()->is_loaded(), "GCM obj is not loaded");
+  const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
+  assert(tinst != NULL, "GCTR obj is null");
+  assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
   ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
@@ -6762,7 +6762,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, processInChunks, state_start, subkeyHtbl_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
@@ -6782,17 +6782,17 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
 
 Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
   // The receiver was checked for NULL already.
-  Node* objGCM = argument(0);
-  // Load embeddedCipher field of CipherBlockChaining object.
-  Node* embeddedCipherObj = load_field_from_object(objGCM, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
+  Node* objGCTR = argument(7);
+  // Load embeddedCipher field of GCTR object.
+  Node* embeddedCipherObj = load_field_from_object(objGCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
   assert(embeddedCipherObj != NULL, "embeddedCipherObj is null");
 
   // get AESCrypt klass for instanceOf check
   // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
   // will have same classloader as CipherBlockChaining object
-  const TypeInstPtr* tinst = _gvn.type(objGCM)->isa_instptr();
-  assert(tinst != NULL, "GCMobj is null");
-  assert(tinst->klass()->is_loaded(), "GCMobj is not loaded");
+  const TypeInstPtr* tinst = _gvn.type(objGCTR)->isa_instptr();
+  assert(tinst != NULL, "GCTR obj is null");
+  assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
   ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));

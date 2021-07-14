@@ -4394,9 +4394,7 @@ class StubGenerator: public StubCodeGenerator {
   // ct = c_rarg2 (r8)       |  c_rarg2 (rdx)
   // out = c_rarg3 (r9)      |  c_rarg3 (rcx)
   // key = r10               |  c_rarg4 (r8)
-  // processInChunks = r11   |  c_rarg5 (r9)
-  // isEncrypt = r12         |  r10
-  // state = r13             |  r13
+  // state = r13             |  c_rarg5 (r9)
   // subkeyHtbl = r14        |  r11
   // counter = rsi           |  r12
   // return - number of processed bytes
@@ -4411,23 +4409,19 @@ class StubGenerator: public StubCodeGenerator {
     // and updated with the incremented counter in the end
 #ifndef _WIN64
     const Register key = c_rarg4;
-    const Register processInChunks = c_rarg5;
-    const Address state_mem(rbp, 2 * wordSize);
-    const Register state = r13;
-    const Address subkeyH_mem(rbp, 3 * wordSize);
+    const Register state = c_rarg5;
+    const Address subkeyH_mem(rbp, 2 * wordSize);
     const Register subkeyHtbl = r11;
-    const Address counter_mem(rbp, 4 * wordSize);
+    const Address counter_mem(rbp, 3 * wordSize);
     const Register counter = r12;
 #else
     const Address key_mem(rbp, 6 * wordSize);
     const Register key = r10;
-    const Register processInChunks = r11;
-    const Address partial_mem(rbp, 7 * wordSize);
-    const Address state_mem(rbp, 8 * wordSize);
+    const Address state_mem(rbp, 7 * wordSize);
     const Register state = r13;
-    const Address subkeyH_mem(rbp, 9 * wordSize);
+    const Address subkeyH_mem(rbp, 8 * wordSize);
     const Register subkeyHtbl = r14;
-    const Address counter_mem(rbp, 10 * wordSize);
+    const Address counter_mem(rbp, 9 * wordSize);
     const Register counter = rsi;
 #endif
     __ enter();
@@ -4441,16 +4435,12 @@ class StubGenerator: public StubCodeGenerator {
     // on win64, fill len_reg from stack position
     __ push(rsi);
     __ movptr(key, key_mem);
-    __ movl(processInChunks, partial_mem);
     __ movptr(state, state_mem);
-    __ movptr(subkeyHtbl, subkeyH_mem);
-    __ movptr(counter, counter_mem);
-#else
-    __ movptr(state, state_mem);
-    __ movptr(subkeyHtbl, subkeyH_mem);
-    __ movptr(counter, counter_mem);
 #endif
-    __ aesgcm_encrypt(in, len, ct, out, key, processInChunks, state, subkeyHtbl, counter);
+    __ movptr(subkeyHtbl, subkeyH_mem);
+    __ movptr(counter, counter_mem);
+
+    __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, counter);
 
     // Restore state before leaving routine
 #ifdef _WIN64
