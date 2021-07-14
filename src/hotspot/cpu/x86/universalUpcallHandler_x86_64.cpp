@@ -580,6 +580,10 @@ struct AuxiliarySaves {
   bool should_detach;
 };
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax and for xmm0. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry, jobject jabi, jobject jconv) {
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
@@ -844,6 +848,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   return blob->code_begin();
 }
+PRAGMA_DIAG_POP
 
 bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
   return true;

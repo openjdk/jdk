@@ -29,7 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/linkedlist.hpp"
 
 template <typename E, MEMFLAGS F>
@@ -108,7 +108,13 @@ public:
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
+typedef ResourceHashtable<LogFileOutput*,
+                          uint32_t,
+                          primitive_hash<LogFileOutput*>,
+                          primitive_equals<LogFileOutput*>,
+                          17, /*table_size*/
+                          ResourceObj::C_HEAP,
+                          mtLogging> AsyncLogMap;
 
 //
 // ASYNC LOGGING SUPPORT

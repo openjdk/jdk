@@ -3258,7 +3258,7 @@ void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
   // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_and_cleanup_shared_classes to
+  // it will cause MetaspaceShared::link_shared_classes to
   // fail for dynamic dump.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
@@ -3269,7 +3269,7 @@ void JavaThread::invoke_shutdown_hooks() {
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
+    DynamicArchive::prepare_for_dynamic_dumping();
   }
 #endif
 
