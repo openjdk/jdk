@@ -96,13 +96,13 @@ public class BitSet implements Cloneable, java.io.Serializable {
     /**
      * The number of words in the logical size of this BitSet.
      */
-    private transient int wordsInUse;
+    private transient int wordsInUse = 0;
 
     /**
      * Whether the size of "words" is user-specified.  If so, we assume
      * the user knows what he's doing and try harder to preserve it.
      */
-    private transient boolean sizeIsSticky;
+    private transient boolean sizeIsSticky = false;
 
     /* use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
