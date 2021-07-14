@@ -43,7 +43,7 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   if (_buffer.size() >= _buffer_max_size) {
     bool p_created;
-    uint32_t* counter = _stats.add_if_absent(msg.output(), 0, &p_created);
+    uint32_t* counter = _stats.put_if_absent(msg.output(), 0, &p_created);
     *counter = *counter + 1;
     // drop the enqueueing message.
     os::free(msg.message());
@@ -77,7 +77,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator m
 AsyncLogWriter::AsyncLogWriter()
   : _lock(1), _sem(0), _flush_sem(0),
     _initialized(false),
-    _stats(17 /*table_size*/) {
+    _stats() {
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
   } else {
@@ -93,16 +93,16 @@ class AsyncLogMapIterator {
 
  public:
   AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
-  bool do_entry(LogFileOutput* output, uint32_t* counter) {
+  bool do_entry(LogFileOutput* output, uint32_t& counter) {
     using none = LogTagSetMapping<LogTag::__NO_TAG>;
 
-    if (*counter > 0) {
+    if (counter > 0) {
       LogDecorations decorations(LogLevel::Warning, none::tagset(), LogDecorators::All);
       stringStream ss;
-      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
+      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
       AsyncLogMessage msg(output, decorations, ss.as_string(true /*c_heap*/));
       _logs.push_back(msg);
-      *counter = 0;
+      counter = 0;
     }
 
     return true;

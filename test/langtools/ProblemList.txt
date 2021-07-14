@@ -72,3 +72,4 @@ tools/sjavac/ClasspathDependencies.java                                         
 #
 # jdeps
 
+tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                            8270060    generic-all    java.util.SplittableRandom extends a non-exported class

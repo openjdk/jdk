@@ -27,19 +27,15 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <new>
 
-// The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
-// Note: this value must be a power of 2
-
-#define ARENA_AMALLOC_ALIGNMENT (2*BytesPerWord)
-
-#define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
-#define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
-#define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)
+// The byte alignment to be used by Arena::Amalloc.
+#define ARENA_AMALLOC_ALIGNMENT BytesPerLong
+#define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
@@ -105,20 +101,17 @@ protected:
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
   debug_only(void* malloc(size_t size);)
-  debug_only(void* internal_malloc_4(size_t x);)
 
-  void signal_out_of_memory(size_t request, const char* whence) const;
-
-  bool check_for_overflow(size_t request, const char* whence,
-      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) const {
-    if (UINTPTR_MAX - request < (uintptr_t)_hwm) {
-      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-        return false;
-      }
-      signal_out_of_memory(request, whence);
+  void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
+    if (pointer_delta(_max, _hwm, 1) >= x) {
+      char *old = _hwm;
+      _hwm += x;
+      return old;
+    } else {
+      return grow(x, alloc_failmode);
     }
-    return true;
- }
+  }
 
  public:
   Arena(MEMFLAGS memflag);
@@ -136,50 +129,20 @@ protected:
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
   void  operator delete(void* p);
 
-  // Fast allocate in the arena.  Common case is: pointer test + increment.
+  // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
+  // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
-    x = ARENA_ALIGN(x);
+    x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
-  }
-  // Further assume size is padded out to words
-  void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-    debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+    return internal_amalloc(x, alloc_failmode);
   }
 
-  // Allocate with 'double' alignment. It is 8 bytes on sparc.
-  // In other cases Amalloc_D() should be the same as Amalloc_4().
-  void* Amalloc_D(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
+  // Allocate in the arena, assuming the size has been aligned to size of pointer, which
+  // is 4 bytes on 32 bits, hence the name.
+  void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
     debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+    return internal_amalloc(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
