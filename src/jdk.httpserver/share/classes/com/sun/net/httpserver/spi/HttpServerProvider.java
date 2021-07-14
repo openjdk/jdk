@@ -29,6 +29,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -96,12 +97,15 @@ public abstract class HttpServerProvider {
         if (cn == null)
             return false;
         try {
-            @SuppressWarnings("deprecation")
-            Object o = Class.forName(cn, true,
-                                     ClassLoader.getSystemClassLoader()).newInstance();
-            provider = (HttpServerProvider)o;
-            return true;
-        } catch (ClassNotFoundException |
+            var cls = Class.forName(cn, true, ClassLoader.getSystemClassLoader());
+            if (cls.getDeclaredConstructor().newInstance() instanceof HttpServerProvider p) {
+                provider = p;
+                return true;
+            }
+            return false;
+        } catch (InvocationTargetException |
+                 NoSuchMethodException |
+                 ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException |
                  SecurityException x) {
