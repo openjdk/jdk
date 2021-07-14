@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestRefprocSanity
+ * @test id=default
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah
  *
@@ -42,7 +42,7 @@
  */
 
 /*
- * @test TestRefprocSanity
+ * @test id=iu
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah
  *

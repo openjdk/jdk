@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,10 @@ public class ByteArrayInputStream extends InputStream {
      * {@code buf[pos+k-1]} are copied into {@code b[off]} through
      * {@code b[off+k-1]} in the manner performed by {@code System.arraycopy}.
      * The value {@code k} is added into {@code pos} and {@code k} is returned.
+     * <p>
+     * Unlike the {@link InputStream#read(byte[],int,int) overridden method}
+     * of {@code InputStream}, this method returns {@code -1} instead of zero
+     * if the end of the stream has been reached and {@code len == 0}.
      * <p>
      * This {@code read} method cannot block.
      *
