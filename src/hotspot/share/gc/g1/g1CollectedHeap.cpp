@@ -2867,21 +2867,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   return true;
 }
 
-void G1CollectedHeap::gc_tracer_report_gc_start() {
-  _gc_timer_stw->register_gc_start();
-  _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
-}
-
-void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark,
-                                              G1EvacuationInfo& evacuation_info) {
-  _gc_tracer_stw->report_evacuation_info(&evacuation_info);
-  _gc_tracer_stw->report_tenuring_threshold(_policy->tenuring_threshold());
-
-  _gc_timer_stw->register_gc_end();
-  _gc_tracer_stw->report_gc_end(_gc_timer_stw->gc_end(),
-  _gc_timer_stw->time_partitions());
-}
-
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
 // The code relies on the fact that GCTraceTimeWrapper stores the string passed

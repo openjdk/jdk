@@ -401,9 +401,6 @@ private:
 
   G1NewTracer* _gc_tracer_stw;
 
-  void gc_tracer_report_gc_start();
-  void gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark, G1EvacuationInfo& evacuation_info);
-
   // The current policy object for the collector.
   G1Policy* _policy;
   G1HeapSizingPolicy* _heap_sizing_policy;
