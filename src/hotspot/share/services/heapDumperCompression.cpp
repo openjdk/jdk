@@ -34,7 +34,7 @@
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");
 
-  _fd = os::create_binary_file(_path, false);    // don't replace existing file
+  _fd = os::create_binary_file(_path, _overwrite);
 
   if (_fd < 0) {
     return os::strerror(errno);
