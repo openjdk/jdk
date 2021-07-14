@@ -804,7 +804,7 @@ public final class System {
      *     JDKs prior to 18. In that case, the value will be replaced with the
      *     one from {@code native.encoding} system property during runtime startup.
      *     Specifying it to {@code UTF-8}, or no value is set, defaults to use
-     *     {@code UTF-8}.
+     *     {@code UTF-8}. Other values have unspecified behavior.
      *     </td></tr>
      * </tbody>
      * </table>

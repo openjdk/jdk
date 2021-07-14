@@ -58,7 +58,7 @@ import java.nio.charset.UnsupportedCharsetException;
  * @author     Frank Yellin
  * @author     Mark Reinhold
  * @since      1.0
- * @see Console#charset()
+ * @see Charset#defaultCharset()
  */
 
 public class PrintStream extends FilterOutputStream
@@ -124,13 +124,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, without automatic line flushing, with the
      * specified OutputStream. Characters written to the stream are converted
-     * to bytes using the default console charset.
+     * to bytes using the default charset.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
      *
      * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public PrintStream(OutputStream out) {
         this(out, false);
@@ -139,7 +139,7 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, with the specified OutputStream and line
      * flushing. Characters written to the stream are converted to bytes using
-     * the default console charset.
+     * the default charset.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -149,7 +149,7 @@ public class PrintStream extends FilterOutputStream
      *                    character or byte ({@code '\n'}) is written
      *
      * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream, boolean)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public PrintStream(OutputStream out, boolean autoFlush) {
         this(autoFlush, requireNonNull(out, "Null output stream"));
@@ -208,7 +208,7 @@ public class PrintStream extends FilterOutputStream
      * specified file name.  This convenience constructor creates
      * the necessary intermediate {@link java.io.OutputStreamWriter
      * OutputStreamWriter}, which will encode characters using the
-     * {@linkplain Console#charset() default console charset}
+     * {@linkplain Charset#defaultCharset() default charset}
      * for this instance of the Java virtual machine.
      *
      * @param  fileName
@@ -227,7 +227,7 @@ public class PrintStream extends FilterOutputStream
      *          If a security manager is present and {@link
      *          SecurityManager#checkWrite checkWrite(fileName)} denies write
      *          access to the file
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
@@ -310,7 +310,7 @@ public class PrintStream extends FilterOutputStream
      * specified file.  This convenience constructor creates the necessary
      * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
      * which will encode characters using the {@linkplain
-     * Console#charset() default console charset} for this
+     * Charset#defaultCharset() default charset} for this
      * instance of the Java virtual machine.
      *
      * @param  file
@@ -329,7 +329,7 @@ public class PrintStream extends FilterOutputStream
      *          If a security manager is present and {@link
      *          SecurityManager#checkWrite checkWrite(file.getPath())}
      *          denies write access to the file
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
@@ -762,12 +762,12 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a boolean value.  The string produced by {@link
      * java.lang.String#valueOf(boolean)} is translated into bytes
-     * according to the default console charset, and these bytes
+     * according to the default charset, and these bytes
      * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      b   The {@code boolean} to be printed
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(boolean b) {
         write(String.valueOf(b));
@@ -776,11 +776,11 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a character.  The character is translated into one or more bytes
      * according to the character encoding given to the constructor, or the
-     * default console charset if none specified. These bytes
+     * default charset if none specified. These bytes
      * are written in exactly the manner of the {@link #write(int)} method.
      *
      * @param      c   The {@code char} to be printed
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(char c) {
         write(String.valueOf(c));
@@ -789,13 +789,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an integer.  The string produced by {@link
      * java.lang.String#valueOf(int)} is translated into bytes
-     * according to the default console charset, and these bytes
+     * according to the default charset, and these bytes
      * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      i   The {@code int} to be printed
      * @see        java.lang.Integer#toString(int)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(int i) {
         write(String.valueOf(i));
@@ -804,13 +804,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a long integer.  The string produced by {@link
      * java.lang.String#valueOf(long)} is translated into bytes
-     * according to the default console charset, and these bytes
+     * according to the default charset, and these bytes
      * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      l   The {@code long} to be printed
      * @see        java.lang.Long#toString(long)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(long l) {
         write(String.valueOf(l));
@@ -819,13 +819,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a floating-point number.  The string produced by {@link
      * java.lang.String#valueOf(float)} is translated into bytes
-     * according to the default console charset, and these bytes
+     * according to the default charset, and these bytes
      * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      f   The {@code float} to be printed
      * @see        java.lang.Float#toString(float)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(float f) {
         write(String.valueOf(f));
@@ -834,13 +834,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints a double-precision floating-point number.  The string produced by
      * {@link java.lang.String#valueOf(double)} is translated into
-     * bytes according to the default console charset, and these
+     * bytes according to the default charset, and these
      * bytes are written in exactly the manner of the {@link
      * #write(int)} method.
      *
      * @param      d   The {@code double} to be printed
      * @see        java.lang.Double#toString(double)
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(double d) {
         write(String.valueOf(d));
@@ -849,11 +849,11 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an array of characters.  The characters are converted into bytes
      * according to the character encoding given to the constructor, or the
-     * default console charset if none specified. These bytes
+     * default charset if none specified. These bytes
      * are written in exactly the manner of the {@link #write(int)} method.
      *
      * @param      s   The array of chars to be printed
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      *
      * @throws  NullPointerException  If {@code s} is {@code null}
      */
@@ -865,12 +865,12 @@ public class PrintStream extends FilterOutputStream
      * Prints a string.  If the argument is {@code null} then the string
      * {@code "null"} is printed.  Otherwise, the string's characters are
      * converted into bytes according to the character encoding given to the
-     * constructor, or the default console charset if none
+     * constructor, or the default charset if none
      * specified. These bytes are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      s   The {@code String} to be printed
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(String s) {
         write(String.valueOf(s));
@@ -879,13 +879,13 @@ public class PrintStream extends FilterOutputStream
     /**
      * Prints an object.  The string produced by the {@link
      * java.lang.String#valueOf(Object)} method is translated into bytes
-     * according to the default console charset, and these bytes
+     * according to the default charset, and these bytes
      * are written in exactly the manner of the
      * {@link #write(int)} method.
      *
      * @param      obj   The {@code Object} to be printed
      * @see        java.lang.Object#toString()
-     * @see Console#charset()
+     * @see Charset#defaultCharset()
      */
     public void print(Object obj) {
         write(String.valueOf(obj));
