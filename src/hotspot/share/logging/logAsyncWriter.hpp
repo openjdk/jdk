@@ -135,13 +135,10 @@ class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
 
   static AsyncLogWriter* _instance;
-  // _lock(1) denotes a critional region.
-  Semaphore _lock;
-  // _sem is a semaphore whose value denotes how many messages have been enqueued.
-  // It decreases in AsyncLogWriter::run()
-  Semaphore _sem;
   Semaphore _flush_sem;
-
+  // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
+  os::PlatformMonitor _lock;
+  bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
   AsyncLogBuffer _buffer;

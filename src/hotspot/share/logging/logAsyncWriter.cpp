@@ -27,16 +27,17 @@
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.inline.hpp"
 
 class AsyncLogWriter::AsyncLogLocker : public StackObj {
  public:
   AsyncLogLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_lock.wait();
+    _instance->_lock.lock();
   }
 
   ~AsyncLogLocker() {
-    _instance->_lock.signal();
+    _instance->_lock.unlock();
   }
 };
 
@@ -51,7 +52,8 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   }
 
   _buffer.push_back(msg);
-  _sem.signal();
+  _data_available = true;
+  _lock.notify();
 }
 
 void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
@@ -75,7 +77,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator m
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _lock(1), _sem(0), _flush_sem(0),
+  : _flush_sem(0), _lock(), _data_available(false),
     _initialized(false),
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
@@ -125,6 +127,7 @@ void AsyncLogWriter::write() {
     // append meta-messages of dropped counters
     AsyncLogMapIterator dropped_counters_iter(logs);
     _stats.iterate(&dropped_counters_iter);
+    _data_available = false;
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());
@@ -152,9 +155,14 @@ void AsyncLogWriter::write() {
 
 void AsyncLogWriter::run() {
   while (true) {
-    // The value of a semphore cannot be negative. Therefore, the current thread falls asleep
-    // when its value is zero. It will be waken up when new messages are enqueued.
-    _sem.wait();
+    {
+      AsyncLogLocker locker;
+
+      while (!_data_available) {
+        _lock.wait(0/* no timeout */);
+      }
+    }
+
     write();
   }
 }
@@ -198,7 +206,8 @@ void AsyncLogWriter::flush() {
 
       // Push directly in-case we are at logical max capacity, as this must not get dropped.
       _instance->_buffer.push_back(token);
-      _instance->_sem.signal();
+      _instance->_data_available = true;
+      _instance->_lock.notify();
     }
 
     _instance->_flush_sem.wait();
