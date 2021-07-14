@@ -502,8 +502,7 @@ jchar* java_lang_String::as_unicode_string_or_null(oop java_string, int& length)
   return result;
 }
 
-template<bool update>
-unsigned int java_lang_String::hash_code_impl(oop java_string) {
+inline unsigned int java_lang_String::hash_code_impl(oop java_string, bool update) {
   // The hash and hashIsZero fields are subject to a benign data race,
   // making it crucial to ensure that any observable result of the
   // calculation in this method stays correct under any possible read of
@@ -541,11 +540,11 @@ unsigned int java_lang_String::hash_code_impl(oop java_string) {
 }
 
 unsigned int java_lang_String::hash_code(oop java_string) {
-  return hash_code_impl</*update=*/true>(java_string);
+  return hash_code_impl(java_string, /*update=*/true);
 }
 
 unsigned int java_lang_String::hash_code_noupdate(oop java_string) {
-  return hash_code_impl</*update=*/false>(java_string);
+  return hash_code_impl(java_string, /*update=*/false);
 }
 
 

@@ -127,8 +127,7 @@ class java_lang_String : AllStatic {
   // returning true if the bit was already set.
   static bool test_and_set_flag(oop java_string, uint8_t flag_mask);
 
-  template<bool update>
-  static unsigned int hash_code_impl(oop java_string);
+  static inline unsigned int hash_code_impl(oop java_string, bool update);
 
  public:
 
