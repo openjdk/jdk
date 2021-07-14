@@ -519,6 +519,9 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print() {
+  // Check if some time has been recorded for verification and only then print
+  // the message. We do not use Verify*GC here to print because VerifyGCType
+  // further limits actual verification.
   if (_cur_verify_before_time_ms > 0.0) {
     debug_time("Verify Before", _cur_verify_before_time_ms);
   }
@@ -530,6 +533,7 @@ void G1GCPhaseTimes::print() {
   accounted_ms += print_post_evacuate_collection_set();
   print_other(accounted_ms);
 
+  // See above comment on the _cur_verify_before_time_ms check.
   if (_cur_verify_after_time_ms > 0.0) {
     debug_time("Verify After", _cur_verify_after_time_ms);
   }

@@ -301,6 +301,7 @@ public:
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
+  // Record the start and end of the young gc pause.
   void note_young_gc_pause_start();
   void note_young_gc_pause_end();
 
@@ -310,7 +311,7 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
+  // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
   void record_young_collection_end(bool concurrent_operation_is_full_mark);
 
