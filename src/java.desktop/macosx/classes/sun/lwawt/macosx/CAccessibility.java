@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.annotation.Native;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -654,9 +655,9 @@ class CAccessibility implements PropertyChangeListener {
 
     // Duplicated from JavaComponentAccessibility
     // Note that values >=0 are indexes into the child array
-    static final int JAVA_AX_ALL_CHILDREN = -1;
-    static final int JAVA_AX_SELECTED_CHILDREN = -2;
-    static final int JAVA_AX_VISIBLE_CHILDREN = -3;
+    @Native static final int JAVA_AX_ALL_CHILDREN = -1;
+    @Native static final int JAVA_AX_SELECTED_CHILDREN = -2;
+    @Native static final int JAVA_AX_VISIBLE_CHILDREN = -3;
 
     // Each child takes up two entries in the array: one for itself and one for its role
     public static Object[] getChildrenAndRoles(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored) {
@@ -749,8 +750,8 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
-    private static final int JAVA_AX_ROWS = 1;
-    private static final int JAVA_AX_COLS = 2;
+    @Native private static final int JAVA_AX_ROWS = 1;
+    @Native private static final int JAVA_AX_COLS = 2;
 
     public static int getTableInfo(final Accessible a, final Component c,
                                    final int info) {

@@ -28,6 +28,7 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 #import "OutlineAccessibility.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 static jclass sjc_CAccessible = NULL;
 #define GET_CACCESSIBLE_CLASS_RETURN(ret) \
@@ -66,7 +67,7 @@ static jclass sjc_CAccessible = NULL;
     jobject currentAccessible = [self currentAccessibleWithENV:env];
     if (currentAccessible != NULL) {
         CommonComponentAccessibility *currentElement = [CommonComponentAccessibility createWithAccessible:currentAccessible withEnv:env withView:self->fView isCurrent:YES];
-        NSArray *children = [CommonComponentAccessibility childrenOfParent:currentElement withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+        NSArray *children = [CommonComponentAccessibility childrenOfParent:currentElement withEnv:env withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:YES];
         if ([children count] != 0) {
             return children;
         }

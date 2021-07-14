@@ -29,6 +29,7 @@
 #import "CellAccessibility.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 static jclass sjc_CAccessibility = NULL;
 
@@ -61,7 +62,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
         if (parent->fAccessible == NULL) return nil;
         GET_CHILDRENANDROLES_METHOD_RETURN(nil);
         jobjectArray jchildrenAndRoles = (jobjectArray)(*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getChildrenAndRoles,
-                                                                                      parent->fAccessible, parent->fComponent, JAVA_AX_ALL_CHILDREN, NO);
+                                                                                      parent->fAccessible, parent->fComponent, sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN, NO);
         CHECK_EXCEPTION();
         if (jchildrenAndRoles == NULL) return nil;
 

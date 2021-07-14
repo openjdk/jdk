@@ -26,6 +26,7 @@
 #import "ScrollAreaAccessibility.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 /*
  * Implementation of the accessibility peer for the ScrollArea role
@@ -35,7 +36,7 @@
 - (NSArray * _Nullable)accessibilityContentsAttribute
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:YES];
 
     if ([children count] <= 0) return nil;
     NSArray *contents = [NSMutableArray arrayWithCapacity:[children count]];
@@ -56,7 +57,7 @@
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:YES];
     if ([children count] <= 0) return nil;
 
     // The scroll bars are in the children.

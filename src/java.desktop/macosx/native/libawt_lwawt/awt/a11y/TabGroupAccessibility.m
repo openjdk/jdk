@@ -27,6 +27,7 @@
 #import "../JavaAccessibilityUtilities.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 static jclass sjc_CAccessibility = NULL;
 
@@ -40,7 +41,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 
 - (id)currentTabWithEnv:(JNIEnv *)env withAxContext:(jobject)axContext
 {
-    NSArray *tabs = [self tabButtonsWithEnv:env withTabGroupAxContext:axContext withTabCode:JAVA_AX_ALL_CHILDREN allowIgnored:NO];
+    NSArray *tabs = [self tabButtonsWithEnv:env withTabGroupAxContext:axContext withTabCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:NO];
 
     // Looking at the JTabbedPane sources, there is always one AccessibleSelection.
     jobject selAccessible = getAxContextSelection(env, axContext, 0, fComponent);
@@ -127,7 +128,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jobject axContext = [self axContextWithEnv:env];
-    id tabs = [self tabButtonsWithEnv:env withTabGroupAxContext:axContext withTabCode:JAVA_AX_ALL_CHILDREN allowIgnored:NO];
+    id tabs = [self tabButtonsWithEnv:env withTabGroupAxContext:axContext withTabCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:NO];
     (*env)->DeleteLocalRef(env, axContext);
     return tabs;
 }
@@ -136,7 +137,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jobject axContext = [self axContextWithEnv:env];
-    NSArray* cont = [self contentsWithEnv:env withTabGroupAxContext:axContext withTabCode:JAVA_AX_ALL_CHILDREN allowIgnored:NO];
+    NSArray* cont = [self contentsWithEnv:env withTabGroupAxContext:axContext withTabCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:NO];
     (*env)->DeleteLocalRef(env, axContext);
     return cont;
 }

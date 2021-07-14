@@ -32,9 +32,7 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 #import "CellAccessibility.h"
-
-#define JAVA_AX_ROWS (1)
-#define JAVA_AX_COLS (2)
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 static jclass sjc_CAccessibility = NULL;
 
@@ -153,7 +151,7 @@ static jmethodID sjm_getAccessibleName = NULL;
 
 - (nullable NSArray<id<NSAccessibilityRow>> *)accessibilitySelectedRows
 {
-    NSArray<NSNumber *> *selectedRowIndexses = [self getTableSelectedInfo:JAVA_AX_ROWS];
+    NSArray<NSNumber *> *selectedRowIndexses = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_ROWS];
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:[selectedRowIndexses count]];
     for (NSNumber *index in selectedRowIndexses) {
         [children addObject:[[TableRowAccessibility alloc] initWithParent:self
@@ -198,7 +196,7 @@ static jmethodID sjm_getAccessibleName = NULL;
 
 - (nullable NSArray *)accessibilitySelectedColumns
 {
-    NSArray<NSNumber *> *indexes = [self getTableSelectedInfo:JAVA_AX_COLS];
+    NSArray<NSNumber *> *indexes = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS];
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[indexes count]];
     for (NSNumber *i in indexes) {
         [columns addObject:[[ColumnAccessibility alloc] initWithParent:self
@@ -213,12 +211,12 @@ static jmethodID sjm_getAccessibleName = NULL;
 
 - (NSInteger)accessibilityRowCount
 {
-    return [[self getTableInfo:JAVA_AX_ROWS] integerValue];
+    return [[self getTableInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_ROWS] integerValue];
 }
 
 - (NSInteger)accessibilityColumnCount
 {
-    return [[self getTableInfo:JAVA_AX_COLS] integerValue];
+    return [[self getTableInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS] integerValue];
 }
 
 - (nullable NSArray *)accessibilitySelectedCells;

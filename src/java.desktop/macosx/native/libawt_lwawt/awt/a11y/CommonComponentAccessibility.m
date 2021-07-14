@@ -33,6 +33,8 @@
 #import "JNIUtilities.h"
 #import "AWTView.h"
 #import "sun_lwawt_macosx_CAccessible.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
+
 
 // GET* macros defined in JavaAccessibilityUtilities.h, so they can be shared.
 static jclass sjc_CAccessibility = NULL;
@@ -747,17 +749,17 @@ static jobject sAccessibilityClass = NULL;
 
 - (NSArray *)accessibilityChildren
 {
-    return [self accessibleChildrenWithChildCode:JAVA_AX_ALL_CHILDREN];
+    return [self accessibleChildrenWithChildCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN];
 }
 
 - (NSArray *)accessibilitySelectedChildren
 {
-    return [self accessibleChildrenWithChildCode:JAVA_AX_SELECTED_CHILDREN];
+    return [self accessibleChildrenWithChildCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_SELECTED_CHILDREN];
 }
 
 - (NSArray *)accessibilityVisibleChildren
 {
-    return [self accessibleChildrenWithChildCode:JAVA_AX_VISIBLE_CHILDREN];
+    return [self accessibleChildrenWithChildCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_VISIBLE_CHILDREN];
 }
 
 - (NSRect)accessibilityFrame
@@ -1015,7 +1017,7 @@ static jobject sAccessibilityClass = NULL;
         NSArray *children =
             [CommonComponentAccessibility childrenOfParent:self
                                         withEnv:env
-                                        withChildrenCode:JAVA_AX_ALL_CHILDREN
+                                        withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN
                                         allowIgnored:YES];
         if ([children count] > 0) {
             // handle case of AXMenuItem
