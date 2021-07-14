@@ -287,8 +287,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
      * {@link #toString(String charsetName)} or {@link #toString(Charset charset)}
      * method, which takes an encoding-name or charset argument,
-     * or the {@code toString()} method, which uses the default
-     * charset.
+     * or the {@code toString()} method, which uses the default charset.
      *
      * @param      hibyte    the high byte of each resulting Unicode character.
      * @return     the current contents of the output stream, as a string.

@@ -571,7 +571,7 @@ public final class Console implements Flushable
         }
     }
 
-    static final Charset CHARSET; // shared with PrintStream
+    private static final Charset CHARSET;
     static {
         Charset cs = null;
         boolean istty = istty();

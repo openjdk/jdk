@@ -2121,9 +2121,9 @@ public final class System {
         setIn0(new BufferedInputStream(fdIn));
         // sun.stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encoding
-        // defaults to Charset.defaultCharset()
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+        // defaults to native.encoding
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding", StaticProperty.nativeEncoding())));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding", StaticProperty.nativeEncoding())));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

@@ -108,7 +108,7 @@ public class PrintStream extends FilterOutputStream
     private PrintStream(boolean autoFlush, OutputStream out) {
         super(out);
         this.autoFlush = autoFlush;
-        this.charOut = new OutputStreamWriter(this, Console.CHARSET);
+        this.charOut = new OutputStreamWriter(this);
         this.textOut = new BufferedWriter(charOut);
     }
 

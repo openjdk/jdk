@@ -32,6 +32,8 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -136,7 +138,7 @@ public class URLEncoder {
         dontNeedEncoding.set('.');
         dontNeedEncoding.set('*');
 
-        dfltEncName = GetPropertyAction.privilegedGetProperty("file.encoding");
+        dfltEncName = StaticProperty.fileEncoding();
     }
 
     /**
