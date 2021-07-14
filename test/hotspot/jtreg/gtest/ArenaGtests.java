@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,19 @@
  *
  */
 
-#ifndef SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
-#define SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
+/*
+ * This runs the parts of the gtest which test hotspot arenas. We run the
+ * tests with +UseMallocOnly (the standard case, -UseMallocOnly, is taken care
+ * of by the standard gtests).
+ */
 
-#include "memory/resourceArea.hpp"
+/* @test id=use-malloc-only
+ * @summary Run Arena-related gtests with +UseMallocOnly
+ * @requires vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=Arena* -XX:+UseMallocOnly
+ */
 
-#include "services/memTracker.hpp"
-
-inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failmode) {
-#ifdef ASSERT
-  verify_has_resource_mark();
-  if (UseMallocOnly) {
-    // use malloc, but save pointer in res. area for later freeing
-    char** save = (char**)internal_amalloc(sizeof(char*), sizeof(char*));
-    return (*save = (char*)os::malloc(size, mtThread, CURRENT_PC));
-  }
-#endif // ASSERT
-  return (char*)Amalloc(size, alloc_failmode);
-}
-
-#endif // SHARE_MEMORY_RESOURCEAREA_INLINE_HPP

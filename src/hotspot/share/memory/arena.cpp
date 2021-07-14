@@ -32,8 +32,23 @@
 #include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
 
+
+// Some static assumptions:
+
+// We require the max arena alignment to be <= malloc alignment.
+const size_t max_malloc_align = sizeof(long double); // max_align_t?
+STATIC_ASSERT(Chunk::max_arena_alignment <= max_malloc_align);
+
+// We require the standard chunk sizes to be aligned to Chunk::max_arena_alignment.
+STATIC_ASSERT(is_aligned((size_t)Chunk::tiny_size, Chunk::max_arena_alignment));
+STATIC_ASSERT(is_aligned((size_t)Chunk::init_size, Chunk::max_arena_alignment));
+STATIC_ASSERT(is_aligned((size_t)Chunk::medium_size, Chunk::max_arena_alignment));
+STATIC_ASSERT(is_aligned((size_t)Chunk::size, Chunk::max_arena_alignment));
+
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
+//
+// A ChunkPool caches chunks of the same size.
 
 // MT-safe pool of chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
@@ -41,7 +56,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
   Chunk*       _first;        // first cached Chunk; its first word points to next chunk
   size_t       _num_chunks;   // number of unused chunks in pool
   size_t       _num_used;     // number of chunks currently checked out
-  const size_t _size;         // size of each chunk (must be uniform)
+  const size_t _size;         // the *outer* size of the chunks this pool manages
 
   // Our four static pools
   static ChunkPool* _large_pool;
@@ -61,7 +76,10 @@ class ChunkPool: public CHeapObj<mtInternal> {
 
  public:
   // All chunks in a ChunkPool has the same size
-   ChunkPool(size_t size) : _size(size) { _first = NULL; _num_chunks = _num_used = 0; }
+   ChunkPool(size_t size) : _first(NULL), _num_chunks(0), _num_used(0), _size(size) {
+     assert(is_aligned(_size, Chunk::max_arena_alignment),
+            "Standard pool sizes must be aligned to max arena alignment");
+   }
 
   // Allocate a new chunk from the pool (might expand the pool)
   NOINLINE void* allocate(size_t bytes, AllocFailType alloc_failmode) {
@@ -77,12 +95,13 @@ class ChunkPool: public CHeapObj<mtInternal> {
     if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "ChunkPool::allocate");
     }
+    assert(is_aligned(p, Chunk::max_arena_alignment), "malloc alignment too small?");
     return p;
   }
 
   // Return a chunk to the pool
   void free(Chunk* chunk) {
-    assert(chunk->length() + Chunk::aligned_overhead_size() == _size, "bad size");
+    assert(chunk->outer_size() == _size, "bad size");
     ThreadCritical tc;
     _num_used--;
 
@@ -129,10 +148,10 @@ class ChunkPool: public CHeapObj<mtInternal> {
   static ChunkPool* tiny_pool()   { assert(_tiny_pool   != NULL, "must be initialized"); return _tiny_pool;   }
 
   static void initialize() {
-    _large_pool  = new ChunkPool(Chunk::size        + Chunk::aligned_overhead_size());
-    _medium_pool = new ChunkPool(Chunk::medium_size + Chunk::aligned_overhead_size());
-    _small_pool  = new ChunkPool(Chunk::init_size   + Chunk::aligned_overhead_size());
-    _tiny_pool   = new ChunkPool(Chunk::tiny_size   + Chunk::aligned_overhead_size());
+    _large_pool  = new ChunkPool(Chunk::calc_outer_size(Chunk::size));
+    _medium_pool = new ChunkPool(Chunk::calc_outer_size(Chunk::medium_size));
+    _small_pool  = new ChunkPool(Chunk::calc_outer_size(Chunk::init_size));
+    _tiny_pool   = new ChunkPool(Chunk::calc_outer_size(Chunk::tiny_size));
   }
 
   static void clean() {
@@ -171,13 +190,11 @@ class ChunkPoolCleaner : public PeriodicTask {
 //--------------------------------------------------------------------------------------
 // Chunk implementation
 
-void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, size_t length) throw() {
-  // requested_size is equal to sizeof(Chunk) but in order for the arena
-  // allocations to come out aligned as expected the size must be aligned
-  // to expected arena alignment.
-  // expect requested_size but if sizeof(Chunk) doesn't match isn't proper size we must align it.
-  assert(ARENA_ALIGN(requested_size) == aligned_overhead_size(), "Bad alignment");
-  size_t bytes = ARENA_ALIGN(requested_size) + length;
+void* Chunk::operator new (size_t size, AllocFailType alloc_failmode, size_t length) throw() {
+  // - size == sizeof(Chunk), possibly unaligned
+  // - length == requested payload length - possibly unaligned if non-standard size
+  // We need to allocate enough memory to hold the aligned header + aligned payload.
+  const size_t bytes = Chunk::calc_outer_size(length);
   switch (length) {
    case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
    case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
@@ -204,10 +221,6 @@ void Chunk::operator delete(void* p) {
      ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
      os::free(c);
   }
-}
-
-Chunk::Chunk(size_t length) : _len(length) {
-  _next = NULL;         // Chain on the linked list
 }
 
 void Chunk::chop() {
@@ -363,6 +376,9 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
 
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
+  if (new_size == old_size) {
+    return old_ptr; // Nothing to do.
+  }
   if (new_size == 0) {
     Afree(old_ptr, old_size); // like realloc(3)
     return NULL;
@@ -386,19 +402,21 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
 #endif
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
+  if (new_size < old_size) {  // Shrink in-place
+#ifdef ASSERT
+    if (ZapResourceArea) {
+      ::memset(c_old + new_size, badResourceValue, old_size - new_size); // zap leftovers
+    }
+#endif
     if( c_old+old_size == _hwm) // Attempt to free the excess bytes
       _hwm = c_old+new_size;    // Adjust hwm
     return c_old;
   }
 
-  // make sure that new_size is legal
-  size_t corrected_new_size = ARENA_ALIGN(new_size);
-
   // See if we can resize in-place
   if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+corrected_new_size <= _max) ) {      // Still fits where it sits
-    _hwm = c_old+corrected_new_size;      // Adjust hwm
+      (pointer_delta(_max, c_old, 1) >= new_size) ) {      // Still fits where it sits
+    _hwm = c_old+new_size;      // Adjust hwm
     return c_old;               // Return old pointer
   }
 
@@ -411,7 +429,6 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
   Afree(c_old,old_size);        // Mostly done to keep stats accurate
   return new_ptr;
 }
-
 
 // Determine if pointer belongs to this Arena or not.
 bool Arena::contains( const void *ptr ) const {
@@ -449,8 +466,11 @@ bool Arena::contains( const void *ptr ) const {
 void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
-  char** save = (char**)internal_amalloc(sizeof(char*));
-  return (*save = (char*)os::malloc(size, mtChunk));
+  char** save = (char**)internal_amalloc(sizeof(char*), sizeof(char*));
+  *save = (char*)os::malloc(size, mtChunk);
+  assert(is_aligned(*save, Chunk::max_arena_alignment),
+         "malloc alignment too small?"); // see comments at start of file.
+  return *save;
 }
 #endif
 
