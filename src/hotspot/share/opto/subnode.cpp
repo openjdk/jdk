@@ -269,9 +269,9 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     return new SubINode( add1, in2->in(1) );
   }
 
-    // Associative
+  // Associative
   if (op1 == Op_MulI && op2 == Op_MulI) {
-    // Convert "a*b-a*c into a *(b-c)
+    // Convert "a*b-a*c into a*(b-c)
     if (in1->in(1) == in2->in(1)) {
       Node* sub = phase->transform(new SubINode(in1->in(2), in2->in(2)));
       return new MulINode(in1->in(1), sub);
@@ -283,6 +283,10 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
       // Convert a*c-b*c into (a-b)*c
       Node* sub = phase->transform(new SubINode(in1->in(1), in2->in(1)));
       return new MulINode(sub, in1->in(2));
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b-c*a into a*(b-c)
+      Node* sub = phase->transform(new SubINode(in1->in(2), in2->in(1)));
+      return new MulINode(in1->in(1), sub);
     }
   }
 
@@ -412,7 +416,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Associative
   if (op1 == Op_MulL && op2 == Op_MulL) {
-    // Convert "a*b-a*c into a *(b+c)
+    // Convert "a*b-a*c into a*(b+c)
     if (in1->in(1) == in2->in(1)) {
       Node* sub = phase->transform(new SubLNode(in1->in(2), in2->in(2)));
       return new MulLNode(in1->in(1), sub);
@@ -424,6 +428,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Convert a*c-b*c into (a-b)*c
       Node* sub = phase->transform(new SubLNode(in1->in(1), in2->in(1)));
       return new MulLNode(sub, in1->in(2));
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b-c*a into a*(b-c)
+      Node* sub = phase->transform(new SubLNode(in1->in(2), in2->in(1)));
+      return new MulLNode(in1->in(1), sub);
     }
   }
 
