@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,4 +156,33 @@ public class C {
             F0<? extends T7> t7,
             F0<? extends T8> t8)
             throws IllegalArgumentException, IllegalStateException { return null; }
+
+    /**
+     * Inner classes with type arguments in enclosing classes.
+     *
+     * @param i param i
+     * @param j param j
+     * @return return value
+     */
+    public Generic<Integer>.Inner nestedGeneric1(Generic<Integer>.Inner i, Generic<C>.Inner j) { return i; }
+
+    /**
+     * Inner classes with type arguments in enclosing classes.
+     *
+     * @param f param f
+     * @param g param g
+     * @return return value
+     */
+    public Generic<C.F0<C>>.Inner.Foo nestedGeneric2(Generic<Integer>.Inner.Foo f, Generic<C.F0<C>>.Inner.Foo g) { return g; }
+
+    /**
+     * Generic class with multiple inner classes.
+     * @param <T> type parameter
+     */
+    public static class Generic<T> {
+        public class Inner {
+            T data;
+            public class Foo {}
+        }
+    }
 }
