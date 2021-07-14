@@ -328,7 +328,7 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* mul_in = NULL;
 
     if (in1->in(1) == in2->in(1)) {
-      // Convert "a*b+a*c into a *(b+c)
+      // Convert "a*b+a*c into a*(b+c)
       add_in1 = in1->in(2);
       add_in2 = in2->in(2);
       mul_in = in1->in(1);
