@@ -610,7 +610,7 @@ class VerifyCompStrings : StackObj {
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings() : _table(unsigned(_items_count + 8 / 8)), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == NULL) {
