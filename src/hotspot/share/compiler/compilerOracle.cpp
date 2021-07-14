@@ -395,11 +395,12 @@ bool CompilerOracle::should_exclude(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_inline(const methodHandle& method) {
-  return (check_predicate(CompileCommand::Inline, method));
+  return (check_predicate(CompileCommand::Inline, method) && !check_predicate(CompileCommand::DontInline, method));
 }
 
 bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(CompileCommand::DontInline, method) || check_predicate(CompileCommand::Exclude, method);
+  return (check_predicate(CompileCommand::DontInline, method) && !check_predicate(CompileCommand::Inline, method))
+         || check_predicate(CompileCommand::Exclude, method);
 }
 
 bool CompilerOracle::should_print(const methodHandle& method) {
