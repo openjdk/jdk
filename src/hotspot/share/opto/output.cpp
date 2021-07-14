@@ -1684,8 +1684,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
       // "Normal" instruction case
       DEBUG_ONLY(uint instr_offset = cb->insts_size());
+      uint pre_offset = cb->insts_size();
       n->emit(*cb, C->regalloc());
       current_offset = cb->insts_size();
+
+      if (n->is_MachMemBar() && ((current_offset - pre_offset) == 0)) {
+          block->remove_node(j);
+          --last_inst;
+          continue;
+      }
 
       // Above we only verified that there is enough space in the instruction section.
       // However, the instruction may emit stubs that cause code buffer expansion.
