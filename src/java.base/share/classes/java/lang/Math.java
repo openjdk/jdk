@@ -1004,11 +1004,14 @@ public final class Math {
 
     /**
      * Returns the quotient of the arguments, throwing an exception if the
-     * result overflows an {@code int}.  Such overflow can occur if and only
-     * if either {@code y} is zero, or both {@code x} is
-     * {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.  In contrast,
-     * if {@code Integer.MIN_VALUE / -1} were evaluated directly, the result
-     * would be {@code Integer.MIN_VALUE} and no exception would be thrown.
+     * result overflows an {@code int}.  Such overflow occurs in this method if
+     * {@code x} is {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Integer.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Integer.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, overflow also occurs as in direct evaluation and
+     * an exception is thrown as usual.
      *
      * @param x the dividend
      * @param y the divisor
@@ -1018,23 +1021,23 @@ public final class Math {
      * @since 18
      */
     public static int divideExact(int x, int y) {
-        // * This conditional is slower than the straightfoward one below.
-        // HD 2nd. Ed. p. 44 section 2-13 Overflow Detection: Division
-        // int z = (x ^ Integer.MIN_VALUE) | (y + 1);
-        // if (((y | -y) & (z | -z)) >= 0)
-
-        if (x == Integer.MIN_VALUE && y == -1)
-            throw new ArithmeticException("integer overflow");
-        return x / y; // if y == 0, ArithmeticException is thrown here
+        int q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("integer overflow");
     }
 
     /**
      * Returns the quotient of the arguments, throwing an exception if the
-     * result overflows a {@code long}.  Such overflow can occur if and only
-     * if either {@code y} is zero, or both {@code x} is
-     * {@link Long#MIN_VALUE} and {@code y} is {@code -1}.  In contrast,
-     * if {@code Long.MIN_VALUE / -1} were evaluated directly, the result
-     * would be {@code Long.MIN_VALUE} and no exception would be thrown.
+     * result overflows a {@code long}.  Such overflow occurs in this method if
+     * {@code x} is {@link Long#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Long.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Long.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, overflow also occurs as in direct evaluation and
+     * an exception is thrown as usual.
      *
      * @param x the dividend
      * @param y the divisor
@@ -1044,9 +1047,11 @@ public final class Math {
      * @since 18
      */
     public static long divideExact(long x, long y) {
-        if (x == Long.MIN_VALUE && y == -1L)
-            throw new ArithmeticException("long overflow");
-        return x / y; // if y == 0, ArithmeticException is thrown here
+        long q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("long overflow");
     }
 
     /**
