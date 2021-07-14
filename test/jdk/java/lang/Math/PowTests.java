@@ -60,16 +60,10 @@ public class PowTests {
     static int testStrictVsNonstrictPowCase(double input1, double input2) {
         double smResult = StrictMath.pow(input1, input2);
         double mResult = Math.pow(input1, input2);
-        int failures = 0;
-        if (Double.isNaN(smResult)) {
-            if (!Double.isNaN(mResult)) failures = 1;
-        } else {
-            failures += Tests.testUlpDiff(
-                "StrictMath.pow(double, double) vs Math.pow(double, double)",
-                input1, input2, mResult, smResult, 1.0
-            );
-        }
-        return failures;
+        return Tests.testUlpDiff(
+            "StrictMath.pow(double, double) vs Math.pow(double, double)",
+            input1, input2, mResult, smResult, 2.0
+        );
     }
 
     /*
