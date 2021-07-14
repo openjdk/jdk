@@ -3248,29 +3248,6 @@ public:
   }
 };
 
-// Serial drain queue closure. Called as the 'complete_gc'
-// closure for each discovered list in some of the
-// reference processing phases.
-
-class G1STWDrainQueueClosure: public VoidClosure {
-protected:
-  G1CollectedHeap* _g1h;
-  G1ParScanThreadState* _par_scan_state;
-
-  G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
-
-public:
-  G1STWDrainQueueClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) :
-    _g1h(g1h),
-    _par_scan_state(pss)
-  { }
-
-  void do_void() {
-    G1ParScanThreadState* const pss = par_scan_state();
-    pss->trim_queue();
-  }
-};
-
 class G1STWRefProcProxyTask : public RefProcProxyTask {
   G1CollectedHeap& _g1h;
   G1ParScanThreadStateSet& _pss;
