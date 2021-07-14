@@ -113,7 +113,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _collection_set->start_incremental_building();
 }
 
-void G1Policy::note_young_gc_pause_start() {
+void G1Policy::record_young_gc_pause_start() {
   phase_times()->record_gc_pause_start();
 }
 
@@ -891,7 +891,7 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::note_young_gc_pause_end() {
+void G1Policy::record_young_gc_pause_end() {
   phase_times()->record_gc_pause_end();
   phase_times()->print();
 }
@@ -1490,7 +1490,7 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
-  note_start_adding_survivor_regions();
+  start_adding_survivor_regions();
 
   HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
@@ -1506,7 +1506,7 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
 
     last = curr;
   }
-  note_stop_adding_survivor_regions();
+  stop_adding_survivor_regions();
 
   // Don't clear the survivor list handles until the start of
   // the next evacuation pause - we need it in order to re-tag

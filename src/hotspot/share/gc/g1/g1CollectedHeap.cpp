@@ -2948,8 +2948,8 @@ public:
 
 class G1YoungGCNotifyPauseMark : public StackObj {
 public:
-  G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->note_young_gc_pause_start(); }
-  ~G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->note_young_gc_pause_end(); }
+  G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_start(); }
+  ~G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(); }
 };
 
 G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {

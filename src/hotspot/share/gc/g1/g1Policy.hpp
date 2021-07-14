@@ -302,8 +302,8 @@ public:
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   // Record the start and end of the young gc pause.
-  void note_young_gc_pause_start();
-  void note_young_gc_pause_end();
+  void record_young_gc_pause_start();
+  void record_young_gc_pause_end();
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -427,11 +427,11 @@ public:
     return _max_survivor_regions;
   }
 
-  void note_start_adding_survivor_regions() {
+  void start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
-  void note_stop_adding_survivor_regions() {
+  void stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
 
