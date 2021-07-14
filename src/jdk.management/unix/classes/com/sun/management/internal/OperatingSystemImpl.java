@@ -96,14 +96,21 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                 hostTicks = hostTicks * containerCPUs / totalCPUs;
                 return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), hostTicks);
             } else {
+                // If CPU quotas and shares are not active then find the average load for
+                // all online CPUs that are allowed to run this container.
+
+                // If the cpuset is the same as the host's one there is no need to iterate over each CPU
                 if (isCpuSetSameAsHostCpuSet()) {
                     return defaultCpuLoadSupplier().getAsDouble();
                 } else {
                     int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
+                    // in case the effectiveCPUSetCpus are not available, attempt to use just cpusets.cpus
                     if (cpuSet == null || cpuSet.length <= 0) {
                         cpuSet = containerMetrics.getCpuSetCpus();
                     }
                     if (cpuSet == null) {
+                        // cgroups is mounted, but CPU resource is not limited.
+                        // We can assume the VM is run on the host CPUs.
                         return defaultCpuLoadSupplier().getAsDouble();
                     } else if (cpuSet.length > 0) {
                         return cpuSetCalc().applyAsDouble(cpuSet);
