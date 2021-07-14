@@ -51,7 +51,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
   _the_space->reset_saved_mark();
-  _shrink_factor = 0;
+  // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
+  _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
 
   _gc_stats = new GCStats();
