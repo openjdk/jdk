@@ -59,7 +59,7 @@ public:
 
 class DynamicArchive : AllStatic {
 public:
-  static void prepare_for_dynamic_dumping_at_exit();
+  static void prepare_for_dynamic_dumping();
   static void dump(const char* archive_name, TRAPS);
   static void dump(TRAPS);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }

@@ -71,7 +71,7 @@ class HeapDumper : public StackObj {
   // dumps the heap to the specified file, returns 0 if success.
   // additional info is written to out if not NULL.
   // compression >= 0 creates a gzipped file with the given compression level.
-  int dump(const char* path, outputStream* out = NULL, int compression = -1);
+  int dump(const char* path, outputStream* out = NULL, int compression = -1, bool overwrite = false);
 
   // returns error message (resource allocated), or NULL if no error
   char* error_as_C_string() const;
