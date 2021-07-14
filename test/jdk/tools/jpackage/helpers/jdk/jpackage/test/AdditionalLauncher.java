@@ -84,12 +84,6 @@ public final class AdditionalLauncher {
     public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
         withMenuShortcut = menu;
         withShortcut = shortcut;
-        if (TKit.isLinux()) {
-            addRawProperties(Map.entry("linux-shortcut", "" + shortcut));
-        } else if (TKit.isWindows()) {
-            addRawProperties(Map.entry("win-menu", "" + menu));
-            addRawProperties(Map.entry("win-shortcut", "" + shortcut));
-        }
         return this;
     }
 
@@ -153,6 +147,18 @@ public final class AdditionalLauncher {
                 iconPath = icon.toAbsolutePath().toString().replace('\\', '/');
             }
             properties.add(Map.entry("icon", iconPath));
+        }
+
+        if (withShortcut != null) {
+            if (TKit.isLinux()) {
+                properties.add(Map.entry("linux-shortcut", withShortcut.toString()));
+            } else if (TKit.isWindows()) {
+                properties.add(Map.entry("win-shortcut", withShortcut.toString()));
+            }
+        }
+
+        if (TKit.isWindows() && withMenuShortcut != null)  {
+            properties.add(Map.entry("win-menu", withMenuShortcut.toString()));
         }
 
         properties.addAll(rawProperties);
