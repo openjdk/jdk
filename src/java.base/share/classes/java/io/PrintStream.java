@@ -45,8 +45,8 @@ import java.nio.charset.UnsupportedCharsetException;
  * ({@code '\n'}) is written.
  *
  * <p> All characters printed by a {@code PrintStream} are converted into
- * bytes using the given encoding or charset, or the default
- * console charset if not specified.
+ * bytes using the given encoding or charset, or the default charset if not
+ * specified.
  * The {@link PrintWriter} class should be used in situations that require
  * writing characters rather than bytes.
  *
@@ -524,9 +524,8 @@ public class PrintStream extends FilterOutputStream
      * invoked on the underlying output stream.
      *
      * <p> Note that the byte is written as given; to write a character that
-     * will be translated according to the default console
-     * charset, use the {@code print(char)} or {@code println(char)}
-     * methods.
+     * will be translated according to the default charset, use the
+     * {@code print(char)} or {@code println(char)} methods.
      *
      * @param  b  The byte to be written
      * @see #print(char)
@@ -557,9 +556,8 @@ public class PrintStream extends FilterOutputStream
      * output stream.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the default console
-     * charset, use the {@code print(char)} or {@code println(char)}
-     * methods.
+     * that will be translated according to the default charset, use the
+     * {@code print(char)} or {@code println(char)} methods.
      *
      * @param  buf   A byte array
      * @param  off   Offset from which to start taking bytes
@@ -589,9 +587,8 @@ public class PrintStream extends FilterOutputStream
      * invoked on the underlying output stream.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the default console
-     * charset, use the {@code print(char[])} or {@code println(char[])}
-     * methods.
+     * that will be translated according to the default charset, use the
+     * {@code print(char[])} or {@code println(char[])} methods.
      *
      * @apiNote
      * Although declared to throw {@code IOException}, this method never
@@ -627,9 +624,8 @@ public class PrintStream extends FilterOutputStream
      * will be invoked.
      *
      * <p> Note that the bytes will be written as given; to write characters
-     * that will be translated according to the default console
-     * charset, use the {@code print(char[])} or {@code println(char[])}
-     * methods.
+     * that will be translated according to the default charset, use the
+     * {@code print(char[])} or {@code println(char[])} methods.
      *
      * @implSpec
      * This method is equivalent to
