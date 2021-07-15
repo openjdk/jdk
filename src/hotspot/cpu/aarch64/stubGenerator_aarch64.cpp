@@ -4963,9 +4963,9 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(cnt2, cnt2, isLL ? 8 : 4);
 
     __ bind(LESS8);                          // directly load last 8 bytes
-    if(!isLL) {
-       __ add(cnt2, cnt2, cnt2);
-    }
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2);
+      }
       __ ldr(tmp1, Address(str1, cnt2));
       __ ldr(tmp2, Address(str2, cnt2));
       __ eor(rscratch2, tmp1, tmp2);
@@ -4987,11 +4987,11 @@ class StubGenerator: public StubCodeGenerator {
       __ lsrv(tmp1, tmp1, rscratch2);
       __ lsrv(tmp2, tmp2, rscratch2);
       if (isLL) {
-          __ uxtbw(tmp1, tmp1);
-          __ uxtbw(tmp2, tmp2);
+        __ uxtbw(tmp1, tmp1);
+        __ uxtbw(tmp2, tmp2);
       } else {
-          __ uxthw(tmp1, tmp1);
-          __ uxthw(tmp2, tmp2);
+        __ uxthw(tmp1, tmp1);
+        __ uxthw(tmp2, tmp2);
       }
 
       __ subw(result, tmp1, tmp2);
