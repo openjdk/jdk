@@ -37,6 +37,7 @@ public class CheckOperatingSystemMXBean {
             System.out.println("Metrics.getMemoryLimit() == " + metrics.getMemoryLimit());
             System.out.println("Metrics.getMemoryAndSwapUsage() == " + metrics.getMemoryAndSwapUsage());
             System.out.println("Metrics.getMemoryUsage() == " + metrics.getMemoryUsage());
+            System.out.println("Metrics.getPidsMax() == " + metrics.getPidsMax());
         }
 
         OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
