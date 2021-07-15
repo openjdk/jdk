@@ -905,7 +905,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_regions_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1156,7 +1156,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
     oop m = Universe::_mirrors[t].resolve();
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_heap_object(m);
+      oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
@@ -1215,7 +1215,7 @@ oop java_lang_Class::archive_mirror(Klass* k) {
   }
 
   // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_heap_object(mirror);
+  oop archived_mirror = HeapShared::archive_object(mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }

@@ -114,7 +114,7 @@ bool MetaspaceShared::_use_full_module_graph = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_java_heap_objects.
+// The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_objects.
 // Their layout is independent of the rw/ro regions.
 
 static DumpRegion _symbol_region("symbols");
@@ -403,15 +403,15 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
 
 class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
 private:
-  GrowableArray<MemRegion> *_closed_archive_heap_regions;
-  GrowableArray<MemRegion> *_open_archive_heap_regions;
+  GrowableArray<MemRegion> *_closed_heap_regions;
+  GrowableArray<MemRegion> *_open_heap_regions;
 
-  GrowableArray<ArchiveHeapOopmapInfo> *_closed_archive_heap_oopmaps;
-  GrowableArray<ArchiveHeapOopmapInfo> *_open_archive_heap_oopmaps;
+  GrowableArray<ArchiveHeapOopmapInfo> *_closed_heap_oopmaps;
+  GrowableArray<ArchiveHeapOopmapInfo> *_open_heap_oopmaps;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_archive_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
+  void dump_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
                                  GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
@@ -423,10 +423,10 @@ public:
 
   VM_PopulateDumpSharedSpace() :
     VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
-    _closed_archive_heap_regions(NULL),
-    _open_archive_heap_regions(NULL),
-    _closed_archive_heap_oopmaps(NULL),
-    _open_archive_heap_oopmaps(NULL) {}
+    _closed_heap_regions(NULL),
+    _open_heap_regions(NULL),
+    _closed_heap_oopmaps(NULL),
+    _open_heap_oopmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
@@ -472,7 +472,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   MetaspaceShared::serialize(&wc);
 
   // Write the bitmaps for patching the archive heap regions
-  dump_archive_heap_oopmaps();
+  dump_heap_oopmaps();
 
   return start;
 }
@@ -530,10 +530,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->set_cloned_vtables(cloned_vtables);
   mapinfo->open_for_write();
   builder.write_archive(mapinfo,
-                        _closed_archive_heap_regions,
-                        _open_archive_heap_regions,
-                        _closed_archive_heap_oopmaps,
-                        _open_archive_heap_oopmaps);
+                        _closed_heap_regions,
+                        _open_heap_regions,
+                        _closed_heap_oopmaps,
+                        _open_heap_oopmaps);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
@@ -809,27 +809,26 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
   }
 
   // The closed and open archive heap space has maximum two regions.
-  // See FileMapInfo::write_archive_heap_regions() for details.
-  _closed_archive_heap_regions = new GrowableArray<MemRegion>(2);
-  _open_archive_heap_regions = new GrowableArray<MemRegion>(2);
-  HeapShared::archive_java_heap_objects(_closed_archive_heap_regions,
-                                        _open_archive_heap_regions);
+  // See FileMapInfo::write_heap_regions() for details.
+  _closed_heap_regions = new GrowableArray<MemRegion>(2);
+  _open_heap_regions = new GrowableArray<MemRegion>(2);
+  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions);
   ArchiveBuilder::OtherROAllocMark mark;
   HeapShared::write_subgraph_info_table();
 }
 
-void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps() {
+void VM_PopulateDumpSharedSpace::dump_heap_oopmaps() {
   if (HeapShared::is_heap_object_archiving_allowed()) {
-    _closed_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_archive_heap_oopmaps(_closed_archive_heap_regions, _closed_archive_heap_oopmaps);
+    _closed_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_heap_oopmaps(_closed_heap_regions, _closed_heap_oopmaps);
 
-    _open_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_archive_heap_oopmaps(_open_archive_heap_regions, _open_archive_heap_oopmaps);
+    _open_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_heap_oopmaps(_open_heap_regions, _open_heap_oopmaps);
   }
 }
 
-void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
-                                                           GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
+void VM_PopulateDumpSharedSpace::dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
+                                                   GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
   for (int i=0; i<regions->length(); i++) {
     ResourceBitMap oopmap = HeapShared::calculate_oopmap(regions->at(i));
     size_t size_in_bits = oopmap.size();
@@ -1384,7 +1383,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Initialize the run-time symbol table.
   SymbolTable::create_table();
 
-  static_mapinfo->patch_archived_heap_embedded_pointers();
+  static_mapinfo->patch_heap_embedded_pointers();
 
   // Close the mapinfo file
   static_mapinfo->close();

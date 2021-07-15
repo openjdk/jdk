@@ -724,11 +724,11 @@ oop StringTable::create_archived_string(oop s) {
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s);
+  new_s = HeapShared::archive_object(s);
   if (new_s == NULL) {
     return NULL;
   }
@@ -779,7 +779,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!HeapShared::closed_archive_heap_region_mapped()) {
+  } else if (!HeapShared::closed_regions_mapped()) {
     _shared_table.reset();
   }
 }

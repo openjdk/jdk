@@ -287,10 +287,10 @@ void ConstantPool::archive_resolved_references() {
       }
     }
 
-    oop archived = HeapShared::archive_heap_object(rr);
+    oop archived = HeapShared::archive_object(rr);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
-    // the return value of archive_heap_object here. At runtime, the
+    // the return value of archive_object() here. At runtime, the
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
@@ -347,7 +347,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::open_archive_heap_region_mapped() &&
+    if (HeapShared::open_regions_mapped() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
