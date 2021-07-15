@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
- Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -193,10 +193,10 @@ collections APIs will be used quite pervasively, often with
 multiple method calls on a single line of code, so it is important
 that the names be short. Consider, for example, the Iterator
 methods. Currently, a loop over a collection looks like this:</p>
-{@snippet :
+<pre>
     for (Iterator i = c.iterator(); i.hasNext(); )
         System.out.println(i.next());
-}
+</pre>
 Everything fits neatly on one line, even if the Collection name is
 a long expression. If we named the methods "getIterator",
 "hasNextElement" and "getNextElement", this would no longer be the
@@ -276,11 +276,11 @@ was a strong desire to keep the core interface names short. Also,
 several existing names (AbstractSequentialList, LinkedList) would
 have been decidedly worse if we changed List to Sequence. The
 naming conflict can be dealt with by the following incantation:</p>
-{@snippet :
+<pre>
     import java.util.*;
     import java.awt.*;
     import java.util.List;   // Dictates interpretation of "List"
-}</li>
+</pre></li>
 <li><a id="a12"><b>Why don't you rename List's set
 method to replace, to avoid confusion with Set.</b></a>
 <p>It was decided that the "set/get" naming convention was strongly

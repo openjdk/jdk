@@ -474,12 +474,12 @@ public interface Map<K, V> {
          * Returns {@code true} if the given object is also a map entry and
          * the two entries represent the same mapping.  More formally, two
          * entries {@code e1} and {@code e2} represent the same mapping
-         * if {@snippet file="MapSnippets.java" region="equals" :
+         * if<pre>
          *     (e1.getKey()==null ?
-         *      e2.getKey()==null : e1.getKey().equals(e2.getKey()))  &&
+         *      e2.getKey()==null : e1.getKey().equals(e2.getKey()))  &amp;&amp;
          *     (e1.getValue()==null ?
          *      e2.getValue()==null : e1.getValue().equals(e2.getValue()))
-         * }
+         * </pre>
          * This ensures that the {@code equals} method works properly across
          * different implementations of the {@code Map.Entry} interface.
          *
@@ -491,11 +491,10 @@ public interface Map<K, V> {
 
         /**
          * Returns the hash code value for this map entry.  The hash code
-         * of a map entry {@code e} is defined to be:
-         * {@snippet file="MapSnippets.java" region="hashCode" :
+         * of a map entry {@code e} is defined to be: <pre>
          *     (e.getKey()==null   ? 0 : e.getKey().hashCode()) ^
          *     (e.getValue()==null ? 0 : e.getValue().hashCode())
-         * }
+         * </pre>
          * This ensures that {@code e1.equals(e2)} implies that
          * {@code e1.hashCode()==e2.hashCode()} for any two Entries
          * {@code e1} and {@code e2}, as required by the general
@@ -683,7 +682,10 @@ public interface Map<K, V> {
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="forEach"}
+     * <pre> {@code
+     * for (Map.Entry<K, V> entry : map.entrySet())
+     *     action.accept(entry.getKey(), entry.getValue());
+     * }</pre>
      *
      * The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -720,7 +722,10 @@ public interface Map<K, V> {
      *
      * @implSpec
      * <p>The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="replaceAll"}
+     * <pre> {@code
+     * for (Map.Entry<K, V> entry : map.entrySet())
+     *     entry.setValue(function.apply(entry.getKey(), entry.getValue()));
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -780,7 +785,14 @@ public interface Map<K, V> {
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="putIfAbsent"}
+     *
+     * <pre> {@code
+     * V v = map.get(key);
+     * if (v == null)
+     *     v = map.put(key, value);
+     *
+     * return v;
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -823,7 +835,14 @@ public interface Map<K, V> {
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="remove"}
+     *
+     * <pre> {@code
+     * if (map.containsKey(key) && Objects.equals(map.get(key), value)) {
+     *     map.remove(key);
+     *     return true;
+     * } else
+     *     return false;
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -860,7 +879,14 @@ public interface Map<K, V> {
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="replaceKVV"}
+     *
+     * <pre> {@code
+     * if (map.containsKey(key) && Objects.equals(map.get(key), oldValue)) {
+     *     map.put(key, newValue);
+     *     return true;
+     * } else
+     *     return false;
+     * }</pre>
      *
      * The default implementation does not throw NullPointerException
      * for maps that do not support null values if oldValue is null unless
@@ -905,7 +931,13 @@ public interface Map<K, V> {
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="replaceKV"}
+     *
+     * <pre> {@code
+     * if (map.containsKey(key)) {
+     *     return map.put(key, value);
+     * } else
+     *     return null;
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -950,14 +982,16 @@ public interface Map<K, V> {
      * common usage is to construct a new object serving as an initial
      * mapped value or memoized result, as in:
      *
-     * {@snippet :
-     * map.computeIfAbsent(key, k -> new Value(f(k))); }
+     * <pre> {@code
+     * map.computeIfAbsent(key, k -> new Value(f(k)));
+     * }</pre>
      *
      * <p>Or to implement a multi-value map, {@code Map<K,Collection<V>>},
      * supporting multiple values per key:
      *
-     * {@snippet :
-     * map.computeIfAbsent(key, k -> new HashSet<V>()).add(v); }
+     * <pre> {@code
+     * map.computeIfAbsent(key, k -> new HashSet<V>()).add(v);
+     * }</pre>
      *
      * <p>The mapping function should not modify this map during computation.
      *
@@ -965,7 +999,14 @@ public interface Map<K, V> {
      * The default implementation is equivalent to the following steps for this
      * {@code map}, then returning the current value or {@code null} if now
      * absent:
-     * {@snippet file="MapSnippets.java" region="computeIfAbsent"}
+     *
+     * <pre> {@code
+     * if (map.get(key) == null) {
+     *     V newValue = mappingFunction.apply(key);
+     *     if (newValue != null)
+     *         map.put(key, newValue);
+     * }
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about detecting if the
      * mapping function modifies this map during computation and, if
@@ -1033,7 +1074,17 @@ public interface Map<K, V> {
      * The default implementation is equivalent to performing the following
      * steps for this {@code map}, then returning the current value or
      * {@code null} if now absent:
-     * {@snippet file="MapSnippets.java" region="computeIfPresent"}
+     *
+     * <pre> {@code
+     * if (map.get(key) != null) {
+     *     V oldValue = map.get(key);
+     *     V newValue = remappingFunction.apply(key, oldValue);
+     *     if (newValue != null)
+     *         map.put(key, newValue);
+     *     else
+     *         map.remove(key);
+     * }
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about detecting if the
      * remapping function modifies this map during computation and, if
@@ -1095,9 +1146,8 @@ public interface Map<K, V> {
      * example, to either create or append a {@code String} msg to a value
      * mapping:
      *
-     * {@snippet :
-     * map.compute(key, (k, v) -> (v == null) ? msg : v.concat(msg))}
-     *
+     * <pre> {@code
+     * map.compute(key, (k, v) -> (v == null) ? msg : v.concat(msg))}</pre>
      * (Method {@link #merge merge()} is often simpler to use for such purposes.)
      *
      * <p>If the remapping function returns {@code null}, the mapping is removed
@@ -1110,7 +1160,17 @@ public interface Map<K, V> {
      * @implSpec
      * The default implementation is equivalent to performing the following
      * steps for this {@code map}:
-     * {@snippet file="MapSnippets.java" region="compute"}
+     *
+     * <pre> {@code
+     * V oldValue = map.get(key);
+     * V newValue = remappingFunction.apply(key, oldValue);
+     * if (newValue != null) {
+     *     map.put(key, newValue);
+     * } else if (oldValue != null || map.containsKey(key)) {
+     *     map.remove(key);
+     * }
+     * return newValue;
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about detecting if the
      * remapping function modifies this map during computation and, if
@@ -1180,8 +1240,9 @@ public interface Map<K, V> {
      * For example, to either create or append a {@code String msg} to a
      * value mapping:
      *
-     * {@snippet :
-     * map.merge(key, msg, String::concat) }
+     * <pre> {@code
+     * map.merge(key, msg, String::concat)
+     * }</pre>
      *
      * <p>If the remapping function returns {@code null}, the mapping is removed.
      * If the remapping function itself throws an (unchecked) exception, the
@@ -1193,7 +1254,16 @@ public interface Map<K, V> {
      * The default implementation is equivalent to performing the following
      * steps for this {@code map}, then returning the current value or
      * {@code null} if absent:
-     * {@snippet file="MapSnippets.java" region="merge"}
+     *
+     * <pre> {@code
+     * V oldValue = map.get(key);
+     * V newValue = (oldValue == null) ? value :
+     *              remappingFunction.apply(oldValue, value);
+     * if (newValue == null)
+     *     map.remove(key);
+     * else
+     *     map.put(key, newValue);
+     * }</pre>
      *
      * <p>The default implementation makes no guarantees about detecting if the
      * remapping function modifies this map during computation and, if
@@ -1552,7 +1622,18 @@ public interface Map<K, V> {
      *
      * @apiNote
      * It is convenient to create the map entries using the {@link Map#entry Map.entry()} method.
-     * For example, {@snippet file="MapSnippets.java" region="ofEntries"}
+     * For example,
+     *
+     * <pre>{@code
+     *     import static java.util.Map.entry;
+     *
+     *     Map<Integer,String> map = Map.ofEntries(
+     *         entry(1, "a"),
+     *         entry(2, "b"),
+     *         entry(3, "c"),
+     *         ...
+     *         entry(26, "z"));
+     * }</pre>
      *
      * @param <K> the {@code Map}'s key type
      * @param <V> the {@code Map}'s value type
