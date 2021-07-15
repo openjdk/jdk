@@ -941,7 +941,7 @@ MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
   return NULL;
 }
 
-class ShenandoahConcurrentEvacuateRegionObjectClosure : public ObjectClosure {
+class ShenandoahConcurrentEvacuateRegionObjectClosure {
 private:
   ShenandoahHeap* const _heap;
   Thread* const _thread;
@@ -949,10 +949,18 @@ public:
   ShenandoahConcurrentEvacuateRegionObjectClosure(ShenandoahHeap* heap) :
     _heap(heap), _thread(Thread::current()) {}
 
-  void do_object(oop p) {
+  inline void do_object(oop p) {
     shenandoah_assert_marked(NULL, p);
     if (!p->is_forwarded()) {
       _heap->evacuate_object(p, _thread);
+    }
+  }
+  inline int do_object_size(oop p) {
+    shenandoah_assert_marked(NULL, p);
+    if (!p->is_forwarded()) {
+      return _heap->evacuate_object(p, _thread);
+    } else {
+      return p->size();
     }
   }
 };

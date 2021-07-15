@@ -618,9 +618,9 @@ public:
   // Checks if location is in the collection set. Can be interior pointer, not the oop itself.
   inline bool in_collection_set_loc(void* loc) const;
 
-  // Evacuates object src. Returns the evacuated object, either evacuated
-  // by this thread, or by some other thread.
-  inline oop evacuate_object(oop src, Thread* thread);
+  // Evacuates the object obj. Updates reference to the evacuated object, either evacuated
+  // by this thread, or by some other thread. Returns size of the object.
+  inline int evacuate_object(oop& obj, Thread* thread);
 
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);

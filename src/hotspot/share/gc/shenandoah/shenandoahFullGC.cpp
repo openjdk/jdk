@@ -290,7 +290,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   heap->parallel_cleaning(true /* full_gc */);
 }
 
-class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {
+class ShenandoahPrepareForCompactionObjectClosure {
 private:
   PreservedMarks*          const _preserved_marks;
   ShenandoahHeap*          const _heap;
@@ -329,12 +329,12 @@ public:
     return _empty_regions_pos;
   }
 
-  void do_object(oop p) {
+  inline int do_object_size(oop p) {
     assert(_from_region != NULL, "must set before work");
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
-    size_t obj_size = p->size();
+    int obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
       finish_region();
 
@@ -360,6 +360,11 @@ public:
     _preserved_marks->push_if_necessary(p, p->mark());
     p->forward_to(cast_to_oop(_compact_point));
     _compact_point += obj_size;
+    return obj_size;
+  }
+
+  inline void do_object(oop p) {
+    do_object_size(p);
   }
 };
 
@@ -742,7 +747,7 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-class ShenandoahAdjustPointersObjectClosure : public ObjectClosure {
+class ShenandoahAdjustPointersObjectClosure {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahAdjustPointersClosure _cl;
@@ -751,9 +756,15 @@ public:
   ShenandoahAdjustPointersObjectClosure() :
     _heap(ShenandoahHeap::heap()) {
   }
-  void do_object(oop p) {
+  inline void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     p->oop_iterate(&_cl);
+  }
+  inline int do_object_size(oop p) {
+    assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
+    Klass* klass = p->klass();
+    p->oop_iterate(&_cl, klass);
+    return p->size_given_klass(klass);
   }
 };
 
@@ -823,7 +834,7 @@ void ShenandoahFullGC::phase3_update_references() {
   workers->run_task(&adjust_pointers_task);
 }
 
-class ShenandoahCompactObjectsClosure : public ObjectClosure {
+class ShenandoahCompactObjectsClosure {
 private:
   ShenandoahHeap* const _heap;
   uint            const _worker_id;
@@ -832,9 +843,10 @@ public:
   ShenandoahCompactObjectsClosure(uint worker_id) :
     _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
 
-  void do_object(oop p) {
+  inline int do_object_size(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-    size_t size = (size_t)p->size();
+    int sz = p->size();
+    size_t size = (size_t)sz;
     if (p->is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
@@ -842,6 +854,10 @@ public:
       oop new_obj = cast_to_oop(compact_to);
       new_obj->init_mark();
     }
+    return sz;
+  }
+  inline void do_object(oop p) {
+    do_object_size(p);
   }
 };
 

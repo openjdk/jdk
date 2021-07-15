@@ -65,7 +65,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
            "evac should be in progress");
     Thread* const t = Thread::current();
     ShenandoahEvacOOMScope scope(t);
-    fwd = _heap->evacuate_object(obj, t);
+    _heap->evacuate_object(fwd, t);
   }
 
   if (load_addr != NULL && fwd != obj) {
@@ -92,7 +92,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
        Thread* t = Thread::current();
       ShenandoahEvacOOMScope oom_evac_scope(t);
-      return _heap->evacuate_object(obj, t);
+      _heap->evacuate_object(fwd, t);
     }
     return fwd;
   }
@@ -355,7 +355,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
       if (HAS_FWD && cset->is_in(obj)) {
         oop fwd = resolve_forwarded_not_null(obj);
         if (EVAC && obj == fwd) {
-          fwd = _heap->evacuate_object(obj, thread);
+          _heap->evacuate_object(fwd, thread);
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);

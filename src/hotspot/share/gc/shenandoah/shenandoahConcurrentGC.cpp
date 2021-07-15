@@ -690,7 +690,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
-        resolved = _heap->evacuate_object(obj, _thread);
+        _heap->evacuate_object(resolved, _thread);
       }
       ShenandoahHeap::atomic_update_oop(resolved, p, obj);
       assert(_heap->cancelled_gc() ||

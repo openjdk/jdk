@@ -287,16 +287,19 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   return allocate_from_gclab_slow(thread, size);
 }
 
-inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
+inline int ShenandoahHeap::evacuate_object(oop& p, Thread* thread) {
+  int sz = p->size();
+  size_t size = (size_t)sz;
+
   if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
     // This thread went through the OOM during evac protocol and it is safe to return
     // the forward pointer. It must not attempt to evacuate any more.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    p = ShenandoahBarrierSet::resolve_forwarded(p);
+    return sz;
   }
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -326,7 +329,8 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
     _oom_evac_handler.handle_out_of_memory_during_evacuation();
 
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    p = ShenandoahBarrierSet::resolve_forwarded(p);
+    return sz;
   }
 
   // Copy the object:
@@ -338,7 +342,8 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
-    return copy_val;
+    p = copy_val;
+    return sz;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
     // new allocation is certainly after TAMS, it will be considered live in the next cycle.
@@ -358,7 +363,8 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
       shenandoah_assert_correct(NULL, copy_val);
     }
     shenandoah_assert_correct(NULL, result);
-    return result;
+    p = result;
+    return sz;
   }
 }
 
@@ -513,33 +519,43 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    int size = obj->size();
-    cl->do_object(obj);
-    cs += size;
+    cs += cl->do_object_size(obj);
   }
 }
 
 template <class T>
-class ShenandoahObjectToOopClosure : public ObjectClosure {
+class ShenandoahObjectToOopClosure {
   T* _cl;
 public:
   ShenandoahObjectToOopClosure(T* cl) : _cl(cl) {}
 
-  void do_object(oop obj) {
+  inline void do_object(oop obj) {
     obj->oop_iterate(_cl);
+  }
+
+  inline int do_object_size(oop obj) {
+    Klass* klass = obj->klass();
+    obj->oop_iterate(_cl, klass);
+    return obj->size_given_klass(klass);
   }
 };
 
 template <class T>
-class ShenandoahObjectToOopBoundedClosure : public ObjectClosure {
+class ShenandoahObjectToOopBoundedClosure {
   T* _cl;
   MemRegion _bounds;
 public:
   ShenandoahObjectToOopBoundedClosure(T* cl, HeapWord* bottom, HeapWord* top) :
     _cl(cl), _bounds(bottom, top) {}
 
-  void do_object(oop obj) {
+  inline void do_object(oop obj) {
     obj->oop_iterate(_cl, _bounds);
+  }
+
+  inline int do_object_size(oop obj) {
+    Klass* klass = obj->klass();
+    obj->oop_iterate(_cl, _bounds, klass);
+    return obj->size_given_klass(klass);
   }
 };
 

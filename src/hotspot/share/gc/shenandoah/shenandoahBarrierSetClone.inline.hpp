@@ -51,7 +51,7 @@ private:
       if (HAS_FWD && _cset->is_in(obj)) {
         oop fwd = _bs->resolve_forwarded_not_null(obj);
         if (EVAC && obj == fwd) {
-          fwd = _heap->evacuate_object(obj, _thread);
+          _heap->evacuate_object(fwd, _thread);
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
         ShenandoahHeap::atomic_update_oop(fwd, p, o);
