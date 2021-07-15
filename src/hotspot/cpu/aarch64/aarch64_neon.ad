@@ -5366,7 +5366,7 @@ instruct vmask_firsttrue8B(iRegINoSp dst, vecD src) %{
   format %{ "vmask_firsttrue $dst, $src\t# vector (8B)" %}
   ins_encode %{
     // Returns the index of the first active lane of the
-    // vector mask, or 8 (VLENGTH) if no lane is active.
+    // vector mask, or VLENGTH if no lane is active.
     //
     // Input "src" is a vector of boolean represented as
     // bytes with 0x00/0x01 as element values.
