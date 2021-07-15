@@ -632,9 +632,9 @@ double G1Policy::logged_cards_processing_time() const {
 void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark) {
   G1GCPhaseTimes* p = phase_times();
 
-  double start_time_s = phase_times()->cur_collection_start_sec();
-  double end_time_s = Ticks::now().seconds();
-  double pause_time_ms = (end_time_s - start_time_s) * 1000.0;
+  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double end_time_sec = Ticks::now().seconds();
+  double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
 
@@ -646,7 +646,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     maybe_start_marking();
   }
 
-  double app_time_ms = (start_time_s * 1000.0 - _analytics->prev_collection_pause_end_ms());
+  double app_time_ms = (start_time_sec * 1000.0 - _analytics->prev_collection_pause_end_ms());
   if (app_time_ms < MIN_TIMER_GRANULARITY) {
     // This usually happens due to the timer not having the required
     // granularity. Some Linuxes are the usual culprits.
@@ -668,7 +668,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_s, end_time_s);
+  record_pause(this_pause, start_time_sec, end_time_sec);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
