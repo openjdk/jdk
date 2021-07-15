@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import com.sun.net.httpserver.*;
@@ -42,46 +43,48 @@ public class RequestTest {
 
     @Test
     public void testAddToEmpty() {
-        var headers = new Headers();  // empty
+        var headers = new Headers();
         Request request = new TestHttpExchange(headers);
-        request = request.with("X-Foo", List.of("Bar"));
+        request = request.with("Foo", List.of("Bar"));
         assertEquals(request.getRequestHeaders().size(), 1);
-        assertEquals(request.getRequestHeaders().get("X-Foo"), List.of("Bar"));
+        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
         assertReadOnly(request.getRequestHeaders());
     }
 
     @Test
     public void testAddition() {
         var headers = new Headers();
-        headers.add("X-Bar", "barValue");
+        headers.add("Foo", "Bar");
         Request request = new TestHttpExchange(headers);
-        request = request.with("X-Foo", List.of("fooValue"));
+        request = request.with("X-Foo", List.of("Bar"));
         assertEquals(request.getRequestHeaders().size(), 2);
-        assertEquals(request.getRequestHeaders().get("X-Bar"), List.of("barValue"));
-        assertEquals(request.getRequestHeaders().get("X-Foo"), List.of("fooValue"));
+        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
+        assertEquals(request.getRequestHeaders().get("X-Foo"), List.of("Bar"));
         assertReadOnly(request.getRequestHeaders());
     }
 
     @Test
     public void testAddWithExisting() {
-        final String headerName = "X-Baz";
+        final String headerName = "Foo";
         var headers = new Headers();
-        headers.add(headerName, "bazValue");
+        headers.add(headerName, "Bar");
         Request request = new TestHttpExchange(headers);
         request = request.with(headerName, List.of("blahblahblah"));
         assertEquals(request.getRequestHeaders().size(), 1);
-        assertEquals(request.getRequestHeaders().get(headerName), List.of("bazValue"));
+        assertEquals(request.getRequestHeaders().get(headerName), List.of("Bar"));
         assertReadOnly(request.getRequestHeaders());
     }
 
     @Test
     public void testAddSeveral() {
         var headers = new Headers();
+        headers.add("Foo", "Bar");
         Request request = new TestHttpExchange(headers);
         request = request.with("Larry", List.of("a"))
                          .with("Curly", List.of("b"))
                          .with("Moe",   List.of("c"));
-        assertEquals(request.getRequestHeaders().size(), 3);
+        assertEquals(request.getRequestHeaders().size(), 4);
+        assertEquals(request.getRequestHeaders().getFirst("Foo"), "Bar");
         assertEquals(request.getRequestHeaders().getFirst("Larry"), "a");
         assertEquals(request.getRequestHeaders().getFirst("Curly"), "b");
         assertEquals(request.getRequestHeaders().getFirst("Moe"  ), "c");
@@ -91,12 +94,44 @@ public class RequestTest {
     static final Class<UnsupportedOperationException> UOP = UnsupportedOperationException.class;
 
     static void assertReadOnly(Headers headers) {
-        assertThrows(UOP, () -> headers.put("a", List.of("b")));
-        assertThrows(UOP, () -> headers.set("c", "d"));
-        assertThrows(UOP, () -> headers.add("e", "f"));
-        assertThrows(UOP, () -> headers.remove("g"));
+        assertUnsupportedOperation(headers);
+        assertUnmodifiableCollection(headers);
+        assertUnmodifiableList(headers);
+    }
+
+    static void assertUnsupportedOperation(Headers headers) {
+        assertThrows(UOP, () -> headers.add("a", "b"));
+        assertThrows(UOP, () -> headers.compute("c", (k, v) -> List.of("c")));
+        assertThrows(UOP, () -> headers.computeIfAbsent("d", k -> List.of("d")));
+        assertThrows(UOP, () -> headers.computeIfPresent("Foo", (k, v) -> null));
+        assertThrows(UOP, () -> headers.merge("e", List.of("e"), (k, v) -> List.of("e")));
+        assertThrows(UOP, () -> headers.put("f", List.of("f")));
         assertThrows(UOP, () -> headers.putAll(Map.of()));
+        assertThrows(UOP, () -> headers.putIfAbsent("g", List.of("g")));
+        assertThrows(UOP, () -> headers.remove("h"));
+        assertThrows(UOP, () -> headers.replace("i", List.of("i")));
+        assertThrows(UOP, () -> headers.replace("j", List.of("j"), List.of("j")));
+        assertThrows(UOP, () -> headers.replaceAll((k, v) -> List.of("k")));
+        assertThrows(UOP, () -> headers.set("l", "m"));
         assertThrows(UOP, () -> headers.clear());
+    }
+
+    static void assertUnmodifiableCollection(Headers headers) {
+        var entry = new AbstractMap.SimpleEntry<>("n", List.of("n"));
+
+        assertThrows(UOP, () -> headers.values().remove(List.of("Bar")));
+        assertThrows(UOP, () -> headers.values().removeAll(List.of("Bar")));
+        assertThrows(UOP, () -> headers.keySet().remove("Foo"));
+        assertThrows(UOP, () -> headers.keySet().removeAll(List.of("Foo")));
+        assertThrows(UOP, () -> headers.entrySet().remove(entry));
+        assertThrows(UOP, () -> headers.entrySet().removeAll(List.of(entry)));
+    }
+
+    static void assertUnmodifiableList(Headers headers) {
+        assertThrows(UOP, () -> headers.get("Foo").remove(0));
+        assertThrows(UOP, () -> headers.get("foo").remove(0));
+        assertThrows(UOP, () -> headers.values().stream().findFirst().orElseThrow().remove(0));
+        assertThrows(UOP, () -> headers.entrySet().stream().findFirst().orElseThrow().getValue().remove(0));
     }
 
     static class TestHttpExchange extends StubHttpExchange {

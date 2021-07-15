@@ -92,7 +92,8 @@ public interface Request {
      * @param headerName   the header name
      * @param headerValues the list of header values
      * @return a request
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is null, or if any element
+     *                              of headerValues is null.
      */
     default Request with(String headerName, List<String> headerValues) {
         Objects.requireNonNull(headerName);
@@ -104,7 +105,7 @@ public interface Request {
         if (!h.containsKey(headerName)) {
             h.put(headerName, headerValues);
         }
-        var unmodifiableHeaders = new UnmodifiableHeaders(h);
+        var unmodifiableHeaders = Headers.of(h);
         return new Request() {
             @Override
             public URI getRequestURI() { return r.getRequestURI(); }

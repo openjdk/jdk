@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
@@ -99,14 +100,10 @@ public class Headers implements Map<String,List<String>> {
      */
     public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
-        var h = headers;
+        var h = headers.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(Entry::getKey, e -> List.copyOf(e.getValue())));
         map = new HashMap<>(32);
-        h.forEach((k, v) -> {
-            Objects.requireNonNull(k);
-            Objects.requireNonNull(v);
-            v.forEach(Objects::requireNonNull);
-            this.put(k ,v);
-        });
+        h.forEach(this::put);
     }
 
     /**
@@ -334,13 +331,6 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      */
     public static Headers of(Map<String,List<String>> headers) {
-        Objects.requireNonNull(headers);
-        var h = headers;
-        h.forEach((k, v) -> {
-            Objects.requireNonNull(k);
-            Objects.requireNonNull(v);
-            v.forEach(Objects::requireNonNull);
-        });
-        return new UnmodifiableHeaders(new Headers(h));
+        return new UnmodifiableHeaders(new Headers(headers));
     }
 }
