@@ -107,7 +107,7 @@ public class bug7154030 {
             locx = bounds.x + insets.left;
             locy = bounds.y + insets.top;
             frw = bounds.width - insets.left - insets.right;
-            frh = bounds.height - insets.top - insets.bottom;
+            frh = bounds.height - insets.top - insets.bottom - 25;
 
             BufferedImage fullScreen = robot.createScreenCapture(screen);
             Graphics g = fullScreen.getGraphics();
