@@ -27,6 +27,7 @@
  * @summary the last specified inlining option should overwrite all previous
  * @library /test/lib
  * @requires vm.flagless
+ * @requires vm.compiler1.enabled | vm.compiler2.enabled
  *
  * @run driver compiler.compilercontrol.TestConflictInlineCommands
  */
