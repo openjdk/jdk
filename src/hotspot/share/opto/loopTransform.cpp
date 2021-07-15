@@ -507,24 +507,29 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
 // If we got the effect of peeling, either by actually peeling or by making
 // a pre-loop which must execute at least once, we can remove all
 // loop-invariant dominated tests in the main body.
-void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_new) {
   bool progress = true;
   while (progress) {
-    progress = false;           // Reset for next iteration
-    Node *prev = loop->_head->in(LoopNode::LoopBackControl);//loop->tail();
-    Node *test = prev->in(0);
+    progress = false; // Reset for next iteration
+    Node* prev = loop->_head->in(LoopNode::LoopBackControl); // loop->tail();
+    Node* test = prev->in(0);
     while (test != loop->_head) { // Scan till run off top of loop
-
       int p_op = prev->Opcode();
-      if ((p_op == Op_IfFalse || p_op == Op_IfTrue) &&
-          test->is_If() &&      // Test?
-          !test->in(1)->is_Con() && // And not already obvious?
-          // Condition is not a member of this loop?
-          !loop->is_member(get_loop(get_ctrl(test->in(1))))){
+      assert(test != NULL, "test cannot be NULL");
+      Node* test_cond = NULL;
+      if ((p_op == Op_IfFalse || p_op == Op_IfTrue) && test->is_If()) {
+        test_cond = test->in(1);
+      }
+      if (test_cond != NULL && // Test?
+          !test_cond->is_Con() && // And not already obvious?
+          // And condition is not a member of this loop?
+          !loop->is_member(get_loop(get_ctrl(test_cond)))) {
         // Walk loop body looking for instances of this test
         for (uint i = 0; i < loop->_body.size(); i++) {
-          Node *n = loop->_body.at(i);
-          if (n->is_If() && n->in(1) == test->in(1) /*&& n != loop->tail()->in(0)*/) {
+          Node* n = loop->_body.at(i);
+          // Check against cached test condition because dominated_by()
+          // replaces the test condition with a constant.
+          if (n->is_If() && n->in(1) == test_cond) {
             // IfNode was dominated by version in peeled loop body
             progress = true;
             dominated_by(old_new[prev->_idx], n);
@@ -534,7 +539,6 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree *loop, Node_List &old_ne
       prev = test;
       test = idom(test);
     } // End of scan tests in loop
-
   } // End of while (progress)
 }
 

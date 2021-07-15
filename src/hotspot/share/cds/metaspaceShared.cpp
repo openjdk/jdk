@@ -592,7 +592,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
+void MetaspaceShared::link_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
 
@@ -726,7 +726,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_and_cleanup_shared_classes(CHECK);
+  link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP

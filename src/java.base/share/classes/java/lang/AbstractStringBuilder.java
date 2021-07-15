@@ -32,6 +32,7 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.UTF16;
@@ -408,9 +409,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public int codePointBefore(int index) {
         int i = index - 1;
-        if (i < 0 || i >= count) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
+        checkIndex(i, count);
         if (isLatin1()) {
             return value[i] & 0xff;
         }
@@ -504,9 +503,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin)
     {
-        checkRangeSIOOBE(srcBegin, srcEnd, count);  // compatible to old version
+        Preconditions.checkFromToIndex(srcBegin, srcEnd, count, Preconditions.SIOOBE_FORMATTER);  // compatible to old version
         int n = srcEnd - srcBegin;
-        checkRange(dstBegin, dstBegin + n, dst.length);
+        Preconditions.checkFromToIndex(dstBegin, dstBegin + n, dst.length, Preconditions.IOOBE_FORMATTER);
         if (isLatin1()) {
             StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         } else {
@@ -676,7 +675,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (s == null) {
             s = "null";
         }
-        checkRange(start, end, s.length());
+        Preconditions.checkFromToIndex(start, end, s.length(), Preconditions.IOOBE_FORMATTER);
         int len = end - start;
         ensureCapacityInternal(count + len);
         if (s instanceof String) {
@@ -735,7 +734,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public AbstractStringBuilder append(char[] str, int offset, int len) {
         int end = offset + len;
-        checkRange(offset, end, str.length);
+        Preconditions.checkFromToIndex(offset, end, str.length, Preconditions.IOOBE_FORMATTER);
         ensureCapacityInternal(count + len);
         appendChars(str, offset, end);
         return this;
@@ -913,7 +912,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (end > count) {
             end = count;
         }
-        checkRangeSIOOBE(start, end, count);
+        Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
         int len = end - start;
         if (len > 0) {
             shift(end, -len);
@@ -996,7 +995,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (end > count) {
             end = count;
         }
-        checkRangeSIOOBE(start, end, count);
+        Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
         int len = str.length();
         int newCount = count + len - (end - start);
         ensureCapacityInternal(newCount);
@@ -1066,7 +1065,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             greater than {@code end}.
      */
     public String substring(int start, int end) {
-        checkRangeSIOOBE(start, end, count);
+        Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
         if (isLatin1()) {
             return StringLatin1.newString(value, start, end - start);
         }
@@ -1103,7 +1102,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                                         int len)
     {
         checkOffset(index, count);
-        checkRangeSIOOBE(offset, offset + len, str.length);
+        Preconditions.checkFromToIndex(offset, offset + len, str.length, Preconditions.SIOOBE_FORMATTER);
         ensureCapacityInternal(count + len);
         shift(index, len);
         count += len;
@@ -1291,7 +1290,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             s = "null";
         }
         checkOffset(dstOffset, count);
-        checkRange(start, end, s.length());
+        Preconditions.checkFromToIndex(start, end, s.length(), Preconditions.IOOBE_FORMATTER);
         int len = end - start;
         ensureCapacityInternal(count + len);
         shift(dstOffset, len);
@@ -1793,21 +1792,5 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             StringUTF16.putCharsSB(this.value, count, s, off, end);
         }
         count += end - off;
-    }
-
-    /* IndexOutOfBoundsException, if out of bounds */
-    private static void checkRange(int start, int end, int len) {
-        if (start < 0 || start > end || end > len) {
-            throw new IndexOutOfBoundsException(
-                "start " + start + ", end " + end + ", length " + len);
-        }
-    }
-
-    /* StringIndexOutOfBoundsException, if out of bounds */
-    private static void checkRangeSIOOBE(int start, int end, int len) {
-        if (start < 0 || start > end || end > len) {
-            throw new StringIndexOutOfBoundsException(
-                "start " + start + ", end " + end + ", length " + len);
-        }
     }
 }

@@ -314,6 +314,7 @@ protected:
   DCmdArgument<char*> _filename;
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
+  DCmdArgument<bool> _overwrite;
 public:
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {

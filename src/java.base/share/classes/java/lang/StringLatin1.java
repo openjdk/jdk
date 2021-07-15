@@ -37,8 +37,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
-import static java.lang.String.checkOffset;
 import static java.lang.String.checkIndex;
+import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
 
