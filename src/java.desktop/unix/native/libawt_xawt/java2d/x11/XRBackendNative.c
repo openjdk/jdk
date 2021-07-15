@@ -59,6 +59,14 @@ typedef struct _XRadialGradient {
 } XRadialGradient;
 #endif
 
+/* BGRA glyph that is rendered using XRenderComposite instead of
+ * XRenderCompositeText32. Used for colored glyphs */
+typedef struct _BGRAGlyphInfo {
+    GlyphInfo* glyphInfo;
+    Pixmap pixmap;
+    Picture picture;
+} BGRAGlyphInfo;
+
 #include <dlfcn.h>
 
 #define BUILD_TRANSFORM_MATRIX(TRANSFORM, M00, M01, M02, M10, M11, M12)                        \
@@ -879,6 +887,74 @@ Java_sun_java2d_xr_XRBackendNative_XRFreeGlyphsNative
     }
 }
 
+JNIEXPORT void JNICALL
+Java_sun_java2d_xr_XRBackendNative_addBGRAGlyphImagesNative
+        (JNIEnv* env, jclass clazz, jint drawable,
+         jlongArray javaGlyphInfoPointersArray, jint glyphCnt, jlong format32) {
+    jlong* glyphInfoPointers;
+    if ((glyphInfoPointers = (jlong *)
+        (*env)->GetPrimitiveArrayCritical(env, javaGlyphInfoPointersArray, NULL)) == NULL) {
+        return;
+    }
+
+    XRenderPictFormat* format = (XRenderPictFormat*) jlong_to_ptr(format32);
+    XRenderPictureAttributes pictureAttributes;
+
+    int i;
+    for (i = 0; i < glyphCnt; i++) {
+        GlyphInfo* glyphInfo = (GlyphInfo*) jlong_to_ptr(glyphInfoPointers[i]);
+
+        Pixmap pixmap = XCreatePixmap(awt_display, (Drawable) drawable,
+                                      glyphInfo->width, glyphInfo->height, 32);
+        GC gc = XCreateGC(awt_display, (Drawable) pixmap, 0L, NULL);
+        XImage* image = XCreateImage(awt_display, NULL, 32, ZPixmap, 0,
+                                     (char*) glyphInfo->image,
+                                     glyphInfo->width, glyphInfo->height,
+                                     32, glyphInfo->rowBytes);
+        XPutImage(awt_display, pixmap, gc, image, 0, 0, 0, 0,
+                  glyphInfo->width, glyphInfo->height);
+        image->data = NULL;
+        XDestroyImage(image);
+        XFreeGC(awt_display, gc);
+        Picture picture = XRenderCreatePicture(awt_display, pixmap, format,
+                                               0, &pictureAttributes);
+
+        BGRAGlyphInfo* bgraGlyphInfo =
+                (BGRAGlyphInfo*) malloc(sizeof(BGRAGlyphInfo));
+        bgraGlyphInfo->glyphInfo = glyphInfo;
+        bgraGlyphInfo->pixmap = pixmap;
+        bgraGlyphInfo->picture = picture;
+
+        glyphInfoPointers[i] = (jlong) bgraGlyphInfo;
+    }
+
+    (*env)->ReleasePrimitiveArrayCritical(env, javaGlyphInfoPointersArray,
+                                          glyphInfoPointers, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_xr_XRBackendNative_freeBGRAGlyphImages
+        (JNIEnv* env, jclass clazz,
+         jlongArray javaGlyphInfoPointersArray, jint glyphCnt) {
+    jlong* glyphInfoPointers;
+    if ((glyphInfoPointers = (jlong *)
+        (*env)->GetPrimitiveArrayCritical(env, javaGlyphInfoPointersArray, NULL)) == NULL) {
+        return;
+    }
+
+    int i;
+    for (i = 0; i < glyphCnt; i++) {
+        BGRAGlyphInfo* bgraGlyphInfo =
+                (BGRAGlyphInfo*) jlong_to_ptr(glyphInfoPointers[i]);
+        XRenderFreePicture(awt_display, bgraGlyphInfo->picture);
+        XFreePixmap(awt_display, bgraGlyphInfo->pixmap);
+        free(bgraGlyphInfo);
+    }
+
+    (*env)->ReleasePrimitiveArrayCritical(env, javaGlyphInfoPointersArray,
+                                          glyphInfoPointers, JNI_ABORT);
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRenderCreateGlyphSetNative
  (JNIEnv *env, jclass cls, jlong format) {
@@ -956,19 +1032,48 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
       xids[i] = ids[i];
     }
 
-    for (i=0; i < eltCnt; i++) {
-      xelts[i].nchars = elts[i*4 + 0];
-      xelts[i].xOff = elts[i*4 + 1];
-      xelts[i].yOff = elts[i*4 + 2];
-      xelts[i].glyphset = (GlyphSet) elts[i*4 + 3];
-      xelts[i].chars = &xids[charCnt];
-
-      charCnt += xelts[i].nchars;
+    int totalXElts = 0;
+    for (i = 0; i < eltCnt; i++) {
+        int nchars = elts[i*4];
+        int xOff = elts[i*4 + 1];
+        int yOff = elts[i*4 + 2];
+        int glyphset = (GlyphSet) elts[i*4 + 3];
+        if (glyphset == -1) { // BGRA glyph, render as image
+            float x = (float) xOff;
+            float y = (float) yOff;
+            int ch;
+            for (ch = 0; ch < nchars; ch++) {
+                BGRAGlyphInfo* bgraGlyphInfo = (BGRAGlyphInfo*)
+                        (((jlong) xids[charCnt + ch * 2] << 32) |
+                        (((jlong) xids[charCnt + ch * 2 + 1]) & 0xFFFFFFFF));
+                GlyphInfo* glyph = bgraGlyphInfo->glyphInfo;
+                XRenderComposite(awt_display, PictOpOver,
+                                 bgraGlyphInfo->picture,
+                                 (Picture) 0, (Picture) dst,
+                                 0, 0, 0, 0,
+                                 (int) (x + glyph->topLeftX),
+                                 (int) (y + glyph->topLeftY),
+                                 glyph->width, glyph->height);
+                x += glyph->advanceX;
+                y += glyph->advanceY;
+            }
+            charCnt += nchars * 2;
+        } else { // Standard XRender glyph
+            xelts[totalXElts].nchars = nchars;
+            xelts[totalXElts].xOff = xOff;
+            xelts[totalXElts].yOff = yOff;
+            xelts[totalXElts].glyphset = glyphset;
+            xelts[totalXElts].chars = &xids[charCnt];
+            charCnt += nchars;
+            totalXElts++;
+        }
     }
 
-    XRenderCompositeText32(awt_display, op, (Picture) src, (Picture) dst,
-                           (XRenderPictFormat *) jlong_to_ptr(maskFmt),
-                            sx, sy, 0, 0, xelts, eltCnt);
+    if (totalXElts > 0) {
+        XRenderCompositeText32(awt_display, op, (Picture) src, (Picture) dst,
+                               (XRenderPictFormat *) jlong_to_ptr(maskFmt),
+                               sx, sy, 0, 0, xelts, totalXElts);
+    }
 
     (*env)->ReleasePrimitiveArrayCritical(env, glyphIDArray, ids, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, eltArray, elts, JNI_ABORT);

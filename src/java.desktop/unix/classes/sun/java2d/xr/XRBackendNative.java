@@ -250,6 +250,26 @@ public class XRBackendNative implements XRBackend {
     private static native void XRFreeGlyphsNative(int glyphSet,
                                                   int[] gids, int idCnt);
 
+    public void addBGRAGlyphImages(int drawable,
+                                   List<XRGlyphCacheEntry> cacheEntries) {
+        long[] glyphInfoPtrs = getGlyphInfoPtrs(cacheEntries);
+        addBGRAGlyphImagesNative(drawable, glyphInfoPtrs,
+                                 glyphInfoPtrs.length, FMTPTR_ARGB32);
+        /* addBGRAGlyphImagesNative replaced values in
+         * glyphInfoPtrs with pointers to BGRAGlyphInfo structs, save them */
+        int i = 0;
+        for (XRGlyphCacheEntry cacheEntry : cacheEntries) {
+            cacheEntry.setBgraGlyphInfoPtr(glyphInfoPtrs[i++]);
+        }
+    }
+
+    private native void addBGRAGlyphImagesNative(int drawable,
+                                                 long[] glyphInfoPtrs,
+                                                 int glyphCnt, long format32);
+
+    public native void freeBGRAGlyphImages(long[] glyphInfoPointers,
+                                           int glyphCount);
+
     private static native void
         XRenderCompositeTextNative(int op, int src, int dst,
                                    int srcX, int srcY, long maskFormat,

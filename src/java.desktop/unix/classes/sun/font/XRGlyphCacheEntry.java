@@ -34,7 +34,7 @@ import java.io.*;
  */
 
 public class XRGlyphCacheEntry {
-    long glyphInfoPtr;
+    long glyphInfoPtr, bgraGlyphInfoPtr;
 
     int lastUsed;
     boolean pinned;
@@ -47,9 +47,17 @@ public class XRGlyphCacheEntry {
     public XRGlyphCacheEntry(long glyphInfoPtr, GlyphList gl) {
         this.glyphInfoPtr = glyphInfoPtr;
 
-        /* TODO: Does it make sence to cache results? */
+        /* TODO: Does it make sense to cache results? */
         xOff = Math.round(getXAdvance());
         yOff = Math.round(getYAdvance());
+    }
+
+    public long getBgraGlyphInfoPtr() {
+        return bgraGlyphInfoPtr;
+    }
+
+    public void setBgraGlyphInfoPtr(long bgraGlyphInfoPtr) {
+        this.bgraGlyphInfoPtr = bgraGlyphInfoPtr;
     }
 
     public int getXOff() {
@@ -132,9 +140,9 @@ public class XRGlyphCacheEntry {
         int width = getWidth();
         int height = getHeight();
         int rowBytes = getSourceRowBytes();
-        int paddedWidth = getPaddedWidth(uploadAsLCD);
+        int paddedWidth = getPaddedWidth();
 
-        if (!uploadAsLCD) {
+        if (getType() == Type.GRAYSCALE) {
             for (int line = 0; line < height; line++) {
                 for(int x = 0; x < paddedWidth; x++) {
                     if(x < width) {
@@ -176,22 +184,27 @@ public class XRGlyphCacheEntry {
         return glyphInfoPtr;
     }
 
-    public boolean isGrayscale(boolean listContainsLCDGlyphs) {
-        return getSourceRowBytes() == getWidth() && !(getWidth() == 0 && getHeight() == 0 && listContainsLCDGlyphs);
-    }
-
-    public int getPaddedWidth(boolean listContainsLCDGlyphs) {
+    public Type getType() {
+        int rowBytes = getSourceRowBytes();
         int width = getWidth();
-        return isGrayscale(listContainsLCDGlyphs) ? (int) Math.ceil(width / 4.0) * 4 : width;
+        // 0x0 -> LCD is just for backward compatibiity
+        if (width == 0 || getHeight() == 0) return Type.LCD;
+        if (width == rowBytes) return Type.GRAYSCALE;
+        if (width * 4 == rowBytes) return Type.BGRA;
+        return Type.LCD;
     }
 
-    public int getDestinationRowBytes(boolean listContainsLCDGlyphs) {
-        boolean grayscale = isGrayscale(listContainsLCDGlyphs);
-        return grayscale ? getPaddedWidth(grayscale) : getWidth() * 4;
+    public int getPaddedWidth() {
+        return getType() == Type.GRAYSCALE ?
+                (int) Math.ceil(getWidth() / 4.0) * 4 : getWidth();
     }
 
-    public int getGlyphDataLenth(boolean listContainsLCDGlyphs) {
-        return getDestinationRowBytes(listContainsLCDGlyphs) * getHeight();
+    public int getDestinationRowBytes() {
+        return getType() == Type.GRAYSCALE ? getPaddedWidth() : getWidth() * 4;
+    }
+
+    public int getGlyphDataLenth() {
+        return getDestinationRowBytes() * getHeight();
     }
 
     public void setPinned() {
@@ -217,4 +230,13 @@ public class XRGlyphCacheEntry {
     public boolean isPinned() {
         return pinned;
     }
+
+
+    public enum Type {
+        GRAYSCALE,
+        LCD,
+        BGRA
+    }
+
+
 }

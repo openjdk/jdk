@@ -78,13 +78,20 @@ public class XRTextRenderer extends GlyphListPipe {
                 advY += 0.5f;
             }
 
-            XRGlyphCacheEntry[] cachedGlyphs = glyphCache.cacheGlyphs(gl);
+            XRGlyphCacheEntry[] cachedGlyphs =
+                    glyphCache.cacheGlyphs(gl, x11sd.getXid());
             boolean containsLCDGlyphs = false;
-            int activeGlyphSet = cachedGlyphs[0].getGlyphSet();
+            /* Do not initialize it to cachedGlyphs[0].getGlyphSet(),
+             * as it may cause NPE */
+            int activeGlyphSet = 0;
 
             int eltIndex = -1;
             gl.startGlyphIteration();
             float[] positions = gl.getPositions();
+            /* Accumulated advances are used to adjust glyph positions
+             * when mixing BGRA and standard glyphs as they have
+             * completely different methods of rendering. */
+            float accumulatedXEltAdvanceX = 0, accumulatedXEltAdvanceY = 0;
             for (int i = 0; i < gl.getNumGlyphs(); i++) {
                 gl.setGlyphIndex(i);
                 XRGlyphCacheEntry cacheEntry = cachedGlyphs[i];
@@ -92,8 +99,18 @@ public class XRTextRenderer extends GlyphListPipe {
                     continue;
                 }
 
-                eltList.getGlyphs().addInt(cacheEntry.getGlyphID());
                 int glyphSet = cacheEntry.getGlyphSet();
+
+                if (glyphSet == XRGlyphCache.BGRA_GLYPH_SET) {
+                    /* BGRA glyphs store pointers to BGRAGlyphInfo
+                     * struct instead of glyph index */
+                    eltList.getGlyphs().addInt(
+                            (int) (cacheEntry.getBgraGlyphInfoPtr() >> 32));
+                    eltList.getGlyphs().addInt(
+                            (int) cacheEntry.getBgraGlyphInfoPtr());
+                } else {
+                    eltList.getGlyphs().addInt(cacheEntry.getGlyphID());
+                }
 
                 containsLCDGlyphs |= (glyphSet == glyphCache.lcdGlyphSet);
 
@@ -103,7 +120,11 @@ public class XRTextRenderer extends GlyphListPipe {
                         || cacheEntry.getYAdvance() != ((float) cacheEntry.getYOff())
                         || glyphSet != activeGlyphSet
                         || eltIndex < 0
-                        || eltList.getCharCnt(eltIndex) == MAX_ELT_GLYPH_COUNT) {
+                        /* We don't care about number of glyphs when
+                         * rendering BGRA glyphs because they are not rendered
+                         * using XRenderCompositeText. */
+                        || (glyphSet != XRGlyphCache.BGRA_GLYPH_SET &&
+                            eltList.getCharCnt(eltIndex) == MAX_ELT_GLYPH_COUNT)) {
 
                     eltIndex = eltList.getNextIndex();
                     eltList.setCharCnt(eltIndex, 1);
@@ -136,16 +157,30 @@ public class XRTextRenderer extends GlyphListPipe {
                         advY += (cacheEntry.getYAdvance() - cacheEntry.getYOff());
                     }
 
-                    // Offset of the current glyph is the difference
-                    // to the last glyph and this one
-                    eltList.setXOff(eltIndex, (posX - oldPosX));
-                    eltList.setYOff(eltIndex, (posY - oldPosY));
-
-                    oldPosX = posX;
-                    oldPosY = posY;
+                    if (glyphSet == XRGlyphCache.BGRA_GLYPH_SET) {
+                        // BGRA glyphs use absolute positions
+                        eltList.setXOff(eltIndex,
+                                        (int) (accumulatedXEltAdvanceX + posX));
+                        eltList.setYOff(eltIndex,
+                                        (int) (accumulatedXEltAdvanceY + posY));
+                    } else {
+                        // Offset of the current glyph is the difference
+                        // to the last glyph and this one
+                        eltList.setXOff(eltIndex, (posX - oldPosX));
+                        eltList.setYOff(eltIndex, (posY - oldPosY));
+                        oldPosX = posX;
+                        oldPosY = posY;
+                    }
 
                 } else {
                     eltList.setCharCnt(eltIndex, eltList.getCharCnt(eltIndex) + 1);
+                }
+                if (glyphSet == XRGlyphCache.BGRA_GLYPH_SET) {
+                    advX += cacheEntry.getXAdvance();
+                    advY += cacheEntry.getYAdvance();
+                } else {
+                    accumulatedXEltAdvanceX += cacheEntry.getXAdvance();
+                    accumulatedXEltAdvanceY += cacheEntry.getYAdvance();
                 }
             }
 

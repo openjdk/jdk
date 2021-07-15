@@ -24,12 +24,12 @@
 /*
  * @test
  * @key headful
- * @bug 8263583
+ * @bug 8263583 8269806
  * @summary Checks that emoji character has a non-empty and identical
  *          representation when rendered to different types of images,
  *          including an accelerated (OpenGL or Metal) surface.
- * @requires (os.family == "mac")
- * @run main/othervm -Dsun.java2d.uiScale=1 MacEmoji
+ * @requires (os.family == "mac" | os.family == "linux")
+ * @run main/othervm -Dsun.java2d.uiScale=1 Emoji
  */
 
 import java.awt.*;
@@ -37,9 +37,12 @@ import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.List;
 
-public class MacEmoji {
+public class Emoji {
     private static final int IMG_WIDTH = 20;
     private static final int IMG_HEIGHT = 20;
+    private static final Font FONT = new Font(
+            System.getProperty("os.name").toLowerCase().contains("linux") ?
+                    "Noto Color Emoji" : Font.DIALOG, Font.PLAIN, 12);
 
     public static void main(String[] args) {
         GraphicsConfiguration cfg
@@ -101,7 +104,7 @@ public class MacEmoji {
         Graphics g = img.getGraphics();
         g.setColor(Color.white);
         g.fillRect(0, 0, IMG_WIDTH, IMG_HEIGHT);
-        g.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        g.setFont(FONT);
         g.drawString("\uD83D\uDE00" /* U+1F600 'GRINNING FACE' */, 2, 15);
         g.dispose();
     }

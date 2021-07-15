@@ -50,6 +50,9 @@
 #define  FloatToFTFixed(f) (FT_Fixed)((f) * (float)(ftFixed1))
 #define  FTFixedToFloat(x) ((x) / (float)(ftFixed1))
 #define  FT26Dot6ToFloat(x)  ((x) / ((float) (1<<6)))
+#define  FT26Dot6ToInt(x) (((int)(x)) >> 6)
+#define  FT26Dot6ToIntCeil(x) (((int)(x - 1 + (1 << 6))) >> 6)
+#define  IntToFT26Dot6(x) (((FT_Fixed)(x)) << 6)
 
 typedef struct {
     /* Important note:
@@ -84,7 +87,16 @@ typedef struct FTScalerContext {
     int        renderFlags;   /* configuration specific to particular engine */
     int        pathType;
     int        ptsz;          /* size in points */
+    int        fixedSizeIndex;/* -1 for scalable fonts and index inside
+                               * scalerInfo->face->available_sizes otherwise */
 } FTScalerContext;
+
+/* SampledBGRABitmap contains (possibly) downscaled image data
+ * prepared for sampling when generating transformed bitmap */
+typedef struct SampledBGRABitmap {
+    unsigned char* data;
+    int left, top, width, height, rowBytes, xDownscale, yDownscale;
+} SampledBGRABitmap;
 
 #ifdef DEBUG
 /* These are referenced in the freetype sources if DEBUG macro is defined.
@@ -573,7 +585,29 @@ static int setupFTContext(JNIEnv *env,
         setupTransform(&matrix, context);
         FT_Set_Transform(scalerInfo->face, &matrix, NULL);
 
-        errCode = FT_Set_Char_Size(scalerInfo->face, 0, context->ptsz, 72, 72);
+        int charSize;
+        if (FT_IS_SCALABLE(scalerInfo->face)) { // Standard scalable face
+            context->fixedSizeIndex = -1;
+            charSize = context->ptsz;
+        } else { // Non-scalable face (that should only be bitmap faces)
+            const int ptsz = context->ptsz;
+            // Best size is smallest, but not smaller than requested
+            int bestSizeIndex = 0;
+            FT_Pos bestSize = scalerInfo->face->available_sizes[0].size;
+            int i;
+            for (i = 1; i < scalerInfo->face->num_fixed_sizes; i++) {
+                FT_Pos size = scalerInfo->face->available_sizes[i].size;
+                if ((size >= ptsz && bestSize >= ptsz && size < bestSize) ||
+                    (size < ptsz && bestSize < ptsz && size > bestSize) ||
+                    (size >= ptsz && bestSize < ptsz)) {
+                    bestSizeIndex = i;
+                    bestSize = size;
+                }
+            }
+            context->fixedSizeIndex = bestSizeIndex;
+            charSize = (int) bestSize;
+        }
+        errCode = FT_Set_Char_Size(scalerInfo->face, 0, charSize, 72, 72);
 
         if (errCode == 0) {
             errCode = FT_Activate_Size(scalerInfo->face->size);
@@ -647,36 +681,62 @@ Java_sun_font_FreetypeFontScaler_getFontMetricsNative(
     (-FTFixedToFloat(context->transform.yx) * (x) + \
      FTFixedToFloat(context->transform.yy) * (y))
 
-    /*
-     * See FreeType source code: src/base/ftobjs.c ft_recompute_scaled_metrics()
-     * http://icedtea.classpath.org/bugzilla/show_bug.cgi?id=1659
-     */
-    /* ascent */
-    ax = 0;
-    ay = -(jfloat) (FT_MulFixFloatShift6(
-                       ((jlong) scalerInfo->face->ascender),
-                       (jlong) scalerInfo->face->size->metrics.y_scale));
-    /* descent */
-    dx = 0;
-    dy = -(jfloat) (FT_MulFixFloatShift6(
-                       ((jlong) scalerInfo->face->descender),
-                       (jlong) scalerInfo->face->size->metrics.y_scale));
-    /* baseline */
-    bx = by = 0;
+    if (context->fixedSizeIndex == -1) {
+        /*
+         * See FreeType source code: src/base/ftobjs.c ft_recompute_scaled_metrics()
+         * http://icedtea.classpath.org/bugzilla/show_bug.cgi?id=1659
+         */
+        /* ascent */
+        ax = 0;
+        ay = -(jfloat) (FT_MulFixFloatShift6(
+                ((jlong) scalerInfo->face->ascender),
+                (jlong) scalerInfo->face->size->metrics.y_scale));
+        /* descent */
+        dx = 0;
+        dy = -(jfloat) (FT_MulFixFloatShift6(
+                ((jlong) scalerInfo->face->descender),
+                (jlong) scalerInfo->face->size->metrics.y_scale));
+        /* baseline */
+        bx = by = 0;
 
-    /* leading */
-    lx = 0;
-    ly = (jfloat) (FT_MulFixFloatShift6(
-                      (jlong) scalerInfo->face->height,
-                      (jlong) scalerInfo->face->size->metrics.y_scale))
-                  + ay - dy;
-    /* max advance */
-    mx = (jfloat) FT26Dot6ToFloat(
-                     scalerInfo->face->size->metrics.max_advance +
-                     OBLIQUE_MODIFIER(scalerInfo->face->size->metrics.height) +
-                     BOLD_MODIFIER(scalerInfo->face->units_per_EM,
-                             scalerInfo->face->size->metrics.y_scale));
-    my = 0;
+        /* leading */
+        lx = 0;
+        ly = (jfloat) (FT_MulFixFloatShift6(
+                (jlong) scalerInfo->face->height,
+                (jlong) scalerInfo->face->size->metrics.y_scale))
+             + ay - dy;
+        /* max advance */
+        mx = (jfloat) FT26Dot6ToFloat(
+                scalerInfo->face->size->metrics.max_advance +
+                OBLIQUE_MODIFIER(scalerInfo->face->size->metrics.height) +
+                BOLD_MODIFIER(scalerInfo->face->units_per_EM,
+                              scalerInfo->face->size->metrics.y_scale));
+        my = 0;
+    } else {
+        /* Just manually scale metrics for non-scalable fonts */
+        FT_Fixed scale = FT_DivFix(context->ptsz,
+                                   scalerInfo->face->available_sizes[context->fixedSizeIndex].size);
+        /* ascent */
+        ax = 0;
+        ay = -(jfloat) FT_MulFixFloatShift6(
+                scalerInfo->face->size->metrics.ascender, scale);
+        /* descent */
+        dx = 0;
+        dy = -(jfloat) FT_MulFixFloatShift6(
+                scalerInfo->face->size->metrics.descender, scale);
+        /* baseline */
+        bx = by = 0;
+
+        /* leading */
+        lx = 0;
+        ly = (jfloat) FT_MulFixFloatShift6(
+                scalerInfo->face->size->metrics.height, scale) + ay - dy;
+        /* max advance */
+        /* no bold/italic transformations for non-scalable fonts */
+        mx = (jfloat) FT_MulFixFloatShift6(
+                scalerInfo->face->size->metrics.max_advance, scale);
+        my = 0;
+    }
 
     metrics = (*env)->NewObject(env,
         sunFontIDs.strikeMetricsClass,
@@ -866,6 +926,181 @@ static void CopyFTSubpixelVToSubpixel(const void* srcImage, int srcRowBytes,
 }
 
 
+/* Get enclosing axis-aligned rectangle of transformed bitmap bounds */
+static FT_BBox getTransformedBitmapBoundingBox(FT_GlyphSlot ftglyph,
+                                               const FT_Matrix* transform) {
+    FT_Vector corners[4];
+    corners[0].x = corners[2].x = IntToFT26Dot6(ftglyph->bitmap_left);
+    corners[0].y = corners[1].y = IntToFT26Dot6(ftglyph->bitmap_top);
+    corners[1].x = corners[3].x = IntToFT26Dot6(ftglyph->bitmap_left +
+                                                (FT_Int) ftglyph->bitmap.width);
+    corners[2].y = corners[3].y = IntToFT26Dot6(ftglyph->bitmap_top -
+                                                (FT_Int) ftglyph->bitmap.rows);
+
+    FT_Vector_Transform(corners, transform);
+    FT_BBox bb = {corners[0].x, corners[0].y, corners[0].x, corners[0].y};
+    int i;
+    for (i = 1; i < 4; i++) {
+        FT_Vector_Transform(corners + i, transform);
+        if (corners[i].x < bb.xMin) bb.xMin = corners[i].x;
+        if (corners[i].x > bb.xMax) bb.xMax = corners[i].x;
+        if (corners[i].y < bb.yMin) bb.yMin = corners[i].y;
+        if (corners[i].y > bb.yMax) bb.yMax = corners[i].y;
+    }
+    bb.xMin = FT26Dot6ToInt(bb.xMin);
+    bb.yMin = FT26Dot6ToInt(bb.yMin);
+    bb.xMax = FT26Dot6ToIntCeil(bb.xMax);
+    bb.yMax = FT26Dot6ToIntCeil(bb.yMax);
+    return bb;
+}
+
+/* Generate SampledBGRABitmap, downscaling original image when necessary.
+ * It may allocate memory for downscaled image,
+ * so it must be freed with freeSampledBGRABitmap() */
+static SampledBGRABitmap createSampledBGRABitmap(FT_GlyphSlot ftglyph,
+                                                 int xDownscale,
+                                                 int yDownscale) {
+    SampledBGRABitmap sampledBitmap;
+    if (xDownscale == 1 && yDownscale == 1) { // No downscale, use original data
+        sampledBitmap.data = ftglyph->bitmap.buffer;
+        sampledBitmap.left = ftglyph->bitmap_left;
+        sampledBitmap.top = ftglyph->bitmap_top;
+        sampledBitmap.width = (int) ftglyph->bitmap.width;
+        sampledBitmap.height = (int) ftglyph->bitmap.rows;
+        sampledBitmap.rowBytes = ftglyph->bitmap.pitch;
+        sampledBitmap.xDownscale = 1;
+        sampledBitmap.yDownscale = 1;
+    } else { // Generate downscaled bitmap
+        sampledBitmap.left = ftglyph->bitmap_left / xDownscale;
+        sampledBitmap.top = (ftglyph->bitmap_top + yDownscale - 1) / yDownscale;
+        sampledBitmap.width = (int)
+                (ftglyph->bitmap_left + (FT_Pos) ftglyph->bitmap.width -
+                 sampledBitmap.left * xDownscale + xDownscale - 1) / xDownscale;
+        sampledBitmap.height = (int)
+                (sampledBitmap.top * yDownscale - ftglyph->bitmap_top +
+                 (FT_Pos) ftglyph->bitmap.rows + yDownscale - 1) / yDownscale;
+        sampledBitmap.data =
+                malloc(4 * sampledBitmap.width * sampledBitmap.height);
+        sampledBitmap.rowBytes = sampledBitmap.width * 4;
+        sampledBitmap.xDownscale = xDownscale;
+        sampledBitmap.yDownscale = yDownscale;
+        int xOffset = sampledBitmap.left * xDownscale - ftglyph->bitmap_left;
+        int yOffset = ftglyph->bitmap_top - sampledBitmap.top * yDownscale;
+        int x, y;
+        for (y = 0; y < sampledBitmap.height; y++) {
+            for (x = 0; x < sampledBitmap.width; x++) {
+                // Average pixels
+                int b = 0, g = 0, r = 0, a = 0;
+                int xFrom = x * xDownscale + xOffset,
+                        yFrom = y * yDownscale + yOffset,
+                        xTo = xFrom + xDownscale,
+                        yTo = yFrom + yDownscale;
+                if (xFrom < 0) xFrom = 0;
+                if (xTo > (int) ftglyph->bitmap.width) xTo = (int) ftglyph->bitmap.width;
+                if (yFrom < 0) yFrom = 0;
+                if (yTo > (int) ftglyph->bitmap.rows) yTo = (int) ftglyph->bitmap.rows;
+                int i, j;
+                for (j = yFrom; j < yTo; j++) {
+                    for (i = xFrom; i < xTo; i++) {
+                        int offset = j * ftglyph->bitmap.pitch + i * 4;
+                        b += ftglyph->bitmap.buffer[offset + 0];
+                        g += ftglyph->bitmap.buffer[offset + 1];
+                        r += ftglyph->bitmap.buffer[offset + 2];
+                        a += ftglyph->bitmap.buffer[offset + 3];
+                    }
+                }
+                int offset = y * sampledBitmap.rowBytes + x * 4;
+                sampledBitmap.data[offset + 0] = b / xDownscale / yDownscale;
+                sampledBitmap.data[offset + 1] = g / xDownscale / yDownscale;
+                sampledBitmap.data[offset + 2] = r / xDownscale / yDownscale;
+                sampledBitmap.data[offset + 3] = a / xDownscale / yDownscale;
+            }
+        }
+    }
+    return sampledBitmap;
+}
+static void freeSampledBGRABitmap(SampledBGRABitmap* bitmap) {
+    if (bitmap->xDownscale != 1 || bitmap->yDownscale != 1) {
+        free(bitmap->data);
+    }
+}
+/* Get color (returned via b, g, r and a variables, [0-256))
+ * from specific pixel in bitmap.
+ * Returns black-transparent (0,0,0,0) color when sampling out of bounds */
+static void sampleBGRABitmapGlyph(int* b, int* g, int* r, int* a,
+                                  const SampledBGRABitmap* bitmap,
+                                  int x, int y) {
+    int column = x - bitmap->left, row = bitmap->top - y;
+    if (column < 0 || column >= bitmap->width ||
+        row < 0 || row >= bitmap->height) {
+        *b = *g = *r = *a = 0;
+    } else {
+        int offset = row * bitmap->rowBytes + column * 4;
+        *b = bitmap->data[offset + 0];
+        *g = bitmap->data[offset + 1];
+        *r = bitmap->data[offset + 2];
+        *a = bitmap->data[offset + 3];
+    }
+}
+static int bilinearColorMix(int c00, int c10, int c01, int c11,
+                            float x, float y) {
+    float top = (float) c00 + x * (float) (c10 - c00);
+    float bottom = (float) c01 + x * (float) (c11 - c01);
+    return (int) (top + y * (bottom - top));
+}
+/* Transform ftglyph into pre-allocated glyphInfo with transform matrix */
+static void transformBGRABitmapGlyph(FT_GlyphSlot ftglyph, GlyphInfo* glyphInfo,
+                                     const FT_Matrix* transform,
+                                     const FT_BBox* dstBoundingBox,
+                                     const jboolean linear) {
+    FT_Matrix inv = *transform;
+    FT_Matrix_Invert(&inv); // Transformed -> original bitmap space
+    int invScaleX = (int) sqrt((double) FTFixedToFloat(FT_MulFix(inv.xx, inv.xx) +
+                                                       FT_MulFix(inv.xy, inv.xy)));
+    int invScaleY = (int) sqrt((double) FTFixedToFloat(FT_MulFix(inv.yx, inv.yx) +
+                                                       FT_MulFix(inv.yy, inv.yy)));
+    if (invScaleX < 1) invScaleX = 1;
+    if (invScaleY < 1) invScaleY = 1;
+    SampledBGRABitmap sampledBitmap =
+            createSampledBGRABitmap(ftglyph, invScaleX, invScaleY);
+    int x, y;
+    for (y = 0; y < glyphInfo->height; y++) {
+        for (x = 0; x < glyphInfo->width; x++) {
+            FT_Vector position = {
+                    IntToFT26Dot6(dstBoundingBox->xMin + x),
+                    IntToFT26Dot6(dstBoundingBox->yMax - y)
+            };
+            FT_Vector_Transform(&position, &inv);
+            int sampleX = FT26Dot6ToInt(position.x / invScaleX),
+                    sampleY = FT26Dot6ToInt(position.y / invScaleY);
+            int b, g, r, a;
+            sampleBGRABitmapGlyph(&b, &g, &r, &a,
+                                  &sampledBitmap, sampleX, sampleY);
+            if (linear) {
+                int bX, gX, rX, aX, bY, gY, rY, aY, bXY, gXY, rXY, aXY;
+                sampleBGRABitmapGlyph(&bX, &gX, &rX, &aX,
+                                      &sampledBitmap, sampleX + 1, sampleY);
+                sampleBGRABitmapGlyph(&bY, &gY, &rY, &aY,
+                                      &sampledBitmap, sampleX, sampleY + 1);
+                sampleBGRABitmapGlyph(&bXY, &gXY, &rXY, &aXY,
+                                      &sampledBitmap, sampleX + 1, sampleY + 1);
+                float fractX = FT26Dot6ToFloat((position.x / invScaleX) & 63),
+                        fractY = FT26Dot6ToFloat((position.y / invScaleY) & 63);
+                b = bilinearColorMix(b, bX, bY, bXY, fractX, fractY);
+                g = bilinearColorMix(g, gX, gY, gXY, fractX, fractY);
+                r = bilinearColorMix(r, rX, rY, rXY, fractX, fractY);
+                a = bilinearColorMix(a, aX, aY, aXY, fractX, fractY);
+            }
+            glyphInfo->image[y*glyphInfo->rowBytes + x * 4 + 0] = b;
+            glyphInfo->image[y*glyphInfo->rowBytes + x * 4 + 1] = g;
+            glyphInfo->image[y*glyphInfo->rowBytes + x * 4 + 2] = r;
+            glyphInfo->image[y*glyphInfo->rowBytes + x * 4 + 3] = a;
+        }
+    }
+    freeSampledBGRABitmap(&sampledBitmap);
+}
+
+
 /* JDK does not use glyph images for fonts with a
  * pixel size > 100 (see THRESHOLD in OutlineTextRenderer.java)
  * so if the glyph bitmap image dimension is > 1024 pixels,
@@ -927,7 +1162,9 @@ static jlong
          renderFlags |= FT_LOAD_NO_HINTING;
      }
 
-    if (!context->useSbits) {
+    /* Don't disable bitmaps when working with fixed-size glyph,
+     * this is most probably a BGRA glyph */
+    if (!context->useSbits && context->fixedSizeIndex == -1) {
         renderFlags |= FT_LOAD_NO_BITMAP;
     }
 
@@ -938,7 +1175,10 @@ static jlong
 
     /* select appropriate hinting mode */
     if (context->aaType == TEXT_AA_OFF) {
-        target = FT_LOAD_TARGET_MONO;
+        /* We disable MONO for non-scalable fonts, because that
+         * is most probably a colored bitmap glyph */
+        target = context->fixedSizeIndex == -1 ?
+                 FT_LOAD_TARGET_MONO : FT_LOAD_TARGET_NORMAL;
     } else if (context->aaType == TEXT_AA_ON) {
         target = FT_LOAD_TARGET_NORMAL;
     } else if (context->aaType == TEXT_AA_LCD_HRGB ||
@@ -948,6 +1188,10 @@ static jlong
         target = FT_LOAD_TARGET_LCD_V;
     }
     renderFlags |= target;
+    if (context->fixedSizeIndex != -1) {
+        // This is most probably a colored bitmap glyph, so enable COLOR
+        renderFlags |= FT_LOAD_COLOR;
+    }
 
     error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags);
     if (error) {
@@ -958,14 +1202,18 @@ static jlong
 
     ftglyph = scalerInfo->face->glyph;
 
+    /* After call to FT_Render_Glyph, glyph format will be changed from
+     * FT_GLYPH_FORMAT_OUTLINE to FT_GLYPH_FORMAT_BITMAP, so save this value */
+    int outlineGlyph = ftglyph->format == FT_GLYPH_FORMAT_OUTLINE;
+
     /* apply styles */
-    if (context->doBold) { /* if bold style */
+    if (context->doBold && outlineGlyph) { /* if bold style */
         GlyphSlot_Embolden(ftglyph, context->transform);
     }
 
     /* generate bitmap if it is not done yet
      e.g. if algorithmic styling is performed and style was added to outline */
-    if (renderImage && (ftglyph->format == FT_GLYPH_FORMAT_OUTLINE)) {
+    if (renderImage && outlineGlyph) {
         FT_BBox bbox;
         FT_Outline_Get_CBox(&(ftglyph->outline), &bbox);
         int w = (int)((bbox.xMax>>6)-(bbox.xMin>>6));
@@ -980,22 +1228,44 @@ static jlong
         }
     }
 
+    FT_Fixed manualScale = context->fixedSizeIndex == -1 ? ftFixed1 : FT_DivFix(
+            context->ptsz, scalerInfo->face->available_sizes[context->fixedSizeIndex].size);
+    FT_Matrix manualTransform;
+    FT_BBox manualTransformBoundingBox;
     if (renderImage) {
-        width  = (UInt16) ftglyph->bitmap.width;
-        rowBytes = width;
-        if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD) {
-           rowBytes = PADBYTES + width + PADBYTES;
+        if (context->fixedSizeIndex == -1) {
+            width  = (UInt16) ftglyph->bitmap.width;
+            height = (UInt16) ftglyph->bitmap.rows;
+        } else {
+            /* Fixed size glyph, prepare matrix and
+             * bounding box for manual transformation */
+            manualTransform.xx = FT_MulFix(context->transform.xx, manualScale);
+            manualTransform.xy = FT_MulFix(context->transform.xy, manualScale);
+            manualTransform.yx = FT_MulFix(context->transform.yx, manualScale);
+            manualTransform.yy = FT_MulFix(context->transform.yy, manualScale);
+            manualTransformBoundingBox =
+                    getTransformedBitmapBoundingBox(ftglyph, &manualTransform);
+            width  = (UInt16) (manualTransformBoundingBox.xMax -
+                               manualTransformBoundingBox.xMin);
+            height = (UInt16) (manualTransformBoundingBox.yMax -
+                               manualTransformBoundingBox.yMin);
         }
-        height = (UInt16) ftglyph->bitmap.rows;
-            if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
-              glyphInfo = getNullGlyphImage();
-              return ptr_to_jlong(glyphInfo);
-            }
-     } else {
+        if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
+            glyphInfo = getNullGlyphImage();
+            return ptr_to_jlong(glyphInfo);
+        }
+        if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD) {
+            rowBytes = PADBYTES + width + PADBYTES;
+        } else if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+            rowBytes = width * 4;
+        } else {
+            rowBytes = width;
+        }
+    } else {
         width = 0;
         rowBytes = 0;
         height = 0;
-     }
+    }
 
 
     imageSize = rowBytes*height;
@@ -1011,8 +1281,13 @@ static jlong
     glyphInfo->height    = height;
 
     if (renderImage) {
-        glyphInfo->topLeftX  = (float)  ftglyph->bitmap_left;
-        glyphInfo->topLeftY  = (float) -ftglyph->bitmap_top;
+        if (context->fixedSizeIndex == -1) {
+            glyphInfo->topLeftX = (float)  ftglyph->bitmap_left;
+            glyphInfo->topLeftY = (float) -ftglyph->bitmap_top;
+        } else {
+            glyphInfo->topLeftX =  (float)  manualTransformBoundingBox.xMin;
+            glyphInfo->topLeftY =  (float) -manualTransformBoundingBox.yMax;
+        }
 
         if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD && width > 0) {
             glyphInfo->width = width/3;
@@ -1023,7 +1298,7 @@ static jlong
         }
     }
 
-    if (context->fmType == TEXT_FM_ON) {
+    if (context->fmType == TEXT_FM_ON && outlineGlyph) {
         float advh = FTFixedToFloat(ftglyph->linearHoriAdvance);
         glyphInfo->advanceX =
             (float) (advh * FTFixedToFloat(context->transform.xx));
@@ -1031,14 +1306,18 @@ static jlong
             (float) - (advh * FTFixedToFloat(context->transform.yx));
     } else {
         if (!ftglyph->advance.y) {
-            glyphInfo->advanceX = FT26Dot6ToFloat(ftglyph->advance.x);
+            glyphInfo->advanceX = FT26Dot6ToFloat(
+                    FT_MulFix(ftglyph->advance.x, manualScale));
             glyphInfo->advanceY = 0;
         } else if (!ftglyph->advance.x) {
             glyphInfo->advanceX = 0;
-            glyphInfo->advanceY = FT26Dot6ToFloat(-ftglyph->advance.y);
+            glyphInfo->advanceY = FT26Dot6ToFloat(
+                    -FT_MulFix(ftglyph->advance.y, manualScale));
         } else {
-            glyphInfo->advanceX = FT26Dot6ToFloat(ftglyph->advance.x);
-            glyphInfo->advanceY = FT26Dot6ToFloat(-ftglyph->advance.y);
+            glyphInfo->advanceX = FT26Dot6ToFloat(
+                    FT_MulFix(ftglyph->advance.x, manualScale));
+            glyphInfo->advanceY = FT26Dot6ToFloat(
+                    -FT_MulFix(ftglyph->advance.y, manualScale));
         }
     }
 
@@ -1048,46 +1327,65 @@ static jlong
         glyphInfo->image = (unsigned char*) glyphInfo + sizeof(GlyphInfo);
         //convert result to output format
         //output format is either 3 bytes per pixel (for subpixel modes)
+        //4 bytes per pixel for BGRA glyphs
         // or 1 byte per pixel for AA and B&W
-        if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_MONO) {
-            /* convert from 8 pixels per byte to 1 byte per pixel */
-            CopyBW2Grey8(ftglyph->bitmap.buffer,
-                         ftglyph->bitmap.pitch,
-                         (void *) glyphInfo->image,
-                         width,
-                         width,
-                         height);
-        } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_GRAY) {
-            /* byte per pixel to byte per pixel => just copy */
-            memcpy(glyphInfo->image, ftglyph->bitmap.buffer, imageSize);
-        } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_GRAY4) {
-            /* 4 bits per pixel to byte per pixel */
-            CopyGrey4ToGrey8(ftglyph->bitmap.buffer,
+        if (context->fixedSizeIndex == -1) {
+            // Standard format convertation without image transformation
+            if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_MONO) {
+                /* convert from 8 pixels per byte to 1 byte per pixel */
+                CopyBW2Grey8(ftglyph->bitmap.buffer,
                              ftglyph->bitmap.pitch,
                              (void *) glyphInfo->image,
                              width,
                              width,
                              height);
-        } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
-            /* 3 bytes per pixel to 3 bytes per pixel */
-            CopyFTSubpixelToSubpixel(ftglyph->bitmap.buffer,
-                                     ftglyph->bitmap.pitch,
-                                     (void *) (glyphInfo->image+PADBYTES),
-                                     rowBytes,
-                                     width,
-                                     height);
-        } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
-            /* 3 bytes per pixel to 3 bytes per pixel */
-            CopyFTSubpixelVToSubpixel(ftglyph->bitmap.buffer,
-                                      ftglyph->bitmap.pitch,
-                                      (void *) glyphInfo->image,
-                                      width*3,
-                                      width,
-                                      height);
-            glyphInfo->rowBytes *=3;
+            } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_GRAY) {
+                /* byte per pixel to byte per pixel => just copy */
+                memcpy(glyphInfo->image, ftglyph->bitmap.buffer, imageSize);
+            } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_GRAY4) {
+                /* 4 bits per pixel to byte per pixel */
+                CopyGrey4ToGrey8(ftglyph->bitmap.buffer,
+                                 ftglyph->bitmap.pitch,
+                                 (void *) glyphInfo->image,
+                                 width,
+                                 width,
+                                 height);
+            } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
+                /* 3 bytes per pixel to 3 bytes per pixel */
+                CopyFTSubpixelToSubpixel(ftglyph->bitmap.buffer,
+                                         ftglyph->bitmap.pitch,
+                                         (void *) (glyphInfo->image+PADBYTES),
+                                         rowBytes,
+                                         width,
+                                         height);
+            } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
+                /* 3 bytes per pixel to 3 bytes per pixel */
+                CopyFTSubpixelVToSubpixel(ftglyph->bitmap.buffer,
+                                          ftglyph->bitmap.pitch,
+                                          (void *) glyphInfo->image,
+                                          width*3,
+                                          width,
+                                          height);
+                glyphInfo->rowBytes *=3;
+            } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_BGRA) {
+                /* 4 bytes per pixel to 4 bytes per pixel => just copy */
+                memcpy(glyphInfo->image, ftglyph->bitmap.buffer, imageSize);
+            } else {
+                free(glyphInfo);
+                glyphInfo = getNullGlyphImage();
+            }
         } else {
-            free(glyphInfo);
-            glyphInfo = getNullGlyphImage();
+            // Here we have to transform image manually
+            // Only BGRA format is supported (should be enough)
+            if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_BGRA) {
+                transformBGRABitmapGlyph(ftglyph, glyphInfo,
+                                         &manualTransform,
+                                         &manualTransformBoundingBox,
+                                         context->aaType != TEXT_AA_OFF);
+            } else {
+                free(glyphInfo);
+                glyphInfo = getNullGlyphImage();
+            }
         }
     }
 
