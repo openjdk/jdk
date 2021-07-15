@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8270459
- * @summary Inlining decisions shouldn't be conflict by the C1/C2 with the same CompileCommand
+ * @summary the last specified inlining option should overwrite all previous
  * @library /test/lib
  * @requires vm.flagless
  *
@@ -47,11 +47,20 @@ public class TestConflictInlineCommands {
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
+        analyzer.shouldContain("disallowed by CompileCommand");
+        analyzer.shouldNotContain("force inline by CompileCommand");
 
-        if (analyzer.getStdout().contains("disallowed by CompileCommand") &&
-            analyzer.getStdout().contains("force inline by CompileCommand")) {
-            throw new RuntimeException("Conflict inlining decisions detected:\n" + analyzer.getStdout());
-        }
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:CompileCommand=dontinline,*TestConflictInlineCommands::*caller",
+                "-XX:CompileCommand=inline,*TestConflictInlineCommands::caller",
+                "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*Launcher::main",
+                "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
+                Launcher.class.getName());
+
+        analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.shouldContain("force inline by CompileCommand");
+        analyzer.shouldNotContain("disallowed by CompileCommand");
     }
 
     static int sum;
