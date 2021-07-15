@@ -36,28 +36,22 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-public class DelegatingHttpExchange extends HttpExchange {
+public abstract class DelegatingHttpExchange extends HttpExchange {
 
-    HttpExchange exchange;
+    private final HttpExchange exchange;
 
     public DelegatingHttpExchange(HttpExchange ex) {
         this.exchange = ex;
     }
 
-    public Headers getRequestHeaders() {
-        return exchange.getRequestHeaders();
-    }
+    public abstract Headers getRequestHeaders();
+
+    public abstract String getRequestMethod();
+
+    public abstract URI getRequestURI();
 
     public Headers getResponseHeaders() {
         return exchange.getResponseHeaders();
-    }
-
-    public URI getRequestURI() {
-        return exchange.getRequestURI();
-    }
-
-    public String getRequestMethod() {
-        return exchange.getRequestMethod();
     }
 
     public HttpContext getHttpContext() {
@@ -79,7 +73,6 @@ public class DelegatingHttpExchange extends HttpExchange {
     public OutputStream getResponseBody() {
         return exchange.getResponseBody();
     }
-
 
     public void sendResponseHeaders(int rCode, long contentLen) throws IOException {
         exchange.sendResponseHeaders(rCode, contentLen);
