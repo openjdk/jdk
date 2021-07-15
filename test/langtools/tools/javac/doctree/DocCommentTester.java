@@ -587,6 +587,18 @@ public class DocCommentTester {
                 return null;
             }
 
+            @Override
+            public Void visitSnippet(SnippetTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("attributes", node.getAttributes());
+                print("body", node.getBody());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
             public Void visitStartElement(StartElementTree node, Void p) {
                 header(node);
                 indent(+1);

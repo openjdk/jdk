@@ -62,7 +62,7 @@ public class DocumentationToolLocationTest extends APITest {
     @Test
     public void testEnumMethods() throws Exception {
         DocumentationTool.Location[] values = DocumentationTool.Location.values();
-        if (values.length != 3)
+        if (values.length != 4)
             throw new Exception("unexpected number of values returned");
 
         for (DocumentationTool.Location dl: values) {

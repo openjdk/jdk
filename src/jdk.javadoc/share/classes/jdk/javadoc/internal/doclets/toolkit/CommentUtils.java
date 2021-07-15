@@ -57,6 +57,7 @@ import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.TextTree;
@@ -121,6 +122,16 @@ public class CommentUtils {
         List<DocTree> list = new ArrayList<>();
         list.add(treeFactory.newReferenceTree(sig));
         return treeFactory.newSeeTree(list);
+    }
+
+    public LinkTree makeLinkTree(String sig, String label) {
+        ReferenceTree ref = treeFactory.newReferenceTree(sig);
+        return treeFactory.newLinkTree(ref, List.of(makeTextTree(label)));
+    }
+
+    public LinkTree makeLinkPlainTree(String sig, String label) {
+        ReferenceTree ref = treeFactory.newReferenceTree(sig);
+        return treeFactory.newLinkPlainTree(ref, List.of(makeTextTree(label)));
     }
 
     public TextTree makeTextTree(String content) {

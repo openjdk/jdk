@@ -105,6 +105,13 @@ public class EmptyHtmlTest extends TestRunner {
             case "ReturnTree" ->
                     test(d, type, "{@return abc}");
 
+            case "SnippetTree" ->
+                    test(d, type, """
+                            {@snippet :
+                                abc
+                            }
+                            """);
+
             case "SummaryTree" ->
                     test(d, type, "{@summary First sentence.}");
 

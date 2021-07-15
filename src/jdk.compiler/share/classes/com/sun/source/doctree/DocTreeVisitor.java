@@ -288,6 +288,21 @@ public interface DocTreeVisitor<R,P> {
     R visitSince(SinceTree node, P p);
 
     /**
+     * Visits a SnippetTree node.
+     *
+     * @param node the node being visited
+     * @param p    a parameter value
+     *
+     * @return a result value
+     * @implSpec Visits the provided {@code SnippetTree} node
+     *           by calling {@code visitOther(node, p)}.
+     * @since 17
+     */
+    default R visitSnippet(SnippetTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
      * Visits a StartElementTree node.
      * @param node the node being visited
      * @param p a parameter value

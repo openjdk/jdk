@@ -435,14 +435,14 @@ public class Throwable implements Serializable {
      * <p>An example of using this method on a legacy throwable type
      * without other support for setting the cause is:
      *
-     * <pre>
+     * {@snippet :
      * try {
      *     lowLevelOp();
      * } catch (LowLevelException le) {
      *     throw (HighLevelException)
      *           new HighLevelException().initCause(le); // Legacy constructor
      * }
-     * </pre>
+     * }
      *
      * @param  cause the cause (which is saved for later retrieval by the
      *         {@link #getCause()} method).  (A {@code null} value is
@@ -507,14 +507,14 @@ public class Throwable implements Serializable {
      * the method {@link #fillInStackTrace()}. The format of this
      * information depends on the implementation, but the following
      * example may be regarded as typical:
-     * <blockquote><pre>
+     * {@snippet :
      * java.lang.NullPointerException
      *         at MyClass.mash(MyClass.java:9)
      *         at MyClass.crunch(MyClass.java:6)
      *         at MyClass.main(MyClass.java:3)
-     * </pre></blockquote>
+     * }
      * This example was produced by running the program:
-     * <pre>
+     * {@snippet :
      * class MyClass {
      *     public static void main(String[] args) {
      *         crunch(null);
@@ -526,12 +526,12 @@ public class Throwable implements Serializable {
      *         System.out.println(b[0]);
      *     }
      * }
-     * </pre>
+     * }
      * The backtrace for a throwable with an initialized, non-null cause
      * should generally include the backtrace for the cause.  The format
      * of this information depends on the implementation, but the following
      * example may be regarded as typical:
-     * <pre>
+     * {@snippet :
      * HighLevelException: MidLevelException: LowLevelException
      *         at Junk.a(Junk.java:13)
      *         at Junk.main(Junk.java:4)
@@ -545,7 +545,7 @@ public class Throwable implements Serializable {
      *         at Junk.d(Junk.java:27)
      *         at Junk.c(Junk.java:21)
      *         ... 3 more
-     * </pre>
+     * }
      * Note the presence of lines containing the characters {@code "..."}.
      * These lines indicate that the remainder of the stack trace for this
      * exception matches the indicated number of frames from the bottom of the
@@ -554,7 +554,7 @@ public class Throwable implements Serializable {
      * of the output in the common case where a wrapped exception is thrown
      * from same method as the "causative exception" is caught.  The above
      * example was produced by running the program:
-     * <pre>
+     * {@snippet :
      * public class Junk {
      *     public static void main(String args[]) {
      *         try {
@@ -598,7 +598,7 @@ public class Throwable implements Serializable {
      *
      * class LowLevelException extends Exception {
      * }
-     * </pre>
+     * }
      * As of release 7, the platform supports the notion of
      * <i>suppressed exceptions</i> (in conjunction with the {@code
      * try}-with-resources statement). Any exceptions that were
@@ -607,7 +607,7 @@ public class Throwable implements Serializable {
      * depends on the implementation, but the following example may be
      * regarded as typical:
      *
-     * <pre>
+     * {@snippet :
      * Exception in thread "main" java.lang.Exception: Something happened
      *  at Foo.bar(Foo.java:10)
      *  at Foo.main(Foo.java:5)
@@ -615,14 +615,14 @@ public class Throwable implements Serializable {
      *          at Resource.close(Resource.java:26)
      *          at Foo.bar(Foo.java:9)
      *          ... 1 more
-     * </pre>
+     * }
      * Note that the "... n more" notation is used on suppressed exceptions
      * just as it is used on causes. Unlike causes, suppressed exceptions are
      * indented beyond their "containing exceptions."
      *
      * <p>An exception can have both a cause and one or more suppressed
      * exceptions:
-     * <pre>
+     * {@snippet :
      * Exception in thread "main" java.lang.Exception: Main block
      *  at Foo3.main(Foo3.java:7)
      *  Suppressed: Resource$CloseFailException: Resource ID = 2
@@ -633,18 +633,18 @@ public class Throwable implements Serializable {
      *          at Foo3.main(Foo3.java:5)
      * Caused by: java.lang.Exception: I did it
      *  at Foo3.main(Foo3.java:8)
-     * </pre>
+     * }
      * Likewise, a suppressed exception can have a cause:
-     * <pre>
+     * {@snippet :
      * Exception in thread "main" java.lang.Exception: Main block
      *  at Foo4.main(Foo4.java:6)
      *  Suppressed: Resource2$CloseFailException: Resource ID = 1
      *          at Resource2.close(Resource2.java:20)
      *          at Foo4.main(Foo4.java:5)
      *  Caused by: java.lang.Exception: Rats, you caught me
-     *          at Resource2$CloseFailException.&lt;init&gt;(Resource2.java:45)
+     *          at Resource2$CloseFailException.<init>(Resource2.java:45)
      *          ... 2 more
-     * </pre>
+     * }
      */
     public void printStackTrace() {
         printStackTrace(System.err);

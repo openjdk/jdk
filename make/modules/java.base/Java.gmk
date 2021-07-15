@@ -33,7 +33,7 @@ CLEAN += intrinsic.properties
 EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-EXCLUDES += java/lang/doc-files
+EXCLUDES += java/lang/doc-files java/util/snippet-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product

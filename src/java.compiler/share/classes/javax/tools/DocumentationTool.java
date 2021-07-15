@@ -184,7 +184,12 @@ public interface DocumentationTool extends Tool, OptionChecker {
         /**
          * Location to search for taglets.
          */
-        TAGLET_PATH;
+        TAGLET_PATH,
+
+        /**
+         * Location to search for snippets.
+         */
+        SNIPPET_PATH;
 
         public String getName() { return name(); }
 

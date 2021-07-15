@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,6 +886,103 @@ public class DocCommentParser {
     }
 
     /**
+     * Read a series of inline tag attributes, terminated by {@code ":"}
+     * or the first unmatched <code>"}"</code>, whichever comes first.
+     *
+     * Each attribute is of the form {@literal identifier[=value]}.
+     * "value" may be unquoted, single-quoted, or double-quoted.
+     * @return the list of attributes
+     */
+    protected List<DCTree> tagAttrs() throws ParseException {
+
+        /*
+         * Unquoted values are a risky business: omitting quotes may result in
+         * unexpected parsings. Users should prefer quoted values.
+         *
+         * If you decide to modify this code and the related spec(s), consider
+         * the following.
+         *
+         * 1. It is unclear which characters should be included in an unquoted
+         * value. On the one hand, the only precedent we have is the rules of
+         * HTML (linked content as seen on 2021-MAY-12):
+         *
+         *     i. https://html.spec.whatwg.org/multipage/syntax.html#unquoted
+         *    ii. https://www.w3.org/TR/html52/syntax.html#attribute-value-unquoted-state
+         *
+         * On the other hand, those rules are tailored to HTML. For example,
+         * while it makes sense to terminate an unquoted HTML attribute value
+         * with characters such as < or fail attribute parsing when encounter >,
+         * it makes less sense to do any of those for an unquoted attribute
+         * value of a standard doclet tag.
+         *
+         * 2. An HTML attribute value is parsed recursively because it can use
+         * character references (e.g. &commat;, &#064;, etc.) and, in our case,
+         * standard doclet tags (see attrValueChar()). While this should
+         * probably be considered on a case-by-case basis, for an attribute
+         * value of the {@snippet} tag we do not recurse.
+         */
+        ListBuffer<DCTree> attrs = new ListBuffer<>();
+        skipWhitespace();
+
+        loop:
+        while (bp < buflen && isIdentifierStart(ch)) {
+            int namePos = bp;
+            Name name = readAttributeName();
+            skipWhitespace();
+            List<DCTree> value = null;
+            ValueKind vkind = ValueKind.EMPTY;
+            if (ch == '=') {
+                ListBuffer<DCTree> v = new ListBuffer<>();
+                nextChar();
+                /*
+                 * The below skipWhitespace() handles optional whitespace.
+                 * It was copied from HTML attribute value parsing, where it was
+                 * introduced according to the HTML spec, perhaps for formatting
+                 * purposes:
+                 *
+                 *   name=value vs name = value
+                 *
+                 * However, it might yield a problematic parsing. Consider two
+                 * attributes, one unquoted and the other is boolean:
+                 *
+                 *   name1= name2
+                 *
+                 * The above is parsed effectively as if it were:
+                 *
+                 *   name1="name2"
+                 */
+                skipWhitespace();
+                if (ch == '\'' || ch == '"') {
+                    newline = false;
+                    vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
+                    char quote = ch;
+                    nextChar();
+                    textStart = bp;
+                    while (bp < buflen && ch != quote) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1);
+                    nextChar();
+                } else {
+                    vkind = ValueKind.UNQUOTED;
+                    textStart = bp;
+                    // Note: we stop on '}' for it to be re-consumed by the tag
+                    while (bp < buflen && (ch != '}' && !isUnquotedAttrValueTerminator(ch))) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1);
+                }
+                skipWhitespace();
+                value = v.toList();
+            }
+            DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
+            attrs.add(attr);
+        }
+
+        return attrs.toList();
+    }
+
+    /**
      * Read a series of HTML attributes, terminated by {@literal > }.
      * Each attribute is of the form {@literal identifier[=value] }.
      * "value" may be unquoted, single-quoted, or double-quoted.
@@ -998,6 +1095,14 @@ public class DocCommentParser {
     }
 
     protected Name readAttributeName() {
+        return readGeneralAttributeName();
+    }
+
+    protected Name readTagAttributeName() {
+        return readGeneralAttributeName();
+    }
+
+    protected Name readGeneralAttributeName() {
         int start = bp;
         nextChar();
         while (bp < buflen && (Character.isUnicodeIdentifierPart(ch) || ch == '-'))
@@ -1060,6 +1165,19 @@ public class DocCommentParser {
 
     protected boolean isWhitespace(char ch) {
         return Character.isWhitespace(ch);
+    }
+
+    protected boolean isHorizontalWhitespace(char ch) {
+        // Should `\f` (FORM FEED) break a line? Relevant specifications have
+        // different opinions on this:
+        //
+        //      No: https://docs.oracle.com/javase/specs/jls/se14/html/jls-3.html#jls-3.4
+        //     Yes: https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf, "5.8 Newline Guidelines"
+        //      No: https://html.spec.whatwg.org/multipage/syntax.html#newlines
+        //
+        // This parser treats `\f` as a line break (see `nextChar`). To be
+        // consistent with that behaviour, this method does the same.
+        return ch == ' ' || ch == '\t' /* || ch == '\f'*/;
     }
 
     protected void skipWhitespace() {
@@ -1394,6 +1512,41 @@ public class DocCommentParser {
                 public DCTree parse(int pos) {
                     List<DCTree> description = blockContent();
                     return m.at(pos).newSinceTree(description);
+                }
+            },
+
+            // {@snippet attributes :
+            //  body}
+            new TagParser(TagParser.Kind.INLINE, DCTree.Kind.SNIPPET) {
+                @Override
+                DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    List<DCTree> attributes = tagAttrs();
+                    // expect "}" or ":"
+                    if (ch == '}') {
+                        nextChar();
+                        return m.at(pos).newSnippetTree(attributes, null);
+                    } else if (ch == ':') {
+                        newline = false;
+                        // consume ':'
+                        nextChar();
+                        // better still reuse JavaTokenizer here
+                        // expect optional whitespace followed by a mandatory newline
+                        while (bp < buflen && isHorizontalWhitespace(ch)) {
+                            nextChar();
+                        }
+                        // check that we are looking at a line break
+                        if (!newline) {
+                            throw new ParseException("dc.unexpected.content");
+                        }
+                        // consume that line break
+                        nextChar();
+                        DCText text = inlineText(WhitespaceRetentionPolicy.RETAIN_ALL);
+                        nextChar();
+                        return m.at(pos).newSnippetTree(attributes, text);
+                    } else {
+                        throw new ParseException("dc.unexpected.content");
+                    }
                 }
             },
 
