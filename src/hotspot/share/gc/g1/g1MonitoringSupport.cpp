@@ -343,7 +343,14 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
 }
 
 G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected) :
+  _g1mm(g1mm),
   _tcs(full_gc ? g1mm->_full_collection_counters : g1mm->_incremental_collection_counters),
   _tms(full_gc ? &g1mm->_full_gc_memory_manager : &g1mm->_incremental_memory_manager,
        G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
+}
+
+G1MonitoringScope::~G1MonitoringScope() {
+  _g1mm->update_sizes();
+  // Needs to be called after updating pool sizes.
+  MemoryService::track_memory_usage();
 }

@@ -70,8 +70,10 @@ public:
   void step();
 };
 
-// Name support for threads.  non-JavaThread subclasses with multiple
-// uniquely named instances should derive from this.
+// A base class for non-JavaThread subclasses with multiple
+// uniquely named instances. NamedThreads also provide a common
+// location to store GC information needed by GC threads
+// and the VMThread.
 class NamedThread: public NonJavaThread {
   friend class VMStructs;
   enum {
@@ -89,7 +91,8 @@ class NamedThread: public NonJavaThread {
   // May only be called once per thread.
   void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   virtual bool is_Named_thread() const { return true; }
-  virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
+  virtual const char* name() const { return _name == NULL ? "Unknown Thread" : _name; }
+  virtual const char* type_name() const { return "NamedThread"; }
   Thread *processed_thread() { return _processed_thread; }
   void set_processed_thread(Thread *thread) { _processed_thread = thread; }
   virtual void print_on(outputStream* st) const;
@@ -117,6 +120,10 @@ class WorkerThread: public NamedThread {
 
   void set_id(uint work_id)             { _id = work_id; }
   uint id() const                       { return _id; }
+
+  // Printing
+  virtual const char* type_name() const { return "WorkerThread"; }
+
 };
 
 // A single WatcherThread is used for simulating timer interrupts.
@@ -132,6 +139,7 @@ class WatcherThread: public NonJavaThread {
   // volatile due to at least one lock-free read
   volatile static bool _should_terminate;
  public:
+
   enum SomeConstants {
     delay_interval = 10                          // interrupt delay in milliseconds
   };
@@ -148,7 +156,8 @@ class WatcherThread: public NonJavaThread {
   bool is_Watcher_thread() const                 { return true; }
 
   // Printing
-  char* name() const { return (char*)"VM Periodic Task Thread"; }
+  const char* name() const { return "VM Periodic Task Thread"; }
+  const char* type_name() const { return "WatcherThread"; }
   void print_on(outputStream* st) const;
   void unpark();
 

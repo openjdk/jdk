@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
+#include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
@@ -41,6 +43,9 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
 {
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask());
+  if (SampleCollectionSetCandidatesTask::should_execute()) {
+    add_serial_task(new SampleCollectionSetCandidatesTask());
+  }
   if (RemoveSelfForwardPtrsTask::should_execute()) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
   }
@@ -62,6 +67,32 @@ double G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::worker_cost
 
 void G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::do_work(uint worker_id) {
   G1CollectedHeap::heap()->update_used_after_gc();
+}
+
+bool G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::should_execute() {
+  return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
+}
+
+double G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::worker_cost() const {
+  return should_execute() ? 1.0 : AlmostNoWork;
+}
+
+class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
+public:
+  G1CardSetMemoryStats _total;
+
+  bool do_heap_region(HeapRegion* r) override {
+    _total.add(r->rem_set()->card_set_memory_stats());
+    return false;
+  }
+};
+
+void G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::do_work(uint worker_id) {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+  G1SampleCollectionSetCandidatesClosure cl;
+  g1h->collection_set()->candidates()->iterate(&cl);
+  g1h->set_collection_set_candidates_stats(cl._total);
 }
 
 bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_execute() {

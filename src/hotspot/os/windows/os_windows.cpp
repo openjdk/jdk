@@ -892,7 +892,7 @@ static SetThreadDescriptionFnPtr _SetThreadDescription = NULL;
 DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = NULL;)
 
 // forward decl.
-errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
+static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
 
 void os::set_native_thread_name(const char *name) {
 
@@ -969,11 +969,6 @@ void os::set_native_thread_name(const char *name) {
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
   } __except(EXCEPTION_EXECUTE_HANDLER) {}
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 void os::win32::initialize_performance_counter() {
@@ -2288,7 +2283,7 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
 
   // Save pc in thread
   if (thread != nullptr && thread->is_Java_thread()) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+    JavaThread::cast(thread)->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
   }
 
   // Set pc to handler
@@ -2582,7 +2577,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = t->as_Java_thread();
+    JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
@@ -4806,9 +4801,7 @@ bool os::dir_is_empty(const char* path) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  if (!rewrite_existing) {
-    oflags |= _O_EXCL;
-  }
+  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
   return ::open(path, oflags, _S_IREAD | _S_IWRITE);
 }
 

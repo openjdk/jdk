@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm UnreferencedSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedSockets
- * @run main/othervm -Djdk.net.usePlainSocketImpl UnreferencedSockets
  * @summary Check that unreferenced sockets are closed
  */
 

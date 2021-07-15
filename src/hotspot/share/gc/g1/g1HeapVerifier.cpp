@@ -467,7 +467,7 @@ void G1HeapVerifier::enable_verification_type(G1VerifyType type) {
 }
 
 bool G1HeapVerifier::should_verify(G1VerifyType type) {
-  return (_enabled_verification_types & type) == type;
+  return (_enabled_verification_types & type) != 0;
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
@@ -604,31 +604,19 @@ void G1HeapVerifier::prepare_for_verify() {
   }
 }
 
-double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
-  double verify_time_ms = 0.0;
-
+void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
   if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
-    double verify_start = os::elapsedTime();
     prepare_for_verify();
     Universe::verify(vo, msg);
-    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
   }
-
-  return verify_time_ms;
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  if (VerifyBeforeGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  if (VerifyAfterGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
 }
 
 

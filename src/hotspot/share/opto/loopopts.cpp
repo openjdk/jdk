@@ -949,6 +949,9 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
               assert(get_loop(lca) == outer_loop, "safepoint in outer loop consume all memory state");
             }
 #endif
+            lca = place_outside_loop(lca, n_loop);
+            assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->Opcode() == Op_NeverBranch, "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1147,7 +1150,9 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   // Pick control right outside the loop
   for (;;) {
     Node* dom = idom(useblock);
-    if (loop->is_member(get_loop(dom))) {
+    if (loop->is_member(get_loop(dom)) ||
+        // NeverBranch nodes are not assigned to the loop when constructed
+        (dom->Opcode() == Op_NeverBranch && loop->is_member(get_loop(dom->in(0))))) {
       break;
     }
     useblock = dom;
@@ -1503,7 +1508,15 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
-          if (x->in(0) == NULL && !x->is_DecodeNarrowPtr()) {
+          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking so:
+          // 1- We don't add a CastPP here when the first one is sunk so if the second one is not, their bases remain
+          // the same.
+          // (see 2- below)
+          assert(!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP() ||
+                 x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base) ||
+                 !x->in(AddPNode::Address)->in(AddPNode::Base)->eqv_uncast(x->in(AddPNode::Base)), "unexpected AddP shape");
+          if (x->in(0) == NULL && !x->is_DecodeNarrowPtr() &&
+              !(x->is_AddP() && x->in(AddPNode::Address)->is_AddP() && x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base))) {
             assert(!x->is_Load(), "load should be pinned");
             // Use a cast node to pin clone out of loop
             Node* cast = NULL;
@@ -1511,11 +1524,22 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               Node* in = x->in(k);
               if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
-                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t);
+                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t, ConstraintCastNode::UnconditionalDependency);
               }
               if (cast != NULL) {
                 register_new_node(cast, x_ctrl);
                 x->replace_edge(in, cast);
+                // Chain of AddP:
+                // 2- A CastPP of the base is only added now that both AddP nodes are sunk
+                if (x->is_AddP() && k == AddPNode::Base) {
+                  for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
+                    Node* u = x->fast_out(i);
+                    if (u->is_AddP() && u->in(AddPNode::Base) == n->in(AddPNode::Base)) {
+                      _igvn.replace_input_of(u, AddPNode::Base, cast);
+                      assert(u->find_out_with(Op_AddP) == NULL, "more than 2 chained AddP nodes?");
+                    }
+                  }
+                }
                 break;
               }
             }
@@ -1977,10 +2001,13 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == NULL)) {
-      Node* c = u->in(0) != NULL ? u->in(0) : phase->get_ctrl(u);
+      Node* c = phase->get_ctrl(u);
       IdealLoopTree* u_loop = phase->get_loop(c);
       assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
-      if (outer_loop->is_member(u_loop)) {
+      if (outer_loop->is_member(u_loop) ||
+          // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
+          // the outer loop too
+          (u->in(0) != NULL && outer_loop->is_member(phase->get_loop(u->in(0))))) {
         wq.push(u);
       }
     }
@@ -2176,10 +2203,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
   uint i;
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node *old = loop->_body.at(i);
-    Node *nnn = old->clone();
-    old_new.map( old->_idx, nnn );
+  for (i = 0; i < loop->_body.size(); i++) {
+    Node* old = loop->_body.at(i);
+    Node* nnn = old->clone();
+    old_new.map(old->_idx, nnn);
+    if (old->is_reduction()) {
+      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
+      nnn->add_flag(Node::Flag_is_reduction);
+    }
     if (C->do_vector_loop()) {
       cm.verify_insert_and_clone(old, nnn, cm.clone_idx());
     }
@@ -2800,6 +2831,12 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
       worklist.push(use);
     }
   }
+
+  if (C->check_node_count(worklist.size() + NodeLimitFudgeFactor,
+                          "Too many clones required in clone_for_use_outside_loop in partial peeling")) {
+    return -1;
+  }
+
   while( worklist.size() ) {
     Node *use = worklist.pop();
     if (!has_node(use) || use->in(0) == C->top()) continue;
@@ -3352,6 +3389,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
 
   // Evacuate nodes in peel region into the not_peeled region if possible
+  bool too_many_clones = false;
   uint new_phi_cnt = 0;
   uint cloned_for_outside_use = 0;
   for (uint i = 0; i < peel_list.size();) {
@@ -3368,7 +3406,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
           if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
-            cloned_for_outside_use += clone_for_use_outside_loop(loop, n, worklist);
+            int new_clones = clone_for_use_outside_loop(loop, n, worklist);
+            if (new_clones == -1) {
+              too_many_clones = true;
+              break;
+            }
+            cloned_for_outside_use += new_clones;
             sink_list.push(n);
             peel.remove(n->_idx);
             not_peel.set(n->_idx);
@@ -3396,9 +3439,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   bool exceed_node_budget = !may_require_nodes(estimate);
   bool exceed_phi_limit = new_phi_cnt > old_phi_cnt + PartialPeelNewPhiDelta;
 
-  if (exceed_node_budget || exceed_phi_limit) {
+  if (too_many_clones || exceed_node_budget || exceed_phi_limit) {
 #ifndef PRODUCT
-    if (TracePartialPeeling) {
+    if (TracePartialPeeling && exceed_phi_limit) {
       tty->print_cr("\nToo many new phis: %d  old %d new cmpi: %c",
                     new_phi_cnt, old_phi_cnt, new_peel_if != NULL?'T':'F');
     }

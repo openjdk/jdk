@@ -526,6 +526,7 @@ java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 
 ############################################################################
 
@@ -579,7 +580,7 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 
@@ -606,7 +607,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/MulticastSocket/Promiscuous.java                       8265369 macosx-aarch64
 
 ############################################################################
 
@@ -784,8 +784,6 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
-
 ############################################################################
 
 # jdk_instrument
@@ -822,6 +820,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 

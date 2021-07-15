@@ -507,24 +507,29 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
 // If we got the effect of peeling, either by actually peeling or by making
 // a pre-loop which must execute at least once, we can remove all
 // loop-invariant dominated tests in the main body.
-void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_new) {
   bool progress = true;
   while (progress) {
-    progress = false;           // Reset for next iteration
-    Node *prev = loop->_head->in(LoopNode::LoopBackControl);//loop->tail();
-    Node *test = prev->in(0);
+    progress = false; // Reset for next iteration
+    Node* prev = loop->_head->in(LoopNode::LoopBackControl); // loop->tail();
+    Node* test = prev->in(0);
     while (test != loop->_head) { // Scan till run off top of loop
-
       int p_op = prev->Opcode();
-      if ((p_op == Op_IfFalse || p_op == Op_IfTrue) &&
-          test->is_If() &&      // Test?
-          !test->in(1)->is_Con() && // And not already obvious?
-          // Condition is not a member of this loop?
-          !loop->is_member(get_loop(get_ctrl(test->in(1))))){
+      assert(test != NULL, "test cannot be NULL");
+      Node* test_cond = NULL;
+      if ((p_op == Op_IfFalse || p_op == Op_IfTrue) && test->is_If()) {
+        test_cond = test->in(1);
+      }
+      if (test_cond != NULL && // Test?
+          !test_cond->is_Con() && // And not already obvious?
+          // And condition is not a member of this loop?
+          !loop->is_member(get_loop(get_ctrl(test_cond)))) {
         // Walk loop body looking for instances of this test
         for (uint i = 0; i < loop->_body.size(); i++) {
-          Node *n = loop->_body.at(i);
-          if (n->is_If() && n->in(1) == test->in(1) /*&& n != loop->tail()->in(0)*/) {
+          Node* n = loop->_body.at(i);
+          // Check against cached test condition because dominated_by()
+          // replaces the test condition with a constant.
+          if (n->is_If() && n->in(1) == test_cond) {
             // IfNode was dominated by version in peeled loop body
             progress = true;
             dominated_by(old_new[prev->_idx], n);
@@ -534,7 +539,6 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree *loop, Node_List &old_ne
       prev = test;
       test = idom(test);
     } // End of scan tests in loop
-
   } // End of while (progress)
 }
 
@@ -1193,7 +1197,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 }
 
 Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) {
-  Node* castii = new CastIINode(incr, TypeInt::INT, true);
+  Node* castii = new CastIINode(incr, TypeInt::INT, ConstraintCastNode::StrongDependency);
   castii->set_req(0, ctrl);
   register_new_node(castii, ctrl);
   for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
@@ -2331,22 +2335,40 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
     register_new_node(limit, pre_ctrl);
   }
 
-  // Clamp the limit to handle integer under-/overflows.
+  // Clamp the limit to handle integer under-/overflows by using long values.
+  // We only convert the limit back to int when we handled under-/overflows.
+  // Note that all values are longs in the following computations.
   // When reducing the limit, clamp to [min_jint, old_limit]:
-  //   MIN(old_limit, MAX(limit, min_jint))
+  //   INT(MINL(old_limit, MAXL(limit, min_jint)))
+  //   - integer underflow of limit: MAXL chooses min_jint.
+  //   - integer overflow of limit: MINL chooses old_limit (<= MAX_INT < limit)
   // When increasing the limit, clamp to [old_limit, max_jint]:
-  //   MAX(old_limit, MIN(limit, max_jint))
-  Node* cmp = new CmpLNode(limit, _igvn.longcon(is_positive_stride ? min_jint : max_jint));
-  register_new_node(cmp, pre_ctrl);
-  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::lt : BoolTest::gt);
-  register_new_node(bol, pre_ctrl);
-  limit = new ConvL2INode(limit);
-  register_new_node(limit, pre_ctrl);
-  limit = new CMoveINode(bol, limit, _igvn.intcon(is_positive_stride ? min_jint : max_jint), TypeInt::INT);
-  register_new_node(limit, pre_ctrl);
+  //   INT(MAXL(old_limit, MINL(limit, max_jint)))
+  //   - integer overflow of limit: MINL chooses max_jint.
+  //   - integer underflow of limit: MAXL chooses old_limit (>= MIN_INT > limit)
+  // INT() is finally converting the limit back to an integer value.
 
-  limit = is_positive_stride ? (Node*)(new MinINode(old_limit, limit))
-                             : (Node*)(new MaxINode(old_limit, limit));
+  // We use CMove nodes to implement long versions of min/max (MINL/MAXL).
+  // We use helper methods for inner MINL/MAXL which return CMoveL nodes to keep a long value for the outer MINL/MAXL comparison:
+  Node* inner_result_long;
+  if (is_positive_stride) {
+    inner_result_long = MaxNode::signed_max(limit, _igvn.longcon(min_jint), TypeLong::LONG, _igvn);
+  } else {
+    inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
+  }
+  set_subtree_ctrl(inner_result_long, false);
+
+  // Outer MINL/MAXL:
+  // The comparison is done with long values but the result is the converted back to int by using CmovI.
+  Node* old_limit_long = new ConvI2LNode(old_limit);
+  register_new_node(old_limit_long, pre_ctrl);
+  Node* cmp = new CmpLNode(old_limit_long, limit);
+  register_new_node(cmp, pre_ctrl);
+  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
+  register_new_node(bol, pre_ctrl);
+  Node* inner_result_int = new ConvL2INode(inner_result_long); // Could under-/overflow but that's fine as comparison was done with CmpL
+  register_new_node(inner_result_int, pre_ctrl);
+  limit = new CMoveINode(bol, old_limit, inner_result_int, TypeInt::INT);
   register_new_node(limit, pre_ctrl);
   return limit;
 }
@@ -2851,6 +2873,16 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
     register_new_node(main_cmp, main_cle->in(0));
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
+  assert(main_limit == cl->limit() || get_ctrl(main_limit) == pre_ctrl, "wrong control for added limit");
+  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->is_int();
+  bool upward = cl->stride_con() > 0;
+  // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
+  // The expression that computes the new limit may be too complicated and the computed type of the new limit
+  // may be too pessimistic. A CastII here guarantees it's not lost.
+  main_limit = new CastIINode(main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
+                                                        upward ? orig_limit_t->_hi : max_jint, Type::WidenMax));
+  main_limit->init_req(0, pre_ctrl);
+  register_new_node(main_limit, pre_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
   // The OpaqueNode is unshared by design

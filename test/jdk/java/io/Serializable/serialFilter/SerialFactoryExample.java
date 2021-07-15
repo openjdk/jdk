@@ -47,8 +47,8 @@ import static java.io.ObjectInputFilter.Status.REJECTED;
 import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
- * @run testng/othervm -Djdk.serialFilterTrace=true SerialFactoryExample
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread -Djdk.serialFilterTrace=true SerialFactoryExample
+ * @run testng/othervm SerialFactoryExample
+ * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread SerialFactoryExample
  * @summary Test SerialFactoryExample
  */
 
@@ -599,19 +599,28 @@ public class SerialFactoryExample {
             }
 
             /**
-             * Apply the predicate to the class being deserialized, if the class is non-null
-             * and if it returns {@code true}, return the requested status. Otherwise, return UNDECIDED.
+             * Returns a filter that returns {@code ifTrueStatus} or the {@code ifFalseStatus}
+             * based on the predicate of the {@code non-null} class and {@code UNDECIDED}
+             * if the class is {@code null}.
              *
              * @param info the FilterInfo
-             * @return the status of applying the predicate, otherwise {@code UNDECIDED}
+             * @return a filter that returns {@code ifTrueStatus} or the {@code ifFalseStatus}
+             *          based on the predicate of the {@code non-null} class and {@code UNDECIDED}
+             *          if the class is {@code null}
              */
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
                 Class<?> clazz = info.serialClass();
-                return (clazz != null && predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
+                Status status = (clazz == null) ? UNDECIDED
+                        : (predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
+                return status;
             }
 
+            /**
+             * Return a String describing the filter, its predicate, and true and false status values.
+             * @return a String describing the filter, its predicate, and true and false status values.
+             */
             public String toString() {
-                return "predicate(" + predicate + ")";
+                return "predicate(" + predicate + ", ifTrue: " + ifTrueStatus + ", ifFalse:" + ifFalseStatus+ ")";
             }
         }
 
