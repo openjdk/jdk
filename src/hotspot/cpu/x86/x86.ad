@@ -1873,10 +1873,18 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   switch (m->rule()) {
     case MoveVec2Leg_rule:
     case MoveLeg2Vec_rule:
+    case MoveF2VL_rule:
+    case MoveF2LEG_rule:
+    case MoveVL2F_rule:
+    case MoveLEG2F_rule:
+    case MoveD2VL_rule:
+    case MoveD2LEG_rule:
+    case MoveVL2D_rule:
+    case MoveLEG2D_rule:
       return true;
     default:
       return false;
@@ -6590,7 +6598,7 @@ instruct vcastBtoX(vec dst, vec src) %{
 %}
 
 instruct castStoX(vec dst, vec src, rRegP scratch) %{
-  predicate(UseAVX <= 2 &&
+  predicate((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
             vector_length(n->in(1)) <= 8 && // src
             vector_element_basic_type(n) == T_BYTE);
   effect(TEMP scratch);
@@ -6606,7 +6614,7 @@ instruct castStoX(vec dst, vec src, rRegP scratch) %{
 %}
 
 instruct vcastStoX(vec dst, vec src, vec vtmp, rRegP scratch) %{
-  predicate(UseAVX <= 2 &&
+  predicate((UseAVX <= 2 || !VM_Version::supports_avx512vlbw()) &&
             vector_length(n->in(1)) == 16 && // src
             vector_element_basic_type(n) == T_BYTE);
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
@@ -6624,7 +6632,7 @@ instruct vcastStoX(vec dst, vec src, vec vtmp, rRegP scratch) %{
 %}
 
 instruct vcastStoX_evex(vec dst, vec src) %{
-  predicate(UseAVX > 2 ||
+  predicate((UseAVX > 2 && VM_Version::supports_avx512vlbw()) ||
             (vector_length_in_bytes(n) >= vector_length_in_bytes(n->in(1)))); // dst >= src
   match(Set dst (VectorCastS2X src));
   format %{ "vector_cast_s2x $dst,$src\t!" %}
@@ -6739,13 +6747,13 @@ instruct vcastItoX_evex(vec dst, vec src) %{
         __ evpmovdw($dst$$XMMRegister, $src$$XMMRegister, src_vlen_enc);
         break;
       case T_FLOAT:
-        __ vcvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister, dst_vlen_enc);
+        __ vcvtdq2ps($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       case T_LONG:
         __ vpmovsxdq($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       case T_DOUBLE:
-        __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, dst_vlen_enc);
+        __ vcvtdq2pd($dst$$XMMRegister, $src$$XMMRegister, dst_vlen_enc);
         break;
       default:
         ShouldNotReachHere();

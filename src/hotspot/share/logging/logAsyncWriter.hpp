@@ -29,7 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/linkedlist.hpp"
 
 template <typename E, MEMFLAGS F>
@@ -108,7 +108,13 @@ public:
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
+typedef ResourceHashtable<LogFileOutput*,
+                          uint32_t,
+                          primitive_hash<LogFileOutput*>,
+                          primitive_equals<LogFileOutput*>,
+                          17, /*table_size*/
+                          ResourceObj::C_HEAP,
+                          mtLogging> AsyncLogMap;
 
 //
 // ASYNC LOGGING SUPPORT
@@ -135,13 +141,10 @@ class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
 
   static AsyncLogWriter* _instance;
-  // _lock(1) denotes a critional region.
-  Semaphore _lock;
-  // _sem is a semaphore whose value denotes how many messages have been enqueued.
-  // It decreases in AsyncLogWriter::run()
-  Semaphore _sem;
   Semaphore _flush_sem;
-
+  // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
+  os::PlatformMonitor _lock;
+  bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
   AsyncLogBuffer _buffer;

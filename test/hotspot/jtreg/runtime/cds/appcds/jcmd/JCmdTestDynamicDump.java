@@ -63,7 +63,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
 
         // Test dynamic dump twice to same process.
         print2ln(test_count++ + " Test dynamic dump second time to the same process.");
-        test("02.jsa", pid, noBoot,  EXPECT_FAIL);
+        test("02.jsa", pid, noBoot,  EXPECT_PASS);
         app.stopApp();
 
         // Test dynamic dump with -XX:-RecordDynamicDumpInfo.
