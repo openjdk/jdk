@@ -351,6 +351,7 @@ static bool resolve_inlining_predicate(enum CompileCommand option, const methodH
     if (v1 && v2) {
       // Conflict options detected
       // Find the last one for that method and return the predicate accordingly
+      // option_list lists options in reverse order. So the first option we find is the last which was specified.
       enum CompileCommand last_one = CompileCommand::Unknown;
       TypedMethodOptionMatcher* current = option_list;
       while (current != NULL) {
