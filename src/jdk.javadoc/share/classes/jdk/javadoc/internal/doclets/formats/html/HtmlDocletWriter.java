@@ -1075,13 +1075,11 @@ public class HtmlDocletWriter {
         } else if (refMemName == null) {
             // Must be a class reference since refClass is not null and refMemName is null.
             if (labelContent.isEmpty()) {
-                if (!refClass.getTypeParameters().isEmpty() && seeText.contains("<")) {
-                    // If this is a generic type link try to use the TypeMirror representation.
-                    TypeMirror refType = ch.getReferencedType(see);
-                    if (refType != null) {
-                        return plainOrCode(isLinkPlain, getLink(
-                                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refType)));
-                    }
+                TypeMirror referencedType = ch.getReferencedType(see);
+                if (utils.isGenericType(referencedType)) {
+                    // This is a generic type link, use the TypeMirror representation.
+                    return plainOrCode(isLinkPlain, getLink(
+                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
                 }
                 labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
             }

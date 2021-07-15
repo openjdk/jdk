@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
-#define SHARE_MEMORY_RESOURCEAREA_INLINE_HPP
+package pkg1;
 
-#include "memory/resourceArea.hpp"
+import java.util.Map;
 
-#include "services/memTracker.hpp"
+public class C<T, E extends Exception> extends A {
 
-inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failmode) {
-#ifdef ASSERT
-  verify_has_resource_mark();
-  if (UseMallocOnly) {
-    // use malloc, but save pointer in res. area for later freeing
-    char** save = (char**)internal_amalloc(sizeof(char*));
-    return (*save = (char*)os::malloc(size, mtThread, CURRENT_PC));
-  }
-#endif // ASSERT
-  return (char*)Amalloc(size, alloc_failmode);
+    @Override
+    public void overriddenMethod() {}
+
 }
-
-#endif // SHARE_MEMORY_RESOURCEAREA_INLINE_HPP

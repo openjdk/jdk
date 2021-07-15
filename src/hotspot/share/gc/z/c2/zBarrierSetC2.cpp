@@ -72,7 +72,7 @@ public:
 
     RegMask* live = (RegMask*)_live[node->_idx];
     if (live == NULL) {
-      live = new (Compile::current()->comp_arena()->Amalloc_4(sizeof(RegMask))) RegMask();
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
       _live.map(node->_idx, (Node*)live);
     }
 

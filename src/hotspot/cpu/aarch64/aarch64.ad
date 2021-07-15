@@ -2615,6 +2615,14 @@ uint Matcher::int_pressure_limit()
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
   uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  if (!PreserveFramePointer) {
+    // When PreserveFramePointer is off, frame pointer is allocatable,
+    // but different from other SOC registers, it is excluded from
+    // fatproj's mask because its save type is No-Save. Decrease 1 to
+    // ensure high pressure at fatproj when PreserveFramePointer is off.
+    // See check_pressure_at_fatproj().
+    default_int_pressure_threshold--;
+  }
   return (INTPRESSURE == -1) ? default_int_pressure_threshold : INTPRESSURE;
 }
 
