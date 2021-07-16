@@ -561,20 +561,10 @@ public abstract class JavadocTester {
         String[] copy = Arrays.copyOf(strings, strings.length);
         Arrays.sort(copy);
         for (int i = 0; i < copy.length - 1; i++) {
-            if (isFirstPrefixOfSecond(copy[i], copy[i + 1]))
+            if (copy[i + 1].startsWith(copy[i]))
                 return true;
         }
         return false;
-    }
-
-    static boolean isFirstPrefixOfSecond(String a, String b) {
-        int i = 0;
-        int j = 0;
-        while (i < a.length() && j < b.length() && a.charAt(i) == b.charAt(j)) {
-            i++;
-            j++;
-        }
-        return i == a.length();
     }
 
     /**
