@@ -86,8 +86,8 @@ public abstract class Reader {
         }
         GzipRandomAccess access = null;
         try (FileInputStream fis = new FileInputStream(heapFile);
-                BufferedInputStream bis = new BufferedInputStream(fis);
-                PositionDataInputStream in = new PositionDataInputStream(bis)) {
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             PositionDataInputStream in = new PositionDataInputStream(bis)) {
             int i = in.readInt();
             if (i == HprofReader.MAGIC_NUMBER) {
                 Reader r
@@ -96,12 +96,12 @@ public abstract class Reader {
                 return r.read();
             } else if ((access = GzipRandomAccess.getAccess(heapFile, 16)) != null) {
                 in.close();
-                try (BufferedInputStream bis2 = new BufferedInputStream(access.asStream(0));
-                        PositionDataInputStream in2 = new PositionDataInputStream(bis2)) {
-                    i = in2.readInt();
+                try (BufferedInputStream gzBis = new BufferedInputStream(access.asStream(0));
+                     PositionDataInputStream pdin = new PositionDataInputStream(gzBis)) {
+                    i = pdin.readInt();
                     if (i == HprofReader.MAGIC_NUMBER) {
                         Reader r
-                            = new HprofReader(access.asFileBuffer(), in2, dumpNumber,
+                            = new HprofReader(access.asFileBuffer(), pdin, dumpNumber,
                                               callStack, debugLevel);
                         return r.read();
                     } else {
@@ -153,8 +153,8 @@ public abstract class Reader {
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 // Decompress to get dump file.
-                try (FileInputStream fis2 = new FileInputStream(heapFile);
-                     GZIPInputStream gis = new GZIPInputStream(fis2);
+                try (FileInputStream heapFis = new FileInputStream(heapFile);
+                     GZIPInputStream gis = new GZIPInputStream(heapFis);
                      FileOutputStream fos = new FileOutputStream(out)) {
                     byte[] buffer = new byte[1024 * 1024];
                     int len = 0;
@@ -166,13 +166,13 @@ public abstract class Reader {
                     throw new IOException("Cannot decompress the compressed hprof file", e);
                 }
                 // Check dump data header and print stack trace.
-                try (FileInputStream fis3 = new FileInputStream(out);
-                     BufferedInputStream bis2 = new BufferedInputStream(fis3);
-                     PositionDataInputStream in2 = new PositionDataInputStream(bis2)) {
-                    i = in2.readInt();
+                try (FileInputStream outFis = new FileInputStream(out);
+                     BufferedInputStream outBis = new BufferedInputStream(outFis);
+                     PositionDataInputStream pdin = new PositionDataInputStream(outBis)) {
+                    i = pdin.readInt();
                     if (i == HprofReader.MAGIC_NUMBER) {
                         HprofReader r
-                            = new HprofReader(deCompressedFile, in2, dumpNumber,
+                            = new HprofReader(deCompressedFile, pdin, dumpNumber,
                                               true, debugLevel);
                         r.read();
                         return r.printStackTraces();
