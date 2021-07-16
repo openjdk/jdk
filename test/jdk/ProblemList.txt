@@ -664,6 +664,7 @@ security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LetsEncryptCA.java 8270280 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
