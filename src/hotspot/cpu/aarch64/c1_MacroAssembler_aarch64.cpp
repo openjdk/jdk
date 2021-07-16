@@ -233,14 +233,13 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
          stp(zr, zr, Address(obj, i));
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        block_comment("zero memory");
-      // use loop to null out the fields
+       // use loop to null out the fields
 
+       const int unroll = 8; // Number of stp(zr) instructions we'll unroll
        int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
-       mov(index,  words / 8);
-
-       const int unroll = 8; // Number of str(zr) instructions we'll unroll
-       int remainder = words % unroll;
-       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * BytesPerWord));
+       int remainder = (words & ((unroll - 1) * 2)) >> 1;
+       mov(index,  words / (unroll * 2));
+       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * 2 * BytesPerWord));
 
        Label entry_point, loop;
        b(entry_point);
@@ -250,13 +249,16 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
        for (int i = -unroll; i < 0; i++) {
          if (-i == remainder)
            bind(entry_point);
-         str(zr, Address(rscratch1, i * wordSize));
+         stp(zr, zr, Address(rscratch1, i * 2 * BytesPerWord));
        }
        if (remainder == 0)
          bind(entry_point);
-       add(rscratch1, rscratch1, unroll * wordSize);
+       add(rscratch1, rscratch1, unroll * 2 * BytesPerWord);
        cbnz(index, loop);
 
+       if (words % 2 != 0) {
+         str(zr, Address(rscratch1, -(unroll * 2 * BytesPerWord)));
+       }
      }
   }
 
