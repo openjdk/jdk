@@ -180,7 +180,7 @@
   static const bool has_predicated_vectors(void) {
     bool ret_value = false;
     if (UseAVX > 2) {
-      ret_value = VM_Version::supports_avx512vl();
+      return true;
     }
     return ret_value;
   }
