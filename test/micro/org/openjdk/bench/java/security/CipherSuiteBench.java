@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 @Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.ssl=ALL-UNNAMED", "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@BenchmarkMode(Mode.Throughput)
 public class CipherSuiteBench {
 
     Method nameOf;

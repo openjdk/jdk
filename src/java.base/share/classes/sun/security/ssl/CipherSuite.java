@@ -853,18 +853,23 @@ enum CipherSuite {
 
     final boolean exportable;
 
-    private static final HashMap<Integer, CipherSuite> maps_id = new HashMap<>();
-    private static final HashMap<String, CipherSuite> maps_name = new HashMap<>();
+    private static final Map<Integer, CipherSuite> maps_id;
+    private static final Map<String, CipherSuite> maps_name;
     private static final CipherSuite[] ciphers = CipherSuite.values();
 
     static {
+        Map<Integer, CipherSuite> ids = new HashMap<>();
+        Map<String, CipherSuite> names = new HashMap<>();
+
         for(CipherSuite cs : ciphers) {
-            maps_id.put(cs.id, cs);
-            maps_name.put(cs.name, cs);
+            ids.put(cs.id, cs);
+            names.put(cs.name, cs);
             for (String alias : cs.aliases) {
-                maps_name.put(alias, cs);
+                names.put(alias, cs);
             }
         }
+        maps_id = Map.copyOf(ids);
+        maps_name = Map.copyOf(names);
     }
 
     // known but unsupported cipher suite
@@ -912,8 +917,10 @@ enum CipherSuite {
     }
 
     static String nameOf(int id) {
-        if (maps_id.containsKey(id)) {
-            return maps_id.get(id).name;
+        String name = maps_id.get(id).name;
+
+        if (name != null) {
+            return name;
         }
 
         return "UNKNOWN-CIPHER-SUITE(" + Utilities.byte16HexString(id) + ")";
