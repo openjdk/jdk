@@ -76,6 +76,7 @@ public class bug7154030 {
                     JDesktopPane desktop = new JDesktopPane();
                     button = new JButton("button");
                     frame = new JFrame();
+                    frame.setUndecorated(true);
 
                     button.setSize(200, 200);
                     button.setLocation(100, 100);
@@ -107,7 +108,7 @@ public class bug7154030 {
             locx = bounds.x + insets.left;
             locy = bounds.y + insets.top;
             frw = bounds.width - insets.left - insets.right;
-            frh = bounds.height - insets.top - insets.bottom - 25;
+            frh = bounds.height - insets.top - insets.bottom;
 
             BufferedImage fullScreen = robot.createScreenCapture(screen);
             Graphics g = fullScreen.getGraphics();
