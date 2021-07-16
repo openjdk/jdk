@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=passive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -40,7 +40,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -51,7 +51,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -62,7 +62,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -73,7 +73,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -84,7 +84,7 @@
  */
 
 /*
- * @test TestPauseNotifications
+ * @test id=iu
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah

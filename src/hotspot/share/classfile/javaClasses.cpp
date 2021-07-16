@@ -502,7 +502,7 @@ jchar* java_lang_String::as_unicode_string_or_null(oop java_string, int& length)
   return result;
 }
 
-unsigned int java_lang_String::hash_code(oop java_string) {
+inline unsigned int java_lang_String::hash_code_impl(oop java_string, bool update) {
   // The hash and hashIsZero fields are subject to a benign data race,
   // making it crucial to ensure that any observable result of the
   // calculation in this method stays correct under any possible read of
@@ -529,13 +529,24 @@ unsigned int java_lang_String::hash_code(oop java_string) {
     }
   }
 
-  if (hash != 0) {
-    java_string->int_field_put(_hash_offset, hash);
-  } else {
-    java_string->bool_field_put(_hashIsZero_offset, true);
+  if (update) {
+    if (hash != 0) {
+      java_string->int_field_put(_hash_offset, hash);
+    } else {
+      java_string->bool_field_put(_hashIsZero_offset, true);
+    }
   }
   return hash;
 }
+
+unsigned int java_lang_String::hash_code(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/true);
+}
+
+unsigned int java_lang_String::hash_code_noupdate(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/false);
+}
+
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);

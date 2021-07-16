@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280 8262992
+ * @bug     8177280 8262992 8259499
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -118,6 +118,40 @@ public class TestGenericTypeLink extends JavadocTester {
                     </dd>
                     </dl>"""
                 );
+        checkOutput("pkg1/A.Inner.html", true,
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://exampl\
+                    e.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
+                    a.lang" class="external-link">String</a>,<wbr><a href="http://example.com/docs/a\
+                    pi/java.base/java/lang/RuntimeException.html" title="class or interface in java.\
+                    lang" class="external-link">RuntimeException</a>&gt;.<a href="A.Inner.html" titl\
+                    e="class in pkg1">Inner</a></code></li>
+                    <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="A.html" title\
+                    ="class in pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/la\
+                    ng/String.html" title="class or interface in java.lang" class="external-link">St\
+                    ring</a>,<wbr><a href="http://example.com/docs/api/java.base/java/lang/RuntimeEx\
+                    ception.html" title="class or interface in java.lang" class="external-link">Runt\
+                    imeException</a>&gt;.<a href="A.Inner.html" title="class in pkg1">Inner</a>,<wbr\
+                    ><a href="A.SomeException.html" title="class in pkg1">A.SomeException</a>&gt;</c\
+                    ode></li>
+                    </ul>
+                    </dd>
+                    </dl>""");
+
+        checkOutput("pkg1/C.html", true,
+                """
+                    Description copied from class:&nbsp;<code><a href="A.html#overriddenMethod()">A<\
+                    /a></code></span></div>
+                    <div class="block">Here's a generic link: <code><a href="A.html" title="class in\
+                     pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/lang/Object.\
+                    html" title="class or interface in java.lang" class="external-link">Object</a>,<\
+                    wbr><a href="http://example.com/docs/api/java.base/java/lang/RuntimeException.ht\
+                    ml" title="class or interface in java.lang" class="external-link">RuntimeExcepti\
+                    on</a>&gt;.<a href="A.Inner.html" title="class in pkg1">Inner</a>""");
     }
 
     /**

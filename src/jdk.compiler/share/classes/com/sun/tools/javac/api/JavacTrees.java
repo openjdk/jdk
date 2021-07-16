@@ -75,6 +75,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -85,10 +86,8 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
@@ -97,7 +96,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
@@ -151,7 +149,6 @@ import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
  * Provides an implementation of Trees.

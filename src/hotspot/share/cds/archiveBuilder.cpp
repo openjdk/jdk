@@ -161,7 +161,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_region("ro", MAX_SHARED_DELTA),
   _rw_src_objs(),
   _ro_src_objs(),
-  _src_obj_table(INITIAL_TABLE_SIZE),
+  _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _num_instance_klasses(0),
   _num_obj_array_klasses(0),
   _num_type_array_klasses(0),
@@ -191,6 +191,9 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   delete _special_refs;
+  if (_shared_rs.is_reserved()) {
+    _shared_rs.release();
+  }
 }
 
 bool ArchiveBuilder::is_dumping_full_module_graph() {
@@ -464,9 +467,9 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
-  SourceObjInfo* p = _src_obj_table.add_if_absent(src_obj, src_info, &created);
+  SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
-    if (_src_obj_table.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_src_obj_table.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
@@ -660,7 +663,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 }
 
 address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.lookup(src_obj);
+  SourceObjInfo* p = _src_obj_table.get(src_obj);
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
