@@ -32,22 +32,16 @@
 #include "runtime/atomic.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
-  if (addr >= _hr->bottom() && addr < _hr->end()) {
-    HeapWord* q = block_at_or_preceding(addr);
-    return forward_to_block_containing_addr(q, addr);
-  } else {
-    return NULL;
-  }
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  HeapWord* q = block_at_or_preceding(addr);
+  return forward_to_block_containing_addr(q, addr);
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_start_const(const void* addr) const {
-  if (addr >= _hr->bottom() && addr < _hr->end()) {
-    HeapWord* q = block_at_or_preceding(addr);
-    HeapWord* n = q + block_size(q);
-    return forward_to_block_containing_addr_const(q, n, addr);
-  } else {
-    return NULL;
-  }
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  HeapWord* q = block_at_or_preceding(addr);
+  HeapWord* n = q + block_size(q);
+  return forward_to_block_containing_addr_const(q, n, addr);
 }
 
 u_char G1BlockOffsetTable::offset_array(size_t index) const {
