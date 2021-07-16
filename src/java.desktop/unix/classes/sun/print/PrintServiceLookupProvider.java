@@ -58,7 +58,6 @@ import java.nio.file.Files;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-@SuppressWarnings("removal")
 public class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
@@ -97,6 +96,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to force the printing code to poll or not poll
          * for PrintServices.
          */
+        @SuppressWarnings("removal")
         String pollStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
 
@@ -112,6 +112,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to specify minimum refresh time (in seconds)
          * for polling PrintServices.  The default is 120.
          */
+        @SuppressWarnings("removal")
         String refreshTimeStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction(
                 "sun.java2d.print.minRefreshTime"));
@@ -126,8 +127,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         }
 
-        osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
+        osname = System.getProperty("os.name");
 
         /* The system property "sun.java2d.print.aix.lpstat"
          * can be used to force the usage of 'lpstat -p' to enumerate all
@@ -135,6 +135,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * take lots of time if thousands of printers are attached to a server.
          */
         if (isAIX()) {
+            @SuppressWarnings("removal")
             String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
 
@@ -222,6 +223,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -560,6 +562,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -623,6 +626,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -632,6 +636,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
 
     public synchronized PrintService getDefaultPrintService() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -865,6 +870,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return printerNames.toArray(new String[printerNames.size()]);
     }
 
+    @SuppressWarnings("removal")
     static String[] execCmd(final String command) {
         ArrayList<String> results = null;
         try {
