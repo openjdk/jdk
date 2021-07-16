@@ -23,6 +23,8 @@
 
 #include "precompiled.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -1143,4 +1145,79 @@ public:
 
 TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
   mt_test_doer<Driver_BD_Thread>();
+}
+
+class Scanner_Thread: public WorkerThread {
+  Semaphore _start;
+  Semaphore* _done;
+  TestTable* _cht;
+  TestTable::BucketsClaimer* _bucket_claimer;
+  size_t _num_scanned;
+  size_t *_total_scanned;
+protected:
+  void run() override {
+    _start.wait();
+    _cht->do_safepoint_scan(*this, _bucket_claimer);
+    Atomic::add(_total_scanned, _num_scanned);
+    _done->signal();
+  }
+public:
+  Scanner_Thread(Semaphore* done, TestTable* cht, TestTable::BucketsClaimer* bc, size_t *total_scanned) :
+    _done(done), _cht(cht), _bucket_claimer(bc), _num_scanned(0), _total_scanned(total_scanned) {}
+
+  void run_thread() {
+    _start.signal();
+  }
+
+  bool operator()(uintptr_t* val) {
+    return ++_num_scanned;
+  }
+};
+
+class VM_CHT_MT_Scan: public VM_GTestExecuteAtSafepoint {
+  TestTable* _cht;
+  uintptr_t _num_items;
+public:
+  void doit();
+  VM_CHT_MT_Scan(TestTable* cht, uintptr_t num_items): _cht(cht), _num_items(num_items) { }
+};
+
+void VM_CHT_MT_Scan::doit() {
+  size_t total_scanned = 0;
+  TestTable::BucketsClaimer bucket_claimer(_cht);
+  Semaphore done(0);
+
+  // Create and start parallel worker threads.
+  const int num_threads = 4;
+  Scanner_Thread* st[num_threads];
+  for (int i = 0; i < num_threads; i++) {
+    st[i] = new Scanner_Thread(&done, _cht, &bucket_claimer, &total_scanned);
+    os::create_thread(st[i], os::pgc_thread);
+    os::start_thread(st[i]);
+  }
+
+  for (int i = 0; i < num_threads; i++) {
+    st[i]->run_thread();
+  }
+
+  for (int i = 0; i < num_threads; i++) {
+    done.wait();
+  }
+
+  EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;
+}
+
+TEST_VM(ConcurrentHashTable, concurrent_mt_scan) {
+  TestTable* cht = new TestTable(16, 16, 2);
+
+  uintptr_t num_items = 99999;
+  for (uintptr_t v = 1; v <= num_items; v++ ) {
+    TestLookup tl(v);
+    EXPECT_TRUE(cht->insert(JavaThread::current(), tl, v)) << "Inserting an unique value should work.";
+  }
+
+  // Run the test at a safepoint.
+  VM_CHT_MT_Scan op(cht, num_items);
+  ThreadInVMfromNative invm(JavaThread::current());
+  VMThread::execute(&op);
 }
