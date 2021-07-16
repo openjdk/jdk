@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8201533
+ * @bug 8270836
  * @library /tools/lib ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* toolbox.ToolBox
@@ -31,27 +31,67 @@
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 
 import static org.testng.Assert.expectThrows;
 
+/*
+ * ATTENTION: this test is run using @org.testng.annotations.Test,
+ *            not javadoc.tester.JavadocTester.Test
+ */
 public class TestJavadocTester extends JavadocTester {
 
     private TestJavadocTester() { }
 
     @org.testng.annotations.Test
-    public void testCheckOutput() {
-        javadoc("--version"); // generate one of the smallest possible outputs for resource's sake
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, true, "abcde", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, true, "abcde", "a", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, true, "abc", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, true, "", "abcd"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, false, "abcde", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, false, "abcde", "a", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, false, "abc", "abc"));
-        expectThrows(IllegalArgumentException.class, () -> checkOutput(Output.OUT, false, "", "abcd"));
-
-        // for consistency make sure these won't throw anything
-        checkOutput(Output.OUT, false, "abcd");
-        checkOutput(Output.OUT, true, "abcd");
+    public void testCheckOutput() throws IOException {
+        List<List<String>> listOfStringArguments = List.of(
+                List.of("abcd", "abc"),
+                List.of("abcde", "a", "abc"),
+                List.of("abc", "abc"),
+                List.of("", "abcd")
+        );
+        new ToolBox().writeJavaFiles(Path.of("."), "/** First sentence. */ public class MyClass { }");
+        javadoc("-d", "out", "MyClass.java");
+        // (1) these checks must throw
+        for (Output out : Output.values()) {
+            for (boolean expect : new boolean[]{false, true}) {
+                for (List<String> args : listOfStringArguments) {
+                    String[] strs = args.toArray(new String[0]);
+                    expectThrows(IllegalArgumentException.class, () -> checkOutput(out, expect, strs));
+                }
+            }
+        }
+        // these must throw too
+        for (boolean expect : new boolean[]{false, true}) {
+            for (List<String> args : listOfStringArguments) {
+                String[] strings = args.toArray(new String[0]);
+                expectThrows(IllegalArgumentException.class, () -> checkOutput("MyClass.html", expect, strings));
+            }
+        }
+        // (2) sanity check: these won't throw anything
+        for (Output out : Output.values()) {
+            for (boolean expect : new boolean[]{false, true}) {
+                checkOutput(out, expect, "abcd");
+                checkOutput(out, expect, "a", "b");
+                checkOutput(out, expect, "");
+            }
+        }
+        // neither will these:
+        for (boolean expect : new boolean[]{false, true}) {
+            checkOutput("MyClass.html", expect, "abcd");
+            checkOutput("MyClass.html", expect, "a", "b");
+            checkOutput("MyClass.html", expect, "");
+        }
+        // checkOrder won't throw when used as a substitute for the above
+        // cases of checkOutput that threw
+        for (List<String> args : listOfStringArguments) {
+            String[] strings = args.toArray(new String[0]);
+            checkOrder("MyClass.html", strings);
+        }
     }
 }
