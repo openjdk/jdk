@@ -1116,7 +1116,7 @@ void Arguments::print_on(outputStream* st) {
     if (len == 0) {
       st->print_raw_cr("<not set>");
     } else {
-      st->print_raw_cr(path, (int)len);
+      st->print_raw_cr(path, len);
     }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
