@@ -310,7 +310,8 @@ abstract class RTFParser extends AbstractFilter
         if (binaryBytesLeft > 0) {
           binaryBuf.write(ch);
           binaryBytesLeft--;
-        } else {
+        }
+        if (binaryBytesLeft == 0) {
           state = S_text;
           specialsTable = savedSpecials;
           savedSpecials = null;
