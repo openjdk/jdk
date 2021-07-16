@@ -498,6 +498,12 @@ public abstract class JavadocTester {
      *  to be found, or false if all of the strings are expected to be
      *  not found
      * @param strings the strings to be searched for
+     *
+     * @throws IllegalArgumentException as a protective measure against a
+     * situation where the provided array of strings contains a pair of strings
+     * s1 and s2 such that s1.startsWith(s2). Such a situation is problematic
+     * because in order to match s1 and s2, it suffices for the output to
+     * contain only s1.
      */
     public void checkOutput(String path, boolean expectedFound, String... strings) {
         // Read contents of file
@@ -519,6 +525,12 @@ public abstract class JavadocTester {
      *  to be found, or false if all of the strings are expected to be
      *  not found
      * @param strings the strings to be searched for
+     *
+     * @throws IllegalArgumentException as a protective measure against a
+     * situation where the provided array of strings contains a pair of strings
+     * s1 and s2 such that s1.startsWith(s2). Such a situation is problematic
+     * because in order to match s1 and s2, it suffices for the output to
+     * contain only s1.
      */
     public void checkOutput(Output output, boolean expectedFound, String... strings) {
         checkOutput(output.toString(), outputMap.get(output), expectedFound, strings);
@@ -526,6 +538,8 @@ public abstract class JavadocTester {
 
     // NOTE: path may be the name of an Output stream as well as a file path
     private void checkOutput(String path, String fileString, boolean expectedFound, String... strings) {
+        if (checkIfPrefixes(strings))
+            throw new IllegalArgumentException("Prefix strings detected; use checkOrder instead or fix the strings.");
         for (String stringToFind : strings) {
 //            log.logCheckOutput(path, expectedFound, stringToFind);
             checking("checkOutput");
@@ -543,6 +557,26 @@ public abstract class JavadocTester {
         }
     }
 
+    private static boolean checkIfPrefixes(String... strings) {
+        String[] copy = Arrays.copyOf(strings, strings.length);
+        Arrays.sort(copy);
+        for (int i = 0; i < copy.length - 1; i++) {
+            if (isFirstPrefixOfSecond(copy[i], copy[i + 1]))
+                return true;
+        }
+        return false;
+    }
+
+    static boolean isFirstPrefixOfSecond(String a, String b) {
+        int i = 0;
+        int j = 0;
+        while (i < a.length() && j < b.length() && a.charAt(i) == b.charAt(j)) {
+            i++;
+            j++;
+        }
+        return i == a.length();
+    }
+
     /**
      * Checks that there are no duplicate lines in one of the streams written by javadoc.
      * @param output the output stream to check
@@ -552,7 +586,7 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Checks that there are no duplicate lines that either match or don't match a given patter,
+     * Checks that there are no duplicate lines that either match or don't match a given pattern,
      * in one of the streams written by javadoc.
      * @param output the output stream to check
      * @param pattern a pattern to filter the lines to be checked
