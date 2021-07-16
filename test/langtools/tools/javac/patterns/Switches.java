@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -53,8 +53,12 @@ public class Switches {
         runEnumTest(this::testEnumExpression2);
         runEnumTest(this::testEnumWithGuards1);
         runEnumTest(this::testEnumWithGuards2);
+        runEnumTest(this::testEnumWithGuards3);
+        runEnumTest(this::testEnumWithGuards4);
         runEnumTest(this::testEnumWithGuardsExpression1);
         runEnumTest(this::testEnumWithGuardsExpression2);
+        runEnumTest(this::testEnumWithGuardsExpression3);
+        runEnumTest(this::testEnumWithGuardsExpression4);
         runEnumTest(this::testStringWithGuards1);
         runEnumTest(this::testStringWithGuardsExpression1);
         runEnumTest(this::testIntegerWithGuards1);
@@ -63,10 +67,15 @@ public class Switches {
         runStringWithConstant(this::testStringWithConstantExpression);
         runFallThrough(this::testFallThroughStatement);
         runFallThrough(this::testFallThroughExpression);
+        runFallThrough(this::testFallThrough2Statement);
+        runFallThrough(this::testFallThrough2Expression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
+        exhaustiveStatementSane2(null);
+        exhaustiveStatementSane2(new A());
+        exhaustiveStatementSane2(new B());
         switchNestingTest(this::switchNestingStatementStatement);
         switchNestingTest(this::switchNestingStatementExpression);
         switchNestingTest(this::switchNestingExpressionStatement);
@@ -288,6 +297,46 @@ public class Switches {
         };
     }
 
+    String testEnumWithGuards3(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case Object x && "C".equals(x.toString()): return "C";
+            case C: return "broken";
+            case null, E x: return String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression3(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case Object x && "C".equals(x.toString()) -> "C";
+            case C -> "broken";
+            case null, E x -> String.valueOf(x);
+        };
+    }
+
+    String testEnumWithGuards4(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case Runnable x && "C".equals(x.toString()): return "C";
+            case C: return "broken";
+            case null, E x: return String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression4(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case Runnable x && "C".equals(x.toString()) -> "C";
+            case C -> "broken";
+            case null, E x -> String.valueOf(x);
+        };
+    }
+
     String testStringWithGuards1(E e) {
         switch (e != null ? e.name() : null) {
             case "A": return "a";
@@ -353,6 +402,33 @@ public class Switches {
         return r;
     }
 
+    Integer testFallThrough2Statement(Integer i) {
+        int r = 0;
+
+        switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            case -1: r = 1;
+            case null, default:
+                r = 2;
+        }
+
+        return r;
+    }
+
+    Integer testFallThrough2Expression(Integer i) {
+        int r = switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            case -1: r = 1;
+            case null, default:
+                r = 2;
+                yield r;
+        };
+
+        return r;
+    }
+
     void npeTestStatement(I i) {
         switch (i) {
             case A a -> {}
@@ -376,6 +452,17 @@ public class Switches {
         }
         switch (o) {
             case Object obj, null:; //no break intentionally - should not fall through to any possible default
+        }
+    }
+
+    void exhaustiveStatementSane2(I i) {
+        switch (i) {
+            case A a: break;
+            case null, B b:; //no break intentionally - should not fall through to any possible default
+        }
+        switch (i) {
+            case A a -> {}
+            case null, B b -> {}
         }
     }
 
@@ -520,7 +607,9 @@ public class Switches {
         }
     }
 
-    public enum E {
+    public enum E implements Runnable {
         A, B, C;
+
+        @Override public void run() {}
     }
 }

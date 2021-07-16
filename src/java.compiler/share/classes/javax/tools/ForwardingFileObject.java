@@ -38,6 +38,9 @@ import java.util.Objects;
  * might override some of these methods and might also provide
  * additional fields and methods.
  *
+ * <p>Unless stated otherwise, references in this class to "<em>this file object</em>"
+ * should be interpreted as referring indirectly to the {@link #fileObject delegate file object}.
+ *
  * @param <F> the kind of file object forwarded to by this object
  * @author Peter von der Ah&eacute;
  * @since 1.6
@@ -45,7 +48,7 @@ import java.util.Objects;
 public class ForwardingFileObject<F extends FileObject> implements FileObject {
 
     /**
-     * The file object which all methods are delegated to.
+     * The file object to which all methods are delegated.
      */
     protected final F fileObject;
 
