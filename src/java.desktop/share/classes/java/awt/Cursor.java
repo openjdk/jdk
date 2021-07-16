@@ -335,6 +335,7 @@ public class Cursor implements java.io.Serializable {
             }
             final Toolkit toolkit = Toolkit.getDefaultToolkit();
             final String file = RESOURCE_PREFIX + fileName;
+            @SuppressWarnings("removal")
             final InputStream in = AccessController.doPrivileged(
                     (PrivilegedAction<InputStream>) () -> {
                         return Cursor.class.getResourceAsStream(file);
@@ -430,6 +431,7 @@ public class Cursor implements java.io.Serializable {
     /*
      * load the cursor.properties file
      */
+    @SuppressWarnings("removal")
     private static void loadSystemCustomCursorProperties() throws AWTException {
         synchronized(systemCustomCursors) {
             systemCustomCursorProperties = new Properties();

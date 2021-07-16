@@ -41,7 +41,7 @@
  */
 
 /*
- * @test id=debug
+ * @test id=debug-default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -51,15 +51,68 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10                                        TestMetaspaceAllocationMT2
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10  -XX:MetaspaceReclaimPolicy=none       TestMetaspaceAllocationMT2
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10  -XX:MetaspaceReclaimPolicy=aggressive TestMetaspaceAllocationMT2
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10  -XX:+MetaspaceGuardAllocations        TestMetaspaceAllocationMT2
- *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:VerifyMetaspaceInterval=10
+ *      TestMetaspaceAllocationMT2
  */
 
 /*
- * @test id=ndebug
+ * @test id=debug-none
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @key randomness
+ * @requires (vm.debug == true)
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:VerifyMetaspaceInterval=10
+ *      -XX:MetaspaceReclaimPolicy=none
+ *      TestMetaspaceAllocationMT2
+ */
+
+/*
+ * @test id=debug-aggressive
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @key randomness
+ * @requires (vm.debug == true)
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:VerifyMetaspaceInterval=10
+ *      -XX:MetaspaceReclaimPolicy=aggressive
+ *      TestMetaspaceAllocationMT2
+ */
+
+/*
+ * @test id=debug-guard
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @key randomness
+ * @requires (vm.debug == true)
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:VerifyMetaspaceInterval=10
+ *      -XX:+MetaspaceGuardAllocations
+ *      TestMetaspaceAllocationMT2
+ */
+
+/*
+ * @test id=ndebug-default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -69,9 +122,43 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI                                        TestMetaspaceAllocationMT2
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:MetaspaceReclaimPolicy=none       TestMetaspaceAllocationMT2
- * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:MetaspaceReclaimPolicy=aggressive TestMetaspaceAllocationMT2
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      TestMetaspaceAllocationMT2
+ */
+
+/*
+ * @test id=ndebug-none
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @key randomness
+ * @requires (vm.debug == false)
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:MetaspaceReclaimPolicy=none
+ *      TestMetaspaceAllocationMT2
+ */
+
+/*
+ * @test id=ndebug-aggressive
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build sun.hotspot.WhiteBox
+ * @key randomness
+ * @requires (vm.debug == false)
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm/timeout=400
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:MetaspaceReclaimPolicy=aggressive
+ *      TestMetaspaceAllocationMT2
  */
 
 public class TestMetaspaceAllocationMT2 {

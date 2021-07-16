@@ -44,7 +44,7 @@ import org.w3c.dom.ls.LSSerializer;
  * @test
  * @bug 6354955
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.Bug6354955
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.Bug6354955
  * @run testng/othervm dom.ls.Bug6354955
  * @summary Test LSSerializer can writeToString on DOM Text node with white space.
  */

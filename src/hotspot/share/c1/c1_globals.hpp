@@ -153,9 +153,6 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
-          "Intrinsify java.nio.Buffer.checkIndex")                          \
-                                                                            \
   develop(bool, CanonicalizeNodes, true,                                    \
           "Canonicalize graph nodes")                                       \
                                                                             \
@@ -199,9 +196,6 @@
                                                                             \
   develop(bool, CommentedAssembly, trueInDebug,                             \
           "Show extra info in PrintNMethods output")                        \
-                                                                            \
-  develop(bool, LIRTracePeephole, false,                                    \
-          "Trace peephole optimizer")                                       \
                                                                             \
   develop(bool, LIRTraceExecution, false,                                   \
           "add LIR code which logs the execution of blocks")                \
@@ -296,12 +290,6 @@
                                                                             \
   develop(bool, TraceFPURegisterUsage, false,                               \
           "Trace usage of FPU registers at start of blocks (intel only)")   \
-                                                                            \
-  develop(bool, OptimizeUnsafes, true,                                      \
-          "Optimize raw unsafe ops")                                        \
-                                                                            \
-  develop(bool, PrintUnsafeOptimization, false,                             \
-          "Print optimization of raw unsafe ops")                           \
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \

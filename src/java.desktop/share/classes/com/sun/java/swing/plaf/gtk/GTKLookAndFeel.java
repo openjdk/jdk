@@ -1421,6 +1421,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         }
 
         if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK2) {
+            @SuppressWarnings("removal")
             String version = AccessController.doPrivileged(
                     new GetPropertyAction("jdk.gtk.version"));
             if (version != null) {

@@ -288,8 +288,7 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
   report_vm_error(file, line, error_msg, "error %s(%d), %s", os::errno_name(status), status, detail);
 }
 
-void report_fatal(const char* file, int line, const char* detail_fmt, ...)
-{
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
@@ -302,7 +301,9 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
 
   print_error_for_unit_test("fatal error", detail_fmt, detail_args);
 
-  VMError::report_and_die(Thread::current_or_null(), context, file, line, "fatal error", detail_fmt, detail_args);
+  VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
+                          Thread::current_or_null(), NULL, NULL, context,
+                          file, line, 0);
   va_end(detail_args);
 }
 
@@ -360,7 +361,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (CrashOnOutOfMemoryError) {
       tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
-      fatal("OutOfMemory encountered: %s", message);
+      report_fatal(OOM_JAVA_HEAP_FATAL, __FILE__, __LINE__, "OutOfMemory encountered: %s", message);
     }
 
     if (ExitOnOutOfMemoryError) {

@@ -37,13 +37,16 @@ static const u2 JFR_VERSION_MINOR = 1;
 // strictly monotone
 static jlong nanos_now() {
   static jlong last = 0;
-  // We use javaTimeMillis so this can be correlated with
-  // external timestamps.
-  const jlong now = os::javaTimeMillis() * JfrTimeConverter::NANOS_PER_MILLISEC;
+
+  jlong seconds;
+  jlong nanos;
+  // Use same clock source as Instant.now() to ensure
+  // that Recording::getStopTime() returns an Instant that
+  // is in sync.
+  os::javaTimeSystemUTC(seconds, nanos);
+  const jlong now = seconds * 1000000000 + nanos;
   if (now > last) {
     last = now;
-  } else {
-    ++last;
   }
   return last;
 }
@@ -124,7 +127,6 @@ int64_t JfrChunk::start_ticks() const {
 }
 
 int64_t JfrChunk::start_nanos() const {
-  assert(_start_nanos != 0, "invariant");
   return _start_nanos;
 }
 
@@ -144,14 +146,14 @@ void JfrChunk::update_start_ticks() {
 
 void JfrChunk::update_start_nanos() {
   const jlong now = nanos_now();
-  assert(now > _start_nanos, "invariant");
-  assert(now > _last_update_nanos, "invariant");
+  assert(now >= _start_nanos, "invariant");
+  assert(now >= _last_update_nanos, "invariant");
   _start_nanos = _last_update_nanos = now;
 }
 
 void JfrChunk::update_current_nanos() {
   const jlong now = nanos_now();
-  assert(now > _last_update_nanos, "invariant");
+  assert(now >= _last_update_nanos, "invariant");
   _last_update_nanos = now;
 }
 

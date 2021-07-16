@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ static void is_empty(FilterQueue<uintptr_t>& queue) {
   EXPECT_EQ(queue.is_empty(), true) << "Must be empty.";
   EXPECT_EQ(queue.contains(match_1), false) << "Must be empty.";
   EXPECT_EQ(queue.contains(match_all), false) << "Must be empty.";
+  EXPECT_EQ(queue.peek(match_1), (uintptr_t)0) << "Must be empty.";
+  EXPECT_EQ(queue.peek(match_all), (uintptr_t)0) << "Must be empty.";
   EXPECT_EQ(queue.pop(match_all), (uintptr_t)0) << "Must be empty.";
 }
 
@@ -68,6 +70,9 @@ TEST_VM(FilterQueue, one) {
   EXPECT_EQ(queue.contains(match_1), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), false) << "Must not contain a value.";
+  EXPECT_EQ(queue.peek(match_1), (uintptr_t)1) << "Must match 1.";
+  EXPECT_NE(queue.peek(match_all), (uintptr_t)0) << "Must contain a value.";
+  EXPECT_EQ(queue.peek(match_even), (uintptr_t)0) << "Must not contain a value.";
   EXPECT_EQ(queue.pop(match_all), (uintptr_t)1) << "Must not be empty.";
   is_empty(queue);
 }
@@ -84,6 +89,11 @@ TEST_VM(FilterQueue, two) {
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), true) << "Must contain a value.";
 
+  EXPECT_EQ(queue.peek(match_1), (uintptr_t)1) << "Must contain a value.";
+  EXPECT_EQ(queue.peek(match_2), (uintptr_t)2) << "Must contain a value.";
+  EXPECT_NE(queue.peek(match_all), (uintptr_t)0) << "Must contain a value.";
+  EXPECT_NE(queue.peek(match_even), (uintptr_t)0) << "Must contain a value.";
+
   EXPECT_EQ(queue.pop(match_all), (uintptr_t)1) << "Must not be empty.";
 
   EXPECT_EQ(queue.is_empty(), false) << "Must be not empty.";
@@ -92,8 +102,14 @@ TEST_VM(FilterQueue, two) {
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), true) << "Must contain a value.";
 
+  EXPECT_EQ(queue.peek(match_1), (uintptr_t)0) << "Must not contain a value.";
+  EXPECT_EQ(queue.peek(match_2), (uintptr_t)2) << "Must contain a value.";
+  EXPECT_NE(queue.peek(match_all), (uintptr_t)0) << "Must contain a value.";
+  EXPECT_NE(queue.peek(match_even), (uintptr_t)0) << "Must contain a value.";
+
   queue.push(3);
 
+  EXPECT_EQ(queue.peek(match_even), (uintptr_t)2) << "Must not be empty.";
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)2) << "Must not be empty.";
 
   queue.push(2);
@@ -105,6 +121,11 @@ TEST_VM(FilterQueue, two) {
   EXPECT_EQ(queue.contains(match_2), false) << "Must not contain a value.";
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), false) << "Must not contain a value.";
+
+  EXPECT_EQ(queue.peek(match_3), (uintptr_t)3) << "Must contain a value.";
+  EXPECT_EQ(queue.peek(match_2), (uintptr_t)0) << "Must be empty.";
+  EXPECT_EQ(queue.peek(match_all), (uintptr_t)3) << "Must contain a value.";
+  EXPECT_EQ(queue.peek(match_even), (uintptr_t)0) << "Must be empty.";
 
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)0) << "Must be empty.";
   EXPECT_EQ(queue.pop(match_all), (uintptr_t)3) << "Must not be empty.";
@@ -127,6 +148,9 @@ TEST_VM(FilterQueue, three) {
 
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), true) << "Must contain a value.";
+
+  EXPECT_EQ(queue.peek(match_even), (uintptr_t)2) << "Must not be empty.";
+  EXPECT_EQ(queue.peek(match_all), (uintptr_t)1) << "Must not be empty.";
 
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)2) << "Must not be empty.";
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)0) << "Must be empty.";
@@ -160,6 +184,7 @@ public:
       }
       for (int j = 0; j < 10; j++) {
         MutexLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+        while (_fq->peek(*this) == 0) {}
         while (_fq->pop(*this) == 0) {}
       }
     }

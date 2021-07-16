@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.net.http.HttpClient.newHttpClient;
 import static org.testng.Assert.assertFalse;
 
 public class BlowupOutputQueue extends PendingOperations {
@@ -103,7 +102,7 @@ public class BlowupOutputQueue extends PendingOperations {
                     return null;
                 }
             };
-            webSocket = newHttpClient().newWebSocketBuilder()
+            webSocket = httpClient().newWebSocketBuilder()
                     .buildAsync(server.getURI(), listener)
                     .join();
             CharBuffer data = CharBuffer.allocate(65536);

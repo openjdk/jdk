@@ -25,6 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
@@ -48,6 +55,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
@@ -166,18 +174,25 @@ public class HtmlDoclet extends AbstractDoclet {
 
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
-
+        List<String> since = configuration.getOptions().since();
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
-            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
-            if (!builder.isEmpty()) {
-                configuration.deprecatedAPIListBuilder = builder;
+            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, since);
+            if (!deprecatedBuilder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = deprecatedBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
-        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
-        if (!builder.isEmpty()) {
-            configuration.previewAPIListBuilder = builder;
+        if (!since.isEmpty()) {
+            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, since);
+            if (!newAPIBuilder.isEmpty()) {
+                configuration.newAPIPageBuilder = newAPIBuilder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.NEW);
+            }
+        }
+        PreviewAPIListBuilder previewBuilder = new PreviewAPIListBuilder(configuration);
+        if (!previewBuilder.isEmpty()) {
+            configuration.previewAPIListBuilder = previewBuilder;
             configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
 
@@ -230,6 +245,10 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
             PreviewListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
+            NewAPIListWriter.generate(configuration);
         }
 
         if (options.createOverview()) {
@@ -285,6 +304,8 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.JQUERY_OVERRIDES_CSS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.JQUERY_OVERRIDES_CSS), true, true);
         }
+
+        copyLegalFiles(options.createIndex());
     }
 
     private void copyJqueryFiles() throws DocletException {
@@ -309,6 +330,49 @@ public class HtmlDoclet extends AbstractDoclet {
             DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
             f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
+        }
+    }
+
+    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+        Path legalNoticesDir;
+        String legalNotices = configuration.getOptions().legalNotices();
+        switch (legalNotices) {
+            case "", "default" -> {
+                Path javaHome = Path.of(System.getProperty("java.home"));
+                legalNoticesDir = javaHome.resolve("legal").resolve(getClass().getModule().getName());
+            }
+
+            case "none" -> {
+                return;
+            }
+
+            default -> {
+                try {
+                    legalNoticesDir = Path.of(legalNotices);
+                } catch (InvalidPathException e) {
+                    messages.error("doclet.Error_invalid_path_for_legal_notices",
+                            legalNotices, e.getMessage());
+                    return;
+                }
+            }
+        }
+
+        if (Files.exists(legalNoticesDir)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(legalNoticesDir)) {
+                for (Path entry: ds) {
+                    if (!Files.isRegularFile(entry)) {
+                        continue;
+                    }
+                    if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                        continue;
+                    }
+                    DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
+                    DocFile df = DocFile.createFileForOutput(configuration, filePath);
+                    df.copyFile(DocFile.createFileForInput(configuration, entry));
+                }
+            } catch (IOException e) {
+                messages.error("doclet.Error_copying_legal_notices", e);
+            }
         }
     }
 

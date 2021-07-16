@@ -510,7 +510,7 @@ class ParallelSPCleanupThreadClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
     }
   }
 };
@@ -901,7 +901,7 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 // Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
   JavaThread* self = thread();
-  assert(self == Thread::current()->as_Java_thread(), "must be self");
+  assert(self == JavaThread::current(), "must be self");
 
   // Step 1: Find the nmethod from the return address
   address real_return_addr = self->saved_exception_pc();
@@ -928,6 +928,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   if( nm->is_at_poll_return(real_return_addr) ) {
     // See if return type is an oop.
     bool return_oop = nm->method()->is_returning_oop();
+    HandleMark hm(self);
     Handle return_value;
     if (return_oop) {
       // The oop result has been saved on the stack together with all
@@ -971,7 +972,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (self->has_async_condition()) {
+    if (self->has_async_exception_condition()) {
       ThreadInVMfromJava __tiv(self, false /* check asyncs */);
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }

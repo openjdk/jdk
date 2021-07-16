@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
@@ -39,7 +40,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zVerify.hpp"
-#include "gc/z/zWorkers.inline.hpp"
+#include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -148,16 +149,12 @@ bool ZHeap::is_in(uintptr_t addr) const {
   return false;
 }
 
-uint ZHeap::nconcurrent_worker_threads() const {
-  return _workers.nconcurrent();
+uint ZHeap::active_workers() const {
+  return _workers.active_workers();
 }
 
-uint ZHeap::nconcurrent_no_boost_worker_threads() const {
-  return _workers.nconcurrent_no_boost();
-}
-
-void ZHeap::set_boost_worker_threads(bool boost) {
-  _workers.set_boost(boost);
+void ZHeap::set_active_workers(uint nworkers) {
+  _workers.set_active_workers(nworkers);
 }
 
 void ZHeap::threads_do(ThreadClosure* tc) const {
@@ -282,6 +279,10 @@ bool ZHeap::mark_end() {
   JvmtiTagMap::set_needs_cleaning();
 
   return true;
+}
+
+void ZHeap::mark_free() {
+  _mark.free();
 }
 
 void ZHeap::keep_alive(oop obj) {

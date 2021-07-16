@@ -326,6 +326,7 @@ public class Enter extends JCTree.Visitor {
             JCPackageDecl pd = tree.getPackage();
             if (pd != null) {
                 tree.packge = pd.packge = syms.enterPackage(tree.modle, TreeInfo.fullName(pd.pid));
+                setPackageSymbols.scan(pd);
                 if (   pd.annotations.nonEmpty()
                     || pkginfoOpt == PkgInfo.ALWAYS
                     || tree.docComments != null) {
@@ -389,6 +390,31 @@ public class Enter extends JCTree.Visitor {
         log.useSource(prev);
         result = null;
     }
+        //where:
+        //set package Symbols to the package expression:
+        private final TreeScanner setPackageSymbols = new TreeScanner() {
+            Symbol currentPackage;
+
+            @Override
+            public void visitIdent(JCIdent tree) {
+                tree.sym = currentPackage;
+                tree.type = currentPackage.type;
+            }
+
+            @Override
+            public void visitSelect(JCFieldAccess tree) {
+                tree.sym = currentPackage;
+                tree.type = currentPackage.type;
+                currentPackage = currentPackage.owner;
+                super.visitSelect(tree);
+            }
+
+            @Override
+            public void visitPackageDef(JCPackageDecl tree) {
+                currentPackage = tree.packge;
+                scan(tree.pid);
+            }
+        };
 
     @Override
     public void visitClassDef(JCClassDecl tree) {

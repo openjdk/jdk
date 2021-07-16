@@ -160,7 +160,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_region("ro", MAX_SHARED_DELTA),
   _rw_src_objs(),
   _ro_src_objs(),
-  _src_obj_table(INITIAL_TABLE_SIZE),
+  _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _num_instance_klasses(0),
   _num_obj_array_klasses(0),
   _num_type_array_klasses(0),
@@ -190,6 +190,9 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   delete _special_refs;
+  if (_shared_rs.is_reserved()) {
+    _shared_rs.release();
+  }
 }
 
 bool ArchiveBuilder::is_dumping_full_module_graph() {
@@ -228,7 +231,7 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
         _num_type_array_klasses ++;
       }
     }
-    // See RunTimeSharedClassInfo::get_for()
+    // See RunTimeClassInfo::get_for()
     _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
@@ -259,6 +262,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
   log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
+  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -318,7 +322,7 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
+  // size of the symbol table and two dictionaries, plus the RunTimeClassInfo's
   size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
@@ -462,9 +466,9 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
-  SourceObjInfo* p = _src_obj_table.add_if_absent(src_obj, src_info, &created);
+  SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
-    if (_src_obj_table.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_src_obj_table.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
@@ -631,8 +635,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   oldtop = dump_region->top();
   if (ref->msotype() == MetaspaceObj::ClassType) {
     // Save a pointer immediate in front of an InstanceKlass, so
-    // we can do a quick lookup from InstanceKlass* -> RunTimeSharedClassInfo*
-    // without building another hashtable. See RunTimeSharedClassInfo::get_for()
+    // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
+    // without building another hashtable. See RunTimeClassInfo::get_for()
     // in systemDictionaryShared.cpp.
     Klass* klass = (Klass*)src;
     if (klass->is_instance_klass()) {
@@ -658,7 +662,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 }
 
 address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.lookup(src_obj);
+  SourceObjInfo* p = _src_obj_table.get(src_obj);
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
@@ -899,13 +903,13 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
-  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
-    ResourceMark rm(THREAD);
+  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+    ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
-  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
-    ResourceMark rm(THREAD);
+  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+    ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
@@ -915,7 +919,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     address last_obj_base = address(region->base());
     address last_obj_end  = address(region->base());
     address region_end    = address(region->end());
-    Thread* THREAD = Thread::current();
+    Thread* current = Thread::current();
     for (int i = 0; i < src_objs->objs()->length(); i++) {
       SourceObjInfo* src_info = src_objs->at(i);
       address src = src_info->orig_obj();
@@ -929,25 +933,25 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       switch (type) {
       case MetaspaceObj::ClassType:
-        write_klass((Klass*)src, runtime_dest, type_name, bytes, THREAD);
+        write_klass((Klass*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolType:
         write_klass(((ConstantPool*)src)->pool_holder(),
-                    runtime_dest, type_name, bytes, THREAD);
+                    runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolCacheType:
         write_klass(((ConstantPoolCache*)src)->constant_pool()->pool_holder(),
-                    runtime_dest, type_name, bytes, THREAD);
+                    runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::MethodType:
-        write_method((Method*)src, runtime_dest, type_name, bytes, THREAD);
+        write_method((Method*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstMethodType:
-        write_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, THREAD);
+        write_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::SymbolType:
         {
-          ResourceMark rm(THREAD);
+          ResourceMark rm(current);
           Symbol* s = (Symbol*)src;
           log_debug(cds, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
                               s->as_quoted_ascii());

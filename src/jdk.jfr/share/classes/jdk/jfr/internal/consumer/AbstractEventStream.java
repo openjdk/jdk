@@ -56,6 +56,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     private final Object terminated = new Object();
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
+    @SuppressWarnings("removal")
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
     protected final PlatformRecording recording;
@@ -68,7 +69,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     private boolean daemon = false;
 
-    AbstractEventStream(AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
+    AbstractEventStream(@SuppressWarnings("removal") AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
         this.recording = recording;
         this.configurations = configurations;
@@ -280,6 +281,7 @@ public abstract class AbstractEventStream implements EventStream {
         }
     }
 
+    @SuppressWarnings("removal")
     private void run(AccessControlContext accessControlContext) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override

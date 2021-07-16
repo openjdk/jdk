@@ -1,4 +1,4 @@
-Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ The library uses JTHarness Observer and jtreg TimeoutHandler extensions points.
 
 DEPENDENCES
 
-The library requires jtreg 4b13+ and JDK 7+.
+The library requires jtreg 4b13+ and JDK 15+.
 
 BUILDING
 
@@ -102,4 +102,3 @@ $ ${JTREG_HOME}/bin/jtreg -jdk:${JAVA_HOME}                                   \
  -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler\
  -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver         \
  ${WS}/hotspot/test/
-

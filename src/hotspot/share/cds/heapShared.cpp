@@ -137,8 +137,6 @@ void HeapShared::fixup_mapped_heap_regions() {
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {
-  assert(!p->mark().has_bias_pattern(),
-         "this object should never have been locked");  // so identity_hash won't safepoin
   unsigned hash = (unsigned)p->identity_hash();
   return hash;
 }
@@ -416,11 +414,7 @@ void HeapShared::copy_roots() {
   memset(mem, 0, size * BytesPerWord);
   {
     // This is copied from MemAllocator::finish
-    if (UseBiasedLocking) {
-      oopDesc::set_mark(mem, k->prototype_header());
-    } else {
-      oopDesc::set_mark(mem, markWord::prototype());
-    }
+    oopDesc::set_mark(mem, markWord::prototype());
     oopDesc::release_set_klass(mem, k);
   }
   {
@@ -685,7 +679,7 @@ static void verify_the_heap(Klass* k, const char* which) {
 // Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
 // ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
-void HeapShared::resolve_classes(Thread* THREAD) {
+void HeapShared::resolve_classes(JavaThread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
@@ -701,7 +695,7 @@ void HeapShared::resolve_classes(Thread* THREAD) {
 }
 
 void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                               int num, Thread* THREAD) {
+                                               int num, JavaThread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
@@ -711,7 +705,7 @@ void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
+void HeapShared::resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD) {
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
@@ -723,7 +717,7 @@ void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
   }
 }
 
-void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
+void HeapShared::initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }

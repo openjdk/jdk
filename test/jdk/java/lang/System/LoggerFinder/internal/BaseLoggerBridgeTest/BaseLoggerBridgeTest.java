@@ -57,8 +57,8 @@ import java.util.stream.Stream;
  * @modules java.base/sun.util.logging java.base/jdk.internal.logger
  * @build CustomSystemClassLoader BaseLoggerFinder BaseLoggerBridgeTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest NOSECURITY
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest NOPERMISSIONS
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseLoggerBridgeTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class BaseLoggerBridgeTest {

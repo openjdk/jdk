@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZTHREAD_INLINE_HPP
 
 #include "gc/z/zThread.hpp"
+
 #include "utilities/debug.hpp"
 
 inline void ZThread::ensure_initialized() {

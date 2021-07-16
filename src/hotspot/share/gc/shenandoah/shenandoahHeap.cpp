@@ -388,7 +388,6 @@ jint ShenandoahHeap::initialize() {
 
   _monitoring_support = new ShenandoahMonitoringSupport(this);
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
-  ShenandoahStringDedup::initialize();
   ShenandoahCodeRoots::initialize();
 
   if (ShenandoahPacing) {
@@ -1751,7 +1750,7 @@ bool ShenandoahHeap::try_cancel_gc() {
     if (thread->is_Java_thread()) {
       // We need to provide a safepoint here, otherwise we might
       // spin forever if a SP is pending.
-      ThreadBlockInVM sp(thread->as_Java_thread());
+      ThreadBlockInVM sp(JavaThread::cast(thread));
       SpinPause();
     }
   }
@@ -1785,11 +1784,6 @@ void ShenandoahHeap::stop() {
 
   // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
-
-  // Step 4. Stop String Dedup thread if it is active
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::stop();
-  }
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
@@ -1932,7 +1926,10 @@ oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  heap_region_containing(o)->record_unpin();
+  ShenandoahHeapRegion* r = heap_region_containing(o);
+  assert(r != NULL, "Sanity");
+  assert(r->pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", r->index());
+  r->record_unpin();
 }
 
 void ShenandoahHeap::sync_pinned_region_status() {
@@ -2286,14 +2283,6 @@ bool ShenandoahRegionIterator::has_next() const {
 
 char ShenandoahHeap::gc_state() const {
   return _gc_state.raw_value();
-}
-
-void ShenandoahHeap::deduplicate_string(oop str) {
-  assert(java_lang_String::is_instance(str), "invariant");
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::deduplicate(str);
-  }
 }
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {

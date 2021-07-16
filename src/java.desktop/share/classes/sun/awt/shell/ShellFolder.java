@@ -207,6 +207,16 @@ public abstract class ShellFolder extends File {
         return null;
     }
 
+    /**
+     * Returns the icon of the specified size used to display this shell folder.
+     *
+     * @param width width of the icon > 0
+     * @param height height of the icon > 0
+     * @return The icon of the specified size used to display this shell folder
+     */
+    public Image getIcon(int width, int height) {
+        return null;
+    }
 
     // Static
 

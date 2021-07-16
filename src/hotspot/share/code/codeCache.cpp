@@ -1077,12 +1077,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
 }
 
-// Just marks the methods in this class as needing deoptimization
-void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-}
-
-
 // Walk compiled methods and mark dependent methods for deoptimization.
 int CodeCache::mark_dependents_for_evol_deoptimization() {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
@@ -1184,10 +1178,18 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
-  KlassDepChange changes(dependee);
+  int marked = 0;
+  if (dependee->is_linked()) {
+    // Class initialization state change.
+    KlassInitDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  } else {
+    // New class is loaded.
+    NewKlassDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  }
 
-  // Compute the dependent nmethods
-  if (mark_for_deoptimization(changes) > 0) {
+  if (marked > 0) {
     // At least one nmethod has been marked for deoptimization
     Deoptimization::deoptimize_all_marked();
   }

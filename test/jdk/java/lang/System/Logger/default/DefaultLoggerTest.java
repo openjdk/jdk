@@ -60,10 +60,10 @@ import java.util.stream.Stream;
  * @build DefaultLoggerTest AccessSystemLogger
  * @run driver AccessSystemLogger
  * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest NOSECURITY
- * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest NOPERMISSIONS
- * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHPERMISSIONS
- * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHCUSTOMWRAPPERS
- * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHREFLECTION
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow DefaultLoggerTest NOPERMISSIONS
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow DefaultLoggerTest WITHPERMISSIONS
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow DefaultLoggerTest WITHCUSTOMWRAPPERS
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow DefaultLoggerTest WITHREFLECTION
  * @author danielfuchs
  */
 public class DefaultLoggerTest {

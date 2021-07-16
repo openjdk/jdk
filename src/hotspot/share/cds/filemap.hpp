@@ -203,6 +203,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
+  bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -272,6 +273,7 @@ public:
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
+  bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
@@ -344,6 +346,7 @@ private:
   // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
+  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -366,6 +369,7 @@ public:
     return _shared_path_table;
   }
   static SharedPathTable saved_shared_path_table() {
+    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
     return _saved_shared_path_table;
   }
 
@@ -495,6 +499,7 @@ public:
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
+  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();

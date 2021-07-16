@@ -132,13 +132,13 @@ public class SegmentTestDataProvider {
     }
 
     static Object[][] spliteratorTestData = {
-            { "bytes", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_BYTE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsByte },
-            { "chars", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_CHAR), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsChar },
-            { "shorts", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_SHORT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsShort },
-            { "ints", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsInt },
-            { "longs", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_LONG), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsLong },
-            { "floats", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_FLOAT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsFloat },
-            { "doubles", MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_DOUBLE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsDouble },
+            { "bytes", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_BYTE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsByte },
+            { "chars", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_CHAR), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsChar },
+            { "shorts", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_SHORT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsShort },
+            { "ints", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsInt },
+            { "longs", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_LONG), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsLong },
+            { "floats", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_FLOAT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsFloat },
+            { "doubles", MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_DOUBLE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsDouble },
     };
 
     // returns an array of (String name, Supplier<Spliterator<MemorySegment>>, ContentAsserter<MemorySegment>)

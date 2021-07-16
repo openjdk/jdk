@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
  * @test
  * @summary Test that stack tracing isn't broken if an exception is thrown
  *          in a hidden class.
+ * DESCRIPTION
+ *     An exception is thrown by a hidden class.  Verify that the exception's
+ *     stack trace contains the name of the current test class (i.e., verify
+ *     that the stack trace is not broken).
  * @library /test/lib
  * @modules jdk.compiler
  * @run main HiddenClassStack
@@ -38,7 +42,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
-// This test is based on vmTestbase/vm/mlvm/anonloader/func/classNameInStackTrace/Test.java
 public class HiddenClassStack {
 
     static byte klassbuf[] = InMemoryJavaCompiler.compile("TestClass",

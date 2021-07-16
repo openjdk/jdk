@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ import jdk.dynalink.internal.AccessControlContextFactory;
  * A utility class to check whether a given class is in a package with restricted access e.g. "sun.*" etc.
  */
 class CheckRestrictedPackage {
+    @SuppressWarnings("removal")
     private static final AccessControlContext NO_PERMISSIONS_CONTEXT =
             AccessControlContextFactory.createAccessControlContext();
 
@@ -78,6 +79,7 @@ class CheckRestrictedPackage {
      * @param clazz the class to test
      * @return true if the class is either not public, or it resides in a package with restricted access.
      */
+    @SuppressWarnings("removal")
     static boolean isRestrictedClass(final Class<?> clazz) {
         if(!Modifier.isPublic(clazz.getModifiers())) {
             // Non-public classes are always restricted

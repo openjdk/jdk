@@ -93,13 +93,13 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_MODULES_TABLE)
-                    .setDefaultTab(resources.getText("doclet.All_Modules"));
+                    .setDefaultTab(contents.getContent("doclet.All_Modules"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
                 Set<ModuleElement> groupModules = groupModuleMap.get(groupName);
                 if (groupModules != null) {
-                    table.addTab(groupName, groupModules::contains);
+                    table.addTab(Text.of(groupName), groupModules::contains);
                 }
             }
 

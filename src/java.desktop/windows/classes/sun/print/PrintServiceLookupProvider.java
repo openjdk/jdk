@@ -41,6 +41,7 @@ import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
 
+@SuppressWarnings("removal")
 public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private PrintService defaultPrintService;

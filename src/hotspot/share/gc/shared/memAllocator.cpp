@@ -44,7 +44,7 @@ class MemAllocator::Allocation: StackObj {
   friend class MemAllocator;
 
   const MemAllocator& _allocator;
-  Thread*             _thread;
+  JavaThread*         _thread;
   oop*                _obj_ptr;
   bool                _overhead_limit_exceeded;
   bool                _allocated_outside_tlab;
@@ -69,7 +69,7 @@ class MemAllocator::Allocation: StackObj {
 public:
   Allocation(const MemAllocator& allocator, oop* obj_ptr)
     : _allocator(allocator),
-      _thread(Thread::current()),
+      _thread(JavaThread::current()),
       _obj_ptr(obj_ptr),
       _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),
@@ -95,7 +95,7 @@ class MemAllocator::Allocation::PreserveObj: StackObj {
   oop* const _obj_ptr;
 
 public:
-  PreserveObj(Thread* thread, oop* obj_ptr)
+  PreserveObj(JavaThread* thread, oop* obj_ptr)
     : _handle_mark(thread),
       _handle(thread, *obj_ptr),
       _obj_ptr(obj_ptr)
@@ -113,7 +113,7 @@ public:
 };
 
 bool MemAllocator::Allocation::check_out_of_memory() {
-  Thread* THREAD = _thread;
+  JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Unexpected exception, will result in uninitialized storage");
 
   if (obj() != NULL) {
@@ -121,7 +121,7 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   }
 
   const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
-  if (!THREAD->in_retryable_allocation()) {
+  if (!_thread->in_retryable_allocation()) {
     // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
     report_java_out_of_memory(message);
 
@@ -142,7 +142,7 @@ bool MemAllocator::Allocation::check_out_of_memory() {
 void MemAllocator::Allocation::verify_before() {
   // Clear unhandled oops for memory allocation.  Memory allocation might
   // not take out a lock if from tlab, so clear here.
-  Thread* THREAD = _thread;
+  JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
@@ -172,8 +172,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
-  assert(_thread->is_Java_thread(), "non Java threads shouldn't allocate on the Heap");
-  _thread->as_Java_thread()->check_for_valid_safepoint_state();
+  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
 }
 #endif
 
@@ -383,12 +382,8 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
 
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != NULL, "NULL object pointer");
-  if (UseBiasedLocking) {
-    oopDesc::set_mark(mem, _klass->prototype_header());
-  } else {
-    // May be bootstrapping
-    oopDesc::set_mark(mem, markWord::prototype());
-  }
+  // May be bootstrapping
+  oopDesc::set_mark(mem, markWord::prototype());
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-NULL, for
   // concurrent collectors.

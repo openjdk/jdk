@@ -76,38 +76,20 @@ static bool is_allowed(const Klass* k) {
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
-static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Klass* event_klass, Thread* thread) {
+static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
   assert(event_subklasses.length() == 0, "invariant");
   assert(event_klass != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
-  Stack<const Klass*, mtTracing> mark_stack;
-  mark_stack.push(event_klass->subklass());
-
-  while (!mark_stack.is_empty()) {
-    const Klass* const current = mark_stack.pop();
-    assert(current != NULL, "null element in stack!");
-
-    if (is_allowed(current)) {
-      event_subklasses.append(current);
-    }
-
-    // subclass (depth)
-    const Klass* next_klass = current->subklass();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
-    }
-
-    // siblings (breadth)
-    next_klass = current->next_sibling();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
+  for (ClassHierarchyIterator iter(const_cast<InstanceKlass*>(event_klass)); !iter.done(); iter.next()) {
+    Klass* subk = iter.klass();
+    if (is_allowed(subk)) {
+      event_subklasses.append(subk);
     }
   }
-  assert(mark_stack.is_empty(), "invariant");
 }
 
-static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, Thread* thread) {
+static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, JavaThread* thread) {
   assert(event_subklasses.is_nonempty(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
@@ -132,6 +114,7 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
 
   const Klass* const klass = SystemDictionary::resolve_or_null(event_klass_name, THREAD);
   assert(klass != NULL, "invariant");
+  assert(klass->is_instance_klass(), "invariant");
   assert(JdkJfrEvent::is(klass), "invariant");
 
   if (klass->subklass() == NULL) {
@@ -140,7 +123,7 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
 
   ResourceMark rm(THREAD);
   GrowableArray<const void*> event_subklasses(initial_array_size);
-  fill_klasses(event_subklasses, klass, THREAD);
+  fill_klasses(event_subklasses, InstanceKlass::cast(klass), THREAD);
 
   if (event_subklasses.is_empty()) {
     return empty_java_util_arraylist;

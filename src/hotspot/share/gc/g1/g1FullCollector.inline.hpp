@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
 
 #include "gc/g1/g1FullCollector.hpp"
+
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "oops/oopsHierarchy.hpp"
 

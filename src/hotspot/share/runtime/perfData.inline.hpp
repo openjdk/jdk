@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_INLINE_HPP
 
 #include "runtime/perfData.hpp"
+
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 

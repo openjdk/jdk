@@ -124,6 +124,7 @@
   template(java_io_FileInputStream,                   "java/io/FileInputStream")                  \
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
+  template(java_nio_Buffer,                           "java/nio/Buffer")                          \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
   template(java_util_Objects,                         "java/util/Objects")                        \
   template(java_util_Properties,                      "java/util/Properties")                     \
@@ -297,12 +298,6 @@
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
-  /* used by CDS */                                                                               \
-  template(jdk_internal_misc_CDS,                     "jdk/internal/misc/CDS")                    \
-  template(generateLambdaFormHolderClasses,           "generateLambdaFormHolderClasses")          \
-  template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
-  template(dumpSharedArchive,                         "dumpSharedArchive")                        \
-  template(dumpSharedArchive_signature,               "(ZLjava/lang/String;)V")                   \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
@@ -352,7 +347,7 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-  /* Panama Support */                                                                                          \
+  /* Foreign API Support */                                                                                          \
   template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
   template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
   template(jdk_incubator_foreign_MemoryAccess,       "jdk/incubator/foreign/MemoryAccess")        \
@@ -488,6 +483,7 @@
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
+  template(checkIndex_name,                           "checkIndex")                               \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -694,13 +690,22 @@
   /* jfr signatures */                                                                                            \
   JFR_TEMPLATES(template)                                                                                         \
                                                                                                                   \
-  /* cds */                                                                                                       \
-  template(jdk_internal_loader_ClassLoaders,       "jdk/internal/loader/ClassLoaders")                            \
-  template(java_util_concurrent_ConcurrentHashMap, "java/util/concurrent/ConcurrentHashMap")                      \
-  template(java_util_ArrayList,                    "java/util/ArrayList")                                         \
-  template(toFileURL_name,                         "toFileURL")                                                   \
-  template(toFileURL_signature,                    "(Ljava/lang/String;)Ljava/net/URL;")                          \
-  template(url_void_signature,                     "(Ljava/net/URL;)V")                                           \
+  /* CDS */                                                                                                       \
+  template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
+  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)V")                             \
+  template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
+  template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
+  template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
+  template(java_lang_invoke_DirectMethodHandle_Holder,      "java/lang/invoke/DirectMethodHandle$Holder")         \
+  template(java_lang_invoke_LambdaForm_Holder,              "java/lang/invoke/LambdaForm$Holder")                 \
+  template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
+  template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
+  template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
+  template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
+  template(java_util_ArrayList,                             "java/util/ArrayList")                                \
+  template(toFileURL_name,                                  "toFileURL")                                          \
+  template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
+  template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
                                                                                                                   \
   /*end*/
 

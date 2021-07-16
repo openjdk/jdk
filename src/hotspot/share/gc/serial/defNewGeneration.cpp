@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
@@ -37,8 +38,8 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -312,29 +313,31 @@ bool DefNewGeneration::expand(size_t bytes) {
   return success;
 }
 
-size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
-                                                    size_t new_size_before,
-                                                    size_t alignment) const {
-  size_t desired_new_size = new_size_before;
-
-  if (NewSizeThreadIncrease > 0) {
-    int threads_count;
+size_t DefNewGeneration::calculate_thread_increase_size(int threads_count) const {
     size_t thread_increase_size = 0;
-
-    // 1. Check an overflow at 'threads_count * NewSizeThreadIncrease'.
-    threads_count = Threads::number_of_non_daemon_threads();
+    // Check an overflow at 'threads_count * NewSizeThreadIncrease'.
     if (threads_count > 0 && NewSizeThreadIncrease <= max_uintx / threads_count) {
       thread_increase_size = threads_count * NewSizeThreadIncrease;
+    }
+    return thread_increase_size;
+}
 
-      // 2. Check an overflow at 'new_size_candidate + thread_increase_size'.
-      if (new_size_candidate <= max_uintx - thread_increase_size) {
-        new_size_candidate += thread_increase_size;
+size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
+                                                    size_t new_size_before,
+                                                    size_t alignment,
+                                                    size_t thread_increase_size) const {
+  size_t desired_new_size = new_size_before;
 
-        // 3. Check an overflow at 'align_up'.
-        size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
-        if (new_size_candidate <= aligned_max) {
-          desired_new_size = align_up(new_size_candidate, alignment);
-        }
+  if (NewSizeThreadIncrease > 0 && thread_increase_size > 0) {
+
+    // 1. Check an overflow at 'new_size_candidate + thread_increase_size'.
+    if (new_size_candidate <= max_uintx - thread_increase_size) {
+      new_size_candidate += thread_increase_size;
+
+      // 2. Check an overflow at 'align_up'.
+      size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
+      if (new_size_candidate <= aligned_max) {
+        desired_new_size = align_up(new_size_candidate, alignment);
       }
     }
   }
@@ -363,13 +366,14 @@ void DefNewGeneration::compute_new_size() {
   // All space sizes must be multiples of Generation::GenGrain.
   size_t alignment = Generation::GenGrain;
 
-  int threads_count = 0;
-  size_t thread_increase_size = 0;
+  int threads_count = Threads::number_of_non_daemon_threads();
+  size_t thread_increase_size = calculate_thread_increase_size(threads_count);
 
   size_t new_size_candidate = old_size / NewRatio;
   // Compute desired new generation size based on NewRatio and NewSizeThreadIncrease
   // and reverts to previous value if any overflow happens
-  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before, alignment);
+  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before,
+                                                       alignment, thread_increase_size);
 
   // Adjust new generation size
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
@@ -494,9 +498,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
   return result;
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
-                                                bool   is_tlab,
-                                                bool   parallel) {
+HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
   // We don't attempt to expand the young generation (but perhaps we should.)
   return allocate(size, is_tlab);
 }
@@ -585,11 +587,9 @@ void DefNewGeneration::collect(bool   full,
 
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
-  rp->setup_policy(clear_all_soft_refs);
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
-  const ReferenceProcessorStats& stats =
-  rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
-                                    NULL, &pt);
+  SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
+  const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();

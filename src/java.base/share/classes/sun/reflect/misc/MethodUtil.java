@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class Trampoline {
         }
     }
 
+    @SuppressWarnings("removal")
     private static void ensureInvocableMethod(Method m)
         throws InvocationTargetException
     {
@@ -101,6 +102,7 @@ public final class MethodUtil extends SecureClassLoader {
      * Class.getMethods() and walking towards Object until
      * we're done.
      */
+     @SuppressWarnings("removal")
      public static Method[] getPublicMethods(Class<?> cls) {
         // compatibility for update release
         if (System.getSecurityManager() == null) {
@@ -278,6 +280,7 @@ public final class MethodUtil extends SecureClassLoader {
         }
     }
 
+    @SuppressWarnings("removal")
     private static Method getTrampoline() {
         try {
             return AccessController.doPrivileged(

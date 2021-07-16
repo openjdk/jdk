@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,61 +184,59 @@ traceid JfrSymbolId::mark(uintptr_t hash, const char* str, bool leakp) {
 }
 
 /*
-* jsr292 anonymous classes symbol is the external name +
-* the identity_hashcode slash appended:
+* hidden classes symbol is the external name +
+* the address of its InstanceKlass slash appended:
 *   java.lang.invoke.LambdaForm$BMH/22626602
 *
 * caller needs ResourceMark
 */
 
-uintptr_t JfrSymbolId::hidden_or_anon_klass_name_hash(const InstanceKlass* ik) {
+uintptr_t JfrSymbolId::hidden_klass_name_hash(const InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
-  assert(ik->is_unsafe_anonymous() || ik->is_hidden(), "invariant");
+  assert(ik->is_hidden(), "invariant");
   const oop mirror = ik->java_mirror_no_keepalive();
   assert(mirror != NULL, "invariant");
   return (uintptr_t)mirror->identity_hash();
 }
 
-static const char* create_hidden_or_anon_klass_symbol(const InstanceKlass* ik, uintptr_t hash) {
+static const char* create_hidden_klass_symbol(const InstanceKlass* ik, uintptr_t hash) {
   assert(ik != NULL, "invariant");
-  assert(ik->is_unsafe_anonymous() || ik->is_hidden(), "invariant");
+  assert(ik->is_hidden(), "invariant");
   assert(hash != 0, "invariant");
-  char* hidden_or_anon_symbol = NULL;
+  char* hidden_symbol = NULL;
   const oop mirror = ik->java_mirror_no_keepalive();
   assert(mirror != NULL, "invariant");
   char hash_buf[40];
   sprintf(hash_buf, "/" UINTX_FORMAT, hash);
   const size_t hash_len = strlen(hash_buf);
   const size_t result_len = ik->name()->utf8_length();
-  hidden_or_anon_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-  ik->name()->as_klass_external_name(hidden_or_anon_symbol, (int)result_len + 1);
-  assert(strlen(hidden_or_anon_symbol) == result_len, "invariant");
-  strcpy(hidden_or_anon_symbol + result_len, hash_buf);
-  assert(strlen(hidden_or_anon_symbol) == result_len + hash_len, "invariant");
-  return hidden_or_anon_symbol;
+  hidden_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
+  ik->name()->as_klass_external_name(hidden_symbol, (int)result_len + 1);
+  assert(strlen(hidden_symbol) == result_len, "invariant");
+  strcpy(hidden_symbol + result_len, hash_buf);
+  assert(strlen(hidden_symbol) == result_len + hash_len, "invariant");
+  return hidden_symbol;
 }
 
-bool JfrSymbolId::is_hidden_or_anon_klass(const Klass* k) {
+bool JfrSymbolId::is_hidden_klass(const Klass* k) {
   assert(k != NULL, "invariant");
-  return k->is_instance_klass() &&
-    (((const InstanceKlass*)k)->is_unsafe_anonymous() ||
-     ((const InstanceKlass*)k)->is_hidden());
+  return k->is_instance_klass() && ((const InstanceKlass*)k)->is_hidden();
 }
 
-traceid JfrSymbolId::mark_hidden_or_anon_klass_name(const InstanceKlass* ik, bool leakp) {
+traceid JfrSymbolId::mark_hidden_klass_name(const InstanceKlass* ik, bool leakp) {
   assert(ik != NULL, "invariant");
-  assert(ik->is_unsafe_anonymous() || ik->is_hidden(), "invariant");
-  const uintptr_t hash = hidden_or_anon_klass_name_hash(ik);
-  const char* const hidden_or_anon_symbol = create_hidden_or_anon_klass_symbol(ik, hash);
-  return mark(hash, hidden_or_anon_symbol, leakp);
+  assert(ik->is_hidden(), "invariant");
+  const uintptr_t hash = hidden_klass_name_hash(ik);
+  const char* const hidden_symbol = create_hidden_klass_symbol(ik, hash);
+  return mark(hash, hidden_symbol, leakp);
 }
 
 traceid JfrSymbolId::mark(const Klass* k, bool leakp) {
   assert(k != NULL, "invariant");
   traceid symbol_id = 0;
-  if (is_hidden_or_anon_klass(k)) {
+  if (is_hidden_klass(k)) {
     assert(k->is_instance_klass(), "invariant");
-    symbol_id = mark_hidden_or_anon_klass_name((const InstanceKlass*)k, leakp);
+    symbol_id = mark_hidden_klass_name((const InstanceKlass*)k, leakp);
   }
   if (0 == symbol_id) {
     Symbol* const sym = k->name();
@@ -282,9 +280,9 @@ traceid JfrArtifactSet::bootstrap_name(bool leakp) {
   return _symbol_id->bootstrap_name(leakp);
 }
 
-traceid JfrArtifactSet::mark_hidden_or_anon_klass_name(const Klass* klass, bool leakp) {
+traceid JfrArtifactSet::mark_hidden_klass_name(const Klass* klass, bool leakp) {
   assert(klass->is_instance_klass(), "invariant");
-  return _symbol_id->mark_hidden_or_anon_klass_name((const InstanceKlass*)klass, leakp);
+  return _symbol_id->mark_hidden_klass_name((const InstanceKlass*)klass, leakp);
 }
 
 traceid JfrArtifactSet::mark(uintptr_t hash, const Symbol* sym, bool leakp) {

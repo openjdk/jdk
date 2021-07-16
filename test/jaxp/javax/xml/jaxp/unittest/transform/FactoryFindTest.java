@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.FactoryFindTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.FactoryFindTest
  * @run testng/othervm transform.FactoryFindTest
  * @summary Test creating TransformerFactory with ContextClassLoader.
  */

@@ -1600,7 +1600,8 @@ public final class Scanner implements Iterator<String>, Closeable {
      * This method may block while waiting for input. The scanner does not
      * advance past any input.
      *
-     * @return true if and only if this scanner has another line of input
+     * @return true if there is a line separator in the remaining input
+     * or if the input has other remaining characters
      * @throws IllegalStateException if this scanner is closed
      */
     public boolean hasNextLine() {
@@ -2664,9 +2665,8 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     public BigInteger nextBigInteger(int radix) {
         // Check cached result
-        if ((typeCache != null) && (typeCache instanceof BigInteger)
+        if ((typeCache != null) && (typeCache instanceof BigInteger val)
             && this.radix == radix) {
-            BigInteger val = (BigInteger)typeCache;
             useTypeCache();
             return val;
         }
@@ -2730,8 +2730,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     public BigDecimal nextBigDecimal() {
         // Check cached result
-        if ((typeCache != null) && (typeCache instanceof BigDecimal)) {
-            BigDecimal val = (BigDecimal)typeCache;
+        if ((typeCache != null) && (typeCache instanceof BigDecimal val)) {
             useTypeCache();
             return val;
         }

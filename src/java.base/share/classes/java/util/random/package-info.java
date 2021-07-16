@@ -128,24 +128,27 @@
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
  * <p> There are three groups of random number generator algorithm provided
- * in Java; Legacy group, LXM group and Xoroshiro/Xoshiro group.
+ * in Java: the Legacy group, the LXM group, and the Xoroshiro/Xoshiro group.
  *
  * <p> The legacy group includes random number generators that existed
- * before JDK 17; Random, ThreadLocalRandom, SplittableRandom and
- * SecureRandom. Random (LCG) is the weakest of available algorithms and it
+ * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
+ * SecureRandom. Random (LCG) is the weakest of the available algorithms, and it
  * is recommended that users migrate to newer algorithms. If an application
  * requires a random number generator algorithm that is cryptographically
  * secure, then it should continue to use an instance of the class {@link
  * java.security.SecureRandom}.
  *
- * <p> The algorithms in the LXM group use a similar algorithm. The parameters
- * of the algorithm can be found in algorithm name. The numbers indicate the
- * number of bits in the lower and upper state bits respectively. Mix indicates
- * the algorithm uses mix congruency. StarStar indicates use a double
- * multiplier.
+ * <p> The algorithms in the LXM group are similar to each other. The parameters
+ * of each algorithm can be found in the algorithm name. The number after "L" indicates the
+ * number of state bits for the LCG subgenerator, and the number after "X" indicates the
+ * number of state bits for the XBG subgenerator. "Mix" indicates that
+ * the algorithm uses an 8-operation bit-mixing function; "StarStar" indicates use
+ * of a 3-operation bit-scrambler.
  *
- * <p> The algorithms in the Xoroshiro/Xoshiro are more traditional algorithms
- * where the number in the name indicates the period.
+ * <p> The algorithms in the Xoroshiro/Xoshiro group are more traditional algorithms
+ * (see David Blackman and Sebastiano Vigna, "Scrambled Linear Pseudorandom
+ * Number Generators," ACM Transactions on Mathematical Software, 2021);
+ * the number in the name indicates the number of state bits.
  *
  * <p> For applications (such as physical simulation, machine learning, and
  * games) that do not require a cryptographically secure algorithm, this package
@@ -209,7 +212,7 @@
  *
  * These algorithms [in the table below] must be found with the current version
  * of Java SE. A particular JDK implementation may recognize additional
- * algorithms; check the JDK's documentation for details. The set of algorithm
+ * algorithms; check the JDK's documentation for details. The set of algorithms
  * required by Java SE may be updated by changes to the Java SE specification.
  * Over time, new algorithms may be added and old algorithms may be removed.
  * <p>In addition, as another life-cycle phase, an algorithm may be {@linkplain
@@ -235,7 +238,7 @@
  *  <tr>
  *      <td style="text-align:left">L128X1024MixRandom</td>
  *      <td style="text-align:left">LXM</td>
- *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(128)</td>
+ *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">1152</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
@@ -263,7 +266,7 @@
  *  <tr>
  *      <td style="text-align:left">L64X1024MixRandom</td>
  *      <td style="text-align:left">LXM</td>
- *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">1088</td>
  *      <td style="text-align:right">16</td>
  *  </tr>
@@ -272,14 +275,14 @@
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
- *      <td style="text-align:right">1</td>
+ *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X128StarStarRandom</td>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
- *      <td style="text-align:right">1</td>
+ *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">L64X256MixRandom</td>
@@ -314,14 +317,14 @@
  *      <td style="text-align:left">Xoroshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">128</td>
- *      <td style="text-align:right">2</td>
+ *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
  *      <td style="text-align:left">Xoshiro256PlusPlus</td>
  *      <td style="text-align:left">Xoshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">256</td>
- *      <td style="text-align:right">4</td>
+ *      <td style="text-align:right">3</td>
  *  </tr>
  *  </tbody>
  * </table>
@@ -373,27 +376,29 @@
  *
  * The structure of the central nextLong (or nextInt) method of an LXM
  * algorithm follows a suggestion in December 2017 by Sebastiano Vigna
- * that using one LCG subgenerator and one xor-based subgenerator (rather
- * than two LCG subgenerators) would provide a longer period, superior
+ * that using one Linear Congruential Generator (LCG) as a first subgenerator
+ * and one Xor-Based Generator (XBG) as a second subgenerator (rather
+ * than using two LCG subgenerators) would provide a longer period, superior
  * equidistribution, scalability, and better quality.  Each of the
  * specific implementations here combines one of the best currently known
- * xor-based generators (xoroshiro or xoshiro, described by Blackman and
- * Vigna in "Scrambled Linear Pseudorandom Number Generators", ACM
- * Trans. Math. Softw., 2021) with an LCG that uses one of the best
+ * XBG algorithms (xoroshiro128 or xoshiro256, described by Blackman and
+ * Vigna in "Scrambled Linear Pseudorandom Number Generators", ACM Transactions
+ * on Mathematical Software, 2021) with an LCG that uses one of the best
  * currently known multipliers (found by a search for better multipliers
- * in 2019 by Steele and Vigna), and then applies a mixing function
- * identified by Doug Lea. Testing has confirmed that the LXM algorithm
- * is far superior in quality to the SplitMix algorithm (2014) used by
- * SplittableRandom.
+ * in 2019 by Steele and Vigna), and then applies either a mixing function
+ * identified by Doug Lea or a simple scrambler proposed by Blackman and Vigna.
+ * Testing has confirmed that the LXM algorithm is far superior in quality to
+ * the SplitMix algorithm (2014) used by {@code SplittableRandom}.
  *
- * Each class with a name of the form {@code L}<i>p</i>{@code X}<i>q</i>{@code
- * SomethingRandom} uses some specific member of the LXM family of random number
- * algorithms; "LXM" is short for "LCG, Xorshift, Mixing function". Every LXM
- * generator consists of two subgenerators; one is an LCG (Linear Congruential
- * Generator) and the other is an Xorshift generator. Each output of an LXM
+ * Each class with a name of the form
+ * {@code L}<i>p</i>{@code X}<i>q</i>{@code SomethingRandom}
+ * uses some specific member of the LXM family of random number
+ * algorithms; "LXM" is short for "LCG, XBG, Mixer". Every LXM
+ * generator has two subgenerators; one is an LCG (Linear Congruential
+ * Generator) and the other is an XBG (Xor-Based Generator). Each output of an LXM
  * generator is the result of combining state from the LCG with state from the
- * Xorshift generator by using a Mixing function (and then the state of the LCG
- * and the state of the Xorshift generator are advanced).
+ * XBG using a Mixing function (and then the state of the LCG
+ * and the state of the XBG are advanced).
  *
  * <p> The LCG subgenerator has an update step of the form {@code s = m*s + a},
  * where {@code s}, {@code m}, and {@code a} are all binary integers of the same
@@ -406,10 +411,11 @@
  * {@code s} is 128 bits, then we use the name "{@code sh}" below to refer to
  * the high half of {@code s}, that is, the high-order 64 bits of {@code s}.)
  *
- * <p> The Xorshift subgenerator can in principle be any one of a wide variety
- * of xorshift algorithms; in this package it is always either
+ * <p> The XBG subgenerator can in principle be any one of a wide variety
+ * of XBG algorithms; in this package it is always either
  * {@code xoroshiro128}, {@code xoshiro256}, or {@code xoroshiro1024}, in each
- * case without any final scrambler such as "+" or "**". Its state consists of
+ * case without any final scrambler (such as "+" or "**") because LXM uses
+ * a separate Mixer later in the process. The XBG state consists of
  * some fixed number of {@code int} or {@code long} fields, generally named
  * {@code x0}, {@code x1}, and so on, which can take on any values provided that
  * they are not all zero. The collective total size of these fields is <i>q</i>
@@ -427,7 +433,7 @@
  *
  * <p> Generally speaking, among the "{@code L}<i>p</i>{@code X}<i>q</i>"
  * generators, the memory required for an instance is 2<i>p</i>+<i>q</i> bits.
- * (If <i>q</i> is 1024 or larger, the Xorshift state is represented as an
+ * (If <i>q</i> is 1024 or larger, the XBG state is represented as an
  * array, so additional bits are needed for the array object header, and another
  * 32 bits are used for an array index.)
  *
@@ -545,7 +551,7 @@
  * 2<sup>64</sup>(2<sup>256</sup>&minus;1) such subsequences, and each
  * subsequence, which consists of 4 64-bit values, can have one of
  * 2<sup>256</sup> values. Of those 2<sup>256</sup> subsequence values, nearly
- * all of them (2<sup>256</sup>%minus;2<sup>64</sup>) occur 2<sup>64</sup> times
+ * all of them (2<sup>256</sup>&minus;2<sup>64</sup>) occur 2<sup>64</sup> times
  * over the course of the entire cycle, and the other 2<sup>64</sup> subsequence
  * values occur only 2<sup>64</sup>&minus;1 times. So the ratio of the
  * probability of getting any specific one of the less common subsequence values
@@ -560,7 +566,7 @@
  * 4-equidistributed (but not exactly 4-equidistributed).
  *
  * <p> The next table gives the LCG multiplier value, the name of the specific
- * Xorshift algorithm used, the specific numeric parameters for that Xorshift
+ * XBG algorithm used, the specific numeric parameters for that XBG
  * algorithm, and the mixing function for each of the specific LXM algorithms
  * used in this package. (Note that the multiplier used for the 128-bit LCG
  * cases is 65 bits wide, so the constant {@code 0x1d605bbb58c8abbfdL} shown in
@@ -574,8 +580,8 @@
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">LCG multiplier {@code m}</th>
- *       <th style="text-align:left">Xorshift algorithm</th>
- *       <th style="text-align:left">Xorshift parameters</th>
+ *       <th style="text-align:left">XBG algorithm</th>
+ *       <th style="text-align:left">XBG parameters</th>
  *       <th style="text-align:left">Mixing function</th></tr>
  * </thead>
  * <tbody>

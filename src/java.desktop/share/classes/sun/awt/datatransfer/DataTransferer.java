@@ -983,6 +983,7 @@ search:
 
     protected abstract ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList) throws IOException;
 
+    @SuppressWarnings("removal")
     private String removeSuspectedData(DataFlavor flavor, final Transferable contents, final String str)
             throws IOException
     {
@@ -1043,6 +1044,7 @@ search:
         return true;
     }
 
+    @SuppressWarnings("removal")
     private ArrayList<String> castToFiles(final List<?> files,
                                           final ProtectionDomain userProtectionDomain) throws IOException {
         try {
@@ -1417,6 +1419,7 @@ search:
      * and also arbitrary Objects which have a constructor which takes an
      * instance of the Class as its sole parameter.
      */
+    @SuppressWarnings("removal")
     private Object constructFlavoredObject(Object arg, DataFlavor flavor,
                                            Class<?> clazz)
         throws IOException

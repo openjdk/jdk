@@ -53,6 +53,7 @@ import sun.java2d.xr.XRSurfaceData;
  * @see GraphicsDevice
  * @see java.awt.GraphicsConfiguration
  */
+@SuppressWarnings("removal")
 public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
 
     static {

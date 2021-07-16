@@ -26,7 +26,7 @@
  * @test
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestNative
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
  */
 
 import jdk.incubator.foreign.CLinker;
@@ -36,6 +36,7 @@ import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -54,36 +55,36 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import static jdk.incubator.foreign.MemorySegment.*;
+
 import static org.testng.Assert.*;
 
 public class TestNative {
 
-    static SequenceLayout bytes = MemoryLayout.ofSequence(100,
+    static SequenceLayout bytes = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_BYTE.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout chars = MemoryLayout.ofSequence(100,
+    static SequenceLayout chars = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_CHAR.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout shorts = MemoryLayout.ofSequence(100,
+    static SequenceLayout shorts = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_SHORT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout ints = MemoryLayout.ofSequence(100,
+    static SequenceLayout ints = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_INT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout floats = MemoryLayout.ofSequence(100,
+    static SequenceLayout floats = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_FLOAT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout longs = MemoryLayout.ofSequence(100,
+    static SequenceLayout longs = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_LONG.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout doubles = MemoryLayout.ofSequence(100,
+    static SequenceLayout doubles = MemoryLayout.sequenceLayout(100,
             MemoryLayouts.JAVA_DOUBLE.withOrder(ByteOrder.nativeOrder())
     );
 
@@ -144,16 +145,17 @@ public class TestNative {
     public static native long getCapacity(Buffer buffer);
 
     public static MemoryAddress allocate(int size) {
-        return CLinker.allocateMemoryRestricted(size);
+        return CLinker.allocateMemory(size);
     }
 
     public static void free(MemoryAddress addr) {
-        CLinker.freeMemoryRestricted(addr);
+        CLinker.freeMemory(addr);
     }
 
     @Test(dataProvider="nativeAccessOps")
     public void testNativeAccess(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
-        try (MemorySegment segment = MemorySegment.allocateNative(seq)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, scope);
             initializer.accept(segment);
             checker.accept(segment);
         }
@@ -162,7 +164,8 @@ public class TestNative {
     @Test(dataProvider="buffers")
     public void testNativeCapacity(Function<ByteBuffer, Buffer> bufferFunction, int elemSize) {
         int capacity = (int)doubles.byteSize();
-        try (MemorySegment segment = MemorySegment.allocateNative(doubles)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(doubles, scope);
             ByteBuffer bb = segment.asByteBuffer();
             Buffer buf = bufferFunction.apply(bb);
             int expected = capacity / elemSize;
@@ -174,33 +177,34 @@ public class TestNative {
     @Test
     public void testDefaultAccessModes() {
         MemoryAddress addr = allocate(12);
-        MemorySegment mallocSegment = addr.asSegmentRestricted(12, () -> free(addr), null);
-        try (MemorySegment segment = mallocSegment) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS));
-            assertEquals(segment.accessModes(), ALL_ACCESS);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment mallocSegment = addr.asSegment(12, () -> free(addr), scope);
+            assertFalse(mallocSegment.isReadOnly());
         }
     }
 
     @Test
     public void testDefaultAccessModesEverthing() {
-        MemorySegment everything = MemorySegment.ofNativeRestricted();
-        assertTrue(everything.hasAccessModes(READ | WRITE));
-        assertEquals(everything.accessModes(), READ | WRITE);
+        MemorySegment everything = MemorySegment.globalNativeSegment();
+        assertFalse(everything.isReadOnly());
     }
 
     @Test
     public void testMallocSegment() {
         MemoryAddress addr = allocate(12);
-        MemorySegment mallocSegment = addr.asSegmentRestricted(12, () -> free(addr), null);
-        assertEquals(mallocSegment.byteSize(), 12);
-        mallocSegment.close(); //free here
-        assertTrue(!mallocSegment.isAlive());
+        MemorySegment mallocSegment = null;
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            mallocSegment = addr.asSegment(12, () -> free(addr), scope);
+            assertEquals(mallocSegment.byteSize(), 12);
+            //free here
+        }
+        assertTrue(!mallocSegment.scope().isAlive());
     }
 
     @Test
     public void testEverythingSegment() {
         MemoryAddress addr = allocate(4);
-        MemorySegment everything = MemorySegment.ofNativeRestricted();
+        MemorySegment everything = MemorySegment.globalNativeSegment();
         MemoryAccess.setIntAtOffset(everything, addr.toRawLongValue(), 42);
         assertEquals(MemoryAccess.getIntAtOffset(everything, addr.toRawLongValue()), 42);
         free(addr);
@@ -208,8 +212,9 @@ public class TestNative {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadResize() {
-        try (MemorySegment segment = MemorySegment.allocateNative(4)) {
-            segment.address().asSegmentRestricted(0);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(4, 1, scope);
+            segment.address().asSegment(0, ResourceScope.globalScope());
         }
     }
 

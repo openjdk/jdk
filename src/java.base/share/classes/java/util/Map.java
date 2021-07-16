@@ -393,14 +393,33 @@ public interface Map<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * A map entry (key-value pair).  The {@code Map.entrySet} method returns
-     * a collection-view of the map, whose elements are of this class.  The
-     * <i>only</i> way to obtain a reference to a map entry is from the
-     * iterator of this collection-view.  These {@code Map.Entry} objects are
-     * valid <i>only</i> for the duration of the iteration; more formally,
-     * the behavior of a map entry is undefined if the backing map has been
-     * modified after the entry was returned by the iterator, except through
-     * the {@code setValue} operation on the map entry.
+     * A map entry (key-value pair). The Entry may be unmodifiable, or the
+     * value may be modifiable if the optional {@code setValue} method is
+     * implemented. The Entry may be independent of any map, or it may represent
+     * an entry of the entry-set view of a map.
+     * <p>
+     * Instances of the {@code Map.Entry} interface may be obtained by iterating
+     * the entry-set view of a map. These instances maintain a connection to the
+     * original, backing map. This connection to the backing map is valid
+     * <i>only</i> for the duration of iteration over the entry-set view.
+     * During iteration of the entry-set view, if supported by the backing map,
+     * a change to a {@code Map.Entry}'s value via the
+     * {@link Map.Entry#setValue setValue} method will be visible in the backing map.
+     * The behavior of such a {@code Map.Entry} instance is undefined outside of
+     * iteration of the map's entry-set view. It is also undefined if the backing
+     * map has been modified after the {@code Map.Entry} was returned by the
+     * iterator, except through the {@code Map.Entry.setValue} method. In particular,
+     * a change to the value of a mapping in the backing map might or might not be
+     * visible in the corresponding {@code Map.Entry} element of the entry-set view.
+     *
+     * @apiNote
+     * It is possible to create a {@code Map.Entry} instance that is disconnected
+     * from a backing map by using the {@link Map.Entry#copyOf copyOf} method. For example,
+     * the following creates a snapshot of a map's entries that is guaranteed not to
+     * change even if the original map is modified:
+     * <pre> {@code
+     * var entries = map.entrySet().stream().map(Map.Entry::copyOf).toList()
+     * }</pre>
      *
      * @see Map#entrySet()
      * @since 1.2
@@ -558,6 +577,37 @@ public interface Map<K, V> {
             Objects.requireNonNull(cmp);
             return (Comparator<Map.Entry<K, V>> & Serializable)
                 (c1, c2) -> cmp.compare(c1.getValue(), c2.getValue());
+        }
+
+        /**
+         * Returns a copy of the given {@code Map.Entry}. The returned instance is not
+         * associated with any map. The returned instance has the same characteristics
+         * as instances returned by the {@link Map#entry Map::entry} method.
+         *
+         * @apiNote
+         * An instance obtained from a map's entry-set view has a connection to that map.
+         * The {@code copyOf}  method may be used to create a {@code Map.Entry} instance,
+         * containing the same key and value, that is independent of any map.
+         *
+         * @implNote
+         * If the given entry was obtained from a call to {@code copyOf} or {@code Map::entry},
+         * calling {@code copyOf} will generally not create another copy.
+         *
+         * @param <K> the type of the key
+         * @param <V> the type of the value
+         * @param e the entry to be copied
+         * @return a map entry equal to the given entry
+         * @throws NullPointerException if e is null or if either of its key or value is null
+         * @since 17
+         */
+        @SuppressWarnings("unchecked")
+        public static <K, V> Map.Entry<K, V> copyOf(Map.Entry<? extends K, ? extends V> e) {
+            Objects.requireNonNull(e);
+            if (e instanceof KeyValueHolder) {
+                return (Map.Entry<K, V>) e;
+            } else {
+                return Map.entry(e.getKey(), e.getValue());
+            }
         }
     }
 

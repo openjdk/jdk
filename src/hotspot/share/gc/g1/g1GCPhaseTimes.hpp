@@ -70,13 +70,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     Other,
     GCWorkerTotal,
     GCWorkerEnd,
-    StringDedupQueueFixup,
-    StringDedupTableFixup,
     RedirtyCards,
     FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
     RebuildFreeList,
+    SampleCollectionSetCandidates,
     MergePSS,
     RemoveSelfForwardingPtr,
     ClearCardTable,
@@ -99,12 +98,23 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return GCParPhases(StrongOopStorageSetRoots + index);
   }
 
-  enum GCMergeRSWorkTimes {
-    MergeRSMergedSparse,
-    MergeRSMergedFine,
-    MergeRSMergedCoarse,
-    MergeRSDirtyCards
+  enum GCMergeRSWorkItems : uint {
+    MergeRSMergedInline = 0,
+    MergeRSMergedArrayOfCards,
+    MergeRSMergedHowl,
+    MergeRSMergedFull,
+    MergeRSHowlInline,
+    MergeRSHowlArrayOfCards,
+    MergeRSHowlBitmap,
+    MergeRSHowlFull,
+    MergeRSDirtyCards,
+    MergeRSContainersSentinel
   };
+
+  static constexpr const char* GCMergeRSWorkItemsStrings[MergeRSContainersSentinel] =
+    { "Merged Inline", "Merged ArrayOfCards", "Merged Howl", "Merged Full",
+      "Merged Howl Inline", "Merged Howl ArrayOfCards", "Merged Howl BitMap", "Merged Howl Full",
+      "Dirty Cards" };
 
   enum GCScanHRWorkItems {
     ScanHRScannedCards,
@@ -146,8 +156,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_optional_evac_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
 
-  double _cur_string_deduplication_time_ms;
-
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
 
@@ -177,6 +185,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
+  double _recorded_sample_collection_set_candidates_time_ms;
+
   double _recorded_preserve_cm_referents_time_ms;
 
   double _recorded_start_new_cset_time_ms;
@@ -196,7 +206,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WeakProcessorTimes _weak_phase_times;
 
   double worker_time(GCParPhases phase, uint worker);
-  void note_gc_end();
   void reset();
 
   template <class T>
@@ -224,7 +233,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
-  void note_gc_start();
+  void record_gc_pause_start();
+  void record_gc_pause_end();
   void print();
   static const char* phase_name(GCParPhases phase);
 
@@ -293,10 +303,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_optional_prepare_merge_heap_roots_time_ms += ms;
   }
 
-  void record_string_deduplication_time(double ms) {
-    _cur_string_deduplication_time_ms = ms;
-  }
-
   void record_ref_proc_time(double ms) {
     _cur_ref_proc_time_ms = ms;
   }
@@ -335,6 +341,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_sample_collection_set_candidates_time_ms(double time_ms) {
+    _recorded_sample_collection_set_candidates_time_ms = time_ms;
   }
 
   void record_preserve_cm_referents_time_ms(double time_ms) {

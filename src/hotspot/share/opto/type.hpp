@@ -189,7 +189,7 @@ public:
   inline void* operator new( size_t x ) throw() {
     Compile* compile = Compile::current();
     compile->set_type_last_size(x);
-    return compile->type_arena()->Amalloc_D(x);
+    return compile->type_arena()->AmallocWords(x);
   }
   inline void operator delete( void* ptr ) {
     Compile* compile = Compile::current();
@@ -380,7 +380,7 @@ public:
   Category category() const;
 
   static const char* str(const Type* t);
-#endif
+#endif // !PRODUCT
   void typerr(const Type *t) const; // Mixing types error
 
   // Create basic type
@@ -1874,9 +1874,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
-// UseOptoBiasInlining
-#define XorXNode     XorLNode
-#define StoreXConditionalNode StoreLConditionalNode
+// For shenandoahSupport
 #define LoadXNode    LoadLNode
 #define StoreXNode   StoreLNode
 // Opcodes
@@ -1922,9 +1920,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
-// UseOptoBiasInlining
-#define XorXNode     XorINode
-#define StoreXConditionalNode StoreIConditionalNode
+// For shenandoahSupport
 #define LoadXNode    LoadINode
 #define StoreXNode   StoreINode
 // Opcodes

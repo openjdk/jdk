@@ -86,7 +86,7 @@ public class TestGCLogMessages {
         }
 
         public boolean isAvailable() {
-            return Compiler.isC2OrJVMCIIncludedInVmBuild();
+            return Compiler.isC2OrJVMCIIncluded();
         }
     }
 
@@ -101,9 +101,14 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Prepare Merge Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Eager Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Remembered Sets", Level.DEBUG),
-        new LogMessageWithLevel("Merged Sparse", Level.DEBUG),
-        new LogMessageWithLevel("Merged Fine", Level.DEBUG),
-        new LogMessageWithLevel("Merged Coarse", Level.DEBUG),
+        new LogMessageWithLevel("Merged Inline", Level.DEBUG),
+        new LogMessageWithLevel("Merged ArrayOfCards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl", Level.DEBUG),
+        new LogMessageWithLevel("Merged Full", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Inline", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl ArrayOfCards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl BitMap", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Full", Level.DEBUG),
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
@@ -131,13 +136,11 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
         // Misc Top-level
         new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
-        new LogMessageWithLevel("String Deduplication", Level.DEBUG),
-        new LogMessageWithLevel("Queue Fixup", Level.DEBUG),
-        new LogMessageWithLevel("Table Fixup", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
+        new LogMessageWithLevel("Sample Collection Set Candidates", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
@@ -197,7 +200,6 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:+UseStringDeduplication",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=debug",
                                                    GCTest.class.getName());
@@ -206,7 +208,6 @@ public class TestGCLogMessages {
         checkMessagesAtLevel(output, allLogMessages, Level.DEBUG);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:+UseStringDeduplication",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTest.class.getName());
@@ -246,6 +247,8 @@ public class TestGCLogMessages {
                                                                   "-XX:+G1EvacuationFailureALot",
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -257,6 +260,8 @@ public class TestGCLogMessages {
                                                    "-Xmx32M",
                                                    "-Xmn16M",
                                                    "-Xms32M",
+                                                   "-XX:+UnlockDiagnosticVMOptions",
+                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 

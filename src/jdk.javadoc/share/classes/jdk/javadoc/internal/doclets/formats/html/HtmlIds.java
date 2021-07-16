@@ -216,7 +216,7 @@ public class HtmlIds {
      * @return the 1.4.x style anchor for the executable element
      */
     protected HtmlId forErasure(ExecutableElement executableElement) {
-        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName());
+        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
         boolean foundTypeVariable = false;
@@ -237,7 +237,7 @@ public class HtmlIds {
 
                 @Override
                 public Boolean visitTypeVariable(TypeVariable t, Void p) {
-                    buf.append(utils.asTypeElement(t).getQualifiedName());
+                    buf.append(utils.asTypeElement(t).getQualifiedName().toString());
                     foundTypeVariable = true;
                     return foundTypeVariable;
                 }

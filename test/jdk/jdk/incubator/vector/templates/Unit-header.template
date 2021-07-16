@@ -91,8 +91,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
 
-    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * ($bits$ / 8));
-
     interface FUnOp {
         $type$ apply($type$ a);
     }
@@ -234,6 +232,21 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 
     static void assertReductionBoolArraysEquals(boolean[] r, boolean[] a, FBoolReductionOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+        }
+    }
+
+    interface FMaskReductionOp {
+        int apply(boolean[] a, int idx);
+    }
+
+    static void assertMaskReductionArraysEquals(int[] r, boolean[] a, FMaskReductionOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -1184,8 +1197,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static final List<BiFunction<Integer,Integer,$type$[]>> $TYPE$_SHUFFLE_GENERATORS = List.of(
             withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
                 $type$[] a = new $type$[l];
+#if[ByteMax]
+                int upper = Math.min(Byte.MAX_VALUE + 1, m);
+#else[ByteMax]
+                int upper = m;
+#end[ByteMax]
                 for (int i = 0; i < 1; i++) {
-                    a[i] = ($type$)RAND.nextInt(m);
+                    a[i] = ($type$)RAND.nextInt(upper);
                 }
                 return a;
             })
@@ -1212,40 +1230,14 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #end[!Int]
 
-    @DataProvider
-    public Object[][] $type$UnaryOpIndexProvider() {
-        return INT_INDEX_GENERATORS.stream().
-                flatMap(fs -> $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fs};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] $type$UnaryMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fm, fs};
-            }))).
-            toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] scatterMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            $TYPE$_GENERATORS.stream().flatMap(fn ->
-              $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fn, fm, fs};
-            })))).
-            toArray(Object[][]::new);
-    }
-
     static final List<IntFunction<$type$[]>> $TYPE$_COMPARE_GENERATORS = List.of(
             withToString("$type$[i]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)i);
+            }),
+            withToString("$type$[i - length / 2]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i - (s * BUFFER_REPS / 2)));
             }),
             withToString("$type$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1392,6 +1384,48 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 #end[BITWISE]
+
+    static boolean eq($type$ a, $type$ b) {
+        return a == b;
+    }
+
+    static boolean neq($type$ a, $type$ b) {
+        return a != b;
+    }
+
+    static boolean lt($type$ a, $type$ b) {
+        return a < b;
+    }
+
+    static boolean le($type$ a, $type$ b) {
+        return a <= b;
+    }
+
+    static boolean gt($type$ a, $type$ b) {
+        return a > b;
+    }
+
+    static boolean ge($type$ a, $type$ b) {
+        return a >= b;
+    }
+
+#if[!FP]
+    static boolean ult($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) < 0;
+    }
+
+    static boolean ule($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) <= 0;
+    }
+
+    static boolean ugt($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) > 0;
+    }
+
+    static boolean uge($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) >= 0;
+    }
+#end[!FP]
 
     @Test
     static void smokeTest1() {

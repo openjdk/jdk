@@ -35,6 +35,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
@@ -478,22 +479,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
             if (tag.getName() == null || tag.getType() == null)  // ignore malformed @serialField tags
                 continue;
             Content fieldsContentTree = fieldWriter.getFieldsContentHeader(tag.equals(tags.last()));
-            TypeElement te = ch.getReferencedClass(tag);
-            String fieldType = ch.getReferencedMemberName(tag);
-            if (te != null && utils.isPrimitive(te.asType())) {
-                fieldType = utils.getTypeName(te.asType(), false);
-                te = null;
-            }
-            String refSignature = ch.getReferencedSignature(tag);
-            // TODO: Print the signature directly, if it is an array, the
-            // current DocTree APIs makes it very hard to distinguish
-            // an as these are returned back as "Array" a DeclaredType.
-            if (refSignature != null && refSignature.endsWith("[]")) {
-                te = null;
-                fieldType = refSignature;
-            }
-            fieldWriter.addMemberHeader(te, fieldType, "",
-                    tag.getName().getName().toString(), fieldsContentTree);
+            TypeMirror type = ch.getReferencedType(tag);
+            fieldWriter.addMemberHeader(type, tag.getName().getName().toString(), fieldsContentTree);
             fieldWriter.addMemberDescription(field, tag, fieldsContentTree);
             serializableFieldsTree.add(fieldsContentTree);
         }

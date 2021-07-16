@@ -220,6 +220,9 @@ class Events : AllStatic {
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;
 
+  // A log for VM Operations
+  static StringEventLog* _vm_operations;
+
   // A log for internal exception related messages, like internal
   // throws and implicit exceptions.
   static ExceptionsEventLog* _exceptions;
@@ -247,6 +250,8 @@ class Events : AllStatic {
   // Logs a generic message with timestamp and format as printf.
   static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
+  static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
@@ -266,6 +271,15 @@ inline void Events::log(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
+  if (LogEvents && _vm_operations != NULL) {
+    va_list ap;
+    va_start(ap, format);
+    _vm_operations->logv(thread, format, ap);
     va_end(ap);
   }
 }
@@ -414,16 +428,49 @@ inline void EventLogBase<ExtendedStringLogMessage>::print(outputStream* out, Ext
   out->cr();
 }
 
+typedef void (*EventLogFunction)(Thread* thread, const char* format, ...);
+
+class EventMarkBase : public StackObj {
+  EventLogFunction _log_function;
+  StringLogMessage _buffer;
+
+  NONCOPYABLE(EventMarkBase);
+
+ protected:
+  void log_start(const char* format, va_list argp) ATTRIBUTE_PRINTF(2, 0);
+  void log_end();
+
+  EventMarkBase(EventLogFunction log_function);
+};
+
 // Place markers for the beginning and end up of a set of events.
-// These end up in the default log.
-class EventMark : public StackObj {
+template <EventLogFunction log_function>
+class EventMarkWithLogFunction : public EventMarkBase {
   StringLogMessage _buffer;
 
  public:
   // log a begin event, format as printf
-  EventMark(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  EventMarkWithLogFunction(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) :
+      EventMarkBase(log_function) {
+    if (LogEvents) {
+      va_list ap;
+      va_start(ap, format);
+      log_start(format, ap);
+      va_end(ap);
+    }
+  }
   // log an end event
-  ~EventMark();
+  ~EventMarkWithLogFunction() {
+    if (LogEvents) {
+      log_end();
+    }
+  }
 };
+
+// These end up in the default log.
+typedef EventMarkWithLogFunction<Events::log> EventMark;
+
+// These end up in the vm_operation log.
+typedef EventMarkWithLogFunction<Events::log_vm_operation> EventMarkVMOperation;
 
 #endif // SHARE_UTILITIES_EVENTS_HPP

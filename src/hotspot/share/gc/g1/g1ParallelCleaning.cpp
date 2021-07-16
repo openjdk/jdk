@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,9 @@ void JVMCICleaningTask::work(bool unloading_occurred) {
 
 G1ParallelCleaningTask::G1ParallelCleaningTask(BoolObjectClosure* is_alive,
                                                uint num_workers,
-                                               bool unloading_occurred,
-                                               bool resize_dedup_table) :
+                                               bool unloading_occurred) :
   AbstractGangTask("G1 Parallel Cleaning"),
   _unloading_occurred(unloading_occurred),
-  _string_dedup_task(is_alive, NULL, resize_dedup_table),
   _code_cache_task(num_workers, is_alive, unloading_occurred),
   JVMCI_ONLY(_jvmci_cleaning_task() COMMA)
   _klass_cleaning_task() {
@@ -71,9 +69,6 @@ void G1ParallelCleaningTask::work(uint worker_id) {
 
   // Do first pass of code cache cleaning.
   _code_cache_task.work(worker_id);
-
-  // Clean the string dedup data structures.
-  _string_dedup_task.work(worker_id);
 
   // Clean all klasses that were not unloaded.
   // The weak metadata in klass doesn't need to be

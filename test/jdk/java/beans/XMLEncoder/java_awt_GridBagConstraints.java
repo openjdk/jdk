@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062
  * @summary Tests GridBagConstraints encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_GridBagConstraints
  * @author Sergey Malenkov
  */
 

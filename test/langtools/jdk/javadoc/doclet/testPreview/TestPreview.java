@@ -56,35 +56,16 @@ public class TestPreview extends JavadocTester {
                 "m/pkg");
         checkExit(Exit.OK);
 
-        ResourceBundle bundle = ResourceBundle.getBundle("jdk.javadoc.internal.doclets.formats.html.resources.standard", ModuleLayer.boot().findModule("jdk.javadoc").get());
-
-        {
-            String zero = MessageFormat.format(bundle.getString("doclet.PreviewLeadingNote"), "<code>TestPreviewDeclaration</code>");
-            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "<code>TestPreviewDeclaration</code>", "<em>Sealed Classes</em>", "<code>sealed</code>");
-            String two = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote1"), "<code>TestPreviewDeclaration</code>");
-            String three = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote2"), new Object[0]);
-            String expectedTemplate = """
-                                      <div class="preview-block" id="preview-pkg.TestPreviewDeclaration"><span class="preview-label">{0}</span>
-                                      <ul class="preview-comment">
-                                      <li>{1}</li>
-                                      </ul>
-                                      <div class="preview-comment">{2}</div>
-                                      <div class="preview-comment">{3}</div>
-                                      </div>""";
-            String expected = MessageFormat.format(expectedTemplate, zero, one, two, three);
-            checkOutput("m/pkg/TestPreviewDeclaration.html", true, expected);
-        }
-
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
-                    "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a><sup><a href=\"TestPreviewDeclaration.html#preview-pkg.TestPreviewDeclaration\">PREVIEW</a></sup></code>");
+                    "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
                 "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "java.base/preview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
-                "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotation\"><span class=\"preview-label\">");
+                "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
         checkOutput("m/pkg/DocAnnotationUse1.html", true,
-                "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotationUse1\"><span class=\"preview-label\">");
+                "<div class=\"inheritance\">pkg.DocAnnotationUse1</div>");
         checkOutput("m/pkg/DocAnnotationUse2.html", true,
-                "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotationUse2\"><span class=\"preview-label\">");
+                "<div class=\"inheritance\">pkg.DocAnnotationUse2</div>");
     }
 
     @Test

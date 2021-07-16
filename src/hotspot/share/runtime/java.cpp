@@ -34,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -56,7 +57,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
@@ -246,7 +246,7 @@ void print_statistics() {
     os::print_statistics();
   }
 
-  if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -332,10 +332,6 @@ void print_statistics() {
     Method::print_touched_methods(tty);
   }
 
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
-  }
-
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
@@ -374,13 +370,10 @@ void print_statistics() {
   }
 
 #ifdef COMPILER2
-  if (PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #endif
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
-  }
 
   // Native memory tracking data
   if (PrintNMTStatistics) {
@@ -462,6 +455,11 @@ void before_exit(JavaThread* thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
+  // Shut down string deduplication if running.
+  if (StringDedup::is_enabled()) {
+    StringDedup::stop();
+  }
+
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -503,7 +501,15 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::dump();
+    ExceptionMark em(thread);
+    DynamicArchive::dump(thread);
+    if (thread->has_pending_exception()) {
+      ResourceMark rm(thread);
+      oop pending_exception = thread->pending_exception();
+      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
+      thread->clear_pending_exception();
+    }
   }
 #endif
 
@@ -547,7 +553,7 @@ void vm_exit(int code) {
       // Historically there must have been some exit path for which
       // that was not the case and so we set it explicitly - even
       // though we no longer know what that path may be.
-      thread->as_Java_thread()->set_thread_state(_thread_in_vm);
+      JavaThread::cast(thread)->set_thread_state(_thread_in_vm);
     }
 
     // Fire off a VM_Exit operation to bring VM to a safepoint and exit
@@ -595,7 +601,7 @@ void vm_perform_shutdown_actions() {
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
-      JavaThread* jt = thread->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
@@ -672,7 +678,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

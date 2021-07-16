@@ -43,8 +43,8 @@ import resources.ListBundle;
  * @summary tests Logger.setResourceBundle;
  * @build TestSetResourceBundle resources.ListBundle resources.ListBundle_fr
  * @run main/othervm TestSetResourceBundle UNSECURE
- * @run main/othervm TestSetResourceBundle PERMISSION
- * @run main/othervm TestSetResourceBundle SECURE
+ * @run main/othervm -Djava.security.manager=allow TestSetResourceBundle PERMISSION
+ * @run main/othervm -Djava.security.manager=allow TestSetResourceBundle SECURE
  * @author danielfuchs
  */
 public class TestSetResourceBundle {

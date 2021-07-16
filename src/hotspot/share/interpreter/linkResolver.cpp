@@ -1154,10 +1154,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   // a direct superinterface, not an indirect superinterface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != NULL && resolved_klass->is_interface()) {
-    InstanceKlass* ck = InstanceKlass::cast(current_klass);
-    InstanceKlass *klass_to_check = !ck->is_unsafe_anonymous() ?
-                                    ck :
-                                    ck->unsafe_anonymous_host();
+    InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
     // Disable verification for the dynamically-generated reflection bytecodes.
     bool is_reflect = klass_to_check->is_subclass_of(
                         vmClasses::reflect_MagicAccessorImpl_klass());
@@ -1247,7 +1244,6 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
     // The verifier also checks that the receiver is a subtype of the sender, if the sender is
     // a class.  If the sender is an interface, the check has to be performed at runtime.
     InstanceKlass* sender = InstanceKlass::cast(current_klass);
-    sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
     if (sender->is_interface() && recv.not_null()) {
       Klass* receiver_klass = recv->klass();
       if (!receiver_klass->is_subtype_of(sender)) {

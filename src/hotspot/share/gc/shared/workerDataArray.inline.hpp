@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKERDATAARRAY_INLINE_HPP
 
 #include "gc/shared/workerDataArray.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "utilities/ostream.hpp"
 
@@ -50,6 +51,16 @@ void WorkerDataArray<T>::set(uint worker_i, T value) {
   assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
   assert(_data[worker_i] == uninitialized(), "Overwriting data for worker %d in %s", worker_i, _title);
   _data[worker_i] = value;
+}
+
+template <typename T>
+void WorkerDataArray<T>::set_or_add(uint worker_i, T value) {
+  assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
+  if (_data[worker_i] == uninitialized()) {
+    _data[worker_i] = value;
+  } else {
+    _data[worker_i] += value;
+  }
 }
 
 template <typename T>

@@ -284,6 +284,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 if (ctor == null) {
                     PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
                     try {
+                        @SuppressWarnings("removal")
                         Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
 
                         Constructor<T> tmpCtor = null;
@@ -373,7 +374,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
-     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
+     * RandomGenerators that are marked as deprecated are not included in the result.
      *
      * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface.

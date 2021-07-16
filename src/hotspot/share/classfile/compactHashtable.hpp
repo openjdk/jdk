@@ -222,8 +222,12 @@ public:
   // Read/Write the table's header from/to the CDS archive
   void serialize_header(SerializeClosure* soc) NOT_CDS_RETURN;
 
-  inline bool empty() {
+  inline bool empty() const {
     return (_entry_count == 0);
+  }
+
+  inline size_t entry_count() const {
+    return _entry_count;
   }
 
   static size_t calculate_header_size();

@@ -66,7 +66,6 @@ void JVMCICompiler::initialize() {
 }
 
 void JVMCICompiler::bootstrap(TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be");
   if (Arguments::mode() == Arguments::_int) {
     // Nothing to do in -Xint mode
     return;
@@ -97,7 +96,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   do {
     // Loop until there is something in the queue.
     do {
-      THREAD->as_Java_thread()->sleep(100);
+      THREAD->sleep(100);
       qsize = CompileBroker::queue_size(CompLevel_full_optimization);
     } while (!_bootstrap_compilation_request_handled && first_round && qsize == 0);
     first_round = false;

@@ -87,7 +87,7 @@ enum WXMode {
 const bool ExecMem = true;
 
 // Typedef for structured exception handling support
-typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
 class MallocTracker;
 
@@ -278,10 +278,6 @@ class os: AllStatic {
     return _initial_active_processor_count;
   }
 
-  // Binds the current process to a processor.
-  //    Returns true if it worked, false if it didn't.
-  static bool bind_to_processor(uint processor_id);
-
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
 
@@ -450,6 +446,7 @@ class os: AllStatic {
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
+    asynclog_thread,   // dedicated to flushing logs
     os_thread
   };
 
@@ -820,7 +817,7 @@ class os: AllStatic {
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
-  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
   // it will check if dump file can be created. Check or prepare a core dump to be

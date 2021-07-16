@@ -56,7 +56,6 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -141,7 +140,6 @@ int SharedRuntime::_resolve_virtual_ctr = 0;
 int SharedRuntime::_resolve_opt_virtual_ctr = 0;
 int SharedRuntime::_implicit_null_throws = 0;
 int SharedRuntime::_implicit_div0_throws = 0;
-int SharedRuntime::_throw_null_ctr = 0;
 
 int64_t SharedRuntime::_nof_normal_calls = 0;
 int64_t SharedRuntime::_nof_optimized_calls = 0;
@@ -156,7 +154,6 @@ int64_t SharedRuntime::_nof_megamorphic_interface_calls = 0;
 
 int SharedRuntime::_new_instance_ctr=0;
 int SharedRuntime::_new_array_ctr=0;
-int SharedRuntime::_multi1_ctr=0;
 int SharedRuntime::_multi2_ctr=0;
 int SharedRuntime::_multi3_ctr=0;
 int SharedRuntime::_multi4_ctr=0;
@@ -512,6 +509,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
+  if (blob != NULL && blob->is_optimized_entry_blob()) {
+    return ((OptimizedEntryBlob*)blob)->exception_handler();
+  }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
     // The deferred StackWatermarkSet::after_unwind check will be performed in
@@ -788,7 +788,7 @@ JRT_END
 void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
-  Thread* THREAD = current; // For exception processing.
+  JavaThread* THREAD = current; // For exception macros.
   Klass* k = vmClasses::StackOverflowError_klass();
   oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
   if (delayed) {
@@ -986,11 +986,10 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
-      oop obj = thread->as_Java_thread()->threadObj();
+      oop obj = JavaThread::cast(thread)->threadObj();
       return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
     }
   }
@@ -1050,7 +1049,7 @@ JRT_END
 // put callee has not been invoked yet.  Used by: resolve virtual/static,
 // vtable updates, etc.  Caller frame must be compiled.
 Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
 
   // last java frame on stack (which includes native call frames)
@@ -1079,7 +1078,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
                                               CallInfo& callinfo, TRAPS) {
   Handle receiver;
   Handle nullHandle;  // create a handy null handle for exception returns
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
 
   assert(!vfst.at_end(), "Java frame must exist");
 
@@ -1196,7 +1195,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
 }
 
 methodHandle SharedRuntime::find_callee_method(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   // We need first to check if any Java activations (compiled, interpreted)
   // exist on the stack since last JavaCall.  If not, we need
@@ -1336,7 +1335,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 // Resolves a call.  The compilers generate code for calls that go here
 // and are patched with the real destination of the call.
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   RegisterMap cbl_map(current, false);
   frame caller_frame = current->last_frame().sender(&cbl_map);
@@ -1440,7 +1439,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
-  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame(), "unexpected frame");
+  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame() && !caller_frame.is_optimized_entry_frame(), "unexpected frame");
 #endif /* ASSERT */
 
   methodHandle callee_method;
@@ -1472,7 +1471,8 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   frame caller_frame = stub_frame.sender(&reg_map);
 
   if (caller_frame.is_interpreted_frame() ||
-      caller_frame.is_entry_frame()) {
+      caller_frame.is_entry_frame() ||
+      caller_frame.is_optimized_entry_frame()) {
     Method* callee = current->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     current->set_vm_result_2(callee);
@@ -1656,7 +1656,7 @@ bool SharedRuntime::handle_ic_miss_helper_internal(Handle receiver, CompiledMeth
 }
 
 methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   CallInfo call_info;
   Bytecodes::Code bc;
@@ -1763,7 +1763,7 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 // destination from compiled to interpreted.
 //
 methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   RegisterMap reg_map(current, false);
   frame stub_frame = current->last_frame();
@@ -2115,9 +2115,6 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   // The normal monitorenter NullPointerException is thrown without acquiring a lock
   // and the model is that an exception implies the method failed.
   JRT_BLOCK_NO_ASYNC
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
   Handle h_obj(THREAD, obj);
   ObjectSynchronizer::enter(h_obj, lock, current);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
@@ -2155,14 +2152,11 @@ void SharedRuntime::print_statistics() {
   ttyLocker ttyl;
   if (xtty != NULL)  xtty->head("statistics type='SharedRuntime'");
 
-  if (_throw_null_ctr) tty->print_cr("%5d implicit null throw", _throw_null_ctr);
-
   SharedRuntime::print_ic_miss_histogram();
 
   // Dump the JRT_ENTRY counters
   if (_new_instance_ctr) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);
   if (_new_array_ctr) tty->print_cr("%5d new array requires GC", _new_array_ctr);
-  if (_multi1_ctr) tty->print_cr("%5d multianewarray 1 dim", _multi1_ctr);
   if (_multi2_ctr) tty->print_cr("%5d multianewarray 2 dim", _multi2_ctr);
   if (_multi3_ctr) tty->print_cr("%5d multianewarray 3 dim", _multi3_ctr);
   if (_multi4_ctr) tty->print_cr("%5d multianewarray 4 dim", _multi4_ctr);

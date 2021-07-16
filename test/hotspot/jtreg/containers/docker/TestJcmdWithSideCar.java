@@ -30,10 +30,11 @@
  *          is paired with a sidecar container by sharing certain aspects of container
  *          namespace such as PID namespace, specific sub-directories, IPC and more.
  * @requires docker.support
- * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
+ * @library /test/lib
  * @build EventGeneratorLoop
  * @run driver TestJcmdWithSideCar
  */

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359 8199762 8080353 8246353 8247456
+ * @bug 8080357 8167643 8187359 8199762 8080353 8246353 8247456 8267221
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -373,5 +373,15 @@ public class MethodsTest extends KullaTesting {
         assertEval("java.util.stream.IntStream.of(2).mapToObj(int[]::new);");
         assertNumberOfActiveMethods(0);
         assertActiveKeys();
+    }
+
+    //JDK-8267221:
+    public void testMethodArrayParameters() {
+        MethodSnippet m1 = methodKey(assertEval("void m1(int... p) { }", added(VALID)));
+        assertEquals(m1.parameterTypes(), "int...");
+        MethodSnippet m2 = methodKey(assertEval("void m2(int[]... p) { }", added(VALID)));
+        assertEquals(m2.parameterTypes(), "int[]...");
+        MethodSnippet m3 = methodKey(assertEval("void m3(int[][] p) { }", added(VALID)));
+        assertEquals(m3.parameterTypes(), "int[][]");
     }
 }

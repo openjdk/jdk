@@ -37,7 +37,7 @@ import org.w3c.dom.DocumentType;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.DomImplementationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.DomImplementationTest
  * @run testng/othervm org.w3c.dom.ptests.DomImplementationTest
  * @summary Test DomImplementation API
  */

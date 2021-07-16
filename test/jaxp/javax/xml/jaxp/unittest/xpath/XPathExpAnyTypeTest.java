@@ -43,7 +43,7 @@ import org.w3c.dom.Node;
  * @test
  * @bug 8054196
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.XPathExpAnyTypeTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.XPathExpAnyTypeTest
  * @run testng/othervm xpath.XPathExpAnyTypeTest
  * @summary Test for the project XPath: support any type. This test covers the new
  * evaluateExpression methods of XPathExpression.

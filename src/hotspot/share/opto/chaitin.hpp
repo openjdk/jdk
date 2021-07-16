@@ -167,7 +167,7 @@ public:
       assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA), "unexpected scalable reg");
     }
 #endif
-    return _is_scalable;
+    return Matcher::implements_scalable_vector && _is_scalable;
   }
 
 private:

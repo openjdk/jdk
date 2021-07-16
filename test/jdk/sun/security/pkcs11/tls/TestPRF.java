@@ -30,7 +30,7 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPRF
- * @run main/othervm TestPRF sm policy
+ * @run main/othervm -Djava.security.manager=allow TestPRF sm policy
  */
 
 import java.io.BufferedReader;

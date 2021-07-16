@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.Utils;
  * @test
  * @requires vm.hasSA
  * @library /test/lib
- * @run main JhsdbThreadInfoTest
+ * @run driver JhsdbThreadInfoTest
  */
 public class JhsdbThreadInfoTest {
 
@@ -60,8 +60,9 @@ public class JhsdbThreadInfoTest {
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());
 
-            out.shouldMatch("\".+\" #\\d+ daemon prio=\\d+ tid=0x[0-9a-f]+ nid=0x[0-9a-f]+ .+ \\[0x[0-9a-f]+]");
-            out.shouldMatch("\"main\" #\\d+ prio=\\d+ tid=0x[0-9a-f]+ nid=0x[0-9a-f]+ .+ \\[0x[0-9a-f]+]");
+            // The character class \p{XDigit} matches any hexadecimal character.
+            out.shouldMatch("\".+\" #\\d+ daemon prio=\\d+ tid=0x\\p{XDigit}+ nid=\\d+ .+ \\[0x\\p{XDigit}+]");
+            out.shouldMatch("\"main\" #\\d+ prio=\\d+ tid=0x\\p{XDigit}+ nid=\\d+ .+ \\[0x\\p{XDigit}+]");
             out.shouldMatch("   java.lang.Thread.State: .+");
             out.shouldMatch("   JavaThread state: _thread_.+");
 

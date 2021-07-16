@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,6 +415,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     // Enable or disable Java programming language access checks on a
     // reflected object (for example, a method)
+    @SuppressWarnings("removal")
     private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {

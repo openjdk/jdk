@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ static void verify_processing_context() {
 #ifdef ASSERT
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    JavaThread* jt = thread->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(thread);
     JavaThreadState state = jt->thread_state();
     assert(state != _thread_in_native, "unsafe thread state");
     assert(state != _thread_blocked, "unsafe thread state");

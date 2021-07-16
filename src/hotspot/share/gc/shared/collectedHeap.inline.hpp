@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+
 #include "gc/shared/memAllocator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"

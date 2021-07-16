@@ -25,15 +25,26 @@
 #ifndef SHARE_RUNTIME_VFRAME_INLINE_HPP
 #define SHARE_RUNTIME_VFRAME_INLINE_HPP
 
+#include "runtime/vframe.hpp"
+
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vframe.hpp"
 
 inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread, bool process_frames) : _reg_map(thread, false, process_frames) {
   _thread = thread;
 }
 
 inline intptr_t* vframeStreamCommon::frame_id() const        { return _frame.id(); }
+
+inline int vframeStreamCommon::vframe_id() const {
+  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
+  return _vframe_id;
+}
+
+inline int vframeStreamCommon::decode_offset() const {
+  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
+  return _decode_offset;
+}
 
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 

@@ -101,17 +101,12 @@ public:
     _archive_loading_failed = true;
   }
 
-  static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding any
   // mapped shared heap regions.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
-  }
-
-  static address shared_metaspace_top() {
-    return (address)MetaspaceObj::shared_metaspace_top();
   }
 
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
@@ -133,8 +128,8 @@ public:
     NOT_CDS(return false);
   }
 
-  static bool try_link_class(Thread* current, InstanceKlass* ik);
-  static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
+  static bool try_link_class(JavaThread* current, InstanceKlass* ik);
+  static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
   static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
@@ -184,7 +179,7 @@ public:
   static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
-  static void read_extra_data(Thread* current, const char* filename) NOT_CDS_RETURN;
+  static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

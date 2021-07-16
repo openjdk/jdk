@@ -77,6 +77,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         parentLocalesMap.put(Locale.US, Locale.US);
     }
 
+    @SuppressWarnings("removal")
     public CLDRLocaleProviderAdapter() {
         LocaleDataMetaInfo nbmi;
 
@@ -113,6 +114,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
+            @SuppressWarnings("removal")
             CalendarDataProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CalendarDataProvider>) () ->
                     new CLDRCalendarDataProviderImpl(
@@ -131,6 +133,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         if (calendarNameProvider == null) {
+            @SuppressWarnings("removal")
             CalendarNameProvider provider = AccessController.doPrivileged(
                     (PrivilegedAction<CalendarNameProvider>) ()
                     -> new CLDRCalendarNameProviderImpl(
@@ -154,6 +157,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
+            @SuppressWarnings("removal")
             TimeZoneNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<TimeZoneNameProvider>) () ->
                     new CLDRTimeZoneNameProviderImpl(

@@ -36,6 +36,8 @@
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSetConfiguration;
+class G1CardSetMemoryManager;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
@@ -194,6 +196,10 @@ public:
     _bot_part.reset_bot();
   }
 
+  void update_bot() {
+    _bot_part.update();
+  }
+
 private:
   // The remembered set for this region.
   HeapRegionRemSet* _rem_set;
@@ -205,9 +211,6 @@ private:
 
   // For a humongous region, region in which it starts.
   HeapRegion* _humongous_start_region;
-
-  // True iff an attempt to evacuate an object in the region failed.
-  volatile bool _evacuation_failed;
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
@@ -280,7 +283,10 @@ private:
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
 public:
-  HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
+  HeapRegion(uint hrm_index,
+             G1BlockOffsetTable* bot,
+             MemRegion mr,
+             G1CardSetConfiguration* config);
 
   // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.
@@ -444,6 +450,7 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
+  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
     return _rem_set;
@@ -493,15 +500,6 @@ public:
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
   void clear_cardtable();
-
-  // Returns the "evacuation_failed" property of the region.
-  inline bool evacuation_failed() const;
-
-  // Sets the "evacuation_failed" property of the region, returning true if this
-  // has been the first call, false otherwise.
-  inline bool set_evacuation_failed();
-
-  inline void reset_evacuation_failed();
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.

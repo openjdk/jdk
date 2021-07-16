@@ -101,7 +101,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();
     final SequentialScheduler sched =
-            SequentialScheduler.synchronizedScheduler(this::schedule);
+            SequentialScheduler.lockingScheduler(this::schedule);
     final SubscriptionBase userSubscription =
             new SubscriptionBase(sched, this::cancel, this::onSubscriptionError);
 
@@ -840,7 +840,7 @@ class Stream<T> extends ExchangeImpl<T> {
             this.contentLength = contentLen;
             this.remainingContentLength = contentLen;
             this.sendScheduler =
-                    SequentialScheduler.synchronizedScheduler(this::trySend);
+                    SequentialScheduler.lockingScheduler(this::trySend);
         }
 
         @Override

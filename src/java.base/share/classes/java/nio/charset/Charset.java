@@ -375,6 +375,7 @@ public abstract class Charset
     private static ThreadLocal<ThreadLocal<?>> gate =
             new ThreadLocal<ThreadLocal<?>>();
 
+    @SuppressWarnings("removal")
     private static Charset lookupViaProviders(final String charsetName) {
 
         // The runtime startup sequence looks up standard charsets as a
@@ -417,6 +418,7 @@ public abstract class Charset
     private static class ExtendedProviderHolder {
         static final CharsetProvider[] extendedProviders = extendedProviders();
         // returns ExtendedProvider, if installed
+        @SuppressWarnings("removal")
         private static CharsetProvider[] extendedProviders() {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                     public CharsetProvider[] run() {
@@ -563,6 +565,7 @@ public abstract class Charset
      * @return An immutable, case-insensitive map from canonical charset names
      *         to charset objects
      */
+    @SuppressWarnings("removal")
     public static SortedMap<String,Charset> availableCharsets() {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
