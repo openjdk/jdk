@@ -372,6 +372,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * {@linkplain #setLocation setLocation} or
      * {@linkplain #setLocationFromPaths setLocationFromPaths}.
      *
+     * @implSpec
+     * The default implementation throws {@link UnsupportedOperationException}.
+     *
      * @throws IllegalStateException if the location is not a module-oriented
      *  or output location.
      * @throws UnsupportedOperationException if this operation is not supported by

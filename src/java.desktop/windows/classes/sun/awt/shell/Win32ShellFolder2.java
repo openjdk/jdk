@@ -30,6 +30,7 @@ import java.awt.Toolkit;
 import java.awt.image.AbstractMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
+import java.awt.image.MultiResolutionImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -1160,10 +1161,17 @@ final class Win32ShellFolder2 extends ShellFolder {
                                 getRelativePIDL(), s, true);
                         if (hIcon <= 0) {
                             if (isDirectory()) {
-                                return getShell32Icon(FOLDER_ICON_ID, size);
+                                newIcon = getShell32Icon(FOLDER_ICON_ID, size);
                             } else {
-                                return getShell32Icon(FILE_ICON_ID, size);
+                                newIcon = getShell32Icon(FILE_ICON_ID, size);
                             }
+                            if (newIcon == null) {
+                                return null;
+                            }
+                            if (!(newIcon instanceof MultiResolutionImage)) {
+                                newIcon = new MultiResolutionIconImage(size, newIcon);
+                            }
+                            return newIcon;
                         }
                     }
                     newIcon = makeIcon(hIcon);

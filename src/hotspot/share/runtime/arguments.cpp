@@ -1116,7 +1116,7 @@ void Arguments::print_on(outputStream* st) {
     if (len == 0) {
       st->print_raw_cr("<not set>");
     } else {
-      st->print_raw_cr(path, (int)len);
+      st->print_raw_cr(path, len);
     }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
@@ -3988,6 +3988,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   apply_debugger_ergo();
+
+  if (log_is_enabled(Info, arguments)) {
+    LogStream st(Log(arguments)::info());
+    Arguments::print_on(&st);
+  }
 
   return JNI_OK;
 }
