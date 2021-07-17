@@ -53,8 +53,6 @@ public class CustomLoaderApp {
 
         if (init) {
             Object o = c.newInstance();
-
-
             Method method = c.getMethod("main", String[].class);
             String[] params = null;
             method.invoke(null, (Object)params);

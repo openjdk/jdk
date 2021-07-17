@@ -935,7 +935,8 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // initialize_vtable and initialize_itable need to be rerun
       // for a shared class if
       // 1) the class is loaded by custom class loader or
-      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
+      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints or
+      // 3) the class was not verified during dump time
       bool need_init_table = true;
       if (is_shared() && verified_at_dump_time() &&
           SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
