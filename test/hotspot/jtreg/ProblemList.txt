@@ -108,9 +108,9 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterObjectTest.java 8225313 linux-x86,linux-x64,windows-x64
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterObjectTest.java 8225313 linux-i586,linux-x64,windows-x64
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatObjectCorrectnessTest.java 8225313 linux-x86,linux-x64,windows-x64
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatObjectCorrectnessTest.java 8225313 linux-i586,linux-x64,windows-x64
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
