@@ -100,6 +100,7 @@ class VectorNode : public TypeNode {
 
   static bool is_vector_shift(int opc);
   static bool is_vector_shift_count(int opc);
+  static bool is_vector_rotate(int opc);
 
   static bool is_vector_shift(Node* n) {
     return is_vector_shift(n->Opcode());

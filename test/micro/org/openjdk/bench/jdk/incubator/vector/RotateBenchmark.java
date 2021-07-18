@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,10 @@ public class RotateBenchmark {
     int[] intres;
     long[] longinp;
     long[] longres;
-    VectorSpecies bspecies;
-    VectorSpecies sspecies;
-    VectorSpecies ispecies;
-    VectorSpecies lspecies;
+    VectorSpecies<Byte> bspecies;
+    VectorSpecies<Short> sspecies;
+    VectorSpecies<Integer> ispecies;
+    VectorSpecies<Long> lspecies;
 
     static final byte[] specialvalsbyte = {0, -0, Byte.MIN_VALUE, Byte.MAX_VALUE};
     static final short[] specialvalsshort = {0, -0, Short.MIN_VALUE, Short.MAX_VALUE};
@@ -100,12 +100,12 @@ public class RotateBenchmark {
     public void testRotateLeftB(Blackhole bh) {
         ByteVector bytevec = null;
         for (int j = 0; j < size; j += bspecies.length()) {
-            bytevec = ByteVector.fromArray(bspecies, byteinp, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROL, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROL, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROL, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROL, shift);
-            bytevec.lanewise(VectorOperators.ROL, j).intoArray(byteres, j);
+            bytevec = ByteVector.fromArray(bspecies, byteinp, j);
+            bytevec = bytevec.lanewise(VectorOperators.ROL, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROL, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROL, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROL, ((byte)shift));
+            bytevec.lanewise(VectorOperators.ROL, ((byte)j)).intoArray(byteres, j);
         }
         bh.consume(bytevec);
     }
@@ -114,12 +114,12 @@ public class RotateBenchmark {
     public void testRotateRightB(Blackhole bh) {
         ByteVector bytevec = null;
         for (int j = 0; j < size; j += bspecies.length()) {
-            bytevec = ByteVector.fromArray(bspecies, byteinp, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROR, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROR, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROR, shift);
-            bytevec = bytevec.lanewise(VectorOperators.ROR, shift);
-            bytevec.lanewise(VectorOperators.ROR, j).intoArray(byteres, j);
+            bytevec = ByteVector.fromArray(bspecies, byteinp, j);
+            bytevec = bytevec.lanewise(VectorOperators.ROR, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROR, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROR, ((byte)shift));
+            bytevec = bytevec.lanewise(VectorOperators.ROR, ((byte)shift));
+            bytevec.lanewise(VectorOperators.ROR, ((byte)j)).intoArray(byteres, j);
         }
         bh.consume(bytevec);
     }
@@ -128,12 +128,12 @@ public class RotateBenchmark {
     public void testRotateLeftS(Blackhole bh) {
         ShortVector shortvec = null;
         for (int j = 0; j < size; j += sspecies.length()) {
-            shortvec = ShortVector.fromArray(sspecies, shortinp, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROL, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROL, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROL, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROL, shift);
-            shortvec.lanewise(VectorOperators.ROL, j).intoArray(shortres, j);
+            shortvec = ShortVector.fromArray(sspecies, shortinp, j);
+            shortvec = shortvec.lanewise(VectorOperators.ROL, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROL, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROL, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROL, ((short)shift));
+            shortvec.lanewise(VectorOperators.ROL, ((short)j)).intoArray(shortres, j);
         }
         bh.consume(shortvec);
     }
@@ -142,12 +142,12 @@ public class RotateBenchmark {
     public void testRotateRightS(Blackhole bh) {
         ShortVector shortvec = null;
         for (int j = 0; j < size; j += sspecies.length()) {
-            shortvec = ShortVector.fromArray(sspecies, shortinp, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROR, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROR, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROR, shift);
-            shortvec = shortvec.lanewise(VectorOperators.ROR, shift);
-            shortvec.lanewise(VectorOperators.ROR, j).intoArray(shortres, j);
+            shortvec = ShortVector.fromArray(sspecies, shortinp, j);
+            shortvec = shortvec.lanewise(VectorOperators.ROR, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROR, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROR, ((short)shift));
+            shortvec = shortvec.lanewise(VectorOperators.ROR, ((short)shift));
+            shortvec.lanewise(VectorOperators.ROR, ((short)j)).intoArray(shortres, j);
         }
         bh.consume(shortvec);
     }
@@ -156,7 +156,7 @@ public class RotateBenchmark {
     public void testRotateLeftI(Blackhole bh) {
         IntVector intvec = null;
         for (int j = 0; j < size; j += ispecies.length()) {
-            intvec = IntVector.fromArray(ispecies, intinp, shift);
+            intvec = IntVector.fromArray(ispecies, intinp, j);
             intvec = intvec.lanewise(VectorOperators.ROL, shift);
             intvec = intvec.lanewise(VectorOperators.ROL, shift);
             intvec = intvec.lanewise(VectorOperators.ROL, shift);
@@ -170,7 +170,7 @@ public class RotateBenchmark {
     public void testRotateRightI(Blackhole bh) {
         IntVector intvec = null;
         for (int j = 0; j < size; j += ispecies.length()) {
-            intvec = IntVector.fromArray(ispecies, intinp, shift);
+            intvec = IntVector.fromArray(ispecies, intinp, j);
             intvec = intvec.lanewise(VectorOperators.ROR, shift);
             intvec = intvec.lanewise(VectorOperators.ROR, shift);
             intvec = intvec.lanewise(VectorOperators.ROR, shift);
@@ -184,7 +184,7 @@ public class RotateBenchmark {
     public void testRotateLeftL(Blackhole bh) {
         LongVector longvec = null;
         for (int j = 0; j < size; j += lspecies.length()) {
-            longvec = LongVector.fromArray(lspecies, longinp, shift);
+            longvec = LongVector.fromArray(lspecies, longinp, j);
             longvec = longvec.lanewise(VectorOperators.ROL, shift);
             longvec = longvec.lanewise(VectorOperators.ROL, shift);
             longvec = longvec.lanewise(VectorOperators.ROL, shift);
@@ -198,7 +198,7 @@ public class RotateBenchmark {
     public void testRotateRightL(Blackhole bh) {
         LongVector longvec = null;
         for (int j = 0; j < size; j += lspecies.length()) {
-            longvec = LongVector.fromArray(lspecies, longinp, shift);
+            longvec = LongVector.fromArray(lspecies, longinp, j);
             longvec = longvec.lanewise(VectorOperators.ROR, shift);
             longvec = longvec.lanewise(VectorOperators.ROR, shift);
             longvec = longvec.lanewise(VectorOperators.ROR, shift);

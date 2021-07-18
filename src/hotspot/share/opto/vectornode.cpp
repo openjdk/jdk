@@ -261,7 +261,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
     // vector rotation instruction.
-    if (vopc == Op_RotateLeftV || vopc == Op_RotateRightV) {
+    if (VectorNode::is_vector_rotate(vopc)) {
       return is_vector_rotate_supported(vopc, vlen, bt);
     }
     return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
@@ -296,7 +296,7 @@ bool VectorNode::is_roundopD(Node* n) {
 }
 
 bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
-  assert(vopc == Op_RotateLeftV || vopc == Op_RotateRightV, "wrong opcode");
+  assert(VectorNode::is_vector_rotate(vopc), "wrong opcode");
 
   // If target defines vector rotation patterns then no
   // need for degeneration.
@@ -585,6 +585,16 @@ VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt)
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[opc]);
     return NULL;
+  }
+}
+
+bool VectorNode::is_vector_rotate(int opc) {
+  switch (opc) {
+  case Op_RotateLeftV:
+  case Op_RotateRight:
+    return true;
+  default:
+    return false;
   }
 }
 

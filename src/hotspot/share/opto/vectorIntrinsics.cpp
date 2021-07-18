@@ -59,26 +59,42 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
 }
 #endif
 
-bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, bool check_bcast) {
+bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, bool has_scalar_args) {
     bool is_supported = true;
-    if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/) ||
-        (check_bcast && !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+    // has_scalar_args flag is true only for non-constant scalar shift count,
+    // since in this case shift needs to be broadcasted.
+    if (!Matcher::match_rule_supported_vector(opc, num_elem, elem_bt) ||
+         (has_scalar_args &&
+           !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
       is_supported = false;
     }
-    int lshiftopc = VectorNode::opcode(elem_bt == T_LONG ? Op_LShiftL : Op_LShiftI, elem_bt);
-    auto urshiftopc = [&]() {
-      switch(elem_bt) {
-        case T_INT: return Op_URShiftI;
-        case T_LONG: return Op_URShiftL;
-        case T_BYTE: return Op_URShiftB;
-        case T_SHORT: return Op_URShiftS;
-        default: return (Opcodes)0;
-      }
-    };
-    int rshiftopc = VectorNode::opcode(urshiftopc(), elem_bt);
+
+    int lshiftopc, rshiftopc;
+    switch(elem_bt) {
+      case T_BYTE:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftB;
+        break;
+      case T_SHORT:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftS;
+        break;
+      case T_INT:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftI;
+        break;
+      case T_LONG:
+        lshiftopc = Op_LShiftL;
+        rshiftopc = Op_URShiftL;
+        break;
+      default:
+        assert(false, "Unexpected type");
+    }
+    int lshiftvopc = VectorNode::opcode(lshiftopc, elem_bt);
+    int rshiftvopc = VectorNode::opcode(rshiftopc, elem_bt);
     if (!is_supported &&
-        arch_supports_vector(lshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
-        arch_supports_vector(rshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(lshiftvopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(rshiftvopc, num_elem, elem_bt, VecMaskNotUsed) &&
         arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
       is_supported = true;
     }
@@ -138,17 +154,29 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     return false;
   }
 
-  // Check that architecture supports this op-size-type combination.
-  if (!Matcher::match_rule_supported_vector(sopc, num_elem, type)) {
+  if (VectorNode::is_vector_rotate(sopc)) {
+    if(!arch_supports_vector_rotate(sopc, num_elem, type, has_scalar_args)) {
 #ifndef PRODUCT
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support it",
-                    NodeClassNames[sopc], type2name(type), num_elem);
-    }
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support variable vector shifts",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
 #endif
-    return false;
+      return false;
+    }
   } else {
-    assert(Matcher::match_rule_supported(sopc), "must be supported");
+    // Check that architecture supports this op-size-type combination.
+    if (!Matcher::match_rule_supported_vector(sopc, num_elem, type)) {
+#ifndef PRODUCT
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support it",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
+#endif
+      return false;
+    } else {
+      assert(Matcher::match_rule_supported(sopc), "must be supported");
+    }
   }
 
   if (num_elem == 1) {
@@ -322,27 +350,15 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
-  if (VectorNode::is_rotate_opcode(opc)) {
-    if ((sopc != 0) &&
-        !arch_supports_vector_rotate(sopc, num_elem, elem_bt, false)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
-                      n, sopc, num_elem, type2name(elem_bt),
-                      is_vector_mask(vbox_klass) ? 1 : 0);
-      }
-      return false; // not supported
+  // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
+  if ((sopc != 0) &&
+      !arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
+                    n, sopc, num_elem, type2name(elem_bt),
+                    is_vector_mask(vbox_klass) ? 1 : 0);
     }
-  } else {
-    // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
-    if ((sopc != 0) &&
-        !arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
-                      n, sopc, num_elem, type2name(elem_bt),
-                      is_vector_mask(vbox_klass) ? 1 : 0);
-      }
-      return false; // not supported
-    }
+    return false; // not supported
   }
 
   Node* opd1 = NULL; Node* opd2 = NULL; Node* opd3 = NULL;
@@ -1557,24 +1573,17 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+
+  // If CPU supports vector constant rotate instructions pass it directly
   bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
-                         -0x80 <= cnt_type->get_con() && cnt_type->get_con() < 0x80;
-  if (is_rotate) {
-    if (!arch_supports_vector_rotate(sopc, num_elem, elem_bt, !is_const_rotate)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
-                      sopc, num_elem, type2name(elem_bt));
-      }
-      return false; // not supported
+                         Matcher::supports_vector_constant_rotates(cnt_type->get_con());
+  bool has_scalar_args = is_rotate ? !is_const_rotate : true;
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
+                    sopc, num_elem, type2name(elem_bt));
     }
-  } else {
-    if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
-                      sopc, num_elem, type2name(elem_bt));
-      }
-      return false; // not supported
-    }
+    return false; // not supported
   }
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2 = NULL;
@@ -1587,7 +1596,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
       cnt = elem_bt == T_LONG ? gvn().transform(new ConvI2LNode(cnt)) : cnt;
       opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, type_bt));
     } else {
-      // constant shift.
+      // Constant shift value.
       opd2 = cnt;
     }
   }
