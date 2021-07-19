@@ -89,7 +89,7 @@ class MacroAssembler: public Assembler {
   void align(int modulus, int max = 252, int rem = 0);
 
   // Align prefix opcode to make sure it's not on the last word of a
-  // 64-byte block. 
+  // 64-byte block.
   //
   // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
   // add ins_alignment(2) to the instruct definition and implement the
