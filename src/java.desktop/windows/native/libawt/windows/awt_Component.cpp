@@ -6573,7 +6573,7 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
     jintArray obj = (jintArray)JNU_CallStaticMethodByName(env, &ignoreException,
                                                           "java/awt/event/InputEvent",
                                                           "getButtonDownMasks", "()[I").l;
-
+    CHECK_NULL(obj);
     jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
     CHECK_NULL(tmp);
     jsize len = env->GetArrayLength(obj);
