@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -71,7 +72,7 @@ public:
 
     RegMask* live = (RegMask*)_live[node->_idx];
     if (live == NULL) {
-      live = new (Compile::current()->comp_arena()->Amalloc_D(sizeof(RegMask))) RegMask();
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
       _live.map(node->_idx, (Node*)live);
     }
 
@@ -193,11 +194,21 @@ int ZBarrierSetC2::estimate_stub_size() const {
 
 static void set_barrier_data(C2Access& access) {
   if (ZBarrierSet::barrier_needed(access.decorators(), access.type())) {
-    if (access.decorators() & ON_WEAK_OOP_REF) {
-      access.set_barrier_data(ZLoadBarrierWeak);
+    uint8_t barrier_data = 0;
+
+    if (access.decorators() & ON_PHANTOM_OOP_REF) {
+      barrier_data |= ZLoadBarrierPhantom;
+    } else if (access.decorators() & ON_WEAK_OOP_REF) {
+      barrier_data |= ZLoadBarrierWeak;
     } else {
-      access.set_barrier_data(ZLoadBarrierStrong);
+      barrier_data |= ZLoadBarrierStrong;
     }
+
+    if (access.decorators() & AS_NO_KEEPALIVE) {
+      barrier_data |= ZLoadBarrierNoKeepalive;
+    }
+
+    access.set_barrier_data(barrier_data);
   }
 }
 
@@ -253,11 +264,51 @@ static const TypeFunc* clone_type() {
   return TypeFunc::make(domain, range);
 }
 
+#define XTOP LP64_ONLY(COMMA phase->top())
+
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
+
   if (ac->is_clone_array()) {
-    // Clone primitive array
-    BarrierSetC2::clone_at_expansion(phase, ac);
+    const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
+    BasicType bt;
+    if (ary_ptr == NULL) {
+      // ary_ptr can be null iff we are running with StressReflectiveCode
+      // This code will be unreachable
+      assert(StressReflectiveCode, "Guard against surprises");
+      bt = T_LONG;
+    } else {
+      bt = ary_ptr->elem()->array_element_basic_type();
+      if (is_reference_type(bt)) {
+        // Clone object array
+        bt = T_OBJECT;
+      } else {
+        // Clone primitive array
+        bt = T_LONG;
+      }
+    }
+
+    Node* ctrl = ac->in(TypeFunc::Control);
+    Node* mem = ac->in(TypeFunc::Memory);
+    Node* src = ac->in(ArrayCopyNode::Src);
+    Node* src_offset = ac->in(ArrayCopyNode::SrcPos);
+    Node* dest = ac->in(ArrayCopyNode::Dest);
+    Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
+    Node* length = ac->in(ArrayCopyNode::Length);
+
+    Node* payload_src = phase->basic_plus_adr(src, src_offset);
+    Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
+
+    const char* copyfunc_name = "arraycopy";
+    address     copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
+
+    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
+    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+
+    Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
+    phase->transform_later(call);
+
+    phase->igvn().replace_node(ac, call);
     return;
   }
 
@@ -288,6 +339,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   phase->transform_later(call);
   phase->igvn().replace_node(ac, call);
 }
+
+#undef XTOP
 
 // == Dominating barrier elision ==
 

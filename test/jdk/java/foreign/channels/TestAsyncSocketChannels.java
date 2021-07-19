@@ -35,6 +35,7 @@
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -267,7 +268,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                         }
                     }));
             // give time for socket buffer to fill up.
-            Thread.sleep(5*1000);
+            awaitNoFurtherWrites(bytesWritten);
 
             assertMessage(expectThrows(ISE, () -> scope.close()), "Scope is acquired by");
             assertTrue(scope.isAlive());
@@ -279,13 +280,38 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             // in turn unlock the scope and allow it to be closed.
             readNBytes(asc2, bytesWritten.get());
             assertTrue(scope.isAlive());
-            out.println("outstanding writes: " + outstandingWriteOps.get());
-            while (outstandingWriteOps.get() > 0 )  {
-                out.println("spinning");
-                Thread.onSpinWait();
-            }
+            awaitOutstandingWrites(outstandingWriteOps);
             handler.await();
         }
+    }
+
+    /** Waits for outstandingWriteOps to complete (become 0). */
+    static void awaitOutstandingWrites(AtomicInteger outstandingWriteOps) {
+        boolean initial = true;
+        while (outstandingWriteOps.get() > 0 )  {
+            if (initial) {
+                out.print("awaiting outstanding writes");
+                initial = false;
+            }
+            out.print(".");
+            Thread.onSpinWait();
+        }
+        out.println("outstanding writes: " + outstandingWriteOps.get());
+    }
+
+    /** Waits, at most 20secs, for bytesWritten to stabilize. */
+    static void awaitNoFurtherWrites(AtomicLong bytesWritten) throws Exception {
+        int i;
+        long prevN = 0;
+        for (i=0; i<10; i++) {
+            long n = bytesWritten.get();
+            Thread.sleep(2 * 1000);
+            if (bytesWritten.get() == n && prevN == n) {
+                break;
+            }
+            prevN = n;
+        }
+        out.println("awaitNoFurtherWrites: i=" + i +" , bytesWritten=" + bytesWritten.get());
     }
 
     /** Completion handler that exposes conveniences to assert results. */
@@ -357,9 +383,25 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                                                      AsynchronousSocketChannel asc)
         throws Exception
     {
+        setBufferSized(assc, asc);
         assc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         asc.connect(assc.getLocalAddress()).get();
         return assc.accept().get();
+    }
+
+    /** Sets the send/receive buffer sizes in an attempt/hint to limit the
+     * accepted/connected socket buffer sizes. Actual buffer sizes in use will
+     * likely be larger due to TCP auto-tuning, but the hint typically reduces
+     * the overall scaled sizes. This is primarily to stabilize outstanding
+     * write operations.
+     */
+    static void setBufferSized(AsynchronousServerSocketChannel assc,
+                               AsynchronousSocketChannel asc)
+        throws Exception
+    {
+        assc.setOption(StandardSocketOptions.SO_RCVBUF, 32 * 1024);
+        asc.setOption(StandardSocketOptions.SO_SNDBUF, 32 * 1024);
+        asc.setOption(StandardSocketOptions.SO_RCVBUF, 32 * 1024);
     }
 
     /** Tolerate the additional level of IOException wrapping of unchecked exceptions

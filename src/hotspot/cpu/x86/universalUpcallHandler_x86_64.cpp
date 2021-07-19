@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,12 +580,16 @@ struct AuxiliarySaves {
   bool should_detach;
 };
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax and for xmm0. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry, jobject jabi, jobject jconv) {
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs conv = ForeignGlobals::parse_call_regs(jconv);
   assert(conv._rets_length <= 1, "no multi reg returns");
-  CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 1024, /* locs_size = */ 1024);
+  CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 2048, /* locs_size = */ 1024);
 
   int register_size = sizeof(uintptr_t);
   int buffer_alignment = xmm_reg_size;
@@ -844,6 +848,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   return blob->code_begin();
 }
+PRAGMA_DIAG_POP
 
 bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
   return true;

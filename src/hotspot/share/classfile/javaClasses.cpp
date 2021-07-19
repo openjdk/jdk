@@ -469,70 +469,9 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   return native_platform_string;
 }
 
-Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS) {
-  oop          obj    = java_string();
-  // Typical usage is to convert all '/' to '.' in string.
-  typeArrayOop value  = java_lang_String::value(obj);
-  int          length = java_lang_String::length(obj, value);
-  bool      is_latin1 = java_lang_String::is_latin1(obj);
-
-  // First check if any from_char exist
-  int index; // Declared outside, used later
-  for (index = 0; index < length; index++) {
-    jchar c = !is_latin1 ? value->char_at(index) :
-                  ((jchar) value->byte_at(index)) & 0xff;
-    if (c == from_char) {
-      break;
-    }
-  }
-  if (index == length) {
-    // No from_char, so do not copy.
-    return java_string;
-  }
-
-  // Check if result string will be latin1
-  bool to_is_latin1 = false;
-
-  // Replacement char must be latin1
-  if (CompactStrings && UNICODE::is_latin1(to_char)) {
-    if (is_latin1) {
-      // Source string is latin1 as well
-      to_is_latin1 = true;
-    } else if (!UNICODE::is_latin1(from_char)) {
-      // We are replacing an UTF16 char. Scan string to
-      // check if result can be latin1 encoded.
-      to_is_latin1 = true;
-      for (index = 0; index < length; index++) {
-        jchar c = value->char_at(index);
-        if (c != from_char && !UNICODE::is_latin1(c)) {
-          to_is_latin1 = false;
-          break;
-        }
-      }
-    }
-  }
-
-  // Create new UNICODE (or byte) buffer. Must handlize value because GC
-  // may happen during String and char array creation.
-  typeArrayHandle h_value(THREAD, value);
-  Handle string = basic_create(length, to_is_latin1, CHECK_NH);
-  typeArrayOop from_buffer = h_value();
-  typeArrayOop to_buffer = java_lang_String::value(string());
-
-  // Copy contents
-  for (index = 0; index < length; index++) {
-    jchar c = (!is_latin1) ? from_buffer->char_at(index) :
-                    ((jchar) from_buffer->byte_at(index)) & 0xff;
-    if (c == from_char) {
-      c = to_char;
-    }
-    if (!to_is_latin1) {
-      to_buffer->char_at_put(index, c);
-    } else {
-      to_buffer->byte_at_put(index, (jbyte) c);
-    }
-  }
-  return string;
+Handle java_lang_String::externalize_classname(Symbol* java_name, TRAPS) {
+  ResourceMark rm(THREAD);
+  return create_from_str(java_name->as_klass_external_name(), THREAD);
 }
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
@@ -563,7 +502,7 @@ jchar* java_lang_String::as_unicode_string_or_null(oop java_string, int& length)
   return result;
 }
 
-unsigned int java_lang_String::hash_code(oop java_string) {
+inline unsigned int java_lang_String::hash_code_impl(oop java_string, bool update) {
   // The hash and hashIsZero fields are subject to a benign data race,
   // making it crucial to ensure that any observable result of the
   // calculation in this method stays correct under any possible read of
@@ -590,13 +529,24 @@ unsigned int java_lang_String::hash_code(oop java_string) {
     }
   }
 
-  if (hash != 0) {
-    java_string->int_field_put(_hash_offset, hash);
-  } else {
-    java_string->bool_field_put(_hashIsZero_offset, true);
+  if (update) {
+    if (hash != 0) {
+      java_string->int_field_put(_hash_offset, hash);
+    } else {
+      java_string->bool_field_put(_hashIsZero_offset, true);
+    }
   }
   return hash;
 }
+
+unsigned int java_lang_String::hash_code(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/true);
+}
+
+unsigned int java_lang_String::hash_code_noupdate(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/false);
+}
+
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
@@ -4646,26 +4596,6 @@ void java_lang_AssertionStatusDirectives::set_packageEnabled(oop o, oop val) {
 void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
-
-
-// Support for intrinsification of java.nio.Buffer.checkIndex
-
-int java_nio_Buffer::_limit_offset;
-
-#define BUFFER_FIELDS_DO(macro) \
-  macro(_limit_offset, k, "limit", int_signature, false)
-
-void java_nio_Buffer::compute_offsets() {
-  InstanceKlass* k = vmClasses::nio_Buffer_klass();
-  assert(k != NULL, "must be loaded in 1.4+");
-  BUFFER_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_nio_Buffer::serialize_offsets(SerializeClosure* f) {
-  BUFFER_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
 
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 

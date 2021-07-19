@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015 Red Hat, Inc.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +24,15 @@
  */
 /*
  * (C) Copyright IBM Corp. 2013
+ * Copyright (c) 2015 Red Hat, Inc.
  */
 
 package com.sun.crypto.provider;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.ProviderException;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -44,26 +47,18 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.8
  */
-final class GHASH {
 
-    private static long getLong(byte[] buffer, int offset) {
-        long result = 0;
-        int end = offset + 8;
-        for (int i = offset; i < end; ++i) {
-            result = (result << 8) + (buffer[i] & 0xFF);
-        }
-        return result;
-    }
-
-    private static void putLong(byte[] buffer, int offset, long value) {
-        int end = offset + 8;
-        for (int i = end - 1; i >= offset; --i) {
-            buffer[i] = (byte) value;
-            value >>= 8;
-        }
-    }
+final class GHASH implements Cloneable, GCM {
 
     private static final int AES_BLOCK_SIZE = 16;
+
+    // Handle for converting byte[] <-> long
+    private static final VarHandle asLongView =
+        MethodHandles.byteArrayViewVarHandle(long[].class,
+            ByteOrder.BIG_ENDIAN);
+
+    // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
+    private static final int MAX_LEN = 1024;
 
     // Multiplies state[0], state[1] by subkeyH[0], subkeyH[1].
     private static void blockMult(long[] st, long[] subH) {
@@ -127,14 +122,12 @@ final class GHASH {
 
     /* subkeyHtbl and state are stored in long[] for GHASH intrinsic use */
 
-    // hashtable subkeyHtbl; holds 2*9 powers of subkeyH computed using carry-less multiplication
+    // hashtable subkeyHtbl holds 2*9 powers of subkeyH computed using
+    // carry-less multiplication
     private long[] subkeyHtbl;
 
     // buffer for storing hash
     private final long[] state;
-
-    // variables for save/restore calls
-    private long stateSave0, stateSave1;
 
     /**
      * Initializes the cipher in the specified mode with the given key
@@ -151,87 +144,106 @@ final class GHASH {
         }
         state = new long[2];
         subkeyHtbl = new long[2*9];
-        subkeyHtbl[0] = getLong(subkeyH, 0);
-        subkeyHtbl[1] = getLong(subkeyH, 8);
+        subkeyHtbl[0] = (long)asLongView.get(subkeyH, 0);
+        subkeyHtbl[1] = (long)asLongView.get(subkeyH, 8);
     }
 
-    /**
-     * Resets the GHASH object to its original state, i.e. blank w/
-     * the same subkey H. Used after digest() is called and to re-use
-     * this object for different data w/ the same H.
-     */
-    void reset() {
-        state[0] = 0;
-        state[1] = 0;
+    // Cloning constructor
+    private GHASH(GHASH g) {
+        state = g.state.clone();
+        subkeyHtbl = g.subkeyHtbl.clone();
     }
 
-    /**
-     * Save the current snapshot of this GHASH object.
-     */
-    void save() {
-        stateSave0 = state[0];
-        stateSave1 = state[1];
+    @Override
+    public GHASH clone() {
+        return new GHASH(this);
     }
 
-    /**
-     * Restores this object using the saved snapshot.
-     */
-    void restore() {
-        state[0] = stateSave0;
-        state[1] = stateSave1;
-    }
-
-    private static void processBlock(byte[] data, int ofs, long[] st, long[] subH) {
-        st[0] ^= getLong(data, ofs);
-        st[1] ^= getLong(data, ofs + 8);
+    private static void processBlock(byte[] data, int ofs, long[] st,
+        long[] subH) {
+        st[0] ^= (long)asLongView.get(data, ofs);
+        st[1] ^= (long)asLongView.get(data, ofs + 8);
         blockMult(st, subH);
     }
 
-    void update(byte[] in) {
-        update(in, 0, in.length);
+    int update(byte[] in) {
+        return update(in, 0, in.length);
     }
 
-    void update(byte[] in, int inOfs, int inLen) {
+    int update(byte[] in, int inOfs, int inLen) {
         if (inLen == 0) {
-            return;
+            return 0;
         }
-        ghashRangeCheck(in, inOfs, inLen, state, subkeyHtbl);
-        processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyHtbl);
+        int len = inLen - (inLen % AES_BLOCK_SIZE);
+        ghashRangeCheck(in, inOfs, len, state, subkeyHtbl);
+        processBlocks(in, inOfs, len / AES_BLOCK_SIZE, state, subkeyHtbl);
+        return len;
     }
-
-    // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
-    private static final int MAX_LEN = 1024;
 
     // Will process as many blocks it can and will leave the remaining.
-    int update(ByteBuffer src, int inLen) {
+    int update(ByteBuffer ct, int inLen) {
         inLen -= (inLen % AES_BLOCK_SIZE);
         if (inLen == 0) {
             return 0;
         }
 
-        int processed = inLen;
-        byte[] in = new byte[Math.min(MAX_LEN, inLen)];
-        while (processed > MAX_LEN ) {
-            src.get(in, 0, MAX_LEN);
-            update(in, 0 , MAX_LEN);
-            processed -= MAX_LEN;
+        // If ct is a direct bytebuffer, send it directly to the intrinsic
+        if (ct.isDirect()) {
+            int processed = inLen;
+            processBlocksDirect(ct, inLen);
+            return processed;
+        } else if (!ct.isReadOnly()) {
+            // If a non-read only heap bytebuffer, use the array update method
+            int processed = update(ct.array(),
+                ct.arrayOffset() + ct.position(),
+                inLen);
+            ct.position(ct.position() + processed);
+            return processed;
         }
-        src.get(in, 0, processed);
-        update(in, 0, processed);
+
+        // Read only heap bytebuffers have to be copied and operated on
+        int to_process = inLen;
+        byte[] in = new byte[Math.min(MAX_LEN, inLen)];
+        while (to_process > MAX_LEN ) {
+            ct.get(in, 0, MAX_LEN);
+            update(in, 0 , MAX_LEN);
+            to_process -= MAX_LEN;
+        }
+        ct.get(in, 0, to_process);
+        update(in, 0, to_process);
         return inLen;
     }
 
-    void doLastBlock(ByteBuffer src, int inLen) {
-        int processed = update(src, inLen);
+    int doFinal(ByteBuffer src, int inLen) {
+        int processed = 0;
+
+        if (inLen >= AES_BLOCK_SIZE) {
+            processed = update(src, inLen);
+        }
+
         if (inLen == processed) {
-            return;
+            return processed;
         }
         byte[] block = new byte[AES_BLOCK_SIZE];
         src.get(block, 0, inLen - processed);
         update(block, 0, AES_BLOCK_SIZE);
+        return inLen;
     }
 
-    private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {
+    int doFinal(byte[] in, int inOfs, int inLen) {
+        int remainder = inLen % AES_BLOCK_SIZE;
+        inOfs += update(in, inOfs, inLen - remainder);
+        if (remainder > 0) {
+            byte[] block = new byte[AES_BLOCK_SIZE];
+            System.arraycopy(in, inOfs, block, 0,
+                remainder);
+            update(block, 0, AES_BLOCK_SIZE);
+        }
+        return inLen;
+    }
+
+    private static void ghashRangeCheck(byte[] in, int inOfs, int inLen,
+        long[] st, long[] subH) {
         if (inLen < 0) {
             throw new RuntimeException("invalid input length: " + inLen);
         }
@@ -263,7 +275,8 @@ final class GHASH {
      * throw exceptions or allocate arrays as it will breaking intrinsics
      */
     @IntrinsicCandidate
-    private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
+    private static void processBlocks(byte[] data, int inOfs, int blocks,
+        long[] st, long[] subH) {
         int offset = inOfs;
         while (blocks > 0) {
             processBlock(data, offset, st, subH);
@@ -272,11 +285,61 @@ final class GHASH {
         }
     }
 
+    // ProcessBlock for Direct ByteBuffers
+    private void processBlocksDirect(ByteBuffer ct, int inLen) {
+        byte[] data = new byte[Math.min(MAX_LEN, inLen)];
+        while (inLen > MAX_LEN) {
+            ct.get(data, 0, MAX_LEN);
+            processBlocks(data, 0, MAX_LEN / AES_BLOCK_SIZE, state,
+                subkeyHtbl);
+            inLen -= MAX_LEN;
+        }
+        if (inLen >= AES_BLOCK_SIZE) {
+            int len = inLen - (inLen % AES_BLOCK_SIZE);
+            ct.get(data, 0, len);
+            processBlocks(data, 0, len / AES_BLOCK_SIZE, state,
+                subkeyHtbl);
+        }
+    }
+
     byte[] digest() {
         byte[] result = new byte[AES_BLOCK_SIZE];
-        putLong(result, 0, state[0]);
-        putLong(result, 8, state[1]);
-        reset();
+        asLongView.set(result, 0, state[0]);
+        asLongView.set(result, 8, state[1]);
+        // Reset state
+        state[0] = 0;
+        state[1] = 0;
         return result;
+    }
+
+
+    /**
+     * None of the out or dst values are necessary, they are to satisfy the
+     * GCM interface requirement
+     */
+    @Override
+    public int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
+        return update(in, inOfs, inLen);
+    }
+
+    @Override
+    public int update(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
+        return update(in, inOfs, inLen);
+    }
+
+    @Override
+    public int update(ByteBuffer src, ByteBuffer dst) {
+        return update(src, src.remaining());
+    }
+
+    @Override
+    public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
+        int outOfs) {
+        return doFinal(in, inOfs, inLen);
+    }
+
+    @Override
+    public int doFinal(ByteBuffer src, ByteBuffer dst) {
+        return doFinal(src, src.remaining());
     }
 }

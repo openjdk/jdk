@@ -747,9 +747,6 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // Override Abstract_VM_Version implementation
-  static bool use_biased_locking();
-
   // Asserts
   static void assert_is_initialized() {
     assert(_cpuid_info.std_cpuid1_eax.bits.family != 0, "VM_Version not initialized");
@@ -778,7 +775,7 @@ public:
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
   static bool is_zx()             { assert_is_initialized(); return (_cpuid_info.std_vendor_name_0 == 0x746e6543) || (_cpuid_info.std_vendor_name_0 == 0x68532020); } // 'tneC'||'hS  '
   static bool is_atom_family()    { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x36) || (extended_cpu_model() == 0x37) || (extended_cpu_model() == 0x4D))); } //Silvermont and Centerton
-  static bool is_knights_family() { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
+  static bool is_knights_family() { return UseKNLSetting || ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
 
   static bool supports_processor_topology() {
     return (_cpuid_info.std_max_function >= 0xB) &&

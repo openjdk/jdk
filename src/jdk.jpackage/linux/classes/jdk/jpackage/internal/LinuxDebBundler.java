@@ -40,12 +40,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
@@ -437,6 +439,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_ARCH", DEB_ARCH);
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
                 createMetaPackage(params).sourceApplicationLayout().sizeInBytes() >> 10));
+        data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(
+                ABOUT_URL.fetchFrom(params)).map(value -> "Homepage: " + value).orElse(
+                ""));
 
         return data;
     }

@@ -710,6 +710,10 @@ public class Proxy implements java.io.Serializable {
                     throw new IllegalArgumentException(intf.getName() + " is a hidden interface");
                 }
 
+                if (intf.isSealed()) {
+                    throw new IllegalArgumentException(intf.getName() + " is a sealed interface");
+                }
+
                 /*
                  * Verify that the class loader resolves the name of this
                  * interface to the same Class object.
@@ -930,7 +934,8 @@ public class Proxy implements java.io.Serializable {
      * if any of the following restrictions is violated:</a>
      * <ul>
      * <li>All of {@code Class} objects in the given {@code interfaces} array
-     * must represent {@linkplain Class#isHidden() non-hidden} interfaces,
+     * must represent {@linkplain Class#isHidden() non-hidden} and
+     * {@linkplain Class#isSealed() non-sealed} interfaces,
      * not classes or primitive types.
      *
      * <li>No two elements in the {@code interfaces} array may

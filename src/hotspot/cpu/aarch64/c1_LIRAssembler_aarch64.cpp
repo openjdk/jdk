@@ -784,7 +784,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 }
 
 
-void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide, bool /* unaligned */) {
+void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   PatchingStub* patch = NULL;
   Register compressed_src = rscratch1;
@@ -941,7 +941,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 
-void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool /* unaligned */) {
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
   LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
@@ -2577,13 +2577,9 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   if (!UseFastLocking) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
-    Register scratch = noreg;
-    if (UseBiasedLocking) {
-      scratch = op->scratch_opr()->as_register();
-    }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
@@ -2837,7 +2833,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         }
 #endif
         // first time here. Set profile type.
-        __ ldr(tmp, mdo_addr);
+        __ str(tmp, mdo_addr);
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
@@ -2911,7 +2907,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   if (dest->is_address() || src->is_address()) {
     move_op(src, dest, type, lir_patch_none, info,
-            /*pop_fpu_stack*/false, /*unaligned*/false, /*wide*/false);
+            /*pop_fpu_stack*/false, /*wide*/false);
   } else {
     ShouldNotReachHere();
   }

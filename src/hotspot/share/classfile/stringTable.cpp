@@ -53,6 +53,7 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
 
 // We prefer short chains of avg 2
@@ -597,39 +598,40 @@ void StringTable::verify() {
 
 // Verification and comp
 class VerifyCompStrings : StackObj {
-  GrowableArray<oop>* _oops;
+  static unsigned string_hash(oop const& str) {
+    return java_lang_String::hash_code_noupdate(str);
+  }
+  static bool string_equals(oop const& a, oop const& b) {
+    return java_lang_String::equals(a, b);
+  }
+
+  ResizeableResourceHashtable<oop, bool,
+                              ResourceObj::C_HEAP, mtInternal,
+                              string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings(GrowableArray<oop>* oops) : _oops(oops), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == NULL) {
       return true;
     }
-    int len = _oops->length();
-    for (int i = 0; i < len; i++) {
-      bool eq = java_lang_String::equals(s, _oops->at(i));
-      assert(!eq, "Duplicate strings");
-      if (eq) {
-        _errors++;
-      }
+    bool created;
+    _table.put_if_absent(s, true, &created);
+    assert(created, "Duplicate strings");
+    if (!created) {
+      _errors++;
     }
-    _oops->push(s);
     return true;
   };
 };
 
 size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
-  GrowableArray<oop>* oops =
-    new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<oop>((int)_current_size, mtInternal);
-
-  VerifyCompStrings vcs(oops);
+  VerifyCompStrings vcs;
   if (!_local_table->try_scan(thr, vcs)) {
     log_info(stringtable)("verify unavailable at this moment");
   }
-  delete oops;
   return vcs._errors;
 }
 

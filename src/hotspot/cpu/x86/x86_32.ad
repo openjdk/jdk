@@ -1440,6 +1440,16 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 6 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 6 : FLOATPRESSURE;
+}
+
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
   // Use hardware integer DIV instruction when
   // it is faster than a code which use multiply.
@@ -5011,6 +5021,89 @@ define %{
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
+// Dummy reg-to-reg vector moves. Removed during post-selection cleanup.
+// Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+
+
+// Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 //----------BSWAP-Instruction--------------------------------------------------
 instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
@@ -5756,46 +5849,6 @@ instruct loadKlass(eRegP dst, memory mem) %{
   ins_pipe( ialu_reg_mem );
 %}
 
-// Load Float
-instruct MoveF2LEG(legRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveLEG2F(regF dst, legRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveD2LEG(legRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveLEG2D(regD dst, legRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Load Double
 instruct loadDPR(regDPR dst, memory mem) %{
   predicate(UseSSE<=1);
@@ -6425,26 +6478,6 @@ instruct storeD(memory mem, regD src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Double
-instruct MoveD2VL(vlRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveVL2D(regD dst, vlRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Store XMM register to memory (single-precision floating point)
 // MOVSS instruction
 instruct storeF(memory mem, regF src) %{
@@ -6458,25 +6491,6 @@ instruct storeF(memory mem, regF src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Float
-instruct MoveF2VL(vlRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveVL2F(regF dst, vlRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
 
 // Store Float
 instruct storeFPR( memory mem, regFPR1 src) %{
@@ -11470,8 +11484,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // fast clearing of an array
 // Small ClearArray non-AVX512.
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11530,11 +11543,10 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
 %}
 
 // Small ClearArray AVX512 non-constant length.
-instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-               UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-               !n->in(2)->bottom_type()->is_int()->is_con());
+instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
   format %{ $$template
@@ -11593,7 +11605,7 @@ instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI z
 
 // Large ClearArray non-AVX512.
 instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((ClearArrayNode*)n)->is_large());
+  predicate((UseAVX <= 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11642,8 +11654,8 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
 %}
 
 // Large ClearArray AVX512.
-instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((ClearArrayNode*)n)->is_large());
+instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate((UseAVX > 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11695,9 +11707,9 @@ instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAX
 instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-               (UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-                 n->in(2)->bottom_type()->is_int()->is_con()));
+               ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
@@ -13667,7 +13679,7 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
                  $scr$$Register, $cx1$$Register, $cx2$$Register,
-                 _counters, _rtm_counters, _stack_rtm_counters,
+                 _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
   %}
@@ -13682,7 +13694,7 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

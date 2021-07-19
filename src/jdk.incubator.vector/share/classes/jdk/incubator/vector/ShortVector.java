@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -3549,15 +3550,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     ShortVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getShort(o + i * 2));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getShort(o + i * 2));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3600,15 +3600,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
+                });
     }
 
     // End of low-level memory operations.

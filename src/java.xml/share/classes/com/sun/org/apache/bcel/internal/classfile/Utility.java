@@ -42,7 +42,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Utility functions that do not really belong to any class in particular.
  *
- * @LastModified: May 2021
+ * @LastModified: June 2021
  */
 // @since 6.0 methods are no longer final
 public abstract class Utility {
@@ -1461,6 +1461,7 @@ public abstract class Utility {
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     GZIPOutputStream gos = new GZIPOutputStream(baos)) {
                 gos.write(bytes, 0, bytes.length);
+                gos.finish();
                 bytes = baos.toByteArray();
             }
         }

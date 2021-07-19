@@ -272,6 +272,7 @@ public:
   void initialize(uint max_region_length);
 
   void clear_candidates();
+  bool has_candidates();
 
   void set_candidates(G1CollectionSetCandidates* candidates) {
     assert(_candidates == NULL, "Trying to replace collection set candidates.");

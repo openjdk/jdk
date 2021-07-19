@@ -2694,7 +2694,7 @@ void SuperWord::output() {
           // if vector resources are limited, do not allow additional unrolling, also
           // do not unroll more on pure vector loops which were not reduced so that we can
           // program the post loop to single iteration execution.
-          if (FLOATPRESSURE > 8) {
+          if (Matcher::float_pressure_limit() > 8) {
             C->set_major_progress();
             cl->mark_do_unroll_only();
           }

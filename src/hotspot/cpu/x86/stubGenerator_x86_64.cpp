@@ -39,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -5286,162 +5287,99 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  //base64 character set
-  address base64_charset_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "base64_charset");
+  address base64_shuffle_addr()
+  {
+    __ align(64, (unsigned long long)__ pc());
+    StubCodeMark mark(this, "StubRoutines", "shuffle_base64");
     address start = __ pc();
-    __ emit_data64(0x0000004200000041, relocInfo::none);
-    __ emit_data64(0x0000004400000043, relocInfo::none);
-    __ emit_data64(0x0000004600000045, relocInfo::none);
-    __ emit_data64(0x0000004800000047, relocInfo::none);
-    __ emit_data64(0x0000004a00000049, relocInfo::none);
-    __ emit_data64(0x0000004c0000004b, relocInfo::none);
-    __ emit_data64(0x0000004e0000004d, relocInfo::none);
-    __ emit_data64(0x000000500000004f, relocInfo::none);
-    __ emit_data64(0x0000005200000051, relocInfo::none);
-    __ emit_data64(0x0000005400000053, relocInfo::none);
-    __ emit_data64(0x0000005600000055, relocInfo::none);
-    __ emit_data64(0x0000005800000057, relocInfo::none);
-    __ emit_data64(0x0000005a00000059, relocInfo::none);
-    __ emit_data64(0x0000006200000061, relocInfo::none);
-    __ emit_data64(0x0000006400000063, relocInfo::none);
-    __ emit_data64(0x0000006600000065, relocInfo::none);
-    __ emit_data64(0x0000006800000067, relocInfo::none);
-    __ emit_data64(0x0000006a00000069, relocInfo::none);
-    __ emit_data64(0x0000006c0000006b, relocInfo::none);
-    __ emit_data64(0x0000006e0000006d, relocInfo::none);
-    __ emit_data64(0x000000700000006f, relocInfo::none);
-    __ emit_data64(0x0000007200000071, relocInfo::none);
-    __ emit_data64(0x0000007400000073, relocInfo::none);
-    __ emit_data64(0x0000007600000075, relocInfo::none);
-    __ emit_data64(0x0000007800000077, relocInfo::none);
-    __ emit_data64(0x0000007a00000079, relocInfo::none);
-    __ emit_data64(0x0000003100000030, relocInfo::none);
-    __ emit_data64(0x0000003300000032, relocInfo::none);
-    __ emit_data64(0x0000003500000034, relocInfo::none);
-    __ emit_data64(0x0000003700000036, relocInfo::none);
-    __ emit_data64(0x0000003900000038, relocInfo::none);
-    __ emit_data64(0x0000002f0000002b, relocInfo::none);
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x0405030401020001, relocInfo::none);
+    __ emit_data64(0x0a0b090a07080607, relocInfo::none);
+    __ emit_data64(0x10110f100d0e0c0d, relocInfo::none);
+    __ emit_data64(0x1617151613141213, relocInfo::none);
+    __ emit_data64(0x1c1d1b1c191a1819, relocInfo::none);
+    __ emit_data64(0x222321221f201e1f, relocInfo::none);
+    __ emit_data64(0x2829272825262425, relocInfo::none);
+    __ emit_data64(0x2e2f2d2e2b2c2a2b, relocInfo::none);
     return start;
   }
 
-  //base64 url character set
-  address base64url_charset_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "base64url_charset");
+  address base64_avx2_shuffle_addr()
+  {
+    __ align(32);
+    StubCodeMark mark(this, "StubRoutines", "avx2_shuffle_base64");
     address start = __ pc();
-    __ emit_data64(0x0000004200000041, relocInfo::none);
-    __ emit_data64(0x0000004400000043, relocInfo::none);
-    __ emit_data64(0x0000004600000045, relocInfo::none);
-    __ emit_data64(0x0000004800000047, relocInfo::none);
-    __ emit_data64(0x0000004a00000049, relocInfo::none);
-    __ emit_data64(0x0000004c0000004b, relocInfo::none);
-    __ emit_data64(0x0000004e0000004d, relocInfo::none);
-    __ emit_data64(0x000000500000004f, relocInfo::none);
-    __ emit_data64(0x0000005200000051, relocInfo::none);
-    __ emit_data64(0x0000005400000053, relocInfo::none);
-    __ emit_data64(0x0000005600000055, relocInfo::none);
-    __ emit_data64(0x0000005800000057, relocInfo::none);
-    __ emit_data64(0x0000005a00000059, relocInfo::none);
-    __ emit_data64(0x0000006200000061, relocInfo::none);
-    __ emit_data64(0x0000006400000063, relocInfo::none);
-    __ emit_data64(0x0000006600000065, relocInfo::none);
-    __ emit_data64(0x0000006800000067, relocInfo::none);
-    __ emit_data64(0x0000006a00000069, relocInfo::none);
-    __ emit_data64(0x0000006c0000006b, relocInfo::none);
-    __ emit_data64(0x0000006e0000006d, relocInfo::none);
-    __ emit_data64(0x000000700000006f, relocInfo::none);
-    __ emit_data64(0x0000007200000071, relocInfo::none);
-    __ emit_data64(0x0000007400000073, relocInfo::none);
-    __ emit_data64(0x0000007600000075, relocInfo::none);
-    __ emit_data64(0x0000007800000077, relocInfo::none);
-    __ emit_data64(0x0000007a00000079, relocInfo::none);
-    __ emit_data64(0x0000003100000030, relocInfo::none);
-    __ emit_data64(0x0000003300000032, relocInfo::none);
-    __ emit_data64(0x0000003500000034, relocInfo::none);
-    __ emit_data64(0x0000003700000036, relocInfo::none);
-    __ emit_data64(0x0000003900000038, relocInfo::none);
-    __ emit_data64(0x0000005f0000002d, relocInfo::none);
-
+    __ emit_data64(0x0809070805060405, relocInfo::none);
+    __ emit_data64(0x0e0f0d0e0b0c0a0b, relocInfo::none);
+    __ emit_data64(0x0405030401020001, relocInfo::none);
+    __ emit_data64(0x0a0b090a07080607, relocInfo::none);
     return start;
   }
 
-  address base64_bswap_mask_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "bswap_mask_base64");
+  address base64_avx2_input_mask_addr()
+  {
+    __ align(32);
+    StubCodeMark mark(this, "StubRoutines", "avx2_input_mask_base64");
     address start = __ pc();
-    __ emit_data64(0x0504038002010080, relocInfo::none);
-    __ emit_data64(0x0b0a098008070680, relocInfo::none);
-    __ emit_data64(0x0908078006050480, relocInfo::none);
-    __ emit_data64(0x0f0e0d800c0b0a80, relocInfo::none);
-    __ emit_data64(0x0605048003020180, relocInfo::none);
-    __ emit_data64(0x0c0b0a8009080780, relocInfo::none);
-    __ emit_data64(0x0504038002010080, relocInfo::none);
-    __ emit_data64(0x0b0a098008070680, relocInfo::none);
-
+    __ emit_data64(0x8000000000000000, relocInfo::none);
+    __ emit_data64(0x8000000080000000, relocInfo::none);
+    __ emit_data64(0x8000000080000000, relocInfo::none);
+    __ emit_data64(0x8000000080000000, relocInfo::none);
     return start;
   }
 
-  address base64_right_shift_mask_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "right_shift_mask");
+  address base64_avx2_lut_addr()
+  {
+    __ align(32);
+    StubCodeMark mark(this, "StubRoutines", "avx2_lut_base64");
     address start = __ pc();
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
-    __ emit_data64(0x0006000400020000, relocInfo::none);
+    __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
+    __ emit_data64(0x0000f0edfcfcfcfc, relocInfo::none);
+    __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
+    __ emit_data64(0x0000f0edfcfcfcfc, relocInfo::none);
 
+    // URL LUT
+    __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
+    __ emit_data64(0x000020effcfcfcfc, relocInfo::none);
+    __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
+    __ emit_data64(0x000020effcfcfcfc, relocInfo::none);
     return start;
   }
 
-  address base64_left_shift_mask_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "left_shift_mask");
+  address base64_encoding_table_addr()
+  {
+    __ align(64, (unsigned long long)__ pc());
+    StubCodeMark mark(this, "StubRoutines", "encoding_table_base64");
     address start = __ pc();
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
-    __ emit_data64(0x0000000200040000, relocInfo::none);
+    assert(((unsigned long long)start & 0x3f) == 0, "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x4847464544434241, relocInfo::none);
+    __ emit_data64(0x504f4e4d4c4b4a49, relocInfo::none);
+    __ emit_data64(0x5857565554535251, relocInfo::none);
+    __ emit_data64(0x6665646362615a59, relocInfo::none);
+    __ emit_data64(0x6e6d6c6b6a696867, relocInfo::none);
+    __ emit_data64(0x767574737271706f, relocInfo::none);
+    __ emit_data64(0x333231307a797877, relocInfo::none);
+    __ emit_data64(0x2f2b393837363534, relocInfo::none);
 
+    // URL table
+    __ emit_data64(0x4847464544434241, relocInfo::none);
+    __ emit_data64(0x504f4e4d4c4b4a49, relocInfo::none);
+    __ emit_data64(0x5857565554535251, relocInfo::none);
+    __ emit_data64(0x6665646362615a59, relocInfo::none);
+    __ emit_data64(0x6e6d6c6b6a696867, relocInfo::none);
+    __ emit_data64(0x767574737271706f, relocInfo::none);
+    __ emit_data64(0x333231307a797877, relocInfo::none);
+    __ emit_data64(0x5f2d393837363534, relocInfo::none);
     return start;
   }
 
-  address base64_and_mask_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "and_mask");
-    address start = __ pc();
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    __ emit_data64(0x3f003f003f000000, relocInfo::none);
-    return start;
-  }
-
-  address base64_gather_mask_addr() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "gather_mask");
-    address start = __ pc();
-    __ emit_data64(0xffffffffffffffff, relocInfo::none);
-    return start;
-  }
-
-// Code for generating Base64 encoding.
-// Intrinsic function prototype in Base64.java:
-// private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
-  address generate_base64_encodeBlock() {
+  // Code for generating Base64 encoding.
+  // Intrinsic function prototype in Base64.java:
+  // private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp,
+  // boolean isURL) {
+  address generate_base64_encodeBlock()
+  {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "implEncode");
     address start = __ pc();
@@ -5454,25 +5392,26 @@ address generate_avx_ghash_processBlocks() {
     __ push(r15);
 
     // arguments
-    const Register source = c_rarg0; // Source Array
+    const Register source = c_rarg0;       // Source Array
     const Register start_offset = c_rarg1; // start offset
-    const Register end_offset = c_rarg2; // end offset
-    const Register dest = c_rarg3; // destination array
+    const Register end_offset = c_rarg2;   // end offset
+    const Register dest = c_rarg3;   // destination array
 
 #ifndef _WIN64
-    const Register dp = c_rarg4;  // Position for writing to dest array
-    const Register isURL = c_rarg5;// Base64 or URL character set
+    const Register dp = c_rarg4;    // Position for writing to dest array
+    const Register isURL = c_rarg5; // Base64 or URL character set
 #else
-    const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+    const Address dp_mem(rbp, 6 * wordSize); // length is on stack on Win64
     const Address isURL_mem(rbp, 7 * wordSize);
-    const Register isURL = r10;      // pick the volatile windows register
+    const Register isURL = r10; // pick the volatile windows register
     const Register dp = r12;
     __ movl(dp, dp_mem);
     __ movl(isURL, isURL_mem);
 #endif
 
     const Register length = r14;
-    Label L_process80, L_process32, L_process3, L_exit, L_processdata;
+    const Register encode_table = r13;
+    Label L_process3, L_exit, L_processdata, L_vbmiLoop, L_not512, L_32byteLoop;
 
     // calculate length from offsets
     __ movl(length, end_offset);
@@ -5480,198 +5419,331 @@ address generate_avx_ghash_processBlocks() {
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
-    __ lea(r11, ExternalAddress(StubRoutines::x86::base64_charset_addr()));
-    // check if base64 charset(isURL=0) or base64 url charset(isURL=1) needs to be loaded
-    __ cmpl(isURL, 0);
-    __ jcc(Assembler::equal, L_processdata);
-    __ lea(r11, ExternalAddress(StubRoutines::x86::base64url_charset_addr()));
+    // Code for 512-bit VBMI encoding.  Encodes 48 input bytes into 64
+    // output bytes. We read 64 input bytes and ignore the last 16, so be
+    // sure not to read past the end of the input buffer.
+    if (VM_Version::supports_avx512_vbmi()) {
+      __ cmpl(length, 64); // Do not overrun input buffer.
+      __ jcc(Assembler::below, L_not512);
 
-    // load masks required for encoding data
-    __ BIND(L_processdata);
-    __ movdqu(xmm16, ExternalAddress(StubRoutines::x86::base64_gather_mask_addr()));
-    // Set 64 bits of K register.
-    __ evpcmpeqb(k3, xmm16, xmm16, Assembler::AVX_512bit);
-    __ evmovdquq(xmm12, ExternalAddress(StubRoutines::x86::base64_bswap_mask_addr()), Assembler::AVX_256bit, r13);
-    __ evmovdquq(xmm13, ExternalAddress(StubRoutines::x86::base64_right_shift_mask_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(xmm14, ExternalAddress(StubRoutines::x86::base64_left_shift_mask_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(xmm15, ExternalAddress(StubRoutines::x86::base64_and_mask_addr()), Assembler::AVX_512bit, r13);
+      __ shll(isURL, 6); // index into decode table based on isURL
+      __ lea(encode_table, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
+      __ addptr(encode_table, isURL);
+      __ shrl(isURL, 6); // restore isURL
 
-    // Vector Base64 implementation, producing 96 bytes of encoded data
-    __ BIND(L_process80);
-    __ cmpl(length, 80);
-    __ jcc(Assembler::below, L_process32);
-    __ evmovdquq(xmm0, Address(source, start_offset, Address::times_1, 0), Assembler::AVX_256bit);
-    __ evmovdquq(xmm1, Address(source, start_offset, Address::times_1, 24), Assembler::AVX_256bit);
-    __ evmovdquq(xmm2, Address(source, start_offset, Address::times_1, 48), Assembler::AVX_256bit);
+      __ mov64(rax, 0x3036242a1016040aull); // Shifts
+      __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()), Assembler::AVX_512bit, r15);
+      __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
+      __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
 
-    //permute the input data in such a manner that we have continuity of the source
-    __ vpermq(xmm3, xmm0, 148, Assembler::AVX_256bit);
-    __ vpermq(xmm4, xmm1, 148, Assembler::AVX_256bit);
-    __ vpermq(xmm5, xmm2, 148, Assembler::AVX_256bit);
+      __ align(32);
+      __ BIND(L_vbmiLoop);
 
-    //shuffle input and group 3 bytes of data and to it add 0 as the 4th byte.
-    //we can deal with 12 bytes at a time in a 128 bit register
-    __ vpshufb(xmm3, xmm3, xmm12, Assembler::AVX_256bit);
-    __ vpshufb(xmm4, xmm4, xmm12, Assembler::AVX_256bit);
-    __ vpshufb(xmm5, xmm5, xmm12, Assembler::AVX_256bit);
+      __ vpermb(xmm0, xmm3, Address(source, start_offset), Assembler::AVX_512bit);
+      __ subl(length, 48);
 
-    //convert byte to word. Each 128 bit register will have 6 bytes for processing
-    __ vpmovzxbw(xmm3, xmm3, Assembler::AVX_512bit);
-    __ vpmovzxbw(xmm4, xmm4, Assembler::AVX_512bit);
-    __ vpmovzxbw(xmm5, xmm5, Assembler::AVX_512bit);
+      // Put the input bytes into the proper lanes for writing, then
+      // encode them.
+      __ evpmultishiftqb(xmm0, xmm1, xmm0, Assembler::AVX_512bit);
+      __ vpermb(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
 
-    // Extract bits in the following pattern 6, 4+2, 2+4, 6 to convert 3, 8 bit numbers to 4, 6 bit numbers
-    __ evpsrlvw(xmm0, xmm3, xmm13,  Assembler::AVX_512bit);
-    __ evpsrlvw(xmm1, xmm4, xmm13, Assembler::AVX_512bit);
-    __ evpsrlvw(xmm2, xmm5, xmm13, Assembler::AVX_512bit);
+      // Write to destination
+      __ evmovdquq(Address(dest, dp), xmm0, Assembler::AVX_512bit);
 
-    __ evpsllvw(xmm3, xmm3, xmm14, Assembler::AVX_512bit);
-    __ evpsllvw(xmm4, xmm4, xmm14, Assembler::AVX_512bit);
-    __ evpsllvw(xmm5, xmm5, xmm14, Assembler::AVX_512bit);
+      __ addptr(dest, 64);
+      __ addptr(source, 48);
+      __ cmpl(length, 64);
+      __ jcc(Assembler::aboveEqual, L_vbmiLoop);
 
-    __ vpsrlq(xmm0, xmm0, 8, Assembler::AVX_512bit);
-    __ vpsrlq(xmm1, xmm1, 8, Assembler::AVX_512bit);
-    __ vpsrlq(xmm2, xmm2, 8, Assembler::AVX_512bit);
+      __ vzeroupper();
+    }
 
-    __ vpsllq(xmm3, xmm3, 8, Assembler::AVX_512bit);
-    __ vpsllq(xmm4, xmm4, 8, Assembler::AVX_512bit);
-    __ vpsllq(xmm5, xmm5, 8, Assembler::AVX_512bit);
+    __ BIND(L_not512);
+    if (VM_Version::supports_avx2()
+        && VM_Version::supports_avx512vlbw()) {
+      /*
+      ** This AVX2 encoder is based off the paper at:
+      **      https://dl.acm.org/doi/10.1145/3132709
+      **
+      ** We use AVX2 SIMD instructions to encode 24 bytes into 32
+      ** output bytes.
+      **
+      */
+      // Lengths under 32 bytes are done with scalar routine
+      __ cmpl(length, 31);
+      __ jcc(Assembler::belowEqual, L_process3);
 
-    __ vpandq(xmm3, xmm3, xmm15, Assembler::AVX_512bit);
-    __ vpandq(xmm4, xmm4, xmm15, Assembler::AVX_512bit);
-    __ vpandq(xmm5, xmm5, xmm15, Assembler::AVX_512bit);
+      // Set up supporting constant table data
+      __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()), rax);
+      // 6-bit mask for 2nd and 4th (and multiples) 6-bit values
+      __ movl(rax, 0x0fc0fc00);
+      __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()), rax);
+      __ evpbroadcastd(xmm8, rax, Assembler::AVX_256bit);
 
-    // Get the final 4*6 bits base64 encoding
-    __ vporq(xmm3, xmm3, xmm0, Assembler::AVX_512bit);
-    __ vporq(xmm4, xmm4, xmm1, Assembler::AVX_512bit);
-    __ vporq(xmm5, xmm5, xmm2, Assembler::AVX_512bit);
+      // Multiplication constant for "shifting" right by 6 and 10
+      // bits
+      __ movl(rax, 0x04000040);
 
-    // Shift
-    __ vpsrlq(xmm3, xmm3, 8, Assembler::AVX_512bit);
-    __ vpsrlq(xmm4, xmm4, 8, Assembler::AVX_512bit);
-    __ vpsrlq(xmm5, xmm5, 8, Assembler::AVX_512bit);
+      __ subl(length, 24);
+      __ evpbroadcastd(xmm7, rax, Assembler::AVX_256bit);
 
-    // look up 6 bits in the base64 character set to fetch the encoding
-    // we are converting word to dword as gather instructions need dword indices for looking up encoding
-    __ vextracti64x4(xmm6, xmm3, 0);
-    __ vpmovzxwd(xmm0, xmm6, Assembler::AVX_512bit);
-    __ vextracti64x4(xmm6, xmm3, 1);
-    __ vpmovzxwd(xmm1, xmm6, Assembler::AVX_512bit);
+      // For the first load, we mask off reading of the first 4
+      // bytes into the register. This is so we can get 4 3-byte
+      // chunks into each lane of the register, avoiding having to
+      // handle end conditions.  We then shuffle these bytes into a
+      // specific order so that manipulation is easier.
+      //
+      // The initial read loads the XMM register like this:
+      //
+      // Lower 128-bit lane:
+      // +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+      // | XX | XX | XX | XX | A0 | A1 | A2 | B0 | B1 | B2 | C0 | C1
+      // | C2 | D0 | D1 | D2 |
+      // +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+      //
+      // Upper 128-bit lane:
+      // +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+      // | E0 | E1 | E2 | F0 | F1 | F2 | G0 | G1 | G2 | H0 | H1 | H2
+      // | XX | XX | XX | XX |
+      // +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+      //
+      // Where A0 is the first input byte, B0 is the fourth, etc.
+      // The alphabetical significance denotes the 3 bytes to be
+      // consumed and encoded into 4 bytes.
+      //
+      // We then shuffle the register so each 32-bit word contains
+      // the sequence:
+      //    A1 A0 A2 A1, B1, B0, B2, B1, etc.
+      // Each of these byte sequences are then manipulated into 4
+      // 6-bit values ready for encoding.
+      //
+      // If we focus on one set of 3-byte chunks, changing the
+      // nomenclature such that A0 => a, A1 => b, and A2 => c, we
+      // shuffle such that each 24-bit chunk contains:
+      //
+      // b7 b6 b5 b4 b3 b2 b1 b0 | a7 a6 a5 a4 a3 a2 a1 a0 | c7 c6
+      // c5 c4 c3 c2 c1 c0 | b7 b6 b5 b4 b3 b2 b1 b0
+      // Explain this step.
+      // b3 b2 b1 b0 c5 c4 c3 c2 | c1 c0 d5 d4 d3 d2 d1 d0 | a5 a4
+      // a3 a2 a1 a0 b5 b4 | b3 b2 b1 b0 c5 c4 c3 c2
+      //
+      // W first and off all but bits 4-9 and 16-21 (c5..c0 and
+      // a5..a0) and shift them using a vector multiplication
+      // operation (vpmulhuw) which effectively shifts c right by 6
+      // bits and a right by 10 bits.  We similarly mask bits 10-15
+      // (d5..d0) and 22-27 (b5..b0) and shift them left by 8 and 4
+      // bits respecively.  This is done using vpmullw.  We end up
+      // with 4 6-bit values, thus splitting the 3 input bytes,
+      // ready for encoding:
+      //    0 0 d5..d0 0 0 c5..c0 0 0 b5..b0 0 0 a5..a0
+      //
+      // For translation, we recognize that there are 5 distinct
+      // ranges of legal Base64 characters as below:
+      //
+      //   +-------------+-------------+------------+
+      //   | 6-bit value | ASCII range |   offset   |
+      //   +-------------+-------------+------------+
+      //   |    0..25    |    A..Z     |     65     |
+      //   |   26..51    |    a..z     |     71     |
+      //   |   52..61    |    0..9     |     -4     |
+      //   |     62      |   + or -    | -19 or -17 |
+      //   |     63      |   / or _    | -16 or 32  |
+      //   +-------------+-------------+------------+
+      //
+      // We note that vpshufb does a parallel lookup in a
+      // destination register using the lower 4 bits of bytes from a
+      // source register.  If we use a saturated subtraction and
+      // subtract 51 from each 6-bit value, bytes from [0,51]
+      // saturate to 0, and [52,63] map to a range of [1,12].  We
+      // distinguish the [0,25] and [26,51] ranges by assigning a
+      // value of 13 for all 6-bit values less than 26.  We end up
+      // with:
+      //
+      //   +-------------+-------------+------------+
+      //   | 6-bit value |   Reduced   |   offset   |
+      //   +-------------+-------------+------------+
+      //   |    0..25    |     13      |     65     |
+      //   |   26..51    |      0      |     71     |
+      //   |   52..61    |    0..9     |     -4     |
+      //   |     62      |     11      | -19 or -17 |
+      //   |     63      |     12      | -16 or 32  |
+      //   +-------------+-------------+------------+
+      //
+      // We then use a final vpshufb to add the appropriate offset,
+      // translating the bytes.
+      //
+      // Load input bytes - only 28 bytes.  Mask the first load to
+      // not load into the full register.
+      __ vpmaskmovd(xmm1, xmm1, Address(source, start_offset, Address::times_1, -4), Assembler::AVX_256bit);
 
-    __ vextracti64x4(xmm6, xmm4, 0);
-    __ vpmovzxwd(xmm2, xmm6, Assembler::AVX_512bit);
-    __ vextracti64x4(xmm6, xmm4, 1);
-    __ vpmovzxwd(xmm3, xmm6, Assembler::AVX_512bit);
+      // Move 3-byte chunks of input (12 bytes) into 16 bytes,
+      // ordering by:
+      //   1, 0, 2, 1; 4, 3, 5, 4; etc.  This groups 6-bit chunks
+      //   for easy masking
+      __ vpshufb(xmm1, xmm1, xmm9, Assembler::AVX_256bit);
 
-    __ vextracti64x4(xmm4, xmm5, 0);
-    __ vpmovzxwd(xmm6, xmm4, Assembler::AVX_512bit);
+      __ addl(start_offset, 24);
 
-    __ vextracti64x4(xmm4, xmm5, 1);
-    __ vpmovzxwd(xmm7, xmm4, Assembler::AVX_512bit);
+      // Load masking register for first and third (and multiples)
+      // 6-bit values.
+      __ movl(rax, 0x003f03f0);
+      __ evpbroadcastd(xmm6, rax, Assembler::AVX_256bit);
+      // Multiplication constant for "shifting" left by 4 and 8 bits
+      __ movl(rax, 0x01000010);
+      __ evpbroadcastd(xmm5, rax, Assembler::AVX_256bit);
 
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm4, k2, Address(r11, xmm0, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm5, k2, Address(r11, xmm1, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm8, k2, Address(r11, xmm2, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm9, k2, Address(r11, xmm3, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm10, k2, Address(r11, xmm6, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm11, k2, Address(r11, xmm7, Address::times_4, 0), Assembler::AVX_512bit);
+      // Isolate 6-bit chunks of interest
+      __ vpand(xmm0, xmm8, xmm1, Assembler::AVX_256bit);
 
-    //Down convert dword to byte. Final output is 16*6 = 96 bytes long
-    __ evpmovdb(Address(dest, dp, Address::times_1, 0), xmm4, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 16), xmm5, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 32), xmm8, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 48), xmm9, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 64), xmm10, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 80), xmm11, Assembler::AVX_512bit);
+      // Load constants for encoding
+      __ movl(rax, 0x19191919);
+      __ evpbroadcastd(xmm3, rax, Assembler::AVX_256bit);
+      __ movl(rax, 0x33333333);
+      __ evpbroadcastd(xmm4, rax, Assembler::AVX_256bit);
 
-    __ addq(dest, 96);
-    __ addq(source, 72);
-    __ subq(length, 72);
-    __ jmp(L_process80);
+      // Shift output bytes 0 and 2 into proper lanes
+      __ vpmulhuw(xmm2, xmm0, xmm7, Assembler::AVX_256bit);
 
-    // Vector Base64 implementation generating 32 bytes of encoded data
-    __ BIND(L_process32);
-    __ cmpl(length, 32);
-    __ jcc(Assembler::below, L_process3);
-    __ evmovdquq(xmm0, Address(source, start_offset), Assembler::AVX_256bit);
-    __ vpermq(xmm0, xmm0, 148, Assembler::AVX_256bit);
-    __ vpshufb(xmm6, xmm0, xmm12, Assembler::AVX_256bit);
-    __ vpmovzxbw(xmm6, xmm6, Assembler::AVX_512bit);
-    __ evpsrlvw(xmm2, xmm6, xmm13, Assembler::AVX_512bit);
-    __ evpsllvw(xmm3, xmm6, xmm14, Assembler::AVX_512bit);
+      // Mask and shift output bytes 1 and 3 into proper lanes and
+      // combine
+      __ vpand(xmm0, xmm6, xmm1, Assembler::AVX_256bit);
+      __ vpmullw(xmm0, xmm5, xmm0, Assembler::AVX_256bit);
+      __ vpor(xmm0, xmm0, xmm2, Assembler::AVX_256bit);
 
-    __ vpsrlq(xmm2, xmm2, 8, Assembler::AVX_512bit);
-    __ vpsllq(xmm3, xmm3, 8, Assembler::AVX_512bit);
-    __ vpandq(xmm3, xmm3, xmm15, Assembler::AVX_512bit);
-    __ vporq(xmm1, xmm2, xmm3, Assembler::AVX_512bit);
-    __ vpsrlq(xmm1, xmm1, 8, Assembler::AVX_512bit);
-    __ vextracti64x4(xmm9, xmm1, 0);
-    __ vpmovzxwd(xmm6, xmm9, Assembler::AVX_512bit);
-    __ vextracti64x4(xmm9, xmm1, 1);
-    __ vpmovzxwd(xmm5, xmm9,  Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm8, k2, Address(r11, xmm6, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k3);
-    __ evpgatherdd(xmm10, k2, Address(r11, xmm5, Address::times_4, 0), Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 0), xmm8, Assembler::AVX_512bit);
-    __ evpmovdb(Address(dest, dp, Address::times_1, 16), xmm10, Assembler::AVX_512bit);
-    __ subq(length, 24);
-    __ addq(dest, 32);
-    __ addq(source, 24);
-    __ jmp(L_process32);
+      // Find out which are 0..25.  This indicates which input
+      // values fall in the range of 'A'-'Z', which require an
+      // additional offset (see comments above)
+      __ vpcmpgtb(xmm2, xmm0, xmm3, Assembler::AVX_256bit);
+      __ vpsubusb(xmm1, xmm0, xmm4, Assembler::AVX_256bit);
+      __ vpsubb(xmm1, xmm1, xmm2, Assembler::AVX_256bit);
 
-    // Scalar data processing takes 3 bytes at a time and produces 4 bytes of encoded data
-    /* This code corresponds to the scalar version of the following snippet in Base64.java
-    ** int bits = (src[sp0++] & 0xff) << 16 |(src[sp0++] & 0xff) << 8 |(src[sp0++] & 0xff);
-    ** dst[dp0++] = (byte)base64[(bits >> > 18) & 0x3f];
-    ** dst[dp0++] = (byte)base64[(bits >> > 12) & 0x3f];
-    ** dst[dp0++] = (byte)base64[(bits >> > 6) & 0x3f];
-    ** dst[dp0++] = (byte)base64[bits & 0x3f];*/
-    __ BIND(L_process3);
+      // Load the proper lookup table
+      __ lea(r11, ExternalAddress(StubRoutines::x86::base64_avx2_lut_addr()));
+      __ movl(r15, isURL);
+      __ shll(r15, 5);
+      __ vmovdqu(xmm2, Address(r11, r15));
+
+      // Shuffle the offsets based on the range calculation done
+      // above. This allows us to add the correct offset to the
+      // 6-bit value corresponding to the range documented above.
+      __ vpshufb(xmm1, xmm2, xmm1, Assembler::AVX_256bit);
+      __ vpaddb(xmm0, xmm1, xmm0, Assembler::AVX_256bit);
+
+      // Store the encoded bytes
+      __ vmovdqu(Address(dest, dp), xmm0);
+      __ addl(dp, 32);
+
+      __ cmpl(length, 31);
+      __ jcc(Assembler::belowEqual, L_process3);
+
+      __ align(32);
+      __ BIND(L_32byteLoop);
+
+      // Get next 32 bytes
+      __ vmovdqu(xmm1, Address(source, start_offset, Address::times_1, -4));
+
+      __ subl(length, 24);
+      __ addl(start_offset, 24);
+
+      // This logic is identical to the above, with only constant
+      // register loads removed.  Shuffle the input, mask off 6-bit
+      // chunks, shift them into place, then add the offset to
+      // encode.
+      __ vpshufb(xmm1, xmm1, xmm9, Assembler::AVX_256bit);
+
+      __ vpand(xmm0, xmm8, xmm1, Assembler::AVX_256bit);
+      __ vpmulhuw(xmm10, xmm0, xmm7, Assembler::AVX_256bit);
+      __ vpand(xmm0, xmm6, xmm1, Assembler::AVX_256bit);
+      __ vpmullw(xmm0, xmm5, xmm0, Assembler::AVX_256bit);
+      __ vpor(xmm0, xmm0, xmm10, Assembler::AVX_256bit);
+      __ vpcmpgtb(xmm10, xmm0, xmm3, Assembler::AVX_256bit);
+      __ vpsubusb(xmm1, xmm0, xmm4, Assembler::AVX_256bit);
+      __ vpsubb(xmm1, xmm1, xmm10, Assembler::AVX_256bit);
+      __ vpshufb(xmm1, xmm2, xmm1, Assembler::AVX_256bit);
+      __ vpaddb(xmm0, xmm1, xmm0, Assembler::AVX_256bit);
+
+      // Store the encoded bytes
+      __ vmovdqu(Address(dest, dp), xmm0);
+      __ addl(dp, 32);
+
+      __ cmpl(length, 31);
+      __ jcc(Assembler::above, L_32byteLoop);
+
+      __ BIND(L_process3);
+      __ vzeroupper();
+    } else {
+      __ BIND(L_process3);
+    }
+
     __ cmpl(length, 3);
     __ jcc(Assembler::below, L_exit);
-    // Read 1 byte at a time
-    __ movzbl(rax, Address(source, start_offset));
-    __ shll(rax, 0x10);
-    __ movl(r15, rax);
-    __ movzbl(rax, Address(source, start_offset, Address::times_1, 1));
-    __ shll(rax, 0x8);
-    __ movzwl(rax, rax);
-    __ orl(r15, rax);
-    __ movzbl(rax, Address(source, start_offset, Address::times_1, 2));
-    __ orl(rax, r15);
-    // Save 3 bytes read in r15
-    __ movl(r15, rax);
-    __ shrl(rax, 0x12);
-    __ andl(rax, 0x3f);
-    // rax contains the index, r11 contains base64 lookup table
-    __ movb(rax, Address(r11, rax, Address::times_4));
-    // Write the encoded byte to destination
-    __ movb(Address(dest, dp, Address::times_1, 0), rax);
-    __ movl(rax, r15);
-    __ shrl(rax, 0xc);
-    __ andl(rax, 0x3f);
-    __ movb(rax, Address(r11, rax, Address::times_4));
-    __ movb(Address(dest, dp, Address::times_1, 1), rax);
-    __ movl(rax, r15);
-    __ shrl(rax, 0x6);
-    __ andl(rax, 0x3f);
-    __ movb(rax, Address(r11, rax, Address::times_4));
-    __ movb(Address(dest, dp, Address::times_1, 2), rax);
-    __ movl(rax, r15);
-    __ andl(rax, 0x3f);
-    __ movb(rax, Address(r11, rax, Address::times_4));
-    __ movb(Address(dest, dp, Address::times_1, 3), rax);
+
+    // Load the encoding table based on isURL
+    __ lea(r11, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
+    __ movl(r15, isURL);
+    __ shll(r15, 6);
+    __ addptr(r11, r15);
+
+    __ BIND(L_processdata);
+
+    // Load 3 bytes
+    __ load_unsigned_byte(r15, Address(source, start_offset));
+    __ load_unsigned_byte(r10, Address(source, start_offset, Address::times_1, 1));
+    __ load_unsigned_byte(r13, Address(source, start_offset, Address::times_1, 2));
+
+    // Build a 32-bit word with bytes 1, 2, 0, 1
+    __ movl(rax, r10);
+    __ shll(r10, 24);
+    __ orl(rax, r10);
+
     __ subl(length, 3);
-    __ addq(dest, 4);
-    __ addq(source, 3);
-    __ jmp(L_process3);
+
+    __ shll(r15, 8);
+    __ shll(r13, 16);
+    __ orl(rax, r15);
+
+    __ addl(start_offset, 3);
+
+    __ orl(rax, r13);
+    // At this point, rax contains | byte1 | byte2 | byte0 | byte1
+    // r13 has byte2 << 16 - need low-order 6 bits to translate.
+    // This translated byte is the fourth output byte.
+    __ shrl(r13, 16);
+    __ andl(r13, 0x3f);
+
+    // The high-order 6 bits of r15 (byte0) is translated.
+    // The translated byte is the first output byte.
+    __ shrl(r15, 10);
+
+    __ load_unsigned_byte(r13, Address(r11, r13));
+    __ load_unsigned_byte(r15, Address(r11, r15));
+
+    __ movb(Address(dest, dp, Address::times_1, 3), r13);
+
+    // Extract high-order 4 bits of byte1 and low-order 2 bits of byte0.
+    // This translated byte is the second output byte.
+    __ shrl(rax, 4);
+    __ movl(r10, rax);
+    __ andl(rax, 0x3f);
+
+    __ movb(Address(dest, dp, Address::times_1, 0), r15);
+
+    __ load_unsigned_byte(rax, Address(r11, rax));
+
+    // Extract low-order 2 bits of byte1 and high-order 4 bits of byte2.
+    // This translated byte is the third output byte.
+    __ shrl(r10, 18);
+    __ andl(r10, 0x3f);
+
+    __ load_unsigned_byte(r10, Address(r11, r10));
+
+    __ movb(Address(dest, dp, Address::times_1, 1), rax);
+    __ movb(Address(dest, dp, Address::times_1, 2), r10);
+
+    __ addl(dp, 4);
+    __ cmpl(length, 3);
+    __ jcc(Assembler::aboveEqual, L_processdata);
+
     __ BIND(L_exit);
     __ pop(r15);
     __ pop(r14);
@@ -5681,6 +5753,650 @@ address generate_avx_ghash_processBlocks() {
     __ ret(0);
     return start;
   }
+
+  // base64 AVX512vbmi tables
+  address base64_vbmi_lookup_lo_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x3f8080803e808080, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0x8080808080803d3c, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_lookup_hi_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x0605040302010080, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x8080808080191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0x8080808080333231, relocInfo::none);
+    return start;
+  }
+  address base64_vbmi_lookup_lo_url_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64url");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x80803e8080808080, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0x8080808080803d3c, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_lookup_hi_url_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64url");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x0605040302010080, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x3f80808080191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0x8080808080333231, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_pack_vec_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "pack_vec_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x090a040506000102, relocInfo::none);
+    __ emit_data64(0x161011120c0d0e08, relocInfo::none);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_0_1_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "join_0_1_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x090a040506000102, relocInfo::none);
+    __ emit_data64(0x161011120c0d0e08, relocInfo::none);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_1_2_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "join_1_2_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    __ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+    __ emit_data64(0x696a646566606162, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_2_3_addr() {
+    __ align(64, (unsigned long long) __ pc());
+    StubCodeMark mark(this, "StubRoutines", "join_2_3_base64");
+    address start = __ pc();
+    assert(((unsigned long long)start & 0x3f) == 0,
+           "Alignment problem (0x%08llx)", (unsigned long long)start);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    __ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+    __ emit_data64(0x696a646566606162, relocInfo::none);
+    __ emit_data64(0x767071726c6d6e68, relocInfo::none);
+    __ emit_data64(0x7c7d7e78797a7475, relocInfo::none);
+    return start;
+  }
+
+  address base64_decoding_table_addr() {
+    StubCodeMark mark(this, "StubRoutines", "decoding_table_base64");
+    address start = __ pc();
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0x3fffffff3effffff, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0xffffffffffff3d3c, relocInfo::none);
+    __ emit_data64(0x06050403020100ff, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0xffffffffff191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1aff, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0xffffffffff333231, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+
+    // URL table
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffff3effffffffff, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0xffffffffffff3d3c, relocInfo::none);
+    __ emit_data64(0x06050403020100ff, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x3fffffffff191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1aff, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0xffffffffff333231, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    return start;
+  }
+
+
+// Code for generating Base64 decoding.
+//
+// Based on the article (and associated code) from https://arxiv.org/abs/1910.05109.
+//
+// Intrinsic function prototype in Base64.java:
+// private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, isMIME) {
+  address generate_base64_decodeBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "implDecode");
+    address start = __ pc();
+    __ enter();
+
+    // Save callee-saved registers before using them
+    __ push(r12);
+    __ push(r13);
+    __ push(r14);
+    __ push(r15);
+    __ push(rbx);
+
+    // arguments
+    const Register source = c_rarg0; // Source Array
+    const Register start_offset = c_rarg1; // start offset
+    const Register end_offset = c_rarg2; // end offset
+    const Register dest = c_rarg3; // destination array
+    const Register isMIME = rbx;
+
+#ifndef _WIN64
+    const Register dp = c_rarg4;  // Position for writing to dest array
+    const Register isURL = c_rarg5;// Base64 or URL character set
+    __ movl(isMIME, Address(rbp, 2 * wordSize));
+#else
+    const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+    const Address isURL_mem(rbp, 7 * wordSize);
+    const Register isURL = r10;      // pick the volatile windows register
+    const Register dp = r12;
+    __ movl(dp, dp_mem);
+    __ movl(isURL, isURL_mem);
+    __ movl(isMIME, Address(rbp, 8 * wordSize));
+#endif
+
+    const XMMRegister lookup_lo = xmm5;
+    const XMMRegister lookup_hi = xmm6;
+    const XMMRegister errorvec = xmm7;
+    const XMMRegister pack16_op = xmm9;
+    const XMMRegister pack32_op = xmm8;
+    const XMMRegister input0 = xmm3;
+    const XMMRegister input1 = xmm20;
+    const XMMRegister input2 = xmm21;
+    const XMMRegister input3 = xmm19;
+    const XMMRegister join01 = xmm12;
+    const XMMRegister join12 = xmm11;
+    const XMMRegister join23 = xmm10;
+    const XMMRegister translated0 = xmm2;
+    const XMMRegister translated1 = xmm1;
+    const XMMRegister translated2 = xmm0;
+    const XMMRegister translated3 = xmm4;
+
+    const XMMRegister merged0 = xmm2;
+    const XMMRegister merged1 = xmm1;
+    const XMMRegister merged2 = xmm0;
+    const XMMRegister merged3 = xmm4;
+    const XMMRegister merge_ab_bc0 = xmm2;
+    const XMMRegister merge_ab_bc1 = xmm1;
+    const XMMRegister merge_ab_bc2 = xmm0;
+    const XMMRegister merge_ab_bc3 = xmm4;
+
+    const XMMRegister pack24bits = xmm4;
+
+    const Register length = r14;
+    const Register output_size = r13;
+    const Register output_mask = r15;
+    const KRegister input_mask = k1;
+
+    const XMMRegister input_initial_valid_b64 = xmm0;
+    const XMMRegister tmp = xmm10;
+    const XMMRegister mask = xmm0;
+    const XMMRegister invalid_b64 = xmm1;
+
+    Label L_process256, L_process64, L_process64Loop, L_exit, L_processdata, L_loadURL;
+    Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
+    Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
+
+    // calculate length from offsets
+    __ movl(length, end_offset);
+    __ subl(length, start_offset);
+    __ push(dest);          // Save for return value calc
+
+    // If AVX512 VBMI not supported, just compile non-AVX code
+    if(VM_Version::supports_avx512_vbmi() &&
+       VM_Version::supports_avx512bw()) {
+      __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
+      __ jcc(Assembler::lessEqual, L_bruteForce);
+
+      __ cmpl(isMIME, 0);
+      __ jcc(Assembler::notEqual, L_bruteForce);
+
+      // Load lookup tables based on isURL
+      __ cmpl(isURL, 0);
+      __ jcc(Assembler::notZero, L_loadURL);
+
+      __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
+
+      __ BIND(L_continue);
+
+      __ movl(r15, 0x01400140);
+      __ evpbroadcastd(pack16_op, r15, Assembler::AVX_512bit);
+
+      __ movl(r15, 0x00011000);
+      __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
+
+      __ cmpl(length, 0xff);
+      __ jcc(Assembler::lessEqual, L_process64);
+
+      // load masks required for decoding data
+      __ BIND(L_processdata);
+      __ evmovdquq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit,r13);
+      __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, r13);
+
+      __ align(32);
+      __ BIND(L_process256);
+      // Grab input data
+      __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x00), Assembler::AVX_512bit);
+      __ evmovdquq(input1, Address(source, start_offset, Address::times_1, 0x40), Assembler::AVX_512bit);
+      __ evmovdquq(input2, Address(source, start_offset, Address::times_1, 0x80), Assembler::AVX_512bit);
+      __ evmovdquq(input3, Address(source, start_offset, Address::times_1, 0xc0), Assembler::AVX_512bit);
+
+      // Copy the low part of the lookup table into the destination of the permutation
+      __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated1, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated2, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated3, lookup_lo, Assembler::AVX_512bit);
+
+      // Translate the base64 input into "decoded" bytes
+      __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated1, input1, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated2, input2, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated3, input3, lookup_hi, Assembler::AVX_512bit);
+
+      // OR all of the translations together to check for errors (high-order bit of byte set)
+      __ vpternlogd(input0, 0xfe, input1, input2, Assembler::AVX_512bit);
+
+      __ vpternlogd(input3, 0xfe, translated0, translated1, Assembler::AVX_512bit);
+      __ vpternlogd(input0, 0xfe, translated2, translated3, Assembler::AVX_512bit);
+      __ vpor(errorvec, input3, input0, Assembler::AVX_512bit);
+
+      // Check if there was an error - if so, try 64-byte chunks
+      __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
+      __ kortestql(k3, k3);
+      __ jcc(Assembler::notZero, L_process64);
+
+      // The merging and shuffling happens here
+      // We multiply each byte pair [00dddddd | 00cccccc | 00bbbbbb | 00aaaaaa]
+      // Multiply [00cccccc] by 2^6 added to [00dddddd] to get [0000cccc | ccdddddd]
+      // The pack16_op is a vector of 0x01400140, so multiply D by 1 and C by 0x40
+      __ vpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc1, translated1, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc2, translated2, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
+
+      // Now do the same with packed 16-bit values.
+      // We start with [0000cccc | ccdddddd | 0000aaaa | aabbbbbb]
+      // pack32_op is 0x00011000 (2^12, 1), so this multiplies [0000aaaa | aabbbbbb] by 2^12
+      // and adds [0000cccc | ccdddddd] to yield [00000000 | aaaaaabb | bbbbcccc | ccdddddd]
+      __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
+      __ vpmaddwd(merged1, merge_ab_bc1, pack32_op, Assembler::AVX_512bit);
+      __ vpmaddwd(merged2, merge_ab_bc2, pack32_op, Assembler::AVX_512bit);
+      __ vpmaddwd(merged3, merge_ab_bc3, pack32_op, Assembler::AVX_512bit);
+
+      // The join vectors specify which byte from which vector goes into the outputs
+      // One of every 4 bytes in the extended vector is zero, so we pack them into their
+      // final positions in the register for storing (256 bytes in, 192 bytes out)
+      __ evpermt2b(merged0, join01, merged1, Assembler::AVX_512bit);
+      __ evpermt2b(merged1, join12, merged2, Assembler::AVX_512bit);
+      __ evpermt2b(merged2, join23, merged3, Assembler::AVX_512bit);
+
+      // Store result
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), merged0, Assembler::AVX_512bit);
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x40), merged1, Assembler::AVX_512bit);
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x80), merged2, Assembler::AVX_512bit);
+
+      __ addptr(source, 0x100);
+      __ addptr(dest, 0xc0);
+      __ subl(length, 0x100);
+      __ cmpl(length, 64 * 4);
+      __ jcc(Assembler::greaterEqual, L_process256);
+
+      // At this point, we've decoded 64 * 4 * n bytes.
+      // The remaining length will be <= 64 * 4 - 1.
+      // UNLESS there was an error decoding the first 256-byte chunk.  In this
+      // case, the length will be arbitrarily long.
+      //
+      // Note that this will be the path for MIME-encoded strings.
+
+      __ BIND(L_process64);
+
+      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+
+      __ cmpl(length, 63);
+      __ jcc(Assembler::lessEqual, L_finalBit);
+
+      __ align(32);
+      __ BIND(L_process64Loop);
+
+      // Handle first 64-byte block
+
+      __ evmovdquq(input0, Address(source, start_offset), Assembler::AVX_512bit);
+      __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
+      __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
+
+      __ vpor(errorvec, translated0, input0, Assembler::AVX_512bit);
+
+      // Check for error and bomb out before updating dest
+      __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
+      __ kortestql(k3, k3);
+      __ jcc(Assembler::notZero, L_exit);
+
+      // Pack output register, selecting correct byte ordering
+      __ vpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
+      __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
+
+      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
+
+      __ subl(length, 64);
+      __ addptr(source, 64);
+      __ addptr(dest, 48);
+
+      __ cmpl(length, 64);
+      __ jcc(Assembler::greaterEqual, L_process64Loop);
+
+      __ cmpl(length, 0);
+      __ jcc(Assembler::lessEqual, L_exit);
+
+      __ BIND(L_finalBit);
+      // Now have 1 to 63 bytes left to decode
+
+      // I was going to let Java take care of the final fragment
+      // however it will repeatedly call this routine for every 4 bytes
+      // of input data, so handle the rest here.
+      __ movq(rax, -1);
+      __ bzhiq(rax, rax, length);    // Input mask in rax
+
+      __ movl(output_size, length);
+      __ shrl(output_size, 2);   // Find (len / 4) * 3 (output length)
+      __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
+      // output_size in r13
+
+      // Strip pad characters, if any, and adjust length and mask
+      __ cmpb(Address(source, length, Address::times_1, -1), '=');
+      __ jcc(Assembler::equal, L_padding);
+
+      __ BIND(L_donePadding);
+
+      // Output size is (64 - output_size), output mask is (all 1s >> output_size).
+      __ kmovql(input_mask, rax);
+      __ movq(output_mask, -1);
+      __ bzhiq(output_mask, output_mask, output_size);
+
+      // Load initial input with all valid base64 characters.  Will be used
+      // in merging source bytes to avoid masking when determining if an error occurred.
+      __ movl(rax, 0x61616161);
+      __ evpbroadcastd(input_initial_valid_b64, rax, Assembler::AVX_512bit);
+
+      // A register containing all invalid base64 decoded values
+      __ movl(rax, 0x80808080);
+      __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
+
+      // input_mask is in k1
+      // output_size is in r13
+      // output_mask is in r15
+      // zmm0 - free
+      // zmm1 - 0x00011000
+      // zmm2 - 0x01400140
+      // zmm3 - errorvec
+      // zmm4 - pack vector
+      // zmm5 - lookup_lo
+      // zmm6 - lookup_hi
+      // zmm7 - errorvec
+      // zmm8 - 0x61616161
+      // zmm9 - 0x80808080
+
+      // Load only the bytes from source, merging into our "fully-valid" register
+      __ evmovdqub(input_initial_valid_b64, input_mask, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
+
+      // Decode all bytes within our merged input
+      __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
+      __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
+      __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+
+      // Check for error.  Compare (decoded | initial) to all invalid.
+      // If any bytes have their high-order bit set, then we have an error.
+      __ evptestmb(k2, mask, invalid_b64, Assembler::AVX_512bit);
+      __ kortestql(k2, k2);
+
+      // If we have an error, use the brute force loop to decode what we can (4-byte chunks).
+      __ jcc(Assembler::notZero, L_bruteForce);
+
+      // Shuffle output bytes
+      __ vpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddwd(tmp, tmp, pack32_op, Assembler::AVX_512bit);
+
+      __ vpermb(tmp, pack24bits, tmp, Assembler::AVX_512bit);
+      __ kmovql(k1, output_mask);
+      __ evmovdqub(Address(dest, dp), k1, tmp, true, Assembler::AVX_512bit);
+
+      __ addptr(dest, output_size);
+
+      __ BIND(L_exit);
+      __ vzeroupper();
+      __ pop(rax);             // Get original dest value
+      __ subptr(dest, rax);      // Number of bytes converted
+      __ movptr(rax, dest);
+      __ pop(rbx);
+      __ pop(r15);
+      __ pop(r14);
+      __ pop(r13);
+      __ pop(r12);
+      __ leave();
+      __ ret(0);
+
+      __ BIND(L_loadURL);
+      __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
+      __ jmp(L_continue);
+
+      __ BIND(L_padding);
+      __ decrementq(output_size, 1);
+      __ shrq(rax, 1);
+
+      __ cmpb(Address(source, length, Address::times_1, -2), '=');
+      __ jcc(Assembler::notEqual, L_donePadding);
+
+      __ decrementq(output_size, 1);
+      __ shrq(rax, 1);
+      __ jmp(L_donePadding);
+
+      __ align(32);
+      __ BIND(L_bruteForce);
+    }   // End of if(avx512_vbmi)
+
+    // Use non-AVX code to decode 4-byte chunks into 3 bytes of output
+
+    // Register state (Linux):
+    // r12-15 - saved on stack
+    // rdi - src
+    // rsi - sp
+    // rdx - sl
+    // rcx - dst
+    // r8 - dp
+    // r9 - isURL
+
+    // Register state (Windows):
+    // r12-15 - saved on stack
+    // rcx - src
+    // rdx - sp
+    // r8 - sl
+    // r9 - dst
+    // r12 - dp
+    // r10 - isURL
+
+    // Registers (common):
+    // length (r14) - bytes in src
+
+    const Register decode_table = r11;
+    const Register out_byte_count = rbx;
+    const Register byte1 = r13;
+    const Register byte2 = r15;
+    const Register byte3 = WINDOWS_ONLY(r8) NOT_WINDOWS(rdx);
+    const Register byte4 = WINDOWS_ONLY(r10) NOT_WINDOWS(r9);
+
+    __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
+    __ cmpl(length, 0);
+    __ jcc(Assembler::lessEqual, L_exit_no_vzero);
+
+    __ shll(isURL, 8);    // index into decode table based on isURL
+    __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
+    __ addptr(decode_table, isURL);
+
+    __ jmp(L_bottomLoop);
+
+    __ align(32);
+    __ BIND(L_forceLoop);
+    __ shll(byte1, 18);
+    __ shll(byte2, 12);
+    __ shll(byte3, 6);
+    __ orl(byte1, byte2);
+    __ orl(byte1, byte3);
+    __ orl(byte1, byte4);
+
+    __ addptr(source, 4);
+
+    __ movb(Address(dest, dp, Address::times_1, 2), byte1);
+    __ shrl(byte1, 8);
+    __ movb(Address(dest, dp, Address::times_1, 1), byte1);
+    __ shrl(byte1, 8);
+    __ movb(Address(dest, dp, Address::times_1, 0), byte1);
+
+    __ addptr(dest, 3);
+    __ decrementl(length, 1);
+    __ jcc(Assembler::zero, L_exit_no_vzero);
+
+    __ BIND(L_bottomLoop);
+    __ load_unsigned_byte(byte1, Address(source, start_offset, Address::times_1, 0x00));
+    __ load_unsigned_byte(byte2, Address(source, start_offset, Address::times_1, 0x01));
+    __ load_signed_byte(byte1, Address(decode_table, byte1));
+    __ load_signed_byte(byte2, Address(decode_table, byte2));
+    __ load_unsigned_byte(byte3, Address(source, start_offset, Address::times_1, 0x02));
+    __ load_unsigned_byte(byte4, Address(source, start_offset, Address::times_1, 0x03));
+    __ load_signed_byte(byte3, Address(decode_table, byte3));
+    __ load_signed_byte(byte4, Address(decode_table, byte4));
+
+    __ mov(rax, byte1);
+    __ orl(rax, byte2);
+    __ orl(rax, byte3);
+    __ orl(rax, byte4);
+    __ jcc(Assembler::positive, L_forceLoop);
+
+    __ BIND(L_exit_no_vzero);
+    __ pop(rax);             // Get original dest value
+    __ subptr(dest, rax);      // Number of bytes converted
+    __ movptr(rax, dest);
+    __ pop(rbx);
+    __ pop(r15);
+    __ pop(r14);
+    __ pop(r13);
+    __ pop(r12);
+    __ leave();
+    __ ret(0);
+
+    return start;
+  }
+
 
   /**
    *  Arguments:
@@ -6959,15 +7675,30 @@ address generate_avx_ghash_processBlocks() {
       }
     }
 
+
     if (UseBASE64Intrinsics) {
-      StubRoutines::x86::_and_mask = base64_and_mask_addr();
-      StubRoutines::x86::_bswap_mask = base64_bswap_mask_addr();
-      StubRoutines::x86::_base64_charset = base64_charset_addr();
-      StubRoutines::x86::_url_charset = base64url_charset_addr();
-      StubRoutines::x86::_gather_mask = base64_gather_mask_addr();
-      StubRoutines::x86::_left_shift_mask = base64_left_shift_mask_addr();
-      StubRoutines::x86::_right_shift_mask = base64_right_shift_mask_addr();
+      if(VM_Version::supports_avx2() &&
+         VM_Version::supports_avx512bw() &&
+         VM_Version::supports_avx512vl()) {
+        StubRoutines::x86::_avx2_shuffle_base64 = base64_avx2_shuffle_addr();
+        StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
+        StubRoutines::x86::_avx2_lut_base64 = base64_avx2_lut_addr();
+      }
+      StubRoutines::x86::_encoding_table_base64 = base64_encoding_table_addr();
+      if (VM_Version::supports_avx512_vbmi()) {
+        StubRoutines::x86::_shuffle_base64 = base64_shuffle_addr();
+        StubRoutines::x86::_lookup_lo_base64 = base64_vbmi_lookup_lo_addr();
+        StubRoutines::x86::_lookup_hi_base64 = base64_vbmi_lookup_hi_addr();
+        StubRoutines::x86::_lookup_lo_base64url = base64_vbmi_lookup_lo_url_addr();
+        StubRoutines::x86::_lookup_hi_base64url = base64_vbmi_lookup_hi_url_addr();
+        StubRoutines::x86::_pack_vec_base64 = base64_vbmi_pack_vec_addr();
+        StubRoutines::x86::_join_0_1_base64 = base64_vbmi_join_0_1_addr();
+        StubRoutines::x86::_join_1_2_base64 = base64_vbmi_join_1_2_addr();
+        StubRoutines::x86::_join_2_3_base64 = base64_vbmi_join_2_3_addr();
+      }
+      StubRoutines::x86::_decoding_table_base64 = base64_decoding_table_addr();
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -7000,7 +7731,10 @@ address generate_avx_ghash_processBlocks() {
     // Get svml stub routine addresses
     void *libsvml = NULL;
     char ebuf[1024];
-    libsvml = os::dll_load(JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, ebuf, sizeof ebuf);
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "svml")) {
+      libsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
     if (libsvml != NULL) {
       // SVML method naming convention
       //   All the methods are named as __svml_op<T><N>_ha_<VV>

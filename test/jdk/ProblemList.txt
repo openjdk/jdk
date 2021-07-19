@@ -226,6 +226,7 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
+java/awt/Window/MultiWindowApp/MultiWindowAppTest.java 8159904 linux-all
 java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
@@ -526,6 +527,7 @@ java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 
 ############################################################################
 
@@ -579,7 +581,7 @@ com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 
@@ -606,7 +608,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/MulticastSocket/Promiscuous.java                       8265369 macosx-aarch64
 
 ############################################################################
 
@@ -664,6 +665,7 @@ security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LetsEncryptCA.java 8270280 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
@@ -784,8 +786,6 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 # jdk_util
 
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java           8262897 macosx-aarch64
-
 ############################################################################
 
 # jdk_instrument
@@ -800,6 +800,10 @@ sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
+sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 ############################################################################
 
@@ -818,6 +822,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 

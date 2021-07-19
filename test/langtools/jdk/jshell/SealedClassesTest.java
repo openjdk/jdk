@@ -63,10 +63,4 @@ public class SealedClassesTest extends KullaTesting {
         assertEval("class I2 extends I {}");
         assertEval("new I2()");
     }
-
-    @BeforeMethod
-    public void setUp() {
-        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal()))
-                    .remoteVMOptions("--enable-preview"));
-    }
 }

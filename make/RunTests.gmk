@@ -767,7 +767,7 @@ define SetupRunJtregTestBody
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
 
-  $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet -Djavatest.security.noSecurityManager=true
+  $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet
 
   # Make it possible to specify the JIB_DATA_DIR for tests using the
   # JIB Artifact resolver

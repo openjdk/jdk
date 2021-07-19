@@ -351,14 +351,14 @@ public final class HijrahDate
         if (field instanceof ChronoField) {
             if (isSupported(field)) {
                 ChronoField f = (ChronoField) field;
-                switch (f) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, 5);  // TODO
+                return switch (f) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5); // TODO
                     // TODO does the limited range of valid years cause years to
                     // start/end part way through? that would affect range
-                }
-                return getChronology().range(f);
+                    default -> getChronology().range(f);
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -368,22 +368,22 @@ public final class HijrahDate
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case DAY_OF_WEEK: return getDayOfWeek();
-                case ALIGNED_DAY_OF_WEEK_IN_MONTH: return ((dayOfMonth - 1) % 7) + 1;
-                case ALIGNED_DAY_OF_WEEK_IN_YEAR: return ((getDayOfYear() - 1) % 7) + 1;
-                case DAY_OF_MONTH: return this.dayOfMonth;
-                case DAY_OF_YEAR: return this.getDayOfYear();
-                case EPOCH_DAY: return toEpochDay();
-                case ALIGNED_WEEK_OF_MONTH: return ((dayOfMonth - 1) / 7) + 1;
-                case ALIGNED_WEEK_OF_YEAR: return ((getDayOfYear() - 1) / 7) + 1;
-                case MONTH_OF_YEAR: return monthOfYear;
-                case PROLEPTIC_MONTH: return getProlepticMonth();
-                case YEAR_OF_ERA: return prolepticYear;
-                case YEAR: return prolepticYear;
-                case ERA: return getEraValue();
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            return switch ((ChronoField) field) {
+                case DAY_OF_WEEK                  ->  getDayOfWeek();
+                case ALIGNED_DAY_OF_WEEK_IN_MONTH ->  ((dayOfMonth - 1) % 7) + 1;
+                case ALIGNED_DAY_OF_WEEK_IN_YEAR  ->  ((getDayOfYear() - 1) % 7) + 1;
+                case DAY_OF_MONTH                 ->  this.dayOfMonth;
+                case DAY_OF_YEAR                  ->  this.getDayOfYear();
+                case EPOCH_DAY                    ->  toEpochDay();
+                case ALIGNED_WEEK_OF_MONTH        ->  ((dayOfMonth - 1) / 7) + 1;
+                case ALIGNED_WEEK_OF_YEAR         ->  ((getDayOfYear() - 1) / 7) + 1;
+                case MONTH_OF_YEAR                ->  monthOfYear;
+                case PROLEPTIC_MONTH              ->  getProlepticMonth();
+                case YEAR_OF_ERA                  ->  prolepticYear;
+                case YEAR                         ->  prolepticYear;
+                case ERA                          ->  getEraValue();
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }
@@ -398,22 +398,22 @@ public final class HijrahDate
             // not using checkValidIntValue so EPOCH_DAY and PROLEPTIC_MONTH work
             chrono.range(chronoField).checkValidValue(newValue, chronoField);    // TODO: validate value
             int nvalue = (int) newValue;
-            switch (chronoField) {
-                case DAY_OF_WEEK: return plusDays(newValue - getDayOfWeek());
-                case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
-                case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
-                case DAY_OF_MONTH: return resolvePreviousValid(prolepticYear, monthOfYear, nvalue);
-                case DAY_OF_YEAR: return plusDays(Math.min(nvalue, lengthOfYear()) - getDayOfYear());
-                case EPOCH_DAY: return new HijrahDate(chrono, newValue);
-                case ALIGNED_WEEK_OF_MONTH: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_MONTH)) * 7);
-                case ALIGNED_WEEK_OF_YEAR: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_YEAR)) * 7);
-                case MONTH_OF_YEAR: return resolvePreviousValid(prolepticYear, nvalue, dayOfMonth);
-                case PROLEPTIC_MONTH: return plusMonths(newValue - getProlepticMonth());
-                case YEAR_OF_ERA: return resolvePreviousValid(prolepticYear >= 1 ? nvalue : 1 - nvalue, monthOfYear, dayOfMonth);
-                case YEAR: return resolvePreviousValid(nvalue, monthOfYear, dayOfMonth);
-                case ERA: return resolvePreviousValid(1 - prolepticYear, monthOfYear, dayOfMonth);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            return switch (chronoField) {
+                case DAY_OF_WEEK                  ->  plusDays(newValue - getDayOfWeek());
+                case ALIGNED_DAY_OF_WEEK_IN_MONTH ->  plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                case ALIGNED_DAY_OF_WEEK_IN_YEAR  ->  plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                case DAY_OF_MONTH                 ->  resolvePreviousValid(prolepticYear, monthOfYear, nvalue);
+                case DAY_OF_YEAR                  ->  plusDays(Math.min(nvalue, lengthOfYear()) - getDayOfYear());
+                case EPOCH_DAY                    ->  new HijrahDate(chrono, newValue);
+                case ALIGNED_WEEK_OF_MONTH        ->  plusDays((newValue - getLong(ALIGNED_WEEK_OF_MONTH)) * 7);
+                case ALIGNED_WEEK_OF_YEAR         ->  plusDays((newValue - getLong(ALIGNED_WEEK_OF_YEAR)) * 7);
+                case MONTH_OF_YEAR                ->  resolvePreviousValid(prolepticYear, nvalue, dayOfMonth);
+                case PROLEPTIC_MONTH              ->  plusMonths(newValue - getProlepticMonth());
+                case YEAR_OF_ERA                  ->  resolvePreviousValid(prolepticYear >= 1 ? nvalue : 1 - nvalue, monthOfYear, dayOfMonth);
+                case YEAR                         ->  resolvePreviousValid(nvalue, monthOfYear, dayOfMonth);
+                case ERA                          ->  resolvePreviousValid(1 - prolepticYear, monthOfYear, dayOfMonth);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return super.with(field, newValue);
     }

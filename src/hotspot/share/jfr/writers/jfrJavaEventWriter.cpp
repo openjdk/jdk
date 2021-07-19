@@ -171,7 +171,7 @@ class JfrJavaEventWriterNotificationClosure : public ThreadClosure {
  public:
    void do_thread(Thread* t) {
      if (t->is_Java_thread()) {
-       JfrJavaEventWriter::notify(t->as_Java_thread());
+       JfrJavaEventWriter::notify(JavaThread::cast(t));
      }
    }
 };

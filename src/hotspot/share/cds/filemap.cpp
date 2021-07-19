@@ -32,6 +32,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -240,6 +241,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
+  _has_non_jar_in_classpath = ClassLoaderExt::has_non_jar_in_classpath();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
@@ -293,6 +295,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- verify_local:                   %d", _verify_local);
   st->print_cr("- verify_remote:                  %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
+  st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
@@ -475,6 +478,24 @@ void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
   for (int i = 0; i < _shared_path_table.size(); i++) {
     _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, CHECK);
   }
+  _saved_shared_path_table_array = array;
+}
+
+void FileMapInfo::clone_shared_path_table(TRAPS) {
+  Arguments::assert_is_dumping_archive();
+
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
+
+  assert(jrt != NULL,
+         "No modular java runtime image present when allocating the CDS classpath entry table");
+
+  if (_saved_shared_path_table_array != NULL) {
+    MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table_array);
+    _saved_shared_path_table_array = NULL;
+  }
+
+  copy_shared_path_table(loader_data, CHECK);
 }
 
 void FileMapInfo::allocate_shared_path_table(TRAPS) {
@@ -500,8 +521,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
   }
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
-
-  copy_shared_path_table(loader_data, CHECK);
+  clone_shared_path_table(CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
@@ -717,13 +737,25 @@ int FileMapInfo::num_paths(const char* path) {
 
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
-
+  JavaThread* current = JavaThread::current();
   ClasspathStream cp_stream(paths);
+  bool non_jar_in_cp = header()->has_non_jar_in_classpath();
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    struct stat st;
-    if (os::stat(path, &st) == 0) {
-      path_array->append(path);
+    if (!non_jar_in_cp) {
+      struct stat st;
+      if (os::stat(path, &st) == 0) {
+        path_array->append(path);
+      }
+    } else {
+      const char* canonical_path = ClassLoader::get_canonical_path(path, current);
+      if (canonical_path != NULL) {
+        char* error_msg = NULL;
+        jzfile* zip = ClassLoader::open_zip_file(canonical_path, &error_msg, current);
+        if (zip != NULL && error_msg == NULL) {
+          path_array->append(path);
+        }
+      }
     }
   }
   return path_array;
@@ -2137,6 +2169,7 @@ FileMapInfo* FileMapInfo::_dynamic_archive_info = NULL;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 SharedPathTable FileMapInfo::_saved_shared_path_table;
+Array<u8>*      FileMapInfo::_saved_shared_path_table_array = NULL;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;

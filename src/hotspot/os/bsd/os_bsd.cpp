@@ -552,9 +552,6 @@ static void *thread_native_entry(Thread *thread) {
 
   osthread->set_thread_id(os::Bsd::gettid());
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
-
 #ifdef __APPLE__
   // Store unique OS X thread id used by SA
   osthread->set_unique_thread_id();
@@ -586,6 +583,9 @@ static void *thread_native_entry(Thread *thread) {
       sync->wait_without_safepoint_check();
     }
   }
+
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   // call one more level start routine
   thread->call_run();
@@ -631,16 +631,22 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   ThreadState state;
 
   {
+
+    ResourceMark rm;
     pthread_t tid;
-    int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    int ret = 0;
+    int limit = 3;
+    do {
+      ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    } while (ret == EAGAIN && limit-- > 0);
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
-        (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+                           thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
-      log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-        os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
+                              thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
       // Log some OS information which might explain why creating the thread failed.
       log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
       LogStream st(Log(os, thread)::info());
@@ -2165,11 +2171,6 @@ void os::set_native_thread_name(const char *name) {
 #endif
 }
 
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
@@ -2355,9 +2356,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 

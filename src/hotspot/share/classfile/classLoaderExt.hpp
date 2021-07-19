@@ -56,6 +56,7 @@ private:
 
   static bool _has_app_classes;
   static bool _has_platform_classes;
+  static bool _has_non_jar_in_classpath;
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
   static ClassPathEntry* find_classpath_entry_from_cache(JavaThread* current, const char* path);
@@ -107,6 +108,10 @@ public:
     return _has_app_classes || _has_platform_classes;
   }
 
+  static bool has_non_jar_in_classpath() {
+    return _has_non_jar_in_classpath;
+  }
+
   static void record_result(const s2 classpath_index, InstanceKlass* result);
   static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
   static void set_has_app_classes() {
@@ -115,7 +120,10 @@ public:
   static void set_has_platform_classes() {
     _has_platform_classes = true;
   }
-#endif
+  static void set_has_non_jar_in_classpath() {
+    _has_non_jar_in_classpath = true;
+  }
+#endif // INCLUDE_CDS
 };
 
 #endif // SHARE_CLASSFILE_CLASSLOADEREXT_HPP
