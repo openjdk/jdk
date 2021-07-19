@@ -24,6 +24,7 @@
 
 /*
  * @test SuspendBlocked
+ * @bug 8270085
  * @library /testlibrary /test/lib
  * @build SuspendBlocked
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
