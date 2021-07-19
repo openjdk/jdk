@@ -57,7 +57,7 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  if (os::supports_serialize()) {
+  if (VM_Version::supports_serialize()) {
     __asm__ volatile (".byte 0x0f, 0x01, 0xe8\n\t" : : :); //serialize
   } else {
     int idx = 0;

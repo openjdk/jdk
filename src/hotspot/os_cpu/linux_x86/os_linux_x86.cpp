@@ -458,10 +458,6 @@ bool os::supports_sse() {
 #endif // AMD64
 }
 
-bool os::supports_serialize(){
-  return VM_Version::supports_serialize();
-}
-
 juint os::cpu_microcode_revision() {
   juint result = 0;
   char data[2048] = {0}; // lines should fit in 2K buf
