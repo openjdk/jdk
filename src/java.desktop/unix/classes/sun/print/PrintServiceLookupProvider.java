@@ -75,8 +75,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
 
-
-    static String osname;
+    @SuppressWarnings("removal")
+    static String osname = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name"));
 
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
@@ -126,8 +127,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 minRefreshTime = DEFAULT_MINREFRESH;
             }
         }
-
-        osname = System.getProperty("os.name");
 
         /* The system property "sun.java2d.print.aix.lpstat"
          * can be used to force the usage of 'lpstat -p' to enumerate all
