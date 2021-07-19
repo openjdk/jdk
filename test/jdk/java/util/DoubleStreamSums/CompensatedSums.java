@@ -24,10 +24,14 @@
 /*
  * @test
  * @bug 8214761
+ * @run main CompensatedSums
+ * @summary
  */
 
 import java.util.Random;
 import java.util.stream.DoubleStream;
+
+import static org.testng.Assert.assertTrue;
 
 public class CompensatedSums {
 
@@ -35,8 +39,6 @@ public class CompensatedSums {
         double naive = 0;
         double sequentialStream = 0;
         double parallelStream = 0;
-        double mySequentialStream = 0;
-        double myParallelStream = 0;
 
         for (int loop = 0; loop < 100; loop++) {
             // sequence of random numbers of varying magnitudes, both positive and negative
@@ -60,39 +62,12 @@ public class CompensatedSums {
             // squared error of parallel sum
             parallelStream += Math.pow(DoubleStream.of(rand).parallel().sum() - sum[0], 2);
 
-            // squared error of modified sequential sum - should be 0
-            mySequentialStream += Math.pow(computeFinalSum(DoubleStream.of(rand).collect(
-                    () -> new double[3],
-                    (ll, d) -> {
-                        sumWithCompensation(ll, d);
-                        ll[2] += d;
-                    },
-                    (ll, rr) -> {
-                        sumWithCompensation(ll, rr[0]);
-                        sumWithCompensation(ll, -rr[1]); // minus is added
-                        ll[2] += rr[2];
-                    })) - sum[0], 2);
-
-            // squared error of modified parallel sum - typically ~0.25-0.5 times squared error of parallel sum
-            myParallelStream += Math.pow(computeFinalSum(DoubleStream.of(rand).parallel().collect(
-                    () -> new double[3],
-                    (ll, d) -> {
-                        sumWithCompensation(ll, d);
-                        ll[2] += d;
-                    },
-                    (ll, rr) -> {
-                        sumWithCompensation(ll, rr[0]);
-                        sumWithCompensation(ll, -rr[1]); // minus is added
-                        ll[2] += rr[2];
-                    })) - sum[0], 2);
         }
 
         // print sum of squared errors
-        System.out.println(naive);
-        System.out.println(sequentialStream);
-        System.out.println(parallelStream);
-        System.out.println(mySequentialStream);
-        System.out.println(myParallelStream);
+        System.out.println("Naive: " + naive);
+        System.out.println("Sequential Stream: " + sequentialStream);
+        System.out.println("Paralellel Stream: " + parallelStream);
     }
 
     // from OpenJDK8 Collectors, unmodified
