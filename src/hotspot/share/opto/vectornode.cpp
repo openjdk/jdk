@@ -591,7 +591,7 @@ VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt)
 bool VectorNode::is_vector_rotate(int opc) {
   switch (opc) {
   case Op_RotateLeftV:
-  case Op_RotateRight:
+  case Op_RotateRightV:
     return true;
   default:
     return false;
