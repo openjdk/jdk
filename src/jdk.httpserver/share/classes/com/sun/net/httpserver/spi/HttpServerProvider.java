@@ -97,12 +97,14 @@ public abstract class HttpServerProvider {
         if (cn == null)
             return false;
         try {
-            var cls = Class.forName(cn, true, ClassLoader.getSystemClassLoader());
-            if (cls.getDeclaredConstructor().newInstance() instanceof HttpServerProvider p) {
-                provider = p;
+            var cls = Class.forName(cn, false, ClassLoader.getSystemClassLoader());
+            if (HttpServerProvider.class.isAssignableFrom(cls)) {
+                provider = (HttpServerProvider) cls.getDeclaredConstructor().newInstance();
                 return true;
+            } else {
+                throw new ServiceConfigurationError("not assignable to HttpServerProvider: "
+                        + cls.getName());
             }
-            return false;
         } catch (InvocationTargetException |
                  NoSuchMethodException |
                  ClassNotFoundException |

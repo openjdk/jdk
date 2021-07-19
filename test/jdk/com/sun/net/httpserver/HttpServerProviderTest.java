@@ -25,9 +25,18 @@
  * @test
  * @bug 8270286
  * @summary Test for HttpServerProvider::loadProviderFromProperty
- * @modules jdk.httpserver/sun.net.httpserver:+open
- *          jdk.httpserver/com.sun.net.httpserver.spi:+open
- * @run testng/othervm HttpServerProviderTest
+ * @run testng/othervm
+ *      -Dcom.sun.net.httpserver.HttpServerProvider=HttpServerProviderTest$ProviderP
+ *      HttpServerProviderTest
+ * @run testng/othervm
+ *      -Dcom.sun.net.httpserver.HttpServerProvider=HttpServerProviderTest$ProviderPNPC
+ *      HttpServerProviderTest
+ * @run testng/othervm
+ *      -Dcom.sun.net.httpserver.HttpServerProvider=HttpServerProviderTest$ProviderNP
+ *      HttpServerProviderTest
+ * @run testng/othervm
+ *      -Dcom.sun.net.httpserver.HttpServerProvider=HttpServerProviderTest$ProviderT
+ *      HttpServerProviderTest
  */
 
 import java.lang.reflect.InvocationTargetException;
@@ -36,7 +45,6 @@ import java.util.ServiceConfigurationError;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.spi.HttpServerProvider;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -46,11 +54,19 @@ public class HttpServerProviderTest {
     public final static String PROPERTY_KEY = "com.sun.net.httpserver.HttpServerProvider";
 
     @Test
-    public void testPublic() throws Exception {
-        resetProperty();
+    public void test() throws Exception {
+        var provider = System.getProperty(PROPERTY_KEY);
+        switch (provider) {
+            case "HttpServerProviderTest$ProviderP" -> testPublic();
+            case "HttpServerProviderTest$ProviderPNPC" -> testPublicNonPublicConstructor();
+            case "HttpServerProviderTest$ProviderNP" -> testNonPublic();
+            case "HttpServerProviderTest$ProviderT" -> testThrowingConstructor();
+            default -> throw new AssertionError("unexpected test case");
+        }
+    }
 
+    private void testPublic() throws Exception {
         var n = ProviderP.class.getName();
-        System.setProperty(PROPERTY_KEY, n);
         assertEquals(System.getProperty(PROPERTY_KEY), n);
 
         var p = HttpServerProvider.provider();
@@ -58,16 +74,8 @@ public class HttpServerProviderTest {
         assertNull(p.createHttpsServer(null, 0));
     }
 
-    @DataProvider
-    public Object[][] classNames() {
-        return new Object[][] { {ProviderPNPC.class.getName()}, {ProviderNP.class.getName()} };
-    }
-
-    @Test(dataProvider = "classNames")
-    public void testNonPublic(String n) throws Exception {
-        resetProperty();
-
-        System.setProperty(PROPERTY_KEY, n);
+    private void testPublicNonPublicConstructor() {
+        var n = ProviderPNPC.class.getName();
         assertEquals(System.getProperty(PROPERTY_KEY), n);
 
         var e = expectThrows(ServiceConfigurationError.class, HttpServerProvider::provider);
@@ -75,26 +83,23 @@ public class HttpServerProviderTest {
         assertEquals(e.getCause().getClass(), IllegalAccessException.class);
     }
 
-    @Test
-    public void testThrowingConstructor() throws Exception {
-        resetProperty();
+    private void testNonPublic() {
+        var n = ProviderNP.class.getName();
+        assertEquals(System.getProperty(PROPERTY_KEY), n);
 
+        var e = expectThrows(ServiceConfigurationError.class, HttpServerProvider::provider);
+        assertEquals(e.getClass(), ServiceConfigurationError.class);
+        assertEquals(e.getCause().getClass(), IllegalAccessException.class);
+    }
+
+    private void testThrowingConstructor() {
         var cn = ProviderT.class.getName();
-        System.setProperty(PROPERTY_KEY, cn);
         assertEquals(System.getProperty(PROPERTY_KEY), cn);
 
         var e = expectThrows(ServiceConfigurationError.class, HttpServerProvider::provider);
         assertEquals(e.getClass(), ServiceConfigurationError.class);
         assertEquals(e.getCause().getClass(), InvocationTargetException.class);
         assertEquals(e.getCause().getCause().getMessage(), "throwing constructor");
-    }
-
-    // --- infra ---
-
-    private static void resetProperty() throws Exception {
-        var field = HttpServerProvider.class.getDeclaredField("provider");
-        field.setAccessible(true);
-        field.set(null, null);
     }
 
     /**
