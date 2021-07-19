@@ -243,8 +243,10 @@ template <typename PRE_PROC>
 class ThreadBlockInVMPreprocess : public ThreadStateTransition {
  private:
   PRE_PROC& _pr;
+  bool _allow_suspend;
  public:
-  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr) : ThreadStateTransition(thread), _pr(pr) {
+  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr, bool allow_suspend = true)
+    : ThreadStateTransition(thread), _pr(pr), _allow_suspend(allow_suspend) {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
@@ -257,9 +259,9 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     // Change to transition state and ensure it is seen by the VM thread.
     _thread->set_thread_state_fence(_thread_blocked_trans);
 
-    if (SafepointMechanism::should_process(_thread)) {
+    if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
     }
 
     _thread->set_thread_state(_thread_in_vm);
@@ -289,7 +291,7 @@ class ThreadBlockInVM {
   ThreadBlockInVMPreprocess<InFlightMutexRelease> _tbivmpp;
  public:
   ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
-    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr) {}
+    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr, false) {}
 };
 
 // Debug class instantiated in JRT_ENTRY macro.
