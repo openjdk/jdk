@@ -114,13 +114,30 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   if( !t->singleton() ) return NULL;
 
   // No intervening control, like a simple Call
-  Node *r = iff->in(0);
-  if( !r->is_Region() ) return NULL;
-  if (r->is_Loop()) return NULL;
-  if( phi->region() != r ) return NULL;
+  Node* r = iff->in(0);
+  if (!r->is_Region() || r->is_Loop() || phi->region() != r) {
+    return NULL;
+  }
+
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {
     //tty->print_cr("many users of cmp/bool");
+    return NULL;
+  }
+
+  uint non_top_inputs = 0;
+  for (uint i = 1; i < r->req(); i++) {
+    Node* in = r->in(i);
+    if (in != NULL && !in->is_top() && // Input is not top?
+        !(in->in(0) != NULL && in->in(0)->req() == 1 && in->in(0)->is_top())) {
+      // Also check the control input of the region's input to catch the rare case of a dying loop header region
+      // (that is not yet a LoopNode before loop opts) whose last predicate If was already replaced by top but
+      // not its IfProj. The projection with a top input is an input into the region.
+      non_top_inputs++;
+    }
+  }
+  if (non_top_inputs <= 1) {
+    // Bail out as Region will be removed anyways.
     return NULL;
   }
 
@@ -243,6 +260,8 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     }
     Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
     if (proj != NULL) {
+      // Bail out if splitting through a region with a predicate input (could
+      // also be a loop header before loop opts creates a LoopNode for it).
       return NULL;
     }
   }
