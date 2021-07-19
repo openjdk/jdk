@@ -198,16 +198,8 @@ public:
   int frame_complete_offset() const              { return _frame_complete_offset; }
 
   // Profiling/safepoint support
-  class FrameParser: public ResourceObj {
-   protected:
-    const CodeBlob* _cb;
-   public:
-    FrameParser(const CodeBlob* cb) : _cb(cb) {}
-    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
-      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
-  };
-
-  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+  virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
 
   // CodeCache support: really only used by the nmethods, but in order to get
   // asserts and certain bookkeeping to work in the CodeCache they are defined
@@ -374,12 +366,6 @@ class RuntimeBlob : public CodeBlob {
     bool        caller_must_gc_arguments = false
   );
 
-  // Profiling/safepoint support
-  class FrameParser : public CodeBlob::FrameParser {
-   public:
-    FrameParser(const RuntimeBlob* cb) : CodeBlob::FrameParser(cb) {}
-  };
-
   // GC support
   virtual bool is_alive() const                  = 0;
 
@@ -431,12 +417,6 @@ class BufferBlob: public RuntimeBlob {
   // Typing
   virtual bool is_buffer_blob() const            { return true; }
 
-  // Profiling/safepoint support
-  class FrameParser : public RuntimeBlob::FrameParser {
-   public:
-    FrameParser(const BufferBlob* cb) : RuntimeBlob::FrameParser(cb) {}
-  };
-
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
   bool is_alive() const                          { return true; }
@@ -477,14 +457,8 @@ public:
   virtual bool is_vtable_blob() const { return true; }
 
   // Profiling/safepoint support
-  class FrameParser : public BufferBlob::FrameParser {
-   public:
-    FrameParser(const VtableBlob* cb) : BufferBlob::FrameParser(cb) {}
-    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
-      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
-  };
-
-  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+  virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
 };
 
 //----------------------------------------------------------------------------------------------------
@@ -518,14 +492,8 @@ public:
   virtual bool is_interpreter_blob() const { return true; }
 
   // Profiling/safepoint support
-  class FrameParser : public BufferBlob::FrameParser {
-   public:
-    FrameParser(const InterpreterBlob* cb) : BufferBlob::FrameParser(cb) {}
-    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
-      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
-  };
-
-  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+  virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
 };
 
 
@@ -544,14 +512,8 @@ public:
   virtual bool is_stub_routines_blob() const { return true; }
 
   // Profiling/safepoint support
-  class FrameParser : public BufferBlob::FrameParser {
-   public:
-    FrameParser(const StubRoutinesBlob* cb) : BufferBlob::FrameParser(cb) {}
-    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
-      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
-  };
-
-  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+  virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
 };
 
 

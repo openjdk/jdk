@@ -82,9 +82,7 @@ bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& f
       return true;
     }
 
-    if (!candidate.safe_for_sender(_thread) ||
-      candidate.is_stub_frame() ||
-      candidate.cb()->frame_size() <= 0) {
+    if (!candidate.safe_for_sender(_thread)) {
       return false;
     }
 

@@ -54,8 +54,6 @@ void RegisterMap::check_location_valid() {
 // Profiling/safepoint support
 
 bool frame::safe_for_sender(JavaThread *thread) {
-  ResourceMark rm;
-
   address   sp = (address)_sp;
   address   fp = (address)_fp;
   address   unextended_sp = (address)_unextended_sp;
@@ -103,7 +101,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     intptr_t*  sender_unextended_sp = NULL;
     address    sender_pc = NULL;
     intptr_t** saved_fp =  NULL;
-    if (!_cb->frame_parser()->sender_frame(
+    if (!_cb->sender_frame(
           thread, true, _pc, (intptr_t*)sp, (intptr_t*)unextended_sp, (intptr_t*)fp, fp_safe,
             &sender_pc, &sender_sp, &sender_unextended_sp, &saved_fp)) {
       return false;
@@ -437,8 +435,6 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 //------------------------------------------------------------------------------
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  ResourceMark rm;
-
   assert(map != NULL, "map must be set");
 
   // frame owned by optimizing compiler
@@ -449,7 +445,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   intptr_t*  l_unextended_sp = NULL;
   address    l_sender_pc = NULL;
   intptr_t** l_saved_fp = NULL;
-  _cb->frame_parser()->sender_frame(
+  _cb->sender_frame(
     NULL, false, pc(), sp(), unextended_sp(), fp(), true,
       &l_sender_pc, &l_sender_sp, &l_unextended_sp, &l_saved_fp);
 
