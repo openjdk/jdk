@@ -62,11 +62,8 @@ class oopDesc {
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
-  static inline void set_mark(HeapWord* mem, markWord m);
-
   inline void release_set_mark(markWord m);
-  inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
-  inline markWord cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order);
+  inline markWord cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order = memory_order_conservative);
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
@@ -78,7 +75,7 @@ class oopDesc {
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
-  static inline void release_set_klass(HeapWord* mem, Klass* k);
+  inline void release_set_klass(Klass* k);
 
   // For klass field compression
   inline int klass_gap() const;

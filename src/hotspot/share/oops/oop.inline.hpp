@@ -45,29 +45,19 @@
 // We need a separate file to avoid circular references
 
 markWord oopDesc::mark() const {
-  uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
-  return markWord(v);
+  return *const_cast<markWord*>(&_mark);
 }
 
 markWord* oopDesc::mark_addr() const {
-  return (markWord*) &_mark;
+  return const_cast<markWord*>(&_mark);
 }
 
 void oopDesc::set_mark(markWord m) {
-  HeapAccess<MO_RELAXED>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
-}
-
-void oopDesc::set_mark(HeapWord* mem, markWord m) {
-  *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
+  *const_cast<markWord*>(&_mark) = m;
 }
 
 void oopDesc::release_set_mark(markWord m) {
-  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
-}
-
-markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(as_oop(), mark_offset_in_bytes(), old_mark.value(), new_mark.value());
-  return markWord(v);
+  Atomic::release_store(&_mark, m);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order) {
@@ -112,14 +102,13 @@ void oopDesc::set_klass(Klass* k) {
   }
 }
 
-void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
+void oopDesc::release_set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
-  char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
-    Atomic::release_store((narrowKlass*)raw_mem,
+    Atomic::release_store(&_metadata._compressed_klass,
                           CompressedKlassPointers::encode_not_null(k));
   } else {
-    Atomic::release_store((Klass**)raw_mem, k);
+    Atomic::release_store(&_metadata._klass, k);
   }
 }
 
