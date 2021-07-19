@@ -1990,10 +1990,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // Check the shape of the graph at the loop entry. If an inappropriate
     // graph shape is encountered, the compiler bails out loop unrolling;
     // compilation of the method will still succeed.
-    if (!is_canonical_loop_entry(loop_head)) {
+    opaq = loop_head->is_canonical_loop_entry();
+    if (opaq == NULL) {
       return;
     }
-    opaq = loop_head->skip_predicates()->in(0)->in(1)->in(1)->in(2);
     // Zero-trip test uses an 'opaque' node which is not shared.
     assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
   }
@@ -2608,7 +2608,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Check graph shape. Cannot optimize a loop if zero-trip
   // Opaque1 node is optimized away and then another round
   // of loop opts attempted.
-  if (!is_canonical_loop_entry(cl)) {
+  if (cl->is_canonical_loop_entry() == NULL) {
     return closed_range_checks;
   }
 
@@ -2937,7 +2937,9 @@ bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoop
   }
 
   // Find RCE'd post loop so that we can stage its guard.
-  if (!is_canonical_loop_entry(legacy_cl)) return multi_version_succeeded;
+  if (legacy_cl->is_canonical_loop_entry() == NULL) {
+    return multi_version_succeeded;
+  }
   Node* ctrl = legacy_cl->in(LoopNode::EntryControl);
   Node* iffm = ctrl->in(0);
 
