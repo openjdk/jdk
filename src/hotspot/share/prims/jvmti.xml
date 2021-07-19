@@ -15036,6 +15036,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file PermittedSubclasses attribute.
   </change>
+  <change date="15 January 2021" version="17.0.0">
+      Minor clarification in the section "Agent Shutdown" that says the
+      implementation may choose to not call the Agent_OnUnload function
+      if the Agent_OnAttach/Agent_OnAttach_L function reported an error. 
+  </change>
   <change date="8 June 2021" version="17.0.0">
       Minor update to deprecate Heap functions 1.0.
   </change>

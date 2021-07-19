@@ -496,13 +496,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(CollectedHeap::Serial)                                 \
-  declare_constant(CollectedHeap::Parallel)                               \
-  declare_constant(CollectedHeap::G1)                                     \
-  declare_constant(CollectedHeap::Epsilon)                                \
-  declare_constant(CollectedHeap::Z)                                      \
-  declare_constant(CollectedHeap::Shenandoah)                             \
-                                                                          \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \

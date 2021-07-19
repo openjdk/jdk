@@ -27,6 +27,9 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.settings.Settings;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -45,7 +48,10 @@ public class GraphViewerImplementation implements GraphViewer {
         if (!clone) {
             WindowManager manager = WindowManager.getDefault();
             for (Mode m : manager.getModes()) {
-                for (TopComponent t : manager.getOpenedTopComponents(m)) {
+                List<TopComponent> l = new ArrayList<>();
+                l.add(m.getSelectedTopComponent());
+                l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+                for (TopComponent t : l) {
                     if (t instanceof EditorTopComponent) {
                         EditorTopComponent etc = (EditorTopComponent) t;
                         if (etc.getModel().getGroup().getGraphs().contains(graph)) {
