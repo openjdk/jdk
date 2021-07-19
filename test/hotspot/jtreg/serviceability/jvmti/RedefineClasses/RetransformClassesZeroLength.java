@@ -26,6 +26,7 @@
  * @bug 8198393
  * @summary Instrumentation.retransformClasses(new Class[0]) should be NOP
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.instrument
  * @compile RetransformClassesZeroLength.java

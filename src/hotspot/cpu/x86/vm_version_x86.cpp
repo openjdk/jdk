@@ -769,6 +769,15 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_VZEROUPPER;
       _features &= ~CPU_AVX512BW;
       _features &= ~CPU_AVX512VL;
+      _features &= ~CPU_AVX512DQ;
+      _features &= ~CPU_AVX512_VNNI;
+      _features &= ~CPU_AVX512_VAES;
+      _features &= ~CPU_AVX512_VPOPCNTDQ;
+      _features &= ~CPU_AVX512_VPCLMULQDQ;
+      _features &= ~CPU_AVX512_VBMI;
+      _features &= ~CPU_AVX512_VBMI2;
+      _features &= ~CPU_CLWB;
+      _features &= ~CPU_FLUSHOPT;
     }
   }
 

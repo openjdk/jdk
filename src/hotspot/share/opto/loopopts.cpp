@@ -949,6 +949,9 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
               assert(get_loop(lca) == outer_loop, "safepoint in outer loop consume all memory state");
             }
 #endif
+            lca = place_outside_loop(lca, n_loop);
+            assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->Opcode() == Op_NeverBranch, "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1147,7 +1150,9 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   // Pick control right outside the loop
   for (;;) {
     Node* dom = idom(useblock);
-    if (loop->is_member(get_loop(dom))) {
+    if (loop->is_member(get_loop(dom)) ||
+        // NeverBranch nodes are not assigned to the loop when constructed
+        (dom->Opcode() == Op_NeverBranch && loop->is_member(get_loop(dom->in(0))))) {
       break;
     }
     useblock = dom;
@@ -1996,10 +2001,13 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == NULL)) {
-      Node* c = u->in(0) != NULL ? u->in(0) : phase->get_ctrl(u);
+      Node* c = phase->get_ctrl(u);
       IdealLoopTree* u_loop = phase->get_loop(c);
       assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
-      if (outer_loop->is_member(u_loop)) {
+      if (outer_loop->is_member(u_loop) ||
+          // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
+          // the outer loop too
+          (u->in(0) != NULL && outer_loop->is_member(phase->get_loop(u->in(0))))) {
         wq.push(u);
       }
     }
@@ -2195,10 +2203,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
   uint i;
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node *old = loop->_body.at(i);
-    Node *nnn = old->clone();
-    old_new.map( old->_idx, nnn );
+  for (i = 0; i < loop->_body.size(); i++) {
+    Node* old = loop->_body.at(i);
+    Node* nnn = old->clone();
+    old_new.map(old->_idx, nnn);
+    if (old->is_reduction()) {
+      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
+      nnn->add_flag(Node::Flag_is_reduction);
+    }
     if (C->do_vector_loop()) {
       cm.verify_insert_and_clone(old, nnn, cm.clone_idx());
     }

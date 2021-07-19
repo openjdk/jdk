@@ -234,8 +234,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
   // -2- test (hdr - SP) if the low two bits are 0
   sub(tmp2, hdr, SP, eq);
   movs(tmp2, AsmOperand(tmp2, lsr, exact_log2(os::vm_page_size())), eq);
-  // If 'eq' then OK for recursive fast locking: store 0 into a lock record.
-  str(tmp2, Address(disp_hdr, mark_offset), eq);
+  // If still 'eq' then recursive locking OK
+  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+  str(tmp2, Address(disp_hdr, mark_offset));
   b(fast_lock_done, eq);
   // else need slow case
   b(slow_case);

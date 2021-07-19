@@ -25,6 +25,7 @@
  * @test
  * @build DummyWebSocketServer
  * @run testng/othervm
+ *      -Djdk.httpclient.sendBufferSize=8192
  *       PendingPongBinaryClose
  */
 
@@ -50,6 +51,7 @@ public class PendingPongBinaryClose extends PendingOperations {
     public void pendingPongBinaryClose(boolean last) throws Exception {
         repeatable( () -> {
             server = Support.notReadingServer();
+            server.setReceiveBufferSize(1024);
             server.open();
             webSocket = httpClient().newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })

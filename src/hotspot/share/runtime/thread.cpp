@@ -1239,11 +1239,6 @@ JavaThread::~JavaThread() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    if (jvmci_counters_include(this)) {
-      for (int i = 0; i < JVMCICounterSize; i++) {
-        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
-      }
-    }
     FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
@@ -1499,6 +1494,17 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     _timer_exit_phase3.stop();
     _timer_exit_phase4.start();
   }
+
+#if INCLUDE_JVMCI
+  if (JVMCICounterSize > 0) {
+    if (jvmci_counters_include(this)) {
+      for (int i = 0; i < JVMCICounterSize; i++) {
+        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
+      }
+    }
+  }
+#endif // INCLUDE_JVMCI
+
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this, daemon);
 

@@ -61,6 +61,11 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return frame(zeroframe()->next(), sender_sp());
 }
 
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");

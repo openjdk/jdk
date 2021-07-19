@@ -227,8 +227,10 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   {
     NoSafepointVerifier nsv;  // safepoints are not safe while collecting methods to post.
     {
-      // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
-      // because the sweeper may be running concurrently.
+      // Walk the CodeCache notifying for live nmethods. We hold the CodeCache_lock
+      // to ensure the iteration is safe and nmethods are not concurrently freed.
+      // However, they may still change states and become !is_alive(). Filtering
+      // those out is done inside of nmethod::post_compiled_method_load_event().
       // Save events to the queue for posting outside the CodeCache_lock.
       MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods

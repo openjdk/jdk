@@ -68,53 +68,9 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 }
 #endif
 
-/**
- * Transfer all bytes from src to dst within the kernel if possible (Linux),
- * otherwise via user-space buffers
- */
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_transfer
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
+// Transfer via user-space buffers
+void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
 {
-    volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
-
-#if defined(__linux__)
-    // Transfer within the kernel
-    const size_t count = cancel != NULL ?
-        1048576 :   // 1 MB to give cancellation a chance
-        0x7ffff000; // maximum number of bytes that sendfile() can transfer
-    ssize_t bytes_sent;
-    do {
-        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
-        if (bytes_sent == -1) {
-            throwUnixException(env, errno);
-            return;
-        }
-        if (cancel != NULL && *cancel != 0) {
-            throwUnixException(env, ECANCELED);
-            return;
-        }
-    } while (bytes_sent > 0);
-#elif defined(_ALLBSD_SOURCE)
-    copyfile_state_t state;
-    if (cancel != NULL) {
-        state = copyfile_state_alloc();
-        copyfile_state_set(state, COPYFILE_STATE_STATUS_CB, fcopyfile_callback);
-        copyfile_state_set(state, COPYFILE_STATE_STATUS_CTX, (void*)cancel);
-    } else {
-        state = NULL;
-    }
-    if (fcopyfile(src, dst, state, COPYFILE_DATA) < 0) {
-        int errno_fcopyfile = errno;
-        if (state != NULL)
-            copyfile_state_free(state);
-        throwUnixException(env, errno_fcopyfile);
-        return;
-    }
-    if (state != NULL)
-        copyfile_state_free(state);
-#else
-    // Transfer via user-space buffers
     char buf[8192];
 
     for (;;) {
@@ -143,5 +99,59 @@ Java_sun_nio_fs_UnixCopyFile_transfer
             len -= n;
         } while (len > 0);
     }
+}
+
+/**
+ * Transfer all bytes from src to dst within the kernel if possible (Linux),
+ * otherwise via user-space buffers
+ */
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixCopyFile_transfer
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
+{
+    volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
+
+#if defined(__linux__)
+    // Transfer within the kernel
+    const size_t count = cancel != NULL ?
+        1048576 :   // 1 MB to give cancellation a chance
+        0x7ffff000; // maximum number of bytes that sendfile() can transfer
+    ssize_t bytes_sent;
+    do {
+        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        if (bytes_sent == -1) {
+            if (errno == EINVAL || errno == ENOSYS) {
+                // Fall back to copying via user-space buffers
+                transfer(env, dst, src, cancel);
+            } else {
+                throwUnixException(env, errno);
+            }
+            return;
+        }
+        if (cancel != NULL && *cancel != 0) {
+            throwUnixException(env, ECANCELED);
+            return;
+        }
+    } while (bytes_sent > 0);
+#elif defined(_ALLBSD_SOURCE)
+    copyfile_state_t state;
+    if (cancel != NULL) {
+        state = copyfile_state_alloc();
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CB, fcopyfile_callback);
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CTX, (void*)cancel);
+    } else {
+        state = NULL;
+    }
+    if (fcopyfile(src, dst, state, COPYFILE_DATA) < 0) {
+        int errno_fcopyfile = errno;
+        if (state != NULL)
+            copyfile_state_free(state);
+        throwUnixException(env, errno_fcopyfile);
+        return;
+    }
+    if (state != NULL)
+        copyfile_state_free(state);
+#else
+    transfer(env, dst, src, cancel);
 #endif
 }

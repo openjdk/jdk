@@ -351,11 +351,12 @@ class JfrThreadSampler : public NonJavaThread {
 };
 
 static void clear_transition_block(JavaThread* jt) {
+  assert(Threads_lock->owned_by_self(), "Holding the thread table lock.");
   jt->clear_trace_flag();
   JfrThreadLocal* const tl = jt->jfr_thread_local();
+  MutexLocker ml(JfrThreadSampler::transition_block(), Mutex::_no_safepoint_check_flag);
   if (tl->is_trace_block()) {
-    MutexLocker ml(JfrThreadSampler::transition_block(), Mutex::_no_safepoint_check_flag);
-    JfrThreadSampler::transition_block()->notify_all();
+    JfrThreadSampler::transition_block()->notify();
   }
 }
 
@@ -403,16 +404,21 @@ JfrThreadSampler::~JfrThreadSampler() {
   JfrCHeapObj::free(_frames, sizeof(JfrStackFrame) * _max_frames);
 }
 
+static inline bool is_released(JavaThread* jt) {
+  return !jt->is_trace_suspend();
+}
+
 void JfrThreadSampler::on_javathread_suspend(JavaThread* thread) {
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
-  tl->set_trace_block();
-  {
-    MonitorLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
-    while (thread->is_trace_suspend()) {
-      ml.wait();
-    }
-    tl->clear_trace_block();
+  if (is_released(thread)) {
+    return;
   }
+  JfrThreadLocal* const tl = thread->jfr_thread_local();
+  MonitorLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
+  tl->set_trace_block();
+  while (!is_released(thread)) {
+    ml.wait();
+  }
+  tl->clear_trace_block();
 }
 
 JavaThread* JfrThreadSampler::next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current) {
