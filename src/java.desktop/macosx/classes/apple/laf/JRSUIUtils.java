@@ -36,10 +36,13 @@ public final class JRSUIUtils {
 
     static boolean isLeopard = isMacOSXLeopard();
     static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
-    static boolean isBigSurOrAbove = isMacOSXBigSurOrAbove();
 
     public static boolean isMacOSXBigSurOrAbove() {
-        return currentMacOSXVersionMatchesGivenVersionRange(16, true, false, true);
+        String version = System.getProperty("os.version");
+        if (version.startsWith("11.")) {
+            return true;
+        }
+        return false;
     }
 
     static boolean isMacOSXLeopard() {
