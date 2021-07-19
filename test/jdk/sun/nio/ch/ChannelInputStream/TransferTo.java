@@ -1,4 +1,3 @@
-package sun.nio.ch;
 /*
  * Copyright (c) 2014, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
@@ -48,12 +48,12 @@ import java.util.Random;
  */
 public class TransferTo {
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(String[] args) throws IOException {
 		test(defaultInput(), defaultOutput());
 		test(fileChannelInput(), defaultOutput());
 	}
 
-	private static void test(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider) throws IOException {
+	private static void test(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider) throws IOException {
 		ifOutIsNullThenNpeIsThrown(inputStreamProvider, outputStreamProvider);
 		ifExceptionInInputNeitherStreamIsClosed(inputStreamProvider, outputStreamProvider);
 		ifExceptionInOutputNeitherStreamIsClosed(inputStreamProvider, outputStreamProvider);
@@ -62,8 +62,7 @@ public class TransferTo {
 		contents(inputStreamProvider, outputStreamProvider);
 	}
 
-	private static void ifOutIsNullThenNpeIsThrown(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider)
-			throws IOException {
+	private static void ifOutIsNullThenNpeIsThrown(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider) throws IOException {
 		try (InputStream in = inputStreamProvider.input()) {
 			assertThrowsNPE(() -> in.transferTo(null), "out");
 		}
@@ -78,7 +77,7 @@ public class TransferTo {
 
 		InputStream in = null;
 		try {
-			final InputStream fin = in = inputStreamProvider.newThrowingInputStream();
+			InputStream fin = in = inputStreamProvider.newThrowingInputStream();
 			// null check should precede everything else:
 			// InputStream shouldn't be touched if OutputStream is null
 			assertThrowsNPE(() -> fin.transferTo(null), "out");
@@ -86,31 +85,31 @@ public class TransferTo {
 			if (in != null)
 				try {
 					in.close();
-				} catch (final IOException ignored) {
+				} catch (IOException ignored) {
 				}
 		}
 	}
 
-	private static void ifExceptionInInputNeitherStreamIsClosed(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider)
+	private static void ifExceptionInInputNeitherStreamIsClosed(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
 			throws IOException {
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(0, new byte[] { 1, 2, 3 }), outputStreamProvider.output());
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(1, new byte[] { 1, 2, 3 }), outputStreamProvider.output());
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(2, new byte[] { 1, 2, 3 }), outputStreamProvider.output());
 	}
 
-	private static void ifExceptionInOutputNeitherStreamIsClosed(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider)
+	private static void ifExceptionInOutputNeitherStreamIsClosed(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
 			throws IOException {
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(new byte[] { 1, 2, 3 }), outputStreamProvider.output(0));
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(new byte[] { 1, 2, 3 }), outputStreamProvider.output(1));
 		transferToThenCheckIfAnyClosed(inputStreamProvider.input(new byte[] { 1, 2, 3 }), outputStreamProvider.output(2));
 	}
 
-	private static void transferToThenCheckIfAnyClosed(final InputStream input, final OutputStream output) throws IOException {
+	private static void transferToThenCheckIfAnyClosed(InputStream input, OutputStream output) throws IOException {
 		try (CloseLoggingInputStream in = new CloseLoggingInputStream(input); CloseLoggingOutputStream out = new CloseLoggingOutputStream(output)) {
 			boolean thrown = false;
 			try {
 				in.transferTo(out);
-			} catch (final IOException ignored) {
+			} catch (IOException ignored) {
 				thrown = true;
 			}
 			if (!thrown)
@@ -121,8 +120,7 @@ public class TransferTo {
 		}
 	}
 
-	private static void onReturnNeitherStreamIsClosed(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider)
-			throws IOException {
+	private static void onReturnNeitherStreamIsClosed(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider) throws IOException {
 		try (CloseLoggingInputStream in = new CloseLoggingInputStream(inputStreamProvider.input(new byte[] { 1, 2, 3 }));
 				CloseLoggingOutputStream out = new CloseLoggingOutputStream(outputStreamProvider.output())) {
 
@@ -133,8 +131,7 @@ public class TransferTo {
 		}
 	}
 
-	private static void onReturnInputIsAtEnd(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider)
-			throws IOException {
+	private static void onReturnInputIsAtEnd(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider) throws IOException {
 		try (InputStream in = inputStreamProvider.input(new byte[] { 1, 2, 3 }); OutputStream out = outputStreamProvider.output()) {
 
 			in.transferTo(out);
@@ -144,27 +141,27 @@ public class TransferTo {
 		}
 	}
 
-	private static void contents(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider) throws IOException {
+	private static void contents(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider) throws IOException {
 		checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
 		checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
 		// to span through several batches
 		checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
 	}
 
-	private static void checkTransferredContents(final InputStreamProvider inputStreamProvider, final OutputStreamProvider outputStreamProvider,
-			final byte[] bytes) throws IOException {
+	private static void checkTransferredContents(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider, byte[] bytes)
+			throws IOException {
 		try (InputStream in = inputStreamProvider.input(bytes); RecordingOutputStream out = outputStreamProvider.recordingOutput()) {
 			in.transferTo(out);
 
-			final byte[] outBytes = out.toByteArray();
+			byte[] outBytes = out.toByteArray();
 			if (!Arrays.equals(bytes, outBytes))
 				throw new AssertionError(format("bytes.length=%s, outBytes.length=%s", bytes.length, outBytes.length));
 		}
 	}
 
-	private static byte[] createRandomBytes(final int min, final int maxRandomAdditive) {
-		final Random rnd = new Random();
-		final byte[] bytes = new byte[min + rnd.nextInt(maxRandomAdditive)];
+	private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
+		Random rnd = new Random();
+		byte[] bytes = new byte[min + rnd.nextInt(maxRandomAdditive)];
 		rnd.nextBytes(bytes);
 		return bytes;
 	}
@@ -193,12 +190,12 @@ public class TransferTo {
 		return new InputStreamProvider() {
 
 			@Override
-			public InputStream input(final byte... bytes) {
+			public InputStream input(byte... bytes) {
 				return this.input(-1, bytes);
 			}
 
 			@Override
-			public InputStream input(final int exceptionPosition, final byte... bytes) {
+			public InputStream input(int exceptionPosition, byte... bytes) {
 				return new InputStream() {
 
 					int pos;
@@ -225,17 +222,17 @@ public class TransferTo {
 					boolean closed;
 
 					@Override
-					public int read(final byte[] b) throws IOException {
+					public int read(byte[] b) throws IOException {
 						throw new IOException();
 					}
 
 					@Override
-					public int read(final byte[] b, final int off, final int len) throws IOException {
+					public int read(byte[] b, int off, int len) throws IOException {
 						throw new IOException();
 					}
 
 					@Override
-					public long skip(final long n) throws IOException {
+					public long skip(long n) throws IOException {
 						throw new IOException();
 					}
 
@@ -275,13 +272,13 @@ public class TransferTo {
 			}
 
 			@Override
-			public OutputStream output(final int exceptionPosition) {
+			public OutputStream output(int exceptionPosition) {
 				return new OutputStream() {
 
 					int pos;
 
 					@Override
-					public void write(final int b) throws IOException {
+					public void write(int b) throws IOException {
 						if (this.pos++ == exceptionPosition)
 							throw new IOException();
 					}
@@ -291,10 +288,10 @@ public class TransferTo {
 			@Override
 			public RecordingOutputStream recordingOutput() {
 				return new RecordingOutputStream() {
-					private final ByteArrayOutputStream recorder = new ByteArrayOutputStream();
+					private ByteArrayOutputStream recorder = new ByteArrayOutputStream();
 
 					@Override
-					public void write(final int b) {
+					public void write(int b) {
 						this.recorder.write(b);
 					}
 
@@ -311,14 +308,23 @@ public class TransferTo {
 		return new InputStreamProvider() {
 
 			@Override
-			public InputStream input(final byte... bytes) {
+			public InputStream input(byte... bytes) {
 				return this.input(-1, bytes);
 			}
 
 			@Override
-			public InputStream input(final int exceptionPosition, final byte... bytes) {
-				return new ChannelInputStream(new AbstractFileChannel() {
-					// Override the needed method and let it throw then
+			public InputStream input(int exceptionPosition, byte... bytes) {
+				return Channels.newInputStream(new AbstractFileChannel() {
+
+					@Override
+					public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+						int bytesToWrite = (int) (exceptionPosition < 0 ? count : exceptionPosition - position);
+						ByteBuffer buffer = ByteBuffer.wrap(bytes, (int) position, bytesToWrite);
+						int bytesWritten = target.write(buffer);
+						if (exceptionPosition >= 0)
+							throw new IOException();
+						return bytesWritten;
+					}
 				});
 			}
 
@@ -329,17 +335,17 @@ public class TransferTo {
 					boolean closed;
 
 					@Override
-					public int read(final byte[] b) throws IOException {
+					public int read(byte[] b) throws IOException {
 						throw new IOException();
 					}
 
 					@Override
-					public int read(final byte[] b, final int off, final int len) throws IOException {
+					public int read(byte[] b, int off, int len) throws IOException {
 						throw new IOException();
 					}
 
 					@Override
-					public long skip(final long n) throws IOException {
+					public long skip(long n) throws IOException {
 						throw new IOException();
 					}
 
@@ -374,7 +380,7 @@ public class TransferTo {
 
 		boolean closed;
 
-		CloseLoggingInputStream(final InputStream in) {
+		CloseLoggingInputStream(InputStream in) {
 			super(in);
 		}
 
@@ -393,7 +399,7 @@ public class TransferTo {
 
 		boolean closed;
 
-		CloseLoggingOutputStream(final OutputStream out) {
+		CloseLoggingOutputStream(OutputStream out) {
 			super(out);
 		}
 
@@ -412,21 +418,21 @@ public class TransferTo {
 		public void run() throws Throwable;
 	}
 
-	public static void assertThrowsNPE(final Thrower thrower, final String message) {
+	public static void assertThrowsNPE(Thrower thrower, String message) {
 		assertThrows(thrower, NullPointerException.class, message);
 	}
 
-	public static <T extends Throwable> void assertThrows(final Thrower thrower, final Class<T> throwable, final String message) {
+	public static <T extends Throwable> void assertThrows(Thrower thrower, Class<T> throwable, String message) {
 		Throwable thrown;
 		try {
 			thrower.run();
 			thrown = null;
-		} catch (final Throwable caught) {
+		} catch (Throwable caught) {
 			thrown = caught;
 		}
 
 		if (!throwable.isInstance(thrown)) {
-			final String caught = thrown == null ? "nothing" : thrown.getClass().getCanonicalName();
+			String caught = thrown == null ? "nothing" : thrown.getClass().getCanonicalName();
 			throw new AssertionError(format("Expected to catch %s, but caught %s", throwable, caught), thrown);
 		}
 
@@ -437,22 +443,22 @@ public class TransferTo {
 	private static abstract class AbstractFileChannel extends FileChannel {
 
 		@Override
-		public int read(final ByteBuffer dst) throws IOException {
+		public int read(ByteBuffer dst) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public long read(final ByteBuffer[] dsts, final int offset, final int length) throws IOException {
+		public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public int write(final ByteBuffer src) throws IOException {
+		public int write(ByteBuffer src) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public long write(final ByteBuffer[] srcs, final int offset, final int length) throws IOException {
+		public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -462,7 +468,7 @@ public class TransferTo {
 		}
 
 		@Override
-		public FileChannel position(final long newPosition) throws IOException {
+		public FileChannel position(long newPosition) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -472,53 +478,53 @@ public class TransferTo {
 		}
 
 		@Override
-		public FileChannel truncate(final long size) throws IOException {
+		public FileChannel truncate(long size) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void force(final boolean metaData) throws IOException {
+		public void force(boolean metaData) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public long transferTo(final long position, final long count, final WritableByteChannel target) throws IOException {
+		public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public long transferFrom(final ReadableByteChannel src, final long position, final long count) throws IOException {
+		public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public int read(final ByteBuffer dst, final long position) throws IOException {
+		public int read(ByteBuffer dst, long position) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public int write(final ByteBuffer src, final long position) throws IOException {
+		public int write(ByteBuffer src, long position) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public MappedByteBuffer map(final MapMode mode, final long position, final long size) throws IOException {
+		public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public FileLock lock(final long position, final long size, final boolean shared) throws IOException {
+		public FileLock lock(long position, long size, boolean shared) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public FileLock tryLock(final long position, final long size, final boolean shared) throws IOException {
+		public FileLock tryLock(long position, long size, boolean shared) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
 		protected void implCloseChannel() throws IOException {
-			throw new UnsupportedOperationException();
+			// do nothing
 		}
 	}
 }
