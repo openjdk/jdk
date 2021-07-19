@@ -989,9 +989,8 @@ inline void ConcurrentHashTable<CONFIG, F>::
     Bucket* bucket = table->get_bucket(bucket_it);
     // If bucket has a redirect, the items will be in the new table.
     if (!bucket->have_redirect()) {
-      if (!visit_nodes(table->get_bucket(bucket_it), scan_f)) {
-        return; // FIXME: do we really need to return in all cases?
-      }
+      bool result = visit_nodes(table->get_bucket(bucket_it), scan_f);
+      assert(result, "Must be");
     } else {
       assert(bucket->is_locked(), "Bucket must be locked.");
     }
@@ -1349,8 +1348,7 @@ public:
   BucketsClaimer(ConcurrentHashTable<CONFIG, F>* cht)
     : _cht(cht), _next_to_claim(0), _claim_size_log2(DEFAULT_CLAIM_SIZE_LOG2),
     _limit(0), _size_log2(_cht->_table->_log2_size), _next_to_claim_new_table(0),
-    _claim_size_log2_new_table(DEFAULT_CLAIM_SIZE_LOG2), _limit_new_table(0),
-    _size_log2_new_table(_cht->_table->_log2_size) {
+    _claim_size_log2_new_table(0), _limit_new_table(0), _size_log2_new_table(0) {
 
       _claim_size_log2 = MIN2(_claim_size_log2, _size_log2);
       size_t tmp = _size_log2 > _claim_size_log2 ?
@@ -1361,9 +1359,9 @@ public:
 
       if (new_table != NULL) {
         _size_log2_new_table = new_table->_log2_size;
-        _claim_size_log2_new_table = MIN2(_claim_size_log2_new_table, _size_log2_new_table);
+        _claim_size_log2_new_table = MIN2(DEFAULT_CLAIM_SIZE_LOG2, _size_log2_new_table);
         size_t tmp = _size_log2_new_table > _claim_size_log2_new_table ?
-                    (_size_log2_new_table - _claim_size_log2_new_table) : 0;
+                     (_size_log2_new_table - _claim_size_log2_new_table) : 0;
         _limit_new_table = (((size_t)1) << tmp);
       }
     }
@@ -1373,20 +1371,21 @@ public:
       if (Atomic::load(&_next_to_claim) < _limit) {
         size_t claimed = Atomic::fetch_and_add(&_next_to_claim, 1u);
         if (claimed < _limit) {
-          *start = claimed * (((size_t)1) << _claim_size_log2);
+          *start = claimed << _claim_size_log2;
           *stop  = ((*start) + (((size_t)1) << _claim_size_log2));
           *table = _cht->get_table();
           return true;
         }
       }
       if (_limit_new_table == 0) {
+        assert(_cht->get_new_table() == NULL, "Precondition");
         return false;
       }
       ConcurrentHashTable<CONFIG, F>::InternalTable* new_table = _cht->get_new_table();
       assert(new_table != NULL, "Precondition");
       size_t claimed = Atomic::fetch_and_add(&_next_to_claim_new_table, 1u);
       if (claimed < _limit_new_table) {
-        *start = claimed * (((size_t)1) << _claim_size_log2_new_table);
+        *start = claimed << _claim_size_log2_new_table;
         *stop  = ((*start) + (((size_t)1) << _claim_size_log2_new_table));
         *table = new_table;
         return true;

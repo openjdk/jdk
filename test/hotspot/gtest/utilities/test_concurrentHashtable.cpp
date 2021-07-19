@@ -1147,7 +1147,7 @@ TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
   mt_test_doer<Driver_BD_Thread>();
 }
 
-class Scanner_Thread: public WorkerThread {
+class ScannerThread: public WorkerThread {
   Semaphore _start;
   Semaphore* _done;
   TestTable* _cht;
@@ -1162,7 +1162,7 @@ protected:
     _done->signal();
   }
 public:
-  Scanner_Thread(Semaphore* done, TestTable* cht, TestTable::BucketsClaimer* bc, size_t *total_scanned) :
+  ScannerThread(Semaphore* done, TestTable* cht, TestTable::BucketsClaimer* bc, size_t *total_scanned) :
     _done(done), _cht(cht), _bucket_claimer(bc), _num_scanned(0), _total_scanned(total_scanned) {}
 
   void run_thread() {
@@ -1174,24 +1174,24 @@ public:
   }
 };
 
-class VM_CHT_MT_Scan: public VM_GTestExecuteAtSafepoint {
+class CHTScanMT: public VM_GTestExecuteAtSafepoint {
   TestTable* _cht;
   uintptr_t _num_items;
 public:
+  CHTScanMT(TestTable* cht, uintptr_t num_items): _cht(cht), _num_items(num_items) { }
   void doit();
-  VM_CHT_MT_Scan(TestTable* cht, uintptr_t num_items): _cht(cht), _num_items(num_items) { }
 };
 
-void VM_CHT_MT_Scan::doit() {
+void CHTScanMT::doit() {
   size_t total_scanned = 0;
   TestTable::BucketsClaimer bucket_claimer(_cht);
   Semaphore done(0);
 
   // Create and start parallel worker threads.
   const int num_threads = 4;
-  Scanner_Thread* st[num_threads];
+  ScannerThread* st[num_threads];
   for (int i = 0; i < num_threads; i++) {
-    st[i] = new Scanner_Thread(&done, _cht, &bucket_claimer, &total_scanned);
+    st[i] = new ScannerThread(&done, _cht, &bucket_claimer, &total_scanned);
     os::create_thread(st[i], os::pgc_thread);
     os::start_thread(st[i]);
   }
@@ -1217,7 +1217,7 @@ TEST_VM(ConcurrentHashTable, concurrent_mt_scan) {
   }
 
   // Run the test at a safepoint.
-  VM_CHT_MT_Scan op(cht, num_items);
+  CHTScanMT op(cht, num_items);
   ThreadInVMfromNative invm(JavaThread::current());
   VMThread::execute(&op);
 }
