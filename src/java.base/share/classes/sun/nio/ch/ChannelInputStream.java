@@ -146,6 +146,8 @@ public class ChannelInputStream
 
     @Override
     public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+
         if (out instanceof ChannelOutputStream cos) {
             WritableByteChannel oc = cos.channel();
 
