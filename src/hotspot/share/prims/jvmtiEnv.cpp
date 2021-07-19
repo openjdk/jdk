@@ -1326,28 +1326,19 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
   }
 
   Handle thread_hndl(current_thread, thread_oop);
-  {
-    MutexLocker mu(current_thread, Threads_lock); // grab Threads_lock
 
-    JvmtiAgentThread *new_thread = new JvmtiAgentThread(this, proc, arg);
+  JvmtiAgentThread* new_thread = new JvmtiAgentThread(this, proc, arg);
 
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory.
-    if (new_thread == NULL || new_thread->osthread() == NULL) {
-      if (new_thread != NULL) {
-        new_thread->smr_delete();
-      }
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources.
+  if (new_thread->osthread() == NULL) {
+    // The new thread is not known to Thread-SMR yet so we can just delete.
+    delete new_thread;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
-    java_lang_Thread::set_thread(thread_hndl(), new_thread);
-    java_lang_Thread::set_priority(thread_hndl(), (ThreadPriority)priority);
-    java_lang_Thread::set_daemon(thread_hndl());
-
-    new_thread->set_threadObj(thread_hndl());
-    Threads::add(new_thread);
-    Thread::start(new_thread);
-  } // unlock Threads_lock
+  JavaThread::start_internal_daemon(current_thread, new_thread, thread_hndl,
+                                    (ThreadPriority)priority);
 
   return JVMTI_ERROR_NONE;
 } /* end RunAgentThread */
@@ -3144,7 +3135,10 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
     // in thread.cpp.
     JvmtiPendingMonitors::enter(rmonitor);
   } else {
-    rmonitor->raw_enter(Thread::current());
+    Thread* thread = Thread::current();
+    // 8266889: raw_enter changes Java thread state, needs WXWrite
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+    rmonitor->raw_enter(thread);
   }
   return JVMTI_ERROR_NONE;
 } /* end RawMonitorEnter */
@@ -3176,6 +3170,8 @@ JvmtiEnv::RawMonitorExit(JvmtiRawMonitor * rmonitor) {
 jvmtiError
 JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
   Thread* thread = Thread::current();
+  // 8266889: raw_wait changes Java thread state, needs WXWrite
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   int r = rmonitor->raw_wait(millis, thread);
 
   switch (r) {

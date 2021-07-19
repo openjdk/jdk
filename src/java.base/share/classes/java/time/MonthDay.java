@@ -445,12 +445,12 @@ public final class MonthDay
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
+            return switch (chronoField) {
                 // alignedDOW and alignedWOM not supported because they cannot be set in with()
-                case DAY_OF_MONTH: return day;
-                case MONTH_OF_YEAR: return month;
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+                case DAY_OF_MONTH -> day;
+                case MONTH_OF_YEAR -> month;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }

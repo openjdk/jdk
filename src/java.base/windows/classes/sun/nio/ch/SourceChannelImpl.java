@@ -33,6 +33,7 @@ import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
+import java.util.Objects;
 
 /**
  * Pipe.SourceChannel implementation based on socket connection.
@@ -120,8 +121,7 @@ class SourceChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, dsts.length);
         try {
             return read(Util.subsequence(dsts, offset, length));
         } catch (AsynchronousCloseException x) {

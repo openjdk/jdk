@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
@@ -246,7 +248,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
   if (UseSharedSpaces) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
-      SystemDictionaryShared::allocate_shared_data_arrays(size, CHECK);
+      CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
       if (!DynamicDumpSharedSpaces) {
         FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
@@ -590,7 +592,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
+void MetaspaceShared::link_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
 
@@ -700,7 +702,7 @@ void MetaspaceShared::preload_classes(TRAPS) {
   // Exercise the manifest processing code to ensure classes used by CDS at runtime
   // are always archived
   const char* dummy = "Manifest-Version: 1.0\n";
-  SystemDictionaryShared::create_jar_manifest(dummy, strlen(dummy), CHECK);
+  CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
   log_info(cds)("Loading classes to share: done.");
   log_info(cds)("Shared spaces: preloaded %d classes", class_count);
@@ -724,7 +726,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_and_cleanup_shared_classes(CHECK);
+  link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP

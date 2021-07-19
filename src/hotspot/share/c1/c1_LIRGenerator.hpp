@@ -397,18 +397,18 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
                                     int bci, bool backedge, bool notify);
   void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge);
   void increment_invocation_counter(CodeEmitInfo *info) {
-    if (compilation()->count_invocations()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), InvocationEntryBci, false);
     }
   }
   void increment_backedge_counter(CodeEmitInfo* info, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), bci, true);
     }
   }
   void increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci);
   void increment_backedge_counter(CodeEmitInfo* info, LIR_Opr step, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, step, bci, true);
     }
   }
@@ -427,9 +427,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void do_root (Instruction* instr);
   void walk    (Instruction* instr);
-
-  void bind_block_entry(BlockBegin* block);
-  void start_block(BlockBegin* block);
 
   LIR_Opr new_register(BasicType type);
   LIR_Opr new_register(Value value)              { return new_register(as_BasicType(value->type())); }
@@ -469,7 +466,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
 #ifdef JFR_HAVE_INTRINSICS
-  void do_ClassIDIntrinsic(Intrinsic* x);
   void do_getEventWriter(Intrinsic* x);
 #endif
 
@@ -482,7 +478,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
-  LIR_Opr maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:
   Compilation*  compilation() const              { return _compilation; }
@@ -581,11 +576,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  virtual void do_UnsafeGetObject(UnsafeGetObject* x);
-  virtual void do_UnsafePutObject(UnsafePutObject* x);
-  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  virtual void do_UnsafeGet      (UnsafeGet*       x);
+  virtual void do_UnsafePut      (UnsafePut*       x);
+  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);

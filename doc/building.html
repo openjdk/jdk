@@ -506,7 +506,7 @@
 </ul>
 <h2 id="running-tests">Running Tests</h2>
 <p>Most of the JDK tests are using the <a href="http://openjdk.java.net/jtreg">JTReg</a> test framework. Make sure that your configuration knows where to find your installation of JTReg. If this is not picked up automatically, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc.</p>
-<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
+<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
 <p>Building of Hotspot Gtest suite requires the source code of Google Test framework. The top directory, which contains both <code>googletest</code> and <code>googlemock</code> directories, should be specified via <code>--with-gtest</code>. The supported version of Google Test is 1.8.1, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a href="https://github.com/google/googletest/releases/tag/release-1.8.1">here</a></li>

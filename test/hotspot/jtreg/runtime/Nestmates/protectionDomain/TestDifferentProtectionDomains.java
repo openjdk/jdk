@@ -29,7 +29,8 @@
  *          perform a nestmate access check.
  * @comment We use WB to force-compile a constructor to recreate the original
  *          failure scenario, so only run when we have "normal" compiler flags.
- * @requires vm.compMode=="Xmixed" &
+ * @requires vm.compMode == "Xmixed" &
+ *           vm.compiler2.enabled &
  *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
@@ -110,7 +111,9 @@ public class TestDifferentProtectionDomains {
 
         // Force the constructor to compile, which then triggers the nestmate
         // access check in the compiler thread, which leads to the original bug.
-        wb.enqueueMethodForCompilation(cons,  CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+        if (!wb.enqueueMethodForCompilation(cons, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+            throw new RuntimeException("Failed to queue constructor for compilation");
+        }
         while (!wb.isMethodCompiled(cons)) {
             Thread.sleep(100);
         }

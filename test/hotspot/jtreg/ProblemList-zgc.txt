@@ -39,4 +39,4 @@ serviceability/sa/ClhsdbFindPC.java#id3                       8268722   macosx-x
 serviceability/sa/ClhsdbPmap.java#id1                         8268722   macosx-x64
 serviceability/sa/ClhsdbPstack.java#id1                       8268722   macosx-x64
 serviceability/sa/TestJmapCore.java                           8268722,8268283   macosx-x64,linux-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   macosx-x64,linux-x64
+serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   generic-all

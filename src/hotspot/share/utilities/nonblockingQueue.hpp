@@ -29,10 +29,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 
-// The NonblockingQueue template provides a non-blocking FIFO. It provides a
-// try_pop() function for the client to implement pop() according to its
-// need (e.g., whether or not to retry or prevent ABA problem). It has inner
-// padding of one cache line between its two internal pointer fields.
+// The NonblockingQueue template provides a non-blocking FIFO.
+// It has inner padding of one cache line between its two internal pointers.
 //
 // The queue is internally represented by a linked list of elements, with
 // the link to the next element provided by a member of each element.

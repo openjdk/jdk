@@ -478,6 +478,24 @@ void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
   for (int i = 0; i < _shared_path_table.size(); i++) {
     _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, CHECK);
   }
+  _saved_shared_path_table_array = array;
+}
+
+void FileMapInfo::clone_shared_path_table(TRAPS) {
+  Arguments::assert_is_dumping_archive();
+
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
+
+  assert(jrt != NULL,
+         "No modular java runtime image present when allocating the CDS classpath entry table");
+
+  if (_saved_shared_path_table_array != NULL) {
+    MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table_array);
+    _saved_shared_path_table_array = NULL;
+  }
+
+  copy_shared_path_table(loader_data, CHECK);
 }
 
 void FileMapInfo::allocate_shared_path_table(TRAPS) {
@@ -503,8 +521,7 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
   }
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
-
-  copy_shared_path_table(loader_data, CHECK);
+  clone_shared_path_table(CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
@@ -2152,6 +2169,7 @@ FileMapInfo* FileMapInfo::_dynamic_archive_info = NULL;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 SharedPathTable FileMapInfo::_saved_shared_path_table;
+Array<u8>*      FileMapInfo::_saved_shared_path_table_array = NULL;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;

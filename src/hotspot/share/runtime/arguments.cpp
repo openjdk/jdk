@@ -1110,7 +1110,14 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
   if (_java_class_path != NULL) {
     char* path = _java_class_path->value();
-    st->print_cr("java_class_path (initial): %s", strlen(path) == 0 ? "<not set>" : path );
+    size_t len = strlen(path);
+    st->print("java_class_path (initial): ");
+    // Avoid using st->print_cr() because path length maybe longer than O_BUFLEN.
+    if (len == 0) {
+      st->print_raw_cr("<not set>");
+    } else {
+      st->print_raw_cr(path, len);
+    }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
@@ -3981,6 +3988,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   apply_debugger_ergo();
+
+  if (log_is_enabled(Info, arguments)) {
+    LogStream st(Log(arguments)::info());
+    Arguments::print_on(&st);
+  }
 
   return JNI_OK;
 }

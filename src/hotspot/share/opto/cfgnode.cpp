@@ -2034,7 +2034,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* opt = NULL;
   int true_path = is_diamond_phi();
-  if( true_path != 0 ) {
+  if (true_path != 0 &&
+      // If one of the diamond's branch is in the process of dying then, the Phi's input for that branch might transform
+      // to top. If that happens replacing the Phi with an operation that consumes the Phi's inputs will cause the Phi
+      // to be replaced by top. To prevent that, delay the transformation until the branch has a chance to be removed.
+      !(can_reshape && wait_for_region_igvn(phase))) {
     // Check for CMove'ing identity. If it would be unsafe,
     // handle it here. In the safe case, let Identity handle it.
     Node* unsafe_id = is_cmove_id(phase, true_path);
