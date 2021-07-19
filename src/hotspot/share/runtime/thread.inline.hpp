@@ -135,10 +135,14 @@ inline JavaThreadState JavaThread::thread_state() const    {
 #if defined(PPC64) || defined (AARCH64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);
+  return Atomic::load_acquire(&_thread_state);
 #else
-  return _thread_state;
+  return Atomic::load(&_thread_state);
 #endif
+}
+
+inline JavaThreadState JavaThread::thread_state_acquire() const    {
+  return Atomic::load_acquire(&_thread_state);
 }
 
 inline void JavaThread::set_thread_state(JavaThreadState s) {
@@ -147,10 +151,16 @@ inline void JavaThread::set_thread_state(JavaThreadState s) {
 #if defined(PPC64) || defined (AARCH64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  Atomic::release_store((volatile jint*)&_thread_state, (jint)s);
+  Atomic::release_store(&_thread_state, s);
 #else
-  _thread_state = s;
+  Atomic::store(&_thread_state, s);
 #endif
+}
+
+inline void JavaThread::release_set_thread_state(JavaThreadState s) {
+  assert(current_or_null() == NULL || current_or_null() == this,
+         "state change should only be called by the current thread");
+  Atomic::release_store(&_thread_state, s);
 }
 
 inline void JavaThread::set_thread_state_fence(JavaThreadState s) {

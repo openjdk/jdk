@@ -605,7 +605,7 @@ void vm_perform_shutdown_actions() {
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
-      jt->set_thread_state(_thread_in_native);
+      jt->release_set_thread_state(_thread_in_native);
     }
   }
   notify_vm_shutdown();

@@ -112,7 +112,7 @@ class ThreadStateTransition : public StackObj {
 
   static inline void transition_from_native(JavaThread *thread, JavaThreadState to) {
     assert((to & 1) == 0, "odd numbers are transitions states");
-    assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
+    assert(thread->thread_state_acquire() == _thread_in_native, "coming from wrong thread state");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
 
     // Change to transition state and ensure it is seen by the VM thread.
@@ -210,8 +210,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     _thread->check_possible_safepoint();
     // Once we are in native vm expects stack to be walkable
     _thread->frame_anchor()->make_walkable(_thread);
-    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
-    _thread->set_thread_state(_thread_in_native);
+    _thread->release_set_thread_state(_thread_in_native);
   }
 };
 
@@ -249,8 +248,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
-    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
-    thread->set_thread_state(_thread_blocked);
+    thread->release_set_thread_state(_thread_blocked);
   }
   ~ThreadBlockInVMPreprocess() {
     assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");

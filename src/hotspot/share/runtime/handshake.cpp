@@ -512,7 +512,7 @@ bool HandshakeState::possibly_can_process_handshake() {
   if (_handshakee->is_terminated()) {
     return true;
   }
-  switch (_handshakee->thread_state()) {
+  switch (_handshakee->thread_state_acquire()) {
   case _thread_in_native:
     // native threads are safe if they have no java stack or have walkable stack
     return !_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable();

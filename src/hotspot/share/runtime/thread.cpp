@@ -1834,7 +1834,7 @@ void JavaThread::verify_not_published() {
 // Note only the native==>Java barriers can call this function when thread state
 // is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(thread->thread_state_acquire() == _thread_in_native_trans, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
   // Enable WXWrite: called directly from interpreter native wrapper.

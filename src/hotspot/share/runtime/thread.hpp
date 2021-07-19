@@ -1091,7 +1091,9 @@ class JavaThread: public Thread {
 
   // Safepoint support
   inline JavaThreadState thread_state() const;
+  inline JavaThreadState thread_state_acquire() const; // read state with acquire semantics
   inline void set_thread_state(JavaThreadState s);
+  inline void release_set_thread_state(JavaThreadState s); // release before setting thread state
   inline void set_thread_state_fence(JavaThreadState s);  // fence after setting thread state
   inline ThreadSafepointState* safepoint_state() const;
   inline void set_safepoint_state(ThreadSafepointState* state);
