@@ -269,7 +269,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       mark_ref<STRING_DEDUP>(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
     } else if (old != nullptr) {
-      // Young mark, bootstrapping old.
+      // Young mark, bootstrapping old or concurrent with old marking.
       mark_ref<STRING_DEDUP>(old, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
     } else if (GENERATION == OLD) {

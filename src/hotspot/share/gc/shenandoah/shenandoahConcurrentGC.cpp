@@ -46,9 +46,10 @@
 #include "prims/jvmtiTagMap.hpp"
 #include "utilities/events.hpp"
 
-ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation) :
+ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
+  _do_old_gc_bootstrap(do_old_gc_bootstrap),
   _generation(generation) {
 }
 
@@ -435,7 +436,11 @@ void ShenandoahConcurrentGC::op_reset() {
     heap->pacer()->setup_for_reset();
   }
 
-  _generation->prepare_gc();
+  if (_do_old_gc_bootstrap) {
+    heap->global_generation()->prepare_gc();
+  } else {
+    _generation->prepare_gc();
+  }
 }
 
 class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -480,7 +485,13 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   _generation->set_concurrent_mark_in_progress(true);
 
-  {
+  if (_do_old_gc_bootstrap) {
+    // Update region state for both young and old regions
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
+    ShenandoahInitMarkUpdateRegionStateClosure cl;
+    heap->parallel_heap_region_iterate(&cl);
+  } else {
+    // Update region state for only young regions
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     _generation->parallel_heap_region_iterate(&cl);

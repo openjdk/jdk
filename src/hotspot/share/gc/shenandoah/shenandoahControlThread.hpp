@@ -103,7 +103,7 @@ private:
 
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
-  void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
+  void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);

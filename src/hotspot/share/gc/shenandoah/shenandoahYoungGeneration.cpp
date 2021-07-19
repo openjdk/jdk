@@ -113,14 +113,8 @@ bool ShenandoahYoungGeneration::contains(ShenandoahHeapRegion* region) const {
 }
 
 void ShenandoahYoungGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
-  if (_old_gen_task_queues != NULL) {
-    // No generation filter on regions, we need to iterate all the regions.
-    ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
-  } else {
-    // Just the young generations here.
-    ShenandoahGenerationRegionClosure<YOUNG> young_regions(cl);
-    ShenandoahHeap::heap()->parallel_heap_region_iterate(&young_regions);
-  }
+  ShenandoahGenerationRegionClosure<YOUNG> young_regions(cl);
+  ShenandoahHeap::heap()->parallel_heap_region_iterate(&young_regions);
 }
 
 void ShenandoahYoungGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
