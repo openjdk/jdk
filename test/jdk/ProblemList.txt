@@ -226,7 +226,6 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
-java/awt/Window/MultiWindowApp/MultiWindowAppTest.java 8159904 linux-all
 java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
