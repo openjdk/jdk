@@ -194,9 +194,10 @@ public class Preverifier extends ClassVisitor {
 								astores.add((VarInsnNode)inList.get(j));
 							}
 						}
-						if (!hasRet) {
-							throw new Error("Verifier Error. JSR has no matching RET");
-						}
+						// It looks like you can have a JSR without RET
+						// if (!hasRet) {
+						// 	throw new Error("Verifier Error. JSR has no matching RET");
+						// }
 						if (mustExpand) {
 							System.out.println("Expanding code...");
 							for (AbstractInsnNode n = inList.get(inList.indexOf(lb)+2); n.getOpcode() != Opcodes.RET; n=n.getNext()) {
