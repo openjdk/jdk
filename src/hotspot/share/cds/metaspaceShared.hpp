@@ -131,7 +131,7 @@ public:
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
   static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
-  static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
+  static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
   // Alignment for the 2 core CDS regions (RW/RO) only.

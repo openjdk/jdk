@@ -392,7 +392,7 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    if (ik->can_be_verified_at_dumptime()) {
+    if (ik->can_be_verified_at_dumptime() && ik->is_linked()) {
       rewrite_nofast_bytecode(m);
     }
     Fingerprinter fp(m);
@@ -571,10 +571,26 @@ public:
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
-bool MetaspaceShared::linking_required(InstanceKlass* ik) {
-  // For static CDS dump, do not link old classes.
-  // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? ik->can_be_verified_at_dumptime() : !ik->is_shared_unregistered_class();
+// Check if we can eagerly link this class at dump time, so we can avoid the
+// runtime linking overhead (especially verification)
+bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
+  if (!ik->can_be_verified_at_dumptime()) {
+    // For old classes, try to leave them in the unlinked state, so
+    // we can still store them in the archive. They must be
+    // linked/verified at runtime.
+    return false;
+  }
+  if (DynamicDumpSharedSpaces && ik->is_shared_unregistered_class()) {
+    // Linking of unregistered classes at this stage may cause more
+    // classes to be resolved, resulting in calls to ClassLoader.loadClass()
+    // that may not be expected by custom class loaders.
+    //
+    // It's OK to do this for the built-in loaders as we know they can
+    // tolerate this. (Note that unregistered classes are loaded by the NULL
+    // loader during DumpSharedSpaces).
+    return false;
+  }
+  return true;
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -614,7 +630,7 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
-          if (linking_required(ik)) {
+          if (may_be_eagerly_linked(ik)) {
             has_linked |= link_class_for_cds(ik, CHECK);
           }
         }
