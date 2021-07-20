@@ -570,8 +570,8 @@ public:
                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_regions(MemRegion** heap_regions, int first, int max, int* num,
-                         bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions(int first, int max, bool is_open_archive,
+                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;

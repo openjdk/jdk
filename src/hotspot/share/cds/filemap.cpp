@@ -1918,19 +1918,18 @@ void FileMapInfo::map_heap_regions_impl() {
   assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
          "must be");
 
-  // Map the closed_heap regions, GC does not write into the regions.
-  if (map_heap_regions(&closed_heap_regions,
-                       MetaspaceShared::first_closed_heap_region,
+  // Map the closed heap regions: GC does not write into these regions.
+  if (map_heap_regions(MetaspaceShared::first_closed_heap_region,
                        MetaspaceShared::max_closed_heap_region,
-                       &num_closed_heap_regions)) {
+                       /*is_open_archive=*/ false,
+                       &closed_heap_regions, &num_closed_heap_regions)) {
     HeapShared::set_closed_regions_mapped();
 
-    // Now, map open_archive heap regions, GC can write into the regions.
-    if (map_heap_regions(&open_heap_regions,
-                         MetaspaceShared::first_open_heap_region,
+    // Now, map the open heap regions: GC can write into these regions.
+    if (map_heap_regions(MetaspaceShared::first_open_heap_region,
                          MetaspaceShared::max_open_heap_region,
-                         &num_open_heap_regions,
-                         true /* open */)) {
+                         /*is_open_archive=*/ true,
+                         &open_heap_regions, &num_open_heap_regions)) {
       HeapShared::set_open_regions_mapped();
       HeapShared::set_roots(header()->heap_obj_roots());
     }
@@ -1953,8 +1952,8 @@ void FileMapInfo::map_heap_regions() {
   }
 }
 
-bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
-                                   int max, int* num_ret, bool is_open_archive) {
+bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
+                                   MemRegion** regions_ret, int* num_regions_ret) {
   MemRegion* regions = MemRegion::create_array(max, mtInternal);
 
   struct Cleanup {
@@ -1966,7 +1965,7 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
   } cleanup(regions, max);
 
   FileMapRegion* si;
-  int region_num = 0;
+  int num_regions = 0;
 
   for (int i = first;
            i < first + max; i++) {
@@ -1974,26 +1973,26 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
     size_t size = si->used();
     if (size > 0) {
       HeapWord* start = (HeapWord*)start_address_as_decoded_from_archive(si);
-      regions[region_num] = MemRegion(start, size / HeapWordSize);
-      region_num ++;
+      regions[num_regions] = MemRegion(start, size / HeapWordSize);
+      num_regions ++;
       log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
                     i, p2i(start), size);
     }
   }
 
-  if (region_num == 0) {
+  if (num_regions == 0) {
     return false; // no archived java heap data
   }
 
   // Check that regions are within the java heap
-  if (!G1CollectedHeap::heap()->check_archive_addresses(regions, region_num)) {
+  if (!G1CollectedHeap::heap()->check_archive_addresses(regions, num_regions)) {
     log_info(cds)("UseSharedSpaces: Unable to allocate region, range is not within java heap.");
     return false;
   }
 
   // allocate from java heap
   if (!G1CollectedHeap::heap()->alloc_archive_regions(
-             regions, region_num, is_open_archive)) {
+             regions, num_regions, is_open_archive)) {
     log_info(cds)("UseSharedSpaces: Unable to allocate region, java heap range is already in use.");
     return false;
   }
@@ -2001,7 +2000,7 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped regions as they are part of the reserved java heap, which is
   // already recorded.
-  for (int i = 0; i < region_num; i++) {
+  for (int i = 0; i < num_regions; i++) {
     si = space_at(first + i);
     char* addr = (char*)regions[i].start();
     char* base = os::map_memory(_fd, _full_path, si->file_offset(),
@@ -2009,7 +2008,7 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
                                 si->allow_exec());
     if (base == NULL || base != addr) {
       // dealloc the regions from java heap
-      dealloc_heap_regions(regions, region_num);
+      dealloc_heap_regions(regions, num_regions);
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                     INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                     p2i(addr), regions[i].byte_size());
@@ -2018,7 +2017,7 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
 
     if (VerifySharedSpaces && !region_crc_check(addr, regions[i].byte_size(), si->crc())) {
       // dealloc the regions from java heap
-      dealloc_heap_regions(regions, region_num);
+      dealloc_heap_regions(regions, num_regions);
       log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
       return false;
     }
@@ -2027,7 +2026,7 @@ bool FileMapInfo::map_heap_regions(MemRegion** regions_ret, int first,
   cleanup._aborted = false;
   // the shared heap data is mapped successfully
   *regions_ret = regions;
-  *num_ret = region_num;
+  *num_regions_ret = num_regions;
   return true;
 }
 
