@@ -1156,7 +1156,7 @@ abstract class MethodHandleImpl {
             //        return vamh.invokeExact(args);
             //     }
             // }
-            cw.visit(52, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
+            cw.visit(CLASSFILE_VERSION, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
 
             MethodVisitor mv = cw.visitMethod(ACC_STATIC, "invoke_V",
                           "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
