@@ -133,6 +133,10 @@ protected:
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
+#ifndef LP64 // Since this is a hot path, do this only if really needed.
+    _hwm = ARENA_ALIGN(_hwm);
+    _hwm = MIN2(_hwm, _max); // _max is not guaranteed to be 64 bit aligned.
+#endif // !LP64
     debug_only(if (UseMallocOnly) return malloc(x);)
     return internal_amalloc(x, alloc_failmode);
   }
