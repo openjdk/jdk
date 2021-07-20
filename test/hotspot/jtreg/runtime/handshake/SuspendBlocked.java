@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class SuspendBlocked {
         WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < 100; i++) {
             suspend_thread.suspend();
-            wb.lockAndBlock(true /* suspender */);
+            wb.lockAndBlock(/* suspender= */ true);
             suspend_thread.resume();
             Thread.sleep(1);
         }
@@ -52,7 +52,7 @@ public class SuspendBlocked {
     public static void run_loop() {
         WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < 100; i++) {
-            wb.lockAndBlock(false /* suspender */);
+            wb.lockAndBlock(/* suspender= */ false);
         }
     }
 }
