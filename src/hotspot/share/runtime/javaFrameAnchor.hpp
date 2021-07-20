@@ -34,6 +34,7 @@
 //
 class JavaThread;
 class MacroAssembler;
+class ZeroFrame;
 
 class JavaFrameAnchor {
 // Too many friends...
