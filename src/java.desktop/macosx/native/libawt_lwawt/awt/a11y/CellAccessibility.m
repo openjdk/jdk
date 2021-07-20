@@ -24,6 +24,7 @@
 
 #import "CellAccessibility.h"
 #import "ThreadUtilities.h"
+#import "TableAccessibility.h"
 
 @implementation CellAccessibility
 
@@ -45,7 +46,7 @@
                                                                             index:self->fIndex
                                                                           withEnv:[ThreadUtilities getJNIEnv]
                                                                          withView:self->fView
-                                                                        isWrapped:YES];
+                                                                        isWrapped:NO];
         return [NSArray arrayWithObject:newChild];
     } else {
         return children;
@@ -60,6 +61,26 @@
 - (id)accessibilityParent
 {
     return [super accessibilityParent];
+}
+
+- (NSRange)accessibilityRowIndexRange {
+    NSInteger location = -1;
+    if ([[(CommonComponentAccessibility *)fParent accessibilityParent] isKindOfClass:[TableAccessibility class]]) {
+        TableAccessibility *table = [(CommonComponentAccessibility *)fParent accessibilityParent];
+        location = [table accessibleRowAtIndex:fIndex];
+    }
+
+    return NSMakeRange(location, 0);
+}
+
+- (NSRange)accessibilityColumnIndexRange {
+    NSInteger location = -1;
+    if ([[(CommonComponentAccessibility *)fParent accessibilityParent] isKindOfClass:[TableAccessibility class]]) {
+        TableAccessibility *table = [(CommonComponentAccessibility *)fParent accessibilityParent];
+        location = [table accessibleColumnAtIndex:fIndex];
+    }
+
+    return NSMakeRange(location, 0);
 }
 
 @end

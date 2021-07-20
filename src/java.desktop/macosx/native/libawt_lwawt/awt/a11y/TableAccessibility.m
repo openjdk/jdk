@@ -219,7 +219,7 @@ static jmethodID sjm_getAccessibleName = NULL;
     return [[self getTableInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS] integerValue];
 }
 
-- (nullable NSArray *)accessibilitySelectedCells;
+- (nullable NSArray *)accessibilitySelectedCells
 {
     NSArray *children = [super accessibilitySelectedChildren];
     NSMutableArray *cells = [NSMutableArray arrayWithCapacity:[children count]];
@@ -232,6 +232,10 @@ static jmethodID sjm_getAccessibleName = NULL;
                                                       withJavaRole:child->fJavaRole]];
     }
     return [NSArray arrayWithArray:cells];
+}
+
+- (id)accessibilityCellForColumn:(NSInteger)column row:(NSInteger)row {
+    return [[(TableRowAccessibility *)[[self accessibilityRows] objectAtIndex:row] accessibilityChildren] objectAtIndex:column];
 }
 
 @end

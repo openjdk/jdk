@@ -794,9 +794,7 @@ static jobject sAccessibilityClass = NULL;
 
     BOOL value = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_isEnabled, fAccessible, fComponent);
     CHECK_EXCEPTION();
-    if (!value) {
-        NSLog(@"WARNING: %s called on component that has no accessible component: %@", __FUNCTION__, self);
-    }
+
     return value;
 }
 

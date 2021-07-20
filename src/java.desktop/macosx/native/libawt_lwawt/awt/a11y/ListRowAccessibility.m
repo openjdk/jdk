@@ -42,6 +42,8 @@
 {
     NSArray *children = [super accessibilityChildren];
     if (children == NULL) {
+
+        // Since the row element has already been created, we should no create it again, but just retrieve it by a pointer, that's why isWrapped is set to YES.
         CommonComponentAccessibility *newChild = [CommonComponentAccessibility createWithParent:self
                                                                        accessible:self->fAccessible
                                                                              role:self->fJavaRole
