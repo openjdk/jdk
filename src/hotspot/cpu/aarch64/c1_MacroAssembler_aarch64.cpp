@@ -188,12 +188,13 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  // Preserve obj
-  if (hdr_size_in_bytes)
-    add(obj, obj, hdr_size_in_bytes);
-  zero_memory(obj, len_in_bytes, t1);
-  if (hdr_size_in_bytes)
-    sub(obj, obj, hdr_size_in_bytes);
+  // zero_words() takes ptr in r10 and count in words in r11
+  push(RegSet::of(r10, r11), sp);
+  mov(rscratch1, len_in_bytes);
+  lea(r10, Address(obj, hdr_size_in_bytes));
+  lsr(r11, rscratch1, LogBytesPerWord);
+  zero_words(r10, r11);
+  pop(RegSet::of(r10, r11), sp);
 
   bind(done);
 }
@@ -232,31 +233,9 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
        for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
          stp(zr, zr, Address(obj, i));
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
-       block_comment("zero memory");
-      // use loop to null out the fields
-
        int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
-       mov(index,  words / 8);
-
-       const int unroll = 8; // Number of str(zr) instructions we'll unroll
-       int remainder = words % unroll;
-       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * BytesPerWord));
-
-       Label entry_point, loop;
-       b(entry_point);
-
-       bind(loop);
-       sub(index, index, 1);
-       for (int i = -unroll; i < 0; i++) {
-         if (-i == remainder)
-           bind(entry_point);
-         str(zr, Address(rscratch1, i * wordSize));
-       }
-       if (remainder == 0)
-         bind(entry_point);
-       add(rscratch1, rscratch1, unroll * wordSize);
-       cbnz(index, loop);
-
+       lea(t1, Address(obj, hdr_size_in_bytes));
+       zero_words(t1, words);
      }
   }
 

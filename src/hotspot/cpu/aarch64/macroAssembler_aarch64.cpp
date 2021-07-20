@@ -4705,7 +4705,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
     Label l;
     tbz(cnt, exact_log2(i), l);
     for (int j = 0; j < i; j += 2) {
-      stp(zr, zr, post(ptr, 16));
+      stp(zr, zr, post(ptr, 2 * BytesPerWord));
     }
     bind(l);
   }
@@ -4722,39 +4722,38 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 
 // base:         Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:          Immediate count in HeapWords.
-#define SmallArraySize (18 * BytesPerLong)
 void MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   BLOCK_COMMENT("zero_words {");
-  int i = cnt & 1;  // store any odd word to start
-  if (i) str(zr, Address(base));
+  if (cnt > zero_words_block_size) {
+    push(RegSet::of(r10, r11), sp);
 
-  if (cnt <= SmallArraySize / BytesPerLong) {
-    for (; i < (int)cnt; i += 2) {
-      stp(zr, zr, Address(base, i * wordSize));
+    mov(r10, base); mov(r11, cnt);
+    RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::aarch64::zero_blocks());
+    assert(zero_blocks.target() != NULL, "zero_blocks stub has not been generated");
+    if (StubRoutines::aarch64::complete()) {
+      address tpc = trampoline_call(zero_blocks);
+      if (tpc == NULL) {
+        postcond(pc() == badAddress);
+        return;
+      }
+    } else {
+      bl(zero_blocks);
     }
-  } else {
-    const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
-    int remainder = cnt % (2 * unroll);
-    for (; i < remainder; i += 2) {
-      stp(zr, zr, Address(base, i * wordSize));
-    }
-    Label loop;
-    Register cnt_reg = rscratch1;
-    Register loop_base = rscratch2;
-    cnt = cnt - remainder;
-    mov(cnt_reg, cnt);
-    // adjust base and prebias by -2 * wordSize so we can pre-increment
-    add(loop_base, base, (remainder - 2) * wordSize);
-    bind(loop);
-    sub(cnt_reg, cnt_reg, 2 * unroll);
-    for (i = 1; i < unroll; i++) {
-      stp(zr, zr, Address(loop_base, 2 * i * wordSize));
-    }
-    stp(zr, zr, Address(pre(loop_base, 2 * unroll * wordSize)));
-    cbnz(cnt_reg, loop);
+
+    pop(RegSet::of(r10, r11), sp);
+  }
+
+  cnt %= zero_words_block_size;
+
+  for (int i = cnt; i > 1; i -= 2) {
+    stp(zr, zr, post(base, 2 * BytesPerWord));
+  }
+  if (cnt & 1) {
+    str(zr, post(base, 2 * BytesPerWord));
   }
   BLOCK_COMMENT("} zero_words");
+  postcond(pc() != badAddress);
 }
 
 // Zero blocks of memory by using DC ZVA.
