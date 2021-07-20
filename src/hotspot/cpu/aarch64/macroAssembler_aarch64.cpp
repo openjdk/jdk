@@ -4722,36 +4722,47 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 
 // base:         Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:          Immediate count in HeapWords.
+#define SmallArraySize (18 * BytesPerLong)
 void MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
+  STATIC_ASSERT(zero_words_block_size < SmallArraySize);
   BLOCK_COMMENT("zero_words {");
-  if (cnt > zero_words_block_size) {
+
+  if (cnt > SmallArraySize) {
     push(RegSet::of(r10, r11), sp);
 
     mov(r10, base); mov(r11, cnt);
     RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::aarch64::zero_blocks());
     assert(zero_blocks.target() != NULL, "zero_blocks stub has not been generated");
-    if (StubRoutines::aarch64::complete()) {
-      address tpc = trampoline_call(zero_blocks);
-      if (tpc == NULL) {
-        postcond(pc() == badAddress);
-        return;
-      }
-    } else {
-      bl(zero_blocks);
+
+    address tpc = trampoline_call(zero_blocks);
+    if (tpc == NULL) {
+      postcond(pc() == badAddress);
+      return;
+    }
+
+    // We have a few words left to do. zero_blocks has adjusted r10
+    // for us.
+    cnt %= zero_words_block_size;
+    for (int i = cnt; i > 1; i -= 2) {
+      stp(zr, zr, post(r10, 2 * BytesPerWord));
+    }
+    if (cnt & 1) {
+      str(zr, Address(r10));
     }
 
     pop(RegSet::of(r10, r11), sp);
+
+  } else {
+    // Just a few words; do it inline with a few stp instructions.
+    for (int i = cnt; i > 1; i -= 2) {
+      stp(zr, zr, post(base, 2 * BytesPerWord));
+    }
+    if (cnt & 1) {
+      str(zr, post(base, 2 * BytesPerWord));
+    }
   }
 
-  cnt %= zero_words_block_size;
-
-  for (int i = cnt; i > 1; i -= 2) {
-    stp(zr, zr, post(base, 2 * BytesPerWord));
-  }
-  if (cnt & 1) {
-    str(zr, post(base, 2 * BytesPerWord));
-  }
   BLOCK_COMMENT("} zero_words");
   postcond(pc() != badAddress);
 }
