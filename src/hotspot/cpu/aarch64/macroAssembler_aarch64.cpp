@@ -4728,7 +4728,15 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
   STATIC_ASSERT(zero_words_block_size < SmallArraySize);
   BLOCK_COMMENT("zero_words {");
 
-  if (cnt > SmallArraySize) {
+  if (cnt <= SmallArraySize / BytesPerLong) {
+    int i = cnt & 1;  // store any odd word to start
+    if (i) str(zr, Address(base));
+
+    for (; i < (int)cnt; i += 2) {
+      stp(zr, zr, Address(base, i * wordSize));
+    }
+
+  } else {
     push(RegSet::of(r10, r11), sp);
 
     mov(r10, base); mov(r11, cnt);
@@ -4744,23 +4752,14 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
     // We have a few words left to do. zero_blocks has adjusted r10
     // for us.
     cnt %= zero_words_block_size;
-    for (int i = cnt; i > 1; i -= 2) {
-      stp(zr, zr, post(r10, 2 * BytesPerWord));
-    }
-    if (cnt & 1) {
-      str(zr, Address(r10));
+    int i = cnt & 1;  // store any odd word to start
+    if (i) str(zr, Address(r10));
+
+    for (; i < (int)cnt; i += 2) {
+      stp(zr, zr, Address(r10, i * wordSize));
     }
 
     pop(RegSet::of(r10, r11), sp);
-
-  } else {
-    // Just a few words; do it inline with a few stp instructions.
-    for (int i = cnt; i > 1; i -= 2) {
-      stp(zr, zr, post(base, 2 * BytesPerWord));
-    }
-    if (cnt & 1) {
-      str(zr, post(base, 2 * BytesPerWord));
-    }
   }
 
   BLOCK_COMMENT("} zero_words");

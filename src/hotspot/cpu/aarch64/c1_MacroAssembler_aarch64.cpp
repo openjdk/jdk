@@ -233,9 +233,9 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
        for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
          stp(zr, zr, Address(obj, i));
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
-       int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
+       con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
-       zero_words(t1, words);
+       zero_words(t1, con_size_in_bytes / BytesPerWord);
      }
   }
 
