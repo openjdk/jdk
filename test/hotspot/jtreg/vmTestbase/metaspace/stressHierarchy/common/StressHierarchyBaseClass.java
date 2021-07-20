@@ -115,7 +115,7 @@ abstract public class StressHierarchyBaseClass extends TestBase {
              * We pass test in this case as this breaks test logic. We have dedicated test configurations
              * for OOME:heap provoking class unloading, that why we are not missing test coverage here.
              */
-            log.info("GotWrongOOMEExc: " + e.getMessage());
+            log.info("HeapOOMEException: " + e.getMessage());
             log.info("Got wrong type of OOME. We are passing test as it breaks test logic. We have dedicated test configurations" +
             " for each OOME type provoking class unloading, that's why we are not missing test coverage here.");
         } catch (OutOfMemoryError e) {
