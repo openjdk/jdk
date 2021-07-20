@@ -28,6 +28,7 @@
 // Included in orderAccess.hpp header file.
 
 #include <intrin.h>
+#include <immintrin.h>
 
 // Compiler version last used for testing: Microsoft Visual Studio 2010
 // Please update this information when this file changes
@@ -59,8 +60,12 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  int regs[4];
-  __cpuid(regs, 0);
+  if (VM_Version::supports_serialize()) {
+    _serialize();
+  } else {
+    int regs[4];
+    __cpuid(regs, 0);
+  }
 }
 
 #endif // OS_CPU_WINDOWS_X86_ORDERACCESS_WINDOWS_X86_HPP
