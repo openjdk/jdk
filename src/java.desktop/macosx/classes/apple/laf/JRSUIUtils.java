@@ -38,8 +38,16 @@ public final class JRSUIUtils {
     static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
 
     public static boolean isMacOSXBigSurOrAbove() {
-        String version = System.getProperty("os.version");
-        if (version.startsWith("11.")) {
+        @SuppressWarnings("removal")
+        String version = AccessController.doPrivileged(new GetPropertyAction("os.version"));
+        version = version.subString(0, version.indexOf("."));
+        int ver = 0;
+        try {
+            ver = Integer.parseInt(version);
+        } catch (NumberFormatException e) {
+            // was not an integer
+        }
+        if (ver >= 11) {
             return true;
         }
         return false;
