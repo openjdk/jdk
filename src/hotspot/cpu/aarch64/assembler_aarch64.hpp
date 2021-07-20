@@ -2036,6 +2036,15 @@ public:
 
   INSN(fmovhid, 0b100, 0b10, 0b01, 0b110);
 
+  public:
+  void fcvtzv(SIMD_Arrangement T, FloatRegister Rd, FloatRegister Rn) {
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+    starti;
+    f(0, 31), f(T & 1, 30), f(0b0011101, 29, 23);
+    f((T >> 1) & 1, 22), f(0b100001101110, 21, 10);
+    rf(Rn, 5), rf(Rd, 0);
+  }
+
 #undef INSN
 
 #define INSN(NAME, op31, type, rmode, opcode)                           \
@@ -2816,6 +2825,14 @@ public:
     starti;
     assert(T != T1D, "reserved encoding");
     f(0, 31), f((int)T & 1, 30), f(0b001110000, 29, 21);
+    f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
+    f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+  void dups(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int index = 0)
+  {
+    starti;
+    f(0b01011110000, 31, 21);
     f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
