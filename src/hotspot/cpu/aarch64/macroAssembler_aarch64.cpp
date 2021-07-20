@@ -4809,6 +4809,13 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 {
 //  Algorithm:
 //
+//    if (cnt == 0) {
+//      return;
+//    }
+//    if ((p & 8) != 0) {
+//      *p++ = v;
+//    }
+//
 //    scratch1 = cnt & 14;
 //    cnt -= scratch1;
 //    p += scratch1;
@@ -4831,8 +4838,8 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 //          p += 16;
 //      } while (cnt);
 //    }
-//    if (cnt & 1 == 1) {
-//      p[0] = v;
+//    if ((cnt & 1) == 1) {
+//      *p++ = v;
 //    }
 
   assert_different_registers(base, cnt, value, rscratch1, rscratch2);
