@@ -215,9 +215,12 @@ public class Preverifier extends ClassVisitor {
 								}
 							}
 						}
-						else {	
+						else if (hasRet) {	
 							newInst.add(new JumpInsnNode(Opcodes.GOTO, lb));
 							newInst.add(retLb);
+						}
+						else {
+							newInst.add(new JumpInsnNode(Opcodes.GOTO, lb));
 						}
 					}
 					else if (inList.get(i).getOpcode() == Opcodes.RET) {
