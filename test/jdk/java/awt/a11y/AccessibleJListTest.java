@@ -31,14 +31,31 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.JList;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JWindow;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.ListCellRenderer;
+import javax.swing.SwingUtilities;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.Rectangle;
+import java.awt.Dimension;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Window;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.awt.*;
 
 public class AccessibleJListTest extends AccessibleComponentTest {
 

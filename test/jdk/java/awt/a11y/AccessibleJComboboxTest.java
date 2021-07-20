@@ -31,8 +31,11 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import java.awt.FlowLayout;
 import java.util.concurrent.CountDownLatch;
 
 public class AccessibleJComboboxTest extends AccessibleComponentTest {

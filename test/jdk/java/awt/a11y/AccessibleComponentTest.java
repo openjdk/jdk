@@ -31,8 +31,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.*;
+import java.awt.GridBagLayout;
+
 import javax.swing.JPanel;
+import javax.swing.JFrame;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
 
 public abstract class AccessibleComponentTest {
 

@@ -31,8 +31,12 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JTable;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+
+import java.awt.FlowLayout;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 

@@ -31,10 +31,17 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
+import javax.swing.JTree;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeCellRenderer;
-import java.awt.*;
+import javax.swing.SwingUtilities;
+
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.util.Hashtable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

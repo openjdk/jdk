@@ -31,7 +31,14 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
+import javax.swing.JTabbedPane;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JTextField;
+import javax.swing.JCheckBox;
+import javax.swing.SwingUtilities;
+
 import java.util.concurrent.CountDownLatch;
 
 public class AccessibleJTabbedPaneTest extends AccessibleComponentTest {
