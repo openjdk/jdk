@@ -50,165 +50,22 @@ public class AWTEventMonitor {
      */
     public AWTEventMonitor() {}
 
-    /**
-     * The current component with keyboard focus.
-     *
-     * @see #getComponentWithFocus
-     *
-     * @deprecated This field is unused; to get the component with focus use the
-     * getComponentWithFocus method.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected Component componentWithFocus = null;
-
     static private Component componentWithFocus_private = null;
 
     // Low-level listeners
-    /**
-     * The current list of registered ComponentListener classes.
-     *
-     * @see #addComponentListener
-     * @see #removeComponentListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected ComponentListener     componentListener     = null;
-
     static private ComponentListener componentListener_private = null;
-
-    /**
-     * The current list of registered ContainerListener classes.
-     *
-     * @see #addContainerListener
-     * @see #removeContainerListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected ContainerListener     containerListener     = null;
-
     static private ContainerListener containerListener_private = null;
-
-    /**
-     * The current list of registered FocusListener classes.
-     *
-     * @see #addFocusListener
-     * @see #removeFocusListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected FocusListener         focusListener         = null;
-
     static private FocusListener focusListener_private = null;
-
-    /**
-     * The current list of registered KeyListener classes.
-     *
-     * @see #addKeyListener
-     * @see #removeKeyListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected KeyListener           keyListener           = null;
-
     static private KeyListener keyListener_private = null;
-
-    /**
-     * The current list of registered MouseListener classes.
-     *
-     * @see #addMouseListener
-     * @see #removeMouseListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected MouseListener         mouseListener         = null;
-
     static private MouseListener mouseListener_private = null;
-
-    /**
-     * The current list of registered MouseMotionListener classes.
-     *
-     * @see #addMouseMotionListener
-     * @see #removeMouseMotionListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected MouseMotionListener   mouseMotionListener   = null;
-
     static private MouseMotionListener mouseMotionListener_private = null;
-
-    /**
-     * The current list of registered WindowListener classes.
-     *
-     * @see #addWindowListener
-     * @see #removeWindowListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected WindowListener        windowListener        = null;
-
     static private WindowListener windowListener_private = null;
 
-
     // Semantic listeners
-    /**
-     * The current list of registered ActionListener classes.
-     *
-     * @see #addActionListener
-     * @see #removeActionListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected ActionListener        actionListener        = null;
-
     static private ActionListener actionListener_private = null;
-
-    /**
-     * The current list of registered AdjustmentListener classes.
-     *
-     * @see #addAdjustmentListener
-     * @see #removeAdjustmentListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected AdjustmentListener    adjustmentListener    = null;
-
     static private AdjustmentListener adjustmentListener_private = null;
-
-    /**
-     * The current list of registered ItemListener classes.
-     *
-     * @see #addItemListener
-     * @see #removeItemListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected ItemListener          itemListener          = null;
-
     static private ItemListener itemListener_private = null;
-
-    /**
-     * The current list of registered TextListener classes.
-     *
-     * @see #addTextListener
-     * @see #removeTextListener
-     *
-     * @deprecated This field is unused.
-     */
-    @Deprecated(since="8", forRemoval=true)
-    static protected TextListener          textListener          = null;
-
     static private TextListener textListener_private = null;
-
 
     /**
      * The actual listener that is installed on the component instances.
