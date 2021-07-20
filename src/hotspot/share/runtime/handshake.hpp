@@ -117,7 +117,7 @@ class HandshakeState {
   bool has_operation() {
     return !_queue.is_empty();
   }
-  bool has_none_suspend_operation();
+  bool has_a_non_suspend_operation();
 
   bool operation_pending(HandshakeOperation* op);
 

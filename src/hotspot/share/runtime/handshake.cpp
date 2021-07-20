@@ -451,7 +451,7 @@ bool HandshakeState::have_non_self_executable_operation() {
   return _queue.contains(non_self_queue_filter);
 }
 
-bool HandshakeState::has_none_suspend_operation() {
+bool HandshakeState::has_a_non_suspend_operation() {
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   return _queue.contains(no_suspend_filter);
 }

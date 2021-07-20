@@ -63,7 +63,7 @@ bool SafepointMechanism::global_poll() {
 }
 
 bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
-  if (global_poll() || thread->handshake_state()->has_none_suspend_operation()) {
+  if (global_poll() || thread->handshake_state()->has_a_non_suspend_operation()) {
     return true;
   } else {
     // The poll is armed for a suspend request but we don't want to process it now. Since

@@ -291,7 +291,7 @@ class ThreadBlockInVM {
   ThreadBlockInVMPreprocess<InFlightMutexRelease> _tbivmpp;
  public:
   ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
-    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr, false /* no suspend */) {}
+    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr, /* allow_suspend= */ false) {}
 };
 
 // Debug class instantiated in JRT_ENTRY macro.
