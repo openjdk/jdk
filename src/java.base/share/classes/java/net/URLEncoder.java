@@ -34,7 +34,6 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -72,7 +71,7 @@ import sun.security.action.GetPropertyAction;
  * &#252; is encoded as two bytes C3 (hex) and BC (hex), and the
  * character @ is encoded as one byte 40 (hex).
  *
- * @see java.nio.charset.Charset#defaultCharset()
+ * @see Charset#defaultCharset()
  *
  * @author  Herb Jellinek
  * @since   1.0
@@ -176,7 +175,7 @@ public class URLEncoder {
      * format using a specific encoding scheme.
      * <p>
      * This method behaves the same as {@linkplain #encode(String s, Charset charset)}
-     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * except that it will {@linkplain Charset#forName look up the charset}
      * using the given encoding name.
      *
      * @param   s   {@code String} to be translated.
@@ -205,7 +204,7 @@ public class URLEncoder {
 
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
-     * format using a specific {@linkplain java.nio.charset.Charset Charset}.
+     * format using a specific {@linkplain Charset Charset}.
      * This method uses the supplied charset to obtain the bytes for unsafe
      * characters.
      * <p>
@@ -218,7 +217,7 @@ public class URLEncoder {
      * @param charset the given charset
      * @return  the translated {@code String}.
      * @throws NullPointerException if {@code s} or {@code charset} is {@code null}.
-     * @see URLDecoder#decode(java.lang.String, java.nio.charset.Charset)
+     * @see URLDecoder#decode(java.lang.String, Charset)
      * @since 10
      */
     public static String encode(String s, Charset charset) {

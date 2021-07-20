@@ -122,8 +122,8 @@ public class PrintWriter extends Writer {
      *
      * @param  out        An output stream
      *
-     * @see java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see OutputStreamWriter#OutputStreamWriter(OutputStream)
+     * @see Charset#defaultCharset()
      */
     public PrintWriter(OutputStream out) {
         this(out, false);
@@ -140,8 +140,8 @@ public class PrintWriter extends Writer {
      *                    {@code printf}, or {@code format} methods will
      *                    flush the output buffer
      *
-     * @see java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see OutputStreamWriter#OutputStreamWriter(OutputStream)
+     * @see Charset#defaultCharset()
      */
     public PrintWriter(OutputStream out, boolean autoFlush) {
         this(out, autoFlush, Charset.defaultCharset());
@@ -158,7 +158,7 @@ public class PrintWriter extends Writer {
      *                    {@code printf}, or {@code format} methods will
      *                    flush the output buffer
      * @param  charset
-     *         A {@linkplain java.nio.charset.Charset charset}
+     *         A {@linkplain Charset charset}
      *
      * @since 10
      */
@@ -174,9 +174,9 @@ public class PrintWriter extends Writer {
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file name.  This convenience constructor creates the necessary
-     * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
+     * intermediate {@link OutputStreamWriter OutputStreamWriter},
      * which will encode characters using the {@linkplain
-     * java.nio.charset.Charset#defaultCharset() default charset} for this
+     * Charset#defaultCharset() default charset} for this
      * instance of the Java virtual machine.
      *
      * @param  fileName
@@ -195,7 +195,7 @@ public class PrintWriter extends Writer {
      *          If a security manager is present and {@link
      *          SecurityManager#checkWrite checkWrite(fileName)} denies write
      *          access to the file
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
@@ -215,7 +215,7 @@ public class PrintWriter extends Writer {
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file name and charset.  This convenience constructor creates
-     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * the necessary intermediate {@link OutputStreamWriter
      * OutputStreamWriter}, which will encode characters using the provided
      * charset.
      *
@@ -226,8 +226,7 @@ public class PrintWriter extends Writer {
      *         written to the file and is buffered.
      *
      * @param  csn
-     *         The name of a supported {@linkplain java.nio.charset.Charset
-     *         charset}
+     *         The name of a supported {@linkplain Charset charset}
      *
      * @throws  FileNotFoundException
      *          If the given string does not denote an existing, writable
@@ -254,7 +253,7 @@ public class PrintWriter extends Writer {
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file name and charset.  This convenience constructor creates
-     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * the necessary intermediate {@link OutputStreamWriter
      * OutputStreamWriter}, which will encode characters using the provided
      * charset.
      *
@@ -265,7 +264,7 @@ public class PrintWriter extends Writer {
      *         written to the file and is buffered.
      *
      * @param  charset
-     *         A {@linkplain java.nio.charset.Charset charset}
+     *         A {@linkplain Charset charset}
      *
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
@@ -284,9 +283,9 @@ public class PrintWriter extends Writer {
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file.  This convenience constructor creates the necessary
-     * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
+     * intermediate {@link OutputStreamWriter OutputStreamWriter},
      * which will encode characters using the {@linkplain
-     * java.nio.charset.Charset#defaultCharset() default charset} for this
+     * Charset#defaultCharset() default charset} for this
      * instance of the Java virtual machine.
      *
      * @param  file
@@ -305,7 +304,7 @@ public class PrintWriter extends Writer {
      *          If a security manager is present and {@link
      *          SecurityManager#checkWrite checkWrite(file.getPath())}
      *          denies write access to the file
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
@@ -317,7 +316,7 @@ public class PrintWriter extends Writer {
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file and charset.  This convenience constructor creates the
-     * necessary intermediate {@link java.io.OutputStreamWriter
+     * necessary intermediate {@link OutputStreamWriter
      * OutputStreamWriter}, which will encode characters using the provided
      * charset.
      *
@@ -328,8 +327,7 @@ public class PrintWriter extends Writer {
      *         and is buffered.
      *
      * @param  csn
-     *         The name of a supported {@linkplain java.nio.charset.Charset
-     *         charset}
+     *         The name of a supported {@linkplain Charset charset}
      *
      * @throws  FileNotFoundException
      *          If the given file object does not denote an existing, writable
@@ -367,7 +365,7 @@ public class PrintWriter extends Writer {
      *         and is buffered.
      *
      * @param  charset
-     *         A {@linkplain java.nio.charset.Charset charset}
+     *         A {@linkplain Charset charset}
      *
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
@@ -589,7 +587,7 @@ public class PrintWriter extends Writer {
      * #write(int)} method.
      *
      * @param      b   The {@code boolean} to be printed
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(boolean b) {
         write(String.valueOf(b));
@@ -602,7 +600,7 @@ public class PrintWriter extends Writer {
      * #write(int)} method.
      *
      * @param      c   The {@code char} to be printed
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(char c) {
         write(c);
@@ -617,7 +615,7 @@ public class PrintWriter extends Writer {
      *
      * @param      i   The {@code int} to be printed
      * @see        java.lang.Integer#toString(int)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(int i) {
         write(String.valueOf(i));
@@ -632,7 +630,7 @@ public class PrintWriter extends Writer {
      *
      * @param      l   The {@code long} to be printed
      * @see        java.lang.Long#toString(long)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(long l) {
         write(String.valueOf(l));
@@ -647,7 +645,7 @@ public class PrintWriter extends Writer {
      *
      * @param      f   The {@code float} to be printed
      * @see        java.lang.Float#toString(float)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(float f) {
         write(String.valueOf(f));
@@ -662,7 +660,7 @@ public class PrintWriter extends Writer {
      *
      * @param      d   The {@code double} to be printed
      * @see        java.lang.Double#toString(double)
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(double d) {
         write(String.valueOf(d));
@@ -675,7 +673,7 @@ public class PrintWriter extends Writer {
      * method.
      *
      * @param      s   The array of chars to be printed
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      *
      * @throws  NullPointerException  If {@code s} is {@code null}
      */
@@ -691,7 +689,7 @@ public class PrintWriter extends Writer {
      * {@link #write(int)} method.
      *
      * @param      s   The {@code String} to be printed
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(String s) {
         write(String.valueOf(s));
@@ -706,7 +704,7 @@ public class PrintWriter extends Writer {
      *
      * @param      obj   The {@code Object} to be printed
      * @see        java.lang.Object#toString()
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public void print(Object obj) {
         write(String.valueOf(obj));

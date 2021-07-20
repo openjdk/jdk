@@ -558,10 +558,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Constructs a new {@code Scanner} that produces values scanned
      * from the specified input stream. Bytes from the stream are converted
      * into characters using the
-     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+     * {@linkplain Charset#defaultCharset() default charset}.
      *
      * @param  source An input stream to be scanned
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public Scanner(InputStream source) {
         this(new InputStreamReader(source), WHITESPACE_PATTERN);
@@ -631,11 +631,11 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Constructs a new {@code Scanner} that produces values scanned
      * from the specified file. Bytes from the file are converted into
      * characters using the
-     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+     * {@linkplain Charset#defaultCharset() default charset}.
      *
      * @param  source A file to be scanned
      * @throws FileNotFoundException if source is not found
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public Scanner(File source) throws FileNotFoundException {
         this((ReadableByteChannel)(new FileInputStream(source).getChannel()));
@@ -705,13 +705,13 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Constructs a new {@code Scanner} that produces values scanned
      * from the specified file. Bytes from the file are converted into
      * characters using the
-     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+     * {@linkplain Charset#defaultCharset() default charset}.
      *
      * @param   source
      *          the path to the file to be scanned
      * @throws  IOException
      *          if an I/O error occurs opening source
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      *
      * @since   1.7
      */
@@ -773,10 +773,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Constructs a new {@code Scanner} that produces values scanned
      * from the specified channel. Bytes from the source are converted into
      * characters using the
-     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+     * {@linkplain Charset#defaultCharset() default charset}.
      *
      * @param  source A channel to scan
-     * @see java.nio.charset.Charset#defaultCharset()
+     * @see Charset#defaultCharset()
      */
     public Scanner(ReadableByteChannel source) {
         this(makeReadable(Objects.requireNonNull(source, "source")),

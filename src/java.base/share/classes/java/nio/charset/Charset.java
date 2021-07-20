@@ -596,7 +596,7 @@ public abstract class Charset
      *
      * @implNote An implementation may override the default charset with
      * the system property {@code file.encoding} on the command line. If the
-     * value designates {@code COMPAT}, the default charset is derived from
+     * value is {@code COMPAT}, the default charset is derived from
      * the {@code native.encoding} system property, which typically depends
      * upon the locale and charset of the underlying operating system.
      *

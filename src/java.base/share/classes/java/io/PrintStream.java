@@ -192,7 +192,7 @@ public class PrintStream extends FilterOutputStream
      *                    whenever a byte array is written, one of the
      *                    {@code println} methods is invoked, or a newline
      *                    character or byte ({@code '\n'}) is written
-     * @param  charset    A {@linkplain java.nio.charset.Charset charset}
+     * @param  charset    A {@linkplain Charset charset}
      *
      * @since  10
      */
@@ -249,8 +249,7 @@ public class PrintStream extends FilterOutputStream
      *         will be written to the file and is buffered.
      *
      * @param  csn
-     *         The name of a supported {@linkplain java.nio.charset.Charset
-     *         charset}
+     *         The name of a supported {@linkplain Charset charset}
      *
      * @throws  FileNotFoundException
      *          If the given file object does not denote an existing, writable
@@ -289,7 +288,7 @@ public class PrintStream extends FilterOutputStream
      *         will be written to the file and is buffered.
      *
      * @param  charset
-     *         A {@linkplain java.nio.charset.Charset charset}
+     *         A {@linkplain Charset charset}
      *
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
@@ -351,8 +350,7 @@ public class PrintStream extends FilterOutputStream
      *         file and is buffered.
      *
      * @param  csn
-     *         The name of a supported {@linkplain java.nio.charset.Charset
-     *         charset}
+     *         The name of a supported {@linkplain Charset charset}
      *
      * @throws  FileNotFoundException
      *          If the given file object does not denote an existing, writable
@@ -392,7 +390,7 @@ public class PrintStream extends FilterOutputStream
      *         file and is buffered.
      *
      * @param  charset
-     *         A {@linkplain java.nio.charset.Charset charset}
+     *         A {@linkplain Charset charset}
      *
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file

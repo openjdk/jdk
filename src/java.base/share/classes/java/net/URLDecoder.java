@@ -74,7 +74,7 @@ import java.util.Objects;
  * Which approach the decoder takes is left to the
  * implementation.
  *
- * @see java.nio.charset.Charset#defaultCharset()
+ * @see Charset#defaultCharset()
  *
  * @author  Mark Chamness
  * @author  Michael McCloskey
@@ -122,7 +122,7 @@ public class URLDecoder {
      *
      * <p>
      * This method behaves the same as {@linkplain decode(String s, Charset charset)}
-     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * except that it will {@linkplain Charset#forName look up the charset}
      * using the given encoding name.
      *
      * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
@@ -154,7 +154,7 @@ public class URLDecoder {
 
     /**
      * Decodes an {@code application/x-www-form-urlencoded} string using
-     * a specific {@linkplain java.nio.charset.Charset Charset}.
+     * a specific {@linkplain Charset Charset}.
      * The supplied charset is used to determine
      * what characters are represented by any consecutive sequences of the
      * form "<i>{@code %xy}</i>".
@@ -174,7 +174,7 @@ public class URLDecoder {
      * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
      * @throws IllegalArgumentException if the implementation encounters illegal
      * characters
-     * @see URLEncoder#encode(java.lang.String, java.nio.charset.Charset)
+     * @see URLEncoder#encode(java.lang.String, Charset)
      * @since 10
      */
     public static String decode(String s, Charset charset) {
