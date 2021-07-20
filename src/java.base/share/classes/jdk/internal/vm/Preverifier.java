@@ -250,9 +250,9 @@ public class Preverifier extends ClassVisitor {
 						newInst.add(inList.get(i));
 					}
 				}
-				if (astoreToRemove.isEmpty() && hasJSR) {
-					throw new Error("Verifier Error, no astore to remove");
-				}
+				// if (astoreToRemove.isEmpty() && hasJSR) {
+				// 	throw new Error("Verifier Error, no astore to remove");
+				// }
 				// Replace instructions in the method
 				System.out.println("Writing new instruction list");
 				inList.clear();
