@@ -192,6 +192,9 @@ public class CommentHelper {
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
+        // Workaround for JDK-8269706
+        if (path == null || dcTree == null || rtree == null)
+            return null;
         DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
         if (docTreePath != null) {
             DocTrees doctrees = configuration.docEnv.getDocTrees();

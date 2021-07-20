@@ -270,8 +270,14 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
   }
-  ik->vtable().initialize_vtable();
-  ik->itable().initialize_itable();
+  if (ik->is_linked()) {
+    // If the class has already been linked, we must relayout the i/v tables, whose order depends
+    // on the method sorting order.
+    // If the class is unlinked, we cannot layout the i/v tables yet. This is OK, as the
+    // i/v tables will be initialized at runtime after bytecode verification.
+    ik->vtable().initialize_vtable();
+    ik->itable().initialize_itable();
+  }
 
   // Set all the pointer marking bits after sorting.
   remark_pointers_for_instance_klass(ik, true);

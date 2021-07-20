@@ -2867,21 +2867,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   return true;
 }
 
-void G1CollectedHeap::gc_tracer_report_gc_start() {
-  _gc_timer_stw->register_gc_start();
-  _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
-}
-
-void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark,
-                                              G1EvacuationInfo& evacuation_info) {
-  _gc_tracer_stw->report_evacuation_info(&evacuation_info);
-  _gc_tracer_stw->report_tenuring_threshold(_policy->tenuring_threshold());
-
-  _gc_timer_stw->register_gc_end();
-  _gc_tracer_stw->report_gc_end(_gc_timer_stw->gc_end(),
-  _gc_timer_stw->time_partitions());
-}
-
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
 // The code relies on the fact that GCTraceTimeWrapper stores the string passed
@@ -2920,6 +2905,36 @@ public:
   ~G1YoungGCTraceTime() {
     update_young_gc_name();
   }
+};
+
+class G1YoungGCVerifierMark : public StackObj {
+  G1HeapVerifier::G1VerifyType _type;
+
+  static G1HeapVerifier::G1VerifyType young_collection_verify_type() {
+    G1CollectorState* state = G1CollectedHeap::heap()->collector_state();
+    if (state->in_concurrent_start_gc()) {
+      return G1HeapVerifier::G1VerifyConcurrentStart;
+    } else if (state->in_young_only_phase()) {
+      return G1HeapVerifier::G1VerifyYoungNormal;
+    } else {
+      return G1HeapVerifier::G1VerifyMixed;
+    }
+  }
+
+public:
+  G1YoungGCVerifierMark() : _type(young_collection_verify_type()) {
+    G1CollectedHeap::heap()->verify_before_young_collection(_type);
+  }
+
+  ~G1YoungGCVerifierMark() {
+    G1CollectedHeap::heap()->verify_after_young_collection(_type);
+  }
+};
+
+class G1YoungGCNotifyPauseMark : public StackObj {
+public:
+  G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_start(); }
+  ~G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(); }
 };
 
 G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {
@@ -3053,8 +3068,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // determining collector state.
     G1YoungGCTraceTime tm(gc_cause());
 
-    // Young GC internal timing
-    policy()->note_gc_start();
+    // Young GC internal pause timing
+    G1YoungGCNotifyPauseMark npm;
     // JFR
     G1YoungGCJFRTracerMark jtm(_gc_timer_stw, _gc_tracer_stw, gc_cause());
     // JStat/MXBeans
@@ -3069,15 +3084,14 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // just to do that).
     wait_for_root_region_scanning();
 
-    G1HeapVerifier::G1VerifyType verify_type = young_collection_verify_type();
-    verify_before_young_collection(verify_type);
+    G1YoungGCVerifierMark vm;
     {
       // Actual collection work starts and is executed (only) in this scope.
 
-      // The elapsed time induced by the start time below deliberately elides
-      // the possible verification above.
-      double sample_start_time_sec = os::elapsedTime();
-      policy()->record_collection_pause_start(sample_start_time_sec);
+      // Young GC internal collection timing. The elapsed time recorded in the
+      // policy for the collection deliberately elides verification (and some
+      // other trivial setup above).
+      policy()->record_young_collection_start();
 
       calculate_collection_set(jtm.evacuation_info(), target_pause_time_ms);
 
@@ -3106,14 +3120,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
       // modifies it to the next state.
       jtm.report_pause_type(collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark));
 
-      double sample_end_time_sec = os::elapsedTime();
-      double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-      policy()->record_collection_pause_end(pause_time_ms, concurrent_operation_is_full_mark);
+      policy()->record_young_collection_end(concurrent_operation_is_full_mark);
     }
-    verify_after_young_collection(verify_type);
-
-    policy()->print_phases();
-
     TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
   }
@@ -3245,29 +3253,6 @@ public:
       // to point to the new location, and the RSet updated.
       _par_scan_state->push_on_queue(ScannerTask(p));
     }
-  }
-};
-
-// Serial drain queue closure. Called as the 'complete_gc'
-// closure for each discovered list in some of the
-// reference processing phases.
-
-class G1STWDrainQueueClosure: public VoidClosure {
-protected:
-  G1CollectedHeap* _g1h;
-  G1ParScanThreadState* _par_scan_state;
-
-  G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
-
-public:
-  G1STWDrainQueueClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) :
-    _g1h(g1h),
-    _par_scan_state(pss)
-  { }
-
-  void do_void() {
-    G1ParScanThreadState* const pss = par_scan_state();
-    pss->trim_queue();
   }
 };
 
@@ -3803,11 +3788,11 @@ void G1CollectedHeap::evacuate_next_optional_regions(G1ParScanThreadStateSet* pe
 }
 
 void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
-  const double gc_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
+  const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
   while (!evacuation_failed() && _collection_set.optional_region_length() > 0) {
 
-    double time_used_ms = os::elapsedTime() * 1000.0 - gc_start_time_ms;
+    double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
 
     if (time_left_ms < 0 ||
