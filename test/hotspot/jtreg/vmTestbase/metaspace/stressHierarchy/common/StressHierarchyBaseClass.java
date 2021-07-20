@@ -24,13 +24,13 @@ package metaspace.stressHierarchy.common;
 
 import java.net.MalformedURLException;
 
+import vm.share.gc.HeapOOMEException;
 import vm.share.gc.TriggerUnloadingByFillingMetaspace;
 import vm.share.gc.TriggerUnloadingHelper;
 import vm.share.gc.TriggerUnloadingWithWhiteBox;
 
 import metaspace.stressHierarchy.common.classloader.tree.Node;
 import metaspace.stressHierarchy.common.classloader.tree.Tree;
-import vm.share.gc.HeapOOMEException;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;
 import metaspace.stressHierarchy.common.generateHierarchy.GenerateHierarchyHelper;
 import metaspace.stressHierarchy.common.generateHierarchy.GenerateHierarchyHelper.Type;
