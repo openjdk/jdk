@@ -522,9 +522,14 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_primary_supers[i]);
   }
   it->push(&_super);
-  it->push((Klass**)&_subklass);
-  it->push((Klass**)&_next_sibling);
-  it->push(&_next_link);
+  if (!Arguments::is_dumping_archive()) {
+    // If dumping archive, these may point to excluded classes. There's no need
+    // to follow these pointers anyway, as they will be set to NULL in
+    // remove_unshareable_info().
+    it->push((Klass**)&_subklass);
+    it->push((Klass**)&_next_sibling);
+    it->push(&_next_link);
+  }
 
   vtableEntry* vt = start_of_vtable();
   for (int i=0; i<vtable_length(); i++) {

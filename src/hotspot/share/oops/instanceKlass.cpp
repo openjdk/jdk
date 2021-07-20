@@ -901,6 +901,9 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
     if (!is_linked()) {
       if (!is_rewritten()) {
+        if (is_shared()) {
+          assert(!verified_at_dump_time(), "must be");
+        }
         {
           bool verify_ok = verify_code(THREAD);
           if (!verify_ok) {
@@ -932,9 +935,11 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // initialize_vtable and initialize_itable need to be rerun
       // for a shared class if
       // 1) the class is loaded by custom class loader or
-      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
+      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints or
+      // 3) the class was not verified during dump time
       bool need_init_table = true;
-      if (is_shared() && SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
+      if (is_shared() && verified_at_dump_time() &&
+          SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
@@ -2395,7 +2400,8 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void InstanceKlass::remove_unshareable_info() {
 
-  if (can_be_verified_at_dumptime()) {
+  if (is_linked()) {
+    assert(can_be_verified_at_dumptime(), "must be");
     // Remember this so we can avoid walking the hierarchy at runtime.
     set_verified_at_dump_time();
   }
