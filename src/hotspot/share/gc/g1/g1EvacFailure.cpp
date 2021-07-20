@@ -80,6 +80,7 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
+  const bool _is_young;
   size_t _marked_bytes;
   UpdateLogBuffersDeferred* _log_buffer_cl;
   bool _during_concurrent_start;
@@ -94,6 +95,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
+    _is_young(hr->is_young()),
     _marked_bytes(0),
     _log_buffer_cl(log_buffer_cl),
     _during_concurrent_start(during_concurrent_start),
@@ -152,7 +154,9 @@ public:
       // The problem is that, if evacuation fails, we might have
       // remembered set entries missing given that we skipped cards on
       // the collection set. So, we'll recreate such entries now.
-      obj->oop_iterate(_log_buffer_cl);
+      if (_is_young) {
+        obj->oop_iterate(_log_buffer_cl);
+      }
 
       HeapWord* obj_end = obj_addr + obj_size;
       _last_forwarded_object_end = obj_end;
