@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <filesystem>
 #include <dirent.h>
+#include <cstring>
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 #include "Log.h"
