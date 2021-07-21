@@ -3273,11 +3273,17 @@ public:
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
-    _pss.state_for_worker(index)->set_ref_discoverer(nullptr);
+
+    G1ParScanThreadState* pss = _pss.state_for_worker(index);
+    pss->set_ref_discoverer(nullptr);
+
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, _pss.state_for_worker(index));
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, _pss.state_for_worker(index), &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+
+    // We have completed copying any necessary live referent objects.
+    assert(pss->queue_is_empty(), "both queue and overflow should be empty");
   }
 
   void prepare_run_task_hook() override {
@@ -3288,43 +3294,25 @@ public:
 // End of weak reference support closures
 
 void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
-  double ref_proc_start = os::elapsedTime();
+  Ticks start = Ticks::now();
 
   ReferenceProcessor* rp = _ref_processor_stw;
   assert(rp->discovery_enabled(), "should have been enabled");
 
-  // Use only a single queue for this PSS.
-  G1ParScanThreadState*          pss = per_thread_states->state_for_worker(0);
-  pss->set_ref_discoverer(NULL);
-  assert(pss->queue_is_empty(), "pre-condition");
-
-
-  ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
-
-  ReferenceProcessorStats stats;
   uint no_of_gc_workers = workers()->active_workers();
-
-  // Parallel reference processing
-  assert(no_of_gc_workers <= rp->max_num_queues(),
-         "Mismatch between the number of GC workers %u and the maximum number of Reference process queues %u",
-         no_of_gc_workers,  rp->max_num_queues());
-
   rp->set_active_mt_degree(no_of_gc_workers);
+
   G1STWRefProcProxyTask task(rp->max_num_queues(), *this, *per_thread_states, *_task_queues);
-  stats = rp->process_discovered_references(task, pt);
+  ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
+  ReferenceProcessorStats stats = rp->process_discovered_references(task, pt);
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
 
-  // We have completed copying any necessary live referent objects.
-  assert(pss->queue_is_empty(), "both queue and overflow should be empty");
-
   make_pending_list_reachable();
 
-  assert(!rp->discovery_enabled(), "Postcondition");
   rp->verify_no_references_recorded();
 
-  double ref_proc_time = os::elapsedTime() - ref_proc_start;
-  phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
+  phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
 void G1CollectedHeap::make_pending_list_reachable() {
