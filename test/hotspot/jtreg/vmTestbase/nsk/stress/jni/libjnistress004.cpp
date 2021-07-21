@@ -34,126 +34,126 @@ extern "C" {
 JNIEXPORT jcharArray JNICALL
 Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr) {
 
-    unsigned char digest[DIGESTLENGTH];
-    jchar *tmp;
-    static jint upper = 0;
-    jcharArray jArr;
-    int i;
-    const jchar *critstr;
-    char *str;
-    jint len = env->GetStringUTFLength(jstr); CE
+  unsigned char digest[DIGESTLENGTH];
+  jchar *tmp;
+  static jint upper = 0;
+  jcharArray jArr;
+  int i;
+  const jchar *critstr;
+  char *str;
+  jint len = env->GetStringUTFLength(jstr); CE
 
-    for (i = 0; i < DIGESTLENGTH; i++) {
-      digest[i] = 0;
-    }
-    str = (char *)malloc(len*sizeof(char));
-/*     const char *threadName = env->GetStringUTFChars(jstr, 0); */
+  for (i = 0; i < DIGESTLENGTH; i++) {
+    digest[i] = 0;
+  }
+  str = (char *)malloc(len*sizeof(char));
+  /*     const char *threadName = env->GetStringUTFChars(jstr, 0); */
 
-    env->MonitorEnter(jobj); CE
-    if (upper == 0) tmp = (jchar *) malloc(DIGESTLENGTH*sizeof(char));
-    if (env->ExceptionOccurred()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
-    critstr = env->GetStringCritical(jstr, 0); CE
-    for (i = 0; i < len; i++)
+  env->MonitorEnter(jobj); CE
+  if (upper == 0) tmp = (jchar *) malloc(DIGESTLENGTH*sizeof(char));
+  if (env->ExceptionOccurred()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+  }
+  critstr = env->GetStringCritical(jstr, 0); CE
+  for (i = 0; i < len; i++)
     str[i] = (char) critstr[i];
-    env->ReleaseStringCritical(jstr,critstr); CE
-    for (i = 0; i < len; i++) {
-        digest[i % DIGESTLENGTH]+=str[i];
-    }
-    free(str);
+  env->ReleaseStringCritical(jstr,critstr); CE
+  for (i = 0; i < len; i++) {
+    digest[i % DIGESTLENGTH]+=str[i];
+  }
+  free(str);
 
-    if (env->ExceptionOccurred()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
-    memcpy(tmp,digest,DIGESTLENGTH);
-    jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); CE
-    len = env->GetArrayLength(jArr); CE
-    env->SetCharArrayRegion(jArr,0,len,tmp); CE
-/*     ++upper; */
-    env->MonitorExit(jobj); CE
-    return jArr;
+  if (env->ExceptionOccurred()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+  }
+  memcpy(tmp,digest,DIGESTLENGTH);
+  jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); CE
+  len = env->GetArrayLength(jArr); CE
+  env->SetCharArrayRegion(jArr,0,len,tmp); CE
+  /*     ++upper; */
+  env->MonitorExit(jobj); CE
+  return jArr;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring jstr,
-            jcharArray cArr, jint limit) {
+                                            jcharArray cArr, jint limit) {
 
-    unsigned char digest[DIGESTLENGTH];
-    jchar *tmp;
-/*     jcharArray jArr; */
-    const jchar *critstr;
-    jint strlen;
-    char *str;
-    jboolean ret = JNI_TRUE;
-    int i;
-    static jint upper = 0;
-    jint len;
-    jchar *ch;
+  unsigned char digest[DIGESTLENGTH];
+  jchar *tmp;
+  /*     jcharArray jArr; */
+  const jchar *critstr;
+  jint strlen;
+  char *str;
+  jboolean ret = JNI_TRUE;
+  int i;
+  static jint upper = 0;
+  jint len;
+  jchar *ch;
 
-    for (i = 0; i < DIGESTLENGTH; i++) {
-      digest[i] = 0;
-    }
-    strlen =  env->GetStringUTFLength(jstr); CE
-    str = (char *)malloc(strlen*sizeof(char));
+  for (i = 0; i < DIGESTLENGTH; i++) {
+    digest[i] = 0;
+  }
+  strlen =  env->GetStringUTFLength(jstr); CE
+  str = (char *)malloc(strlen*sizeof(char));
 
-    len =env->GetArrayLength(cArr); CE
+  len =env->GetArrayLength(cArr); CE
 
-    env->MonitorEnter(jobj); CE
-    if (upper > limit) {
+  env->MonitorEnter(jobj); CE
+  if (upper > limit) {
     env->MonitorExit(jobj); CE
     return JNI_FALSE;
-    }
-    tmp = (jchar *)malloc(DIGESTLENGTH*sizeof(char));
-    if (env->ExceptionOccurred()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
-    critstr = env->GetStringCritical(jstr, 0); CE
-    for (i = 0; i < strlen; i++)
+  }
+  tmp = (jchar *)malloc(DIGESTLENGTH*sizeof(char));
+  if (env->ExceptionOccurred()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+  }
+  critstr = env->GetStringCritical(jstr, 0); CE
+  for (i = 0; i < strlen; i++)
     str[i] = (char) critstr[i];
-    env->ReleaseStringCritical(jstr,critstr); CE
-    for (i = 0; i < strlen; i++) {
-      digest[i % DIGESTLENGTH]+=str[i % DIGESTLENGTH];
-    }
+  env->ReleaseStringCritical(jstr,critstr); CE
+  for (i = 0; i < strlen; i++) {
+    digest[i % DIGESTLENGTH]+=str[i % DIGESTLENGTH];
+  }
 
-    free(str);
+  free(str);
 
-    if (env->ExceptionOccurred()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
-    memcpy(tmp,digest,DIGESTLENGTH);
+  if (env->ExceptionOccurred()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+  }
+  memcpy(tmp,digest,DIGESTLENGTH);
 
-/*     jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); */
-/*     len = env->GetArrayLength(jArr); */
-/*     env->SetCharArrayRegion(jArr,0,len,tmp); */
-/*     ++upper; */
-/*     env->MonitorExit(jobj); */
+  /*     jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); */
+  /*     len = env->GetArrayLength(jArr); */
+  /*     env->SetCharArrayRegion(jArr,0,len,tmp); */
+  /*     ++upper; */
+  /*     env->MonitorExit(jobj); */
 
-/* Compare  */
-/*     env->MonitorEnter(jobj); */
+  /* Compare  */
+  /*     env->MonitorEnter(jobj); */
 
-    ch = (jchar *)env->GetPrimitiveArrayCritical(cArr,0); CE
+  ch = (jchar *)env->GetPrimitiveArrayCritical(cArr,0); CE
 
-    printf("Comparing: ");
-    for (i = 0; i < len; i++)
+  printf("Comparing: ");
+  for (i = 0; i < len; i++)
     if (ch[i] != tmp[i]) {
-        printf("Error in %d\n",i);
-        printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
-        ret = JNI_FALSE;
+      printf("Error in %d\n",i);
+      printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
+      ret = JNI_FALSE;
     }
     else {
-        printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
+      printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
     }
-    printf("\n");
-    env->ReleasePrimitiveArrayCritical(cArr,ch,0); CE
-    ++upper;
-    if (!(upper % 500))
+  printf("\n");
+  env->ReleasePrimitiveArrayCritical(cArr,ch,0); CE
+  ++upper;
+  if (!(upper % 500))
     fprintf(stderr,"There are %d elements now.\n", upper);
-    if (upper == limit) {
+  if (upper == limit) {
     jclass clazz;
     jmethodID methodID;
     char *name = (char*) "halt";
@@ -164,9 +164,9 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     env->CallStaticVoidMethod(clazz, methodID); CE
     free(tmp);
     ret = JNI_TRUE;
-    }
-    env->MonitorExit(jobj); CE
-    return ret;
+  }
+  env->MonitorExit(jobj); CE
+  return ret;
 }
 
 }
