@@ -1662,7 +1662,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       fd = fs.field_descriptor();
-      // tty->print_cr(" %d %d %s", fd.offset(), fs.offset(), fd.name()->as_C_string());
       F f(fs.offset(), fs.index());
       fields_sorted.push(f);
       i++;
