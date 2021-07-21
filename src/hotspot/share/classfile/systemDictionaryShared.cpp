@@ -1654,7 +1654,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_archive_heap_region_mapped()) {
+  if (!HeapShared::open_regions_mapped()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {
