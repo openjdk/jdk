@@ -119,7 +119,7 @@ OopHandle HeapShared::_roots;
 #ifdef ASSERT
 bool HeapShared::is_archived_object_during_dumptime(oop p) {
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
-  assert(DumpSharedSpaces, "must be called during dump time only");
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   return Universe::heap()->is_archived_object(p);
 }
 #endif
