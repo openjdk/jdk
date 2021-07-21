@@ -69,17 +69,19 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
     element = (CHAR_ARRAY *)c_malloc(env, sizeof(CHAR_ARRAY));
     element->str = (const char **)c_malloc(env, nstr*sizeof(const char *));
     element->checkstr = (char **)c_malloc(env, nstr*sizeof(char *));
-    for (j = 0; j < nstr; j++)
+    for (j = 0; j < nstr; j++) {
       element->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
+    }
   }
   for (j = 0; j < DIGESTLENGTH; j++) {
     digest[j] = 0;
   }
   element->str[allocs] = env->GetStringUTFChars(jstr,0); CE
-  if (strlen(element->str[allocs]) != (size_t) env->GetStringUTFLength(jstr))
+  if (strlen(element->str[allocs]) != (size_t) env->GetStringUTFLength(jstr)) {
     printf("Length is wrong in string No. %d\n",allocs);
-  else
+  } else {
     strsize += strlen(element->str[allocs])+1;
+  }
   for (k = 0; k < strlen(element->str[allocs]); k++) {
     digest[k % DIGESTLENGTH] += element->str[allocs][k];
   }
@@ -87,8 +89,9 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   allocs++;
   if (allocs % printperiod == 0) {
     printf("Check string for thread %s is ", element->str[allocs-1]);
-    for (j = 0; j < DIGESTLENGTH; j++)
+    for (j = 0; j < DIGESTLENGTH; j++) {
       printf("%02x", digest[j]);
+    }
     printf("\n");
   }
   if (allocs == nstr) {
@@ -106,21 +109,22 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
         env->ReleaseStringUTFChars(jstr,element->str[j]); CE
         element->str[j] = NULL;
         element->checkstr[j] = NULL;
-      }
-      else {
+      } else {
         compared = 0;
         printf("The element No. %d has been corrupted %s vs %s\n", j,
                element->str[j], element->checkstr[j]);
         printf("Digest string  is %s [", element->str[j]);
-        for (i = 0; i < DIGESTLENGTH; i++)
+        for (i = 0; i < DIGESTLENGTH; i++) {
           printf("ch[%d] = %02x", i, digest[i]);
+        }
         printf("Digest end\n");
       }
     }
     allocs = 0;
     strsize = 0;
-    for (j = 0; j < nstr; j++)
+    for (j = 0; j < nstr; j++) {
       free(element->checkstr[j]);
+    }
     free(element->checkstr);
     free((void *)(element->str));
     free(element);
@@ -165,8 +169,9 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
     javachars->str = (const jchar **)c_malloc(env, nstr*sizeof(const jchar *));
     javachars->checkstr = (char **)c_malloc(env, nstr*sizeof(char *));
     javachars->size = (int *)c_malloc(env, nstr*sizeof(int));
-    for (j = 0; j < nstr; j++)
+    for (j = 0; j < nstr; j++) {
       javachars->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
+    }
   }
   for (j = 0; j < DIGESTLENGTH; j++) {
     digest[j] = 0;
@@ -187,8 +192,9 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   memcpy(javachars->checkstr[index++],digest,DIGESTLENGTH);
   if (index % printperiod == 0) {
     printf("Check string sum for thread %.*s is ", elem_len, elem);
-    for (j = 0; j < DIGESTLENGTH; j++)
+    for (j = 0; j < DIGESTLENGTH; j++) {
       printf("%02x", digest[j]);
+    }
     printf("\n");
   }
   free(elem);
@@ -213,8 +219,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
         javachars->str[j] = NULL;
         javachars->checkstr[j] = NULL;
         javachars->size[j] = 0;
-      }
-      else {
+      } else {
         equal = 0;
         printf("The Unicode element No. %d has been corrupted\n",j);
         for (i = 0; i < DIGESTLENGTH; i++) {
@@ -224,8 +229,9 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
     }
     index = 0;
     len = 0;
-    for (j = 0; j < nstr; j++)
+    for (j = 0; j < nstr; j++) {
       free(javachars->checkstr[j]);
+    }
     free(javachars->checkstr);
     free((void *)(javachars->str));
     free(javachars->size);

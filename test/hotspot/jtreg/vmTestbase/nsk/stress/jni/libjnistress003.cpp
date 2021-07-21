@@ -67,8 +67,9 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   arrayArray[FLOAT] = env->NewFloatArray(SIZE); CE
   arrayArray[DOUBLE] = env->NewDoubleArray(SIZE); CE
 
-  for (i = 0; i < 8; i++)
-    { env->SetObjectArrayElement(objectsArray,i,arrayArray[i]); CE }
+  for (i = 0; i < 8; i++) {
+    env->SetObjectArrayElement(objectsArray,i,arrayArray[i]); CE
+  }
 
   boolBuf = (jboolean *)c_malloc(env, SIZE*sizeof(jboolean));
   byteBuf = (jbyte *)c_malloc(env, SIZE*sizeof(jbyte));
@@ -80,8 +81,11 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   doubleBuf = (jdouble *)c_malloc(env, SIZE*sizeof(jdouble));
 
   for (i = 0; i < SIZE; i++) {
-    if (i%2 == 0) boolBuf[i] = JNI_TRUE;
-    else boolBuf[i] = JNI_FALSE;
+    if (i%2 == 0) {
+      boolBuf[i] = JNI_TRUE;
+    } else {
+      boolBuf[i] = JNI_FALSE;
+    }
     /*
       byteBuf[i] = (jbyte)random();
       charBuf[i] = (jchar)random();

@@ -53,12 +53,16 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
 
   env->MonitorEnter(jobj); CE
   if (!env->Throw(tobj)) {
-    if (env->ExceptionOccurred())
-      if (Exceptcalls % 1000 == 0)
+    if (env->ExceptionOccurred()) {
+      if (Exceptcalls % 1000 == 0) {
         fprintf(stderr, "NATIVE: Throw has been catched in native\n");
+      }
+    }
     env->ExceptionClear();
     ++Exceptcalls;
-  } else fprintf(stderr, "Throw failed\n");
+  } else {
+    fprintf(stderr, "Throw failed\n");
+  }
 
   env->MonitorExit(jobj); CE
 

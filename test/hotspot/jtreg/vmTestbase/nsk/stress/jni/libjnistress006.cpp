@@ -56,8 +56,7 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
   if (env->IsSameObject(tobj, globRefsArray[upper])) {
     env->DeleteLocalRef(tobj); CE
     clazz = env->GetObjectClass(globRefsArray[upper]); CE
-  }
-  else {
+  } else {
     fprintf(stderr,"Objects are different\n");
     env->MonitorExit(jobj); CE
     return res;
