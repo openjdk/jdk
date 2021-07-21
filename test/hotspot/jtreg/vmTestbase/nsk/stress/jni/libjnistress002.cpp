@@ -31,7 +31,7 @@ jobject NewObjectWrapper(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_list ap;
   jobject tmp;
 
-  va_start(ap,methodID);
+  va_start(ap, methodID);
   tmp = env->NewObjectV(clazz, methodID, ap);
   va_end(ap);
   return(tmp);
@@ -68,22 +68,22 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   paramArr[5].d = dbl;
 
   clazz = env->FindClass(classname); CE
-  obj = env->NewObjectArray((jsize)3,clazz,
+  obj = env->NewObjectArray((jsize)3, clazz,
                             env->AllocObject(clazz)); CE
 
-  methodID = env->GetMethodID(clazz,name,sig); CE
+  methodID = env->GetMethodID(clazz, name, sig); CE
 
-  element = env->NewObject(clazz,methodID,
+  element = env->NewObject(clazz, methodID,
                            jstr, intgr, lng, jChArr, flt, dbl); CE
-  env->SetObjectArrayElement(obj,0,element); CE
-  element = env->NewObjectA(clazz,methodID,paramArr); CE
-  env->SetObjectArrayElement(obj,1,element); CE
+  env->SetObjectArrayElement(obj, 0, element); CE
+  element = env->NewObjectA(clazz, methodID, paramArr); CE
+  env->SetObjectArrayElement(obj, 1, element); CE
   element= NewObjectWrapper(env, clazz, methodID,
                             jstr, intgr, lng, jChArr, flt, dbl); CE
-  env->SetObjectArrayElement(obj,2,element); CE
+  env->SetObjectArrayElement(obj, 2, element); CE
 
   clazzUp = env->FindClass(upperClassName); CE
-  fieldID = env->GetStaticFieldID(clazzUp,fieldName,fieldSig); CE
+  fieldID = env->GetStaticFieldID(clazzUp, fieldName, fieldSig); CE
   if (classCount == env->GetStaticIntField(clazzUp, fieldID)) {
     classname = "nsk/stress/jni/JNIter002";
     clazz = env->FindClass(classname); CE

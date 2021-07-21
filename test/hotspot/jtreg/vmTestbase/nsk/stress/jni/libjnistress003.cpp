@@ -56,7 +56,7 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   const char *classname = "java/lang/Object";
   jclass clazz = env->FindClass(classname); CE
   jobject obj = env->AllocObject(clazz); CE
-  objectsArray = env->NewObjectArray(8,clazz, obj); CE
+  objectsArray = env->NewObjectArray(8, clazz, obj); CE
 
   arrayArray = (jarray *)c_malloc(env, 8*sizeof(jarray));
   arrayArray[BOOL] = env->NewBooleanArray(SIZE); CE
@@ -69,7 +69,7 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   arrayArray[DOUBLE] = env->NewDoubleArray(SIZE); CE
 
   for (i = 0; i < 8; i++) {
-    env->SetObjectArrayElement(objectsArray,i,arrayArray[i]); CE
+    env->SetObjectArrayElement(objectsArray, i,arrayArray[i]); CE
   }
 
   boolBuf = (jboolean *)c_malloc(env, SIZE*sizeof(jboolean));
@@ -104,14 +104,14 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
     floatBuf[i] = (jfloat)235.4576284;
     doubleBuf[i] = (jdouble)98275.716253567;
   }
-  env->SetBooleanArrayRegion((jbooleanArray) arrayArray[BOOL],0,i,boolBuf); CE
-  env->SetByteArrayRegion((jbyteArray) arrayArray[BYTE],0,i,byteBuf); CE
-  env->SetCharArrayRegion((jcharArray) arrayArray[CHAR],0,i,charBuf); CE
-  env->SetShortArrayRegion((jshortArray) arrayArray[SHORT],0,i,shortBuf); CE
-  env->SetIntArrayRegion((jintArray) arrayArray[INT],0,i,intBuf); CE
-  env->SetLongArrayRegion((jlongArray) arrayArray[LONG],0,i,longBuf); CE
-  env->SetFloatArrayRegion((jfloatArray) arrayArray[FLOAT],0,i,floatBuf); CE
-  env->SetDoubleArrayRegion((jdoubleArray) arrayArray[DOUBLE],0,i,doubleBuf); CE
+  env->SetBooleanArrayRegion((jbooleanArray) arrayArray[BOOL], 0, i, boolBuf); CE
+  env->SetByteArrayRegion((jbyteArray) arrayArray[BYTE], 0, i, byteBuf); CE
+  env->SetCharArrayRegion((jcharArray) arrayArray[CHAR], 0, i, charBuf); CE
+  env->SetShortArrayRegion((jshortArray) arrayArray[SHORT], 0, i, shortBuf); CE
+  env->SetIntArrayRegion((jintArray) arrayArray[INT], 0, i, intBuf); CE
+  env->SetLongArrayRegion((jlongArray) arrayArray[LONG], 0, i, longBuf); CE
+  env->SetFloatArrayRegion((jfloatArray) arrayArray[FLOAT], 0, i, floatBuf); CE
+  env->SetDoubleArrayRegion((jdoubleArray) arrayArray[DOUBLE], 0, i, doubleBuf); CE
 
   free(doubleBuf);
   free(floatBuf);
@@ -146,7 +146,7 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   int i;
 
   if ((orig == NULL) || (clone == NULL)) {
-    fprintf(stderr,"JNI received a NULL array from Java\n");
+    fprintf(stderr, "JNI received a NULL array from Java\n");
     return JNI_FALSE;
   }
   if (count == limit) {
@@ -169,20 +169,20 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   arrayOrig = (jarray *)c_malloc(env, 8*sizeof(jarray));
   arrayClone = (jarray *)c_malloc(env, 8*sizeof(jarray));
   for (i = 0; i < 8; i++) {
-    arrayOrig[i] = (jarray) env->GetObjectArrayElement(orig,i); CE
-    arrayClone[i] = (jarray) env->GetObjectArrayElement(clone,i); CE
+    arrayOrig[i] = (jarray) env->GetObjectArrayElement(orig, i); CE
+    arrayClone[i] = (jarray) env->GetObjectArrayElement(clone, i); CE
   }
 
   /* Take the elements from Java arrays into native buffers */
   /* Use Get<Type>ArrayElements */
-  boolOrig = env->GetBooleanArrayElements((jbooleanArray) arrayOrig[BOOL],0); CE
-  byteOrig = env->GetByteArrayElements((jbyteArray) arrayOrig[BYTE],0); CE
-  charOrig = env->GetCharArrayElements((jcharArray) arrayOrig[CHAR],0); CE
-  shortOrig = env->GetShortArrayElements((jshortArray) arrayOrig[SHORT],0); CE
-  intOrig = env->GetIntArrayElements((jintArray) arrayOrig[INT],0); CE
-  longOrig = env->GetLongArrayElements((jlongArray) arrayOrig[LONG],0); CE
-  floatOrig = env->GetFloatArrayElements((jfloatArray) arrayOrig[FLOAT],0); CE
-  doubleOrig = env->GetDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE],0); CE
+  boolOrig = env->GetBooleanArrayElements((jbooleanArray) arrayOrig[BOOL], 0); CE
+  byteOrig = env->GetByteArrayElements((jbyteArray) arrayOrig[BYTE], 0); CE
+  charOrig = env->GetCharArrayElements((jcharArray) arrayOrig[CHAR], 0); CE
+  shortOrig = env->GetShortArrayElements((jshortArray) arrayOrig[SHORT], 0); CE
+  intOrig = env->GetIntArrayElements((jintArray) arrayOrig[INT], 0); CE
+  longOrig = env->GetLongArrayElements((jlongArray) arrayOrig[LONG], 0); CE
+  floatOrig = env->GetFloatArrayElements((jfloatArray) arrayOrig[FLOAT], 0); CE
+  doubleOrig = env->GetDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE], 0); CE
 
   /* Alloc some memory for cloned arrays buffers */
   boolClone = (jboolean *)c_malloc(env, SIZE(BOOL)*sizeof(jboolean));
@@ -196,61 +196,61 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
 
   /* Take the elements from cloned Java arrays into native buffers */
   /* Use Get<Type>ArrayRegion */
-  env->GetBooleanArrayRegion((jbooleanArray) arrayClone[BOOL],0,SIZE(BOOL),boolClone); CE
-  env->GetByteArrayRegion((jbyteArray) arrayClone[BYTE],0,SIZE(BYTE),byteClone); CE
-  env->GetCharArrayRegion((jcharArray) arrayClone[CHAR],0,SIZE(CHAR),charClone); CE
-  env->GetShortArrayRegion((jshortArray) arrayClone[SHORT],0,SIZE(SHORT),shortClone); CE
-  env->GetIntArrayRegion((jintArray) arrayClone[INT],0,SIZE(INT),intClone); CE
-  env->GetLongArrayRegion((jlongArray) arrayClone[LONG],0,SIZE(LONG),longClone); CE
-  env->GetFloatArrayRegion((jfloatArray) arrayClone[FLOAT],0,SIZE(FLOAT),floatClone); CE
-  env->GetDoubleArrayRegion((jdoubleArray) arrayClone[DOUBLE],0,SIZE(DOUBLE),doubleClone); CE
+  env->GetBooleanArrayRegion((jbooleanArray) arrayClone[BOOL], 0, SIZE(BOOL), boolClone); CE
+  env->GetByteArrayRegion((jbyteArray) arrayClone[BYTE], 0, SIZE(BYTE), byteClone); CE
+  env->GetCharArrayRegion((jcharArray) arrayClone[CHAR], 0, SIZE(CHAR), charClone); CE
+  env->GetShortArrayRegion((jshortArray) arrayClone[SHORT], 0, SIZE(SHORT), shortClone); CE
+  env->GetIntArrayRegion((jintArray) arrayClone[INT], 0, SIZE(INT), intClone); CE
+  env->GetLongArrayRegion((jlongArray) arrayClone[LONG], 0, SIZE(LONG), longClone); CE
+  env->GetFloatArrayRegion((jfloatArray) arrayClone[FLOAT], 0, SIZE(FLOAT), floatClone); CE
+  env->GetDoubleArrayRegion((jdoubleArray) arrayClone[DOUBLE], 0, SIZE(DOUBLE), doubleClone); CE
 
   /* In this code section I should make some changes for elements into both */
   /* (original and cloned) arrays and than copied new values back to Java */
 
   /*
     Can't change the pointer into the Java structure.  It's illegal JNI.
-    SWAP(boolOrig,boolClone)
-    SWAP(byteOrig,byteClone)
-    SWAP(charOrig,charClone)
-    SWAP(shortOrig,shortClone)
-    SWAP(intOrig,intClone)
-    SWAP(longOrig,longClone)
-    SWAP(floatOrig,floatClone)
-    SWAP(doubleOrig,doubleClone)
+    SWAP(boolOrig, boolClone)
+    SWAP(byteOrig, byteClone)
+    SWAP(charOrig, charClone)
+    SWAP(shortOrig, shortClone)
+    SWAP(intOrig, intClone)
+    SWAP(longOrig, longClone)
+    SWAP(floatOrig, floatClone)
+    SWAP(doubleOrig, doubleClone)
   */
 
   /* Coping new values of elements back to Java and releasing native buffers */
   /* Use Set<Type>ArrayRegion */
   /*
     Use Orig pointers to get the original effect of the test.
-    env->SetBooleanArrayRegion(arrayClone[BOOL],0,SIZE(BOOL),boolClone);
-    env->SetByteArrayRegion(arrayClone[BYTE],0,SIZE(BYTE),byteClone);
-    env->SetCharArrayRegion(arrayClone[CHAR],0,SIZE(CHAR),charClone);
-    env->SetShortArrayRegion(arrayClone[SHORT],0,SIZE(SHORT),shortClone);
-    env->SetIntArrayRegion(arrayClone[INT],0,SIZE(INT),intClone);
-    env->SetLongArrayRegion(arrayClone[LONG],0,SIZE(LONG),longClone);
-    env->SetFloatArrayRegion(arrayClone[FLOAT],0,SIZE(FLOAT),floatClone);
-    env->SetDoubleArrayRegion(arrayClone[DOUBLE],0,SIZE(DOUBLE),doubleClone);
+    env->SetBooleanArrayRegion(arrayClone[BOOL], 0,SIZE(BOOL), boolClone);
+    env->SetByteArrayRegion(arrayClone[BYTE], 0,SIZE(BYTE), byteClone);
+    env->SetCharArrayRegion(arrayClone[CHAR], 0,SIZE(CHAR), charClone);
+    env->SetShortArrayRegion(arrayClone[SHORT], 0,SIZE(SHORT), shortClone);
+    env->SetIntArrayRegion(arrayClone[INT], 0,SIZE(INT), intClone);
+    env->SetLongArrayRegion(arrayClone[LONG], 0,SIZE(LONG), longClone);
+    env->SetFloatArrayRegion(arrayClone[FLOAT], 0,SIZE(FLOAT), floatClone);
+    env->SetDoubleArrayRegion(arrayClone[DOUBLE], 0,SIZE(DOUBLE), doubleClone);
   */
-  env->SetBooleanArrayRegion((jbooleanArray) arrayClone[BOOL],0,SIZE(BOOL),boolOrig); CE
-  env->SetByteArrayRegion((jbyteArray) arrayClone[BYTE],0,SIZE(BYTE),byteOrig); CE
-  env->SetCharArrayRegion((jcharArray) arrayClone[CHAR],0,SIZE(CHAR),charOrig); CE
-  env->SetShortArrayRegion((jshortArray) arrayClone[SHORT],0,SIZE(SHORT),shortOrig); CE
-  env->SetIntArrayRegion((jintArray) arrayClone[INT],0,SIZE(INT),intOrig); CE
-  env->SetLongArrayRegion((jlongArray) arrayClone[LONG],0,SIZE(LONG),longOrig); CE
-  env->SetFloatArrayRegion((jfloatArray) arrayClone[FLOAT],0,SIZE(FLOAT),floatOrig); CE
-  env->SetDoubleArrayRegion((jdoubleArray) arrayClone[DOUBLE],0,SIZE(DOUBLE),doubleOrig); CE
+  env->SetBooleanArrayRegion((jbooleanArray) arrayClone[BOOL], 0, SIZE(BOOL), boolOrig); CE
+  env->SetByteArrayRegion((jbyteArray) arrayClone[BYTE], 0, SIZE(BYTE), byteOrig); CE
+  env->SetCharArrayRegion((jcharArray) arrayClone[CHAR], 0, SIZE(CHAR), charOrig); CE
+  env->SetShortArrayRegion((jshortArray) arrayClone[SHORT], 0, SIZE(SHORT), shortOrig); CE
+  env->SetIntArrayRegion((jintArray) arrayClone[INT], 0, SIZE(INT), intOrig); CE
+  env->SetLongArrayRegion((jlongArray) arrayClone[LONG], 0, SIZE(LONG), longOrig); CE
+  env->SetFloatArrayRegion((jfloatArray) arrayClone[FLOAT], 0, SIZE(FLOAT), floatOrig); CE
+  env->SetDoubleArrayRegion((jdoubleArray) arrayClone[DOUBLE], 0, SIZE(DOUBLE), doubleOrig); CE
 
   /* Use Release<Type>ArrayElements */
-  env->ReleaseDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE],doubleOrig,0); CE
-  env->ReleaseFloatArrayElements((jfloatArray) arrayOrig[FLOAT],floatOrig,0); CE
-  env->ReleaseLongArrayElements((jlongArray) arrayOrig[LONG],longOrig,0); CE
-  env->ReleaseIntArrayElements((jintArray) arrayOrig[INT],intOrig,0); CE
-  env->ReleaseShortArrayElements((jshortArray) arrayOrig[SHORT],shortOrig,0); CE
-  env->ReleaseCharArrayElements((jcharArray) arrayOrig[CHAR],charOrig,0); CE
-  env->ReleaseByteArrayElements((jbyteArray) arrayOrig[BYTE],byteOrig,0); CE
-  env->ReleaseBooleanArrayElements((jbooleanArray) arrayOrig[BOOL],boolOrig,0); CE
+  env->ReleaseDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE], doubleOrig, 0); CE
+  env->ReleaseFloatArrayElements((jfloatArray) arrayOrig[FLOAT], floatOrig, 0); CE
+  env->ReleaseLongArrayElements((jlongArray) arrayOrig[LONG], longOrig, 0); CE
+  env->ReleaseIntArrayElements((jintArray) arrayOrig[INT], intOrig, 0); CE
+  env->ReleaseShortArrayElements((jshortArray) arrayOrig[SHORT], shortOrig, 0); CE
+  env->ReleaseCharArrayElements((jcharArray) arrayOrig[CHAR], charOrig, 0); CE
+  env->ReleaseByteArrayElements((jbyteArray) arrayOrig[BYTE], byteOrig, 0); CE
+  env->ReleaseBooleanArrayElements((jbooleanArray) arrayOrig[BOOL], boolOrig, 0); CE
   free(arrayOrig);
 
   free(doubleClone);

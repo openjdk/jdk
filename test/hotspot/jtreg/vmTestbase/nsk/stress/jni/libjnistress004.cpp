@@ -57,15 +57,15 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
   for (i = 0; i < len; i++) {
     str[i] = (char) critstr[i];
   }
-  env->ReleaseStringCritical(jstr,critstr); CE
+  env->ReleaseStringCritical(jstr, critstr); CE
   for (i = 0; i < len; i++) {
     digest[i % DIGESTLENGTH]+=str[i];
   }
   free(str);
-  memcpy(tmp,digest,DIGESTLENGTH);
+  memcpy(tmp, digest, DIGESTLENGTH);
   jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); CE
   len = env->GetArrayLength(jArr); CE
-  env->SetCharArrayRegion(jArr,0,len,tmp); CE
+  env->SetCharArrayRegion(jArr, 0, len, tmp); CE
   /*     ++upper; */
   CHECK(env->MonitorExit(jobj));
   return jArr;
@@ -105,39 +105,39 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
   for (i = 0; i < strlen; i++) {
     str[i] = (char) critstr[i];
   }
-  env->ReleaseStringCritical(jstr,critstr); CE
+  env->ReleaseStringCritical(jstr, critstr); CE
   for (i = 0; i < strlen; i++) {
     digest[i % DIGESTLENGTH]+=str[i % DIGESTLENGTH];
   }
   free(str);
-  memcpy(tmp,digest,DIGESTLENGTH);
+  memcpy(tmp, digest, DIGESTLENGTH);
 
   /*     jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); */
   /*     len = env->GetArrayLength(jArr); */
-  /*     env->SetCharArrayRegion(jArr,0,len,tmp); */
+  /*     env->SetCharArrayRegion(jArr, 0, len, tmp); */
   /*     ++upper; */
   /*     env->MonitorExit(jobj); */
 
   /* Compare  */
   /*     env->MonitorEnter(jobj); */
 
-  ch = (jchar *)env->GetPrimitiveArrayCritical(cArr,0); CE
+  ch = (jchar *)env->GetPrimitiveArrayCritical(cArr, 0); CE
 
   printf("Comparing: ");
   for (i = 0; i < len; i++) {
     if (ch[i] != tmp[i]) {
-      printf("Error in %d\n",i);
-      printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
+      printf("Error in %d\n", i);
+      printf("ch[%d] = %02x tmp[%d] = %02x\n", i, ch[i], i, tmp[i]);
       ret = JNI_FALSE;
     } else {
-      printf("ch[%d] = %02x tmp[%d] = %02x\n",i,ch[i],i,tmp[i]);
+      printf("ch[%d] = %02x tmp[%d] = %02x\n", i, ch[i], i, tmp[i]);
     }
   }
   printf("\n");
-  env->ReleasePrimitiveArrayCritical(cArr,ch,0); CE
+  env->ReleasePrimitiveArrayCritical(cArr, ch, 0); CE
   ++upper;
   if (!(upper % 500)) {
-    fprintf(stderr,"There are %d elements now.\n", upper);
+    fprintf(stderr, "There are %d elements now.\n", upper);
   }
   if (upper == limit) {
     jclass clazz;

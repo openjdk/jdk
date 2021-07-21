@@ -59,7 +59,7 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
     env->DeleteLocalRef(tobj); CE
     clazz = env->GetObjectClass(globRefsArray[upper]); CE
   } else {
-    fprintf(stderr,"Objects are different\n");
+    fprintf(stderr, "Objects are different\n");
     CHECK(env->MonitorExit(jobj));
     return res;
   }
@@ -72,7 +72,7 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
   /* If upper == LIMIT than flush ref's array and set */
   /* 'done' flag in JNIter006 class to JNI_TRUE */
   if (upper == LIMIT) {
-    fprintf(stderr,"\n\tTotal memory allocated: %zd bytes\n",
+    fprintf(stderr, "\n\tTotal memory allocated: %zd bytes\n",
             LIMIT*sizeof(jobject));
     clazz = env->FindClass(classname); CE
     jmethod = env->GetMethodID(clazz, setdone, setdonesig); CE
