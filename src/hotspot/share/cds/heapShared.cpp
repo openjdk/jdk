@@ -116,6 +116,14 @@ GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
 narrowOop HeapShared::_roots_narrow;
 OopHandle HeapShared::_roots;
 
+#ifdef ASSERT
+bool HeapShared::is_archived_object_during_dumptime(oop p) {
+  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
+  assert(DumpSharedSpaces, "must be called during dump time only");
+  return Universe::heap()->is_archived_object(p);
+}
+#endif
+
 ////////////////////////////////////////////////////////////////
 //
 // Java heap object archiving support
@@ -873,7 +881,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
   template <class T> void do_oop_work(T *p) {
     oop obj = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(obj)) {
-      assert(!HeapShared::is_archived_object(obj),
+      assert(!HeapShared::is_archived_object_during_dumptime(obj),
              "original objects must not point to archived objects");
 
       size_t field_delta = pointer_delta(p, _orig_referencing_obj, sizeof(char));
@@ -892,7 +900,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
       oop archived = HeapShared::archive_reachable_objects_from(
           _level + 1, _subgraph_info, obj, _is_closed_archive);
       assert(archived != NULL, "VM should have exited with unarchivable objects for _level > 1");
-      assert(HeapShared::is_archived_object(archived), "must be");
+      assert(HeapShared::is_archived_object_during_dumptime(archived), "must be");
 
       if (!_record_klasses_only) {
         // Update the reference in the archived copy of the referencing object.
@@ -948,7 +956,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
                                                oop orig_obj,
                                                bool is_closed_archive) {
   assert(orig_obj != NULL, "must be");
-  assert(!is_archived_object(orig_obj), "sanity");
+  assert(!is_archived_object_during_dumptime(orig_obj), "sanity");
 
   if (!JavaClasses::is_supported_for_archiving(orig_obj)) {
     // This object has injected fields that cannot be supported easily, so we disallow them for now.
@@ -1166,10 +1174,10 @@ void HeapShared::verify_reachable_objects_from(oop obj, bool is_archived) {
     set_has_been_seen_during_subgraph_recording(obj);
 
     if (is_archived) {
-      assert(is_archived_object(obj), "must be");
+      assert(is_archived_object_during_dumptime(obj), "must be");
       assert(find_archived_heap_object(obj) == NULL, "must be");
     } else {
-      assert(!is_archived_object(obj), "must be");
+      assert(!is_archived_object_during_dumptime(obj), "must be");
       assert(find_archived_heap_object(obj) != NULL, "must be");
     }
 
