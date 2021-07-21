@@ -122,16 +122,22 @@ G1ServiceTask* G1ServiceThread::wait_for_task() {
 }
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
-  double start = os::elapsedTime();
+  jlong start = os::elapsed_counter();
   double vstart = os::elapsedVTime();
 
-  log_debug(gc, task, start)("G1 Service Thread (%s) (run)", task->name());
+  assert(task->time() <= start,
+         "task run early: " JLONG_FORMAT " > " JLONG_FORMAT,
+         task->time(), start);
+  log_debug(gc, task, start)("G1 Service Thread (%s) (run %1.3fms after schedule)",
+                             task->name(),
+                             TimeHelper::counter_to_millis(start - task->time()));
+
   task->execute();
 
-  double duration = os::elapsedTime() - start;
-  double vduration = os::elapsedVTime() - vstart;
-  log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms (cpu: %1.3fms)",
-                      task->name(), duration * MILLIUNITS, vduration * MILLIUNITS);
+  log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
+                      task->name(),
+                      TimeHelper::counter_to_millis(os::elapsed_counter() - start),
+                      (os::elapsedVTime() - vstart) * MILLIUNITS);
 }
 
 void G1ServiceThread::run_service() {
