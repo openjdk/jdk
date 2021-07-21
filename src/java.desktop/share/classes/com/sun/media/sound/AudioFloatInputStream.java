@@ -82,7 +82,7 @@ public abstract class AudioFloatInputStream {
         public int read(float[] b, int off, int len) throws IOException {
             if (b == null)
                 throw new NullPointerException();
-            Objects.checkFromIndexSize(len, off, b.length);
+            Objects.checkFromIndexSize(off, len, b.length);
             if (pos >= buffer_len)
                 return -1;
             if (len == 0)
