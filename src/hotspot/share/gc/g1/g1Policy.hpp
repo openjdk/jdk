@@ -373,13 +373,14 @@ public:
   // progress or not is stable.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
-  // This is called at the very beginning of an evacuation pause (it
-  // has to be the first thing that the pause does). If
-  // initiate_conc_mark_if_possible() is true, and the concurrent
-  // marking thread has completed its work during the previous cycle,
-  // it will set in_concurrent_start_gc() to so that the pause does
-  // the concurrent start work and start a marking cycle.
-  void decide_on_conc_mark_initiation();
+  // Decide whether this garbage collection pause should be a concurrent start
+  // pause. This must be called at the very beginning of an evacuation pause.
+  // If initiate_conc_mark_if_possible() is true, and the concurrent
+  // marking thread has completed its work for the previous cycle, and we are
+  // not shutting down the VM this method will return that this should be a
+  // concurrent start pause.
+  // It also updates the collector state accordingly.
+  bool decide_on_concurrent_start_pause();
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 

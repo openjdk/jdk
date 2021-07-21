@@ -74,7 +74,7 @@ void VM_G1TryInitiateConcMark::doit() {
   GCCauseSetter x(g1h, _gc_cause);
 
   // Record for handling by caller.
-  _terminating = g1h->_cm_thread->should_terminate();
+  _terminating = g1h->concurrent_mark_is_terminating();
 
   if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
     // When terminating, the request to initiate a concurrent cycle will be
