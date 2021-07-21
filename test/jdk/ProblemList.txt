@@ -553,6 +553,7 @@ java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc6
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
+java/lang/invoke/RicochetTest.java                              8251969 generic-all
 
 ############################################################################
 
