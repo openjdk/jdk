@@ -39,6 +39,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -122,7 +123,7 @@ public class HttpsServerTest {
             assertEquals(response.body(), "hello world");
             assertEquals(response.headers().firstValue("content-length").get(),
                     Integer.toString("hello world".length()));
-            assertEquals(response.statusCode(), f.responseCode.get());
+            assertEquals(response.statusCode(), f.responseCode.get().intValue());
         } finally {
             s.stop(0);
         }
@@ -157,12 +158,12 @@ public class HttpsServerTest {
      * A test post-processing filter that captures the response code
      */
     static class Filter extends com.sun.net.httpserver.Filter {
-        final AtomicInteger responseCode = new AtomicInteger();
+        final CompletableFuture<Integer> responseCode = new CompletableFuture<>();
 
         @Override
         public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
             chain.doFilter(exchange);
-            responseCode.set(exchange.getResponseCode());
+            responseCode.complete(exchange.getResponseCode());
         }
 
         @Override
