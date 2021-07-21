@@ -87,8 +87,11 @@ class G1ServiceTaskQueue {
   void verify_task_queue() NOT_DEBUG_RETURN;
 public:
   G1ServiceTaskQueue();
-  G1ServiceTask* pop();
-  G1ServiceTask* peek();
+
+  // precondition: !is_empty().
+  G1ServiceTask* front();
+  // precondition: !is_empty().
+  void remove_front();
   void add_ordered(G1ServiceTask* task);
   bool is_empty();
 };

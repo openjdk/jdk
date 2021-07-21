@@ -100,13 +100,11 @@ G1ServiceTask* G1ServiceThread::wait_for_task() {
       log_trace(gc, task)("G1 Service Thread (wait for new tasks)");
       ml.wait();
     } else {
-      G1ServiceTask* task = _task_queue.peek();
-      assert(task != nullptr, "invariant");
+      G1ServiceTask* task = _task_queue.front();
       jlong scheduled = task->time();
       jlong now = os::elapsed_counter();
       if (scheduled <= now) {
-        G1ServiceTask* check = _task_queue.pop();
-        assert(check == task, "invariant");
+        _task_queue.remove_front();
         return task;
       } else {
         // Round up to try not to wake up early, and to avoid round down to
@@ -199,17 +197,15 @@ G1ServiceTask* G1ServiceTask::next() {
 
 G1ServiceTaskQueue::G1ServiceTaskQueue() : _sentinel() { }
 
-G1ServiceTask* G1ServiceTaskQueue::pop() {
+void G1ServiceTaskQueue::remove_front() {
   verify_task_queue();
 
   G1ServiceTask* task = _sentinel.next();
   _sentinel.set_next(task->next());
   task->set_next(NULL);
-
-  return task;
 }
 
-G1ServiceTask* G1ServiceTaskQueue::peek() {
+G1ServiceTask* G1ServiceTaskQueue::front() {
   verify_task_queue();
   return _sentinel.next();
 }
