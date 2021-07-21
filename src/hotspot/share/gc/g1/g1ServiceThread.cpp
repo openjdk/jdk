@@ -141,12 +141,12 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 }
 
 void G1ServiceThread::run_service() {
-  while (!should_terminate()) {
+  while (true) {
     G1ServiceTask* task = wait_for_task();
-    if (task != nullptr) {
-      run_task(task);
-    }
+    if (task == nullptr) break;
+    run_task(task);
   }
+  assert(should_terminate(), "invariant");
   log_debug(gc, task)("G1 Service Thread (stopping)");
 }
 
