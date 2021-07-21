@@ -37,6 +37,9 @@
  * @run testng/othervm
  *      -Dcom.sun.net.httpserver.HttpServerProvider=HttpServerProviderTest$ProviderT
  *      HttpServerProviderTest
+ * @run testng/othervm
+ *      -Dcom.sun.net.httpserver.HttpServerProvider=DoesNotExist
+ *      HttpServerProviderTest
  */
 
 import java.lang.reflect.InvocationTargetException;
@@ -61,7 +64,7 @@ public class HttpServerProviderTest {
             case "HttpServerProviderTest$ProviderPNPC" -> testPublicNonPublicConstructor();
             case "HttpServerProviderTest$ProviderNP" -> testNonPublic();
             case "HttpServerProviderTest$ProviderT" -> testThrowingConstructor();
-            default -> throw new AssertionError("unexpected test case");
+            default -> testBadData();
         }
     }
 
@@ -102,11 +105,20 @@ public class HttpServerProviderTest {
         assertEquals(e.getCause().getCause().getMessage(), "throwing constructor");
     }
 
+    private void testBadData() {
+        var cn = "DoesNotExist";
+        assertEquals(System.getProperty(PROPERTY_KEY), cn);
+
+        var e = expectThrows(ServiceConfigurationError.class, HttpServerProvider::provider);
+        assertEquals(e.getClass(), ServiceConfigurationError.class);
+        assertEquals(e.getCause().getClass(), ClassNotFoundException.class);
+    }
+
     /**
      * Test provider that is public (P)
      */
     public static class ProviderP extends HttpServerProvider {
-        // public default constructor
+        public ProviderP() { super(); }
         @Override
         public HttpServer createHttpServer(InetSocketAddress addr, int backlog) { return null; }
         @Override
@@ -117,7 +129,7 @@ public class HttpServerProviderTest {
      * Test provider that is public with a non-public constructor (PNPC)
      */
     public static class ProviderPNPC extends HttpServerProvider {
-        ProviderPNPC() { super(); }
+        /*package-private*/ ProviderPNPC() { super(); }
         @Override
         public HttpServer createHttpServer(InetSocketAddress addr, int backlog) { return null; }
         @Override
@@ -127,8 +139,8 @@ public class HttpServerProviderTest {
     /**
      * Test provider that is not public (NP)
      */
-    static class ProviderNP extends HttpServerProvider {
-        // package-private default constructor
+    /*package-private*/ static class ProviderNP extends HttpServerProvider {
+        /*package-private*/ ProviderNP() { super(); }
         @Override
         public HttpServer createHttpServer(InetSocketAddress addr, int backlog) { return null; }
         @Override
