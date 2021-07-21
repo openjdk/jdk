@@ -24,10 +24,9 @@
 #include <jni.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "jnihelper.h"
 
 extern "C" {
-
-#define CHECK_EXCEPTION     { if (env->ExceptionOccurred()) { fprintf(stderr, "Unexpected exception:\n"); env->ExceptionDescribe(); env->ExceptionClear(); exit(97); } }
 
 JNIEXPORT void JNICALL
 Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj) {
@@ -52,8 +51,7 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
   /*     printf("JNI: Count is %d\n", env->GetIntField(jobj, jfld)); */
   /*     CHECK_EXCEPTION */
 
-  env->MonitorEnter(jobj);
-  CHECK_EXCEPTION
+  env->MonitorEnter(jobj); CE
   if (!env->Throw(tobj)) {
     if (env->ExceptionOccurred())
       if (Exceptcalls % 1000 == 0)
@@ -62,8 +60,7 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
     ++Exceptcalls;
   } else fprintf(stderr, "Throw failed\n");
 
-  env->MonitorExit(jobj);
-  CHECK_EXCEPTION
+  env->MonitorExit(jobj); CE
 
   switch (Exceptcalls % 23) {
   case 0: name = "java/lang/ArithmeticException"; break;
@@ -93,21 +90,16 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
   }
   mess = name;
 
-  CHECK_EXCEPTION
-  clazz = env->FindClass(name);
-  CHECK_EXCEPTION
+  clazz = env->FindClass(name); CE
   if (env->ThrowNew(clazz, mess)) {
     const char *pass = "setpass";
     const char *passSig = "(Z)V";
     jclass incClazz;
     fprintf(stderr, "ThrowNew failed\n");
-    CHECK_EXCEPTION;
-    incClazz = env->FindClass(iter);
-    CHECK_EXCEPTION;
-    jmethod = env->GetStaticMethodID(incClazz, pass, passSig);
-    CHECK_EXCEPTION
-    env->CallStaticVoidMethod(incClazz, jmethod, JNI_FALSE);
-    CHECK_EXCEPTION
+    CE;
+    incClazz = env->FindClass(iter); CE;
+    jmethod = env->GetStaticMethodID(incClazz, pass, passSig); CE
+    env->CallStaticVoidMethod(incClazz, jmethod, JNI_FALSE); CE
   }
   /*     printf("JNI: count %d\n", Exceptcalls); */
 }
