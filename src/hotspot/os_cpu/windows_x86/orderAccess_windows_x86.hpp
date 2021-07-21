@@ -28,7 +28,6 @@
 // Included in orderAccess.hpp header file.
 
 #include <intrin.h>
-#include <immintrin.h>
 
 // Compiler version last used for testing: Microsoft Visual Studio 2010
 // Please update this information when this file changes
