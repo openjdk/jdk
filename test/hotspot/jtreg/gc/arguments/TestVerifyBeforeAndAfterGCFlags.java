@@ -30,7 +30,6 @@ package gc.arguments;
          combinations of -XX:{+|-}Verify{After|Before}GC flags and checks that
          output contain or doesn't contain expected patterns
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
-
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @library /test/lib
@@ -91,7 +90,7 @@ public class TestVerifyBeforeAndAfterGCFlags {
         Collections.addAll(vmOpts, new String[] {
                                        "-Xbootclasspath/a:.",
                                        "-XX:+UnlockDiagnosticVMOptions",
-                                      "-XX:+WhiteBoxAPI",
+                                       "-XX:+WhiteBoxAPI",
                                        "-Xlog:gc+verify=debug",
                                        "-Xmx5m",
                                        "-Xms5m",
