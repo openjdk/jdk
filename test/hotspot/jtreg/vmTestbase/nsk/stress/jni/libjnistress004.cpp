@@ -46,11 +46,11 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
   for (i = 0; i < DIGESTLENGTH; i++) {
     digest[i] = 0;
   }
-  str = (char *)malloc(len*sizeof(char));
+  str = (char *)c_malloc(env, len*sizeof(char));
   /*     const char *threadName = env->GetStringUTFChars(jstr, 0); */
 
   env->MonitorEnter(jobj); CE
-  if (upper == 0) tmp = (jchar *) malloc(DIGESTLENGTH*sizeof(char));
+  if (upper == 0) tmp = (jchar *) c_malloc(env, DIGESTLENGTH*sizeof(char));
   if (env->ExceptionOccurred()) {
     env->ExceptionDescribe();
     env->ExceptionClear();
@@ -97,7 +97,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     digest[i] = 0;
   }
   strlen =  env->GetStringUTFLength(jstr); CE
-  str = (char *)malloc(strlen*sizeof(char));
+  str = (char *)c_malloc(env, strlen*sizeof(char));
 
   len =env->GetArrayLength(cArr); CE
 
@@ -106,7 +106,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     env->MonitorExit(jobj); CE
     return JNI_FALSE;
   }
-  tmp = (jchar *)malloc(DIGESTLENGTH*sizeof(char));
+  tmp = (jchar *)c_malloc(env, DIGESTLENGTH*sizeof(char));
   if (env->ExceptionOccurred()) {
     env->ExceptionDescribe();
     env->ExceptionClear();
