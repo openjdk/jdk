@@ -36,12 +36,12 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
 
     jclass clazz;
     jmethodID jmethod;
-    jboolean res=JNI_FALSE;
+    jboolean res = JNI_FALSE;
     const char *classname = "nsk/stress/jni/JNIter006";
-    const char *getmethodname="get_i";
-    const char *setmethodname="set_i";
-    const char *getsig="()I";
-    const char *setsig="(I)V";
+    const char *getmethodname = "get_i";
+    const char *setmethodname = "set_i";
+    const char *getsig = "()I";
+    const char *setsig = "(I)V";
     const char *setdone = "halt";
     const char *setdonesig = "()V";
     int i = 0;
@@ -49,35 +49,35 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
     if (upper >= LIMIT) return JNI_TRUE;
 
     if (upper == 0) {
-        globRefsArray=(jobject*)(malloc(LIMIT*sizeof(jobject)));
+        globRefsArray = (jobject*)(malloc(LIMIT*sizeof(jobject)));
     }
 
-    globRefsArray[upper]=env->NewGlobalRef(tobj); CE
+    globRefsArray[upper] = env->NewGlobalRef(tobj); CE
     if (env->IsSameObject(tobj, globRefsArray[upper])) {
     env->DeleteLocalRef(tobj); CE
-    clazz=env->GetObjectClass(globRefsArray[upper]); CE
+    clazz = env->GetObjectClass(globRefsArray[upper]); CE
     }
     else {
     fprintf(stderr,"Objects are different\n");
     env->MonitorExit(jobj); CE
     return res;
     }
-    jmethod=env->GetStaticMethodID(clazz, setmethodname, setsig); CE
+    jmethod = env->GetStaticMethodID(clazz, setmethodname, setsig); CE
     env->CallStaticVoidMethod(clazz, jmethod, (jint)upper); CE
     env->MonitorEnter(jobj); CE
     ++upper;
-    res=JNI_TRUE;
+    res = JNI_TRUE;
     env->MonitorExit(jobj); CE
 /* If upper == LIMIT than flush ref's array and set */
 /* 'done' flag in JNIter006 class to JNI_TRUE */
     if (upper == LIMIT) {
     fprintf(stderr,"\n\tTotal memory allocated: %zd bytes\n",
         LIMIT*sizeof(jobject));
-    clazz=env->FindClass(classname); CE
-    jmethod=env->GetMethodID(clazz, setdone, setdonesig); CE
+    clazz = env->FindClass(classname); CE
+    jmethod = env->GetMethodID(clazz, setdone, setdonesig); CE
     env->CallVoidMethod(jobj, jmethod); CE
 
-    for (i=0;i<LIMIT;i++) {
+    for (i = 0; i < LIMIT; i++) {
         env->DeleteGlobalRef(globRefsArray[i]); CE
     }
         free(globRefsArray);
