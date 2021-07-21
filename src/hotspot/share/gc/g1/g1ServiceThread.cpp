@@ -110,9 +110,10 @@ G1ServiceTask* G1ServiceThread::wait_for_task() {
         // Round up to try not to wake up early, and to avoid round down to
         // zero (which has special meaning of wait forever) by conversion.
         double delay = ceil(TimeHelper::counter_to_millis(scheduled - now));
-        assert(delay > 0.0, "invariant");
         log_trace(gc, task)("G1 Service Thread (wait %1.3fs)", (delay / 1000.0));
-        ml.wait(static_cast<int64_t>(delay));
+        int64_t delay_ms = static_cast<int64_t>(delay);
+        assert(delay_ms > 0, "invariant");
+        ml.wait(delay_ms);
       }
     }
   }
