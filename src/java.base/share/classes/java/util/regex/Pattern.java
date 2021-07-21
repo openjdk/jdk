@@ -830,7 +830,6 @@ public final class Pattern
      *
      * <p> Comments mode can also be enabled via the embedded flag
      * expression&nbsp;{@code (?x)}.
-     *
      */
     public static final int COMMENTS = 0x04;
 
