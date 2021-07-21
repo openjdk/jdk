@@ -40,8 +40,6 @@ public class HeapMonitorStatObjectCorrectnessTest {
   private static final int maxIteration = 200000;
   private static BigObject obj;
 
-  private native static boolean statsHaveExpectedNumberSamples(int expected, int percentError);
-
   private static void allocate() {
     emptyStorage();
 
