@@ -76,18 +76,16 @@ LOG_TRACE(tstrings::any() << "looking in " << place);
         tstring_array::const_iterator it_candidate = candidates.begin();
         for(; it_candidate != candidates.end(); ++it_candidate) {
             tstring path = *it_candidate;
-LOG_TRACE(tstrings::any() << "looking at " << path);
             ReleaseFile candidate = ReleaseFile::load(path);
             if (candidate.satisfies(required, versionSpec)) {
                 tstring version = candidate.getVersion();
-LOG_TRACE(tstrings::any() << "satisfied with: " << bestPath <<
-        " - version: " << bestVersion);
+LOG_TRACE(tstrings::any() << "satisfied with: " << path <<
+        " , version: " << version);
                 if (candidate.greaterThan(version, bestVersion)) {
                     bestPath = FileUtils::dirname(path);
                     bestVersion = version;
+LOG_TRACE(tstrings::any() << "best: " << version << " at: " << bestPath);
                 }
-            } else {
-                LOG_TRACE(tstrings::any() << "not satisfing: " << path);
             }
         }
     }

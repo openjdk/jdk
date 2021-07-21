@@ -66,6 +66,8 @@ import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import static jdk.jpackage.internal.StandardBundlerParam.SPLIT_RUNTIME;
+import static jdk.jpackage.internal.StandardBundlerParam.RUNTIME_ROOT;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -343,6 +345,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private void copyRuntimeFiles(Map<String, ? super Object> params)
             throws IOException {
+        Path runtimeTarget = runtimeRoot;
+        if (SPLIT_RUNTIME.fetchFrom(params).getName() != null) {
+            runtimeTarget = RUNTIME_ROOT.fetchFrom(params);
+        }
+
         // Generate Info.plist
         writeInfoPlist(contentsDir.resolve("Info.plist"), params);
 
@@ -355,7 +362,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 runtimeDir.resolve("Contents/MacOS"));
 
         final Path jliName = Path.of("libjli.dylib");
-        try (Stream<Path> walk = Files.walk(runtimeRoot.resolve("lib"))) {
+        try (Stream<Path> walk = Files.walk(runtimeTarget.resolve("lib"))) {
             final Path jli = walk
                     .filter(file -> file.getFileName().equals(jliName))
                     .findFirst()

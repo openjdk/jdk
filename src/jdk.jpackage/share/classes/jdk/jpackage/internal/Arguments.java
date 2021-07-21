@@ -724,16 +724,19 @@ Log.info("--- for spec: " + spec + " len is: " + values.length +
                     // Runtime Installer has no module, main-jar, or app-image,
                     // but must have a runtime-image
                     localParams.remove(CLIOptions.MODULE.getId());
+                    localParams.remove(CLIOptions.APPCLASS.getId());
                     localParams.remove(CLIOptions.MAIN_JAR.getId());
                     localParams.remove(CLIOptions.PREDEFINED_APP_IMAGE.getId());
                     localParams.put(CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId(),
-                        tempRoot.resolve("runtime"));
+                            tempRoot.resolve("runtime"));
+                    localParams.remove(
+                            CLIOptions.MAC_BUNDLE_IDENTIFIER.getId());
 
-                    // different name, icon, and install-dir from SplitRuntime (version ?)
+                    // different name, icon, and install-dir from SplitRuntime
+                    localParams.put(CLIOptions.NAME.getId(), spr.getName());
+                    localParams.put(CLIOptions.ICON.getId(), spr.getIcon());
                     localParams.put(CLIOptions.INSTALL_DIR.getId(),
                             spr.getInstallDir());
-                    localParams.put(CLIOptions.ICON.getId(), spr.getIcon());
-                    localParams.put(CLIOptions.NAME.getId(), spr.getName());
 
                     bundler.validate(localParams);
                     result = bundler.execute(localParams, deployParams.outdir);

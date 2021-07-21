@@ -110,8 +110,6 @@ bool ReleaseFile::greaterThan(const tstring& v1, const tstring& v2) {
 bool ReleaseFile::satisfies(ReleaseFile required, const tstring& versionSpec) {
     // We need to insure version satisfies the versionSpec
     if (versionMatch(versionSpec, getVersion())) {
-        LOG_TRACE(tstrings::any() << "version: " << versionSpec
-                << " matches version: " << getVersion());
         // now we need to make sure all required modules are there.
         tstring_array reqmods = required.modules;
         tstring_array canmods = modules;
@@ -124,15 +122,15 @@ bool ReleaseFile::satisfies(ReleaseFile required, const tstring& versionSpec) {
                 }
             }
             if (j == (int)canmods.size()) {
-                LOG_TRACE(tstrings::any() << " missing mod: " << reqmods[i]);
+                LOG_TRACE(tstrings::any() << " missing mod: " << reqmods[i]
+                        << "in version: " << getVersion());
                 return false;
             }
         }
-        LOG_TRACE(tstrings::any() << " all modules satisfied ");
+        LOG_TRACE(tstrings::any() << " all modules satisfied with: "
+                                  << getVersion());
         return true;
     }
-    LOG_TRACE(tstrings::any() << "version: " << version
-                << " not matching version: " << required.version);
     return false;
 }
 

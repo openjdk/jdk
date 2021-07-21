@@ -27,8 +27,11 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <filesystem>
+#include <dirent.h>
 #include "FileUtils.h"
 #include "ErrorHandling.h"
+#include "Log.h"
 
 
 namespace FileUtils {
@@ -37,7 +40,6 @@ bool isFileExists(const tstring &filePath) {
     struct stat statBuffer;
     return (stat(filePath.c_str(), &statBuffer) != -1);
 }
-
 
 tstring toAbsolutePath(const tstring& path) {
     if (path.empty()) {
@@ -62,8 +64,55 @@ tstring toAbsolutePath(const tstring& path) {
     return mkpath() << toAbsolutePath("") << path;
 }
 
+// The "release" file in a JDK or other Java runtime is in a directory with
+// several sub-dirs, but not a lot (or any) other files. 
+// We use width to limit search.
+#define WIDTH 8
+#define TYPE_FILE 0x08
+#define TYPE_DIR 0x04
+
+/*
+ * We recursivly search thru "base" (with open DIR "dir" for file named
+ * "filename".  We only look at the first "width" files in each dir.
+ * When a match is found we add it to "reply" and look no further in that dir.
+ */
+tstring_array searchDir(const char *base, DIR *dir,
+        const tstring& filename, int width, tstring_array reply) {
+    struct dirent *dirEntry;
+    int count = 0;
+    while (((dirEntry = readdir(dir)) != NULL) && (count < width)) {
+        if (strchr(dirEntry->d_name, '.') != dirEntry->d_name) {
+            if (dirEntry->d_type == TYPE_DIR) {
+                tstring newbase = (tstrings::any() << base << "/"
+                        << dirEntry->d_name).tstr();
+                DIR *subdir = opendir(newbase.c_str());
+                if (subdir != NULL) {
+                    reply = searchDir(newbase.c_str(), subdir, filename,
+                                      width, reply);
+                    closedir(subdir);
+                }
+            } else if (dirEntry->d_type == TYPE_FILE) {
+                count++;
+                if (strcmp(filename.c_str(), dirEntry->d_name) == 0) {
+                    reply.push_back((tstrings::any() << base << "/"
+                            << dirEntry->d_name).tstr());
+                    LOG_TRACE(tstrings::any() << "found: " << base);
+                    break;
+                }
+            }
+        }
+    }
+    return reply;
+}
+
 tstring_array listContents(const tstring& basedir, const tstring& filename) {
     tstring_array reply;
+    DIR *directory;
+    directory = opendir(basedir.c_str());
+    if (directory != NULL) {
+        reply = searchDir(basedir.c_str(), directory, filename, WIDTH, reply);
+        closedir(directory);
+    }
     return reply;
 }
 
