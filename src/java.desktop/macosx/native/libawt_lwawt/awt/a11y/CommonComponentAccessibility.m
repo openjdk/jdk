@@ -256,10 +256,15 @@ static jobject sAccessibilityClass = NULL;
         fView = [view retain];
         fJavaRole = [javaRole retain];
 
-        fAccessible = (*env)->NewWeakGlobalRef(env, accessible);
-        (*env)->ExceptionClear(env); // in case of OOME
+        if (accessible != NULL) {
+            fAccessible = (*env)->NewWeakGlobalRef(env, accessible);
+            CHECK_EXCEPTION();
+        }
+
         jobject jcomponent = [(AWTView *)fView awtComponent:env];
         fComponent = (*env)->NewWeakGlobalRef(env, jcomponent);
+        CHECK_EXCEPTION();
+
         (*env)->DeleteLocalRef(env, jcomponent);
 
         fIndex = index;

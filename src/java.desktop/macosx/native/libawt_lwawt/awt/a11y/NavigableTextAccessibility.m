@@ -73,7 +73,7 @@ static jmethodID sjm_getAccessibleEditableText = NULL;
 
     // We cheat because we know that the array is 4 elements long (x, y, width, height)
     jdouble *values = (*env)->GetDoubleArrayElements(env, axBounds, 0);
-    CHECK_EXCEPTION();
+
     if (values == NULL) {
         // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
         NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__);
