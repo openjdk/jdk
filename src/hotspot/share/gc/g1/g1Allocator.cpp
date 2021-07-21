@@ -429,7 +429,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Since we've modified the old set, call update_sizes.
-  _g1h->g1mm()->update_sizes();
+  _g1h->monitoring_support()->update_sizes();
   return true;
 }
 
