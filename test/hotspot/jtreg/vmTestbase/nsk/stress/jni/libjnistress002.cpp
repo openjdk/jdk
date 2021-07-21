@@ -46,6 +46,7 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   jobject element;
   jclass clazz, clazzUp;
   jmethodID methodID;
+  jfieldID fieldID;
   const char *classname = "nsk/stress/jni/objectsJNI";
   const char *name = " < init > ";
   const char *sig = "(Ljava/lang/String; IJ[CFD)V";
@@ -56,9 +57,9 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   const char *setpassSig = "()V";
   jvalue paramArr [6];
 
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   ++classCount;
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   paramArr[0].l = jstr;
   paramArr[1].i = intgr;
   paramArr[2].j = lng;
@@ -69,16 +70,8 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   clazz = env->FindClass(classname); CE
   obj = env->NewObjectArray((jsize)3,clazz,
                             env->AllocObject(clazz)); CE
-  if (obj == NULL) {
-    fprintf(stderr,"Can not construct the object Array for  %s\n", classname);
-    return(NULL);
-  }
 
   methodID = env->GetMethodID(clazz,name,sig); CE
-  if (methodID == NULL) {
-    fprintf(stderr,"Can not get the ID of <init> for %s\n", classname);
-    return(NULL);
-  }
 
   element = env->NewObject(clazz,methodID,
                            jstr, intgr, lng, jChArr, flt, dbl); CE
@@ -90,8 +83,8 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   env->SetObjectArrayElement(obj,2,element); CE
 
   clazzUp = env->FindClass(upperClassName); CE
-  if (classCount == env->GetStaticIntField(clazzUp,
-                                           env->GetStaticFieldID(clazzUp,fieldName,fieldSig))) {
+  fieldID = env->GetStaticFieldID(clazzUp,fieldName,fieldSig); CE
+  if (classCount == env->GetStaticIntField(clazzUp, fieldID)) {
     classname = "nsk/stress/jni/JNIter002";
     clazz = env->FindClass(classname); CE
     methodID = env->GetStaticMethodID(clazz, setpass, setpassSig); CE

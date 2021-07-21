@@ -49,13 +49,9 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
   str = (char *)c_malloc(env, len*sizeof(char));
   /*     const char *threadName = env->GetStringUTFChars(jstr, 0); */
 
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   if (upper == 0) {
     tmp = (jchar *) c_malloc(env, DIGESTLENGTH*sizeof(char));
-  }
-  if (env->ExceptionOccurred()) {
-    env->ExceptionDescribe();
-    env->ExceptionClear();
   }
   critstr = env->GetStringCritical(jstr, 0); CE
   for (i = 0; i < len; i++) {
@@ -66,17 +62,12 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
     digest[i % DIGESTLENGTH]+=str[i];
   }
   free(str);
-
-  if (env->ExceptionOccurred()) {
-    env->ExceptionDescribe();
-    env->ExceptionClear();
-  }
   memcpy(tmp,digest,DIGESTLENGTH);
   jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); CE
   len = env->GetArrayLength(jArr); CE
   env->SetCharArrayRegion(jArr,0,len,tmp); CE
   /*     ++upper; */
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   return jArr;
 }
 
@@ -104,16 +95,12 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
 
   len =env->GetArrayLength(cArr); CE
 
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   if (upper > limit) {
-    env->MonitorExit(jobj); CE
+    CHECK(env->MonitorExit(jobj));
     return JNI_FALSE;
   }
   tmp = (jchar *)c_malloc(env, DIGESTLENGTH*sizeof(char));
-  if (env->ExceptionOccurred()) {
-    env->ExceptionDescribe();
-    env->ExceptionClear();
-  }
   critstr = env->GetStringCritical(jstr, 0); CE
   for (i = 0; i < strlen; i++) {
     str[i] = (char) critstr[i];
@@ -122,13 +109,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
   for (i = 0; i < strlen; i++) {
     digest[i % DIGESTLENGTH]+=str[i % DIGESTLENGTH];
   }
-
   free(str);
-
-  if (env->ExceptionOccurred()) {
-    env->ExceptionDescribe();
-    env->ExceptionClear();
-  }
   memcpy(tmp,digest,DIGESTLENGTH);
 
   /*     jArr = env->NewCharArray(DIGESTLENGTH/sizeof(jchar)); */
@@ -170,7 +151,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     free(tmp);
     ret = JNI_TRUE;
   }
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   return ret;
 }
 

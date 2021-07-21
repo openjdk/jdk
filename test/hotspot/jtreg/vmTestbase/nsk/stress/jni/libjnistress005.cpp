@@ -42,29 +42,19 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
   const char *fldSig = "I";
 
   /*     incClazz = env->FindClass(iter); */
-  /*     CHECK_EXCEPTION */
   /*     jmethod = env->GetStaticMethodID(incClazz, inc, incSig); */
-  /*     CHECK_EXCEPTION */
   /*     env->CallStaticVoidMethod(incClazz, jmethod); */
-  /*     CHECK_EXCEPTION */
   /*     jfld = env->GetFieldID(incClazz, fldName, fldSig); */
   /*     printf("JNI: Count is %d\n", env->GetIntField(jobj, jfld)); */
-  /*     CHECK_EXCEPTION */
 
-  env->MonitorEnter(jobj); CE
-  if (!env->Throw(tobj)) {
-    if (env->ExceptionOccurred()) {
-      if (Exceptcalls % 1000 == 0) {
-        fprintf(stderr, "NATIVE: Throw has been catched in native\n");
-      }
-    }
-    env->ExceptionClear();
+  CHECK(env->MonitorEnter(jobj));
+  if (env->Throw(tobj) == 0) {
     ++Exceptcalls;
   } else {
     fprintf(stderr, "Throw failed\n");
   }
 
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
 
   switch (Exceptcalls % 23) {
   case 0: name = "java/lang/ArithmeticException"; break;
@@ -95,15 +85,9 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
   mess = name;
 
   clazz = env->FindClass(name); CE
-  if (env->ThrowNew(clazz, mess)) {
-    const char *pass = "setpass";
-    const char *passSig = "(Z)V";
-    jclass incClazz;
+  if (env->ThrowNew(clazz, mess) != 0) {
     fprintf(stderr, "ThrowNew failed\n");
     CE;
-    incClazz = env->FindClass(iter); CE;
-    jmethod = env->GetStaticMethodID(incClazz, pass, passSig); CE
-    env->CallStaticVoidMethod(incClazz, jmethod, JNI_FALSE); CE
   }
   /*     printf("JNI: count %d\n", Exceptcalls); */
 }

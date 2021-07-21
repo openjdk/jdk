@@ -46,7 +46,9 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
   const char *setdonesig = "()V";
   int i = 0;
 
-  if (upper >= LIMIT) return JNI_TRUE;
+  if (upper >= LIMIT) {
+    return JNI_TRUE;
+  }
 
   if (upper == 0) {
     globRefsArray = (jobject*)c_malloc(env, LIMIT*sizeof(jobject));
@@ -58,15 +60,15 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
     clazz = env->GetObjectClass(globRefsArray[upper]); CE
   } else {
     fprintf(stderr,"Objects are different\n");
-    env->MonitorExit(jobj); CE
+    CHECK(env->MonitorExit(jobj));
     return res;
   }
   jmethod = env->GetStaticMethodID(clazz, setmethodname, setsig); CE
   env->CallStaticVoidMethod(clazz, jmethod, (jint)upper); CE
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   ++upper;
   res = JNI_TRUE;
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   /* If upper == LIMIT than flush ref's array and set */
   /* 'done' flag in JNIter006 class to JNI_TRUE */
   if (upper == LIMIT) {

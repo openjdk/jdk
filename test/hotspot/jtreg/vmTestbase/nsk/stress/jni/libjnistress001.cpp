@@ -64,7 +64,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   jclass clazz;
   jmethodID methodID;
 
-  env->MonitorEnter(jobj); CE
+  env->MonitorEnter(jobj);
   if (!allocs) {
     element = (CHAR_ARRAY *)c_malloc(env, sizeof(CHAR_ARRAY));
     element->str = (const char **)c_malloc(env, nstr*sizeof(const char *));
@@ -163,7 +163,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   jclass clazz;
   jmethodID methodID;
 
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   if (!index) {
     javachars = (JCHAR_ARRAY *)c_malloc(env, sizeof(JCHAR_ARRAY));
     javachars->str = (const jchar **)c_malloc(env, nstr*sizeof(const jchar *));
@@ -245,7 +245,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
     //env->CallStaticVoidMethod(clazz, methodID); CE
     return(tmpstr);
   }
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   return(env->NewString(javachars->str[index-1],elem_len));
 }
 

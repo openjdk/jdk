@@ -55,9 +55,10 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   int SIZE = size;
   const char *classname = "java/lang/Object";
   jclass clazz = env->FindClass(classname); CE
-  objectsArray = env->NewObjectArray(8,clazz, env->AllocObject(clazz));
+  jobject obj = env->AllocObject(clazz); CE
+  objectsArray = env->NewObjectArray(8,clazz, obj); CE
 
-  arrayArray = (jarray *)c_malloc(env, 8*sizeof(jarray)); CE
+  arrayArray = (jarray *)c_malloc(env, 8*sizeof(jarray));
   arrayArray[BOOL] = env->NewBooleanArray(SIZE); CE
   arrayArray[BYTE] = env->NewByteArray(SIZE); CE
   arrayArray[CHAR] = env->NewCharArray(SIZE); CE
@@ -162,9 +163,9 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
 
     return JNI_TRUE;
   }
-  env->MonitorEnter(jobj); CE
+  CHECK(env->MonitorEnter(jobj));
   ++count;
-  env->MonitorExit(jobj); CE
+  CHECK(env->MonitorExit(jobj));
   arrayOrig = (jarray *)c_malloc(env, 8*sizeof(jarray));
   arrayClone = (jarray *)c_malloc(env, 8*sizeof(jarray));
   for (i = 0; i < 8; i++) {
