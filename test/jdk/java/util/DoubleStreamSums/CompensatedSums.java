@@ -24,21 +24,32 @@
 /*
  * @test
  * @bug 8214761
- * @run main CompensatedSums
+ * @run testng CompensatedSums
  * @summary
  */
 
 import java.util.Random;
+import java.util.function.BiConsumer;
+import java.util.function.ObjDoubleConsumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 import static org.testng.Assert.assertTrue;
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
 public class CompensatedSums {
 
-    public static void main(String [] args) {
+    @Test
+    public void testCompensatedSums() {
         double naive = 0;
-        double sequentialStream = 0;
-        double parallelStream = 0;
+        double jdkSequentialStreamError = 0;
+        double goodSequentialStreamError = 0;
+        double jdkParallelStreamError = 0;
+        double goodParallelStreamError = 0;
+        double badParallelStreamError = 0;
 
         for (int loop = 0; loop < 100; loop++) {
             // sequence of random numbers of varying magnitudes, both positive and negative
@@ -53,21 +64,38 @@ public class CompensatedSums {
                 sumWithCompensation(sum, rand[i]);
             }
 
+            // All error is the squared difference of the standard Kahan Sum vs JDK Stream sum implementation
+            // Older less accurate implementations included here as the baseline.
+
             // squared error of naive sum by reduction - should be large
             naive += Math.pow(DoubleStream.of(rand).reduce((x, y) -> x+y).getAsDouble() - sum[0], 2);
 
             // squared error of sequential sum - should be 0
-            sequentialStream += Math.pow(DoubleStream.of(rand).sum() - sum[0], 2);
+            jdkSequentialStreamError += Math.pow(DoubleStream.of(rand).sum() - sum[0], 2);
+
+            goodSequentialStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0], 2);
+
+            // squared error of parallel sum from the JDK
+            jdkParallelStreamError += Math.pow(DoubleStream.of(rand).parallel().sum() - sum[0], 2);
 
             // squared error of parallel sum
-            parallelStream += Math.pow(DoubleStream.of(rand).parallel().sum() - sum[0], 2);
+            goodParallelStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0], 2);
+
+            // the bad parallel stream
+            badParallelStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,badCollectorConsumer)) - sum[0], 2);
+
 
         }
 
-        // print sum of squared errors
-        System.out.println("Naive: " + naive);
-        System.out.println("Sequential Stream: " + sequentialStream);
-        System.out.println("Paralellel Stream: " + parallelStream);
+        Assert.assertEquals(goodSequentialStreamError, 0.0);
+        Assert.assertEquals(goodSequentialStreamError, jdkSequentialStreamError);
+
+        Assert.assertTrue(jdkParallelStreamError <= goodParallelStreamError);
+        Assert.assertTrue(badParallelStreamError > goodParallelStreamError);
+
+        Assert.assertTrue(naive > jdkSequentialStreamError);
+        Assert.assertTrue(naive > jdkParallelStreamError);
+
     }
 
     // from OpenJDK8 Collectors, unmodified
@@ -89,5 +117,25 @@ public class CompensatedSums {
         else
             return tmp;
     }
+
+    //Suppliers and consumers for Double Stream summation collection.
+    static Supplier<double[]> doubleSupplier = () -> new double[3];
+    static ObjDoubleConsumer<double[]> objDoubleConsumer = (double[] ll, double d) -> {
+                                                             sumWithCompensation(ll, d);
+                                                             ll[2] += d;
+                                                           };
+    static BiConsumer<double[], double[]> badCollectorConsumer =
+            (ll, rr) -> {
+                sumWithCompensation(ll, rr[0]);
+                sumWithCompensation(ll, rr[1]);
+                ll[2] += rr[2];
+            };
+
+    static BiConsumer<double[], double[]> goodCollectorConsumer =
+            (ll, rr) -> {
+                sumWithCompensation(ll, rr[0]);
+                sumWithCompensation(ll, -rr[1]);
+                ll[2] += rr[2];
+            };
 
 }

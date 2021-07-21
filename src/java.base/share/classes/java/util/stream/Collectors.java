@@ -766,7 +766,7 @@ public final class Collectors {
      * correctly-signed infinity stored in the simple sum.
      */
     static double computeFinalSum(double[] summands) {
-        // Better error bounds to add both terms as the final sum
+        // Final sum with better error bounds subtract second summand as it is negated
         double tmp = summands[0] - summands[1];
         double simpleSum = summands[summands.length - 1];
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
