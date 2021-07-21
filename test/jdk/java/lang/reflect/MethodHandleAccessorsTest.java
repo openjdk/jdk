@@ -25,7 +25,7 @@
  * @test
  * @bug 6824466
  * @modules java.base/jdk.internal.reflect
- * @summary Test compliance of ConstructorAccessor and MethodAccessor implementations
+ * @summary Test compliance of ConstructorAccessor, FieldAccessor, MethodAccessor implementations
  * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Dsun.reflect.inflationThreshold=1 -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
  */
 /*
@@ -216,7 +216,12 @@ public class MethodHandleAccessorsTest {
         }
     }
 
-    static void doTestAccessor(Method m, MethodAccessor ma, Object target, Object[] args, Object expectedReturn, Throwable... expectedExceptions) {
+    /**
+     * Tests if MethodAccessor::invoke implementation returns the expected
+     * result or exceptions.
+     */
+    static void doTestAccessor(Method m, MethodAccessor ma, Object target, Object[] args,
+                               Object expectedReturn, Throwable... expectedExceptions) {
         Object ret;
         Throwable exc;
         try {
@@ -231,7 +236,12 @@ public class MethodHandleAccessorsTest {
         chechResult(ret, expectedReturn, exc, expectedExceptions);
     }
 
-    static void doTestAccessor(Constructor c, ConstructorAccessor ca, Object[] args, Object expectedReturn, Throwable... expectedExceptions) {
+    /**
+     * Tests if ConstructorAccessor::newInstance implementation returns the
+     * expected result or exceptions.
+     */
+    static void doTestAccessor(Constructor c, ConstructorAccessor ca, Object[] args,
+                               Object expectedReturn, Throwable... expectedExceptions) {
         Object ret;
         Throwable exc;
         try {
@@ -242,11 +252,15 @@ public class MethodHandleAccessorsTest {
             exc = e;
         }
         System.out.println("\n" + c + ", invoked with args: " + Arrays.toString(args));
-
         chechResult(ret, expectedReturn, exc, expectedExceptions);
     }
 
-    static void doTestAccessor(Field f, FieldAccessor fa, Object target, Object expectedValue, Throwable... expectedExceptions) {
+    /**
+     * Tests if FieldAccessor::get implementation returns the
+     * expected result or exceptions.
+     */
+    static void doTestAccessor(Field f, FieldAccessor fa, Object target,
+                               Object expectedValue, Throwable... expectedExceptions) {
         Object ret;
         Throwable exc;
         try {
@@ -261,7 +275,12 @@ public class MethodHandleAccessorsTest {
 
     }
 
-    static void doTestAccessor(Field f, FieldAccessor fa, Object target, Object newValue, Object expectedValue, Throwable... expectedExceptions) {
+    /**
+     * Tests if FieldAccessor::set implementation returns the
+     * expected result or exceptions.
+     */
+    static void doTestAccessor(Field f, FieldAccessor fa, Object target, Object oldValue,
+                               Object newValue, Throwable... expectedExceptions) {
         Object ret;
         Throwable exc;
             try {
@@ -309,10 +328,9 @@ public class MethodHandleAccessorsTest {
     static boolean exceptionMatches(Throwable exc, Throwable expected) {
         return expected.getClass().isInstance(exc) &&
                 (Objects.equals(expected.getMessage(), exc.getMessage()) ||
-                        (exc.getMessage() != null && expected.getMessage() != null && exc.getMessage().startsWith(expected.getMessage()))) && (
-                   expected.getCause() == null ||
-                   exceptionMatches(exc.getCause(), expected.getCause())
-               );
+                        (exc.getMessage() != null && expected.getMessage() != null &&
+                         exc.getMessage().startsWith(expected.getMessage()))) &&
+                (expected.getCause() == null || exceptionMatches(exc.getCause(), expected.getCause()));
     }
 
     static void fail(Throwable thrownException, Throwable... expectedExceptions) {
@@ -439,32 +457,32 @@ public class MethodHandleAccessorsTest {
         Object wrongInst = new Object();
         boolean newImpl = Boolean.getBoolean("jdk.reflect.useDirectMethodHandle");
         return new Object[][]{
-            new Object[]{"public_static_I_V",  int.class, null, new Object[]{12}, null, noException},
-            new Object[]{"public_static_I_I",  int.class, null, new Object[]{12}, 12, noException},
-            new Object[]{"public_I_V",         int.class, inst, new Object[]{12}, null, noException},
-            new Object[]{"public_I_I",         int.class, inst, new Object[]{12}, 12, noException},
-            new Object[]{"private_static_I_V", int.class, null, new Object[]{12}, null, noException},
-            new Object[]{"private_static_I_I", int.class, null, new Object[]{12}, 12, noException},
-            new Object[]{"private_I_V",        int.class, inst, new Object[]{12}, null, noException},
-            new Object[]{"private_I_I",        int.class, inst, new Object[]{12}, 12, noException},
+            new Object[] {"public_static_I_V",  int.class, null, new Object[]{12}, null, noException},
+            new Object[] {"public_static_I_I",  int.class, null, new Object[]{12}, 12, noException},
+            new Object[] {"public_I_V",         int.class, inst, new Object[]{12}, null, noException},
+            new Object[] {"public_I_I",         int.class, inst, new Object[]{12}, 12, noException},
+            new Object[] {"private_static_I_V", int.class, null, new Object[]{12}, null, noException},
+            new Object[] {"private_static_I_I", int.class, null, new Object[]{12}, 12, noException},
+            new Object[] {"private_I_V",        int.class, inst, new Object[]{12}, null, noException},
+            new Object[] {"private_I_I",        int.class, inst, new Object[]{12}, 12, noException},
 
             new Object[] {"public_static_I_I", int.class, null, new Object[]{"a"}, null, mismatched_argument_type},
             new Object[] {"public_I_I",        int.class, inst, new Object[]{"a"}, null, mismatched_argument_type},
             new Object[] {"public_static_I_I", int.class, null, new Object[]{12, 13}, null,
-                    newImpl ? wrong_argument_count_no_details : wrong_argument_count},
+                          newImpl ? wrong_argument_count_no_details : wrong_argument_count},
             new Object[] {"public_I_I",        int.class, inst, new Object[]{12, 13}, null,
-                    newImpl ? wrong_argument_count_no_details : wrong_argument_count},
+                          newImpl ? wrong_argument_count_no_details : wrong_argument_count},
             new Object[] {"public_I_I",        int.class, wrongInst, new Object[]{12}, 12, mismatched_target_type},
             new Object[] {"public_I_I",        int.class, null, new Object[]{12}, 12, null_target},
 
             new Object[] {"public_static_I_V", int.class, null, null, null,
-                    newImpl ? wrong_argument_count_no_details : null_argument},
+                          newImpl ? wrong_argument_count_no_details : null_argument},
             new Object[] {"public_static_I_V", int.class, null, new Object[]{null}, null,
-                    newImpl ? null_argument_value_npe : null_argument_value},
+                          newImpl ? null_argument_value_npe : null_argument_value},
             new Object[] {"public_I_I",        int.class, inst, null, null, null_argument},
 
             new Object[] {"public_I_I", int.class, inst, new Object[]{null}, null,
-                    newImpl ? null_argument_value_npe : null_argument_value},
+                          newImpl ? null_argument_value_npe : null_argument_value},
         };
     }
 
@@ -487,17 +505,20 @@ public class MethodHandleAccessorsTest {
     }
 
     @Test(dataProvider = "testNoArgMethods")
-    public void testNoArgMethod(String methodname, Object target, Object[] args, Object expectedReturn, Throwable[] expectedExpections) throws Exception {
+    public void testNoArgMethod(String methodname, Object target, Object[] args,
+                                Object expectedReturn, Throwable[] expectedExpections) throws Exception {
         doTest(MethodHandleAccessorsTest.class.getDeclaredMethod(methodname), target, args, expectedReturn, expectedExpections);
     }
 
     @Test(dataProvider = "testOneArgMethods")
-    public void testOneArgMethod(String methodname, Class<?> paramType, Object target, Object[] args, Object expectedReturn, Throwable[] expectedExpections) throws Exception {
+    public void testOneArgMethod(String methodname, Class<?> paramType, Object target, Object[] args,
+                                 Object expectedReturn, Throwable[] expectedExpections) throws Exception {
         doTest(MethodHandleAccessorsTest.class.getDeclaredMethod(methodname, paramType), target, args, expectedReturn, expectedExpections);
     }
 
     @Test(dataProvider = "testMethodsWithVarargs")
-    public void testMethodsWithVarargs(String methodname, Class<?>[] paramTypes, Object target, Object[] args, Object expectedReturn, Throwable[] expectedExpections) throws Exception {
+    public void testMethodsWithVarargs(String methodname, Class<?>[] paramTypes, Object target, Object[] args,
+                                       Object expectedReturn, Throwable[] expectedExpections) throws Exception {
         doTest(MethodHandleAccessorsTest.class.getDeclaredMethod(methodname, paramTypes), target, args, expectedReturn, expectedExpections);
     }
 
@@ -579,7 +600,7 @@ public class MethodHandleAccessorsTest {
                 new Object[]{"i", new Public(100), 100, noException},
                 new Object[]{"s", new Public("test"), "test", noException},
                 new Object[]{"s", new Object(), "test",
-                    newImpl ? cannot_get_final_field : cannot_set_final_field},
+                             newImpl ? cannot_get_final_field : cannot_set_final_field},
                 new Object[]{"s", null, "test", null_target},
         };
     }

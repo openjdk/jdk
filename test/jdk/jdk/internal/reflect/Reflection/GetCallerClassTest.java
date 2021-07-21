@@ -228,7 +228,8 @@ public class GetCallerClassTest {
         // The new implementation uses the special calling sequence and Method::invoke
         // defines an adapter method such that the stack walking is done only once
         // using the same caller class.
-        boolean newImpl = Boolean.valueOf(System.getProperty("jdk.reflect.useDirectMethodHandle", "true"));
+        String s = System.getProperty("jdk.reflect.useDirectMethodHandle", "true");
+        boolean newImpl = Boolean.valueOf(s);
         Class<?> expectedCaller = newImpl ? GetCallerClassTest.class : Method.class;
 
         System.out.println();
