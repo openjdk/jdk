@@ -29,10 +29,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Programmatic entry point to start the simpleserver tool.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interface are subject to change or deletion
- *  without notice.</b>
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interface are subject to change or deletion
+ * without notice.</b>
  */
 public class Main {
 
@@ -42,14 +42,24 @@ public class Main {
     private Main() { throw new AssertionError(); }
 
     /**
-     * The main entry point. The status code from starting the simple server is
-     * ignored.
+     * The main entry point.
+     *
+     * <p The command line arguments are parsed and the server is started. If
+     * started successfully, the server will run on a new non-daemon thread,
+     * and this method will return. Otherwise, if the server is not started
+     * successfully, e.g. an error is encountered while parsing the arguments
+     * or an I/O error occurs, the server is not started and this method invokes
+     * System::exit with an appropriate exit code.
      *
      * @param args the command-line options
      * @throws NullPointerException if {@code args} is {@code null}, or if there
      *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
-        SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), args);
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), args);
+        if (ec != 0)
+            System.exit(ec);
+        // otherwise the server has been started successfully and runs in
+        // another non-daemon thread.
     }
 }

@@ -26,32 +26,29 @@
  * @summary Positive tests for simpleserver command-line tool
  * @library /test/lib
  * @modules jdk.httpserver
- * @build jdk.test.lib.util.FileUtils
  * @run testng/othervm CommandLinePositiveTest
  */
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static java.lang.System.out;
 
 public class CommandLinePositiveTest {
 
-    static final String JAVA = System.getProperty("java.home") + "/bin/java";
+    static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String JAVA = getJava(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLinePositiveTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
@@ -78,106 +75,107 @@ public class CommandLinePositiveTest {
     @DataProvider
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
+    static final int SIGTERM = 15;
+    static final int NORMAL_EXIT_CODE = normalExitCode();
+
+    static int normalExitCode() {
+        if (Platform.isWindows()) {
+            return 1; // expected process destroy exit code
+        } else {
+            // signal terminated exit code on Unix is 128 + signal value
+            return 128 + SIGTERM;
+        }
+    }
+
     @Test(dataProvider = "directoryOptions")
-    public void testDirectory(String opt) throws Exception {
+    public void testDirectory(String opt) throws Throwable {
+        out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
-                    assertContains(r.output,
-                            "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:")
+                .shouldContain("http://" + LOCALHOST_ADDR);
     }
 
     @DataProvider
     public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
 
     @Test(dataProvider = "portOptions")
-    public void testPort(String opt) throws Exception {
+    public void testPort(String opt) throws Throwable {
+        out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
-                    assertContains(r.output,
-                            "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:")
+                .shouldContain("http://" + LOCALHOST_ADDR);
     }
 
     @DataProvider
     public Object[][] helpOptions() { return new Object[][] {{"-?"}, {"-h"}, {"--help"}}; }
 
-    @Test(dataProvider = "helpOptions")
-    public void testHelp(String opt) throws Exception {
-        var usageText = "Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]\n" +
-                        "                              [-o none|info|verbose] [-h to show options]";
-        var optionsText = """
-                Options:
-                -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
-                -d, --directory       - Directory to serve. Default: current directory.
-                -o, --output          - Output format. none|info|verbose. Default: info.
-                -p, --port            - Port to listen on. Default: 8000.
-                -?, -h, --help        - Print this help message.
-                To stop the server, press Crtl + C.""";
+    static final String USAGE_TEXT = """
+            Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
+                                          [-o none|info|verbose] [-h to show options]""";
 
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt)
-                .resultChecker(r -> {
-                    assertContains(r.output, usageText);
-                    assertContains(r.output, optionsText);
-                });
+    static final String OPTIONS_TEXT = """
+            Options:
+            -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+            -d, --directory       - Directory to serve. Default: current directory.
+            -o, --output          - Output format. none|info|verbose. Default: info.
+            -p, --port            - Port to listen on. Default: 8000.
+            -?, -h, --help        - Print this help message.
+            To stop the server, press Crtl + C.""";
+
+    @Test(dataProvider = "helpOptions")
+    public void testHelp(String opt) throws Throwable {
+        out.println("\n--- testHelp, opt=\"%s\" ".formatted(opt));
+        simpleserver(WaitForLine.HELP_STARTUP_LINE,
+                     false,  // do not explicitly destroy the process
+                     JAVA, "-m", "jdk.httpserver", opt)
+                .shouldHaveExitValue(0)
+                .shouldContain(USAGE_TEXT)
+                .shouldContain(OPTIONS_TEXT);
     }
 
     @DataProvider
     public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
 
     @Test(dataProvider = "bindOptions")
-    public void testlastOneWinsBindAddress(String opt) throws Exception {
+    public void testLastOneWinsBindAddress(String opt) throws Throwable {
+        out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOCALHOST_ADDR)
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                    "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "http://" + LOCALHOST_ADDR);
+
     }
 
     @Test(dataProvider = "directoryOptions")
-    public void testlastOneWinsDirectory(String opt) throws Exception {
+    public void testLastOneWinsDirectory(String opt) throws Throwable {
+        out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
-                    assertContains(r.output,
-                            "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:")
+                .shouldContain("http://" + LOCALHOST_ADDR);
     }
 
     @DataProvider
     public Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
 
     @Test(dataProvider = "outputOptions")
-    public void testlastOneWinsOutput(String opt) throws Exception {
+    public void testLastOneWinsOutput(String opt) throws Throwable {
+        out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
-                    assertContains(r.output,
-                            "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:")
+                .shouldContain("http://" + LOCALHOST_ADDR);
     }
 
     @Test(dataProvider = "portOptions")
-    public void testlastOneWinsPort(String opt) throws Exception {
+    public void testLastOneWinsPort(String opt) throws Throwable {
+        out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
-                .assertExternalTermination()
-                .resultChecker(r -> {
-                    assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
-                    assertContains(r.output, "http://" + LOCALHOST_ADDR);
-                });
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:")
+                .shouldContain("http://" + LOCALHOST_ADDR);
     }
 
     @AfterTest
@@ -187,46 +185,46 @@ public class CommandLinePositiveTest {
         }
     }
 
-    // --- helper methods ---
+    // --- infra ---
 
-    static void assertContains(String output, String subString) {
-        var outs = output.replaceAll("\n", System.lineSeparator());
-        var subs = subString.replaceAll("\n", System.lineSeparator());
-        if (outs.contains(subs))
-            assertTrue(true);
-        else
-            fail("Expected to find [" + subs + "], in output [" + outs + "]");
+    static String getJava(Path image) {
+        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
+        if (Files.notExists(java))
+            throw new RuntimeException(java + " not found");
+        return java.toAbsolutePath().toString();
     }
 
-    static Result simpleserver(String... args) throws Exception {
-        System.out.println("simpleserver " + Arrays.toString(args));
-        var p = new ProcessBuilder(args)
-                .redirectErrorStream(true)
-                .directory(TEST_DIR.toFile())
-                .start();
-        var in = new BufferedInputStream(p.getInputStream());
-        var out = new ByteArrayOutputStream();
-        var t = new Thread("read-server-output") {
-            @Override
-            public void run() {
-                try (in; out) {
-                    in.transferTo(out);
-                    out.flush();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        };
-        t.start();
-        Thread.sleep(5000);
-        p.destroyForcibly();
-        p.waitFor();
-        t.join();
-        return new Result(p.exitValue(), out.toString(UTF_8));
+    static final String REGULAR_STARTUP_LINE1_STRING = "Serving";
+    static final String REGULAR_STARTUP_LINE2_STRING = "http://";
+
+    // The stdout/stderr output line to wait for when starting the simpleserver
+    enum WaitForLine {
+        REGULAR_STARTUP_LINE (REGULAR_STARTUP_LINE2_STRING) ,
+        HELP_STARTUP_LINE (OPTIONS_TEXT.lines().reduce((first, second) -> second).orElseThrow());
+
+        final String value;
+        WaitForLine(String value) { this.value = value; }
     }
 
-    static record Result(int exitCode, String output) {
-        Result assertExternalTermination() { assertTrue(exitCode != 0, output); return this; }
-        Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
+    static OutputAnalyzer simpleserver(String... args) throws Throwable {
+        return simpleserver(WaitForLine.REGULAR_STARTUP_LINE, true, args);
+    }
+
+    static OutputAnalyzer simpleserver(WaitForLine waitForLine, boolean destroy, String... args) throws Throwable {
+        StringBuffer sb = new StringBuffer();  // stdout & stderr
+        // start the process and await the waitForLine before returning
+        var p = ProcessTools.startProcess("simpleserver",
+                new ProcessBuilder(args).directory(TEST_DIR.toFile()),
+                line -> sb.append(line + "\n"),
+                line -> line.startsWith(waitForLine.value),
+                30,  // suitably high default timeout, not expected to timeout
+                TimeUnit.SECONDS);
+        if (destroy) {
+            p.destroy();  // SIGTERM on Unix
+        }
+        int ec = p.waitFor();
+        var outputAnalyser = new OutputAnalyzer(sb.toString(), "", ec);
+        return outputAnalyser;
     }
 }

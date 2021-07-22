@@ -26,32 +26,28 @@
  * @summary Negative tests for simpleserver command-line tool
  * @library /test/lib
  * @modules jdk.httpserver
- * @build jdk.test.lib.util.FileUtils jdk.test.lib.Platform
  * @run testng/othervm CommandLineNegativeTest
  */
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.function.Consumer;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
+import org.testng.SkipException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.lang.System.out;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 public class CommandLineNegativeTest {
 
-    static final String JAVA = System.getProperty("java.home") + "/bin/java";
+    static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String JAVA = getJava(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLineNegativeTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
@@ -74,12 +70,11 @@ public class CommandLineNegativeTest {
     }
 
     @Test(dataProvider = "badOption")
-    public void testBadOption(String opt) throws Exception {
+    public void testBadOption(String opt) throws Throwable {
+        out.println("\n--- testBadOption, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt)
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option: " + opt)
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: unknown option: " + opt);
     }
 
     @DataProvider(name = "tooManyOptionArgs")
@@ -98,12 +93,11 @@ public class CommandLineNegativeTest {
     }
 
     @Test(dataProvider = "tooManyOptionArgs")
-    public void testTooManyOptionArgs(String opt, String arg) throws Exception {
+    public void testTooManyOptionArgs(String opt, String arg) throws Throwable {
+        out.println("\n--- testTooManyOptionArgs, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, arg, arg)
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: unknown option: " + arg)
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: unknown option: " + arg);
     }
 
     @DataProvider(name = "noArg")
@@ -122,12 +116,11 @@ public class CommandLineNegativeTest {
     }
 
     @Test(dataProvider = "noArg")
-    public void testNoArg(String opt) throws Exception {
+    public void testNoArg(String opt) throws Throwable {
+        out.println("\n--- testNoArg, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt)
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: no value given for " + opt)
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: no value given for " + opt);
     }
 
     @DataProvider(name = "invalidValue")
@@ -150,85 +143,74 @@ public class CommandLineNegativeTest {
     }
 
     @Test(dataProvider = "invalidValue")
-    public void testInvalidValue(String opt, String val) throws Exception {
+    public void testInvalidValue(String opt, String val) throws Throwable {
+        out.println("\n--- testInvalidValue, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, val)
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: invalid value given for "
-                                + opt + ": " + val)
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: invalid value given for " + opt + ": " + val);
     }
 
     @DataProvider
     public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
 
     @Test(dataProvider = "portOptions")
-    public void testPortOutOfRange(String opt) throws Exception {
+    public void testPortOutOfRange(String opt) throws Throwable {
+        out.println("\n--- testPortOutOfRange, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "65536")  // range 0 to 65535
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "port out of range:65536")
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: server config failed: " + "port out of range:65536");
     }
 
     @DataProvider
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootNotAbsolute(String opt) throws Exception {
+    public void testRootNotAbsolute(String opt) throws Throwable {
+        out.println("\n--- testRootNotAbsolute, opt=\"%s\" ".formatted(opt));
         var root = Path.of(".");
         assertFalse(root.isAbsolute());
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path is not absolute:")
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: server config failed: " + "Path is not absolute:");
     }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootNotADirectory(String opt) throws Exception {
+    public void testRootNotADirectory(String opt) throws Throwable {
+        out.println("\n--- testRootNotADirectory, opt=\"%s\" ".formatted(opt));
         var file = TEST_FILE.toString();
         assertFalse(Files.isDirectory(TEST_FILE));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, file)
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path is not a directory: " + file)
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: server config failed: " + "Path is not a directory: " + file);
     }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootDoesNotExist(String opt) throws Exception {
+    public void testRootDoesNotExist(String opt) throws Throwable {
+        out.println("\n--- testRootDoesNotExist, opt=\"%s\" ".formatted(opt));
         Path root = TEST_DIR.resolve("not/existent/dir");
         assertFalse(Files.exists(root));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
-                .assertNormalTermination()
-                .resultChecker(r ->
-                        assertContains(r.output, "Error: server config failed: "
-                                + "Path does not exist: " + root.toString())
-                );
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Error: server config failed: " + "Path does not exist: " + root.toString());
     }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootNotReadable(String opt) throws Exception {
+    public void testRootNotReadable(String opt) throws Throwable {
+        out.println("\n--- testRootNotReadable, opt=\"%s\" ".formatted(opt));
+        if (Platform.isWindows()) {
+            // Not applicable to Windows. Reason: cannot revoke an owner's read
+            // access to a directory that was created by that owner
+            throw new SkipException("cannot run on Windows");
+        }
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
-        if (!Platform.isWindows()) {  // not applicable to Windows
-                                      // reason: cannot revoke an owner's read
-                                      // access to a directory that was created
-                                      // by that owner
-            try {
-                root.toFile().setReadable(false, false);
-                assertFalse(Files.isReadable(root));
-                simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
-                        .assertNormalTermination()
-                        .resultChecker(r ->
-                                assertContains(r.output, "Error: server config failed: "
-                                        + "Path is not readable: " + root.toString()));
-            } finally {
-                root.toFile().setReadable(true, false);
-            }
+        try {
+            root.toFile().setReadable(false, false);
+            assertFalse(Files.isReadable(root));
+            simpleserver(JAVA, "-m", "jdk.httpserver", opt, root.toString())
+                    .shouldNotHaveExitValue(0)
+                    .shouldContain("Error: server config failed: " + "Path is not readable: " + root.toString());
+        } finally {
+            root.toFile().setReadable(true, false);
         }
     }
 
@@ -239,42 +221,22 @@ public class CommandLineNegativeTest {
         }
     }
 
-    // --- helper methods ---
+    // --- infra ---
 
-    static void assertContains(String output, String subString) {
-        if (output.contains(subString))
-            assertTrue(true);
-        else fail("Expected to find [" + subString + "], in output [" + output + "]");
+    static String getJava(Path image) {
+        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
+        if (Files.notExists(java))
+            throw new RuntimeException(java + " not found");
+        return java.toAbsolutePath().toString();
     }
 
-    static Result simpleserver(String... args) throws Exception {
-        System.out.println("simpleserver " + Arrays.toString(args));
-        var p = new ProcessBuilder(args)
-                .redirectErrorStream(true)
-                .directory(TEST_DIR.toFile())
-                .start();
-        var in = new BufferedInputStream(p.getInputStream());
-        var out = new ByteArrayOutputStream();
-        var t = new Thread("read-server-output") {
-            @Override
-            public void run() {
-                try {
-                    in.transferTo(out);
-                    out.flush();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        };
-        t.start();
-        Thread.sleep(5000);
-        p.waitFor();
-        t.join();
-        return new Result(p.exitValue(), out.toString(UTF_8));
-    }
-
-    static record Result(int exitCode, String output) {
-        Result assertNormalTermination() { assertTrue(exitCode == 0, output); return this; }
-        Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
+    static OutputAnalyzer simpleserver(String... args) throws Throwable {
+        var pb = new ProcessBuilder(args)
+                .directory(TEST_DIR.toFile());
+        var outputAnalyser = ProcessTools.executeCommand(pb)
+                .outputTo(System.out)
+                .errorTo(System.out);
+        return outputAnalyser;
     }
 }
