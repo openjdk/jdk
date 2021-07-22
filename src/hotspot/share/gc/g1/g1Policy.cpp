@@ -1046,7 +1046,7 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
-bool G1Policy::decide_on_concurrent_start_pause() {
+void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
@@ -1059,7 +1059,7 @@ bool G1Policy::decide_on_concurrent_start_pause() {
   // We should not be starting a concurrent start pause if the concurrent mark
   // thread is terminating.
   if (_g1h->concurrent_mark_is_terminating()) {
-    return false;
+    return;
   }
 
   if (collector_state()->initiate_conc_mark_if_possible()) {
@@ -1116,8 +1116,6 @@ bool G1Policy::decide_on_concurrent_start_pause() {
          collector_state()->in_young_only_phase(), "sanity");
   // We also do not allow mixed GCs during marking.
   assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
-
-  return collector_state()->in_concurrent_start_gc();
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {

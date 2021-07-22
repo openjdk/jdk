@@ -3041,10 +3041,11 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
   GCTraceCPUTime tcpu;
 
+  policy()->decide_on_concurrent_start_pause();
   // Record whether this pause may need to trigger a concurrent operation. Later,
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
-  bool should_start_concurrent_mark_operation = policy()->decide_on_concurrent_start_pause();
+  bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
   bool concurrent_operation_is_full_mark = false;
 
   // Verification may use the gang workers, so they must be set up before.
