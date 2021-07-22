@@ -56,8 +56,9 @@ public class ExactArithTests {
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
-     * decrementExact, negateExact methods with {@code int} arguments.
+     * Test Math.addExact, multiplyExact, divideExact, subtractExact,
+     * incrementExact, decrementExact, negateExact methods with
+     * {@code int} arguments.
      */
     static void testIntegerExact() {
         testIntegerExact(0, 0);
@@ -215,8 +216,9 @@ public class ExactArithTests {
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
-     * decrementExact, negateExact, toIntExact methods with {@code long} arguments.
+     * Test Math.addExact, multiplyExact, divideExact, subtractExact,
+     * incrementExact, decrementExact, negateExact, toIntExact methods
+     * with {@code long} arguments.
      */
     static void testLongExact() {
         testLongExactTwice(0, 0);
