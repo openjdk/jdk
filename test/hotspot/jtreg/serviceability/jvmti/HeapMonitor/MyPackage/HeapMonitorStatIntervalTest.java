@@ -42,7 +42,7 @@ public class HeapMonitorStatIntervalTest {
     HeapMonitor.enableSamplingEvents();
 
     int allocationTotal = 10 * 1024 * 1024;
-    int allocationIterations = 10;
+    int allocationIterations = 20;
 
     double actualCount = 0;
     for (int i = 0; i < allocationIterations; i++) {
