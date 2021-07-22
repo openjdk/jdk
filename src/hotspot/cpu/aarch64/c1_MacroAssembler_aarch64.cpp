@@ -180,7 +180,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 // preserves obj, destroys len_in_bytes
-void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1) {
+void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   Label done;
 
@@ -188,13 +188,18 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
+  RegSet savedRegs;
+  if (t1 != r10 || t2 != r11)  savedRegs = RegSet::of(r10, r11);
+
+  push(savedRegs, sp);
+
   // zero_words() takes ptr in r10 and count in words in r11
-  push(RegSet::of(r10, r11), sp);
   mov(rscratch1, len_in_bytes);
   lea(r10, Address(obj, hdr_size_in_bytes));
   lsr(r11, rscratch1, LogBytesPerWord);
   zero_words(r10, r11);
-  pop(RegSet::of(r10, r11), sp);
+
+  pop(savedRegs, sp);
 
   bind(done);
 }
@@ -219,19 +224,9 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
      // clear rest of allocated space
      const Register index = t2;
-     const int threshold = 16 * BytesPerWord;   // approximate break even point for code size (see comments below)
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       initialize_body(obj, index, hdr_size_in_bytes, t1);
-     } else if (con_size_in_bytes <= threshold) {
-       // use explicit null stores
-       int i = hdr_size_in_bytes;
-       if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) {
-         str(zr, Address(obj, i));
-         i += BytesPerWord;
-       }
-       for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
-         stp(zr, zr, Address(obj, i));
+       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
@@ -270,8 +265,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
 
   membar(StoreStore);
 

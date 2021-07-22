@@ -1243,6 +1243,9 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
+private:
+  void zero_words_inner(Register base, Register cnt);
+public:
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
