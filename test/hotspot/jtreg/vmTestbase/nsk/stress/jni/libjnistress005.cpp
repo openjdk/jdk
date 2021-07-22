@@ -48,7 +48,14 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
   /*     printf("JNI: Count is %d\n", env->GetIntField(jobj, jfld)); */
 
   CHECK(env->MonitorEnter(jobj));
+
   if (env->Throw(tobj) == 0) {
+    if (env->ExceptionOccurred()) {
+      if (Exceptcalls % 1000 == 0) {
+        fprintf(stderr, "NATIVE: Throw has been caught in native\n");
+      }
+    }
+    env->ExceptionClear();
     ++Exceptcalls;
   } else {
     fprintf(stderr, "Throw failed\n");
