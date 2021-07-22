@@ -39,7 +39,7 @@ import java.util.Iterator;
 import java.util.ListResourceBundle;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.Obejcts;
+import java.util.Objects;
 import java.util.Vector;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
