@@ -37,9 +37,6 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This is intentionally a manual test. The (jtreg) configurations below are here only
- * for reference about runtime expectations of this test.
- *
  * @test
  * @bug 8190753 8011146
  * @summary Verify that using zip filesystem for opening an outputstream for a zip entry whose
