@@ -863,6 +863,7 @@ enum CipherSuite {
         Map<String, CipherSuite> names = new HashMap<>();
         List<CipherSuite> allowedCS = new ArrayList<>();
         List<CipherSuite> defaultCS = new ArrayList<>();
+
         for(CipherSuite cs : CipherSuite.values()) {
             ids.put(cs.id, cs);
             names.put(cs.name, cs);
@@ -878,6 +879,7 @@ enum CipherSuite {
                 defaultCS.add(cs);
             }
         }
+
         cipherSuiteIds = Map.copyOf(ids);
         cipherSuiteNames = Map.copyOf(names);
         allowedCipherSuites = List.copyOf(allowedCS);
