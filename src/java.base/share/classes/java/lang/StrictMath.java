@@ -861,13 +861,14 @@ public final class StrictMath {
      * the result would be {@code Integer.MIN_VALUE} and no exception would be
      * thrown.
      * <p>
-     * If {@code y} is zero, overflow also occurs as in direct evaluation and
-     * an exception is thrown as usual.
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
      *
      * @param x the dividend
      * @param y the divisor
      * @return the quotient {@code x / y}
-     * @throws ArithmeticException if the quotient overflows an int
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows an int
      * @jls 15.17.2 Division Operator /
      * @see Math#divideExact(int,int)
      * @since 18
@@ -884,13 +885,14 @@ public final class StrictMath {
      * the result would be {@code Long.MIN_VALUE} and no exception would be
      * thrown.
      * <p>
-     * If {@code y} is zero, overflow also occurs as in direct evaluation and
-     * an exception is thrown as usual.
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
      *
      * @param x the dividend
      * @param y the divisor
      * @return the quotient {@code x / y}
-     * @throws ArithmeticException if the quotient overflows a long
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows a long
      * @jls 15.17.2 Division Operator /
      * @see Math#divideExact(long,long)
      * @since 18
