@@ -44,27 +44,27 @@ import sun.hotspot.WhiteBox;
 public class ReserveMemory {
   public static void main(String args[]) throws Exception {
     if (args.length > 0) {
+      // expected to crash
       WhiteBox.getWhiteBox().readReservedMemory();
-
-      throw new Exception("Read of reserved/uncommitted memory unexpectedly succeeded, expected crash!");
-    }
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-          "-Xbootclasspath/a:.",
-          "-XX:+UnlockDiagnosticVMOptions",
-          "-XX:+WhiteBoxAPI",
-          "-XX:-CreateCoredumpOnCrash",
-          "-Xmx128m",
-          "ReserveMemory",
-          "test");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    if (Platform.isWindows()) {
-      output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
-    } else if (Platform.isOSX()) {
-      output.shouldContain("SIGBUS");
     } else {
-      output.shouldContain("SIGSEGV");
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-XX:-CreateCoredumpOnCrash",
+            "-Xmx128m",
+            "ReserveMemory",
+            "test");
+
+      OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldNotHaveExitValue(0);
+      if (Platform.isWindows()) {
+        output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
+      } else if (Platform.isOSX()) {
+        output.shouldContain("SIGBUS");
+      } else {
+        output.shouldContain("SIGSEGV");
+      }
     }
   }
 }
