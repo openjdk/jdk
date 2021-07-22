@@ -88,6 +88,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/pair.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1638,15 +1639,9 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   }
 }
 
-struct F {
-  int _off;
-  int _pos;
-  F(int off, int pos) : _off(off), _pos(pos) {}
-  F() : _off(0), _pos(0) {}
-};
-
-static int compare_fields_by_offset(F* a, F* b) {
-  return a->_off - b->_off;
+// first in Pair is offset, second is index.
+static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
+  return a->first - b->first;
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
@@ -1657,12 +1652,12 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   ResourceMark rm;
   fieldDescriptor fd;
   // In DebugInfo nonstatic fields are sorted by offset.
-  GrowableArray<F> fields_sorted;
+  GrowableArray<Pair<int,int> > fields_sorted;
   int i = 0;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       fd = fs.field_descriptor();
-      F f(fs.offset(), fs.index());
+      Pair<int,int> f(fs.offset(), fs.index());
       fields_sorted.push(f);
       i++;
     }
@@ -1673,8 +1668,8 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
     // _sort_Fn is defined in growableArray.hpp.
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i)._pos);
-      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i)._off, "only nonstatic fields");
+      fd.reinitialize(this, fields_sorted.at(i).second);
+      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
