@@ -285,8 +285,6 @@ public class Arguments {
                 String[] values = spec.split("=", 2);
                 name = values[0];
                 filename = values[1];
-Log.info("--- for spec: " + spec + " len is: " + values.length +
-" and filename is: " + filename);
             }
             context().splitRuntime = new SplitRuntime(name, filename);
             setOptionValue("split-runtime", context().splitRuntime);
@@ -644,9 +642,12 @@ Log.info("--- for spec: " + spec + " len is: " + values.length +
             throw new PackagerException("ERR_NoEntryPoint");
         }
         if (isSplitRuntime && runtimeInstaller) {
-            // only case where split-runtime invalid is when we
-            // are already creating a runtime installer.
-            throw new PackagerException("ERR_NoSplitRuntime");
+            // split-runtime invalid is when creating a runtime installer.
+            throw new PackagerException("ERR_NoSplitRuntime", "--runtime-image");
+        }
+        if (isSplitRuntime && hasAppImage) {
+            // split-runtime invalid is with app-image specified.
+            throw new PackagerException("ERR_NoSplitRuntime", "--app-image");
         }
     }
 

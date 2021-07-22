@@ -668,8 +668,6 @@ void FileWriter::finalize() {
 }
 
 tstring_array listContents(const tstring& basedir, const tstring& name) {
-LOG_TRACE(tstrings::any() << "listing content in: "
-                          << basedir << " matching: " << name );
     return listNamedContents(basedir, name);
 }
 

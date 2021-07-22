@@ -66,7 +66,7 @@ tstring toAbsolutePath(const tstring& path) {
 }
 
 // The "release" file in a JDK or other Java runtime is in a directory with
-// several sub-dirs, but not a lot (or any) other files. 
+// several sub-dirs, but not a lot (or any) other files.
 // We use width to limit search.
 #define WIDTH 8
 #define TYPE_FILE 0x08

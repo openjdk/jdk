@@ -113,7 +113,7 @@ bool ReleaseFile::satisfies(ReleaseFile required, const tstring& versionSpec) {
         // now we need to make sure all required modules are there.
         tstring_array reqmods = required.modules;
         tstring_array canmods = modules;
-        
+
         for (int i=0; i<(int)reqmods.size(); i++) {
             int j = 0;
             for (; j<(int)canmods.size(); j++) {

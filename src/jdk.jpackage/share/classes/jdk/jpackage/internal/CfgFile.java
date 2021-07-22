@@ -95,7 +95,7 @@ final class CfgFile {
                     "$APPDIR" + File.separator + RELEASE_FILE_NAME));
 
             String sp = splitRuntime.getSearchPath();
-           
+
             String searchPath = splitRuntime.getInstallDir() + ","
                     + ((sp == null) ? "" : sp + ",") + getDefaultSearchPath();
 
@@ -175,6 +175,7 @@ final class CfgFile {
                 .orElseGet(() -> Optional.ofNullable(getEnvVariableAsPath(
                 "SystemDrive")).orElseGet(() -> Path.of("C:")).resolve(knownDir));
     }
+
     private static Path getEnvVariableAsPath(String envVar) {
         String path = System.getenv(envVar);
         if (path != null) {

@@ -51,12 +51,4 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
     return result;
 }
 
-tstring getAppDataPath() {
-    return "~/.config";
-}
-
-tstring getLibPath() {
-    return getEnvVariable(_T("LD_LIBRARY_PATH"));
-}
-
 } // end of namespace SysInfo

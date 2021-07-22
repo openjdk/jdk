@@ -209,13 +209,4 @@ bool isEnvVariableSet(const tstring& name) {
     return GetLastError() != ERROR_ENVVAR_NOT_FOUND;
 }
 
-tstring getAppDataPath() {
-    return getEnvVariable(std::nothrow, _T("APPDATA"));
-}
-
-tstring getLibPath() {
-    return getEnvVariable(_T("PATH"));
-}
-
-    
 } // end of namespace SysInfo

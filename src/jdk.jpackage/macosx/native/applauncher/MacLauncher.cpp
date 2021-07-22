@@ -52,13 +52,13 @@ void initJvmLauncher() {
     // Create JVM launcher and save in global variable.
     jvmLauncher = AppLauncher()
         .setImageRoot(appImageRoot)
-        .addJvmLibName(_T("lib/libjli.dylib"))
+        .addJvmLibName(_T("Contents/Home/lib/libjli.dylib"))
         // add backup - older version such as JDK11 have it in jli sub-dir
-        .addJvmLibName(_T("lib/jli/libjli.dylib"))
+        .addJvmLibName(_T("Contents/Home/lib/jli/libjli.dylib"))
         .setAppDir(FileUtils::mkpath() << appImageRoot << _T("Contents/app"))
         .setLibEnvVariableName(_T("DYLD_LIBRARY_PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                << _T("Contents/runtime/Contents/Home"))
+                << _T("Contents/runtime"))
         .createJvmLauncher();
 
     // Kick start JVM launching. The function wouldn't return!

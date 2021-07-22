@@ -92,8 +92,6 @@ namespace SysInfo {
      * Returns 'true' if environment variable with the given name is set.
      */
     bool isEnvVariableSet(const tstring& name);
-
-    tstring getLibPath();
 }
 
 #endif // SYSINFO_H

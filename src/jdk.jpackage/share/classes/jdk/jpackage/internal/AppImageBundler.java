@@ -170,18 +170,6 @@ class AppImageBundler extends AbstractBundler {
         SplitRuntime splitRuntime = SPLIT_RUNTIME.fetchFrom(params);
         if (splitRuntime.getName() != null) {
             runtimeTarget = RUNTIME_ROOT.fetchFrom(params);
-/*
- * The following causes --split-runtime to imply --runtime-image=$JAVA_HOME
- * that is, we would always create a "full" runtime image (if not given
- * another --runtime-image arg.)
- * Since either way it is possible to create full or minimal runtime, we will
- * leave the default alone
- *
-            if (runtimeSource == null) {
-                runtimeSource = Path.of(System.getProperty("java.home"));
-            }
- *
- */
         }
         if (runtimeSource == null ) {
             JLinkBundlerHelper.execute(params, runtimeTarget);
