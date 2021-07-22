@@ -50,12 +50,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -172,6 +175,12 @@ public abstract class JavadocTester {
     private final Map<File,SoftReference<String>> fileContentCache = new HashMap<>();
     /** The charset used for files in the fileContentCache. */
     private Charset fileContentCacheCharset = null;
+
+    /** History of calls to checkOutput */
+    private final Map<FileAndFlag, Set<StringsAndStacktrace>> checkOutputCalls = new HashMap<>();
+    // The below two records are implicitly static
+    private record FileAndFlag(String file, boolean expectFound) { }
+    private record StringsAndStacktrace(List<String> strings, List<StackWalker.StackFrame> stackFrames) { }
 
     /** Stream used for logging messages. */
     protected final PrintStream out = System.out;
@@ -307,6 +316,7 @@ public abstract class JavadocTester {
     public void javadoc(String... args) {
         outputMap.clear();
         fileContentCache.clear();
+        checkOutputCalls.clear();
 
         javadocRunNum++;
         javadocTestNum = 0; // reset counter for this run of javadoc
@@ -500,10 +510,11 @@ public abstract class JavadocTester {
      * @param strings the strings to be searched for
      *
      * @throws IllegalArgumentException as a protective measure against a
-     * situation where the provided array of strings contains a pair of strings
-     * s1 and s2 such that s1.startsWith(s2). Such a situation is problematic
-     * because in order to match s1 and s2, it suffices for the output to
-     * contain only s1.
+     * situation where there exists a pair of strings s1 and s2 among the
+     * provided so far such that s1.contains(s2). Such a situation is confusing
+     * and might indicate a bug because in order for the check to succeed, it
+     * suffices for the output to (not) contain only one of these strings. Which
+     * one, depends on the {@code expectFound} flag.
      */
     public void checkOutput(String path, boolean expectedFound, String... strings) {
         // Read contents of file
@@ -527,10 +538,11 @@ public abstract class JavadocTester {
      * @param strings the strings to be searched for
      *
      * @throws IllegalArgumentException as a protective measure against a
-     * situation where the provided array of strings contains a pair of strings
-     * s1 and s2 such that s1.startsWith(s2). Such a situation is problematic
-     * because in order to match s1 and s2, it suffices for the output to
-     * contain only s1.
+     * situation where there exists a pair of strings s1 and s2 among the
+     * provided so far such that s1.contains(s2). Such a situation is confusing
+     * and might indicate a bug because in order for the check to succeed, it
+     * suffices for the output to (not) contain only one of these strings. Which
+     * one, depends on the {@code expectFound} flag.
      */
     public void checkOutput(Output output, boolean expectedFound, String... strings) {
         checkOutput(output.toString(), outputMap.get(output), expectedFound, strings);
@@ -538,8 +550,7 @@ public abstract class JavadocTester {
 
     // NOTE: path may be the name of an Output stream as well as a file path
     private void checkOutput(String path, String fileString, boolean expectedFound, String... strings) {
-        if (checkIfPrefixes(strings))
-            throw new IllegalArgumentException("Prefix strings detected; use checkOrder instead or fix the strings.");
+        checkConfusingStrings(path, fileString, expectedFound, strings);
         for (String stringToFind : strings) {
 //            log.logCheckOutput(path, expectedFound, stringToFind);
             checking("checkOutput");
@@ -557,14 +568,96 @@ public abstract class JavadocTester {
         }
     }
 
-    private static boolean checkIfPrefixes(String... strings) {
-        String[] copy = Arrays.copyOf(strings, strings.length);
-        Arrays.sort(copy);
-        for (int i = 0; i < copy.length - 1; i++) {
-            if (copy[i + 1].startsWith(copy[i]))
-                return true;
+    /*
+     * This method might double-count confusing strings because the call data is
+     * stored unconditionally. This is to report all errors at once.
+     */
+    private void checkConfusingStrings(String path, String fileString, boolean expectedFound, String... strings) {
+        FileAndFlag key = new FileAndFlag(path, expectedFound);
+        // get the relevant stacktrace (i.e. without topmost frames related to JavadocTester)
+        List<StackWalker.StackFrame> frames = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(s -> s.dropWhile(f -> f.getDeclaringClass() == JavadocTester.class).toList());
+        StringsAndStacktrace value = new StringsAndStacktrace(List.of(strings), frames);
+        Set<StringsAndStacktrace> prevSet = checkOutputCalls.getOrDefault(key, Set.of());
+        checkOutputCalls.put(key, mergeSets(prevSet, Set.of(value)));
+        Map<String, Set<String>> thisCallConfusingStrings = findConfusingStrings(Arrays.asList(strings));
+        String details = "";
+        if (!thisCallConfusingStrings.isEmpty()) {
+            details += "Confusing strings in this call:\n";
+            details += "Currently called from:\n\n" + stringFromStackFrames(value.stackFrames()).indent(4) + "\n";
+            details += describeConfusingStrings(fileString, thisCallConfusingStrings);
         }
-        return false;
+        for (var stringsAndStacktrace : prevSet) {
+            Map<String, Set<String>> prevCallConfusingStrings = findConfusingStrings(mergeLists(stringsAndStacktrace.strings(), List.of(strings)));
+            if (!prevCallConfusingStrings.equals(thisCallConfusingStrings)) {
+                details += "Confusing strings across this and previous calls:\n";
+                details += "Currently called from:\n\n" + stringFromStackFrames(value.stackFrames()).indent(4) + "\n";
+                details += "Previously called from:\n\n" + stringFromStackFrames(stringsAndStacktrace.stackFrames()).indent(4) + "\n";
+                details += describeConfusingStrings(fileString, prevCallConfusingStrings) + "\n";
+            }
+        }
+        if (!details.isEmpty()) {
+//            System.out.println(details);
+            throw new IllegalArgumentException(details);
+        }
+    }
+
+    private static String describeConfusingStrings(String fileString, Map<String, Set<String>> thisCallConfusingStrings) {
+        StringBuilder detail = new StringBuilder();
+        thisCallConfusingStrings.forEach((subString, superStrings) -> {
+            long count = Pattern.compile(Pattern.quote(subString)).matcher(fileString).results().count();
+            String sup = String.join("\n\n", superStrings);
+            detail.append(
+                    """
+                    substring:
+                    %s
+                    number of occurrences in the output:
+                    %s
+                    superstrings:
+                    %s
+
+                    """.formatted(subString, count, sup));
+        });
+        return detail.toString().indent(4);
+    }
+
+    private static String stringFromStackFrames(List<StackWalker.StackFrame> value) {
+        return value.stream().map(Object::toString).collect(Collectors.joining("\n"));
+    }
+
+    private static <T> Set<T> mergeSets(Set<T> a, Set<T> b) {
+        var merged = new HashSet<>(a);
+        merged.addAll(b);
+        return merged;
+    }
+
+    private static <T> List<T> mergeLists(List<T> a, List<T> b) {
+        var merged = new ArrayList<>(a);
+        merged.addAll(b);
+        return merged;
+    }
+
+    /*
+     * 1. This algorithm runs in the order of O(N^2). Given that the typical
+     * number N of strings is small, this is not an issue.
+     *
+     * 2. This algorithm goes the extra mile so as to be helpful: it not only
+     * detects that there are problematic strings, but also points to the
+     * specific pairs that conflict.
+     */
+    private static Map<String, Set<String>> findConfusingStrings(List<String> strings) {
+        Map<String, Set<String>> r = new HashMap<>();
+        for (int i = 0; i < strings.size(); i++) {
+            var s1 = strings.get(i);
+            for (int j = 0; j < strings.size(); j++) {
+                var s2 = strings.get(j);
+                if (i == j) // do not count self
+                    continue;
+                if (s1.contains(s2))
+                    r.merge(s2, Set.of(s1), JavadocTester::mergeSets);
+            }
+        }
+        return r;
     }
 
     /**
