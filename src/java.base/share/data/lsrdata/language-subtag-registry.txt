@@ -1,4 +1,4 @@
-File-Date: 2021-05-11
+File-Date: 2021-07-21
 %%
 Type: language
 Subtag: aa
@@ -47777,6 +47777,13 @@ Added: 2010-06-29
 Prefix: rm
 Comments: Sutsilvan is one of the five traditional written standards or
   "idioms" of the Romansh language.
+%%
+Type: variant
+Subtag: synnejyl
+Description: Synnejysk
+Description: South Jutish
+Added: 2021-07-17
+Prefix: da
 %%
 Type: variant
 Subtag: tarask
