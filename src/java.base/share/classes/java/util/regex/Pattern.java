@@ -755,7 +755,7 @@ import jdk.internal.util.ArraysSupport;
  *    within a group; in the latter case, flags are restored at the end of the
  *    group just as in Perl.  </p></li>
  *
- *    <li><p> In Perl, <i>free-spacing mode</i> (which is called <i>comments
+ *    <li><p><i>Free-spacing mode</i> in Perl (called <i>comments
  *    mode</i> in this class) denoted by {@code (?x)} in the regular
  *    expression (or by the {@link Pattern#COMMENTS} flag when compiling
  *    the expression) will not ignore whitespace inside of character classes. In
