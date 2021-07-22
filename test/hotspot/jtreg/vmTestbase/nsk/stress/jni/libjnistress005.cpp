@@ -93,8 +93,15 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
 
   clazz = env->FindClass(name); CE
   if (env->ThrowNew(clazz, mess) != 0) {
+    const char *pass = "setpass";
+    const char *passSig = "(Z)V";
+    jclass incClazz;
     fprintf(stderr, "ThrowNew failed\n");
     CE;
+    // ThrowNew failed but didn't itself raise an exception
+    incClazz = env->FindClass(iter); CE
+    jmethod=env->GetStaticMethodID(incClazz, pass, passSig); CE
+    env->CallStaticVoidMethod(incClazz, jmethod, JNI_FALSE); CE
   }
   /*     printf("JNI: count %d\n", Exceptcalls); */
 }
