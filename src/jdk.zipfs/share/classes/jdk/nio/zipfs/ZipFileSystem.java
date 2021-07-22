@@ -33,7 +33,6 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.lang.Runtime.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -1976,22 +1975,14 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public synchronized void write(int b) throws IOException {
-            try {
-                out.write(b);
-            } catch (UncheckedIOException uioe) {
-                throw uioe.getCause();
-            }
+            out.write(b);
             written += 1;
         }
 
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            try {
-                out.write(b, off, len);
-            } catch (UncheckedIOException uioe) {
-                throw uioe.getCause();
-            }
+            out.write(b, off, len);
             written += len;
         }
 
@@ -2026,11 +2017,7 @@ class ZipFileSystem extends FileSystem {
         @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
-            try {
-                super.write(b, off, len);
-            } catch (UncheckedIOException uioe) {
-                throw uioe.getCause();
-            }
+            super.write(b, off, len);
             crc.update(b, off, len);
         }
 
@@ -2137,18 +2124,18 @@ class ZipFileSystem extends FileSystem {
     // byte array, to that newly created file. The temp file is then opened
     // in append mode and any subsequent writes, including the one which triggered
     // the temporary file creation, will be written to the file.
-    private class FileRolloverOutputStream extends ByteArrayOutputStream {
+    private class FileRolloverOutputStream extends OutputStream {
+        private ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
         private final Entry entry;
-        private long totalWritten = 0;
         private OutputStream tmpFileOS;
+        private long totalWritten = 0;
 
-        FileRolloverOutputStream(final Entry e) {
-            super(8192);
+        private FileRolloverOutputStream(final Entry e) {
             this.entry = e;
         }
 
         @Override
-        public synchronized void write(int b) throws UncheckedIOException {
+        public synchronized void write(final int b) throws IOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b);
@@ -2156,21 +2143,22 @@ class ZipFileSystem extends FileSystem {
             }
             if (totalWritten + 1 < tempFileCreationThreshold) {
                 // write to our in-memory byte array
-                super.write(b);
+                baos.write(b);
                 totalWritten++;
                 return;
             }
             // rollover into a file
-            try {
-                transferToFile();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            transferToFile();
             writeToFile(b);
         }
 
         @Override
-        public synchronized void write(byte[] b, int off, int len) throws UncheckedIOException {
+        public void write(final byte[] b) throws IOException {
+            write(b, 0, b.length);
+        }
+
+        @Override
+        public synchronized void write(final byte[] b, final int off, final int len) throws IOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b, off, len);
@@ -2178,41 +2166,37 @@ class ZipFileSystem extends FileSystem {
             }
             if (totalWritten + len < tempFileCreationThreshold) {
                 // write to our in-memory byte array
-                super.write(b, off, len);
+                baos.write(b, off, len);
                 totalWritten += len;
                 return;
             }
             // rollover into a file
-            try {
-                transferToFile();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            transferToFile();
             writeToFile(b, off, len);
         }
 
         @Override
+        public void flush() throws IOException {
+            if (tmpFileOS != null) {
+                tmpFileOS.flush();
+            }
+        }
+
+        @Override
         public void close() throws IOException {
+            baos = null;
             if (tmpFileOS != null) {
                 tmpFileOS.close();
             }
         }
 
-        private void writeToFile(int b) throws UncheckedIOException {
-            try {
-                tmpFileOS.write(b);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+        private void writeToFile(int b) throws IOException {
+            tmpFileOS.write(b);
             totalWritten++;
         }
 
-        private void writeToFile(byte[] b, int off, int len) throws UncheckedIOException {
-            try {
-                tmpFileOS.write(b, off, len);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+        private void writeToFile(byte[] b, int off, int len) throws IOException {
+            tmpFileOS.write(b, off, len);
             totalWritten += len;
         }
 
@@ -2221,13 +2205,16 @@ class ZipFileSystem extends FileSystem {
             entry.file = getTempPathForEntry(null);
             // transfer the already written data from the byte array buffer into this tempfile
             try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(entry.file))) {
-                new ByteArrayInputStream(buf, 0, count).transferTo(os);
+                baos.writeTo(os);
             }
-            // clear the in-memory buffer and shrink the buffer
-            reset();
-            buf = new byte[0];
+            // release the underlying byte array
+            baos = null;
             // append any further data to the file with buffering enabled
             tmpFileOS = new BufferedOutputStream(Files.newOutputStream(entry.file, APPEND));
+        }
+
+        private byte[] toByteArray() {
+            return baos == null ? null : baos.toByteArray();
         }
     }
 
