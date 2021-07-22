@@ -23,7 +23,7 @@
 package vm.share.gc;
 
 /**
- * This class is used to differ OOME in metaspace and heap when trigger class unloading.
+ * This class is used to distinguish between OOME in metaspace and OOME in heap when triggering class unloading.
  */
 public class HeapOOMEException extends RuntimeException {
 
