@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref TrimmingEmptyTag.out TrimmingEmptyTag.java
+ * @run main DocLintTester -ref TrimmingEmptyTag.out TrimmingEmptyTag.java
  */
 
 // tidy: Warning: trimming empty <.*>

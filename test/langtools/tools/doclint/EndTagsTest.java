@@ -4,8 +4,8 @@
  * @summary doclint: structural issue hidden
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing,-html EndTagsTest.java
- * @run main DocLintTester -Xmsgs:all,-missing -ref EndTagsTest.out EndTagsTest.java
+ * @run main DocLintTester -Xmsgs:-html EndTagsTest.java
+ * @run main DocLintTester -ref EndTagsTest.out EndTagsTest.java
  */
 
 /** */

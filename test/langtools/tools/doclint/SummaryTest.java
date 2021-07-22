@@ -16,7 +16,4 @@ public class SummaryTest {
 
     /** {@summary legal} text {@summary illegal} **/
     public void m2() {}
-
-    /** . */
-    private SummaryTest() { }
 }

@@ -1,5 +1,0 @@
-SyntheticTest.java:37: warning: use of default constructor, which does not provide a comment
-public class SyntheticTest {
-       ^
-1 warning
-

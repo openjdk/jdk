@@ -9,7 +9,7 @@
  */
 
 /** . */
-public class EmptyTagsTest { /** . */ EmptyTagsTest() { }
+public class EmptyTagsTest {
     /**
      * Comment. <p>
      */

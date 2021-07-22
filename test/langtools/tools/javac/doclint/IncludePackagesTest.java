@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,39 +63,29 @@ public class IncludePackagesTest {
 
     final String[] sources = new String[] {
         "p1/p1T.java",
-        """
-            package p1;
-            /** Syntax < error. */
-            public class p1T {
-            }
-            """,
+        "package p1;\n" +
+        "/** Syntax < error. */\n" +
+        "public class p1T {\n" +
+        "}\n",
         "p1/sp1/p1sp1T.java",
-        """
-            package p1.sp1;
-            /** Syntax < error. */
-            public class p1sp1T {
-            }
-            """,
+        "package p1.sp1;\n" +
+        "/** Syntax < error. */\n" +
+        "public class p1sp1T {\n" +
+        "}\n",
         "p1/sp1/sp2/p1sp1sp2T.java",
-        """
-            package p1.sp1.sp2;
-            /** Syntax < error. */
-            public class p1sp1sp2T {
-            }
-            """,
+        "package p1.sp1.sp2;\n" +
+        "/** Syntax < error. */\n" +
+        "public class p1sp1sp2T {\n" +
+        "}\n",
         "p2/p2T.java",
-        """
-            package p2;
-            /** Syntax < error. */
-            public class p2T {
-            }
-            """,
+        "package p2;\n" +
+        "/** Syntax < error. */\n" +
+        "public class p2T {\n" +
+        "}\n",
         "Default.java",
-        """
-            /** Syntax < error. */
-            public class Default {
-            }
-            """,
+        "/** Syntax < error. */\n" +
+        "public class Default {\n" +
+        "}\n",
     };
 
     final String rawDiags = "-XDrawDiagnostics";
@@ -140,28 +130,28 @@ public class IncludePackagesTest {
                 files.add(new JFOImpl(sources[si], sources[si + 1]));
             }
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing"),
+            test(Arrays.asList(rawDiags, "-Xdoclint"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.p1T, Message.p1sp1T, Message.p1sp1sp2T,
                                Message.p2T, Message.Default));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing", "-Xdoclint/package:p1"),
+            test(Arrays.asList(rawDiags, "-Xdoclint", "-Xdoclint/package:p1"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.p1T));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing", "-Xdoclint/package:p1.*"),
+            test(Arrays.asList(rawDiags, "-Xdoclint", "-Xdoclint/package:p1.*"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.p1sp1T, Message.p1sp1sp2T));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing", "-Xdoclint/package:p1.*,-p1.sp1"),
+            test(Arrays.asList(rawDiags, "-Xdoclint", "-Xdoclint/package:p1.*,-p1.sp1"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.p1sp1sp2T));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing", "-Xdoclint/package:-p1.sp1"),
+            test(Arrays.asList(rawDiags, "-Xdoclint", "-Xdoclint/package:-p1.sp1"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.p1T, Message.p1sp1sp2T, Message.p2T, Message.Default));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all,-missing", "-Xdoclint/package:wrong+package"),
+            test(Arrays.asList(rawDiags, "-Xdoclint", "-Xdoclint/package:wrong+package"),
                     Main.Result.CMDERR,
                     EnumSet.of(Message.INVALID_PACKAGE_ERROR));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class DocLintTest {
 
     final String code =
         /* 01 */    "/** Class comment. */\n" +
-        /* 02 */    "public class Test { /** */ Test() { }\n" +
+        /* 02 */    "public class Test {\n" +
         /* 03 */    "    /** Method comment. */\n" +
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "\n" +

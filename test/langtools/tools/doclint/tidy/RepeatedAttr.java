@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref RepeatedAttr.out RepeatedAttr.java
+ * @run main DocLintTester -ref RepeatedAttr.out RepeatedAttr.java
  */
 
 // tidy: Warning: <.*> dropping value ".*" for repeated attribute ".*"

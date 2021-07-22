@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref MissingGT.out MissingGT.java
+ * @run main DocLintTester -ref MissingGT.out MissingGT.java
  */
 
 // tidy: Warning: <.*> missing '>' for end of tag

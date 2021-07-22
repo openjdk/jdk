@@ -1,7 +1,0 @@
-NoArgsConstructorTest.java:10: warning: use of default constructor, which does not provide a comment
-public class NoArgsConstructorTest {
-       ^
-NoArgsConstructorTest.java:15: warning: no comment
-        public PublicConstructor() { }
-               ^
-2 warnings

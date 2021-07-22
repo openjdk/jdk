@@ -10,5 +10,4 @@
 
 /** @author */
 public class EmptyAuthorTest {
-    /** */ EmptyAuthorTest() { }
 }
