@@ -179,7 +179,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
       cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
     } else if (strcmp(name, "pids") == 0) {
-      log_info(os, container)("Detected optional pids controller entry in %s", proc_cgroups);
+      log_debug(os, container)("Detected optional pids controller entry in %s", proc_cgroups);
       cg_infos[PIDS_IDX]._name = os::strdup(name);
       cg_infos[PIDS_IDX]._hierarchy_id = hierarchy_id;
       cg_infos[PIDS_IDX]._enabled = (enabled == 1);

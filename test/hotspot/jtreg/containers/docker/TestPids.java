@@ -67,6 +67,7 @@ public class TestPids {
         testPids("400");
         testPids("800");
         testPids("2000");
+        testPids("Unlimited");
     }
 
     private static DockerRunOptions commonOpts() {
@@ -105,10 +106,18 @@ public class TestPids {
         Common.logNewTestCase("pids controller test, limiting value = " + value);
 
         DockerRunOptions opts = commonOpts();
-        opts.addDockerOpts("--pids-limit=" + value);
+        if (value.equals("Unlimited")) {
+            opts.addDockerOpts("--pids-limit=-1");
+        } else {
+            opts.addDockerOpts("--pids-limit="+value);
+        }
 
         List<String> lines = Common.run(opts).asLines();
-        checkResult(lines, "Maximum number of tasks is: ", value);
+        if (value.equals("Unlimited")) {
+            checkResult(lines, "Maximum number of tasks is: ", "max");
+        } else {
+            checkResult(lines, "Maximum number of tasks is: ", value);
+        }
     }
 
 }

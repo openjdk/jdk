@@ -406,7 +406,7 @@ public final class LauncherHelper {
         ostream.println(formatLimitString(limit, INDENT + "Memory & Swap Limit: ", longRetvalNotSupported));
 
         limit = c.getPidsMax();
-        ostream.println(formatLimitString(limit, INDENT + "Maximum number of tasks available to the process: ",
+        ostream.println(formatLimitString(limit, INDENT + "Maximum Processes Limit: ",
                                           longRetvalNotSupported, false));
         ostream.println("");
     }

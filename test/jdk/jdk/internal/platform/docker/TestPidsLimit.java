@@ -58,9 +58,11 @@ public class TestPidsLimit {
     }
 
     private static void testPidsLimit(String pidsLimit) throws Exception {
-        Common.logNewTestCase("TestPidsLimit");
+        Common.logNewTestCase("testPidsLimit (limit: " + pidsLimit + ")");
         DockerRunOptions opts = Common.newOptsShowSettings(imageName);
-        if (! pidsLimit.equals("Unlimited")) {
+        if (pidsLimit.equals("Unlimited")) {
+            opts.addDockerOpts("--pids-limit=-1");
+        } else {
             opts.addDockerOpts("--pids-limit="+pidsLimit);
         }
 
@@ -71,7 +73,7 @@ public class TestPidsLimit {
         if (sdr.contains("WARNING: Your kernel does not support pids limit capabilities")) {
             System.out.println("Docker pids limitation seems not to work, avoiding check");
         } else {
-            out.shouldContain("Maximum number of tasks available to the process: " + pidsLimit);
+            out.shouldContain("Maximum Processes Limit: " + pidsLimit);
         }
     }
 }
