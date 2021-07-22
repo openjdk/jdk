@@ -54,7 +54,7 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      zypper)
+      *zypper*)
         zypper_help  $MISSING_DEPENDENCY ;;
       pacman)
         pacman_help  $MISSING_DEPENDENCY ;;
