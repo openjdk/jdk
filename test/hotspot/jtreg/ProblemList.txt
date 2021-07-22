@@ -100,6 +100,8 @@ runtime/os/TestTracePageSizes.java#with-G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#with-Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#with-Serial 8267460 linux-aarch64
 
+applications/jcstress/copy.java 8229852 linux-x64
+
 #############################################################################
 
 # :hotspot_serviceability
@@ -115,6 +117,8 @@ serviceability/sa/ClhsdbCDSCore.java 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#id1 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#id3 8269982 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#id1 8269982 macosx-aarch64
+
+serviceability/dcmd/gc/HeapDumpAllTest.java 8270341 generic-x64
 
 #############################################################################
 
