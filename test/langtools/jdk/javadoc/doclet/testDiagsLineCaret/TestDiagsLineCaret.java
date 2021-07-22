@@ -62,7 +62,6 @@ public class TestDiagsLineCaret extends JavadocTester {
                 "-XDaccessInternalAPI",
                 "-tagletpath", testClasses,
                 "-taglet", "MyTaglet",
-                "-Xdoclint:none",
                 "MyClass.java");
         checkExit(Exit.ERROR);
 

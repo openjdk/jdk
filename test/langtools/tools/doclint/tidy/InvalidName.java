@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref InvalidName.out InvalidName.java
+ * @run main DocLintTester -ref InvalidName.out InvalidName.java
  */
 
 // tidy: Warning: <a> cannot copy name attribute to id

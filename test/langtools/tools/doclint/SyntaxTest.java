@@ -14,8 +14,5 @@ public class SyntaxTest {
      * a < b
      */
     public void syntax_error() { }
-
-    /** */
-    private SyntaxTest() { }
 }
 

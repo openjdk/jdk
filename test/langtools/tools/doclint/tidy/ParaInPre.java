@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref ParaInPre.out ParaInPre.java
+ * @run main DocLintTester -ref ParaInPre.out ParaInPre.java
  */
 
 // tidy: Warning: replacing <p> by <br>

@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref ListTagsTest.out ListTagsTest.java
+ * @run main DocLintTester -Xmsgs -ref ListTagsTest.out ListTagsTest.java
  */
 
 /** */

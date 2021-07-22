@@ -12,7 +12,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /** . */
-public class EmptySerialDataTest implements Serializable { /** . */ EmptySerialDataTest() { }
+public class EmptySerialDataTest implements Serializable {
     /**
      * .
      * @serialData

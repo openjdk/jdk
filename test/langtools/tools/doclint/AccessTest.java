@@ -19,7 +19,7 @@
  */
 
 /** */
-public class AccessTest { /** */ AccessTest() { }
+public class AccessTest {
     /**
      * public a < b
      */
@@ -42,7 +42,7 @@ public class AccessTest { /** */ AccessTest() { }
 }
 
 /** */
-class AccessTest2 { /** */ AccessTest2() { }
+class AccessTest2 {
     /**
      * public a < b
      */

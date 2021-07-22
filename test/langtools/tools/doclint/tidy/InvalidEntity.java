@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref InvalidEntity.out InvalidEntity.java
+ * @run main DocLintTester -ref InvalidEntity.out InvalidEntity.java
  */
 
 // tidy: Warning: replacing invalid numeric character reference .*

@@ -4,8 +4,8 @@
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing,-html HtmlTagsTest.java
- * @run main DocLintTester -Xmsgs:all,-missing -ref HtmlTagsTest.out HtmlTagsTest.java
+ * @run main DocLintTester -Xmsgs:-html HtmlTagsTest.java
+ * @run main DocLintTester -ref HtmlTagsTest.out HtmlTagsTest.java
  */
 
 /** */

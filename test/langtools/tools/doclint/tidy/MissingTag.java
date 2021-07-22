@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref MissingTag.out MissingTag.java
+ * @run main DocLintTester -ref MissingTag.out MissingTag.java
  */
 
 // tidy: Warning: missing <.*>

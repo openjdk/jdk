@@ -4,8 +4,8 @@
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing,-accessibility AccessibilityTest.java
- * @run main DocLintTester -Xmsgs:all,-missing -ref AccessibilityTest.out AccessibilityTest.java
+ * @run main DocLintTester -Xmsgs:-accessibility AccessibilityTest.java
+ * @run main DocLintTester -ref AccessibilityTest.out AccessibilityTest.java
  */
 
 /** */

@@ -182,18 +182,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 reportMissing("dc.missing.comment");
                 return null;
             }
-
-
-
         } else {
             if (tree == null) {
-                if (isDefaultConstructor()) {
-                    if (isNormalClass(p.getParentPath())) {
-                        reportMissing("dc.default.constructor");
-                    }
-                } else if (!isOverridingMethod) {
+                if (!isSynthetic() && !isOverridingMethod)
                     reportMissing("dc.missing.comment");
-                }
                 return null;
             }
         }
@@ -1150,7 +1142,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
     }
 
-    private boolean isDefaultConstructor() {
+    private boolean isSynthetic() {
         switch (env.currElement.getKind()) {
             case CONSTRUCTOR:
                 // A synthetic default constructor has the same pos as the
@@ -1159,14 +1151,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
-    }
-
-    private boolean isNormalClass(TreePath p) {
-        return switch (p.getLeaf().getKind()) {
-            case ENUM, RECORD -> false;
-            case CLASS -> true;
-            default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
-        };
     }
 
     void markEnclosingTag(Flag flag) {

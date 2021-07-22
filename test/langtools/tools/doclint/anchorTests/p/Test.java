@@ -50,11 +50,5 @@ public class Test {
          * <a id="okMethod">okMethod again</a>
          */
         public void m() { }
-
-        /** . */
-        private Nested() { }
     }
-
-    /** . */
-    private Test() { }
 }

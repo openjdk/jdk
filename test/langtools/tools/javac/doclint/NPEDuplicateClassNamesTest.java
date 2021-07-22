@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class NPEDuplicateClassNamesTest extends TestRunner {
                 "2 errors");
         List<String> output = new JavacTask(tb)
                   .outdir(classes)
-                  .options("-XDrawDiagnostics", "-Xdoclint:all,-missing", "-XDdev")
+                  .options("-XDrawDiagnostics", "-Xdoclint:all", "-XDdev")
                   .files(tb.findJavaFiles(src))
                   .run(Task.Expect.FAIL)
                   .writeAll()

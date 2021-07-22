@@ -12,7 +12,7 @@ import java.io.ObjectStreamField;
 import java.io.Serializable;
 
 /** . */
-public class EmptySerialFieldTest implements Serializable { /** . */ EmptySerialFieldTest() { }
+public class EmptySerialFieldTest implements Serializable {
 
     /**
      * @serialField empty    String

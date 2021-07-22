@@ -4,7 +4,7 @@
  * @summary doclint needs to check for valid usage of at-value tag
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all,-missing -ref ValueTest.out ValueTest.java
+ * @run main DocLintTester -ref ValueTest.out ValueTest.java
  */
 
 /** */
