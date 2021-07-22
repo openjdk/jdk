@@ -853,23 +853,35 @@ enum CipherSuite {
 
     final boolean exportable;
 
-    private static final Map<Integer, CipherSuite> maps_id;
-    private static final Map<String, CipherSuite> maps_name;
-    private static final CipherSuite[] ciphers = CipherSuite.values();
+    private static final Map<Integer, CipherSuite> cipherSuiteIds;
+    private static final Map<String, CipherSuite> cipherSuiteNames;
+    private static final List<CipherSuite> allowedCipherSuites;
+    private static final List<CipherSuite> defaultCipherSuites;
 
     static {
         Map<Integer, CipherSuite> ids = new HashMap<>();
         Map<String, CipherSuite> names = new HashMap<>();
-
-        for(CipherSuite cs : ciphers) {
+        List<CipherSuite> allowedCS = new ArrayList<>();
+        List<CipherSuite> defaultCS = new ArrayList<>();
+        for(CipherSuite cs : CipherSuite.values()) {
             ids.put(cs.id, cs);
             names.put(cs.name, cs);
             for (String alias : cs.aliases) {
                 names.put(alias, cs);
             }
+
+            if (!cs.supportedProtocols.isEmpty()) {
+                allowedCS.add(cs);
+            }
+
+            if (cs.isDefaultEnabled) {
+                defaultCS.add(cs);
+            }
         }
-        maps_id = Map.copyOf(ids);
-        maps_name = Map.copyOf(names);
+        cipherSuiteIds = Map.copyOf(ids);
+        cipherSuiteNames = Map.copyOf(names);
+        allowedCipherSuites = List.copyOf(allowedCS);
+        defaultCipherSuites = List.copyOf(defaultCS);
     }
 
     // known but unsupported cipher suite
@@ -909,49 +921,29 @@ enum CipherSuite {
     }
 
     static CipherSuite nameOf(String ciperSuiteName) {
-        return maps_name.get(ciperSuiteName);
+        return cipherSuiteNames.get(ciperSuiteName);
     }
 
     static CipherSuite valueOf(int id) {
-        return maps_id.get(id);
+        return cipherSuiteIds.get(id);
     }
 
     static String nameOf(int id) {
-        String name = maps_id.get(id).name;
+        CipherSuite cs = cipherSuiteIds.get(id);
 
-        if (name != null) {
-            return name;
+        if (cs != null) {
+            return cs.name;
         }
 
         return "UNKNOWN-CIPHER-SUITE(" + Utilities.byte16HexString(id) + ")";
     }
 
     static Collection<CipherSuite> allowedCipherSuites() {
-        Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : ciphers) {
-            if (!cs.supportedProtocols.isEmpty()) {
-                cipherSuites.add(cs);
-            } else {
-                // values() is ordered, remaining cipher suites are
-                // not supported.
-                break;
-            }
-        }
-        return cipherSuites;
+        return allowedCipherSuites;
     }
 
     static Collection<CipherSuite> defaultCipherSuites() {
-        Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : ciphers) {
-            if (cs.isDefaultEnabled) {
-                cipherSuites.add(cs);
-            } else {
-                // values() is ordered, remaining cipher suites are
-                // not enabled.
-                break;
-            }
-        }
-        return cipherSuites;
+        return defaultCipherSuites;
     }
 
     /**
@@ -974,17 +966,11 @@ enum CipherSuite {
             }
 
             boolean found = false;
-            for (CipherSuite cs : ciphers) {
-                if (!cs.supportedProtocols.isEmpty()) {
-                    if (cs.name.equals(name) ||
-                            cs.aliases.contains(name)) {
-                        cipherSuites.add(cs);
-                        found = true;
-                        break;
-                    }
-                } else {
-                    // values() is ordered, remaining cipher suites are
-                    // not supported.
+            for (CipherSuite cs : allowedCipherSuites) {
+                if (cs.name.equals(name) ||
+                        cs.aliases.contains(name)) {
+                    cipherSuites.add(cs);
+                    found = true;
                     break;
                 }
             }
