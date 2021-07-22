@@ -49,7 +49,7 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   jfieldID fieldID;
   const char *classname = "nsk/stress/jni/objectsJNI";
   const char *name = "<init>";
-  const char *sig = "(Ljava/lang/String; IJ[CFD)V";
+  const char *sig = "(Ljava/lang/String;IJ[CFD)V";
   const char *upperClassName = "nsk/stress/jni/jnistress002";
   const char *fieldName = "jniStringAllocSize";
   const char *fieldSig = "I";
