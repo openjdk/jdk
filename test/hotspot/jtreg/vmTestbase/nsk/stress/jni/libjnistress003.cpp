@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,17 +72,17 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
     env->SetObjectArrayElement(objectsArray, i,arrayArray[i]); CE
   }
 
-  boolBuf = (jboolean *)c_malloc(env, SIZE*sizeof(jboolean));
-  byteBuf = (jbyte *)c_malloc(env, SIZE*sizeof(jbyte));
-  charBuf = (jchar *)c_malloc(env, SIZE*sizeof(jchar));
-  shortBuf = (jshort *)c_malloc(env, SIZE*sizeof(jshort));
-  intBuf = (jint *)c_malloc(env, SIZE*sizeof(jint));
-  longBuf = (jlong *)c_malloc(env, SIZE*sizeof(jlong));
-  floatBuf = (jfloat *)c_malloc(env, SIZE*sizeof(jfloat));
-  doubleBuf = (jdouble *)c_malloc(env, SIZE*sizeof(jdouble));
+  boolBuf = (jboolean *)c_malloc(env, SIZE * sizeof(jboolean));
+  byteBuf = (jbyte *)c_malloc(env, SIZE * sizeof(jbyte));
+  charBuf = (jchar *)c_malloc(env, SIZE * sizeof(jchar));
+  shortBuf = (jshort *)c_malloc(env, SIZE * sizeof(jshort));
+  intBuf = (jint *)c_malloc(env, SIZE * sizeof(jint));
+  longBuf = (jlong *)c_malloc(env, SIZE * sizeof(jlong));
+  floatBuf = (jfloat *)c_malloc(env, SIZE * sizeof(jfloat));
+  doubleBuf = (jdouble *)c_malloc(env, SIZE * sizeof(jdouble));
 
   for (i = 0; i < SIZE; i++) {
-    if (i%2 == 0) {
+    if (i % 2 == 0) {
       boolBuf[i] = JNI_TRUE;
     } else {
       boolBuf[i] = JNI_FALSE;
@@ -166,8 +166,8 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   CHECK(env->MonitorEnter(jobj));
   ++count;
   CHECK(env->MonitorExit(jobj));
-  arrayOrig = (jarray *)c_malloc(env, 8*sizeof(jarray));
-  arrayClone = (jarray *)c_malloc(env, 8*sizeof(jarray));
+  arrayOrig = (jarray *)c_malloc(env, 8 * sizeof(jarray));
+  arrayClone = (jarray *)c_malloc(env, 8 * sizeof(jarray));
   for (i = 0; i < 8; i++) {
     arrayOrig[i] = (jarray) env->GetObjectArrayElement(orig, i); CE
     arrayClone[i] = (jarray) env->GetObjectArrayElement(clone, i); CE
@@ -185,14 +185,14 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   doubleOrig = env->GetDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE], 0); CE
 
   /* Alloc some memory for cloned arrays buffers */
-  boolClone = (jboolean *)c_malloc(env, SIZE(BOOL)*sizeof(jboolean));
-  byteClone = (jbyte *)c_malloc(env, SIZE(BYTE)*sizeof(jbyte));
-  charClone = (jchar *)c_malloc(env, SIZE(CHAR)*sizeof(jchar));
-  shortClone = (jshort *)c_malloc(env, SIZE(SHORT)*sizeof(jshort));
-  intClone = (jint *)c_malloc(env, SIZE(INT)*sizeof(jint));
-  longClone = (jlong *)c_malloc(env, SIZE(LONG)*sizeof(jlong));
-  floatClone = (jfloat *)c_malloc(env, SIZE(FLOAT)*sizeof(jfloat));
-  doubleClone = (jdouble *)c_malloc(env, SIZE(DOUBLE)*sizeof(jdouble));
+  boolClone = (jboolean *)c_malloc(env, SIZE(BOOL) * sizeof(jboolean));
+  byteClone = (jbyte *)c_malloc(env, SIZE(BYTE) * sizeof(jbyte));
+  charClone = (jchar *)c_malloc(env, SIZE(CHAR) * sizeof(jchar));
+  shortClone = (jshort *)c_malloc(env, SIZE(SHORT) * sizeof(jshort));
+  intClone = (jint *)c_malloc(env, SIZE(INT) * sizeof(jint));
+  longClone = (jlong *)c_malloc(env, SIZE(LONG) * sizeof(jlong));
+  floatClone = (jfloat *)c_malloc(env, SIZE(FLOAT) * sizeof(jfloat));
+  doubleClone = (jdouble *)c_malloc(env, SIZE(DOUBLE) * sizeof(jdouble));
 
   /* Take the elements from cloned Java arrays into native buffers */
   /* Use Get<Type>ArrayRegion */

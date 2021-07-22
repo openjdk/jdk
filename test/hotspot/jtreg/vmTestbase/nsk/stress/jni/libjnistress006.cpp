@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
   }
 
   if (upper == 0) {
-    globRefsArray = (jobject*)c_malloc(env, LIMIT*sizeof(jobject));
+    globRefsArray = (jobject*)c_malloc(env, LIMIT * sizeof(jobject));
   }
 
   globRefsArray[upper] = env->NewGlobalRef(tobj); CE
@@ -73,7 +73,7 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
   /* 'done' flag in JNIter006 class to JNI_TRUE */
   if (upper == LIMIT) {
     fprintf(stderr, "\n\tTotal memory allocated: %zd bytes\n",
-            LIMIT*sizeof(jobject));
+            LIMIT * sizeof(jobject));
     clazz = env->FindClass(classname); CE
     jmethod = env->GetMethodID(clazz, setdone, setdonesig); CE
     env->CallVoidMethod(jobj, jmethod); CE

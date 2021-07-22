@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,14 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   jclass clazz;
   jmethodID methodID;
 
-  env->MonitorEnter(jobj);
+  CHECK(env->MonitorEnter(jobj));
+
   if (!allocs) {
     element = (CHAR_ARRAY *)c_malloc(env, sizeof(CHAR_ARRAY));
-    element->str = (const char **)c_malloc(env, nstr*sizeof(const char *));
-    element->checkstr = (char **)c_malloc(env, nstr*sizeof(char *));
+    element->str = (const char **)c_malloc(env, nstr * sizeof(const char*));
+    element->checkstr = (char **)c_malloc(env, nstr * sizeof(char*));
     for (j = 0; j < nstr; j++) {
-      element->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
+      element->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH * sizeof(char));
     }
   }
   for (j = 0; j < DIGESTLENGTH; j++) {
@@ -80,7 +81,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   if (strlen(element->str[allocs]) != (size_t) env->GetStringUTFLength(jstr)) {
     printf("Length is wrong in string No. %d\n", allocs);
   } else {
-    strsize += strlen(element->str[allocs])+1;
+    strsize += strlen(element->str[allocs]) + 1;
   }
   for (k = 0; k < strlen(element->str[allocs]); k++) {
     digest[k % DIGESTLENGTH] += element->str[allocs][k];
@@ -88,7 +89,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   memcpy(element->checkstr[allocs], digest, DIGESTLENGTH);
   allocs++;
   if (allocs % printperiod == 0) {
-    printf("Check string for thread %s is ", element->str[allocs-1]);
+    printf("Check string for thread %s is ", element->str[allocs - 1]);
     for (j = 0; j < DIGESTLENGTH; j++) {
       printf("%02x", digest[j]);
     }
@@ -96,7 +97,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   }
   if (allocs == nstr) {
     printf("JNI UTF8 strings memory = %zd\n", strsize);
-    tmpstr = env->NewStringUTF(element->str[allocs-1]); CE
+    tmpstr = env->NewStringUTF(element->str[allocs - 1]); CE
     for (j = 0; j < nstr; j++) {
 
       for (i = 0; i < DIGESTLENGTH; i++) {
@@ -135,10 +136,10 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
     }
     //methodID = env->GetStaticMethodID(clazz, halt, haltSig); CE
     //env->CallStaticVoidMethod(clazz, methodID); CE
-    return(tmpstr);
+    return tmpstr;
   }
-  env->MonitorExit(jobj); CE
-  return (env->NewStringUTF(element->str[allocs-1]));
+  CHECK(env->MonitorExit(jobj));
+  return (env->NewStringUTF(element->str[allocs - 1]));
 }
 
 JNIEXPORT jstring JNICALL
@@ -166,11 +167,11 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   CHECK(env->MonitorEnter(jobj));
   if (!index) {
     javachars = (JCHAR_ARRAY *)c_malloc(env, sizeof(JCHAR_ARRAY));
-    javachars->str = (const jchar **)c_malloc(env, nstr*sizeof(const jchar *));
-    javachars->checkstr = (char **)c_malloc(env, nstr*sizeof(char *));
-    javachars->size = (int *)c_malloc(env, nstr*sizeof(int));
+    javachars->str = (const jchar **)c_malloc(env, nstr * sizeof(const jchar*));
+    javachars->checkstr = (char **)c_malloc(env, nstr * sizeof(char*));
+    javachars->size = (int *)c_malloc(env, nstr * sizeof(int));
     for (j = 0; j < nstr; j++) {
-      javachars->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH*sizeof(char));
+      javachars->checkstr[j] = (char *)c_malloc(env, DIGESTLENGTH * sizeof(char));
     }
   }
   for (j = 0; j < DIGESTLENGTH; j++) {
@@ -180,14 +181,14 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   javachars->size[index] = env->GetStringUTFLength(jstr); CE
   elem_len = javachars->size[index];
   len += elem_len;
-  elem = (char*) c_malloc(env, elem_len*sizeof(char));
+  elem = (char*) c_malloc(env, elem_len * sizeof(char));
   for (j = 0; j < elem_len; j++) {
     elem[j] = (char) javachars->str[index][j];
   }
 
   //memcpy(digest, elem, javachars->size[index]);
   for (j = 0; j < elem_len; j++) {
-    digest[j % DIGESTLENGTH]+=elem[j];
+    digest[j % DIGESTLENGTH] += elem[j];
   }
   memcpy(javachars->checkstr[index++], digest, DIGESTLENGTH);
   if (index % printperiod == 0) {
@@ -200,9 +201,9 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   free(elem);
   if (index == nstr) {
     printf("JNI Unicode strings memory = %ld\n", len);
-    tmpstr = env->NewString(javachars->str[index-1], elem_len); CE
+    tmpstr = env->NewString(javachars->str[index - 1], elem_len); CE
     for (j = 0; j < nstr; j++) {
-      elem = (char*) c_malloc(env, javachars->size[j]*sizeof(char));
+      elem = (char*) c_malloc(env, javachars->size[j] * sizeof(char));
       for (i = 0; i < javachars->size[j]; i++) {
         elem[i] = (char) javachars->str[j][i];
       }
@@ -211,7 +212,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
         digest[i] = 0;
       }
       for (i = 0; i < javachars->size[j]; i++) {
-        digest[i % DIGESTLENGTH]+=elem[i];
+        digest[i % DIGESTLENGTH] += elem[i];
       }
       free(elem);
       if (memcmp(digest, javachars->checkstr[j], javachars->size[j]) == 0) {
@@ -243,10 +244,10 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
     }
     //methodID = env->GetStaticMethodID(clazz, halt, haltSig); CE
     //env->CallStaticVoidMethod(clazz, methodID); CE
-    return(tmpstr);
+    return tmpstr;
   }
   CHECK(env->MonitorExit(jobj));
-  return(env->NewString(javachars->str[index-1], elem_len));
+  return env->NewString(javachars->str[index - 1], elem_len);
 }
 
 }
