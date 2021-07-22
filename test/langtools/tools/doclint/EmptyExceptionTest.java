@@ -9,7 +9,7 @@
  */
 
 /** . */
-public class EmptyExceptionTest {
+public class EmptyExceptionTest {  /** */ EmptyExceptionTest() { }
     /** @exception NullPointerException */
     void emptyException() throws NullPointerException { }
 }

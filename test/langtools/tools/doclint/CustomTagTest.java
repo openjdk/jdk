@@ -17,5 +17,6 @@
  * @unknownTag Text for an unknown tag.
  */
 public class CustomTagTest {
+    /** */ CustomTagTest() { }
 }
 
