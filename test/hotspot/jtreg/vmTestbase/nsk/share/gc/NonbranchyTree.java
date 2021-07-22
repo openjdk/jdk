@@ -68,7 +68,7 @@ public class NonbranchyTree {
         }
         if ((branchiness >= 1) || (branchiness <= 0)) {
             throw new IllegalArgumentException("Illegal value of branchiness: "
-                    + branchiness + ", must be at greater than 0 and less than 1.");
+                    + branchiness + ", must be greater than 0 and less than 1.");
         }
         if (size < 1) {
             throw new IllegalArgumentException("Illegal size of nodes: "
