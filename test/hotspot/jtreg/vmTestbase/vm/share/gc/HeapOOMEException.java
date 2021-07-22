@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,18 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package metaspace.stressHierarchy.common.exceptions;
+package vm.share.gc;
 
 /**
- * Usually this means that we got OOME:heap while trying to gain OOME:metaspace.
- * We pass test in this case as this breaks test logic. We have dedicated test configurations
- * for OOME:heap provoking class unloading, that why we are not missing test coverage here.
+ * This class is used to distinguish between OOME in metaspace and OOME in heap when triggering class unloading.
  */
-public class GotWrongOOMEException extends RuntimeException {
+public class HeapOOMEException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public GotWrongOOMEException(String string) {
+    public HeapOOMEException(String string) {
         super(string);
     }
 
