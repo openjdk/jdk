@@ -36,8 +36,6 @@
 
 class ShenandoahConcurrentCoalesceAndFillTask : public AbstractGangTask {
 private:
-  // remember nworkers, coalesce_and_fill_region_array,coalesce_and_fill_regions_count
-
   uint _nworkers;
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
   uint _coalesce_and_fill_region_count;
@@ -67,7 +65,7 @@ public:
 
 
 ShenandoahOldGC::ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption) :
-  ShenandoahConcurrentGC(generation), _allow_preemption(allow_preemption) {
+    ShenandoahConcurrentGC(generation, false), _allow_preemption(allow_preemption) {
   _coalesce_and_fill_region_array = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC);
 }
 
@@ -76,6 +74,47 @@ void ShenandoahOldGC::entry_old_evacuations() {
   ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   entry_coalesce_and_fill();
   old_heuristics->start_old_evacuations();
+}
+
+
+// Final mark for old-gen is different than for young or old, so we
+// override the implementation.
+void ShenandoahOldGC::op_final_mark() {
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
+  assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
+
+  if (ShenandoahVerify) {
+    heap->verifier()->verify_roots_no_forwarded();
+  }
+
+  if (!heap->cancelled_gc()) {
+    assert(_mark.generation()->generation_mode() == OLD, "Generation of Old-Gen GC should be OLD");
+    _mark.finish_mark();
+    assert(!heap->cancelled_gc(), "STW mark cannot OOM");
+
+    // Believe notifying JVMTI that the tagmap table will need cleaning is not relevant following old-gen mark
+    // so commenting out for now:
+    //   JvmtiTagMap::set_needs_cleaning();
+
+    {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
+      ShenandoahHeapLocker locker(heap->lock());
+      // Old-gen choose_collection_set() does not directly manipulate heap->collection_set() so no need to clear it.
+      _generation->heuristics()->choose_collection_set(nullptr, nullptr);
+    }
+
+    // Believe verification following old-gen concurrent mark needs to be different than verification following
+    // young-gen concurrent mark, so am commenting this out for now:
+    //   if (ShenandoahVerify) {
+    //     heap->verifier()->verify_after_concmark();
+    //   }
+
+    if (VerifyAfterGC) {
+      Universe::verify();
+    }
+  }
 }
 
 bool ShenandoahOldGC::collect(GCCause::Cause cause) {

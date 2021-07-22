@@ -50,6 +50,13 @@ private:
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
   HeapWord* allocate_with_affiliation(ShenandoahRegionAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // While holding the heap lock, allocate memory for a single object which is to be entirely contained
+  // within a single HeapRegion as characterized by req.  The req.size() value is known to be less than or
+  // equal to ShenandoahHeapRegion::humongous_threshold_words().  The caller of allocate_single is responsible
+  // for registering the resulting object and setting the remembered set card values as appropriate.  The
+  // most common case is that we are allocating a PLAB in which case object registering and card dirtying
+  // is managed after the PLAB is divided into individual objects.
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
 

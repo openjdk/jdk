@@ -167,9 +167,23 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   try_recycle_trashed(r);
 
   if (r->affiliation() == ShenandoahRegionAffiliation::FREE) {
-    // This free region might have garbage in its remembered set representation.
-    _heap->clear_cards_for(r);
+    ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
+    if (req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
+      // This free region might have garbage in its remembered set representation.
+      _heap->clear_cards_for(r);
+    }
     r->set_affiliation(req.affiliation());
+    r->set_update_watermark(r->bottom());
+    ctx->capture_top_at_mark_start(r);
+
+    assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
+    assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
+
+    // Leave top_bitmap alone.  The first time a heap region is put into service, top_bitmap should equal end.
+    // Thereafter, it should represent the upper bound on parts of the bitmap that need to be cleared.
+    log_debug(gc)("NOT clearing bitmap for region " SIZE_FORMAT ", top_bitmap: "
+                  PTR_FORMAT " at transition from FREE to %s",
+                  r->index(), p2i(ctx->top_bitmap(r)), affiliation_name(req.affiliation()));
   } else if (r->affiliation() != req.affiliation()) {
     return NULL;
   }
@@ -313,6 +327,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   };
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
+  ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
 
   // Initialize regions:
   for (size_t i = beg; i <= end; i++) {
@@ -336,8 +351,20 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
       used_words = ShenandoahHeapRegion::region_size_words();
     }
 
-    r->set_top(r->bottom() + used_words);
     r->set_affiliation(req.affiliation());
+    r->set_update_watermark(r->bottom());
+    r->set_top(r->bottom());    // Set top to bottom so we can capture TAMS
+    ctx->capture_top_at_mark_start(r);
+    r->set_top(r->bottom() + used_words); // Then change top to reflect allocation of humongous object.
+    assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
+    assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
+
+    // Leave top_bitmap alone.  The first time a heap region is put into service, top_bitmap should equal end.
+    // Thereafter, it should represent the upper bound on parts of the bitmap that need to be cleared.
+    // ctx->clear_bitmap(r);
+    log_debug(gc)("NOT clearing bitmap for Humongous region [" PTR_FORMAT ", " PTR_FORMAT "], top_bitmap: "
+                  PTR_FORMAT " at transition from FREE to %s",
+                  p2i(r->bottom()), p2i(r->end()), p2i(ctx->top_bitmap(r)), affiliation_name(req.affiliation()));
 
     _mutator_free_bitmap.clear_bit(r->index());
   }
@@ -448,6 +475,7 @@ void ShenandoahFreeSet::rebuild() {
   shenandoah_assert_heaplocked();
   clear();
 
+  log_debug(gc)("Rebuilding FreeSet");
   for (size_t idx = 0; idx < _heap->num_regions(); idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
     if (region->is_alloc_allowed() || region->is_trash()) {
@@ -461,6 +489,8 @@ void ShenandoahFreeSet::rebuild() {
 
       assert(!is_mutator_free(idx), "We are about to add it, it shouldn't be there already");
       _mutator_free_bitmap.set_bit(idx);
+
+      log_debug(gc)("  Setting _mutator_free_bitmap bit for " SIZE_FORMAT, idx);
     }
   }
 
@@ -478,6 +508,7 @@ void ShenandoahFreeSet::rebuild() {
       size_t ac = alloc_capacity(region);
       _capacity -= ac;
       reserved += ac;
+      log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
     }
   }
 

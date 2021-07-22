@@ -87,8 +87,8 @@ bool ShenandoahGlobalGeneration::is_concurrent_mark_in_progress() {
   return heap->is_concurrent_mark_in_progress();
 }
 
-void ShenandoahGlobalGeneration::prepare_gc() {
-  ShenandoahGeneration::prepare_gc();
+void ShenandoahGlobalGeneration::prepare_gc(bool do_old_gc_bootstrap) {
+  ShenandoahGeneration::prepare_gc(do_old_gc_bootstrap);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {

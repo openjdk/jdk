@@ -88,11 +88,13 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   size_t live_bytes = new_live_data * HeapWordSize;
   size_t used_bytes = used();
   assert(live_bytes <= used_bytes,
-         "can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT, live_bytes, used_bytes);
+         "%s Region " SIZE_FORMAT " can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT " after adding " SIZE_FORMAT,
+         affiliation_name(affiliation()), index(), live_bytes, used_bytes, s * HeapWordSize);
 #endif
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
+  log_debug(gc)("SHR::clear_live_data on %s Region " SIZE_FORMAT,  affiliation_name(affiliation()), index());
   Atomic::store(&_live_data, (size_t)0);
 }
 

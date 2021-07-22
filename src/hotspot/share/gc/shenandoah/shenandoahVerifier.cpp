@@ -658,6 +658,7 @@ public:
 };
 
 void ShenandoahVerifier::verify_at_safepoint(const char* label,
+                                             VerifyRememberedSet remembered,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,
                                              VerifyLiveness liveness, VerifyRegions regions,
@@ -686,6 +687,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       case _verify_gcstate_evacuation:
         enabled = true;
         expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION;
+        break;
+      case _verify_gcstate_updating:
+        enabled = true;
+        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::UPDATEREFS;
         break;
       case _verify_gcstate_stable:
         enabled = true;
@@ -742,6 +747,12 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
 
   if (generation != NULL) {
     ShenandoahHeapLocker lock(_heap->lock());
+
+    if (remembered == _verify_remembered_for_marking) {
+      _heap->verify_rem_set_at_mark();
+    } else if (remembered == _verify_remembered_for_updating_references) {
+      _heap->verify_rem_set_at_update_ref();
+    }
 
     ShenandoahCalculateRegionStatsClosure cl;
     generation->heap_region_iterate(&cl);
@@ -847,6 +858,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
 void ShenandoahVerifier::verify_generic(VerifyOption vo) {
   verify_at_safepoint(
           "Generic Verification",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_allow,     // conservatively allow forwarded
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
           _verify_cset_disable,        // cset may be inconsistent
@@ -860,6 +872,7 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 void ShenandoahVerifier::verify_before_concmark() {
     verify_at_safepoint(
           "Before Mark",
+          _verify_remembered_for_marking,  // verify read-only remembered set from bottom() to top()
           _verify_forwarded_none,      // UR should have fixed up
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
           _verify_cset_none,           // UR should have fixed this
@@ -873,6 +886,7 @@ void ShenandoahVerifier::verify_before_concmark() {
 void ShenandoahVerifier::verify_after_concmark() {
   verify_at_safepoint(
           "After Mark",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // no forwarded references
           _verify_marked_complete_except_references, // bitmaps as precise as we can get, except dangling j.l.r.Refs
           _verify_cset_none,           // no references to cset anymore
@@ -891,6 +905,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
 
   verify_at_safepoint(
           "Before Evacuation",
+          _verify_remembered_disable,                // do not verify remembered set
           _verify_forwarded_none,                    // no forwarded references
           _verify_marked_complete_except_references, // walk over marked objects too
           _verify_cset_disable,                      // non-forwarded references to cset expected
@@ -909,6 +924,7 @@ void ShenandoahVerifier::verify_during_evacuation() {
 
   verify_at_safepoint(
           "During Evacuation",
+          _verify_remembered_disable, // do not verify remembered set
           _verify_forwarded_allow,    // some forwarded references are allowed
           _verify_marked_disable,     // walk only roots
           _verify_cset_disable,       // some cset references are not forwarded yet
@@ -922,6 +938,7 @@ void ShenandoahVerifier::verify_during_evacuation() {
 void ShenandoahVerifier::verify_after_evacuation() {
   verify_at_safepoint(
           "After Evacuation",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_allow,     // objects are still forwarded
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
           _verify_cset_forwarded,      // all cset refs are fully forwarded
@@ -935,12 +952,13 @@ void ShenandoahVerifier::verify_after_evacuation() {
 void ShenandoahVerifier::verify_before_updaterefs() {
   verify_at_safepoint(
           "Before Updating References",
-          _verify_forwarded_allow,     // forwarded references allowed
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,      // all cset refs are fully forwarded
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded,   // evacuation should have produced some forwarded objects
+          _verify_remembered_for_updating_references,  // do not verify remembered set
+          _verify_forwarded_allow,                     // forwarded references allowed
+          _verify_marked_complete,                     // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_cset_forwarded,                      // all cset refs are fully forwarded
+          _verify_liveness_disable,                    // no reliable liveness data anymore
+          _verify_regions_notrash,                     // trash regions have been recycled already
+          _verify_gcstate_updating,                    // evacuation is done, objects are forwarded, updating in process
           _verify_all_weak_roots
   );
 }
@@ -948,6 +966,7 @@ void ShenandoahVerifier::verify_before_updaterefs() {
 void ShenandoahVerifier::verify_after_updaterefs() {
   verify_at_safepoint(
           "After Updating References",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // no forwarded references
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
           _verify_cset_none,           // no cset references, all updated
@@ -961,6 +980,7 @@ void ShenandoahVerifier::verify_after_updaterefs() {
 void ShenandoahVerifier::verify_after_degenerated() {
   verify_at_safepoint(
           "After Degenerated GC",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
           _verify_marked_complete,     // all objects are marked in complete bitmap
           _verify_cset_none,           // no cset references
@@ -974,6 +994,7 @@ void ShenandoahVerifier::verify_after_degenerated() {
 void ShenandoahVerifier::verify_before_fullgc() {
   verify_at_safepoint(
           "Before Full GC",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_allow,     // can have forwarded objects
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
           _verify_cset_disable,        // cset might be foobared
@@ -987,6 +1008,7 @@ void ShenandoahVerifier::verify_before_fullgc() {
 void ShenandoahVerifier::verify_after_fullgc() {
   verify_at_safepoint(
           "After Full GC",
+          _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
           _verify_marked_complete,     // all objects are marked in complete bitmap
           _verify_cset_none,           // no cset references

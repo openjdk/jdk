@@ -71,6 +71,8 @@ public:
   inline ShenandoahObjToScanQueue* get_queue(uint index) const;
   inline ShenandoahObjToScanQueue* get_old_queue(uint index) const;
 
+  inline ShenandoahGeneration* generation() { return _generation; };
+
 // ---------- Marking loop and tasks
 private:
   template <class T>

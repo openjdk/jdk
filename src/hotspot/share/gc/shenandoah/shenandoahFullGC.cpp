@@ -120,6 +120,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    fatal("Full GC not yet supported for generational mode in do_it().");
+  }
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_fullgc();
   }
@@ -196,6 +199,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 
   if (UseTLAB) {
+    // TODO: Do we need to explicitly retire PLABs?
     heap->gclabs_retire(ResizeTLAB);
     heap->tlabs_retire(ResizeTLAB);
   }
@@ -275,8 +279,10 @@ public:
   ShenandoahPrepareForMarkClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion *r) {
-    _ctx->capture_top_at_mark_start(r);
-    r->clear_live_data();
+    if (r->affiliation() != FREE) {
+      _ctx->capture_top_at_mark_start(r);
+      r->clear_live_data();
+    }
   }
 
   bool is_thread_safe() { return true; }
@@ -467,6 +473,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
   size_t to_begin = heap->num_regions();
   size_t to_end = heap->num_regions();
 
+  log_debug(gc)("Full GC calculating target humongous objects from end " SIZE_FORMAT, to_end);
   for (size_t c = heap->num_regions(); c > 0; c--) {
     ShenandoahHeapRegion *r = heap->get_region(c - 1);
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
@@ -533,25 +540,32 @@ public:
     _ctx(ShenandoahHeap::heap()->complete_marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
-    if (r->is_humongous_start()) {
-      oop humongous_obj = oop(r->bottom());
-      if (!_ctx->is_marked(humongous_obj)) {
-        assert(!r->has_live(),
-               "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
-        _heap->trash_humongous_region_at(r);
-      } else {
-        assert(r->has_live(),
-               "Region " SIZE_FORMAT " should have live", r->index());
-      }
-    } else if (r->is_humongous_continuation()) {
-      // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(),
-             "Region " SIZE_FORMAT " should have live", r->index());
-    } else if (r->is_regular()) {
-      if (!r->has_live()) {
-        r->make_trash_immediate();
+    if (r->affiliation() != FREE) {
+      if (r->is_humongous_start()) {
+        oop humongous_obj = oop(r->bottom());
+        if (!_ctx->is_marked(humongous_obj)) {
+          assert(!r->has_live(),
+                 "Humongous Start %s Region " SIZE_FORMAT " is not marked, should not have live",
+                 affiliation_name(r->affiliation()),  r->index());
+          log_debug(gc)("Trashing immediate humongous region " SIZE_FORMAT " because not marked", r->index());
+          _heap->trash_humongous_region_at(r);
+        } else {
+          assert(r->has_live(),
+                 "Humongous Start %s Region " SIZE_FORMAT " should have live", affiliation_name(r->affiliation()),  r->index());
+        }
+      } else if (r->is_humongous_continuation()) {
+        // If we hit continuation, the non-live humongous starts should have been trashed already
+        assert(r->humongous_start_region()->has_live(),
+               "Humongous Continuation %s Region " SIZE_FORMAT " should have live", affiliation_name(r->affiliation()),  r->index());
+      } else if (r->is_regular()) {
+        if (!r->has_live()) {
+          log_debug(gc)("Trashing immediate regular region " SIZE_FORMAT " because has no live", r->index());
+          r->make_trash_immediate();
+        }
       }
     }
+    // else, ignore this FREE region.
+    // TODO: change iterators so they do not process FREE regions.
   }
 };
 
@@ -971,6 +985,9 @@ void ShenandoahFullGC::compact_humongous_objects() {
       assert(old_start != new_start, "must be real move");
       assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());
 
+      log_debug(gc)("Full GC compaction moves humongous object from region " SIZE_FORMAT " to region " SIZE_FORMAT,
+                    old_start, new_start);
+
       Copy::aligned_conjoint_words(heap->get_region(old_start)->bottom(),
                                    heap->get_region(new_start)->bottom(),
                                    words_size);
@@ -979,6 +996,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
       new_obj->init_mark();
 
       {
+        ShenandoahRegionAffiliation original_affiliation = r->affiliation();
         for (size_t c = old_start; c <= old_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           r->make_regular_bypass();
@@ -988,9 +1006,9 @@ void ShenandoahFullGC::compact_humongous_objects() {
         for (size_t c = new_start; c <= new_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           if (c == new_start) {
-            r->make_humongous_start_bypass();
+            r->make_humongous_start_bypass(original_affiliation);
           } else {
-            r->make_humongous_cont_bypass();
+            r->make_humongous_cont_bypass(original_affiliation);
           }
 
           // Trailing region may be non-full, record the remainder there

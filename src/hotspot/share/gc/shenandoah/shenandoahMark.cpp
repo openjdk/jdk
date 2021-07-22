@@ -178,7 +178,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 }
 
 void ShenandoahMark::mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-               bool cancellable, bool strdedup) {
+                               bool cancellable, bool strdedup) {
   bool update_refs = ShenandoahHeap::heap()->has_forwarded_objects();
   switch (generation) {
     case YOUNG: {
@@ -212,17 +212,3 @@ void ShenandoahMark::mark_loop(GenerationMode generation, uint worker_id, TaskTe
   }
 }
 
-template<>
-bool ShenandoahMark::in_generation<YOUNG>(oop obj) {
-  return ShenandoahHeap::heap()->is_in_young(obj);
-}
-
-template<>
-bool ShenandoahMark::in_generation<OLD>(oop obj) {
-  return ShenandoahHeap::heap()->is_in_old(obj);
-}
-
-template<>
-bool ShenandoahMark::in_generation<GLOBAL>(oop obj) {
-  return true;
-}

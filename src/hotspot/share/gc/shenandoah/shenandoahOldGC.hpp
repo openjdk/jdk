@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/shenandoahVerifier.hpp"
 
 class ShenandoahGeneration;
 
@@ -34,6 +35,10 @@ class ShenandoahOldGC : public ShenandoahConcurrentGC {
  public:
   ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption);
   bool collect(GCCause::Cause cause);
+
+ protected:
+  virtual void op_final_mark();
+
  private:
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
 

@@ -159,6 +159,8 @@ public:
   inline bool is_marked_strong(HeapWord* w)  const;
   inline bool is_marked_weak(HeapWord* addr) const;
 
+  bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
+
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".

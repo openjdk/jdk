@@ -42,7 +42,7 @@ public:
   virtual size_t used() const;
   virtual size_t available() const;
 
-  virtual void prepare_gc();
+  virtual void prepare_gc(bool do_old_gc_bootstrap);
 
   virtual void set_concurrent_mark_in_progress(bool in_progress);
 

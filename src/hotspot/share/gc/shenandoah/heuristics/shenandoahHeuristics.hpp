@@ -140,7 +140,8 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics);
+  // Return true iff the chosen collection set includes at least one old-gen region.
+  virtual bool choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics);
 
   virtual bool can_unload_classes();
   virtual bool can_unload_classes_normal();

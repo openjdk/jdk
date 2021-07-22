@@ -72,7 +72,9 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) {
+// Returns true iff the chosen collection set includes old-gen regions
+bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) {
+  bool result = false;
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->count() == 0, "Must be empty");
@@ -162,7 +164,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   if (immediate_percent <= ShenandoahImmediateThreshold) {
 
     if (old_heuristics != NULL) {
-      old_heuristics->prime_collection_set(collection_set);
+      if (old_heuristics->prime_collection_set(collection_set)) {
+        result = true;
+      }
     }
     // else, this is global collection and doesn't need to prime_collection_set
 
@@ -191,6 +195,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                      byte_size_in_proper_unit(collection_set->garbage()),
                      proper_unit_for_byte_size(collection_set->garbage()),
                      cset_percent);
+  return result;
 }
 
 void ShenandoahHeuristics::record_cycle_start() {

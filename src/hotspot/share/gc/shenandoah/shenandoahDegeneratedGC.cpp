@@ -222,7 +222,7 @@ void ShenandoahDegenGC::op_degenerated() {
 }
 
 void ShenandoahDegenGC::op_reset() {
-  _generation->prepare_gc();
+  _generation->prepare_gc(false);
 }
 
 void ShenandoahDegenGC::op_mark() {

@@ -64,7 +64,25 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
 
   void heap_region_do(ShenandoahHeapRegion* region) {
     if (_heap->is_bitmap_slice_committed(region)) {
-        _ctx->clear_bitmap(region);
+      _ctx->clear_bitmap(region);
+    }
+  }
+
+  bool is_thread_safe() { return true; }
+};
+
+class ShenandoahSquirrelAwayCardTable: public ShenandoahHeapRegionClosure {
+ private:
+  ShenandoahHeap* _heap;
+  RememberedScanner* _scanner;
+ public:
+  ShenandoahSquirrelAwayCardTable() :
+    _heap(ShenandoahHeap::heap()),
+    _scanner(_heap->card_scan()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* region) {
+    if (region->is_old()) {
+      _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
     }
   }
 
@@ -135,25 +153,54 @@ void ShenandoahGeneration::reset_mark_bitmap() {
   parallel_heap_region_iterate(&task);
 }
 
-void ShenandoahGeneration::prepare_gc() {
+// The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
+// However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
+// location of the card table.  So the interim implementation of swap_remembered_set will copy the write-table
+// onto the read-table and will then clear the write-table.
+void ShenandoahGeneration::swap_remembered_set() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->assert_gc_workers(heap->workers()->active_workers());
+  shenandoah_assert_safepoint();
+
+  // TODO: Eventually, we want replace this with a constant-time exchange of pointers.
+  ShenandoahSquirrelAwayCardTable task;
+  heap->old_generation()->parallel_heap_region_iterate(&task);
+}
+
+void ShenandoahGeneration::prepare_gc(bool do_old_gc_bootstrap) {
   // Reset mark bitmap for this generation (typically young)
   reset_mark_bitmap();
+  if (do_old_gc_bootstrap) {
+    // Reset mark bitmap for old regions also.  Note that do_old_gc_bootstrap is only true if this generation is YOUNG.
+    ShenandoahHeap::heap()->old_generation()->reset_mark_bitmap();
+  }
 
   // Capture Top At Mark Start for this generation (typically young)
   ShenandoahResetUpdateRegionStateClosure cl;
   parallel_heap_region_iterate(&cl);
+  if (do_old_gc_bootstrap) {
+    // Capture top at mark start for both old-gen regions also.  Note that do_old_gc_bootstrap is only true if generation is YOUNG.
+    ShenandoahHeap::heap()->old_generation()->parallel_heap_region_iterate(&cl);
+  }
 }
 
-void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
+// Returns true iff the chosen collection set includes a mix of young-gen and old-gen regions.
+bool ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
+  bool result;
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  assert(generation_mode() != OLD, "Only YOUNG and GLOBAL GC perform evacuations");
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
                                          ShenandoahPhaseTimings::degen_gc_final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
-    parallel_heap_region_iterate(&cl);
 
+    parallel_heap_region_iterate(&cl);
     heap->assert_pinned_region_status();
+
+    // Also capture update_watermark for old-gen regions.
+    ShenandoahCaptureUpdateWaterMarkForOld old_cl(complete_marking_context());
+    heap->old_generation()->parallel_heap_region_iterate(&old_cl);
   }
 
   {
@@ -161,7 +208,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
     heap->collection_set()->clear();
-    _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
+    result = _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
   }
 
   {
@@ -170,6 +217,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->rebuild();
   }
+  return result;
 }
 
 bool ShenandoahGeneration::is_bitmap_clear() {
@@ -178,8 +226,9 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (contains(r)) {
-      if (heap->is_bitmap_slice_committed(r) && !context->is_bitmap_clear_range(r->bottom(), r->end())) {
+    if (contains(r) && (r->affiliation() != FREE)) {
+      if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
+          !context->is_bitmap_clear_range(r->bottom(), r->end())) {
         return false;
       }
     }
@@ -246,14 +295,13 @@ ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
 }
 
 void ShenandoahGeneration::scan_remembered_set() {
-  shenandoah_assert_safepoint();
   assert(generation_mode() == YOUNG, "Should only scan remembered set for young generation.");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   uint nworkers = heap->workers()->active_workers();
   reserve_task_queues(nworkers);
 
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_scan_rset);
+  ShenandoahConcurrentPhase gc_phase("Concurrent remembered set scanning", ShenandoahPhaseTimings::init_scan_rset);
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   ShenandoahRegionIterator regions;
   ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &regions);

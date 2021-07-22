@@ -149,6 +149,7 @@ private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
   ShenandoahOldHeuristics* _old_heuristics;
+  bool _mixed_evac;             // true iff most recent evac included at least one old-gen HeapRegion
 
 public:
   ShenandoahHeapLock* lock() {
@@ -164,9 +165,15 @@ public:
     _gc_generation = generation;
   }
 
+  void set_mixed_evac(bool mixed_evac) {
+    _mixed_evac = mixed_evac;
+  }
+
   ShenandoahOldHeuristics* old_heuristics() {
     return _old_heuristics;
   }
+
+  bool doing_mixed_evacuations();
 
   bool is_gc_generation_young() const;
 
@@ -195,6 +202,8 @@ public:
 
   void prepare_for_verify();
   void verify(VerifyOption vo);
+  void verify_rem_set_at_mark();
+  void verify_rem_set_at_update_ref();
 
 // ---------- Heap counters and metrics
 //
@@ -371,6 +380,11 @@ private:
 
   double _cancel_requested_time;
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+
+  // Returns true if cancel request was successfully communicated.
+  // Returns false if some other thread already communicated cancel
+  // request.  A true return value does not mean GC has been
+  // cancelled, only that the process of cancelling GC has begun.
   bool try_cancel_gc();
 
 public:

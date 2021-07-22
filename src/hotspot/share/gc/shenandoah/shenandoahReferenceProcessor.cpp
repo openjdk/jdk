@@ -386,12 +386,22 @@ template <typename T>
 oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  oop referent = reference_referent<T>(reference);
   assert(reference_referent<T>(reference) == NULL ||
-         ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
+         heap->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
 
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
   reference_set_discovered<T>(reference, NULL);
+  // When this reference was discovered, it would not have been marked. If it ends up surviving
+  // the cycle, we need to dirty the card if the reference is old and the referent is young.  Note
+  // that if the reference is not dropped, then its pointer to the referent will be nulled before
+  // evacuation begins so card does not need to be dirtied.
+  if (heap->mode()->is_generational() && heap->is_old(reference) && heap->is_in_young(referent)) {
+    // Note: would be sufficient to mark only the card that holds the start of this Reference object.
+    heap->card_scan()->mark_range_as_dirty(cast_from_oop<HeapWord*>(reference), reference->size());
+  }
   return next;
 }
 

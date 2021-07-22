@@ -73,19 +73,38 @@ inline bool ShenandoahMarkingContext::allocated_after_mark_start(HeapWord* addr)
 }
 
 inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRegion *r) {
-  size_t idx = r->index();
-  HeapWord* old_tams = _top_at_mark_starts_base[idx];
-  HeapWord* new_tams = r->top();
+  if (r->affiliation() != FREE) {
+    size_t idx = r->index();
+    HeapWord* old_tams = _top_at_mark_starts_base[idx];
+    HeapWord* new_tams = r->top();
 
-  assert(new_tams >= old_tams,
-         "Region " SIZE_FORMAT", TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
-         idx, p2i(old_tams), p2i(new_tams));
-  assert(is_bitmap_clear_range(old_tams, new_tams),
-         "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
-         idx, p2i(old_tams), p2i(new_tams));
+    assert(new_tams >= old_tams,
+           "Region " SIZE_FORMAT", TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+           idx, p2i(old_tams), p2i(new_tams));
+    assert((new_tams == r->bottom()) || (old_tams == r->bottom()) || (new_tams >= _top_bitmaps[idx]),
+           "Region " SIZE_FORMAT", top_bitmaps updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+           idx, p2i(_top_bitmaps[idx]), p2i(new_tams));
+    assert(old_tams == r->bottom() || is_bitmap_clear_range(old_tams, new_tams),
+           "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
+           idx, p2i(old_tams), p2i(new_tams));
 
-  _top_at_mark_starts_base[idx] = new_tams;
-  _top_bitmaps[idx] = new_tams;
+    log_debug(gc)("Capturing TAMS for %s Region " SIZE_FORMAT ", was: %llx, now: %llx\n",
+                  affiliation_name(r->affiliation()), idx, (unsigned long long) old_tams, (unsigned long long) new_tams);
+
+    if ((old_tams == r->bottom()) && (new_tams > old_tams)) {
+      log_debug(gc)("Clearing mark bitmap for %s Region " SIZE_FORMAT " while capturing TAMS",
+                    affiliation_name(r->affiliation()), idx);
+
+      clear_bitmap(r);
+    }
+
+    _top_at_mark_starts_base[idx] = new_tams;
+    if (new_tams > r->bottom()) {
+      // In this case, new_tams is greater than old _top_bitmaps[idx]
+      _top_bitmaps[idx] = new_tams;
+    }
+  }
+  // else, FREE regions do not need their TAMS updated
 }
 
 inline void ShenandoahMarkingContext::reset_top_at_mark_start(ShenandoahHeapRegion* r) {

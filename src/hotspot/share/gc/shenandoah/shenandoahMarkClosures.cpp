@@ -86,3 +86,10 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
   }
 }
 
+ShenandoahCaptureUpdateWaterMarkForOld::ShenandoahCaptureUpdateWaterMarkForOld(ShenandoahMarkingContext* ctx) :
+  _ctx(ctx), _lock(ShenandoahHeap::heap()->lock()) {}
+
+void ShenandoahCaptureUpdateWaterMarkForOld::heap_region_do(ShenandoahHeapRegion* r) {
+  // Remember limit for updating refs. It's guaranteed that we get no from-space-refs written from here on.
+  r->set_update_watermark_at_safepoint(r->top());
+}

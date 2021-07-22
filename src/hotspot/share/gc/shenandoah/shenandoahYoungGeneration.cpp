@@ -31,8 +31,6 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
-#undef TRACE_PROMOTION
-
 ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity) :
   ShenandoahGeneration(YOUNG, max_queues, max_capacity, soft_max_capacity),
   _old_gen_task_queues(nullptr) {
@@ -69,9 +67,10 @@ public:
     ShenandoahHeapRegion* r = _regions->next();
     while (r != NULL) {
       if (r->is_young() && r->age() >= InitialTenuringThreshold && ((r->is_regular() && !r->has_young_lab_flag()) || r->is_humongous_start())) {
-        // The above condition filtered out humongous continuations, among other states.
-        // Here we rely on promote() below promoting related continuation regions when encountering a homongous start.
-        size_t promoted = r->promote();
+        // The thread that first encounters a humongous start region promotes the associated humonogous continuations,
+        // so we do not process humongous continuations directly.  Below, we rely on promote() to promote related
+        // continuation regions when encountering a homongous start.
+        size_t promoted = r->promote(false);
         Atomic::add(&_promoted, promoted);
       }
       r = _regions->next();
@@ -95,24 +94,20 @@ void ShenandoahYoungGeneration::promote_all_regions() {
   for (size_t index = 0; index < heap->num_regions(); index++) {
     ShenandoahHeapRegion* r = heap->get_region(index);
     if (r->is_young()) {
-      r->promote();
+      r->promote(true);
     }
   }
   assert(_affiliated_region_count == 0, "young generation must not have affiliated regions after reset");
   _used = 0;
-
-  // HEY! Better to use a service of ShenandoahScanRemembered for the following.
-
-  // We can clear the entire card table here because we've just promoted all
-  // young regions to old, so there can be no old->young pointers at this point.
-  ShenandoahBarrierSet::barrier_set()->card_table()->clear();
 }
 
 bool ShenandoahYoungGeneration::contains(ShenandoahHeapRegion* region) const {
+  // TODO: why not test for equals YOUNG_GENERATION?  As written, returns true for regions that are FREE
   return region->affiliation() != OLD_GENERATION;
 }
 
 void ShenandoahYoungGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
+  // Just iterate over the young generation here.
   ShenandoahGenerationRegionClosure<YOUNG> young_regions(cl);
   ShenandoahHeap::heap()->parallel_heap_region_iterate(&young_regions);
 }

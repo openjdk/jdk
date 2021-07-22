@@ -42,4 +42,16 @@ public:
   bool is_thread_safe() { return true; }
 };
 
+class ShenandoahCaptureUpdateWaterMarkForOld : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+  ShenandoahHeapLock* const _lock;
+public:
+  ShenandoahCaptureUpdateWaterMarkForOld(ShenandoahMarkingContext* ctx);
+
+  void heap_region_do(ShenandoahHeapRegion* r);
+
+  bool is_thread_safe() { return true; }
+};
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP

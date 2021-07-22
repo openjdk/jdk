@@ -417,7 +417,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(
       // concurrent mark in the old generation. We need to think about promotions
       // in this case. Promoted objects should be above the TAMS in the old regions
       // they end up in, but we have to be sure we don't promote into any regions
-      // that are in the cset (more of an issue for Milestone-8 to worry about).
+      // that are in the cset.
       log_info(gc, ergo)("Start GC cycle (YOUNG)");
       service_concurrent_cycle(heap->young_generation(), cause, false);
       heap->young_generation()->log_status();
@@ -455,9 +455,7 @@ void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap*
   young_generation->set_old_gen_task_queues(old_generation->task_queues());
   young_generation->set_mark_incomplete();
   old_generation->set_mark_incomplete();
-
   service_concurrent_cycle(young_generation, cause, true);
-
   if (!heap->cancelled_gc()) {
     // Reset the degenerated point. Normally this would happen at the top
     // of the control loop, but here we have just completed a young cycle

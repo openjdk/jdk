@@ -43,16 +43,19 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahInitUpdateRefs;
   friend class VM_ShenandoahFinalUpdateRefs;
 
-private:
+protected:
   ShenandoahConcurrentMark    _mark;
+
+private:
   ShenandoahDegenPoint        _degen_point;
+  bool                        _mixed_evac; // true iff most recent evacuation includes old-gen HeapRegions
   const bool                  _do_old_gc_bootstrap;
 
 protected:
   ShenandoahGeneration* const _generation;
 
 public:
-  ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap = false);
+  ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
 
@@ -89,6 +92,7 @@ protected:
   void entry_strong_roots();
   void entry_cleanup_early();
   void entry_rendezvous_roots();
+  virtual void op_final_mark();
 
 private:
   void entry_evacuate();
@@ -101,7 +105,6 @@ private:
   void op_init_mark();
   void op_mark_roots();
   void op_mark();
-  void op_final_mark();
   void op_thread_roots();
   void op_weak_refs();
   void op_weak_roots();

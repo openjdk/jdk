@@ -172,8 +172,8 @@ public:
   void make_regular_bypass();
   void make_humongous_start();
   void make_humongous_cont();
-  void make_humongous_start_bypass();
-  void make_humongous_cont_bypass();
+  void make_humongous_start_bypass(ShenandoahRegionAffiliation affiliation);
+  void make_humongous_cont_bypass(ShenandoahRegionAffiliation affiliation);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -367,10 +367,14 @@ public:
 
   void recycle();
 
-  // coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
+  // Coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
+  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parseable.
   void oop_fill_and_coalesce();
 
-  void oop_iterate(OopIterateClosure* cl, bool fill_dead_objects = false, bool reregister_coalesced_objects = false);
+  // During global collections, this service iterates through an old-gen heap region that is not part of collection
+  // set to fill and register ranges of dead memory.  Note that live objects were previously registered.  Some dead objects
+  // that are subsumed into coalesced ranges of dead memory need to be "unregistered".
+  void global_oop_iterate_and_fill_dead(OopIterateClosure* cl);
   void oop_iterate_humongous(OopIterateClosure* cl);
 
   HeapWord* block_start(const void* p) const;
@@ -414,15 +418,24 @@ public:
   void increment_age() { if (_age < markWord::max_age) { _age++; } }
   void reset_age()     { _age = 0; }
 
-  // If this is a humongous start, returns the number of regions in the object.
-  size_t promote();
+  // Adjusts remembered set information by setting all cards to clean if promoting all, setting
+  // all cards to dirty otherwise.
+  //
+  // Returns the number of regions promoted, which is generally one, but may be greater than 1 if
+  // this is humongous region with multiple continuations.
+  size_t promote(bool promoting_all);
 
 private:
   void do_commit();
   void do_uncommit();
 
-  void oop_iterate_objects(OopIterateClosure* cl, bool fill_dead_objects, bool reregister_coalesced_objects);
-  void oop_iterate_objects(bool fill_dead_objects, bool reregister_coalesced_objects);
+  // This is an old-region that was not part of the collection set during a GLOBAL collection.  We coalesce the dead
+  // objects, but do not need to register the live objects as they are already registered.
+  void global_oop_iterate_objects_and_fill_dead(OopIterateClosure* cl);
+
+  // Process the contents of a region when it is being promoted en masse by registering each marked object, coalescing
+  // contiguous ranges of unmarked objects into registered dead objects.  Do not touch card marks.
+  void fill_dead_and_register_for_promotion();
 
   inline void internal_increase_live_data(size_t s);
 

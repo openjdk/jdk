@@ -31,7 +31,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 
-ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(CardTable* card_table, size_t total_card_count) {
+ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count) {
   _heap = ShenandoahHeap::heap();
   _card_table = card_table;
   _total_card_count = total_card_count;
@@ -104,7 +104,6 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
-
   ShenandoahHeapRegion* region = _regions->next();
   while (region != NULL) {
     if (region->affiliation() == OLD_GENERATION) {

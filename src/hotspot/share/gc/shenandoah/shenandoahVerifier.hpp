@@ -58,6 +58,20 @@ private:
   MarkBitMap* _verification_bit_map;
 public:
   typedef enum {
+    // Disable remembered set verification.
+    _verify_remembered_disable,
+
+    // Assure remembered set cards are dirty for every interesting pointer within
+    // each ShenandoahHeapRegion between bottom() and top().  This is appropriate at
+    // the init_mark safepoint since all TLABS are retired before we reach this code.
+    _verify_remembered_for_marking,
+
+    // Assure remembered set cards are dirty for every interesting pointer within
+    // each ShenandoahHeapRegion between bottom() and get_update_watermark()
+    _verify_remembered_for_updating_references
+  } VerifyRememberedSet;
+
+  typedef enum {
     // Disable marked objects verification.
     _verify_marked_disable,
 
@@ -133,7 +147,10 @@ public:
     _verify_gcstate_forwarded,
 
     // Evacuation is in progress, some objects are forwarded
-    _verify_gcstate_evacuation
+    _verify_gcstate_evacuation,
+
+    // Evacuation is done, objects are forwarded, updating is in progress
+    _verify_gcstate_updating
   } VerifyGCState;
 
   typedef enum {
@@ -167,6 +184,7 @@ public:
 
 private:
   void verify_at_safepoint(const char* label,
+                           VerifyRememberedSet remembered,
                            VerifyForwarded forwarded,
                            VerifyMarked marked,
                            VerifyCollectionSet cset,

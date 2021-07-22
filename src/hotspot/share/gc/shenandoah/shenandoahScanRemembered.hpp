@@ -236,7 +236,7 @@ private:
   //  CardTable::dirty_card_val()
 
   ShenandoahHeap *_heap;
-  CardTable *_card_table;
+  ShenandoahCardTable *_card_table;
   size_t _card_shift;
   size_t _total_card_count;
   size_t _cluster_count;
@@ -247,9 +247,11 @@ private:
   uint8_t *_overreach_map;      // Points to first entry within the overreach card table
   uint8_t *_overreach_map_base; // Points to overreach_map minus the bias computed from address of heap memory
 
+  uint64_t _wide_clean_value;
+
 public:
   // count is the number of cards represented by the card table.
-  ShenandoahDirectCardMarkRememberedSet(CardTable *card_table, size_t total_card_count);
+  ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable *card_table, size_t total_card_count);
   ~ShenandoahDirectCardMarkRememberedSet();
 
   // Card index is zero-based relative to _byte_map.
@@ -257,9 +259,11 @@ public:
   size_t card_index_for_addr(HeapWord *p);
   HeapWord *addr_for_card_index(size_t card_index);
   bool is_card_dirty(size_t card_index);
+  bool is_write_card_dirty(size_t card_index);
   void mark_card_as_dirty(size_t card_index);
   void mark_range_as_dirty(size_t card_index, size_t num_cards);
   void mark_card_as_clean(size_t card_index);
+  void mark_read_card_as_clean(size_t card_index);
   void mark_range_as_clean(size_t card_index, size_t num_cards);
   void mark_overreach_card_as_dirty(size_t card_index);
   bool is_card_dirty(HeapWord *p);
@@ -277,6 +281,32 @@ public:
   // Called by GC thread at end of concurrent mark or evacuation phase.  Each parallel GC thread typically merges different
   // subranges of all overreach entries.
   void merge_overreach(size_t first_cluster, size_t count);
+
+  // Called by GC thread at start of concurrent mark to exchange roles of read and write remembered sets.
+  // Not currently used because mutator write barrier does not honor changes to the location of card table.
+  void swap_remset() {  _card_table->swap_card_tables(); }
+
+  HeapWord* whole_heap_base() { return _whole_heap_base; }
+  HeapWord* whole_heap_end() { return _whole_heap_end; }
+
+  // Instead of swap_remset, the current implementation of concurrent remembered set scanning does reset_remset
+  // in parallel threads, each invocation processing one entire HeapRegion at a time.  Processing of a region
+  // consists of copying the write table to the read table and cleaning the write table.
+  void reset_remset(HeapWord* start, size_t word_count) {
+    size_t card_index = card_index_for_addr(start);
+    size_t num_cards = word_count / CardTable::card_size_in_words;
+    size_t iterations = num_cards / (sizeof (intptr_t) / sizeof (CardTable::CardValue));
+    intptr_t* read_table_ptr = (intptr_t*) &(_card_table->read_byte_map())[card_index];
+    intptr_t* write_table_ptr = (intptr_t*) &(_card_table->write_byte_map())[card_index];
+    for (size_t i = 0; i < iterations; i++) {
+      *read_table_ptr++ = *write_table_ptr;
+      *write_table_ptr++ = CardTable::clean_card_row_val();
+    }
+  }
+
+  // Called by GC thread after scanning old remembered set in order to prepare for next GC pass
+  void clear_old_remset() {  _card_table->clear_read_table(); }
+
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -647,7 +677,7 @@ public:
   // It is not necessary to invoke register_object at the very instant
   // an object is allocated.  It is only necessary to invoke it
   // prior to the next start of a garbage collection concurrent mark
-  // or concurrent evacuation phase.  An "ideal" time to register
+  // or concurrent update-references phase.  An "ideal" time to register
   // objects is during post-processing of a GCLAB after the GCLAB is
   // retired due to depletion of its memory.
   //
@@ -722,25 +752,48 @@ public:
   //     object_starts information is coherent.
 
 
-  // Synchronization thoughts from kelvin:
+  // Notes on synchronization of register_object():
   //
-  // previously, I had contemplated a more complex implementation of
-  // object registration, which had to touch every card spanned by the
-  // registered object.  But the current implementation is much simpler,
-  // and only has to touch the card that contains the start of the
-  // object.
+  //  1. For efficiency, there is no locking in the implementation of register_object()
+  //  2. Thus, it is required that users of this service assure that concurrent/parallel invocations of
+  //     register_object() do pertain to the same card's memory range.  See discussion below to undestand
+  //     the risks.
+  //  3. When allocating from a TLAB or GCLAB, the mutual exclusion can be guaranteed by assuring that each
+  //     LAB's start and end are aligned on card memory boundaries.
+  //  4. Use the same lock that guarantees exclusivity when performing free-list allocation within heap regions.
+  //
+  // Register the newly allocated object while we're holding the global lock since there's no synchronization
+  // built in to the implementation of register_object().  There are potential races when multiple independent
+  // threads are allocating objects, some of which might span the same card region.  For example, consider
+  // a card table's memory region within which three objects are being allocated by three different threads:
+  //
+  // objects being "concurrently" allocated:
+  //    [-----a------][-----b-----][--------------c------------------]
+  //            [---- card table memory range --------------]
+  //
+  // Before any objects are allocated, this card's memory range holds no objects.  Note that:
+  //   allocation of object a wants to set the has-object, first-start, and last-start attributes of the preceding card region.
+  //   allocation of object b wants to set the has-object, first-start, and last-start attributes of this card region.
+  //   allocation of object c also wants to set the has-object, first-start, and last-start attributes of this card region.
+  //
+  // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as last-start
+  // representing object b while first-start represents object c.  This is why we need to require all register_object()
+  // invocations associated with objects that are allocated from "free lists" to provide their own mutual exclusion locking
+  // mechanism.
 
-  // if I were careful to assure that every GCLAB aligns with the start
-  // of a card region and spanned a multiple of the card region size,
-  // then the post-processing of each GCLAB with regards to
-  // register_object() invocations can proceed without synchronization.
+  // Reset the has_object() information to false for all cards in the range between from and to.
+  void reset_object_range(HeapWord *from, HeapWord *to);
 
-  // But right now, we're not even using GCLABs  We are doing shared
-  // allocations.  But, we must hold a lock while we are doing these, so
-  // maybe I just piggy back on the lock that we already hold for
-  // managing the free lists and register each object newly allocated by
-  // the shared allocator.
+  // register_object() requires that the caller hold the heap lock
+  // before calling it.
   void register_object(HeapWord* address);
+
+  // register_object_wo_lock() does not require that the caller hold
+  // the heap lock before calling it, under the assumption that the
+  // caller has assure no other thread will endeavor to concurrently
+  // register objects that start within the same card's memory region
+  // as address.
+  void register_object_wo_lock(HeapWord* address);
 
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
@@ -752,24 +805,24 @@ public:
   // At some future time, we may implement a further optimization: satisfy future allocation requests
   // by carving new objects out of the range of memory that represents the coalesced dead objects.
   //
-  // In its current implementation, unregister_object() serves the needs of coalescing objects.
-  //
-
   // Suppose we want to combine several dead objects into a single coalesced object.  How does this
   // impact our representation of crossing map information?
-  //  1. If the newly coalesced region is contained entirely within a single region, that region's last
+  //  1. If the newly coalesced range is contained entirely within a card range, that card's last
   //     start entry either remains the same or it is changed to the start of the coalesced region.
-  //  2. For the region that holds the start of the coalesced object, it will not impact the first start
+  //  2. For the card that holds the start of the coalesced object, it will not impact the first start
   //     but it may impact the last start.
-  //  3. For following regions spanned entirely by the newly coalesced object, it will change has_object
+  //  3. For following cards spanned entirely by the newly coalesced object, it will change has_object
   //     to false (and make first-start and last-start "undefined").
-  //  4. For a following region that is spanned patially by the newly coalesced object, it may change
+  //  4. For a following card that is spanned patially by the newly coalesced object, it may change
   //     first-start value, but it will not change the last-start value.
   //
   // The range of addresses represented by the arguments to coalesce_objects() must represent a range
   // of memory that was previously occupied exactly by one or more previously registered objects.  For
   // convenience, it is legal to invoke coalesce_objects() with arguments that span a single previously
   // registered object.
+  //
+  // The role of coalesce_objects is to change the crossing map information associated with all of the coalesced
+  // objects.
   void coalesce_objects(HeapWord* address, size_t length_in_words);
 
   // The typical use case is going to look something like this:
@@ -801,14 +854,6 @@ public:
 // ShenandoahScanRemembered is a concrete class representing the
 // ability to scan the old-gen remembered set for references to
 // objects residing in young-gen memory.
-//
-// In an initial implementation, remembered set scanning happens
-// during a HotSpot safepoint.  This greatly simplifies the
-// implementation and improves efficiency of remembered set scanning,
-// but this design choice increases pause times experienced at the
-// start of concurrent marking and concurrent evacuation.  Pause times
-// will be especially long if old-gen memory holds many pointers to
-// young-gen memory.
 //
 // Scanning normally begins with an invocation of numRegions and ends
 // after all clusters of all regions have been scanned.
@@ -874,9 +919,11 @@ public:
   size_t card_index_for_addr(HeapWord *p);
   HeapWord *addr_for_card_index(size_t card_index);
   bool is_card_dirty(size_t card_index);
+  bool is_write_card_dirty(size_t card_index) { return _rs->is_write_card_dirty(card_index); }
   void mark_card_as_dirty(size_t card_index);
   void mark_range_as_dirty(size_t card_index, size_t num_cards);
   void mark_card_as_clean(size_t card_index);
+  void mark_read_card_as_clean(size_t card_index) { _rs->mark_read_card_clean(card_index); }
   void mark_range_as_clean(size_t card_index, size_t num_cards);
   void mark_overreach_card_as_dirty(size_t card_index);
   bool is_card_dirty(HeapWord *p);
@@ -889,9 +936,23 @@ public:
   void initialize_overreach(size_t first_cluster, size_t count);
   void merge_overreach(size_t first_cluster, size_t count);
 
+  // Called by GC thread at start of concurrent mark to exchange roles of read and write remembered sets.
+  void swap_remset() { _rs->swap_remset(); }
+
+  void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
+
+  // Called by GC thread after scanning old remembered set in order to prepare for next GC pass
+  void clear_old_remset() { _rs->clear_old_remset(); }
+
   size_t cluster_for_addr(HeapWord *addr);
+
+  void reset_object_range(HeapWord *from, HeapWord *to);
   void register_object(HeapWord *addr);
+  void register_object_wo_lock(HeapWord *addr);
   void coalesce_objects(HeapWord *addr, size_t length_in_words);
+
+  // Return true iff this object is "properly" registered.
+  bool verify_registration(HeapWord* address, size_t size_in_words);
 
   // clear the cards to clean, and clear the object_starts info to no objects
   void mark_range_as_empty(HeapWord *addr, size_t length_in_words);
@@ -931,7 +992,13 @@ public:
   inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops);
 
   template <typename ClosureType>
+  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops, bool use_write_table);
+
+  template <typename ClosureType>
   inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl);
+
+  template <typename ClosureType>
+  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl, bool use_write_table);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and

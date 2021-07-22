@@ -49,6 +49,7 @@
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
+  _mixed_evac (false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap),
   _generation(generation) {
 }
@@ -66,7 +67,12 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Start initial mark under STW
   vmop_entry_init_mark();
 
-    // Concurrent mark roots
+  // Concurrent remembered set scanning
+  if (_generation->generation_mode() == YOUNG) {
+    _generation->scan_remembered_set();
+  }
+
+  // Concurrent mark roots
   entry_mark_roots();
   if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_outside_cycle)) return false;
 
@@ -148,7 +154,7 @@ void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_mark_gross);
 
   heap->try_inject_alloc_failure();
-  VM_ShenandoahInitMark op(this);
+  VM_ShenandoahInitMark op(this, _do_old_gc_bootstrap);
   VMThread::execute(&op); // jump to entry_init_mark() under safepoint
 }
 
@@ -191,6 +197,12 @@ void ShenandoahConcurrentGC::entry_init_mark() {
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_init_marking(),
                               "init marking");
+
+  if (ShenandoahHeap::heap()->mode()->is_generational() && (_generation->generation_mode() == YOUNG)) {
+    // The current implementation of swap_remembered_set() copies the write-card-table
+    // to the read-card-table.
+    _generation->swap_remembered_set();
+  }
 
   op_init_mark();
 }
@@ -435,12 +447,7 @@ void ShenandoahConcurrentGC::op_reset() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_reset();
   }
-
-  if (_do_old_gc_bootstrap) {
-    heap->global_generation()->prepare_gc();
-  } else {
-    _generation->prepare_gc();
-  }
+  _generation->prepare_gc(_do_old_gc_bootstrap);
 }
 
 class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -453,7 +460,8 @@ public:
     assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
     if (r->is_active()) {
       // Check if region needs updating its TAMS. We have updated it already during concurrent
-      // reset, so it is very likely we don't need to do another write here.
+      // reset, so it is very likely we don't need to do another write here.  Since most regions
+      // are not "active", this path is relatively rare.
       if (_ctx->top_at_mark_start(r) != r->top()) {
         _ctx->capture_top_at_mark_start(r);
       }
@@ -490,6 +498,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     heap->parallel_heap_region_iterate(&cl);
+    heap->old_generation()->parallel_heap_region_iterate(&cl);
   } else {
     // Update region state for only young regions
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
@@ -504,10 +513,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   // Make above changes visible to worker threads
   OrderAccess::fence();
-
-  if (_generation->generation_mode() == YOUNG) {
-    _generation->scan_remembered_set();
-  }
 
   // Arm nmethods for concurrent marking. When a nmethod is about to be executed,
   // we need to make sure that all its metadata are marked. alternative is to remark
@@ -546,7 +551,8 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
-    _generation->prepare_regions_and_collection_set(true /*concurrent*/);
+    bool mixed_evac = _generation->prepare_regions_and_collection_set(true /*concurrent*/);
+    heap->set_mixed_evac(mixed_evac);
 
     // Has to be done after cset selection
     heap->prepare_concurrent_roots();
@@ -909,7 +915,9 @@ void ShenandoahConcurrentGC::op_init_updaterefs() {
   heap->set_evacuation_in_progress(false);
   heap->prepare_update_heap_references(true /*concurrent*/);
   heap->set_update_refs_in_progress(true);
-
+  if (ShenandoahVerify) {
+    heap->verifier()->verify_before_updaterefs();
+  }
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_updaterefs();
   }

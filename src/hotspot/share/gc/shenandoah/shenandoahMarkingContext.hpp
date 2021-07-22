@@ -75,11 +75,13 @@ public:
   inline void reset_top_at_mark_start(ShenandoahHeapRegion* r);
   void initialize_top_at_mark_start(ShenandoahHeapRegion* r);
 
+  HeapWord* top_bitmap(ShenandoahHeapRegion* r);
+
   inline void reset_top_bitmap(ShenandoahHeapRegion *r);
   void clear_bitmap(ShenandoahHeapRegion *r);
 
   bool is_bitmap_clear() const;
-  bool is_bitmap_clear_range(HeapWord* start, HeapWord* end) const;
+  bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
 
   bool is_complete();
   void mark_complete();
