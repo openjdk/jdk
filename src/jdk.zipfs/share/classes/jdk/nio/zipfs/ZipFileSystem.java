@@ -2124,6 +2124,10 @@ class ZipFileSystem extends FileSystem {
     // byte array, to that newly created file. The temp file is then opened
     // in append mode and any subsequent writes, including the one which triggered
     // the temporary file creation, will be written to the file.
+    // Implementation note: the "write" and the "close" methods of this implementation
+    // aren't "synchronized" because this FileRolloverOutputStream gets called
+    // only from either DeflatingEntryOutputStream or EntryOutputStream, both of which
+    // already have the necessary "synchronized" before calling these methods.
     private class FileRolloverOutputStream extends OutputStream {
         private ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
         private final Entry entry;
@@ -2135,7 +2139,7 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public synchronized void write(final int b) throws IOException {
+        public void write(final int b) throws IOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b);
@@ -2158,7 +2162,7 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public synchronized void write(final byte[] b, final int off, final int len) throws IOException {
+        public void write(final byte[] b, final int off, final int len) throws IOException {
             if (tmpFileOS != null) {
                 // already rolled over, write to the file that has been created previously
                 writeToFile(b, off, len);
@@ -2203,14 +2207,11 @@ class ZipFileSystem extends FileSystem {
         private void transferToFile() throws IOException {
             // create a tempfile
             entry.file = getTempPathForEntry(null);
+            tmpFileOS = new BufferedOutputStream(Files.newOutputStream(entry.file));
             // transfer the already written data from the byte array buffer into this tempfile
-            try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(entry.file))) {
-                baos.writeTo(os);
-            }
+            baos.writeTo(tmpFileOS);
             // release the underlying byte array
             baos = null;
-            // append any further data to the file with buffering enabled
-            tmpFileOS = new BufferedOutputStream(Files.newOutputStream(entry.file, APPEND));
         }
 
         private byte[] toByteArray() {
