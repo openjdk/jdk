@@ -801,8 +801,6 @@ private:
 
   void set_young_collection_default_active_worker_threads();
 
-  bool determine_start_concurrent_mark_gc();
-
   void prepare_tlabs_for_mutator();
 
   void retire_tlabs();
@@ -1003,6 +1001,9 @@ public:
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize();
+
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
 
   virtual void stop();
   virtual void safepoint_synchronize_begin();
