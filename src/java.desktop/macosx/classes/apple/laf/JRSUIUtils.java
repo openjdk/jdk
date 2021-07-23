@@ -36,10 +36,10 @@ public final class JRSUIUtils {
 
     static boolean isLeopard = isMacOSXLeopard();
     static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
-    static boolean isBigSurOrAbove = isMacOSXBigSurOrAbove();
 
     public static boolean isMacOSXBigSurOrAbove() {
-        return currentMacOSXVersionMatchesGivenVersionRange(16, true, false, true);
+        return currentMacOSXVersionMatchesGivenVersionRange(10, 16, true,
+                false, true);
     }
 
     static boolean isMacOSXLeopard() {
@@ -47,32 +47,46 @@ public final class JRSUIUtils {
     }
 
     static boolean isMacOSXSnowLeopardOrBelow() {
-        return currentMacOSXVersionMatchesGivenVersionRange(6, true, true, false);
+        return currentMacOSXVersionMatchesGivenVersionRange(10, 6, true,
+                true, false);
     }
 
     static boolean isCurrentMacOSXVersion(final int version) {
-        return currentMacOSXVersionMatchesGivenVersionRange(version, true, false, false);
+        return isCurrentMacOSXVersion(10, version);
+    }
+
+    static boolean isCurrentMacOSXVersion(final int major, final int minor) {
+        return currentMacOSXVersionMatchesGivenVersionRange(major, minor, true, false, false);
     }
 
     static boolean currentMacOSXVersionMatchesGivenVersionRange(
             final int version, final boolean inclusive,
             final boolean matchBelow, final boolean matchAbove) {
-        // split the "10.x.y" version number
+        return currentMacOSXVersionMatchesGivenVersionRange(10, version, inclusive, matchBelow, matchAbove);
+    }
+
+    static boolean currentMacOSXVersionMatchesGivenVersionRange(
+            final int majorVersion, final int minorVersion, final boolean inclusive,
+            final boolean matchBelow, final boolean matchAbove) {
+        // split the "x.y.z" version number
         @SuppressWarnings("removal")
         String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
         String[] fragments = osVersion.split("\\.");
 
-        // sanity check the "10." part of the version
-        if (!fragments[0].equals("10")) return false;
         if (fragments.length < 2) return false;
 
         // check if os.version matches the given version using the given match method
         try {
+            int majorVers = Integer.parseInt(fragments[0]);
             int minorVers = Integer.parseInt(fragments[1]);
 
-            if (inclusive && minorVers == version) return true;
-            if (matchBelow && minorVers < version) return true;
-            if (matchAbove && minorVers > version) return true;
+            if (inclusive && majorVers == majorVersion && minorVers == minorVersion) return true;
+            if (matchBelow &&
+                    (majorVers < majorVersion ||
+                            (majorVers == majorVersion && minorVers < minorVersion))) return true;
+            if (matchAbove &&
+                    (majorVers > majorVersion ||
+                            (majorVers == majorVersion && minorVers > minorVersion))) return true;
 
         } catch (NumberFormatException e) {
             // was not an integer
