@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
+const char* const LogFileStreamOutput::NewLineOptionKey = "newline";
+
 static bool initialized;
 static union {
   char stdoutmem[sizeof(LogStdoutOutput)];
@@ -49,6 +51,33 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
     ::new (&StderrLog) LogStderrOutput();
     initialized = true;
   }
+}
+
+bool LogFileStreamOutput::initialize(const char* options, outputStream* errstream) {
+  if (options == NULL || strlen(options) == 0) {
+    return true;
+  }
+
+  char* opts = os::strdup_check_oom(options, mtLogging);
+  char* equals_pos = strchr(opts, '=');
+  bool success = false;
+  if (equals_pos == NULL) {
+    errstream->print_cr("Invalid option '%s' for log file stream output.", opts);
+  } else {
+    char* key = opts;
+    char* value_str = equals_pos + 1;
+    *equals_pos = '\0';
+
+    if (strcmp(NewLineOptionKey, key) == 0) {
+      _new_line = os::strdup_check_oom(value_str, mtLogging);
+      success = true;
+    } else {
+      errstream->print_cr("Invalid option '%s' for log file stream output.", options);
+    }
+  }
+
+  os::free(opts);
+  return success;
 }
 
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
@@ -117,6 +146,29 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
+int LogFileStreamOutput::write_internal(const char* msg) {
+  int written = 0;
+  if (_new_line == NULL) {
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  } else {
+    char *dupstr = os::strdup_check_oom(msg, mtLogging);
+    char *cur = dupstr;
+    char *next;
+    do {
+      next = strchr(cur, '\n');
+      if (next == NULL) {
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
+      } else {
+        *next = '\0';
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, _new_line), written);
+        cur = next + 1;
+      }
+    } while (next != NULL);
+    os::free(dupstr);
+  }
+  return written;
+}
+
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
@@ -126,7 +178,7 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
-  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  written += write_internal(msg);
 
   return flush() ? written : -1;
 }
@@ -141,7 +193,7 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
+    written += write_internal(msg_iterator.message());
   }
 
   return flush() ? written : -1;
