@@ -82,11 +82,7 @@ Java_nsk_stress_jni_JNIter003_jniInitArrays (JNIEnv *env, jobject jobj, jint siz
   doubleBuf = (jdouble *)c_malloc(env, SIZE * sizeof(jdouble));
 
   for (i = 0; i < SIZE; i++) {
-    if (i % 2 == 0) {
-      boolBuf[i] = JNI_TRUE;
-    } else {
-      boolBuf[i] = JNI_FALSE;
-    }
+    boolBuf[i] = (i % 2 == 0) ? JNI_TRUE : JNI_FALSE;
     /*
       byteBuf[i] = (jbyte)random();
       charBuf[i] = (jchar)random();
