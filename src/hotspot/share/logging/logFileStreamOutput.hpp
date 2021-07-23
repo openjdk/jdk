@@ -26,6 +26,7 @@
 
 #include "logging/logDecorators.hpp"
 #include "logging/logOutput.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
