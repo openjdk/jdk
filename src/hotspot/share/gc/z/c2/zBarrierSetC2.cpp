@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public:
 
     RegMask* live = (RegMask*)_live[node->_idx];
     if (live == NULL) {
-      live = new (Compile::current()->comp_arena()->Amalloc_D(sizeof(RegMask))) RegMask();
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
       _live.map(node->_idx, (Node*)live);
     }
 
@@ -194,11 +194,21 @@ int ZBarrierSetC2::estimate_stub_size() const {
 
 static void set_barrier_data(C2Access& access) {
   if (ZBarrierSet::barrier_needed(access.decorators(), access.type())) {
-    if (access.decorators() & ON_WEAK_OOP_REF) {
-      access.set_barrier_data(ZLoadBarrierWeak);
+    uint8_t barrier_data = 0;
+
+    if (access.decorators() & ON_PHANTOM_OOP_REF) {
+      barrier_data |= ZLoadBarrierPhantom;
+    } else if (access.decorators() & ON_WEAK_OOP_REF) {
+      barrier_data |= ZLoadBarrierWeak;
     } else {
-      access.set_barrier_data(ZLoadBarrierStrong);
+      barrier_data |= ZLoadBarrierStrong;
     }
+
+    if (access.decorators() & AS_NO_KEEPALIVE) {
+      barrier_data |= ZLoadBarrierNoKeepalive;
+    }
+
+    access.set_barrier_data(barrier_data);
   }
 }
 
@@ -286,6 +296,18 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
     Node* length = ac->in(ArrayCopyNode::Length);
 
+    if (bt == T_OBJECT) {
+      // BarrierSetC2::clone sets the offsets via BarrierSetC2::arraycopy_payload_base_offset
+      // which 8-byte aligns them to allow for word size copies. Make sure the offsets point
+      // to the first element in the array when cloning object arrays. Otherwise, load
+      // barriers are applied to parts of the header.
+      assert(src_offset == dest_offset, "should be equal");
+      assert((src_offset->get_long() == arrayOopDesc::base_offset_in_bytes(T_OBJECT) && UseCompressedClassPointers) ||
+             (src_offset->get_long() == arrayOopDesc::length_offset_in_bytes() && !UseCompressedClassPointers),
+             "unexpected offset for object array clone");
+      src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+      dest_offset = src_offset;
+    }
     Node* payload_src = phase->basic_plus_adr(src, src_offset);
     Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 

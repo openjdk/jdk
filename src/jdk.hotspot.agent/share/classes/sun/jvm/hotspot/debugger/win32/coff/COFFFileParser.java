@@ -753,7 +753,7 @@ public class COFFFileParser {
 
         public int getNumEntries() { return numEntries; }
         public DebugDirectoryEntry getEntry(int i) {
-          if ((i < 0) || (i >= getNumEntries())) throw new IndexOutOfBoundsException();
+          Objects.checkIndex(i, getNumEntries());
           return new DebugDirectoryEntryImpl(offset + i * DEBUG_DIRECTORY_ENTRY_SIZE);
         }
       }
@@ -809,9 +809,7 @@ public class COFFFileParser {
         }
 
         public byte  getRawDataByte(int i) {
-          if (i < 0 || i >= getSizeOfData()) {
-            throw new IndexOutOfBoundsException();
-          }
+          Objects.checkIndex(i, getSizeOfData());
           seek(getPointerToRawData() + i);
           return readByte();
         }

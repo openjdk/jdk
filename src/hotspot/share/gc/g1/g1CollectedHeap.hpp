@@ -146,6 +146,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
 
+  friend class G1YoungGCVerifierMark;
+
   // Closures used in implementation.
   friend class G1ParScanThreadState;
   friend class G1ParScanThreadStateSet;
@@ -153,6 +155,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1PLABAllocator;
 
   // Other related classes.
+  friend class G1HeapPrinterMark;
   friend class HeapRegionClaimer;
 
   // Testing classes.
@@ -245,7 +248,7 @@ private:
   bool _expand_heap_after_alloc_failure;
 
   // Helper for monitoring and management support.
-  G1MonitoringSupport* _g1mm;
+  G1MonitoringSupport* _monitoring_support;
 
   // Records whether the region at the given index is (still) a
   // candidate for eager reclaim.  Only valid for humongous start
@@ -316,10 +319,6 @@ private:
   // cleanup code more (as all the regions that will be allocated by
   // this method will be found dead by the marking cycle).
   void allocate_dummy_regions() PRODUCT_RETURN;
-
-  // If the HR printer is active, dump the state of the regions in the
-  // heap after a compaction.
-  void print_hrm_post_compaction();
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -396,11 +395,6 @@ private:
 #define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
 #endif
 
-  static const uint MaxYoungGCNameLength = 128;
-  // Sets given young_gc_name to the canonical young gc pause string. Young_gc_name
-  // must be at least of length MaxYoungGCNameLength.
-  void set_young_gc_name(char* young_gc_name);
-
   // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;
@@ -408,9 +402,6 @@ private:
   STWGCTimer* _gc_timer_stw;
 
   G1NewTracer* _gc_tracer_stw;
-
-  void gc_tracer_report_gc_start();
-  void gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark, G1EvacuationInfo& evacuation_info);
 
   // The current policy object for the collector.
   G1Policy* _policy;
@@ -542,7 +533,7 @@ private:
   void prepare_heap_for_mutators();
   void abort_refinement();
   void verify_after_full_collection();
-  void print_heap_after_full_collection(G1HeapTransition* heap_transition);
+  void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
@@ -586,9 +577,9 @@ public:
     return _verifier;
   }
 
-  G1MonitoringSupport* g1mm() {
-    assert(_g1mm != NULL, "should have been initialized");
-    return _g1mm;
+  G1MonitoringSupport* monitoring_support() {
+    assert(_monitoring_support != nullptr, "should have been initialized");
+    return _monitoring_support;
   }
 
   void resize_heap_if_necessary();
@@ -808,11 +799,17 @@ private:
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
 
+  void set_young_collection_default_active_worker_threads();
+
+  void prepare_tlabs_for_mutator();
+
+  void retire_tlabs();
+
   G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
-  void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
+  void calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
@@ -838,8 +835,8 @@ private:
   void evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states);
 
 public:
-  void pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
-  void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info,
+  void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
+  void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
                                     G1RedirtyCardsQueueSet* rdcqs,
                                     G1ParScanThreadStateSet* pss);
 
@@ -928,52 +925,30 @@ public:
 
   // ("Weak") Reference processing support.
   //
-  // G1 has 2 instances of the reference processor class. One
-  // (_ref_processor_cm) handles reference object discovery
-  // and subsequent processing during concurrent marking cycles.
+  // G1 has 2 instances of the reference processor class.
   //
-  // The other (_ref_processor_stw) handles reference object
-  // discovery and processing during full GCs and incremental
-  // evacuation pauses.
+  // One (_ref_processor_cm) handles reference object discovery and subsequent
+  // processing during concurrent marking cycles. Discovery is enabled/disabled
+  // at the start/end of a concurrent marking cycle.
   //
-  // During an incremental pause, reference discovery will be
-  // temporarily disabled for _ref_processor_cm and will be
-  // enabled for _ref_processor_stw. At the end of the evacuation
-  // pause references discovered by _ref_processor_stw will be
-  // processed and discovery will be disabled. The previous
-  // setting for reference object discovery for _ref_processor_cm
-  // will be re-instated.
+  // The other (_ref_processor_stw) handles reference object discovery and
+  // processing during incremental evacuation pauses and full GC pauses.
   //
-  // At the start of marking:
-  //  * Discovery by the CM ref processor is verified to be inactive
-  //    and it's discovered lists are empty.
-  //  * Discovery by the CM ref processor is then enabled.
+  // ## Incremental evacuation pauses
   //
-  // At the end of marking:
-  //  * Any references on the CM ref processor's discovered
-  //    lists are processed (possibly MT).
+  // STW ref processor discovery is enabled/disabled at the start/end of an
+  // incremental evacuation pause. No particular handling of the CM ref
+  // processor is needed, apart from treating the discovered references as
+  // roots; CM discovery does not need to be temporarily disabled as all
+  // marking threads are paused during incremental evacuation pauses.
   //
-  // At the start of full GC we:
-  //  * Disable discovery by the CM ref processor and
-  //    empty CM ref processor's discovered lists
-  //    (without processing any entries).
-  //  * Verify that the STW ref processor is inactive and it's
-  //    discovered lists are empty.
-  //  * Temporarily set STW ref processor discovery as single threaded.
-  //  * Temporarily clear the STW ref processor's _is_alive_non_header
-  //    field.
-  //  * Finally enable discovery by the STW ref processor.
+  // ## Full GC pauses
   //
-  // The STW ref processor is used to record any discovered
-  // references during the full GC.
-  //
-  // At the end of a full GC we:
-  //  * Enqueue any reference objects discovered by the STW ref processor
-  //    that have non-live referents. This has the side-effect of
-  //    making the STW ref processor inactive by disabling discovery.
-  //  * Verify that the CM ref processor is still inactive
-  //    and no references have been placed on it's discovered
-  //    lists (also checked as a precondition during concurrent start).
+  // We abort any ongoing concurrent marking cycle, disable CM discovery, and
+  // temporarily substitute a new closure for the STW ref processor's
+  // _is_alive_non_header field (old value is restored after the full GC). Then
+  // STW ref processor discovery is enabled, and marking & compaction
+  // commences.
 
   // The (stw) reference processor...
   ReferenceProcessor* _ref_processor_stw;
@@ -1026,6 +1001,9 @@ public:
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize();
+
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
 
   virtual void stop();
   virtual void safepoint_synchronize_begin();
@@ -1496,6 +1474,28 @@ public:
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const;
+};
+
+// Scoped object that performs common pre- and post-gc heap printing operations.
+class G1HeapPrinterMark : public StackObj {
+  G1CollectedHeap* _g1h;
+  G1HeapTransition _heap_transition;
+
+public:
+  G1HeapPrinterMark(G1CollectedHeap* g1h);
+  ~G1HeapPrinterMark();
+};
+
+// Scoped object that performs common pre- and post-gc operations related to
+// JFR events.
+class G1JFRTracerMark : public StackObj {
+protected:
+  STWGCTimer* _timer;
+  GCTracer* _tracer;
+
+public:
+  G1JFRTracerMark(STWGCTimer* timer, GCTracer* tracer);
+  ~G1JFRTracerMark();
 };
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {

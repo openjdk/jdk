@@ -684,7 +684,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
     raw = format+1;
   }
   if (raw != NULL) {
-    st->print_raw(raw, (int) flen);
+    st->print_raw(raw, flen);
     return (int) flen;
   }
   va_list ap;

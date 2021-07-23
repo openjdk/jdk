@@ -743,21 +743,27 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // flag appears to work with _beginthredex() as well.
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
-  HANDLE thread_handle =
-    (HANDLE)_beginthreadex(NULL,
-                           (unsigned)stack_size,
-                           (unsigned (__stdcall *)(void*)) thread_native_entry,
-                           thread,
-                           initflag,
-                           &thread_id);
+  HANDLE thread_handle;
+  int limit = 3;
+  do {
+    thread_handle =
+      (HANDLE)_beginthreadex(NULL,
+                             (unsigned)stack_size,
+                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             thread,
+                             initflag,
+                             &thread_id);
+  } while (thread_handle == NULL && errno == EAGAIN && limit-- > 0);
 
+  ResourceMark rm;
   char buf[64];
   if (thread_handle != NULL) {
-    log_info(os, thread)("Thread started (tid: %u, attributes: %s)",
-      thread_id, describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+    log_info(os, thread)("Thread \"%s\" started (tid: %u, attributes: %s)",
+                         thread->name(), thread_id,
+                         describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
   } else {
-    log_warning(os, thread)("Failed to start thread - _beginthreadex failed (%s) for attributes: %s.",
-      os::errno_name(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+    log_warning(os, thread)("Failed to start thread \"%s\" - _beginthreadex failed (%s) for attributes: %s.",
+                            thread->name(), os::errno_name(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
     // Log some OS information which might explain why creating the thread failed.
     log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
     LogStream st(Log(os, thread)::info());
@@ -969,11 +975,6 @@ void os::set_native_thread_name(const char *name) {
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
   } __except(EXCEPTION_EXECUTE_HANDLER) {}
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 void os::win32::initialize_performance_counter() {
@@ -4806,9 +4807,7 @@ bool os::dir_is_empty(const char* path) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  if (!rewrite_existing) {
-    oflags |= _O_EXCL;
-  }
+  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
   return ::open(path, oflags, _S_IREAD | _S_IWRITE);
 }
 

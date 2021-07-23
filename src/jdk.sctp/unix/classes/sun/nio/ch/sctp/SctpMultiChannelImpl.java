@@ -374,14 +374,15 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 return;
             if (state == ChannelState.UNINITIALIZED) {
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
                 return;
             }
             assert !isOpen() && !isRegistered();
 
             /* Postpone the kill if there is a thread sending or receiving. */
             if (receiverThread == 0 && senderThread == 0) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
             } else {
                 state = ChannelState.KILLPENDING;
             }

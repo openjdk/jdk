@@ -522,9 +522,14 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_primary_supers[i]);
   }
   it->push(&_super);
-  it->push((Klass**)&_subklass);
-  it->push((Klass**)&_next_sibling);
-  it->push(&_next_link);
+  if (!Arguments::is_dumping_archive()) {
+    // If dumping archive, these may point to excluded classes. There's no need
+    // to follow these pointers anyway, as they will be set to NULL in
+    // remove_unshareable_info().
+    it->push((Klass**)&_subklass);
+    it->push((Klass**)&_next_sibling);
+    it->push(&_next_link);
+  }
 
   vtableEntry* vt = start_of_vtable();
   for (int i=0; i<vtable_length(); i++) {
@@ -599,7 +604,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_regions_mapped()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
