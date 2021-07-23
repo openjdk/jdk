@@ -57,6 +57,7 @@ public class HandshakeTimeoutTest {
                     "HandshakeTimeoutTest$Test");
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldNotHaveExitValue(0);
         output.reportDiagnosticSummary();
         // In rare cases the target wakes up and performs the handshake at the same time as we timeout.
         // Therefore it's not certain the timeout will find any thread.
