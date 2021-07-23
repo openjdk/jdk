@@ -1309,7 +1309,7 @@ void G1ConcurrentMark::compute_new_sizes() {
 
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
-  _g1h->g1mm()->update_sizes();
+  _g1h->monitoring_support()->update_sizes();
 }
 
 void G1ConcurrentMark::cleanup() {

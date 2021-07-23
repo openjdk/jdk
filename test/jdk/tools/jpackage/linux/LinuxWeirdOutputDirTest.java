@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_HEAPSHARED_INLINE_HPP
-#define SHARE_CDS_HEAPSHARED_INLINE_HPP
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.JPackageCommand;
 
-#include "cds/heapShared.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "utilities/align.hpp"
+/*
+ * @test
+ * @summary jpackage with values of --dest parameter breaking jpackage launcher
+ * @requires (os.family == "linux")
+ * @bug 8268974
+ * @library ../helpers
+ * @build jdk.jpackage.test.*
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @compile LinuxWeirdOutputDirTest.java
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=LinuxWeirdOutputDirTest
+ */
+public class LinuxWeirdOutputDirTest {
 
-#if INCLUDE_CDS_JAVA_HEAP
-
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = cast_to_oop((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
+    @Test
+    @Parameter("bin")
+    @Parameter("lib")
+    public void test(String outputPath) {
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        cmd.setArgumentValue("--dest", cmd.outputDir().resolve(outputPath));
+        cmd.executeAndAssertHelloAppImageCreated();
+    }
 }
-
-#endif
-
-#endif // SHARE_CDS_HEAPSHARED_INLINE_HPP

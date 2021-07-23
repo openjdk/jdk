@@ -62,6 +62,7 @@ public class ReadFromNoaccessArea {
     if (output.getStdout() != null && output.getStdout().contains("WB_ReadFromNoaccessArea method is useless")) {
       throw new SkippedException("There is no protected page in ReservedHeapSpace in these circumstance");
     }
+    output.shouldNotHaveExitValue(0);
     if (Platform.isWindows()) {
       output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
     } else if (Platform.isOSX()) {
@@ -76,7 +77,6 @@ public class ReadFromNoaccessArea {
     // This method calls whitebox method reading from noaccess area
     public static void main(String args[]) throws Exception {
       WhiteBox.getWhiteBox().readFromNoaccessArea();
-      throw new Exception("Call of readFromNoaccessArea succeeded! This is wrong. Crash expected. Test failed.");
     }
   }
 
