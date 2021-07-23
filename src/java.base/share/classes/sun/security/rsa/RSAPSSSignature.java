@@ -233,9 +233,9 @@ public class RSAPSSSignature extends SignatureSpi {
             }
         }
 
-	// validate key attributes
+        // validate key attributes
         try {
-	    if (rsaKey.getModulus().signum() == 0 ||
+            if (rsaKey.getModulus().signum() == 0 ||
                 (rsaKey instanceof RSAPrivateKey rsaPrKey &&
                     (rsaPrKey.getPrivateExponent().signum() == 0 ||
                         (rsaPrKey instanceof RSAPrivateCrtKey crtKey &&
