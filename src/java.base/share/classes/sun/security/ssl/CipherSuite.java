@@ -968,13 +968,10 @@ enum CipherSuite {
             }
 
             boolean found = false;
-            for (CipherSuite cs : allowedCipherSuites) {
-                if (cs.name.equals(name) ||
-                        cs.aliases.contains(name)) {
-                    cipherSuites.add(cs);
-                    found = true;
-                    break;
-                }
+            CipherSuite cs;
+            if ((cs = cipherSuiteNames.get(name)) != null && !cs.supportedProtocols.isEmpty()) {
+                cipherSuites.add(cs);
+                found = true;
             }
             if (!found) {
                 throw new IllegalArgumentException(
