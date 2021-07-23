@@ -28,7 +28,6 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 import java.util.Properties;
 
 import jdk.internal.util.StaticProperty;
@@ -80,17 +79,8 @@ public final class UntrustedCertificates {
         if (algorithm == null) {
             return false;
         }
-        String key;
-        if (cert instanceof X509CertImpl) {
-            key = ((X509CertImpl)cert).getFingerprint(algorithm);
-        } else {
-            try {
-                key = new X509CertImpl(cert.getEncoded()).getFingerprint(algorithm);
-            } catch (CertificateException cee) {
-                return false;
-            }
-        }
-        return props.containsKey(key);
+        String key = X509CertImpl.getFingerprint(algorithm, cert, debug);
+        return (key == null ? false : props.containsKey(key));
     }
 
     private UntrustedCertificates() {}
