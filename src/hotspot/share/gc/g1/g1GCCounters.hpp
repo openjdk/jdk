@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1PERIODICGCTASK_HPP
-#define SHARE_GC_G1_G1PERIODICGCTASK_HPP
+#ifndef SHARE_GC_G1_G1GCCOUNTERS_HPP
+#define SHARE_GC_G1_G1GCCOUNTERS_HPP
 
-#include "gc/g1/g1ServiceThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
-class G1GCCounters;
 
-// Task handling periodic GCs
-class G1PeriodicGCTask : public G1ServiceTask {
-  bool should_start_periodic_gc(G1CollectedHeap* g1h,
-                                G1GCCounters* counters);
-  void check_for_periodic_gc();
+// Record collection counters for later use when deciding whether a GC has
+// been run since the counter state was recorded.
+class G1GCCounters {
+  uint _total_collections;
+  uint _total_full_collections;
+  uint _old_marking_cycles_started;
 
 public:
-  G1PeriodicGCTask(const char* name);
-  virtual void execute();
+  G1GCCounters() {}             // Uninitialized
+
+  // Capture the current counters from the heap.  The caller must ensure no
+  // collections will occur while this constructor is executing.
+  explicit G1GCCounters(G1CollectedHeap* g1h);
+
+  uint total_collections() const { return _total_collections; }
+  uint total_full_collections() const { return _total_full_collections; }
+  uint old_marking_cycles_started() const { return _old_marking_cycles_started; }
 };
 
-#endif // SHARE_GC_G1_G1PERIODICGCTASK_HPP
+#endif // SHARE_GC_G1_G1GCCOUNTERS_HPP
