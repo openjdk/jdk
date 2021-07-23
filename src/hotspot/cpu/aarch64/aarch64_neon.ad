@@ -33,7 +33,7 @@
 // Load Vector (16 bits)
 instruct loadV2(vecD dst, vmem2 mem)
 %{
-  predicate(n->as_LoadVector()->memory_size() == 2);
+  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 2);
   match(Set dst (LoadVector mem));
   ins_cost(4 * INSN_COST);
   format %{ "ldrh   $dst,$mem\t# vector (16 bits)" %}
@@ -44,7 +44,7 @@ instruct loadV2(vecD dst, vmem2 mem)
 // Load Vector (32 bits)
 instruct loadV4(vecD dst, vmem4 mem)
 %{
-  predicate(n->as_LoadVector()->memory_size() == 4);
+  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 4);
   match(Set dst (LoadVector mem));
   ins_cost(4 * INSN_COST);
   format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
@@ -55,7 +55,7 @@ instruct loadV4(vecD dst, vmem4 mem)
 // Load Vector (64 bits)
 instruct loadV8(vecD dst, vmem8 mem)
 %{
-  predicate(n->as_LoadVector()->memory_size() == 8);
+  predicate(UseSVE == 0 && n->as_LoadVector()->memory_size() == 8);
   match(Set dst (LoadVector mem));
   ins_cost(4 * INSN_COST);
   format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
@@ -2473,9 +2473,10 @@ instruct vmaskcastX(vecX dst)
 
 instruct loadcon8B(vecD dst, immI0 src)
 %{
-  predicate((n->as_Vector()->length() == 2 || n->as_Vector()->length() == 4 ||
-             n->as_Vector()->length() == 8) &&
-             n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(UseSVE == 0 &&
+           (n->as_Vector()->length() == 2 || n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8) &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorLoadConst src));
   ins_cost(INSN_COST);
   format %{ "ldr $dst, CONSTANT_MEMORY\t# load iota indices" %}
@@ -2488,7 +2489,7 @@ instruct loadcon8B(vecD dst, immI0 src)
 
 instruct loadcon16B(vecX dst, immI0 src)
 %{
-  predicate(n->as_Vector()->length() == 16 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(UseSVE == 0 && n->as_Vector()->length() == 16 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorLoadConst src));
   ins_cost(INSN_COST);
   format %{ "ldr $dst, CONSTANT_MEMORY\t# load iota indices" %}
@@ -2945,8 +2946,8 @@ instruct vabd2D(vecX dst, vecX src1, vecX src2)
 
 instruct replicate8B(vecD dst, iRegIorL2I src)
 %{
-  predicate(n->as_Vector()->length() == 4 ||
-            n->as_Vector()->length() == 8);
+  predicate(UseSVE == 0 && (n->as_Vector()->length() == 8 ||
+                            n->as_Vector()->length() == 4));
   match(Set dst (ReplicateB src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (8B)" %}
@@ -2970,8 +2971,8 @@ instruct replicate16B(vecX dst, iRegIorL2I src)
 
 instruct replicate8B_imm(vecD dst, immI con)
 %{
-  predicate(n->as_Vector()->length() == 4 ||
-            n->as_Vector()->length() == 8);
+  predicate(UseSVE == 0 && (n->as_Vector()->length() == 8 ||
+                            n->as_Vector()->length() == 4));
   match(Set dst (ReplicateB con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector (8B)" %}
@@ -2995,8 +2996,8 @@ instruct replicate16B_imm(vecX dst, immI con)
 
 instruct replicate4S(vecD dst, iRegIorL2I src)
 %{
-  predicate(n->as_Vector()->length() == 2 ||
-            n->as_Vector()->length() == 4);
+  predicate(UseSVE == 0 && (n->as_Vector()->length() == 4 ||
+                            n->as_Vector()->length() == 2));
   match(Set dst (ReplicateS src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (4S)" %}
@@ -3020,8 +3021,8 @@ instruct replicate8S(vecX dst, iRegIorL2I src)
 
 instruct replicate4S_imm(vecD dst, immI con)
 %{
-  predicate(n->as_Vector()->length() == 2 ||
-            n->as_Vector()->length() == 4);
+  predicate(UseSVE == 0 && (n->as_Vector()->length() == 4 ||
+                            n->as_Vector()->length() == 2));
   match(Set dst (ReplicateS con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector (4H)" %}
@@ -3045,7 +3046,7 @@ instruct replicate8S_imm(vecX dst, immI con)
 
 instruct replicate2I(vecD dst, iRegIorL2I src)
 %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(UseSVE == 0 && n->as_Vector()->length() == 2);
   match(Set dst (ReplicateI src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2I)" %}
@@ -3069,7 +3070,7 @@ instruct replicate4I(vecX dst, iRegIorL2I src)
 
 instruct replicate2I_imm(vecD dst, immI con)
 %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(UseSVE == 0 && n->as_Vector()->length() == 2);
   match(Set dst (ReplicateI con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector (2I)" %}
@@ -3119,7 +3120,7 @@ instruct replicate2L_zero(vecX dst, immI0 zero)
 
 instruct replicate2F(vecD dst, vRegF src)
 %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(UseSVE == 0 && n->as_Vector()->length() == 2);
   match(Set dst (ReplicateF src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2F)" %}
@@ -4249,8 +4250,8 @@ instruct vxor16B(vecX dst, vecX src1, vecX src2)
 // ------------------------------ Shift ---------------------------------------
 
 instruct vshiftcnt8B(vecD dst, iRegIorL2I cnt) %{
-  predicate(n->as_Vector()->length_in_bytes() == 4 ||
-            n->as_Vector()->length_in_bytes() == 8);
+  predicate(UseSVE == 0 && (n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8));
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "dup  $dst, $cnt\t# shift count vector (8B)" %}
@@ -4261,7 +4262,7 @@ instruct vshiftcnt8B(vecD dst, iRegIorL2I cnt) %{
 %}
 
 instruct vshiftcnt16B(vecX dst, iRegIorL2I cnt) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16);
+  predicate(UseSVE == 0 && (n->as_Vector()->length_in_bytes() == 16));
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "dup  $dst, $cnt\t# shift count vector (16B)" %}

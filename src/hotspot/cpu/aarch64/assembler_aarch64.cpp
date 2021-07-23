@@ -60,6 +60,27 @@ Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
     return _esize2arrangement_table[esize][isQ];
 }
 
+Assembler::SIMD_RegVariant Assembler::elemBytes_to_regVariant(int esize) {
+  switch(esize) {
+    case 1:
+      return B;
+    case 2:
+      return H;
+    case 4:
+      return S;
+    case 8:
+      return D;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
+  return INVALID;
+}
+
+Assembler::SIMD_RegVariant Assembler::elemType_to_regVariant(BasicType bt) {
+  return elemBytes_to_regVariant(type2aelembytes(bt));
+}
+
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
                             int format) {

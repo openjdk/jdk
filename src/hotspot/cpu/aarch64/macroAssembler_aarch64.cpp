@@ -2536,7 +2536,9 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
           as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
   }
 
-  if (restore_vectors) {
+  // We may use predicate registers and rely on ptrue with SVE,
+  // regardless of wide vector (> 8 bytes) used or not.
+  if (use_sve) {
     reinitialize_ptrue();
   }
 

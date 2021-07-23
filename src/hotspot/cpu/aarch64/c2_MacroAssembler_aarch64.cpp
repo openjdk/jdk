@@ -944,3 +944,59 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
     }
   }
 }
+
+void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
+                                    FloatRegister zn, FloatRegister zm, int cond) {
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    switch (cond) {
+      case BoolTest::eq: sve_fcmeq(pd, size, pg, zn, zm); break;
+      case BoolTest::ne: sve_fcmne(pd, size, pg, zn, zm); break;
+      case BoolTest::ge: sve_fcmge(pd, size, pg, zn, zm); break;
+      case BoolTest::gt: sve_fcmgt(pd, size, pg, zn, zm); break;
+      case BoolTest::le: sve_fcmge(pd, size, pg, zm, zn); break;
+      case BoolTest::lt: sve_fcmgt(pd, size, pg, zm, zn); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  } else {
+    switch (cond) {
+      case BoolTest::eq: sve_cmpeq(pd, size, pg, zn, zm); break;
+      case BoolTest::ne: sve_cmpne(pd, size, pg, zn, zm); break;
+      case BoolTest::ge: sve_cmpge(pd, size, pg, zn, zm); break;
+      case BoolTest::gt: sve_cmpgt(pd, size, pg, zn, zm); break;
+      case BoolTest::le: sve_cmpge(pd, size, pg, zm, zn); break;
+      case BoolTest::lt: sve_cmpgt(pd, size, pg, zm, zn); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  }
+}
+
+void C2_MacroAssembler::sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
+                                            PRegister pg, PRegister pn, int length) {
+  assert(pg->is_governing(), "This register has to be a governing predicate register");
+  // The conditional flags will be clobbered by this function
+  sve_cmpne(pn, size, pg, src, 0);
+  switch (opc) {
+    case Op_VectorMaskTrueCount:
+      sve_cntp(dst, size, ptrue, pn);
+      break;
+    case Op_VectorMaskFirstTrue:
+      sve_brkb(pn, pg, pn, false);
+      sve_cntp(dst, size, ptrue, pn);
+      break;
+    case Op_VectorMaskLastTrue:
+      sve_rev(pn, size, pn);
+      sve_brkb(pn, ptrue, pn, false);
+      sve_cntp(dst, size, ptrue, pn);
+      movw(rscratch1, length - 1);
+      subw(dst, rscratch1, dst);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
+}
