@@ -969,7 +969,8 @@ enum CipherSuite {
 
             boolean found = false;
             CipherSuite cs;
-            if ((cs = cipherSuiteNames.get(name)) != null && !cs.supportedProtocols.isEmpty()) {
+            if ((cs = cipherSuiteNames.get(name)) != null
+                    && !cs.supportedProtocols.isEmpty()) {
                 cipherSuites.add(cs);
                 found = true;
             }
