@@ -64,7 +64,7 @@ public:
   // Allocate right next to the MachNodes in the same arena
   void *operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    return C->node_arena()->Amalloc_4(x);
+    return C->node_arena()->AmallocWords(x);
   }
 
   // Opcode

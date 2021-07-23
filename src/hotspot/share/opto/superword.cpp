@@ -3604,7 +3604,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   // The loop cannot be optimized if the graph shape at
   // the loop entry is inappropriate.
-  if (!PhaseIdealLoop::is_canonical_loop_entry(cl)) {
+  if (cl->is_canonical_loop_entry() == NULL) {
     return NULL;
   }
 

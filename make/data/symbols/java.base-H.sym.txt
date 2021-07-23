@@ -209,7 +209,8 @@ header extends java/lang/RuntimeException flags 21
 class name java/lang/runtime/SwitchBootstraps
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SWITCH_PATTERN_MATCHING;)
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name typeSwitch descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite; thrownTypes java/lang/Throwable flags 89
+method name typeSwitch descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite; flags 89
+method name enumSwitch descriptor (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite; flags 89
 
 class name java/net/DatagramSocket
 -method name setDatagramSocketImplFactory descriptor (Ljava/net/DatagramSocketImplFactory;)V
@@ -454,8 +455,7 @@ innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/Obje
 innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/ObjectOutputStream innerClassName PutField flags 409
 
 class name java/util/SplittableRandom
-header extends jdk/internal/util/random/RandomSupport$AbstractSplittableGenerator flags 31 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="SplittableRandom",i=I64,j=I0,k=I0,equidistribution=I1)
-innerclass innerClass jdk/internal/util/random/RandomSupport$AbstractSplittableGenerator outerClass jdk/internal/util/random/RandomSupport innerClassName AbstractSplittableGenerator flags 409
+header extends java/lang/Object implements java/util/random/RandomGenerator,java/util/random/RandomGenerator$SplittableGenerator flags 31 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="SplittableRandom",i=I64,j=I0,k=I0,equidistribution=I1)
 innerclass innerClass java/util/random/RandomGenerator$SplittableGenerator outerClass java/util/random/RandomGenerator innerClassName SplittableGenerator flags 609
 -method name nextInt descriptor (I)I
 -method name nextInt descriptor (II)I

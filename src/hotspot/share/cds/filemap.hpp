@@ -460,9 +460,9 @@ public:
                             GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
                             GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
                             size_t &size_in_bytes);
-  size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
-                                    GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                    int first_region_id, int max_num_regions);
+  size_t write_heap_regions(GrowableArray<MemRegion>* regions,
+                            GrowableArray<ArchiveHeapOopmapInfo>* oopmaps,
+                            int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
@@ -470,9 +470,9 @@ public:
   void  unmap_regions(int regions[], int num_regions);
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
-                                              int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
+                                     int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   void  unmap_region(int i);
@@ -570,10 +570,10 @@ public:
                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
-                      bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions(int first, int max, bool is_open_archive,
+                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
-  void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);

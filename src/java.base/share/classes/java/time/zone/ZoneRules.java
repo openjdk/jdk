@@ -430,7 +430,10 @@ public final class ZoneRules implements Serializable {
     }
 
     /**
-     * Reads the state from the stream.
+     * Reads the state from the stream. The 1,024 limit to the lengths
+     * of stdTrans and savSize is intended to be the size well enough
+     * to accommodate the max number of transitions in current tzdb data
+     * (203 for Asia/Tehran).
      *
      * @param in  the input stream, not null
      * @return the created object, not null
@@ -438,6 +441,9 @@ public final class ZoneRules implements Serializable {
      */
     static ZoneRules readExternal(DataInput in) throws IOException, ClassNotFoundException {
         int stdSize = in.readInt();
+        if (stdSize > 1024) {
+            throw new InvalidObjectException("Too many transitions");
+        }
         long[] stdTrans = (stdSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[stdSize];
         for (int i = 0; i < stdSize; i++) {
@@ -448,6 +454,9 @@ public final class ZoneRules implements Serializable {
             stdOffsets[i] = Ser.readOffset(in);
         }
         int savSize = in.readInt();
+        if (savSize > 1024) {
+            throw new InvalidObjectException("Too many saving offsets");
+        }
         long[] savTrans = (savSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[savSize];
         for (int i = 0; i < savSize; i++) {
@@ -458,6 +467,9 @@ public final class ZoneRules implements Serializable {
             savOffsets[i] = Ser.readOffset(in);
         }
         int ruleSize = in.readByte();
+        if (ruleSize > 16) {
+            throw new InvalidObjectException("Too many transition rules");
+        }
         ZoneOffsetTransitionRule[] rules = (ruleSize == 0) ?
             EMPTY_LASTRULES : new ZoneOffsetTransitionRule[ruleSize];
         for (int i = 0; i < ruleSize; i++) {
