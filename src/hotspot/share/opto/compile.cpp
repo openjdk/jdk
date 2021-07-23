@@ -2108,10 +2108,6 @@ void Compile::Optimize() {
     if (failing())  return;
   }
 
-  // Now that all inlining is over, cut edge from root to loop
-  // safepoints
-  remove_root_to_sfpts_edges(igvn);
-
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
   // that early so that optimizations are not disrupted by the extra
@@ -2148,7 +2144,11 @@ void Compile::Optimize() {
     set_for_igvn(save_for_igvn);
   }
 
-  // Perform escape analysis
+  // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
+  // safepoints
+  remove_root_to_sfpts_edges(igvn);
+
+    // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
