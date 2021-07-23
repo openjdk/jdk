@@ -232,6 +232,26 @@ public class RSAPSSSignature extends SignatureSpi {
                         ("Unrecognized digest algo: " + digestAlgo);
             }
         }
+
+	// validate key attributes
+        try {
+	    if (rsaKey.getModulus().signum() == 0 ||
+                (rsaKey instanceof RSAPrivateKey rsaPrKey &&
+                    (rsaPrKey.getPrivateExponent().signum() == 0 ||
+                        (rsaPrKey instanceof RSAPrivateCrtKey crtKey &&
+                            (crtKey.getPrimeP().signum() == 0 ||
+                             crtKey.getPrimeQ().signum() == 0 ||
+                             crtKey.getPrimeExponentP().signum() == 0 ||
+                             crtKey.getPrimeExponentQ().signum() == 0 ||
+                             crtKey.getCrtCoefficient().signum() == 0 ||
+                             crtKey.getPublicExponent().signum() == 0 )))) ||
+                (rsaKey instanceof RSAPublicKey rsaPubKey &&
+                    rsaPubKey.getPublicExponent().signum() == 0)) {
+                throw new InvalidKeyException("Invalid key attributes");
+            }
+        } catch(Exception ex) {
+            throw new InvalidKeyException("Invalid key attributes", ex);
+        }
         return rsaKey;
     }
 
