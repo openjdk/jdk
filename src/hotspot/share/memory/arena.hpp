@@ -134,6 +134,15 @@ protected:
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     debug_only(if (UseMallocOnly) return malloc(x);)
+    // JDK-8270308: Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
+    // allocation was AmallocWords. Note though that padding plays havoc with arenas holding packed arrays,
+    // like HandleAreas. Those areas should never mix Amalloc.. calls with differing alignment.
+#ifndef LP64 // Since this is a hot path, and on 64-bit Amalloc and AmallocWords are identical, restrict this alignment to 32-bit.
+    if (x > 0) {
+      _hwm = ARENA_ALIGN(_hwm);
+      _hwm = MIN2(_hwm, _max); // _max is not guaranteed to be 64 bit aligned.
+    }
+#endif // !LP64
     return internal_amalloc(x, alloc_failmode);
   }
 

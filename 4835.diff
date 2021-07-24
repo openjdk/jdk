@@ -1,0 +1,62 @@
+diff --git a/src/hotspot/share/memory/arena.hpp b/src/hotspot/share/memory/arena.hpp
+index f82765e51b2f..165fa9ce6cb2 100644
+--- a/src/hotspot/share/memory/arena.hpp
++++ b/src/hotspot/share/memory/arena.hpp
+@@ -134,6 +134,15 @@ class Arena : public CHeapObj<mtNone> {
+   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
+     debug_only(if (UseMallocOnly) return malloc(x);)
++    // JDK-8270308: Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
++    // allocation was AmallocWords. Note though that padding plays havoc with arenas holding packed arrays,
++    // like HandleAreas. Those areas should never mix Amalloc.. calls with differing alignment.
++#ifndef LP64 // Since this is a hot path, and on 64-bit Amalloc and AmallocWords are identical, restrict this alignment to 32-bit.
++    if (x > 0) {
++      _hwm = ARENA_ALIGN(_hwm);
++      _hwm = MIN2(_hwm, _max); // _max is not guaranteed to be 64 bit aligned.
++    }
++#endif // !LP64
+     return internal_amalloc(x, alloc_failmode);
+   }
+ 
+diff --git a/test/hotspot/gtest/memory/test_arena.cpp b/test/hotspot/gtest/memory/test_arena.cpp
+new file mode 100644
+index 000000000000..d5ac1694a64e
+--- /dev/null
++++ b/test/hotspot/gtest/memory/test_arena.cpp
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++#include "precompiled.hpp"
++#include "memory/arena.hpp"
++#include "unittest.hpp"
++
++TEST(Arena, mixed_alignment_allocation) {
++  // Test that mixed alignment allocations work and provide allocations with the correct
++  // alignment
++  Arena ar(mtTest);
++  void* p1 = ar.AmallocWords(BytesPerWord);
++  void* p2 = ar.Amalloc(BytesPerLong);
++  ASSERT_TRUE(is_aligned(p1, BytesPerWord));
++  ASSERT_TRUE(is_aligned(p2, BytesPerLong));
++}
