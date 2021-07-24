@@ -122,8 +122,8 @@ LOG_TRACE(tstrings::any() << "version: " << version);
             _T("") : CfgFile::asString(*searchpathProp);
 LOG_TRACE(tstrings::any() << "search path: " << searchpath);
 
-    if (FileUtils::isFileExists(
-            FileUtils::mkpath() << runtimePath << _T("/lib"))) {
+    if ((runtimePathProp != appOptions.end()) && (FileUtils::isFileExists(
+            FileUtils::mkpath() << runtimePath << _T("/lib")))) {
         LOG_TRACE(tstrings::any()
                 << "Property \"" << PropertyName::runtime.name()
                 << "\" found in \"" << SectionName::Application.name()
