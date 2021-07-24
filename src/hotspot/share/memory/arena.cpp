@@ -171,13 +171,30 @@ class ChunkPoolCleaner : public PeriodicTask {
 //--------------------------------------------------------------------------------------
 // Chunk implementation
 
-void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, size_t length) throw() {
-  // requested_size is equal to sizeof(Chunk) but in order for the arena
-  // allocations to come out aligned as expected the size must be aligned
-  // to expected arena alignment.
-  // expect requested_size but if sizeof(Chunk) doesn't match isn't proper size we must align it.
-  assert(ARENA_ALIGN(requested_size) == aligned_overhead_size(), "Bad alignment");
-  size_t bytes = ARENA_ALIGN(requested_size) + length;
+void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, size_t length) throw() {
+
+  // - requested_size = sizeof(Chunk)
+  // - length = payload size
+  // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
+  //
+  // +-----------+--+--------------------------------------------+
+  // |           |g |                                            |
+  // | Chunk     |a |               Payload                      |
+  // |           |p |                                            |
+  // +-----------+--+--------------------------------------------+
+  // A           B  C                                            D
+  //
+  // - The Chunk is allocated from C-heap, therefore its start address (A) should be
+  //   64-bit aligned on all our platforms, including 32-bit.
+  // - sizeof(Chunk) (B) may not be aligned to 64-bit, and we have to take that into
+  //   account when calculating the Payload bottom (C) (see Chunk::bottom())
+  // - the payload size (length) must be aligned to 64-bit, which takes care of 64-bit
+  //   aligning (D)
+
+  assert(sizeofChunk == sizeof(Chunk), "weird request size");
+  assert(is_aligned(length, BytesPerLong), "chunk payload length not 64-bit aligned: "
+                                           SIZE_FORMAT ".", length);
+  size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
   switch (length) {
    case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
    case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
@@ -188,6 +205,7 @@ void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, 
      if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
        vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
      }
+     assert(is_aligned(p, BytesPerLong), "Chunk start address not malloc aligned?");
      return p;
    }
   }
@@ -239,8 +257,7 @@ void Chunk::start_chunk_pool_cleaner_task() {
 //------------------------------Arena------------------------------------------
 
 Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
-  size_t round_size = (sizeof (char *)) - 1;
-  init_size = (init_size+round_size) & ~round_size;
+  init_size = ARENA_ALIGN(init_size);
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();

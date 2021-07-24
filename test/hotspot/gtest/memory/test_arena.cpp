@@ -25,10 +25,20 @@
 #include "memory/arena.hpp"
 #include "unittest.hpp"
 
-TEST(Arena, mixed_alignment_allocation) {
+TEST_VM(Arena, mixed_alignment_allocation) {
   // Test that mixed alignment allocations work and provide allocations with the correct
   // alignment
   Arena ar(mtTest);
+  void* p1 = ar.AmallocWords(BytesPerWord);
+  void* p2 = ar.Amalloc(BytesPerLong);
+  ASSERT_TRUE(is_aligned(p1, BytesPerWord));
+  ASSERT_TRUE(is_aligned(p2, BytesPerLong));
+}
+
+TEST_VM(Arena, Arena_with_crooked_initial_size) {
+  // Test that an arena with a crooked, not 64-bit aligned initial size
+  // works
+  Arena ar(mtTest, 4097);
   void* p1 = ar.AmallocWords(BytesPerWord);
   void* p2 = ar.Amalloc(BytesPerLong);
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));

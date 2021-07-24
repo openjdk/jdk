@@ -52,11 +52,12 @@ class Chunk: CHeapObj<mtChunk> {
   enum {
     // default sizes; make them slightly smaller than 2**k to guard against
     // buddy-system style malloc implementations
+    // Note: please keep these constants 64-bit aligned.
 #ifdef _LP64
     slack      = 40,            // [RGV] Not sure if this is right, but make it
                                 //       a multiple of 8.
 #else
-    slack      = 20,            // suspected sizeof(Chunk) + internal malloc headers
+    slack      = 24,            // suspected sizeof(Chunk) + internal malloc headers
 #endif
 
     tiny_size  =  256  - slack, // Size of first chunk (tiny)
@@ -134,15 +135,11 @@ protected:
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     debug_only(if (UseMallocOnly) return malloc(x);)
-    // JDK-8270308: Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
-    // allocation was AmallocWords. Note though that padding plays havoc with arenas holding packed arrays,
-    // like HandleAreas. Those areas should never mix Amalloc.. calls with differing alignment.
-#ifndef LP64 // Since this is a hot path, and on 64-bit Amalloc and AmallocWords are identical, restrict this alignment to 32-bit.
-    if (x > 0) {
-      _hwm = ARENA_ALIGN(_hwm);
-      _hwm = MIN2(_hwm, _max); // _max is not guaranteed to be 64 bit aligned.
-    }
-#endif // !LP64
+    // Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
+    // allocation was AmallocWords. Only needed on 32-bit - on 64-bit Amalloc and AmallocWords are
+    // identical.
+    assert(is_aligned(_max, ARENA_AMALLOC_ALIGNMENT), "chunk end unaligned?");
+    NOT_LP64(_hwm = ARENA_ALIGN(_hwm));
     return internal_amalloc(x, alloc_failmode);
   }
 
