@@ -1518,6 +1518,11 @@ public class Gen extends JCTree.Visitor {
             int startpc = code.curCP();
             Code.State stateTry = code.state.dup();
             genStat(body, env, CRT_BLOCK);
+            if (startpc == code.curCP()) {
+                // Put a "nop" into try block even if it is empty because we want
+                // to generate exception table within code attribute.
+                code.emitop0(nop);
+            }
             int endpc = code.curCP();
             List<Integer> gaps = env.info.gaps.toList();
             code.statBegin(TreeInfo.endPos(body));
