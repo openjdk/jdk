@@ -24,15 +24,7 @@
  */
 
 package jdk.nio.zipfs;
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.Runtime.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -1570,6 +1562,10 @@ class ZipFileSystem extends FileSystem {
                 throw new ZipException("invalid CEN header (bad header size)");
             }
             IndexNode inode = new IndexNode(cen, pos, nlen);
+            if(hasDotOrDotDot(inode.name)) {
+                throw new ZipException("ZIP file can't be opened as a file system " +
+                        "because an entry has a '.' or '..' element in its name");
+            }
             inodes.put(inode, inode);
             if (zc.isUTF8() || (flag & FLAG_USE_UTF8) != 0) {
                 checkUTF8(inode.name);
@@ -1584,6 +1580,44 @@ class ZipFileSystem extends FileSystem {
         }
         buildNodeTree();
         return cen;
+    }
+
+    /**
+     * Check Inode.name to see if it includes a "." or ".." in the name array
+     * @param path  the path as stored in Inode.name to verify
+     * @return true if the path contains a "." or ".." entry; false otherwise
+     */
+    private boolean hasDotOrDotDot(byte[] path) {
+        boolean dotOrDotDotFound = false;
+        // Inode.name always includes "/" in path[0]
+        if (path.length == 1) {
+            return false;
+        }
+        int index = 1;
+        while (index < path.length) {
+            int starting = index;
+            while (index < path.length && path[index] != '/') {
+                index++;
+            }
+            // Check the path snippet for a "." or ".."
+            if (isDotOrDotDotPath(path, starting, index)) {
+                return true;
+            }
+            index++;
+        }
+        return dotOrDotDotFound;
+    }
+
+    /**
+     * Check the path to see if it includes a "." or ".."
+     * @param path  the path to check
+     * @return true if the path contains a "." or ".." entry; false otherwise
+     */
+    private boolean isDotOrDotDotPath(byte[] path, int start, int index) {
+        int pathLen = index - start;
+        if ((pathLen == 1 && path[start] == '.'))
+            return true;
+        return (pathLen == 2 && path[start] == '.') && path[start + 1] == '.';
     }
 
     private  final void checkUTF8(byte[] a) throws ZipException {
