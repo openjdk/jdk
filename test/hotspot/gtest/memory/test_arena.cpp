@@ -25,6 +25,10 @@
 #include "memory/arena.hpp"
 #include "unittest.hpp"
 
+#ifndef LP64
+// These tests below are about alignment issues when mixing Amalloc and AmallocWords.
+// Since on 64-bit these APIs offer the same alignment, they only matter for 32-bit.
+
 TEST_VM(Arena, mixed_alignment_allocation) {
   // Test that mixed alignment allocations work and provide allocations with the correct
   // alignment
@@ -44,3 +48,19 @@ TEST_VM(Arena, Arena_with_crooked_initial_size) {
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));
   ASSERT_TRUE(is_aligned(p2, BytesPerLong));
 }
+
+TEST_VM(Arena, Arena_grows_large_unaligned) {
+  // Test that if the arena grows with a large unaligned value, nothing bad happens.
+  // We trigger allocation of a new, large, unaligned chunk with a non-standard size
+  // (only possible on 32-bit when allocating with word alignment).
+  // Then we alloc some more. If Arena::grow() does not correctly align, on 32-bit
+  // something should assert at some point.
+  Arena ar(mtTest, 100); // first chunk is small
+  void* p = ar.AmallocWords(Chunk::size + BytesPerWord); // if Arena::grow() misaligns, this asserts
+  ASSERT_TRUE(is_aligned(p, BytesPerLong));
+  for (int i = 0; i < 100; i ++) {
+    ar.Amalloc(1);
+  }
+}
+
+#endif //  LP64

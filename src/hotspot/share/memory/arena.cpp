@@ -357,7 +357,8 @@ size_t Arena::used() const {
 // Grow a new Chunk
 void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
-  size_t len = MAX2(x, (size_t) Chunk::size);
+  // (Note: all chunk sizes have to be 64-bit aligned)
+  size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
   Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (alloc_failmode, len) Chunk(len);
