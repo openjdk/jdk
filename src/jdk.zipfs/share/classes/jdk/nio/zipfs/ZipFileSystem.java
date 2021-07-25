@@ -24,7 +24,14 @@
  */
 
 package jdk.nio.zipfs;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.Runtime.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
