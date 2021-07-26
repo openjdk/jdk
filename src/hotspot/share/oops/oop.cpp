@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -218,7 +219,7 @@ void oopDesc::release_double_field_put(int offset, jdouble value)     { HeapAcce
 #ifdef ASSERT
 void oopDesc::verify_forwardee(oop forwardee) {
 #if INCLUDE_CDS_JAVA_HEAP
-  assert(!HeapShared::is_archived_object(forwardee) && !HeapShared::is_archived_object(this),
+  assert(!Universe::heap()->is_archived_object(forwardee) && !Universe::heap()->is_archived_object(this),
          "forwarding archive object");
 #endif
 }

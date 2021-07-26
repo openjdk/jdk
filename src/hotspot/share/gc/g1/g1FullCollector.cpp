@@ -113,7 +113,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool clear_soft_refs,
                                  bool do_maximum_compaction) :
     _heap(heap),
-    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximum_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximum_compaction),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -170,13 +170,11 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->print_heap_before_gc();
-  _heap->print_heap_regions();
-
   _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
   _heap->gc_prologue(true);
+  _heap->retire_tlabs();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -216,12 +214,12 @@ void G1FullCollector::complete_collection() {
 
   _heap->prepare_heap_for_mutators();
 
+  _heap->resize_all_tlabs();
+
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();
-
-  _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
