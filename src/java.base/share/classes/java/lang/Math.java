@@ -1156,35 +1156,43 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @since 9
      */
     @IntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
-        if (x < 0 || y < 0) {
-            // Use technique from section 8-2 of Henry S. Warren, Jr.,
-            // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
-            long x1 = x >> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y1 = y >> 32;
-            long y2 = y & 0xFFFFFFFFL;
-            long z2 = x2 * y2;
-            long t = x1 * y2 + (z2 >>> 32);
-            long z1 = t & 0xFFFFFFFFL;
-            long z0 = t >> 32;
-            z1 += x2 * y1;
-            return x1 * y1 + z0 + (z1 >> 32);
-        } else {
-            // Use Karatsuba technique with two base 2^32 digits.
-            long x1 = x >>> 32;
-            long y1 = y >>> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y2 = y & 0xFFFFFFFFL;
-            long A = x1 * y1;
-            long B = x2 * y2;
-            long C = (x1 + x2) * (y1 + y2);
-            long K = C - A - B;
-            return (((B >>> 32) + K) >>> 32) + A;
-        }
+        // Use technique from section 8-2 of Henry S. Warren, Jr.,
+        // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+        long x1 = x >> 32;
+        long x2 = x & 0xFFFFFFFFL;
+        long y1 = y >> 32;
+        long y2 = y & 0xFFFFFFFFL;
+
+        long z2 = x2 * y2;
+        long t = x1 * y2 + (z2 >>> 32);
+        long z1 = t & 0xFFFFFFFFL;
+        long z0 = t >> 32;
+        z1 += x2 * y1;
+
+        return x1 * y1 + z0 + (z1 >> 32);
+    }
+
+    /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see #multiplyHigh
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        // Compute via multiplyHigh() to leverage the intrinsic
+        long result = Math.multiplyHigh(x, y);
+        result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
+        result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
+        return result;
     }
 
     /**
@@ -1519,7 +1527,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float abs(float a) {
-        return (a <= 0.0F) ? 0.0F - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & FloatConsts.MAG_BIT_MASK);
     }
 
     /**
@@ -1544,7 +1553,9 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double abs(double a) {
-        return (a <= 0.0D) ? 0.0D - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & DoubleConsts.MAG_BIT_MASK);
+
     }
 
     /**
@@ -1926,29 +1937,25 @@ public final class Math {
     public static double ulp(double d) {
         int exp = getExponent(d);
 
-        switch(exp) {
-        case Double.MAX_EXPONENT + 1:       // NaN or infinity
-            return Math.abs(d);
+        return switch(exp) {
+            case Double.MAX_EXPONENT + 1 -> Math.abs(d);      // NaN or infinity
+            case Double.MIN_EXPONENT - 1 -> Double.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
 
-        case Double.MIN_EXPONENT - 1:       // zero or subnormal
-            return Double.MIN_VALUE;
-
-        default:
-            assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Double.MIN_EXPONENT) {
-                return powerOfTwoD(exp);
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Double.MIN_EXPONENT) {
+                    yield powerOfTwoD(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of Double.MIN_VALUE appropriate
+                    // number of positions
+                    yield Double.longBitsToDouble(1L <<
+                            (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of Double.MIN_VALUE appropriate
-                // number of positions
-                return Double.longBitsToDouble(1L <<
-                (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        };
     }
 
     /**
@@ -1977,28 +1984,25 @@ public final class Math {
     public static float ulp(float f) {
         int exp = getExponent(f);
 
-        switch(exp) {
-        case Float.MAX_EXPONENT+1:        // NaN or infinity
-            return Math.abs(f);
+        return switch(exp) {
+            case Float.MAX_EXPONENT + 1 -> Math.abs(f);     // NaN or infinity
+            case Float.MIN_EXPONENT - 1 -> Float.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
 
-        case Float.MIN_EXPONENT-1:        // zero or subnormal
-            return Float.MIN_VALUE;
-
-        default:
-            assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Float.MIN_EXPONENT) {
-                return powerOfTwoF(exp);
-            } else {
-                // return a subnormal result; left shift integer
-                // representation of FloatConsts.MIN_VALUE appropriate
-                // number of positions
-                return Float.intBitsToFloat(1 <<
-                (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (FloatConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Float.MIN_EXPONENT) {
+                    yield powerOfTwoF(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of FloatConsts.MIN_VALUE appropriate
+                    // number of positions
+                    yield Float.intBitsToFloat(1 <<
+                            (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-        }
+        };
     }
 
     /**

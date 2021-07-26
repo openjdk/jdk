@@ -187,22 +187,17 @@ class LambdaForm {
             return ALL_TYPES[type];
         }
         static BasicType basicType(char type) {
-            switch (type) {
-                case 'L': return L_TYPE;
-                case 'I': return I_TYPE;
-                case 'J': return J_TYPE;
-                case 'F': return F_TYPE;
-                case 'D': return D_TYPE;
-                case 'V': return V_TYPE;
+            return switch (type) {
+                case 'L' -> L_TYPE;
+                case 'I' -> I_TYPE;
+                case 'J' -> J_TYPE;
+                case 'F' -> F_TYPE;
+                case 'D' -> D_TYPE;
+                case 'V' -> V_TYPE;
                 // all subword types are represented as ints
-                case 'Z':
-                case 'B':
-                case 'S':
-                case 'C':
-                    return I_TYPE;
-                default:
-                    throw newInternalError("Unknown type char: '"+type+"'");
-            }
+                case 'Z', 'B', 'S', 'C' -> I_TYPE;
+                default -> throw newInternalError("Unknown type char: '" + type + "'");
+            };
         }
         static BasicType basicType(Wrapper type) {
             char c = type.basicTypeChar();

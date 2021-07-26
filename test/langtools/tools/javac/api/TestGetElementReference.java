@@ -70,9 +70,7 @@ public class TestGetElementReference {
                 }
             }
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            List<String> options = List.of("-Xjcov",
-                                           "--enable-preview",
-                                           "-source", JDK_VERSION);
+            List<String> options = List.of("-Xjcov");
             JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, options, null, files);
             Trees trees = Trees.instance(ct);
             CompilationUnitTree cut = ct.parse().iterator().next();

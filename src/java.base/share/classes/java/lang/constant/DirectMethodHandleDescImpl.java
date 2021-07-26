@@ -72,11 +72,11 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
         requireNonNull(type);
 
         switch (kind) {
-            case CONSTRUCTOR: validateConstructor(type); break;
-            case GETTER: validateFieldType(type, false, true); break;
-            case SETTER: validateFieldType(type, true, true); break;
-            case STATIC_GETTER: validateFieldType(type, false, false); break;
-            case STATIC_SETTER: validateFieldType(type, true, false); break;
+            case CONSTRUCTOR   -> validateConstructor(type);
+            case GETTER        -> validateFieldType(type, false, true);
+            case SETTER        -> validateFieldType(type, true, true);
+            case STATIC_GETTER -> validateFieldType(type, false, false);
+            case STATIC_SETTER -> validateFieldType(type, true, false);
         }
 
         this.kind = kind;
@@ -134,57 +134,40 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
 
     @Override
     public String lookupDescriptor() {
-        switch (kind) {
-            case VIRTUAL:
-            case SPECIAL:
-            case INTERFACE_VIRTUAL:
-            case INTERFACE_SPECIAL:
-                return invocationType.dropParameterTypes(0, 1).descriptorString();
-            case STATIC:
-            case INTERFACE_STATIC:
-                return invocationType.descriptorString();
-            case CONSTRUCTOR:
-                return invocationType.changeReturnType(CD_void).descriptorString();
-            case GETTER:
-            case STATIC_GETTER:
-                return invocationType.returnType().descriptorString();
-            case SETTER:
-                return invocationType.parameterType(1).descriptorString();
-            case STATIC_SETTER:
-                return invocationType.parameterType(0).descriptorString();
-            default:
-                throw new IllegalStateException(kind.toString());
-        }
+        return switch (kind) {
+            case VIRTUAL,
+                 SPECIAL,
+                 INTERFACE_VIRTUAL,
+                 INTERFACE_SPECIAL        -> invocationType.dropParameterTypes(0, 1).descriptorString();
+            case STATIC,
+                 INTERFACE_STATIC         -> invocationType.descriptorString();
+            case CONSTRUCTOR              -> invocationType.changeReturnType(CD_void).descriptorString();
+            case GETTER,
+                 STATIC_GETTER            -> invocationType.returnType().descriptorString();
+            case SETTER                   -> invocationType.parameterType(1).descriptorString();
+            case STATIC_SETTER            -> invocationType.parameterType(0).descriptorString();
+            default -> throw new IllegalStateException(kind.toString());
+        };
     }
 
     public MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
         Class<?> resolvedOwner = (Class<?>) owner.resolveConstantDesc(lookup);
         MethodType invocationType = (MethodType) this.invocationType().resolveConstantDesc(lookup);
-        switch (kind) {
-            case STATIC:
-            case INTERFACE_STATIC:
-                return lookup.findStatic(resolvedOwner, name, invocationType);
-            case INTERFACE_VIRTUAL:
-            case VIRTUAL:
-                return lookup.findVirtual(resolvedOwner, name, invocationType.dropParameterTypes(0, 1));
-            case SPECIAL:
-            case INTERFACE_SPECIAL:
-                return lookup.findSpecial(resolvedOwner, name, invocationType.dropParameterTypes(0, 1),
-                                          lookup.lookupClass());
-            case CONSTRUCTOR:
-                return lookup.findConstructor(resolvedOwner, invocationType.changeReturnType(void.class));
-            case GETTER:
-                return lookup.findGetter(resolvedOwner, name, invocationType.returnType());
-            case STATIC_GETTER:
-                return lookup.findStaticGetter(resolvedOwner, name, invocationType.returnType());
-            case SETTER:
-                return lookup.findSetter(resolvedOwner, name, invocationType.parameterType(1));
-            case STATIC_SETTER:
-                return lookup.findStaticSetter(resolvedOwner, name, invocationType.parameterType(0));
-            default:
-                throw new IllegalStateException(kind.name());
-        }
+        return switch (kind) {
+            case STATIC,
+                 INTERFACE_STATIC           -> lookup.findStatic(resolvedOwner, name, invocationType);
+            case VIRTUAL,
+                 INTERFACE_VIRTUAL          -> lookup.findVirtual(resolvedOwner, name, invocationType.dropParameterTypes(0, 1));
+            case SPECIAL,
+                 INTERFACE_SPECIAL          -> lookup.findSpecial(resolvedOwner, name, invocationType.dropParameterTypes(0, 1), lookup.lookupClass());
+            case CONSTRUCTOR                -> lookup.findConstructor(resolvedOwner, invocationType.changeReturnType(void.class));
+            case GETTER                     -> lookup.findGetter(resolvedOwner, name, invocationType.returnType());
+            case STATIC_GETTER              -> lookup.findStaticGetter(resolvedOwner, name, invocationType.returnType());
+            case SETTER                     -> lookup.findSetter(resolvedOwner, name, invocationType.parameterType(1));
+            case STATIC_SETTER              -> lookup.findStaticSetter(resolvedOwner, name, invocationType.parameterType(0));
+            default -> throw new IllegalStateException(kind.name());
+        };
     }
 
     /**

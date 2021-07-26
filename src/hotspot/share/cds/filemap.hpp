@@ -203,6 +203,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
+  bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -272,6 +273,7 @@ public:
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
+  bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
@@ -344,6 +346,7 @@ private:
   // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
   static SharedPathTable       _saved_shared_path_table;
+  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -366,6 +369,7 @@ public:
     return _shared_path_table;
   }
   static SharedPathTable saved_shared_path_table() {
+    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
     return _saved_shared_path_table;
   }
 
@@ -456,9 +460,9 @@ public:
                             GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
                             GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
                             size_t &size_in_bytes);
-  size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
-                                    GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                    int first_region_id, int max_num_regions);
+  size_t write_heap_regions(GrowableArray<MemRegion>* regions,
+                            GrowableArray<ArchiveHeapOopmapInfo>* oopmaps,
+                            int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
@@ -466,9 +470,9 @@ public:
   void  unmap_regions(int regions[], int num_regions);
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
-                                              int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
+                                     int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   void  unmap_region(int i);
@@ -495,6 +499,7 @@ public:
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
+  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
@@ -565,10 +570,10 @@ public:
                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
-                      bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions(int first, int max, bool is_open_archive,
+                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
-  void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);

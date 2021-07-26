@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestStringInternCleanup
+ * @test id=passive
  * @summary Check that Shenandoah cleans up interned strings
  * @requires vm.gc.Shenandoah
  *
@@ -49,7 +49,7 @@
  */
 
 /*
- * @test TestStringInternCleanup
+ * @test id=default
  * @summary Check that Shenandoah cleans up interned strings
  * @requires vm.gc.Shenandoah
  *
@@ -76,7 +76,7 @@
  */
 
 /*
- * @test TestStringInternCleanup
+ * @test id=iu
  * @summary Check that Shenandoah cleans up interned strings
  * @requires vm.gc.Shenandoah
  *

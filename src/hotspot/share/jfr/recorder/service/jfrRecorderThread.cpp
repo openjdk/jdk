@@ -46,29 +46,18 @@ static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAP
   assert(thread_oop.not_null(), "invariant");
   assert(proc != NULL, "invariant");
 
-  bool allocation_failed = false;
-  JavaThread* new_thread = NULL;
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    new_thread = new JavaThread(proc);
-    // At this point it may be possible that no
-    // osthread was created for the JavaThread due to lack of memory.
-    if (new_thread == NULL || new_thread->osthread() == NULL) {
-      delete new_thread;
-      allocation_failed = true;
-    } else {
-      java_lang_Thread::set_thread(thread_oop(), new_thread);
-      java_lang_Thread::set_priority(thread_oop(), NormPriority);
-      java_lang_Thread::set_daemon(thread_oop());
-      new_thread->set_threadObj(thread_oop());
-      Threads::add(new_thread);
-    }
+  JavaThread* new_thread = new JavaThread(proc);
+
+  // At this point it may be possible that no
+  // osthread was created for the JavaThread due to lack of resources.
+  if (new_thread->osthread() == NULL) {
+    delete new_thread;
+    JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", THREAD);
+    return NULL;
+  } else {
+    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NormPriority);
+    return new_thread;
   }
-  if (allocation_failed) {
-    JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", CHECK_NULL);
-  }
-  Thread::start(new_thread);
-  return new_thread;
 }
 
 JfrPostBox* JfrRecorderThread::_post_box = NULL;

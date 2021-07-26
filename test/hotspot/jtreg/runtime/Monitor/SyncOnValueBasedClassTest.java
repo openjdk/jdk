@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,9 @@ public class SyncOnValueBasedClassTest {
     static List<Object> testObjects = new ArrayList<Object>();
 
     private static final String[] specificFlags[] = {
-        {"-Xint", "-XX:+UseBiasedLocking"},
-        {"-Xint", "-XX:-UseBiasedLocking"},
-        {"-Xcomp", "-XX:TieredStopAtLevel=1", "-XX:+UseBiasedLocking"},
-        {"-Xcomp", "-XX:TieredStopAtLevel=1", "-XX:-UseBiasedLocking"},
-        {"-Xcomp", "-XX:-TieredCompilation", "-XX:-UseBiasedLocking"},
-        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:+UseOptoBiasInlining"},
-        {"-Xcomp", "-XX:-TieredCompilation", "-XX:+UseBiasedLocking", "-XX:-UseOptoBiasInlining"}
+        {"-Xint"},
+        {"-Xcomp", "-XX:TieredStopAtLevel=1"},
+        {"-Xcomp", "-XX:-TieredCompilation"},
     };
 
     private static void initTestObjects() {

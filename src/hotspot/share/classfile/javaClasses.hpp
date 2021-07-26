@@ -66,7 +66,6 @@ class RecordComponent;
   f(java_lang_reflect_Constructor) \
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
-  f(java_nio_Buffer) \
   f(reflect_ConstantPool) \
   f(reflect_UnsafeStaticFieldAccessorImpl) \
   f(java_lang_reflect_Parameter) \
@@ -128,6 +127,8 @@ class java_lang_String : AllStatic {
   // returning true if the bit was already set.
   static bool test_and_set_flag(oop java_string, uint8_t flag_mask);
 
+  static inline unsigned int hash_code_impl(oop java_string, bool update);
+
  public:
 
   // Coders
@@ -146,7 +147,6 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
-  static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
   static void set_compact_strings(bool value);
 
@@ -224,15 +224,14 @@ class java_lang_String : AllStatic {
   }
 
   static unsigned int hash_code(oop java_string);
+  static unsigned int hash_code_noupdate(oop java_string);
 
   static bool equals(oop java_string, const jchar* chars, int len);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
-  // Conversion between '.' and '/' formats
-  static Handle externalize_classname(Handle java_string, TRAPS) {
-    return char_converter(java_string, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, THREAD);
-  }
+  // Conversion between '.' and '/' formats, and allocate a String from the result.
+  static Handle externalize_classname(Symbol* java_name, TRAPS);
 
   // Conversion
   static Symbol* as_symbol(oop java_string);
@@ -1583,16 +1582,6 @@ class java_lang_AssertionStatusDirectives: AllStatic {
   friend class JavaClasses;
 };
 
-
-class java_nio_Buffer: AllStatic {
- private:
-  static int _limit_offset;
-
- public:
-  static int  limit_offset() { CHECK_INIT(_limit_offset); }
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-};
 
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:

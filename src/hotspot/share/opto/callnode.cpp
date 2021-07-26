@@ -1411,8 +1411,14 @@ Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
-  if( in(TypeFunc::Control)->is_SafePoint() )
-    return in(TypeFunc::Control);
+  if (in(TypeFunc::Control)->is_SafePoint()) {
+    Node* out_c = unique_ctrl_out();
+    // This can be the safepoint of an outer strip mined loop if the inner loop's backedge was removed. Replacing the
+    // outer loop's safepoint could confuse removal of the outer loop.
+    if (out_c != NULL && !out_c->is_OuterStripMinedLoopEnd()) {
+      return in(TypeFunc::Control);
+    }
+  }
 
   // Transforming long counted loops requires a safepoint node. Do not
   // eliminate a safepoint until loop opts are over.
@@ -1670,13 +1676,7 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
-  if (UseBiasedLocking && Opcode() == Op_Allocate) {
-    Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
-  } else {
-    mark_node = phase->MakeConX(markWord::prototype().value());
-  }
+  mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
 }
 
@@ -1758,7 +1758,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       InitializeNode* init = initialization();
       assert(init != NULL, "initialization not found");
       length = new CastIINode(length, narrow_length_type);
-      length->set_req(0, init->proj_out_or_null(0));
+      length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
     }
   }
 
@@ -2054,6 +2054,12 @@ bool AbstractLockNode::find_unlocks_for_region(const RegionNode* region, LockNod
 
 }
 
+const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
+
+const char * AbstractLockNode::kind_as_string() const {
+  return _kind_names[_kind];
+}
+
 #ifndef PRODUCT
 //
 // Create a counter which counts the number of times this lock is acquired
@@ -2070,8 +2076,6 @@ void AbstractLockNode::set_eliminated_lock_counter() {
     _counter->set_tag(NamedCounter::EliminatedLockCounter);
   }
 }
-
-const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
 
 void AbstractLockNode::dump_spec(outputStream* st) const {
   st->print("%s ", _kind_names[_kind]);
@@ -2124,6 +2128,9 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return result;
     }
 
+    if (!phase->C->do_locks_coarsening()) {
+      return result; // Compiling without locks coarsening
+    }
     //
     // Try lock coarsening
     //
@@ -2161,6 +2168,9 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (PrintEliminateLocks) {
           int locks = 0;
           int unlocks = 0;
+          if (Verbose) {
+            tty->print_cr("=== Locks coarsening ===");
+          }
           for (int i = 0; i < lock_ops.length(); i++) {
             AbstractLockNode* lock = lock_ops.at(i);
             if (lock->Opcode() == Op_Lock)
@@ -2168,10 +2178,11 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             else
               unlocks++;
             if (Verbose) {
-              lock->dump(1);
+              tty->print(" %d: ", i);
+              lock->dump();
             }
           }
-          tty->print_cr("***Eliminated %d unlocks and %d locks", unlocks, locks);
+          tty->print_cr("=== Coarsened %d unlocks and %d locks", unlocks, locks);
         }
   #endif
 
@@ -2186,6 +2197,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
           lock->set_coarsened();
         }
+        // Record this coarsened group.
+        phase->C->add_coarsened_locks(lock_ops);
       } else if (ctrl->is_Region() &&
                  iter->_worklist.member(ctrl)) {
         // We weren't able to find any opportunities but the region this
@@ -2219,15 +2232,34 @@ bool LockNode::is_nested_lock_region(Compile * c) {
   // Ignore complex cases: merged locks or multiple locks.
   Node* obj = obj_node();
   LockNode* unique_lock = NULL;
-  if (!box->is_simple_lock_region(&unique_lock, obj)) {
+  Node* bad_lock = NULL;
+  if (!box->is_simple_lock_region(&unique_lock, obj, &bad_lock)) {
 #ifdef ASSERT
-    this->log_lock_optimization(c, "eliminate_lock_INLR_2a");
+    this->log_lock_optimization(c, "eliminate_lock_INLR_2a", bad_lock);
 #endif
     return false;
   }
   if (unique_lock != this) {
 #ifdef ASSERT
-    this->log_lock_optimization(c, "eliminate_lock_INLR_2b");
+    this->log_lock_optimization(c, "eliminate_lock_INLR_2b", (unique_lock != NULL ? unique_lock : bad_lock));
+    if (PrintEliminateLocks && Verbose) {
+      tty->print_cr("=============== unique_lock != this ============");
+      tty->print(" this: ");
+      this->dump();
+      tty->print(" box: ");
+      box->dump();
+      tty->print(" obj: ");
+      obj->dump();
+      if (unique_lock != NULL) {
+        tty->print(" unique_lock: ");
+        unique_lock->dump();
+      }
+      if (bad_lock != NULL) {
+        tty->print(" bad_lock: ");
+        bad_lock->dump();
+      }
+      tty->print_cr("===============");
+    }
 #endif
     return false;
   }
@@ -2294,23 +2326,21 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return result;
 }
 
-const char * AbstractLockNode::kind_as_string() const {
-  return is_coarsened()   ? "coarsened" :
-         is_nested()      ? "nested" :
-         is_non_esc_obj() ? "non_escaping" :
-         "?";
-}
-
-void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag)  const {
+void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node* bad_lock)  const {
   if (C == NULL) {
     return;
   }
   CompileLog* log = C->log();
   if (log != NULL) {
-    log->begin_head("%s lock='%d' compile_id='%d' class_id='%s' kind='%s'",
-          tag, is_Lock(), C->compile_id(),
+    Node* box = box_node();
+    Node* obj = obj_node();
+    int box_id = box != NULL ? box->_idx : -1;
+    int obj_id = obj != NULL ? obj->_idx : -1;
+
+    log->begin_head("%s compile_id='%d' lock_id='%d' class='%s' kind='%s' box_id='%d' obj_id='%d' bad_id='%d'",
+          tag, C->compile_id(), this->_idx,
           is_Unlock() ? "unlock" : is_Lock() ? "lock" : "?",
-          kind_as_string());
+          kind_as_string(), box_id, obj_id, (bad_lock != NULL ? bad_lock->_idx : -1));
     log->stamp();
     log->end_head();
     JVMState* p = is_Unlock() ? (as_Unlock()->dbg_jvms()) : jvms();

@@ -433,7 +433,7 @@ void Universe::genesis(TRAPS) {
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
-        HeapShared::open_archive_heap_region_mapped() &&
+        HeapShared::open_regions_mapped() &&
         _mirrors[T_INT].resolve() != NULL) {
       assert(HeapShared::is_heap_object_archiving_allowed(), "Sanity");
 

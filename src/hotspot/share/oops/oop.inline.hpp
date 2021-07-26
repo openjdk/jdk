@@ -32,7 +32,7 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWord.inline.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -46,6 +46,11 @@
 
 markWord oopDesc::mark() const {
   uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
+  return markWord(v);
+}
+
+markWord oopDesc::mark_acquire() const {
+  uintptr_t v = HeapAccess<MO_ACQUIRE>::load_at(as_oop(), mark_offset_in_bytes());
   return markWord(v);
 }
 
@@ -75,7 +80,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 void oopDesc::init_mark() {
-  set_mark(markWord::prototype_for_klass(klass()));
+  set_mark(markWord::prototype());
 }
 
 Klass* oopDesc::klass() const {
@@ -254,10 +259,6 @@ bool oopDesc::is_unlocked() const {
   return mark().is_unlocked();
 }
 
-bool oopDesc::has_bias_pattern() const {
-  return mark().has_bias_pattern();
-}
-
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
@@ -303,13 +304,6 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
   return cast_to_oop(mark().decode_pointer());
-}
-
-// Note that the forwardee is not the same thing as the displaced_mark.
-// The forwardee is used when copying during scavenge and mark-sweep.
-// It does need to clear the low two locking- and GC-related bits.
-oop oopDesc::forwardee_acquire() const {
-  return cast_to_oop(Atomic::load_acquire(&_mark).decode_pointer());
 }
 
 // The following method needs to be MT safe.

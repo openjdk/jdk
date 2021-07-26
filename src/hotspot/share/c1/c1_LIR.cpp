@@ -403,7 +403,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_backwardbranch_target:    // result and info always invalid
     case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
@@ -1637,7 +1636,6 @@ const char * LIR_Op::name() const {
      case lir_label:                 s = "label";         break;
      case lir_nop:                   s = "nop";           break;
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
-     case lir_backwardbranch_target: s = "backbranch";    break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
      case lir_fpop_raw:              s = "fpop_raw";      break;
@@ -1781,8 +1779,6 @@ const char * LIR_Op1::name() const {
     switch (move_kind()) {
     case lir_move_normal:
       return "move";
-    case lir_move_unaligned:
-      return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
     case lir_move_wide:

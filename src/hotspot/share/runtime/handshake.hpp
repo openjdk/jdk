@@ -29,6 +29,7 @@
 #include "memory/iterator.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/filterQueue.hpp"
 
 class HandshakeOperation;
@@ -48,6 +49,7 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
+  virtual bool is_suspend()                        { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -85,22 +87,27 @@ class HandshakeState {
   // JavaThread suspend/resume operations.
   Monitor _lock;
   // Set to the thread executing the handshake operation.
-  Thread* _active_handshaker;
+  Thread* volatile _active_handshaker;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
 
-  // Returns false if the JavaThread finished all its handshake operations.
-  // If the method returns true there is still potential work to be done,
-  // but we need to check for a safepoint before.
-  // (This is due to a suspension handshake which put the JavaThread in blocked
-  // state so a safepoint may be in-progress.)
-  bool process_self_inner();
-
   bool have_non_self_executable_operation();
-  HandshakeOperation* pop_for_self();
-  HandshakeOperation* pop();
+  HandshakeOperation* get_op_for_self(bool allow_suspend);
+  HandshakeOperation* get_op();
+  void remove_op(HandshakeOperation* op);
+
+  void set_active_handshaker(Thread* thread) { Atomic::store(&_active_handshaker, thread); }
+
+  class MatchOp {
+    HandshakeOperation* _op;
+   public:
+    MatchOp(HandshakeOperation* op) : _op(op) {}
+    bool operator()(HandshakeOperation* op) {
+      return op == _op;
+    }
+  };
 
  public:
   HandshakeState(JavaThread* thread);
@@ -110,32 +117,14 @@ class HandshakeState {
   bool has_operation() {
     return !_queue.is_empty();
   }
+  bool has_a_non_suspend_operation();
 
   bool operation_pending(HandshakeOperation* op);
 
-  // Both _queue and _lock must be checked. If a thread has seen this _handshakee
-  // as safe it will execute all possible handshake operations in a loop while
-  // holding _lock. We use lock free addition to the queue, which means it is
-  // possible for the queue to be seen as empty by _handshakee but as non-empty
-  // by the thread executing in the loop. To avoid the _handshakee continuing
-  // while handshake operations are being executed, the _handshakee
-  // must take slow path, process_by_self(), if _lock is held.
-  bool should_process() {
-    // The holder of the _lock can add an asynchronous handshake to queue.
-    // To make sure it is seen by the handshakee, the handshakee must first
-    // check the _lock, and if held go to slow path.
-    // Since the handshakee is unsafe if _lock gets locked after this check
-    // we know other threads cannot process any handshakes.
-    // Now we can check the queue to see if there is anything we should processs.
-    if (_lock.is_locked()) {
-      return true;
-    }
-    // Lock check must be done before queue check, force ordering.
-    OrderAccess::loadload();
-    return !_queue.is_empty();
-  }
-
-  bool process_by_self();
+  // If the method returns true we need to check for a possible safepoint.
+  // This is due to a suspension handshake which put the JavaThread in blocked
+  // state so a safepoint may be in-progress.
+  bool process_by_self(bool allow_suspend);
 
   enum ProcessResult {
     _no_operation = 0,
@@ -147,7 +136,7 @@ class HandshakeState {
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* active_handshaker() const { return _active_handshaker; }
+  Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
 
   // Suspend/resume support
  private:

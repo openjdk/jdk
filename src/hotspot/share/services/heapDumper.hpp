@@ -72,7 +72,7 @@ class HeapDumper : public StackObj {
   // additional info is written to out if not NULL.
   // compression >= 0 creates a gzipped file with the given compression level.
   // parallel_thread_num >= 0 indicates thread numbers of parallel object dump
-  int dump(const char* path, outputStream* out = NULL, int compression = -1, uint parallel_thread_num = 1);
+  int dump(const char* path, outputStream* out = NULL, int compression = -1, bool overwrite, uint parallel_thread_num = 1);
 
   // returns error message (resource allocated), or NULL if no error
   char* error_as_C_string() const;

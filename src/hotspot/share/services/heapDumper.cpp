@@ -2452,7 +2452,7 @@ void VM_HeapDumper::dump_large_objects(ObjectClosure* cl) {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression, uint num_dump_threads) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -2474,7 +2474,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, uint 
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite), compressor);
 
   if (writer.error() != NULL) {
     set_error(writer.error());

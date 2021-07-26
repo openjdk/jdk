@@ -160,7 +160,7 @@ class UnixDomainSockets {
         return n;
     }
 
-    private static native boolean socketSupported();
+    private static native boolean init();
 
     private static native int socket0() throws IOException;
 
@@ -176,6 +176,6 @@ class UnixDomainSockets {
     static {
         // Load all required native libs
         IOUtil.load();
-        supported = socketSupported();
+        supported = init();
     }
 }
