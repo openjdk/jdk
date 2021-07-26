@@ -26,7 +26,7 @@ import jdk.test.lib.process.*;
 
 /*
  * @test TestAbortOnVMOperationTimeout
- * @bug 8181143
+ * @bug 8181143 8269523
  * @summary Check abort on VM timeout is working
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -51,9 +51,9 @@ public class TestAbortOnVMOperationTimeout {
             testWith(delay, true);
         }
 
-        // These should fail: Serial is not very fast. Traversing 10M objects in 5 ms
-        // means less than 0.5 ns per object, which is not doable.
-        for (int delay : new int[]{0, 1, 5}) {
+        // These should fail: Serial is not very fast but we have seen the test
+        // execute as quickly as 2ms!
+        for (int delay : new int[]{0, 1}) {
             testWith(delay, false);
         }
     }
@@ -66,6 +66,7 @@ public class TestAbortOnVMOperationTimeout {
                 "-Xmx256m",
                 "-XX:+UseSerialGC",
                 "-XX:-CreateCoredumpOnCrash",
+                "-Xlog:gc",
                 "TestAbortOnVMOperationTimeout",
                 "foo"
         );
@@ -77,6 +78,6 @@ public class TestAbortOnVMOperationTimeout {
             output.shouldMatch("VM operation took too long");
             output.shouldNotHaveExitValue(0);
         }
+        output.reportDiagnosticSummary();
     }
 }
-
