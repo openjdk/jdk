@@ -1570,7 +1570,7 @@ class ZipFileSystem extends FileSystem {
                 throw new ZipException("invalid CEN header (bad header size)");
             }
             IndexNode inode = new IndexNode(cen, pos, nlen);
-            if(hasDotOrDotDot(inode.name)) {
+            if (hasDotOrDotDot(inode.name)) {
                 throw new ZipException("ZIP file can't be opened as a file system " +
                         "because an entry has a '.' or '..' element in its name");
             }
@@ -1598,6 +1598,7 @@ class ZipFileSystem extends FileSystem {
     private boolean hasDotOrDotDot(byte[] path) {
         boolean dotOrDotDotFound = false;
         // Inode.name always includes "/" in path[0]
+        assert path[0] == '/';
         if (path.length == 1) {
             return false;
         }
