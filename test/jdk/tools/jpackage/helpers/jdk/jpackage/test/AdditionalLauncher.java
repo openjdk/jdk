@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,12 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
+        withMenuShortcut = menu;
+        withShortcut = shortcut;
+        return this;
+    }
+
     public AdditionalLauncher setIcon(Path iconPath) {
         if (iconPath == NO_ICON) {
             throw new IllegalArgumentException();
@@ -143,6 +149,18 @@ public final class AdditionalLauncher {
             properties.add(Map.entry("icon", iconPath));
         }
 
+        if (withShortcut != null) {
+            if (TKit.isLinux()) {
+                properties.add(Map.entry("linux-shortcut", withShortcut.toString()));
+            } else if (TKit.isWindows()) {
+                properties.add(Map.entry("win-shortcut", withShortcut.toString()));
+            }
+        }
+
+        if (TKit.isWindows() && withMenuShortcut != null)  {
+            properties.add(Map.entry("win-menu", withMenuShortcut.toString()));
+        }
+
         properties.addAll(rawProperties);
 
         createFileHandler.accept(propsFile, properties);
@@ -178,7 +196,7 @@ public final class AdditionalLauncher {
                 () -> iconInResourceDir(cmd, name));
         while (effectiveIcon != NO_ICON) {
             if (effectiveIcon != null) {
-                withLinuxDesktopFile = true;
+                withLinuxDesktopFile = Boolean.FALSE != withShortcut;
                 verifier.setExpectedIcon(effectiveIcon);
                 break;
             }
@@ -186,7 +204,7 @@ public final class AdditionalLauncher {
             Path customMainLauncherIcon = cmd.getArgumentValue("--icon",
                     () -> iconInResourceDir(cmd, null), Path::of);
             if (customMainLauncherIcon != null) {
-                withLinuxDesktopFile = true;
+                withLinuxDesktopFile = Boolean.FALSE != withShortcut;
                 verifier.setExpectedIcon(customMainLauncherIcon);
                 break;
             }
@@ -197,8 +215,8 @@ public final class AdditionalLauncher {
 
         if (TKit.isLinux() && !cmd.isImagePackageType()) {
             if (effectiveIcon != NO_ICON && !withLinuxDesktopFile) {
-                withLinuxDesktopFile = Stream.of("--linux-shortcut").anyMatch(
-                        cmd::hasArgument);
+                withLinuxDesktopFile = (Boolean.FALSE != withShortcut) &&
+                        Stream.of("--linux-shortcut").anyMatch(cmd::hasArgument);
                 verifier.setExpectedDefaultIcon();
             }
             Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
@@ -212,8 +230,21 @@ public final class AdditionalLauncher {
         verifier.applyTo(cmd);
     }
 
+    private void verifyShortcuts(JPackageCommand cmd) throws IOException {
+        if (TKit.isLinux() && !cmd.isImagePackageType()
+                && withShortcut != null) {
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            if (withShortcut) {
+                TKit.assertFileExists(desktopFile);
+            } else {
+                TKit.assertPathExists(desktopFile, false);
+            }
+        }
+    }
+
     private void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
+        verifyShortcuts(cmd);
 
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -240,6 +271,8 @@ public final class AdditionalLauncher {
     private final String name;
     private final List<Map.Entry<String, String>> rawProperties;
     private BiConsumer<Path, List<Map.Entry<String, String>>> createFileHandler;
+    private Boolean withMenuShortcut;
+    private Boolean withShortcut;
 
     private final static Path NO_ICON = Path.of("");
 }

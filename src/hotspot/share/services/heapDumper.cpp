@@ -1905,7 +1905,7 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -1928,7 +1928,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression) {
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite), compressor);
 
   if (writer.error() != NULL) {
     set_error(writer.error());

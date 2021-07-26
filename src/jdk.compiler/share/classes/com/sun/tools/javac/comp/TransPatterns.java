@@ -35,6 +35,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
+import com.sun.tools.javac.code.Symbol.DynamicVarSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -58,6 +59,7 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -93,6 +95,7 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
+import java.util.Iterator;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
@@ -275,7 +278,6 @@ public class TransPatterns extends TreeTranslator {
                               boolean hasTotalPattern,
                               boolean patternSwitch) {
         Type seltype = selector.type;
-        boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
 
         if (patternSwitch) {
             Assert.check(preview.isEnabled());
@@ -315,27 +317,6 @@ public class TransPatterns extends TreeTranslator {
             //-case null is always desugared to case -1, as the typeSwitch bootstrap method will
             // return -1 when the input is null
             //
-            //a special case for switches over enums with pattern case
-            //with only a single unguarded (type) pattern case, which is equivalent
-            //to a default with additional binding variable assignment:
-            //switch ($enum) {
-            //    case $constant1: $stats$
-            //    case $constant2: $stats$
-            //    case typeof($enum) e: $stats$
-            //}
-            //=>
-            //switch ($enum) {
-            //    case $constant1: $stats$
-            //    case $constant2: $stats$
-            //    default: typeof($enum) e = $enum; $stats$
-            //}
-            //constant labels in switches over enums with one or more pattern cases
-            //with guards are desugared into guards:
-            //case $constant1: $stats$
-            //=>
-            //case typeof($enum) e && e == $constant1: $stats$
-            //and handled as a normal pattern matching switch
-            //
             //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
             for (List<JCCase> c = cases; c.nonEmpty(); c = c.tail) {
@@ -344,27 +325,6 @@ public class TransPatterns extends TreeTranslator {
                 } else {
                     newCases.add(c.head);
                 }
-            }
-            if (enumSwitch && hasGuards(newCases)) {
-                for (JCCase c : newCases) {
-                    for (List<JCCaseLabel> l = c.labels; l.nonEmpty(); l = l.tail) {
-                        if (l.head.isExpression() && !TreeInfo.isNull(l.head)) {
-                            BindingSymbol temp = new BindingSymbol(Flags.SYNTHETIC,
-                                    names.fromString("enumGuard" + c.pos +
-                                                     target.syntheticNameChar() + "temp"),
-                                    seltype,
-                                    currentMethodSym);
-                            JCBindingPattern binding =
-                                    make.at(l.head.pos()).BindingPattern(make.VarDef(temp, null));
-                            binding.setType(seltype);
-                            l.head = make.GuardPattern(binding,
-                                                       makeBinary(Tag.EQ,
-                                                                  make.Ident(temp),
-                                                                  (JCExpression) l.head));
-                        }
-                    }
-                }
-                enumSwitch = false;
             }
             cases = newCases.toList();
             ListBuffer<JCStatement> statements = new ListBuffer<>();
@@ -395,46 +355,44 @@ public class TransPatterns extends TreeTranslator {
                     currentMethodSym);
             statements.append(make.at(tree.pos).VarDef(index, makeLit(syms.intType, 0)));
 
-            if (enumSwitch) {
-                selector = make.Ident(temp);
-            } else {
-                List<Type> staticArgTypes = List.of(syms.methodHandleLookupType,
-                                                    syms.stringType,
-                                                    syms.methodTypeType,
-                                                    types.makeArrayType(new ClassType(syms.classType.getEnclosingType(),
-                                                                        List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                                                                                 syms.boundClass)),
-                                                                        syms.classType.tsym)));
-                LoadableConstant[] staticArgValues =
-                        cases.stream()
-                             .flatMap(c -> c.labels.stream())
-                             .map(l -> toLoadableConstant(l))
-                             .filter(c -> c != null)
-                             .toArray(s -> new LoadableConstant[s]);
+            List<Type> staticArgTypes = List.of(syms.methodHandleLookupType,
+                                                syms.stringType,
+                                                syms.methodTypeType,
+                                                types.makeArrayType(new ClassType(syms.classType.getEnclosingType(),
+                                                                    List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,
+                                                                                             syms.boundClass)),
+                                                                    syms.classType.tsym)));
+            LoadableConstant[] staticArgValues =
+                    cases.stream()
+                         .flatMap(c -> c.labels.stream())
+                         .map(l -> toLoadableConstant(l, seltype))
+                         .filter(c -> c != null)
+                         .toArray(s -> new LoadableConstant[s]);
 
-                Symbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
-                        names.fromString("typeSwitch"), staticArgTypes, List.nil());
+            boolean enumSelector = seltype.tsym.isEnum();
+            Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
+            Symbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
+                    bootstrapName, staticArgTypes, List.nil());
 
-                MethodType indyType = new MethodType(
-                        List.of(syms.objectType, syms.intType),
-                        syms.intType,
-                        List.nil(),
-                        syms.methodClass
-                );
-                DynamicMethodSymbol dynSym = new DynamicMethodSymbol(names.fromString("typeSwitch"),
-                        syms.noSymbol,
-                        ((MethodSymbol)bsm).asHandle(),
-                        indyType,
-                        staticArgValues);
+            MethodType indyType = new MethodType(
+                    List.of(enumSelector ? seltype : syms.objectType, syms.intType),
+                    syms.intType,
+                    List.nil(),
+                    syms.methodClass
+            );
+            DynamicMethodSymbol dynSym = new DynamicMethodSymbol(bootstrapName,
+                    syms.noSymbol,
+                    ((MethodSymbol)bsm).asHandle(),
+                    indyType,
+                    staticArgValues);
 
-                JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
-                qualifier.sym = dynSym;
-                qualifier.type = syms.intType;
-                selector = make.Apply(List.nil(),
-                                      qualifier,
-                                      List.of(make.Ident(temp), make.Ident(index)))
-                               .setType(syms.intType);
-            }
+            JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
+            qualifier.sym = dynSym;
+            qualifier.type = syms.intType;
+            selector = make.Apply(List.nil(),
+                                  qualifier,
+                                  List.of(make.Ident(temp), make.Ident(index)))
+                           .setType(syms.intType);
 
             int i = 0;
             boolean previousCompletesNormally = false;
@@ -473,38 +431,27 @@ public class TransPatterns extends TreeTranslator {
                 } else {
                     c.stats = translate(c.stats);
                 }
-                if (enumSwitch) {
-                    var labels = c.labels;
-
-                    while (labels.nonEmpty()) {
-                        if (labels.head.isPattern()) {
-                            labels.head = make.DefaultCaseLabel();
-                        }
-                        labels = labels.tail;
-                    }
-                } else {
-                    ListBuffer<JCCaseLabel> translatedLabels = new ListBuffer<>();
-                    for (var p : c.labels) {
-                        if (p.hasTag(Tag.DEFAULTCASELABEL)) {
-                            translatedLabels.add(p);
-                            hasDefault = true;
-                        } else if (hasTotalPattern && !hasDefault &&
-                                   c == lastCase && p.isPattern()) {
-                            //If the switch has total pattern, the last case will contain it.
-                            //Convert the total pattern to default:
-                            translatedLabels.add(make.DefaultCaseLabel());
+                ListBuffer<JCCaseLabel> translatedLabels = new ListBuffer<>();
+                for (var p : c.labels) {
+                    if (p.hasTag(Tag.DEFAULTCASELABEL)) {
+                        translatedLabels.add(p);
+                        hasDefault = true;
+                    } else if (hasTotalPattern && !hasDefault &&
+                               c == lastCase && p.isPattern()) {
+                        //If the switch has total pattern, the last case will contain it.
+                        //Convert the total pattern to default:
+                        translatedLabels.add(make.DefaultCaseLabel());
+                    } else {
+                        int value;
+                        if (p.isNullPattern()) {
+                            value = -1;
                         } else {
-                            int value;
-                            if (p.isNullPattern()) {
-                                value = -1;
-                            } else {
-                                value = i++;
-                            }
-                            translatedLabels.add(make.Literal(value));
+                            value = i++;
                         }
+                        translatedLabels.add(make.Literal(value));
                     }
-                    c.labels = translatedLabels.toList();
                 }
+                c.labels = translatedLabels.toList();
                 if (c.caseKind == CaseTree.CaseKind.STATEMENT) {
                     previousCompletesNormally = c.completesNormally;
                 } else {
@@ -538,29 +485,31 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
-    private boolean hasGuards(Collection<JCCase> cases) {
-        return cases.stream()
-                    .flatMap(c -> c.labels.stream())
-                    .filter(JCCaseLabel::isPattern)
-                    .anyMatch(l -> !TreeInfo.primaryPatternType((JCPattern) l).unconditional());
-    }
-
     private Type principalType(JCPattern p) {
         return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p).type()));
     }
 
-    private LoadableConstant toLoadableConstant(JCCaseLabel l) {
+    private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
         if (l.isPattern()) {
-            return (LoadableConstant) principalType((JCPattern) l);
+            Type principalType = principalType((JCPattern) l);
+            if (types.isSubtype(selector, principalType)) {
+                return (LoadableConstant) selector;
+            } else {
+                return (LoadableConstant) principalType;
+            }
         } else if (l.isExpression() && !TreeInfo.isNull((JCExpression) l)) {
-            Assert.checkNonNull(l.type.constValue());
+            if ((l.type.tsym.flags_field & Flags.ENUM) != 0) {
+                return LoadableConstant.String(((JCIdent) l).name.toString());
+            } else {
+                Assert.checkNonNull(l.type.constValue());
 
-            return switch (l.type.getTag()) {
-                case BYTE, CHAR,
-                     SHORT, INT -> LoadableConstant.Int((Integer) l.type.constValue());
-                case CLASS -> LoadableConstant.String((String) l.type.constValue());
-                default -> throw new AssertionError();
-            };
+                return switch (l.type.getTag()) {
+                    case BYTE, CHAR,
+                         SHORT, INT -> LoadableConstant.Int((Integer) l.type.constValue());
+                    case CLASS -> LoadableConstant.String((String) l.type.constValue());
+                    default -> throw new AssertionError();
+                };
+            }
         } else {
             return null;
         }
@@ -819,7 +768,7 @@ public class TransPatterns extends TreeTranslator {
         VarSymbol bindingDeclared(BindingSymbol varSymbol) {
             VarSymbol res = parent.bindingDeclared(varSymbol);
             if (res == null) {
-                res = new VarSymbol(varSymbol.flags(), varSymbol.name, varSymbol.type, varSymbol.owner);
+                res = new VarSymbol(varSymbol.flags(), varSymbol.name, varSymbol.type, currentMethodSym);
                 res.setTypeAttributes(varSymbol.getRawTypeAttributes());
                 hoistedVarMap.put(varSymbol, res);
             }

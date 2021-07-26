@@ -206,7 +206,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WeakProcessorTimes _weak_phase_times;
 
   double worker_time(GCParPhases phase, uint worker);
-  void note_gc_end();
   void reset();
 
   template <class T>
@@ -234,7 +233,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
-  void note_gc_start();
+  void record_gc_pause_start();
+  void record_gc_pause_end();
   void print();
   static const char* phase_name(GCParPhases phase);
 
