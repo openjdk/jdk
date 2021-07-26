@@ -107,7 +107,9 @@ public class PatternSyntaxException
         sb.append(pattern);
         if (index >= 0 && pattern != null && index < pattern.length()) {
             sb.append(System.lineSeparator());
-            for (int i = 0; i < index; i++) sb.append(' ');
+            for (int i = 0; i < index; i++) {
+                sb.append((pattern.charAt(i) == '\t') ? '\t' : ' ');
+            }
             sb.append('^');
         }
         return sb.toString();
