@@ -5290,6 +5290,8 @@ public class RegExTest {
             System.out.println("Compiling intersection pattern is matching digits where it should not");
         }
 
+        report("Dropped classes with intersection.");
+
     }
 
     //This test is for 8269753
@@ -5301,12 +5303,10 @@ public class RegExTest {
         } catch (PatternSyntaxException e) {
             var message = e.getMessage();
             var sep = System.lineSeparator();
-            if(message.contains(sep + "\t ^")){
-                return;
+            if (!message.contains(sep + "\t ^")){
+                failCount++;
             }
         }
-        failCount++;
-
         report("Correct caret indentation for patterns with tabs");
     }
 }
