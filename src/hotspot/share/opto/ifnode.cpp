@@ -115,29 +115,13 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // No intervening control, like a simple Call
   Node* r = iff->in(0);
-  if (!r->is_Region() || r->is_Loop() || phi->region() != r) {
+  if (!r->is_Region() || r->is_Loop() || phi->region() != r || r->as_Region()->is_copy()) {
     return NULL;
   }
 
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {
     //tty->print_cr("many users of cmp/bool");
-    return NULL;
-  }
-
-  uint non_top_inputs = 0;
-  for (uint i = 1; i < r->req(); i++) {
-    Node* in = r->in(i);
-    if (in != NULL && !in->is_top() && // Input is not top?
-        !(in->in(0) != NULL && in->in(0)->req() == 1 && in->in(0)->is_top())) {
-      // Also check the control input of the region's input to catch the rare case of a dying loop header region
-      // (that is not yet a LoopNode before loop opts) whose last predicate If was already replaced by top but
-      // not its IfProj. The projection with a top input is an input into the region.
-      non_top_inputs++;
-    }
-  }
-  if (non_top_inputs <= 1) {
-    // Bail out as Region will be removed anyways.
     return NULL;
   }
 
@@ -268,7 +252,15 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // If all the defs of the phi are the same constant, we already have the desired end state.
   // Skip the split that would create empty phi and region nodes.
-  if((r->req() - req_c) == 1) {
+  if ((r->req() - req_c) == 1) {
+    return NULL;
+  }
+
+  // At this point we know that we can apply the split if optimization. If the region is still on the worklist,
+  // we should wait until it is processed. The region might be removed which makes this optimization redundant.
+  // This also avoids the creation of dead data loops when rewiring data nodes below when a region is dying.
+  if (igvn->_worklist.member(r)) {
+    igvn->_worklist.push(iff); // retry split if later again
     return NULL;
   }
 
