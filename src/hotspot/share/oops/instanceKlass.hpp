@@ -1007,6 +1007,7 @@ public:
   void do_local_static_fields(FieldClosure* cl);
   void do_nonstatic_fields(FieldClosure* cl); // including inherited fields
   void do_local_static_fields(void f(fieldDescriptor*, Handle, TRAPS), Handle, TRAPS);
+  void print_nonstatic_fields(FieldClosure* cl); // including inherited and injected fields
 
   void methods_do(void f(Method* method));
   void array_klasses_do(void f(Klass* k));

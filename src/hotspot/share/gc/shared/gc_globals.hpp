@@ -148,7 +148,6 @@
                                                                             \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
-          constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \

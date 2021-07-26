@@ -39,6 +39,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 VirtualSpace* ArchivePtrMarker::_vs;
@@ -307,12 +308,12 @@ void ReadClosure::do_tag(int tag) {
 
 void ReadClosure::do_oop(oop *p) {
   narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-  if (CompressedOops::is_null(o) || !HeapShared::open_archive_heap_region_mapped()) {
+  if (CompressedOops::is_null(o) || !HeapShared::open_regions_mapped()) {
     *p = NULL;
   } else {
     assert(HeapShared::is_heap_object_archiving_allowed(),
            "Archived heap object is not allowed");
-    assert(HeapShared::open_archive_heap_region_mapped(),
+    assert(HeapShared::open_regions_mapped(),
            "Open archive heap region is not mapped");
     *p = HeapShared::decode_from_archive(o);
   }

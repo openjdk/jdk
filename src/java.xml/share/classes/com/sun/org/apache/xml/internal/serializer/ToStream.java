@@ -43,6 +43,7 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -1978,21 +1979,21 @@ abstract public class ToStream extends SerializerBase {
             String doctypeSystem = getDoctypeSystem();
             if (null != doctypeSystem)
             {
-                if (null == doctypePublic)
-                    writer.write(" SYSTEM \"");
-                else
-                    writer.write(" \"");
+                char quote = JdkXmlUtils.getQuoteChar(doctypeSystem);
+                if (null == doctypePublic) {
+                    writer.write(" SYSTEM");
+                }
+                writer.write(" ");
+                writer.write(quote);
 
                 writer.write(doctypeSystem);
-
+                writer.write(quote);
                 if (closeDecl)
                 {
-                    writer.write("\">");
+                    writer.write(">");
                     writer.write(m_lineSep, 0, m_lineSepLen);
                     closeDecl = false; // done closing
                 }
-                else
-                    writer.write('\"');
             }
             boolean dothis = false;
             if (dothis)
