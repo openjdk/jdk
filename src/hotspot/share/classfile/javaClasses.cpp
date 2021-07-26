@@ -40,6 +40,7 @@
 #include "code/debugInfo.hpp"
 #include "code/dependencyContext.hpp"
 #include "code/pcDesc.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -816,14 +817,11 @@ static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, T
 static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
   DEBUG_ONLY(assert_valid_static_string_field(fd);)
   assert(DumpSharedSpaces, "must be");
-  if (HeapShared::is_archived_object(mirror())) {
-    // Archive the String field and update the pointer.
-    oop s = mirror()->obj_field(fd->offset());
-    oop archived_s = StringTable::create_archived_string(s);
-    mirror()->obj_field_put(fd->offset(), archived_s);
-  } else {
-    guarantee(false, "Unexpected");
-  }
+  assert(HeapShared::is_archived_object_during_dumptime(mirror()), "must be");
+  // Archive the String field and update the pointer.
+  oop s = mirror()->obj_field(fd->offset());
+  oop archived_s = StringTable::create_archived_string(s);
+  mirror()->obj_field_put(fd->offset(), archived_s);
 }
 #endif
 
@@ -905,7 +903,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_regions_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1156,7 +1154,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
     oop m = Universe::_mirrors[t].resolve();
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_heap_object(m);
+      oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
@@ -1215,7 +1213,7 @@ oop java_lang_Class::archive_mirror(Klass* k) {
   }
 
   // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_heap_object(mirror);
+  oop archived_mirror = HeapShared::archive_object(mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
@@ -1342,7 +1340,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  assert(HeapShared::is_archived_object(m), "must be archived mirror object");
+  assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
