@@ -784,11 +784,6 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // a given bytecode or the state after, so we try both
           if (!Bytecodes::is_invoke(cur_code) && cur_code != Bytecodes::_athrow) {
             // Get expression stack size for the next bytecode
-            if(UseNewCode) {
-              if(cur_code == Bytecodes::_goto && next_code ==Bytecodes::_astore_2){
-                tty->print_cr("==");
-              }
-            }
             InterpreterOopMap next_mask;
             OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
             next_mask_expression_stack_size = next_mask.expression_stack_size();
