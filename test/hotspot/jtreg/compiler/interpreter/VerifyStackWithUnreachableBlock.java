@@ -25,6 +25,7 @@
 /*
  * @test VerifyStackWithUnreachableBlock
  * @bug 8271055
+ * @compile VerifyStackWithUnreachableBlock.java
  * @summary Using VerifyStack for method that contains unreachable basic blocks
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack compiler.interpreter.VerifyStackWithUnreachableBlock
  */
