@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +20,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package metaspace.stressHierarchy.common.exceptions;
 
-/**
- * Usually this means that we got OOME:heap while trying to gain OOME:metaspace.
- * We pass test in this case as this breaks test logic. We have dedicated test configurations
- * for OOME:heap provoking class unloading, that why we are not missing test coverage here.
- */
-public class GotWrongOOMEException extends RuntimeException {
+#ifndef OS_LINUX_TRIMCHEAPDCMD_HPP
+#define OS_LINUX_TRIMCHEAPDCMD_HPP
 
-    private static final long serialVersionUID = 1L;
+#include "services/diagnosticCommand.hpp"
 
-    public GotWrongOOMEException(String string) {
-        super(string);
-    }
+class outputStream;
 
-}
+class TrimCLibcHeapDCmd : public DCmd {
+public:
+  TrimCLibcHeapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "System.trim_native_heap";
+  }
+  static const char* description() {
+    return "Attempts to free up memory by trimming the C-heap.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+#endif // OS_LINUX_TRIMCHEAPDCMD_HPP

@@ -23,14 +23,15 @@
 
 /*
  * @test
- * @bug 8155643
- * @summary Test Object.clone() intrinsic if ReduceInitialCardMarks is disabled.
+ * @bug 8155643 8268125 8270461
+ * @summary Test Object.clone() intrinsic.
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
  *                   compiler.arraycopy.TestObjectArrayClone
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   compiler.arraycopy.TestObjectArrayClone
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedClassPointers -Xmx128m
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
  *                   compiler.arraycopy.TestObjectArrayClone
  */

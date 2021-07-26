@@ -329,6 +329,7 @@ public class TestLargePagesFlags {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
 
     return output;
   }

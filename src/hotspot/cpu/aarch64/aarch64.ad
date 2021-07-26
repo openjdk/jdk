@@ -1295,7 +1295,7 @@ public:
   };
 };
 
- bool is_CAS(int opcode, bool maybe_volatile);
+  bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
 
