@@ -4088,68 +4088,6 @@ void MacroAssembler::eden_allocate(Register obj,
   bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
-// Zero words; len is in bytes
-// Destroys all registers except addr
-// len must be a nonzero multiple of wordSize
-void MacroAssembler::zero_memory(Register addr, Register len, Register t1) {
-  assert_different_registers(addr, len, t1, rscratch1, rscratch2);
-
-#ifdef ASSERT
-  { Label L;
-    tst(len, BytesPerWord - 1);
-    br(Assembler::EQ, L);
-    stop("len is not a multiple of BytesPerWord");
-    bind(L);
-  }
-#endif
-
-#ifndef PRODUCT
-  block_comment("zero memory");
-#endif
-
-  Label loop;
-  Label entry;
-
-//  Algorithm:
-//
-//    scratch1 = cnt & 7;
-//    cnt -= scratch1;
-//    p += scratch1;
-//    switch (scratch1) {
-//      do {
-//        cnt -= 8;
-//          p[-8] = 0;
-//        case 7:
-//          p[-7] = 0;
-//        case 6:
-//          p[-6] = 0;
-//          // ...
-//        case 1:
-//          p[-1] = 0;
-//        case 0:
-//          p += 8;
-//      } while (cnt);
-//    }
-
-  const int unroll = 8; // Number of str(zr) instructions we'll unroll
-
-  lsr(len, len, LogBytesPerWord);
-  andr(rscratch1, len, unroll - 1);  // tmp1 = cnt % unroll
-  sub(len, len, rscratch1);      // cnt -= unroll
-  // t1 always points to the end of the region we're about to zero
-  add(t1, addr, rscratch1, Assembler::LSL, LogBytesPerWord);
-  adr(rscratch2, entry);
-  sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
-  br(rscratch2);
-  bind(loop);
-  sub(len, len, unroll);
-  for (int i = -unroll; i < 0; i++)
-    Assembler::str(zr, Address(t1, i * wordSize));
-  bind(entry);
-  add(t1, t1, unroll * wordSize);
-  cbnz(len, loop);
-}
-
 void MacroAssembler::verify_tlab() {
 #ifdef ASSERT
   if (UseTLAB && VerifyOops) {
@@ -4668,10 +4606,11 @@ void MacroAssembler::string_equals(Register a1, Register a2,
 // handle anything smaller than this ourselves in zero_words().
 const int MacroAssembler::zero_words_block_size = 8;
 
-// zero_words() is used by C2 ClearArray patterns.  It is as small as
-// possible, handling small word counts locally and delegating
-// anything larger to the zero_blocks stub.  It is expanded many times
-// in compiled code, so it is important to keep it short.
+// zero_words() is used by C2 ClearArray patterns and by
+// C1_MacroAssembler.  It is as small as possible, handling small word
+// counts locally and delegating anything larger to the zero_blocks
+// stub.  It is expanded many times in compiled code, so it is
+// important to keep it short.
 
 // ptr:   Address of a buffer to be zeroed.
 // cnt:   Count in HeapWords.
