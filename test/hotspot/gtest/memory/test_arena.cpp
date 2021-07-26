@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "memory/arena.hpp"
+#include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
 #ifndef LP64
@@ -36,7 +40,7 @@ TEST_VM(Arena, mixed_alignment_allocation) {
   void* p1 = ar.AmallocWords(BytesPerWord);
   void* p2 = ar.Amalloc(BytesPerLong);
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));
-  ASSERT_TRUE(is_aligned(p2, BytesPerLong));
+  ASSERT_TRUE(is_aligned(p2, ARENA_AMALLOC_ALIGNMENT));
 }
 
 TEST_VM(Arena, Arena_with_crooked_initial_size) {
@@ -46,7 +50,7 @@ TEST_VM(Arena, Arena_with_crooked_initial_size) {
   void* p1 = ar.AmallocWords(BytesPerWord);
   void* p2 = ar.Amalloc(BytesPerLong);
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));
-  ASSERT_TRUE(is_aligned(p2, BytesPerLong));
+  ASSERT_TRUE(is_aligned(p2, ARENA_AMALLOC_ALIGNMENT));
 }
 
 TEST_VM(Arena, Arena_grows_large_unaligned) {
@@ -57,7 +61,7 @@ TEST_VM(Arena, Arena_grows_large_unaligned) {
   // something should assert at some point.
   Arena ar(mtTest, 100); // first chunk is small
   void* p = ar.AmallocWords(Chunk::size + BytesPerWord); // if Arena::grow() misaligns, this asserts
-  ASSERT_TRUE(is_aligned(p, BytesPerLong));
+  // some more allocations for good measure
   for (int i = 0; i < 100; i ++) {
     ar.Amalloc(1);
   }

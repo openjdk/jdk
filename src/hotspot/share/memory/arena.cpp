@@ -30,7 +30,16 @@
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
+// Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
+STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
@@ -192,8 +201,8 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   //   aligning (D)
 
   assert(sizeofChunk == sizeof(Chunk), "weird request size");
-  assert(is_aligned(length, BytesPerLong), "chunk payload length not 64-bit aligned: "
-                                           SIZE_FORMAT ".", length);
+  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
+         SIZE_FORMAT ".", length);
   size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
   switch (length) {
    case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
@@ -205,7 +214,8 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
      if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
        vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
      }
-     assert(is_aligned(p, BytesPerLong), "Chunk start address not malloc aligned?");
+     // We rely on arena alignment <= malloc alignment.
+     assert(is_aligned(p, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
      return p;
    }
   }
