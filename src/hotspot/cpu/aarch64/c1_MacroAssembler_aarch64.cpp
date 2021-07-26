@@ -180,6 +180,9 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 // preserves obj, destroys len_in_bytes
+//
+// Scratch registers: t1 = r10, t2 = r11
+//
 void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   Label done;
@@ -214,6 +217,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
   initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
+// Scratch registers: t1 = r10, t2 = r11
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
