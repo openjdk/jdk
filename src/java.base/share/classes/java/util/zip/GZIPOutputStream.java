@@ -66,7 +66,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      *
      * @throws    IOException If an I/O error has occurred.
      *
-     * @since 17
+     * @since 18
      */
     public GZIPOutputStream(OutputStream out,
                             int size,
@@ -172,7 +172,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      * @throws    IllegalArgumentException if {@code size <= 0}
      *
-     * @since 17
+     * @since 18
      */
     public GZIPOutputStream(OutputStream out,
                             GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)

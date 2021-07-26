@@ -29,7 +29,7 @@ import java.io.IOException;
  * This class implements the GZIP file header builder
  *
  * @author      Lin Zang
- * @since 17
+ * @since 18
  *
  */
 public class GZIPHeaderBuilder {
@@ -46,7 +46,7 @@ public class GZIPHeaderBuilder {
      * Creates a GZIP file header builder.
      * Current only {@code Deflater.DEFLATED} compress method supportted.
      *
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderBuilder() {
         this.cm = (byte)Deflater.DEFLATED;
@@ -67,7 +67,7 @@ public class GZIPHeaderBuilder {
      *
      * @throws ZipException if extra field layout is incorrect.
      *
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderBuilder withExtraFieldBytes(byte[] extraFieldBytes) throws ZipException {
         /*
@@ -89,7 +89,7 @@ public class GZIPHeaderBuilder {
      * @param filename The file name
      * @return {@code this}
      *
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderBuilder withFileName(String filename) {
         if (filename == null || filename.length() == 0) {
@@ -108,7 +108,7 @@ public class GZIPHeaderBuilder {
      * @param fileComment The file comment
      * @return {@code this}'
      *
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderBuilder withFileComment(String fileComment) {
         if (fileComment == null || fileComment.length() == 0) {
@@ -125,7 +125,7 @@ public class GZIPHeaderBuilder {
      * @param calculateHeaderCRC if {@code true} the header data contains the lower 16 bytes of header CRC
      * @return {@code this}
      *
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderBuilder calculateHeaderCRC(boolean calculateHeaderCRC) {
         if (calculateHeaderCRC) {
@@ -141,7 +141,7 @@ public class GZIPHeaderBuilder {
      * @throws ZipException         If extra field size is out of range.
      *                              Or if extra filed data layout is incorrect.
      * @throws IllegalArgumentException     If compress method is not {@code Deflater.DEFLATED}
-     * @since 17
+     * @since 18
      */
     public GZIPHeaderData build() throws IOException {
         byte[] headerBytes = generateBytes(cm, extraFieldBytes, filename, fileComment);
@@ -179,7 +179,7 @@ public class GZIPHeaderBuilder {
      *                              Or if extra filed data layout is incorrect.
      * @throws IllegalArgumentException     If compress method is not {@code Deflater.DEFLATED}.
      *
-     * @since 17
+     * @since 18
      */
     public byte[] generateBytes(byte cm,
                                 byte[] extraFieldBytes,
@@ -293,7 +293,7 @@ public class GZIPHeaderBuilder {
      * @param fieldBytes    the data of extra fileds.
      * @return {@code true} if field data layout is correct.
      *
-     * @since 17
+     * @since 18
      */
     private boolean verifyExtraFieldLayout(byte[] fieldBytes) {
         int index = 0;
@@ -315,7 +315,7 @@ public class GZIPHeaderBuilder {
      * This class implements the header of GZIP file which contains members defined
      * in the RFC 1952 specification
      *
-     * @since 17
+     * @since 18
      *
      */
     public record GZIPHeaderData (byte compressMethod, byte flags,
