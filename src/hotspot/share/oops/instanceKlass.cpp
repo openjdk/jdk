@@ -88,6 +88,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/pair.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1623,11 +1624,6 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
   }
 }
 
-
-static int compare_fields_by_offset(int* a, int* b) {
-  return a[0] - b[0];
-}
-
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   InstanceKlass* super = superklass();
   if (super != NULL) {
@@ -1635,30 +1631,49 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   }
   fieldDescriptor fd;
   int length = java_fields_count();
-  // In DebugInfo nonstatic fields are sorted by offset.
-  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1), mtClass);
-  int j = 0;
   for (int i = 0; i < length; i += 1) {
     fd.reinitialize(this, i);
     if (!fd.is_static()) {
-      fields_sorted[j + 0] = fd.offset();
-      fields_sorted[j + 1] = i;
-      j += 2;
-    }
-  }
-  if (j > 0) {
-    length = j;
-    // _sort_Fn is defined in growableArray.hpp.
-    qsort(fields_sorted, length/2, 2*sizeof(int), (_sort_Fn)compare_fields_by_offset);
-    for (int i = 0; i < length; i += 2) {
-      fd.reinitialize(this, fields_sorted[i + 1]);
-      assert(!fd.is_static() && fd.offset() == fields_sorted[i], "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
-  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
+// first in Pair is offset, second is index.
+static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
+  return a->first - b->first;
+}
+
+void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
+  InstanceKlass* super = superklass();
+  if (super != NULL) {
+    super->print_nonstatic_fields(cl);
+  }
+  ResourceMark rm;
+  fieldDescriptor fd;
+  // In DebugInfo nonstatic fields are sorted by offset.
+  GrowableArray<Pair<int,int> > fields_sorted;
+  int i = 0;
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (!fs.access_flags().is_static()) {
+      fd = fs.field_descriptor();
+      Pair<int,int> f(fs.offset(), fs.index());
+      fields_sorted.push(f);
+      i++;
+    }
+  }
+  if (i > 0) {
+    int length = i;
+    assert(length == fields_sorted.length(), "duh");
+    // _sort_Fn is defined in growableArray.hpp.
+    fields_sorted.sort(compare_fields_by_offset);
+    for (int i = 0; i < length; i++) {
+      fd.reinitialize(this, fields_sorted.at(i).second);
+      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      cl->do_field(&fd);
+    }
+  }
+}
 
 void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
   if (array_klasses() != NULL)
@@ -3437,7 +3452,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
   FieldPrinter print_nonstatic_field(st);
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
-  ik->do_nonstatic_fields(&print_nonstatic_field);
+  ik->print_nonstatic_fields(&print_nonstatic_field);
 
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
@@ -3479,30 +3494,20 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
       st->print(BULLET"string: ");
       java_lang_String::print(obj, st);
       st->cr();
-      if (!WizardMode)  return;  // that is enough
     }
   }
 
   st->print_cr(BULLET"---- fields (total size %d words):", oop_size(obj));
   FieldPrinter print_field(st, obj);
-  do_nonstatic_fields(&print_field);
+  print_nonstatic_fields(&print_field);
 
   if (this == vmClasses::Class_klass()) {
     st->print(BULLET"signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
-    Klass* mirrored_klass = java_lang_Class::as_Klass(obj);
-    st->print(BULLET"fake entry for mirror: ");
-    Metadata::print_value_on_maybe_null(st, mirrored_klass);
-    st->cr();
-    Klass* array_klass = java_lang_Class::array_klass_acquire(obj);
-    st->print(BULLET"fake entry for array: ");
-    Metadata::print_value_on_maybe_null(st, array_klass);
-    st->cr();
-    st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
-    st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
     Klass* real_klass = java_lang_Class::as_Klass(obj);
     if (real_klass != NULL && real_klass->is_instance_klass()) {
+      st->print_cr(BULLET"---- static fields (%d words):", java_lang_Class::static_oop_field_count(obj));
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == vmClasses::MethodType_klass()) {
