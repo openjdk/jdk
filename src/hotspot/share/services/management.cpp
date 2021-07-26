@@ -1616,7 +1616,7 @@ class ThreadTimesClosure: public ThreadClosure {
   ThreadTimesClosure(objArrayHandle names, typeArrayHandle times);
   ~ThreadTimesClosure();
   virtual void do_thread(Thread* thread);
-  void do_unlocked();
+  void do_unlocked(TRAPS);
   int count() { return _count; }
 };
 
@@ -1649,20 +1649,18 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
     return;
   }
 
-  EXCEPTION_MARK;
-  ResourceMark rm(THREAD); // thread->name() uses ResourceArea
+  ResourceMark rm; // thread->name() uses ResourceArea
 
   assert(thread->name() != NULL, "All threads should have a name");
-  _names_chars[_count] = os::strdup(thread->name());
+  _names_chars[_count] = os::strdup_check_oom(thread->name());
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
 }
 
 // Called without Threads_lock, we can allocate String objects.
-void ThreadTimesClosure::do_unlocked() {
+void ThreadTimesClosure::do_unlocked(TRAPS) {
 
-  EXCEPTION_MARK;
   for (int i = 0; i < _count; i++) {
     Handle s = java_lang_String::create_from_str(_names_chars[i],  CHECK);
     _names_strings->obj_at_put(i, s());
@@ -1707,7 +1705,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
     MutexLocker ml(THREAD, Threads_lock);
     Threads::threads_do(&ttc);
   }
-  ttc.do_unlocked();
+  ttc.do_unlocked(THREAD);
   return ttc.count();
 JVM_END
 

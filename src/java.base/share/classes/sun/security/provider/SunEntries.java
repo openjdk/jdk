@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,10 +324,8 @@ public final class SunEntries {
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";
 
-    private static final String seedSource;
-
-    static {
-        seedSource = AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    private static final String seedSource = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
 
             @Override
@@ -344,6 +342,7 @@ public final class SunEntries {
             }
         });
 
+    static {
         DEF_SECURE_RANDOM_ALGO  = (NativePRNG.isAvailable() &&
             (seedSource.equals(URL_DEV_URANDOM) ||
              seedSource.equals(URL_DEV_RANDOM)) ?

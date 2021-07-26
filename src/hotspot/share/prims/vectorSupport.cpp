@@ -30,8 +30,10 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -40,6 +42,29 @@
 #ifdef COMPILER2
 #include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
 #endif // COMPILER2
+
+#ifdef COMPILER2
+const char* VectorSupport::svmlname[VectorSupport::NUM_SVML_OP] = {
+    "tan",
+    "tanh",
+    "sin",
+    "sinh",
+    "cos",
+    "cosh",
+    "asin",
+    "acos",
+    "atan",
+    "atan2",
+    "cbrt",
+    "log",
+    "log10",
+    "log1p",
+    "pow",
+    "exp",
+    "expm1",
+    "hypot",
+};
+#endif
 
 bool VectorSupport::is_vector(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
@@ -385,6 +410,25 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_TAN:
+    case VECTOR_OP_TANH:
+    case VECTOR_OP_SIN:
+    case VECTOR_OP_SINH:
+    case VECTOR_OP_COS:
+    case VECTOR_OP_COSH:
+    case VECTOR_OP_ASIN:
+    case VECTOR_OP_ACOS:
+    case VECTOR_OP_ATAN:
+    case VECTOR_OP_ATAN2:
+    case VECTOR_OP_CBRT:
+    case VECTOR_OP_LOG:
+    case VECTOR_OP_LOG10:
+    case VECTOR_OP_LOG1P:
+    case VECTOR_OP_POW:
+    case VECTOR_OP_EXP:
+    case VECTOR_OP_EXPM1:
+    case VECTOR_OP_HYPOT:
+      return Op_CallLeafVector;
     default: fatal("unknown op: %d", vop);
   }
   return 0; // Unimplemented

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_CONSTANTPOOL_INLINE_HPP
 
 #include "oops/constantPool.hpp"
+
 #include "oops/cpCache.inline.hpp"
 #include "runtime/atomic.hpp"
 

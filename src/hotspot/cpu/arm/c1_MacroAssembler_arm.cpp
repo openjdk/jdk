@@ -31,7 +31,6 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -90,11 +89,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register obj_end, Register tm
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register tmp) {
   assert_different_registers(obj, klass, len, tmp);
 
-  if(UseBiasedLocking && !len->is_valid()) {
-    ldr(tmp, Address(klass, Klass::prototype_header_offset()));
-  } else {
-    mov(tmp, (intptr_t)markWord::prototype().value());
-  }
+  mov(tmp, (intptr_t)markWord::prototype().value());
 
   str(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
@@ -187,14 +182,12 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len,
   initialize_object(obj, tmp1, klass, len, tmp2, tmp3, header_size_in_bytes, -1, /* is_tlab_allocated */ UseTLAB);
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj,
-                                   Register disp_hdr, Register tmp1,
-                                   Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   Label done, fast_lock, fast_lock_done;
   int null_check_offset = 0;
 
   const Register tmp2 = Rtemp; // Rtemp should be free at c1 LIR level
-  assert_different_registers(hdr, obj, disp_hdr, tmp1, tmp2);
+  assert_different_registers(hdr, obj, disp_hdr, tmp2);
 
   assert(BasicObjectLock::lock_offset_in_bytes() == 0, "ajust this code");
   const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
@@ -209,10 +202,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
     ldr_u32(tmp2, Address(tmp2, Klass::access_flags_offset()));
     tst(tmp2, JVM_ACC_IS_VALUE_BASED_CLASS);
     b(slow_case, ne);
-  }
-
-  if (UseBiasedLocking) {
-    biased_locking_enter(obj, hdr/*scratched*/, tmp1, false, tmp2, done, slow_case);
   }
 
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
@@ -234,8 +223,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
   // -2- test (hdr - SP) if the low two bits are 0
   sub(tmp2, hdr, SP, eq);
   movs(tmp2, AsmOperand(tmp2, lsr, exact_log2(os::vm_page_size())), eq);
-  // If 'eq' then OK for recursive fast locking: store 0 into a lock record.
-  str(tmp2, Address(disp_hdr, mark_offset), eq);
+  // If still 'eq' then recursive locking OK
+  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+  str(tmp2, Address(disp_hdr, mark_offset));
   b(fast_lock_done, eq);
   // else need slow case
   b(slow_case);
@@ -248,23 +238,12 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
   cas_for_lock_acquire(hdr, disp_hdr, obj, tmp2, slow_case);
 
   bind(fast_lock_done);
-
-#ifndef PRODUCT
-  if (PrintBiasedLockingStatistics) {
-    cond_atomic_inc32(al, BiasedLocking::fast_path_entry_count_addr());
-  }
-#endif // !PRODUCT
-
   bind(done);
 
   return null_check_offset;
 }
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj,
-                                      Register disp_hdr, Register tmp,
-                                      Label& slow_case) {
-  // Note: this method is not using its 'tmp' argument
-
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   assert_different_registers(hdr, obj, disp_hdr, Rtemp);
   Register tmp2 = Rtemp;
 
@@ -273,11 +252,6 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj,
   const int mark_offset = BasicLock::displaced_header_offset_in_bytes();
 
   Label done;
-  if (UseBiasedLocking) {
-    // load object
-    ldr(obj, Address(disp_hdr, obj_offset));
-    biased_locking_exit(obj, hdr, done);
-  }
 
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
@@ -286,10 +260,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj,
   // If hdr is NULL, we've got recursive locking and there's nothing more to do
   cbz(hdr, done);
 
-  if(!UseBiasedLocking) {
-    // load object
-    ldr(obj, Address(disp_hdr, obj_offset));
-  }
+  // load object
+  ldr(obj, Address(disp_hdr, obj_offset));
 
   // Restore the object header
   cas_for_lock_release(disp_hdr, hdr, obj, tmp2, slow_case);

@@ -1544,8 +1544,14 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
 }
 
 //----------SUPERWORD HELPERS----------------------------------------
@@ -1599,7 +1605,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -1653,6 +1659,17 @@ bool Matcher::can_be_java_arg(int reg) {
 
 bool Matcher::is_spillable_arg(int reg) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  // Medium size register set, 6 special purpose regs, 3 SOE regs.
+  return (INTPRESSURE == -1) ? 10 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
@@ -5256,6 +5273,30 @@ instruct castLL(iRegL dst) %{
   match(Set dst (CastLL dst));
   size(0);
   format %{ "# castLL of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castFF(regF dst) %{
+  match(Set dst (CastFF dst));
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castDD(regD dst) %{
+  match(Set dst (CastDD dst));
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castVV(iRegL dst) %{
+  match(Set dst (CastVV dst));
+  size(0);
+  format %{ "# castVV of $dst" %}
   ins_encode(/*empty*/);
   ins_pipe(pipe_class_dummy);
 %}
@@ -9775,8 +9816,7 @@ instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRe
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE); // Uses load_const_optimized.
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
-  ins_encode %{ __ compiler_fast_lock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register,
-                                             UseBiasedLocking && !UseOptoBiasInlining); %}
+  ins_encode %{ __ compiler_fast_lock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -9784,10 +9824,9 @@ instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, i
   match(Set pcc (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
-  // TODO: s390 port size(FIXED_SIZE);  // emitted code depends on UseBiasedLocking being on/off.
+  // TODO: s390 port size(FIXED_SIZE);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
-  ins_encode %{ __ compiler_fast_unlock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register,
-                                               UseBiasedLocking && !UseOptoBiasInlining); %}
+  ins_encode %{ __ compiler_fast_unlock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 

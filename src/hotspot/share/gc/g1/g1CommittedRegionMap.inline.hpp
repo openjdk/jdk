@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP
 
 #include "gc/g1/g1CommittedRegionMap.hpp"
+
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1CommittedRegionMap::active(uint index) const {

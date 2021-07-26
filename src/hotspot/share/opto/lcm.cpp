@@ -413,7 +413,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: NULL or dominating control.
   Node* ctrl = best->in(0);
-  if (get_block_for_node(ctrl) == not_null_block) {
+  if (ctrl != NULL && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -870,6 +870,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
     case Op_CallRuntime:
     case Op_CallLeaf:
     case Op_CallLeafNoFP:
+    case Op_CallLeafVector:
       // Calling C code so use C calling convention
       save_policy = _matcher._c_reg_save_policy;
       break;
@@ -880,7 +881,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       save_policy = _matcher._register_save_policy;
       break;
     case Op_CallNative:
-      // We use the c reg save policy here since Panama
+      // We use the c reg save policy here since Foreign Linker
       // only supports the C ABI currently.
       // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;
@@ -1075,11 +1076,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   if (OptoRegScheduling && block_size_threshold_ok) {
     // To stage register pressure calculations we need to examine the live set variables
     // breaking them up by register class to compartmentalize the calculations.
-    uint float_pressure = Matcher::float_pressure(FLOATPRESSURE);
-    _regalloc->_sched_int_pressure.init(INTPRESSURE);
-    _regalloc->_sched_float_pressure.init(float_pressure);
-    _regalloc->_scratch_int_pressure.init(INTPRESSURE);
-    _regalloc->_scratch_float_pressure.init(float_pressure);
+    _regalloc->_sched_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_sched_float_pressure.init(Matcher::float_pressure_limit());
+    _regalloc->_scratch_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_scratch_float_pressure.init(Matcher::float_pressure_limit());
 
     _regalloc->compute_entry_block_pressure(block);
   }

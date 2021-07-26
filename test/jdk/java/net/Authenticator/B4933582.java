@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,41 +29,66 @@
  * @test
  * @bug 4933582
  * @key intermittent
- * @library ../../../sun/net/www/httptest /test/lib
+ * @library /test/lib
  * @modules java.base/sun.net.www
  *          java.base/sun.net.www.protocol.http
- * @build HttpCallback HttpTransaction TestHttpServer B4933582
+ *
  * @run main/othervm B4933582
  */
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import sun.net.www.protocol.http.*;
-import jdk.test.lib.net.URIBuilder;
 
-public class B4933582 implements HttpCallback {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
+import sun.net.www.protocol.http.AuthCacheImpl;
+import sun.net.www.protocol.http.AuthCacheValue;
+
+public class B4933582 implements HttpHandler {
 
     static int count = 0;
     static String authstring;
 
-    void errorReply (HttpTransaction req, String reply) throws IOException {
-        req.addResponseHeader ("Connection", "close");
-        req.addResponseHeader ("WWW-Authenticate", reply);
-        req.sendResponse (401, "Unauthorized");
-        req.orderlyClose();
+    void errorReply (HttpExchange req, String reply) throws IOException {
+        req.getResponseHeaders().set("Connection", "close");
+        req.getResponseHeaders().set("WWW-Authenticate", reply);
+        req.sendResponseHeaders(401, -1);
     }
 
-    void okReply (HttpTransaction req) throws IOException {
-        req.setResponseEntityBody ("Hello .");
-        req.sendResponse (200, "Ok");
-        req.orderlyClose();
+    void okReply (HttpExchange req) throws IOException {
+        req.sendResponseHeaders(200, 0);
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello .");
+        }
     }
 
     static volatile boolean firstTime = true;
 
-    public void request (HttpTransaction req) {
+    public void handle (HttpExchange req) {
         try {
-            authstring = req.getRequestHeader ("Authorization");
+            if(req.getRequestHeaders().get("Authorization") != null) {
+                authstring = req.getRequestHeaders().get("Authorization").get(0);
+                System.out.println(authstring);
+            }
             if (firstTime) {
                 switch (count) {
                 case 0:
@@ -134,29 +159,33 @@ public class B4933582 implements HttpCallback {
         }
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main (String[] args) throws Exception {
+        B4933582 b4933582 = new B4933582();
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         InetAddress loopback = InetAddress.getLoopbackAddress();
         CacheImpl cache;
         try {
-            server = new TestHttpServer(new B4933582(), 1, 10, loopback, 0);
-            cache = new CacheImpl (server.getLocalPort());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", b4933582);
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            cache = new CacheImpl (server.getAddress().getPort());
             AuthCacheValue.setAuthCache (cache);
             String serverURL = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
-                .port(server.getLocalPort())
+                .port(server.getAddress().getPort())
                 .path("/")
                 .build()
                 .toString();
             client(serverURL + "d1/foo.html");
         } finally {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
         }
 
@@ -171,8 +200,10 @@ public class B4933582 implements HttpCallback {
         cache = new CacheImpl();
         while (true) {
             try {
-                server = new TestHttpServer(new B4933582(), 1, 10,
-                                            loopback, cache.getPort());
+                server = HttpServer.create(new InetSocketAddress(loopback, cache.getPort()), 10);
+                server.createContext("/", b4933582);
+                server.setExecutor(Executors.newSingleThreadExecutor());
+                server.start();
                 break;
             } catch (BindException e) {
                 if (retries++ < 5) {
@@ -191,14 +222,14 @@ public class B4933582 implements HttpCallback {
             String serverURL = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
-                .port(server.getLocalPort())
+                .port(server.getAddress().getPort())
                 .path("/")
                 .build()
                 .toString();
             client(serverURL + "d1/foo.html");
         } finally {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
         }
 
@@ -209,7 +240,7 @@ public class B4933582 implements HttpCallback {
     }
 
     public static void except (String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException (s);
     }
 

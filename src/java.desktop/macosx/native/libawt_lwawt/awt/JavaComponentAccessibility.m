@@ -896,6 +896,14 @@ static NSObject *sAttributeNamesLOCK = nil;
     return NO;
 }
 
+- (NSInteger)accessibilityIndex {
+    int index = 0;
+    if (fParent != NULL) {
+        index = [fParent accessibilityIndexOfChild:self];
+    }
+    return index;
+}
+
 /*
  * The java/lang/Number concrete class could be for any of the Java primitive
  * numerical types or some other subclass.

@@ -551,6 +551,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->context_trapno == trap_page_fault) {
     int page_size = os::vm_page_size();

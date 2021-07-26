@@ -668,6 +668,7 @@ public class Config {
      * @param fileName the configuration file
      * @return normalized lines
      */
+    @SuppressWarnings("removal")
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
@@ -1173,6 +1174,7 @@ public class Config {
      * @throws KrbException where no realm can be located
      * @return the default realm, always non null
      */
+    @SuppressWarnings("removal")
     public String getDefaultRealm() throws KrbException {
         if (defaultRealm != null) {
             return defaultRealm;
@@ -1217,6 +1219,7 @@ public class Config {
      * @throws KrbException if there's no way to find KDC for the realm
      * @return the list of KDCs separated by a space, always non null
      */
+    @SuppressWarnings("removal")
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
@@ -1369,6 +1372,7 @@ public class Config {
         return kdcs;
     }
 
+    @SuppressWarnings("removal")
     private boolean fileExists(String name) {
         return java.security.AccessController.doPrivileged(
                                 new FileExistsAction(name));

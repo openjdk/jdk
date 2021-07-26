@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_OOPSTORAGE_INLINE_HPP
 
 #include "gc/shared/oopStorage.hpp"
+
 #include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isConst.hpp"

@@ -291,9 +291,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCCase Case(CaseTree.CaseKind caseKind, List<JCExpression> pats,
+    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
                        List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, pats, stats, body);
+        JCCase tree = new JCCase(caseKind, labels, stats, body);
         tree.pos = pos;
         return tree;
     }
@@ -484,6 +484,24 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCBindingPattern BindingPattern(JCVariableDecl var) {
         JCBindingPattern tree = new JCBindingPattern(var);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCDefaultCaseLabel DefaultCaseLabel() {
+        JCDefaultCaseLabel tree = new JCDefaultCaseLabel();
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
+        JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCGuardPattern GuardPattern(JCPattern guardedPattern, JCExpression expr) {
+        JCGuardPattern tree = new JCGuardPattern(guardedPattern, expr);
         tree.pos = pos;
         return tree;
     }

@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARKSTACK_INLINE_HPP
 
 #include "gc/z/zMarkStack.hpp"
+
 #include "utilities/debug.hpp"
 #include "runtime/atomic.hpp"
 

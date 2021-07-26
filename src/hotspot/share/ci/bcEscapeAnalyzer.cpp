@@ -188,10 +188,6 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
   }
 }
 
-void BCEscapeAnalyzer::set_dirty(ArgumentMap vars) {
-  clear_bits(vars, _dirty);
-}
-
 void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
 
   for (int i = 0; i < _arg_size; i++) {
@@ -490,7 +486,6 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           ArgumentMap array = state.apop();
           set_method_escape(array);
           state.apush(unknown_obj);
-          set_dirty(array);
         }
         break;
       case Bytecodes::_istore:
@@ -1451,7 +1446,6 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     , _arg_local(_arena)
     , _arg_stack(_arena)
     , _arg_returned(_arena)
-    , _dirty(_arena)
     , _return_local(false)
     , _return_allocated(false)
     , _allocated_escapes(false)
@@ -1463,7 +1457,6 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     _arg_local.clear();
     _arg_stack.clear();
     _arg_returned.clear();
-    _dirty.clear();
     Arena* arena = CURRENT_ENV->arena();
     _arg_modified = (uint *) arena->Amalloc(_arg_size * sizeof(uint));
     Copy::zero_to_bytes(_arg_modified, _arg_size * sizeof(uint));

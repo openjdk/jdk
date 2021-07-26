@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public:
   // sentinel value used to trigger backtracking in compile_method().
   static const char* retry_no_subsuming_loads();
   static const char* retry_no_escape_analysis();
+  static const char* retry_no_locks_coarsening();
   static const char* retry_class_loading_during_parsing();
 
   // Print compilation timers and statistics

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,11 @@ public enum LogTag {
     /**
      * Covers usage of jcmd with JFR
      */
-    JFR_DCMD(12);
+    JFR_DCMD(12),
+    /**
+     * -XX:StartFlightRecording
+     */
+    JFR_START(13);
 
     /* set from native side */
     volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized

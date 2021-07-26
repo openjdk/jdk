@@ -46,7 +46,7 @@ import org.w3c.dom.Node;
  * @test
  * @bug 6684227
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.JaxpIssue49
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.JaxpIssue49
  * @run testng/othervm validation.JaxpIssue49
  * @summary Test property current-element-node works.
  */

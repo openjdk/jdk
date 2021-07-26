@@ -57,6 +57,9 @@ class CallNode;
 class CallRuntimeNode;
 class CallNativeNode;
 class CallStaticJavaNode;
+class CastFFNode;
+class CastDDNode;
+class CastVVNode;
 class CastIINode;
 class CastLLNode;
 class CatchNode;
@@ -217,8 +220,7 @@ class Node {
   friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
-  Node(const Node&);            // not defined; linker error to use these
-  Node &operator=(const Node &rhs);
+  NONCOPYABLE(Node);
 
 public:
   friend class Compile;
@@ -236,7 +238,7 @@ public:
 
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    Node* n = (Node*)C->node_arena()->Amalloc_D(x);
+    Node* n = (Node*)C->node_arena()->AmallocWords(x);
     return (void*)n;
   }
 
@@ -691,6 +693,9 @@ public:
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
         DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
         DEFINE_CLASS_ID(CastLL, ConstraintCast, 2)
+        DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
+        DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
+        DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)

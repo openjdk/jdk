@@ -24,11 +24,12 @@
 #ifndef SHARE_GC_Z_ZPAGE_INLINE_HPP
 #define SHARE_GC_Z_ZPAGE_INLINE_HPP
 
+#include "gc/z/zPage.hpp"
+
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zNUMA.hpp"
-#include "gc/z/zPage.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"

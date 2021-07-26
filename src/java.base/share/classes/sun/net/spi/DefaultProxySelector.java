@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ public class DefaultProxySelector extends ProxySelector {
 
     static {
         final String key = "java.net.useSystemProxies";
+        @SuppressWarnings("removal")
         Boolean b = AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
@@ -103,6 +104,7 @@ public class DefaultProxySelector extends ProxySelector {
         }
     }
 
+    @SuppressWarnings("removal")
     public static int socksProxyVersion() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<Integer>() {
@@ -211,6 +213,7 @@ public class DefaultProxySelector extends ProxySelector {
          * System properties it does help having only 1 call to doPrivileged.
          * Be mindful what you do in here though!
          */
+        @SuppressWarnings("removal")
         Proxy[] proxyArray = AccessController.doPrivileged(
             new PrivilegedAction<Proxy[]>() {
                 public Proxy[] run() {

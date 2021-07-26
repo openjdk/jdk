@@ -442,7 +442,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask) * NOF_STACK_MASKS);
+  RegMask *rms = (RegMask*)C->comp_arena()->AmallocWords(sizeof(RegMask) * NOF_STACK_MASKS);
 
   // Initialize empty placeholder masks into the newly allocated arena
   for (int i = 0; i < NOF_STACK_MASKS; i++) {
@@ -1365,16 +1365,27 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
-      if( !parm_regs[i].first()->is_valid() &&
-          !parm_regs[i].second()->is_valid() ) {
+      VMReg first = parm_regs[i].first();
+      VMReg second = parm_regs[i].second();
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
+      // Handle case where arguments are in vector registers.
+      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+        OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
+        OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
+        assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
+        for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
+          rm->Insert(r);
+        }
+      }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(parm_regs[i].first(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(parm_regs[i].second(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -2216,6 +2227,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVF:
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
+    case Op_VectorCmpMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2306,6 +2318,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_VectorCmpMasked: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
       n->del_req(3);
       break;
     }
@@ -2620,7 +2638,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
     if (def->is_Mach()) {
       if (def->is_MachTemp() && Matcher::is_generic_vector(def->as_Mach()->_opnds[0])) {
         specialize_temp_node(def->as_MachTemp(), m, base_idx); // MachTemp node use site
-      } else if (is_generic_reg2reg_move(def->as_Mach())) {
+      } else if (is_reg2reg_move(def->as_Mach())) {
         def = def->in(1); // skip over generic reg-to-reg moves
       }
     }
@@ -2646,9 +2664,6 @@ void Matcher::specialize_generic_vector_operands() {
   assert(supports_generic_vector_operands, "sanity");
   ResourceMark rm;
 
-  if (C->max_vector_size() == 0) {
-    return; // no vector instructions or operands
-  }
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
   Unique_Node_List live_nodes;
@@ -2657,7 +2672,7 @@ void Matcher::specialize_generic_vector_operands() {
   while (live_nodes.size() > 0) {
     MachNode* m = live_nodes.pop()->isa_Mach();
     if (m != NULL) {
-      if (Matcher::is_generic_reg2reg_move(m)) {
+      if (Matcher::is_reg2reg_move(m)) {
         // Register allocator properly handles vec <=> leg moves using register masks.
         int opnd_idx = m->operand_index(1);
         Node* def = m->in(opnd_idx);
@@ -2680,7 +2695,7 @@ bool Matcher::verify_after_postselect_cleanup() {
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();
       if (m != NULL) {
-        assert(!Matcher::is_generic_reg2reg_move(m), "no MoveVec nodes allowed");
+        assert(!Matcher::is_reg2reg_move(m), "no MoveVec nodes allowed");
         for (uint j = 0; j < m->num_opnds(); j++) {
           assert(!Matcher::is_generic_vector(m->_opnds[j]), "no generic vector operands allowed");
         }
@@ -2749,9 +2764,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

@@ -330,15 +330,9 @@ final class Byte128Vector extends ByteVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        byte[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Byte128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -606,18 +600,10 @@ final class Byte128Vector extends ByteVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new Byte128Vector.Byte128Mask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new Short128Vector.Short128Mask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new Int128Vector.Int128Mask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new Long128Vector.Long128Mask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new Float128Vector.Float128Mask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new Double128Vector.Double128Mask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -636,6 +622,14 @@ final class Byte128Vector extends ByteVector {
                     Byte128Mask::defaultMaskCast);
             }
             return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public Byte128Mask eq(VectorMask<Byte> mask) {
+            Objects.requireNonNull(mask);
+            Byte128Mask m = (Byte128Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -780,24 +774,7 @@ final class Byte128Vector extends ByteVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte128Vector.Byte128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short128Vector.Short128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int128Vector.Int128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long128Vector.Long128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float128Vector.Float128Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double128Vector.Double128Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -824,6 +801,14 @@ final class Byte128Vector extends ByteVector {
     final
     ByteVector fromArray0(byte[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
+    }
+
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
     }
 
     @ForceInline

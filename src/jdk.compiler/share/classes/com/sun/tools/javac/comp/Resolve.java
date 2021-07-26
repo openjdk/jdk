@@ -146,8 +146,7 @@ public class Resolve {
         Target target = Target.instance(context);
         allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
-        allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
-                Feature.SWITCH_EXPRESSION.allowedInSource(source);
+        allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         checkVarargsAccessAfterResolution =
                 Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
@@ -3418,7 +3417,7 @@ public class Resolve {
          */
         final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
-                !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS;
+                 !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS || sym.kind == STATICERR;
         }
 
         /**

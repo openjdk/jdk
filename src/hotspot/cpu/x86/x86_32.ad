@@ -688,7 +688,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
   // If method set FPU control word, restore to standard control word
   if (C->in_24_bit_fp_mode()) {
-    _masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    _masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   int framesize = C->output()->frame_size_in_bytes();
@@ -1398,6 +1398,16 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
+// Vector calling convention not supported.
+const bool Matcher::supports_vector_calling_convention() {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -1428,6 +1438,16 @@ bool Matcher::can_be_java_arg( int reg ) {
 
 bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 6 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 6 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
@@ -1768,7 +1788,7 @@ encode %{
     debug_only(int off0 = cbuf.insts_size());
     if (ra_->C->in_24_bit_fp_mode()) {
       MacroAssembler _masm(&cbuf);
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
@@ -1782,7 +1802,7 @@ encode %{
     // If method sets FPU control word do it here also
     if (Compile::current()->in_24_bit_fp_mode()) {
       MacroAssembler masm(&cbuf);
-      masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     }
   %}
 
@@ -2335,7 +2355,7 @@ encode %{
   enc_class strictfp_bias1( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias1() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias1() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -2343,7 +2363,7 @@ encode %{
   enc_class strictfp_bias2( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias2() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias2() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -2878,7 +2898,7 @@ encode %{
     // invalid value Intel stores down in the corner cases.
     emit_opcode(cbuf,0xD9);            // FLDCW  trunc
     emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::addr_fpu_cntrl_wrd_trunc());
+    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
     emit_opcode(cbuf,0x83);            // SUB ESP,4
     emit_opcode(cbuf,0xEC);
@@ -2892,8 +2912,8 @@ encode %{
     emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
     emit_opcode(cbuf,0x2D);
     emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
-        ? (int)StubRoutines::addr_fpu_cntrl_wrd_24()
-        : (int)StubRoutines::addr_fpu_cntrl_wrd_std());
+        ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
+        : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
     emit_opcode(cbuf,0x58);       // POP EAX
@@ -2907,14 +2927,14 @@ encode %{
     // CALL directly to the runtime
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
   enc_class DPR2L_encoding( regDPR src ) %{
     emit_opcode(cbuf,0xD9);            // FLDCW  trunc
     emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::addr_fpu_cntrl_wrd_trunc());
+    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
     emit_opcode(cbuf,0x83);            // SUB ESP,8
     emit_opcode(cbuf,0xEC);
@@ -2928,8 +2948,8 @@ encode %{
     emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
     emit_opcode(cbuf,0x2D);
     emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
-        ? (int)StubRoutines::addr_fpu_cntrl_wrd_24()
-        : (int)StubRoutines::addr_fpu_cntrl_wrd_std());
+        ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
+        : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
     emit_opcode(cbuf,0x58);       // POP EAX
@@ -2949,7 +2969,7 @@ encode %{
     // CALL directly to the runtime
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
     // Carry on here...
   %}
 
@@ -5001,6 +5021,89 @@ define %{
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
+// Dummy reg-to-reg vector moves. Removed during post-selection cleanup.
+// Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+
+
+// Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 //----------BSWAP-Instruction--------------------------------------------------
 instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
@@ -5746,46 +5849,6 @@ instruct loadKlass(eRegP dst, memory mem) %{
   ins_pipe( ialu_reg_mem );
 %}
 
-// Load Float
-instruct MoveF2LEG(legRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveLEG2F(regF dst, legRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveD2LEG(legRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveLEG2D(regD dst, legRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Load Double
 instruct loadDPR(regDPR dst, memory mem) %{
   predicate(UseSSE<=1);
@@ -6415,26 +6478,6 @@ instruct storeD(memory mem, regD src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Double
-instruct MoveD2VL(vlRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveVL2D(regD dst, vlRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Store XMM register to memory (single-precision floating point)
 // MOVSS instruction
 instruct storeF(memory mem, regF src) %{
@@ -6448,25 +6491,6 @@ instruct storeF(memory mem, regF src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Float
-instruct MoveF2VL(vlRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveVL2F(regF dst, vlRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
 
 // Store Float
 instruct storeFPR( memory mem, regFPR1 src) %{
@@ -7173,6 +7197,22 @@ instruct castII( rRegI dst ) %{
 instruct castLL( eRegL dst ) %{
   match(Set dst (CastLL dst));
   format %{ "#castLL of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castFF( regF dst ) %{
+  match(Set dst (CastFF dst));
+  format %{ "#castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castDD( regD dst ) %{
+  match(Set dst (CastDD dst));
+  format %{ "#castDD of $dst" %}
   ins_encode( /*empty encoding*/ );
   ins_cost(0);
   ins_pipe( empty );
@@ -9777,15 +9817,15 @@ instruct mulDPR_reg(regDPR dst, regDPR src) %{
 // rescale product by 2^(15360)
 //
 instruct strictfp_mulDPR_reg(regDPR1 dst, regnotDPR1 src) %{
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   match(Set dst (MulD dst src));
-  ins_cost(1);   // Select this instruction for all strict FP double multiplies
+  ins_cost(1);   // Select this instruction for all FP double multiplies
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "DMULp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x1); /* DE C8+i or DE /1*/
   ins_encode( strictfp_bias1(dst),
@@ -9896,14 +9936,14 @@ instruct divDPR_reg(regDPR dst, regDPR src) %{
 instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
   predicate (UseSSE<=1);
   match(Set dst (DivD dst src));
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   ins_cost(01);
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "FDIVp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x7); /* DE F8+i or DE /7*/
   ins_encode( strictfp_bias1(dst),
@@ -9912,20 +9952,6 @@ instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
               strictfp_bias2(dst) );
   ins_pipe( fpu_reg_reg );
 %}
-
-instruct divDPR_reg_round(stackSlotD dst, regDPR src1, regDPR src2) %{
-  predicate( UseSSE<=1 && !(Compile::current()->has_method() && Compile::current()->method()->is_strict()) );
-  match(Set dst (RoundDouble (DivD src1 src2)));
-
-  format %{ "FLD    $src1\n\t"
-            "FDIV   ST,$src2\n\t"
-            "FSTP_D $dst\t# D-round" %}
-  opcode(0xD8, 0x6); /* D8 F0+i or D8 /6 */
-  ins_encode( Push_Reg_DPR(src1),
-              OpcP, RegOpc(src2), Pop_Mem_DPR(dst) );
-  ins_pipe( fpu_mem_reg_reg );
-%}
-
 
 instruct modDPR_reg(regDPR dst, regDPR src, eAXRegI rax, eFlagsReg cr) %{
   predicate(UseSSE<=1);
@@ -10778,7 +10804,7 @@ instruct convD2I_reg_reg( eAXRegI dst, eDXRegI tmp, regD src, eFlagsReg cr ) %{
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2i_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10834,13 +10860,13 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ subptr(rsp, 8);
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
     __ fistp_d(Address(rsp, 0));
     // Restore the rounding mode, mask the exception
     if (Compile::current()->in_24_bit_fp_mode()) {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     } else {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Load the converted long, adjust CPU stack
     __ pop(rax);
@@ -10853,7 +10879,7 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2l_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10908,7 +10934,7 @@ instruct convF2I_reg(eAXRegI dst, eDXRegI tmp, regF src, eFlagsReg cr ) %{
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2i_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10965,13 +10991,13 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ subptr(rsp, 8);
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
     __ fistp_d(Address(rsp, 0));
     // Restore the rounding mode, mask the exception
     if (Compile::current()->in_24_bit_fp_mode()) {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     } else {
-      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+      __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Load the converted long, adjust CPU stack
     __ pop(rax);
@@ -10984,7 +11010,7 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ movflt(Address(rsp, 0), $src$$XMMRegister);
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::d2l_wrapper())));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -11458,8 +11484,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // fast clearing of an array
 // Small ClearArray non-AVX512.
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11518,11 +11543,10 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
 %}
 
 // Small ClearArray AVX512 non-constant length.
-instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-               UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-               !n->in(2)->bottom_type()->is_int()->is_con());
+instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
   format %{ $$template
@@ -11581,7 +11605,7 @@ instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI z
 
 // Large ClearArray non-AVX512.
 instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((ClearArrayNode*)n)->is_large());
+  predicate((UseAVX <= 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11630,8 +11654,8 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
 %}
 
 // Large ClearArray AVX512.
-instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((ClearArrayNode*)n)->is_large());
+instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate((UseAVX > 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11683,9 +11707,9 @@ instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAX
 instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-               (UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-                 n->in(2)->bottom_type()->is_int()->is_con()));
+               ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
@@ -13655,7 +13679,7 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
                  $scr$$Register, $cx1$$Register, $cx2$$Register,
-                 _counters, _rtm_counters, _stack_rtm_counters,
+                 _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
   %}
@@ -13670,7 +13694,7 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

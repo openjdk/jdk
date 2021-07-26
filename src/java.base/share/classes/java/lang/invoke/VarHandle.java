@@ -40,6 +40,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -1636,6 +1637,10 @@ public abstract class VarHandle implements Constable {
         COMPARE_AND_EXCHANGE(Object.class),
         GET_AND_UPDATE(Object.class);
 
+        static final int COUNT = GET_AND_UPDATE.ordinal() + 1;
+        static {
+            assert (COUNT == values().length);
+        }
         final Class<?> returnType;
         final boolean isMonomorphicInReturnType;
 
@@ -1890,6 +1895,10 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
+        static final int COUNT = GET_AND_BITWISE_XOR_ACQUIRE.ordinal() + 1;
+        static {
+            assert (COUNT == values().length);
+        }
         final String methodName;
         final AccessType at;
 
@@ -2029,6 +2038,19 @@ public abstract class VarHandle implements Constable {
     }
 
     @ForceInline
+    final void checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+        if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throwWrongMethodTypeException(ad);
+        }
+    }
+
+    @DontInline
+    private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
+        throw new WrongMethodTypeException("expected " + accessModeType(ad.type) + " but found "
+                + ad.symbolicMethodTypeExact);
+    }
+
+    @ForceInline
     final MethodType accessModeType(int accessTypeOrdinal) {
         TypesAndInvokers tis = getTypesAndInvokers();
         MethodType mt = tis.methodType_table[accessTypeOrdinal];
@@ -2112,12 +2134,10 @@ public abstract class VarHandle implements Constable {
 
     static class TypesAndInvokers {
         final @Stable
-        MethodType[] methodType_table =
-                new MethodType[VarHandle.AccessType.values().length];
+        MethodType[] methodType_table = new MethodType[VarHandle.AccessType.COUNT];
 
         final @Stable
-        MethodHandle[] methodHandle_table =
-                new MethodHandle[AccessMode.values().length];
+        MethodHandle[] methodHandle_table = new MethodHandle[AccessMode.COUNT];
     }
 
     @ForceInline
@@ -2158,15 +2178,6 @@ public abstract class VarHandle implements Constable {
         UNSAFE.putReference(this, VFORM_OFFSET, newVForm);
         UNSAFE.fullFence();
     }
-
-    static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
-            AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
-            new Function<String, ArrayIndexOutOfBoundsException>() {
-                @Override
-                public ArrayIndexOutOfBoundsException apply(String s) {
-                    return new ArrayIndexOutOfBoundsException(s);
-                }
-            });
 
     private static final long VFORM_OFFSET;
 
@@ -2262,15 +2273,11 @@ public abstract class VarHandle implements Constable {
             }
 
             ConstantDesc[] toBSMArgs(ClassDesc declaringClass, ClassDesc varType) {
-                switch (this) {
-                    case FIELD:
-                    case STATIC_FIELD:
-                        return new ConstantDesc[] {declaringClass, varType };
-                    case ARRAY:
-                        return new ConstantDesc[] {declaringClass };
-                    default:
-                        throw new InternalError("Cannot reach here");
-                }
+                return switch (this) {
+                    case FIELD, STATIC_FIELD -> new ConstantDesc[]{declaringClass, varType};
+                    case ARRAY               -> new ConstantDesc[]{declaringClass};
+                    default -> throw new InternalError("Cannot reach here");
+                };
             }
         }
 
@@ -2365,20 +2372,16 @@ public abstract class VarHandle implements Constable {
         @Override
         public VarHandle resolveConstantDesc(MethodHandles.Lookup lookup)
                 throws ReflectiveOperationException {
-            switch (kind) {
-                case FIELD:
-                    return lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
-                                                constantName(),
-                                                (Class<?>) varType.resolveConstantDesc(lookup));
-                case STATIC_FIELD:
-                    return lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
-                                                      constantName(),
-                                                      (Class<?>) varType.resolveConstantDesc(lookup));
-                case ARRAY:
-                    return MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
-                default:
-                    throw new InternalError("Cannot reach here");
-            }
+            return switch (kind) {
+                case FIELD        -> lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                          constantName(),
+                                                          (Class<?>) varType.resolveConstantDesc(lookup));
+                case STATIC_FIELD -> lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                          constantName(),
+                                                          (Class<?>) varType.resolveConstantDesc(lookup));
+                case ARRAY        -> MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
+                default -> throw new InternalError("Cannot reach here");
+            };
         }
 
         /**
@@ -2391,17 +2394,13 @@ public abstract class VarHandle implements Constable {
          */
         @Override
         public String toString() {
-            switch (kind) {
-                case FIELD:
-                case STATIC_FIELD:
-                    return String.format("VarHandleDesc[%s%s.%s:%s]",
-                                         (kind == Kind.STATIC_FIELD) ? "static " : "",
-                                         declaringClass.displayName(), constantName(), varType.displayName());
-                case ARRAY:
-                    return String.format("VarHandleDesc[%s[]]", declaringClass.displayName());
-                default:
-                    throw new InternalError("Cannot reach here");
-            }
+            return switch (kind) {
+                case FIELD, STATIC_FIELD -> String.format("VarHandleDesc[%s%s.%s:%s]",
+                                                           (kind == Kind.STATIC_FIELD) ? "static " : "",
+                                                           declaringClass.displayName(), constantName(), varType.displayName());
+                case ARRAY               -> String.format("VarHandleDesc[%s[]]", declaringClass.displayName());
+                default -> throw new InternalError("Cannot reach here");
+            };
         }
     }
 

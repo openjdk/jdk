@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/instanceOop.hpp"

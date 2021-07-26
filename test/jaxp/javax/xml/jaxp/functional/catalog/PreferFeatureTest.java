@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.PreferFeatureTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.PreferFeatureTest
  * @run testng/othervm catalog.PreferFeatureTest
  * @summary This case tests how does the feature affect the catalog resolution,
  *          and tests the priority between this feature and attribute prefer

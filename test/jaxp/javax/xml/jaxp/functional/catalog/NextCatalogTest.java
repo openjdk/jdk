@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.NextCatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.NextCatalogTest
  * @run testng/othervm catalog.NextCatalogTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          but some of the entries are defined in none-current catalog files.

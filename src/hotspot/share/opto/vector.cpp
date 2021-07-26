@@ -406,14 +406,10 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
     BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;
-    BasicType elem_bt;
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
     } else if (is_vector_shuffle(from_kls)) {
-      if (vec_unbox->is_shuffle_to_vector() == true) {
-        elem_bt = bt;
-      }
       bt = T_BYTE;
     }
 
@@ -459,13 +455,9 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::make(masktype, num_elem)));
-    } else if (is_vector_shuffle(from_kls)) {
-      if (vec_unbox->is_shuffle_to_vector() == false) {
-        assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
-        vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
-      } else {
-        vec_val_load = gvn.transform(VectorCastNode::make(Op_VectorCastB2X, vec_val_load, elem_bt, num_elem));
-      }
+    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
+      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
+      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

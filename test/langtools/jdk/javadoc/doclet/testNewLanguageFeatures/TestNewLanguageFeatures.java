@@ -196,9 +196,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput(Output.OUT, true,
                 // Bad type parameter warnings.
                 """
-                    warning - @param argument "<BadClassTypeParam>" is not the name of a type parameter.""",
+                    warning: @param argument "<BadClassTypeParam>" is not the name of a type parameter.""",
                 """
-                    warning - @param argument "<BadMethodTypeParam>" is not the name of a type parameter.""");
+                    warning: @param argument "<BadMethodTypeParam>" is not the name of a type parameter.""");
 
         // Signature of subclass that has type parameters.
         checkOutput("pkg/TypeParameterSubClass.html", true,

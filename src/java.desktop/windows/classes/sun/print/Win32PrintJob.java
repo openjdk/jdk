@@ -684,6 +684,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                   throw new PrintException(e);
                 }
                 // check write access
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 if (security != null) {
                   try {

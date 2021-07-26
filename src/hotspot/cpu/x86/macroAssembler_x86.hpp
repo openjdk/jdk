@@ -26,6 +26,8 @@
 #define CPU_X86_MACROASSEMBLER_X86_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.inline.hpp"
+#include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
@@ -206,6 +208,22 @@ class MacroAssembler: public Assembler {
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+#ifdef _LP64
+  // Support for argument shuffling
+
+  void move32_64(VMRegPair src, VMRegPair dst);
+  void long_move(VMRegPair src, VMRegPair dst);
+  void float_move(VMRegPair src, VMRegPair dst);
+  void double_move(VMRegPair src, VMRegPair dst);
+  void move_ptr(VMRegPair src, VMRegPair dst);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+#endif // _LP64
 
   // Support for VM calls
   //
@@ -337,8 +355,6 @@ class MacroAssembler: public Assembler {
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src, Register tmp);
 
 #ifdef _LP64
   void store_klass_gap(Register dst, Register src);
@@ -654,21 +670,6 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
 
   void verify_tlab();
-
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg must be rax, and is killed.
-  // tmp_reg is optional. If it is supplied (i.e., != noreg) it will
-  // be killed; if not supplied, push/pop will be used internally to
-  // allocate a temporary (inefficient, avoid if possible).
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            Register tmp_reg2, bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
 
   Condition negate_condition(Condition cond);
 
@@ -1279,21 +1280,21 @@ public:
 
   // Vector compares
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
 
 
   // Emit comparison instruction for the specified comparison predicate.

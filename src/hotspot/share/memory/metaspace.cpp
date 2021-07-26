@@ -535,8 +535,6 @@ void MetaspaceGC::compute_new_size() {
 
 const MetaspaceTracer* Metaspace::_tracer = NULL;
 
-DEBUG_ONLY(bool Metaspace::_frozen = false;)
-
 bool Metaspace::initialized() {
   return metaspace::MetaspaceContext::context_nonclass() != NULL
       LP64_ONLY(&& (using_class_space() ? Metaspace::class_space_is_initialized() : true));
@@ -744,6 +742,9 @@ void Metaspace::global_initialize() {
 #if INCLUDE_CDS
   // case (a)
   if (UseSharedSpaces) {
+    if (!FLAG_IS_DEFAULT(CompressedClassSpaceBaseAddress)) {
+      log_warning(metaspace)("CDS active - ignoring CompressedClassSpaceBaseAddress.");
+    }
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
@@ -759,23 +760,49 @@ void Metaspace::global_initialize() {
   if (using_class_space() && !class_space_is_initialized()) {
     assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
 
-    // case (b)
+    // case (b) (No CDS)
     ReservedSpace rs;
-
-    // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
-    //  territory, i.e. its base is under 32G, then we attempt to place ccs
-    //  right above the java heap.
-    // Otherwise the lower 32G are still free. We try to place ccs at the lowest
-    // allowed mapping address.
-    address base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
-                   CompressedOops::end() : (address)HeapBaseMinAddress;
-    base = align_up(base, Metaspace::reserve_alignment());
-
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
-    if (base != NULL) {
-      if (CompressedKlassPointers::is_valid_base(base)) {
-        rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                           os::vm_page_size(), (char*)base);
+    address base = NULL;
+
+    // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
+    // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
+    // this may fail, in which case the VM will exit after printing an appropiate message.
+    // Tests using this switch should cope with that.
+    if (CompressedClassSpaceBaseAddress != 0) {
+      base = (address)CompressedClassSpaceBaseAddress;
+      if (!is_aligned(base, Metaspace::reserve_alignment())) {
+        vm_exit_during_initialization(
+            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
+                    "(must be aligned to " SIZE_FORMAT_HEX ").",
+                    CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
+      }
+      rs = ReservedSpace(size, Metaspace::reserve_alignment(),
+                         os::vm_page_size() /* large */, (char*)base);
+      if (rs.is_reserved()) {
+        log_info(metaspace)("Sucessfully forced class space address to " PTR_FORMAT, p2i(base));
+      } else {
+        vm_exit_during_initialization(
+            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",
+                CompressedClassSpaceBaseAddress));
+      }
+    }
+
+    if (!rs.is_reserved()) {
+      // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
+      //  territory, i.e. its base is under 32G, then we attempt to place ccs
+      //  right above the java heap.
+      // Otherwise the lower 32G are still free. We try to place ccs at the lowest
+      // allowed mapping address.
+      base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
+              CompressedOops::end() : (address)HeapBaseMinAddress;
+      base = align_up(base, Metaspace::reserve_alignment());
+
+      if (base != NULL) {
+        if (CompressedKlassPointers::is_valid_base(base)) {
+          rs = ReservedSpace(size, Metaspace::reserve_alignment(),
+                             os::vm_page_size(), (char*)base);
+        }
       }
     }
 
@@ -851,7 +878,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
-  assert(!_frozen, "sanity");
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");

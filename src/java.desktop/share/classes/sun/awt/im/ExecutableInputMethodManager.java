@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,6 +252,7 @@ class ExecutableInputMethodManager extends InputMethodManager
      * initializes the input method locator list for all
      * installed input method descriptors.
      */
+    @SuppressWarnings("removal")
     private void initializeInputMethodLocatorList() {
         synchronized (javaInputMethodLocatorList) {
             javaInputMethodLocatorList.clear();
@@ -593,6 +594,7 @@ class ExecutableInputMethodManager extends InputMethodManager
         }
     }
 
+    @SuppressWarnings("removal")
     private Preferences getUserRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<Preferences>() {
             public Preferences run() {

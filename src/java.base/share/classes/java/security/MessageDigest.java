@@ -447,12 +447,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
         PrintStream p = new PrintStream(baos);
         p.print(algorithm+" Message Digest from "+getProviderName()+", ");
         switch (state) {
-        case INITIAL:
-            p.print("<initialized>");
-            break;
-        case IN_PROGRESS:
-            p.print("<in progress>");
-            break;
+            case INITIAL     -> p.print("<initialized>");
+            case IN_PROGRESS -> p.print("<in progress>");
         }
         p.println();
         return (baos.toString());

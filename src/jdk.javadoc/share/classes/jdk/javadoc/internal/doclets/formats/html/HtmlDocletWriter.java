@@ -75,6 +75,7 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -182,11 +183,6 @@ public class HtmlDocletWriter {
      * To check whether annotation heading is printed or not.
      */
     protected boolean printedAnnotationHeading = false;
-
-    /**
-     * To check whether annotation field heading is printed or not.
-     */
-    protected boolean printedAnnotationFieldHeading = false;
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -690,13 +686,6 @@ public class HtmlDocletWriter {
         return label;
     }
 
-    public Content interfaceName(TypeElement typeElement, boolean qual) {
-        Content name = Text.of((qual)
-                ? typeElement.getQualifiedName()
-                : utils.getSimpleName(typeElement));
-        return (utils.isInterface(typeElement)) ?  HtmlTree.SPAN(HtmlStyle.interfaceName, name) : name;
-    }
-
     /**
      * Add the link to the content tree.
      *
@@ -1086,13 +1075,11 @@ public class HtmlDocletWriter {
         } else if (refMemName == null) {
             // Must be a class reference since refClass is not null and refMemName is null.
             if (labelContent.isEmpty()) {
-                if (!refClass.getTypeParameters().isEmpty() && seeText.contains("<")) {
-                    // If this is a generic type link try to use the TypeMirror representation.
-                    TypeMirror refType = ch.getReferencedType(see);
-                    if (refType != null) {
-                        return plainOrCode(isLinkPlain, getLink(
-                                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refType)));
-                    }
+                TypeMirror referencedType = ch.getReferencedType(see);
+                if (utils.isGenericType(referencedType)) {
+                    // This is a generic type link, use the TypeMirror representation.
+                    return plainOrCode(isLinkPlain, getLink(
+                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
                 }
                 labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
             }
@@ -1123,8 +1110,8 @@ public class HtmlDocletWriter {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (this instanceof ClassWriterImpl) {
-                    containing = ((ClassWriterImpl) this).getTypeElement();
+                if (this instanceof ClassWriterImpl writer) {
+                    containing = writer.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
                     messages.warning(
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
@@ -1439,7 +1426,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitAttribute(AttributeTree node, Content c) {
-                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName());
+                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName().toString());
                     if (node.getValueKind() == ValueKind.EMPTY) {
                         result.add(sb);
                         return false;
@@ -1527,9 +1514,16 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitErroneous(ErroneousTree node, Content c) {
-                    messages.warning(ch.getDocTreePath(node),
-                            "doclet.tag.invalid_usage", node);
-                    result.add(new RawHtml(node.toString()));
+                    DocTreePath dtp = ch.getDocTreePath(node);
+                    if (dtp != null) {
+                        String body = node.getBody();
+                        if (body.matches("(?i)\\{@[a-z]+.*")) {
+                            messages.warning(dtp,"doclet.tag.invalid_usage", body);
+                        } else {
+                            messages.warning(dtp, "doclet.tag.invalid_input", body);
+                        }
+                    }
+                    result.add(Text.of(node.toString()));
                     return false;
                 }
 
@@ -1554,7 +1548,10 @@ public class HtmlDocletWriter {
                 public Boolean visitLink(LinkTree node, Content c) {
                     var inTags = context.inTags;
                     if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
-                        messages.warning(ch.getDocTreePath(node), "doclet.see.nested_link", "{@" + node.getTagName() + "}");
+                        DocTreePath dtp = ch.getDocTreePath(node);
+                        if (dtp != null) {
+                            messages.warning(dtp, "doclet.see.nested_link", "{@" + node.getTagName() + "}");
+                        }
                         Content label = commentTagsToContent(node, element, node.getLabel(), context);
                         if (label.isEmpty()) {
                             label = Text.of(node.getReference().getSignature());
@@ -1654,13 +1651,41 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return true if relative links should not be redirected.
+     * Returns true if relative links should be redirected.
      *
-     * @return Return true if a relative link should not be redirected.
+     * @return true if a relative link should be redirected.
      */
-    private boolean shouldNotRedirectRelativeLinks() {
-        return  this instanceof ClassWriter ||
-                this instanceof PackageSummaryWriter;
+    private boolean shouldRedirectRelativeLinks(Element element) {
+        if (element == null || utils.isOverviewElement(element)) {
+            // Can't redirect unless there is a valid source element.
+            return false;
+        }
+        // Retrieve the element of this writer if it is a "primary" writer for an element.
+        // Note: It would be nice to have getCurrentPageElement() return package and module elements
+        // in their respective writers, but other uses of the method are only interested in TypeElements.
+        Element currentPageElement = getCurrentPageElement();
+        if (currentPageElement == null) {
+            if (this instanceof PackageWriterImpl packageWriter) {
+                currentPageElement = packageWriter.packageElement;
+            } else if (this instanceof ModuleWriterImpl moduleWriter) {
+                currentPageElement = moduleWriter.mdle;
+            }
+        }
+        // Redirect link if the current writer is not the primary writer for the source element.
+        return currentPageElement == null
+                || (currentPageElement != element
+                    &&  currentPageElement != utils.getEnclosingTypeElement(element));
+    }
+
+    /**
+     * Returns true if element lives in the same package as the type or package
+     * element of this writer.
+     */
+    private boolean inSamePackage(Element element) {
+        Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
+                ? packageWriter.packageElement : getCurrentPageElement();
+        return currentPageElement != null && !utils.isModule(element)
+                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
     }
 
     /**
@@ -1688,47 +1713,66 @@ public class HtmlDocletWriter {
      */
     private String redirectRelativeLinks(Element element, TextTree tt) {
         String text = tt.getBody();
-        if (element == null || utils.isOverviewElement(element) || shouldNotRedirectRelativeLinks()) {
-            return text;
-        }
-
-        DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
-            @Override
-            public DocPath visitType(TypeElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            public DocPath visitPackage(PackageElement e, Void p) {
-                return docPaths.forPackage(e);
-            }
-
-            @Override
-            public DocPath visitVariable(VariableElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            public DocPath visitExecutable(ExecutableElement e, Void p) {
-                return docPaths.forPackage(utils.containingPackage(e));
-            }
-
-            @Override
-            protected DocPath defaultAction(Element e, Void p) {
-                return null;
-            }
-        }.visit(element);
-        if (redirectPathFromRoot == null) {
+        if (!shouldRedirectRelativeLinks(element)) {
             return text;
         }
         String lower = Utils.toLowerCase(text);
-        if (!(lower.startsWith("mailto:")
+        if (lower.startsWith("mailto:")
                 || lower.startsWith("http:")
                 || lower.startsWith("https:")
-                || lower.startsWith("file:"))) {
-            text = "{@" + (new DocRootTaglet()).getName() + "}/"
-                    + redirectPathFromRoot.resolve(text).getPath();
-            text = replaceDocRootDir(text);
+                || lower.startsWith("file:")) {
+            return text;
+        }
+        if (text.startsWith("#")) {
+            // Redirected fragment link: prepend HTML file name to make it work
+            if (utils.isModule(element)) {
+                text = "module-summary.html" + text;
+            } else if (utils.isPackage(element)) {
+                text = DocPaths.PACKAGE_SUMMARY.getPath() + text;
+            } else {
+                TypeElement typeElement = element instanceof TypeElement
+                        ? (TypeElement) element : utils.getEnclosingTypeElement(element);
+                text = docPaths.forName(typeElement).getPath() + text;
+            }
+        }
+
+        if (!inSamePackage(element)) {
+            DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
+                @Override
+                public DocPath visitType(TypeElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitPackage(PackageElement e, Void p) {
+                    return docPaths.forPackage(e);
+                }
+
+                @Override
+                public DocPath visitVariable(VariableElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitExecutable(ExecutableElement e, Void p) {
+                    return docPaths.forPackage(utils.containingPackage(e));
+                }
+
+                @Override
+                public DocPath visitModule(ModuleElement e, Void p) {
+                    return DocPaths.forModule(e);
+                }
+
+                @Override
+                protected DocPath defaultAction(Element e, Void p) {
+                    return null;
+                }
+            }.visit(element);
+            if (redirectPathFromRoot != null) {
+                text = "{@" + (new DocRootTaglet()).getName() + "}/"
+                        + redirectPathFromRoot.resolve(text).getPath();
+                return replaceDocRootDir(text);
+            }
         }
         return text;
     }
@@ -2057,18 +2101,18 @@ public class HtmlDocletWriter {
         }
         StringBuilder sb = new StringBuilder();
         for (Element e: chain) {
-            CharSequence name;
+            String name;
             switch (e.getKind()) {
                 case MODULE:
                 case PACKAGE:
-                    name = ((QualifiedNameable) e).getQualifiedName();
+                    name = ((QualifiedNameable) e).getQualifiedName().toString();
                     if (name.length() == 0) {
                         name = "<unnamed>";
                     }
                     break;
 
                 default:
-                    name = e.getSimpleName();
+                    name = e.getSimpleName().toString();
                     break;
             }
 
@@ -2110,7 +2154,8 @@ public class HtmlDocletWriter {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")
-                .replaceAll("^(Module|Package|Class)$", "$1Declaration");
+                .replaceAll("^(Module|Package|Class)$", "$1Declaration")
+                .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
         return HtmlStyle.valueOf(page);
     }
@@ -2128,11 +2173,11 @@ public class HtmlDocletWriter {
     List<DocPath> getLocalStylesheets(Element element) throws DocFileIOException {
         List<DocPath> stylesheets = new ArrayList<>();
         DocPath basePath = null;
-        if (element instanceof PackageElement) {
-            stylesheets.addAll(getModuleStylesheets((PackageElement)element));
-            basePath = docPaths.forPackage((PackageElement)element);
-        } else if (element instanceof ModuleElement) {
-            basePath = DocPaths.forModule((ModuleElement)element);
+        if (element instanceof PackageElement pkg) {
+            stylesheets.addAll(getModuleStylesheets(pkg));
+            basePath = docPaths.forPackage(pkg);
+        } else if (element instanceof ModuleElement mdle) {
+            basePath = DocPaths.forModule(mdle);
         }
         for (DocPath stylesheet : getStylesheets(element)) {
             stylesheets.add(basePath.resolve(stylesheet.getPath()));

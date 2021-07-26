@@ -40,7 +40,7 @@ import java.util.Set;
  * @since 1.8
  */
 
-/*package*/ class HttpConnectSocketImpl extends DelegatingSocketImpl {
+/*package*/ @SuppressWarnings("removal") class HttpConnectSocketImpl extends DelegatingSocketImpl {
 
     private static final String httpURLClazzStr =
                                   "sun.net.www.protocol.http.HttpURLConnection";

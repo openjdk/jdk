@@ -63,7 +63,7 @@ private:
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
-  unsigned  _slow_refill_waste;
+  unsigned  _refill_waste;
   unsigned  _gc_waste;
   unsigned  _slow_allocations;
   size_t    _allocated_size;
@@ -128,6 +128,10 @@ public:
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
   size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
+
+  // For external inspection.
+  const HeapWord* start_relaxed() const;
+  const HeapWord* top_relaxed() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
@@ -194,8 +198,8 @@ private:
   static PerfVariable* _perf_total_allocations;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
-  static PerfVariable* _perf_total_slow_refill_waste;
-  static PerfVariable* _perf_max_slow_refill_waste;
+  static PerfVariable* _perf_total_refill_waste;
+  static PerfVariable* _perf_max_refill_waste;
   static PerfVariable* _perf_total_slow_allocations;
   static PerfVariable* _perf_max_slow_allocations;
 
@@ -207,8 +211,8 @@ private:
   size_t       _total_allocations;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
-  size_t       _total_slow_refill_waste;
-  size_t       _max_slow_refill_waste;
+  size_t       _total_refill_waste;
+  size_t       _max_refill_waste;
   unsigned int _total_slow_allocations;
   unsigned int _max_slow_allocations;
 
@@ -221,7 +225,7 @@ public:
   void update_fast_allocations(unsigned int refills,
                                size_t allocations,
                                size_t gc_waste,
-                               size_t slow_refill_waste);
+                               size_t refill_waste);
   void update_slow_allocations(unsigned int allocations);
   void update(const ThreadLocalAllocStats& other);
 

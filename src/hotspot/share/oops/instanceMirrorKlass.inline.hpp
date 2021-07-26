@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP
 
+#include "oops/instanceMirrorKlass.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"

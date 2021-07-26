@@ -158,6 +158,24 @@
     return true;
   }
 
+  // Does the CPU supports vector unsigned comparison instructions?
+  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    int vlen_in_bytes = vlen * type2aelembytes(bt);
+    if ((UseAVX > 2) && (VM_Version::supports_avx512vl() || vlen_in_bytes == 64))
+      return true;
+    else {
+      // instruction set supports only signed comparison
+      // so need to zero extend to higher integral type and perform comparison
+      // cannot cast long to higher integral type
+      // and on avx1 cannot cast 128 bit integral vectors to higher size
+
+      if ((bt != T_LONG)  &&
+          ((UseAVX >= 2) || (vlen_in_bytes <= 8)))
+        return true;
+    }
+    return false;
+  }
+
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void) {
     bool ret_value = false;

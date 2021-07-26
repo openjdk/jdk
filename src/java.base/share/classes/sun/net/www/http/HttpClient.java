@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,6 +353,7 @@ public class HttpClient extends NetworkClient {
                 ret.authenticatorKey = httpuc.getAuthenticatorKey();
             }
         } else {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
@@ -544,6 +545,7 @@ public class HttpClient extends NetworkClient {
     /*
      * call openServer in a privileged block
      */
+    @SuppressWarnings("removal")
     private void privilegedOpenServer(final InetSocketAddress server)
          throws IOException
     {
@@ -575,6 +577,7 @@ public class HttpClient extends NetworkClient {
      */
     protected void openServer() throws IOException {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
 
         lock();

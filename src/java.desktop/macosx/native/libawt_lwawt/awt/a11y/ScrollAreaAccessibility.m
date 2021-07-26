@@ -83,9 +83,9 @@
     return nil;
 }
 
-- (NSString * _Nonnull)accessibilityRole
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return [self accessibilityRoleAttribute];
+    return NSAccessibilityScrollAreaRole;
 }
 
 - (NSArray * _Nullable)accessibilityContents

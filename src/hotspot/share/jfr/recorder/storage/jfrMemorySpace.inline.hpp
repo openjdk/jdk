@@ -25,8 +25,9 @@
 #ifndef SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_INLINE_HPP
 #define SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_INLINE_HPP
 
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
+
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 

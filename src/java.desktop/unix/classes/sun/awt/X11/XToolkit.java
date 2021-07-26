@@ -245,6 +245,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static void initSecurityWarning() {
         // Enable warning only for internal builds
+        @SuppressWarnings("removal")
         String runtime = AccessController.doPrivileged(
                              new GetPropertyAction("java.runtime.version"));
         securityWarningEnabled = (runtime != null && runtime.contains("internal"));
@@ -324,6 +325,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @SuppressWarnings("removal")
     void init() {
         awtLock();
         try {
@@ -401,6 +403,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return awtAppClassName;
     }
 
+    @SuppressWarnings("removal")
     public XToolkit() {
         super();
         if (PerformanceLogger.loggingEnabled()) {
@@ -1089,6 +1092,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Returns the value of "sun.awt.disableGtkFileDialogs" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static synchronized boolean getSunAwtDisableGtkFileDialogs() {
         if (sunAwtDisableGtkFileDialogs == null) {
             sunAwtDisableGtkFileDialogs = AccessController.doPrivileged(
@@ -1233,6 +1237,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public  Clipboard getSystemClipboard() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
@@ -1247,6 +1252,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemSelection() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
@@ -2113,6 +2119,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void setBackingStoreType() {
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.awt.backingStore"));
 
@@ -2538,6 +2545,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Returns the value of "sun.awt.disablegrab" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static boolean getSunAwtDisableGrab() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.disablegrab"));
     }

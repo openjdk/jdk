@@ -3967,11 +3967,7 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      __ ldr(Rtemp, Address(Rklass, Klass::prototype_header_offset()));
-    } else {
-      __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
-    }
+    __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
     // mark
     __ str(Rtemp, Address(Robj, oopDesc::mark_offset_in_bytes()));
 

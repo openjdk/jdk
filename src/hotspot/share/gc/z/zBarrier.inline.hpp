@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZBARRIER_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIER_INLINE_HPP
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.hpp"
+
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
 #include "oops/oop.hpp"
@@ -286,11 +287,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop(oop o) {
   return weak_load_barrier_on_weak_oop_field_preloaded((oop*)NULL, o);
 }
 
-inline oop ZBarrier::weak_load_barrier_on_weak_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_weak_oop_field_preloaded(p, o);
-}
-
 inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
@@ -303,11 +299,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop*
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop(oop o) {
   return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)NULL, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_phantom_oop_field_preloaded(p, o);
 }
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {

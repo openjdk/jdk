@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -43,6 +42,7 @@ import org.xml.sax.ext.DeclHandler;
  * it is not a public API.
  *
  * @xsl.usage internal
+ * @LastModified: May 2021
  */
 public interface SerializationHandler
     extends
@@ -148,8 +148,8 @@ public interface SerializationHandler
 
     /**
      * Specify if the output will be treated as a standalone  property
-     * @param isStandalone true if the http://www.oracle.com/xml/is-standalone is set to yes
-     * @see OutputPropertiesFactory ORACLE_IS_STANDALONE
+     * @param b true if the property "jdk.xml.xsltcIsStandalone" is set to yes
+     * @see JdkConstants.SP_XSLTC_IS_Standalone
      */
     public void setIsStandalone(boolean b);
 

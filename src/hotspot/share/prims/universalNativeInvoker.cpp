@@ -59,7 +59,8 @@ static JNINativeMethod PI_methods[] = {
   {CC "generateAdapter", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PI_generateAdapter)}
 };
 
-JNI_LEAF(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+JNI_ENTRY(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+  ThreadToNativeFromVM ttnfv(thread);
   int status = env->RegisterNatives(PI_class, PI_methods, sizeof(PI_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.foreign.abi.programmable.ProgrammableInvoker natives");

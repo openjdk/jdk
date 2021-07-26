@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,11 +113,13 @@ public class TrayIcon {
      * Unlike the acc in Component, this field is made final
      * because TrayIcon is not serializable.
      */
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     /*
      * Returns the acc this tray icon was constructed with.
      */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException("TrayIcon is missing AccessControlContext");

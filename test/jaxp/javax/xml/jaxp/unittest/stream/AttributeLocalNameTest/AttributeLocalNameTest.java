@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.AttributeLocalNameTest.AttributeLocalNameTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.AttributeLocalNameTest.AttributeLocalNameTest
  * @run testng/othervm stream.AttributeLocalNameTest.AttributeLocalNameTest
  * @summary Test XMLStreamReader.getAttributeLocalName().
  */

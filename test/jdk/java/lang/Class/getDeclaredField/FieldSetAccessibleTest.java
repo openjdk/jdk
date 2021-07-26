@@ -65,7 +65,7 @@ import jdk.internal.module.Modules;
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
  * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest SECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM -Djava.security.manager=allow FieldSetAccessibleTest SECURE
  *
  * @author danielfuchs
  */

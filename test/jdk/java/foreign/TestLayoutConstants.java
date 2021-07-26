@@ -67,43 +67,43 @@ public class TestLayoutConstants {
         return new Object[][] {
                 //padding
                 { MemoryLayouts.PAD_32 },
-                { MemoryLayout.ofSequence(MemoryLayouts.PAD_32) },
-                { MemoryLayout.ofSequence(5, MemoryLayouts.PAD_32) },
-                { MemoryLayout.ofStruct(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
-                { MemoryLayout.ofUnion(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
+                { MemoryLayout.sequenceLayout(MemoryLayouts.PAD_32) },
+                { MemoryLayout.sequenceLayout(5, MemoryLayouts.PAD_32) },
+                { MemoryLayout.structLayout(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
+                { MemoryLayout.unionLayout(MemoryLayouts.PAD_32, MemoryLayouts.PAD_32) },
                 //values, big endian
                 { MemoryLayouts.BITS_32_BE },
-                { MemoryLayout.ofStruct(
+                { MemoryLayout.structLayout(
                         MemoryLayouts.BITS_32_BE,
                         MemoryLayouts.BITS_32_BE) },
-                { MemoryLayout.ofUnion(
+                { MemoryLayout.unionLayout(
                         MemoryLayouts.BITS_32_BE,
                         MemoryLayouts.BITS_32_BE) },
                 //values, little endian
                 { MemoryLayouts.BITS_32_LE },
-                { MemoryLayout.ofStruct(
+                { MemoryLayout.structLayout(
                         MemoryLayouts.BITS_32_LE,
                         MemoryLayouts.BITS_32_LE) },
-                { MemoryLayout.ofUnion(
+                { MemoryLayout.unionLayout(
                         MemoryLayouts.BITS_32_LE,
                         MemoryLayouts.BITS_32_LE) },
                 //deeply nested
-                { MemoryLayout.ofStruct(
+                { MemoryLayout.structLayout(
                         MemoryLayouts.PAD_16,
-                        MemoryLayout.ofStruct(
+                        MemoryLayout.structLayout(
                                 MemoryLayouts.PAD_8,
                                 MemoryLayouts.BITS_32_BE)) },
-                { MemoryLayout.ofUnion(
+                { MemoryLayout.unionLayout(
                         MemoryLayouts.PAD_16,
-                        MemoryLayout.ofStruct(
+                        MemoryLayout.structLayout(
                                 MemoryLayouts.PAD_8,
                                 MemoryLayouts.BITS_32_BE)) },
-                { MemoryLayout.ofSequence(
-                        MemoryLayout.ofStruct(
+                { MemoryLayout.sequenceLayout(
+                        MemoryLayout.structLayout(
                                 MemoryLayouts.PAD_8,
                                 MemoryLayouts.BITS_32_BE)) },
-                { MemoryLayout.ofSequence(5,
-                        MemoryLayout.ofStruct(
+                { MemoryLayout.sequenceLayout(5,
+                        MemoryLayout.structLayout(
                                 MemoryLayouts.PAD_8,
                                 MemoryLayouts.BITS_32_BE)) },
                 { MemoryLayouts.BITS_32_LE.withName("myInt") },

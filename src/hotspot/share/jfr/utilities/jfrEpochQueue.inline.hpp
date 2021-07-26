@@ -25,9 +25,10 @@
 #ifndef SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 #define SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 
+#include "jfr/utilities/jfrEpochQueue.hpp"
+
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "jfr/utilities/jfrEpochQueue.hpp"
 #include "runtime/thread.inline.hpp"
 
 template <template <typename> class ElementPolicy>
@@ -67,7 +68,7 @@ JfrEpochQueue<ElementPolicy>::storage_for_element(JfrEpochQueue<ElementPolicy>::
 template <template <typename> class ElementPolicy>
 void JfrEpochQueue<ElementPolicy>::enqueue(JfrEpochQueue<ElementPolicy>::TypePtr t) {
   assert(t != NULL, "invariant");
-  static size_t element_size = _policy.element_size(t);
+  size_t element_size = _policy.element_size(t);
   BufferPtr buffer = storage_for_element(t, element_size);
   assert(buffer != NULL, "invariant");
   _policy.store_element(t, buffer);

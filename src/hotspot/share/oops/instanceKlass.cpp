@@ -75,7 +75,6 @@
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -89,6 +88,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/pair.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -508,12 +508,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   assert(NULL == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
-
-  // Set biased locking bit for all instances of this class; it will be
-  // cleared if revocation occurs too often for this type
-  if (UseBiasedLocking && BiasedLocking::enabled()) {
-    set_prototype_header(markWord::biased_locking_prototype());
-  }
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
@@ -683,7 +677,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_annotations(NULL);
 
   if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(this);
+    SystemDictionaryShared::handle_class_unloading(this);
   }
 }
 
@@ -908,6 +902,9 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
     if (!is_linked()) {
       if (!is_rewritten()) {
+        if (is_shared()) {
+          assert(!verified_at_dump_time(), "must be");
+        }
         {
           bool verify_ok = verify_code(THREAD);
           if (!verify_ok) {
@@ -939,9 +936,11 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // initialize_vtable and initialize_itable need to be rerun
       // for a shared class if
       // 1) the class is loaded by custom class loader or
-      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints
+      // 2) the class is loaded by built-in class loader but failed to add archived loader constraints or
+      // 3) the class was not verified during dump time
       bool need_init_table = true;
-      if (is_shared() && SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
+      if (is_shared() && verified_at_dump_time() &&
+          SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
       if (need_init_table) {
@@ -1625,11 +1624,6 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
   }
 }
 
-
-static int compare_fields_by_offset(int* a, int* b) {
-  return a[0] - b[0];
-}
-
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   InstanceKlass* super = superklass();
   if (super != NULL) {
@@ -1637,30 +1631,49 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   }
   fieldDescriptor fd;
   int length = java_fields_count();
-  // In DebugInfo nonstatic fields are sorted by offset.
-  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1), mtClass);
-  int j = 0;
   for (int i = 0; i < length; i += 1) {
     fd.reinitialize(this, i);
     if (!fd.is_static()) {
-      fields_sorted[j + 0] = fd.offset();
-      fields_sorted[j + 1] = i;
-      j += 2;
-    }
-  }
-  if (j > 0) {
-    length = j;
-    // _sort_Fn is defined in growableArray.hpp.
-    qsort(fields_sorted, length/2, 2*sizeof(int), (_sort_Fn)compare_fields_by_offset);
-    for (int i = 0; i < length; i += 2) {
-      fd.reinitialize(this, fields_sorted[i + 1]);
-      assert(!fd.is_static() && fd.offset() == fields_sorted[i], "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
-  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
+// first in Pair is offset, second is index.
+static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
+  return a->first - b->first;
+}
+
+void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
+  InstanceKlass* super = superklass();
+  if (super != NULL) {
+    super->print_nonstatic_fields(cl);
+  }
+  ResourceMark rm;
+  fieldDescriptor fd;
+  // In DebugInfo nonstatic fields are sorted by offset.
+  GrowableArray<Pair<int,int> > fields_sorted;
+  int i = 0;
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (!fs.access_flags().is_static()) {
+      fd = fs.field_descriptor();
+      Pair<int,int> f(fs.offset(), fs.index());
+      fields_sorted.push(f);
+      i++;
+    }
+  }
+  if (i > 0) {
+    int length = i;
+    assert(length == fields_sorted.length(), "duh");
+    // _sort_Fn is defined in growableArray.hpp.
+    fields_sorted.sort(compare_fields_by_offset);
+    for (int i = 0; i < length; i++) {
+      fd.reinitialize(this, fields_sorted.at(i).second);
+      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      cl->do_field(&fd);
+    }
+  }
+}
 
 void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
   if (array_klasses() != NULL)
@@ -2402,9 +2415,10 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void InstanceKlass::remove_unshareable_info() {
 
-  if (has_old_class_version()) {
-    // Set the old class bit.
-    set_is_shared_old_klass();
+  if (is_linked()) {
+    assert(can_be_verified_at_dumptime(), "must be");
+    // Remember this so we can avoid walking the hierarchy at runtime.
+    set_verified_at_dump_time();
   }
 
   Klass::remove_unshareable_info();
@@ -2496,6 +2510,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");
+  assert(!shared_loading_failed(), "Must not try to load failed class again");
   set_package(loader_data, pkg_entry, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
@@ -2529,15 +2544,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
 
-  // Initialize current biased locking state.
-  if (UseBiasedLocking && BiasedLocking::enabled()) {
-    set_prototype_header(markWord::biased_locking_prototype());
-  }
-
   // Initialize @ValueBased class annotation
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
     set_is_value_based();
-    set_prototype_header(markWord::prototype());
   }
 }
 
@@ -2546,21 +2555,21 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // without changing the old verifier, the verification constraint cannot be
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
-bool InstanceKlass::has_old_class_version() const {
+bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
-    return true;
+    return false;
   }
-  if (java_super() != NULL && java_super()->has_old_class_version()) {
-    return true;
+  if (java_super() != NULL && !java_super()->can_be_verified_at_dumptime()) {
+    return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    if (interfaces->at(i)->has_old_class_version()) {
-      return true;
+    if (!interfaces->at(i)->can_be_verified_at_dumptime()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
 void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
@@ -2612,7 +2621,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
   ClassLoadingService::notify_class_unloaded(ik);
 
   if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_dumptime_info(ik);
+    SystemDictionaryShared::handle_class_unloading(ik);
   }
 
   if (log_is_enabled(Info, class, unload)) {
@@ -2851,9 +2860,9 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 }
 
-// Function set_classpath_index checks if the package of the InstanceKlass is in the
-// boot loader's package entry table.  If so, then it sets the classpath_index
-// in the package entry record.
+// Function set_classpath_index ensures that for a non-null _package_entry
+// of the InstanceKlass, the entry is in the boot loader's package entry table.
+// It then sets the classpath_index in the package entry record.
 //
 // The classpath_index field is used to find the entry on the boot loader class
 // path for packages with classes loaded by the boot loader from -Xbootclasspath/a
@@ -3306,8 +3315,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 // -----------------------------------------------------------------------------------------------------
 // Printing
 
-#ifndef PRODUCT
-
 #define BULLET  " - "
 
 static const char* state_names[] = {
@@ -3445,7 +3452,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
   FieldPrinter print_nonstatic_field(st);
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
-  ik->do_nonstatic_fields(&print_nonstatic_field);
+  ik->print_nonstatic_fields(&print_nonstatic_field);
 
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
@@ -3457,15 +3464,11 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#endif //PRODUCT
-
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   if (Verbose || WizardMode)  access_flags().print_on(st);
   name()->print_value_on(st);
 }
-
-#ifndef PRODUCT
 
 void FieldPrinter::do_field(fieldDescriptor* fd) {
   _st->print(BULLET);
@@ -3491,30 +3494,20 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
       st->print(BULLET"string: ");
       java_lang_String::print(obj, st);
       st->cr();
-      if (!WizardMode)  return;  // that is enough
     }
   }
 
   st->print_cr(BULLET"---- fields (total size %d words):", oop_size(obj));
   FieldPrinter print_field(st, obj);
-  do_nonstatic_fields(&print_field);
+  print_nonstatic_fields(&print_field);
 
   if (this == vmClasses::Class_klass()) {
     st->print(BULLET"signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
-    Klass* mirrored_klass = java_lang_Class::as_Klass(obj);
-    st->print(BULLET"fake entry for mirror: ");
-    Metadata::print_value_on_maybe_null(st, mirrored_klass);
-    st->cr();
-    Klass* array_klass = java_lang_Class::array_klass_acquire(obj);
-    st->print(BULLET"fake entry for array: ");
-    Metadata::print_value_on_maybe_null(st, array_klass);
-    st->cr();
-    st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
-    st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
     Klass* real_klass = java_lang_Class::as_Klass(obj);
     if (real_klass != NULL && real_klass->is_instance_klass()) {
+      st->print_cr(BULLET"---- static fields (%d words):", java_lang_Class::static_oop_field_count(obj));
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == vmClasses::MethodType_klass()) {
@@ -3523,6 +3516,8 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   }
 }
+
+#ifndef PRODUCT
 
 bool InstanceKlass::verify_itable_index(int i) {
   int method_count = klassItable::method_count_for_interface(this);
@@ -3627,7 +3622,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       Thread* current = Thread::current();
       Klass* caller = current->is_Java_thread() ?
-        current->as_Java_thread()->security_get_caller_class(1):
+        JavaThread::cast(current)->security_get_caller_class(1):
         NULL;
       // caller can be NULL, for example, during a JVMTI VM_Init hook
       if (caller != NULL) {

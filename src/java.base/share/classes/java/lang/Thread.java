@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ public class Thread implements Runnable {
     private ClassLoader contextClassLoader;
 
     /* The inherited AccessControlContext of this thread */
+    @SuppressWarnings("removal")
     private AccessControlContext inheritedAccessControlContext;
 
     /* For autonumbering anonymous threads. */
@@ -388,6 +389,7 @@ public class Thread implements Runnable {
      * @param inheritThreadLocals if {@code true}, inherit initial values for
      *            inheritable thread-locals from the constructing thread
      */
+    @SuppressWarnings("removal")
     private Thread(ThreadGroup g, Runnable target, String name,
                    long stackSize, AccessControlContext acc,
                    boolean inheritThreadLocals) {
@@ -496,7 +498,7 @@ public class Thread implements Runnable {
      * but thread-local variables are not inherited.
      * This is not a public constructor.
      */
-    Thread(Runnable target, AccessControlContext acc) {
+    Thread(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
         this(null, target, "Thread-" + nextThreadNum(), 0, acc, false);
     }
 
@@ -922,6 +924,7 @@ public class Thread implements Runnable {
      */
     @Deprecated(since="1.2")
     public final void stop() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             checkAccess();
@@ -1424,8 +1427,16 @@ public class Thread implements Runnable {
      * @throws  SecurityException  if the current thread is not allowed to
      *          access this thread.
      * @see        SecurityManager#checkAccess(Thread)
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public final void checkAccess() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkAccess(this);
@@ -1476,6 +1487,7 @@ public class Thread implements Runnable {
     public ClassLoader getContextClassLoader() {
         if (contextClassLoader == null)
             return null;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader.checkClassLoaderPermission(contextClassLoader,
@@ -1507,6 +1519,7 @@ public class Thread implements Runnable {
      * @since 1.2
      */
     public void setContextClassLoader(ClassLoader cl) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setContextClassLoader"));
@@ -1574,6 +1587,7 @@ public class Thread implements Runnable {
     public StackTraceElement[] getStackTrace() {
         if (this != Thread.currentThread()) {
             // check for getStackTrace permission
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkPermission(
@@ -1634,6 +1648,7 @@ public class Thread implements Runnable {
      */
     public static Map<Thread, StackTraceElement[]> getAllStackTraces() {
         // check for getStackTrace permission
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(
@@ -1696,6 +1711,7 @@ public class Thread implements Runnable {
      * subclass overrides any of the methods, false otherwise.
      */
     private static boolean auditSubclass(final Class<?> subcl) {
+        @SuppressWarnings("removal")
         Boolean result = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public Boolean run() {
@@ -1927,6 +1943,7 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public static void setDefaultUncaughtExceptionHandler(UncaughtExceptionHandler eh) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(

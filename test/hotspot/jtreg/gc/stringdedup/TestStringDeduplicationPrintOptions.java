@@ -27,17 +27,31 @@ package gc.stringdedup;
  * @test TestStringDeduplicationPrintOptions
  * @summary Test string deduplication print options
  * @bug 8029075
- * @requires vm.gc == "null" | vm.gc == "G1" | vm.gc == "Shenandoah"
+ * @requires vm.gc.G1
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions G1
+ */
+
+/*
+ * @test TestStringDeduplicationPrintOptions
+ * @summary Test string deduplication print options
+ * @bug 8029075
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Shenandoah
  */
 
 public class TestStringDeduplicationPrintOptions {
     public static void main(String[] args) throws Exception {
+        TestStringDeduplicationTools.selectGC(args);
         TestStringDeduplicationTools.testPrintOptions();
     }
 }

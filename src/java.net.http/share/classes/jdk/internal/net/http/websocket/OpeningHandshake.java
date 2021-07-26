@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,7 @@ public class OpeningHandshake {
         }
     }
 
+    @SuppressWarnings("removal")
     public CompletableFuture<Result> send() {
         PrivilegedAction<CompletableFuture<Result>> pa = () ->
                 client.sendAsync(this.request, BodyHandlers.ofString())
@@ -384,6 +385,7 @@ public class OpeningHandshake {
      * @throws SecurityException if the security manager denies access
      */
     static void checkPermissions(BuilderImpl b, Proxy proxy) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;

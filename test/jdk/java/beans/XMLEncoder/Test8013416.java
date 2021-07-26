@@ -25,6 +25,7 @@
  * @test
  * @bug 8013416
  * @summary Tests public synthetic methods
+ * @run main/othervm -Djava.security.manager=allow Test8013416
  * @author Sergey Malenkov
  */
 

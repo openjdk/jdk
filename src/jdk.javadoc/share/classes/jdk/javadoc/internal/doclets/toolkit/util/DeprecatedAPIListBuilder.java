@@ -40,15 +40,20 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  *  deletion without notice.</b>
  */
 public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
+
     private SortedSet<Element> forRemoval;
+    public final List<String> releases;
 
     /**
      * Constructor.
      *
      * @param configuration the current configuration of the doclet
+     * @param releases list of releases
      */
-    public DeprecatedAPIListBuilder(BaseConfiguration configuration) {
+    public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> releases) {
         super(configuration, configuration.utils::isDeprecated);
+        this.releases = releases;
+        buildSummaryAPIInfo();
     }
 
     public SortedSet<Element> getForRemoval() {
@@ -64,5 +69,4 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
             getForRemoval().add(e);
         }
     }
-
 }

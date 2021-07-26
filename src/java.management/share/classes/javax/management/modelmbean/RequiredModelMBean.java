@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ public class RequiredModelMBean
     private transient MBeanServer server = null;
 
     private static final JavaSecurityAccess javaSecurityAccess = SharedSecrets.getJavaSecurityAccess();
+    @SuppressWarnings("removal")
     final private AccessControlContext acc = AccessController.getContext();
 
     /*************************************/
@@ -969,6 +970,7 @@ public class RequiredModelMBean
 
             if (opClassName != null) {
                 try {
+                    @SuppressWarnings("removal")
                     AccessControlContext stack = AccessController.getContext();
                     final Object obj = targetObject;
                     final String className = opClassName;
@@ -1039,6 +1041,7 @@ public class RequiredModelMBean
         if (sig == null)
             argClasses = null;
         else {
+            @SuppressWarnings("removal")
             final AccessControlContext stack = AccessController.getContext();
             final ReflectionException[] caughtException = new ReflectionException[1];
             final ClassLoader targetClassLoader = targetClass.getClassLoader();
@@ -1126,6 +1129,7 @@ public class RequiredModelMBean
         if (opClassName == null)
             targetClass = rmmbClass;
         else {
+            @SuppressWarnings("removal")
             AccessControlContext stack = AccessController.getContext();
             final String className = opClassName;
             targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
@@ -1163,6 +1167,7 @@ public class RequiredModelMBean
             throws MBeanException, ReflectionException {
         try {
             final Throwable[] caughtException = new Throwable[1];
+            @SuppressWarnings("removal")
             AccessControlContext stack = AccessController.getContext();
             Object rslt = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Object>() {
 
@@ -1580,6 +1585,7 @@ public class RequiredModelMBean
                                 final Class<?> respClass = response.getClass();
                                 final Exception[] caughException = new Exception[1];
 
+                                @SuppressWarnings("removal")
                                 AccessControlContext stack = AccessController.getContext();
 
                                 Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
@@ -2666,6 +2672,7 @@ public class RequiredModelMBean
 
     private Class<?> loadClass(final String className)
         throws ClassNotFoundException {
+        @SuppressWarnings("removal")
         AccessControlContext stack = AccessController.getContext();
         final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
 

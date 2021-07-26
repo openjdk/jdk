@@ -25,12 +25,13 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
+#include "gc/g1/g1FullGCMarker.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
-#include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"

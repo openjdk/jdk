@@ -110,6 +110,7 @@ public final class KeychainStore extends KeyStoreSpi {
     }
 
     private static void permissionCheck() {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
 
         if (sec != null) {

@@ -32,14 +32,14 @@
  *
  * @modules jdk.incubator.foreign
  *
- * @run main/othervm -Dforeign.restricted=permit -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
  *
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -47,8 +47,12 @@ import java.lang.invoke.MethodType;
 import static jdk.incubator.foreign.CLinker.C_INT;
 
 public class TestLinkToNativeRBP {
+    static {
+        System.loadLibrary("LinkToNativeRBP");
+    }
+
     final static CLinker abi = CLinker.getInstance();
-    static final LibraryLookup lookup = LibraryLookup.ofLibrary("LinkToNativeRBP");
+    static final SymbolLookup lookup = SymbolLookup.loaderLookup();
     final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
             MethodType.methodType(int.class),
             FunctionDescriptor.of(C_INT));

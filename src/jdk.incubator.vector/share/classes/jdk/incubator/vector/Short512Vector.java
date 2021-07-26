@@ -330,15 +330,9 @@ final class Short512Vector extends ShortVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        short[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Short512Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -638,18 +632,10 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new Byte512Vector.Byte512Mask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new Short512Vector.Short512Mask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new Int512Vector.Int512Mask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new Long512Vector.Long512Mask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new Float512Vector.Float512Mask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new Double512Vector.Double512Mask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -668,6 +654,14 @@ final class Short512Vector extends ShortVector {
                     Short512Mask::defaultMaskCast);
             }
             return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public Short512Mask eq(VectorMask<Short> mask) {
+            Objects.requireNonNull(mask);
+            Short512Mask m = (Short512Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -812,24 +806,7 @@ final class Short512Vector extends ShortVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte512Vector.Byte512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short512Vector.Short512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int512Vector.Int512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long512Vector.Long512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float512Vector.Float512Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double512Vector.Double512Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -857,6 +834,14 @@ final class Short512Vector extends ShortVector {
     ShortVector fromArray0(short[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    ShortVector fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+
 
     @ForceInline
     @Override

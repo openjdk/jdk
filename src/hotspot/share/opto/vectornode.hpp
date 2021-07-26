@@ -800,6 +800,8 @@ class StoreVectorNode : public StoreNode {
                                                      idx == MemNode::ValueIn + 1; }
 };
 
+//------------------------------StoreVectorMaskedNode--------------------------------
+// Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
@@ -818,6 +820,8 @@ class StoreVectorMaskedNode : public StoreVectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+//------------------------------LoadVectorMaskedNode--------------------------------
+// Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
@@ -836,28 +840,43 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+
+//------------------------------VectorCmpMaskedNode--------------------------------
+// Vector Comparison under the influence of a predicate register(mask).
+class VectorCmpMaskedNode : public TypeNode {
+  public:
+   VectorCmpMaskedNode(Node* src1, Node* src2, Node* mask, const Type* ty): TypeNode(ty, 4)  {
+     init_req(1, src1);
+     init_req(2, src2);
+     init_req(3, mask);
+   }
+
+  virtual int Opcode() const;
+};
+
+
 class VectorMaskGenNode : public TypeNode {
  public:
-  VectorMaskGenNode(Node* length, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
+  VectorMaskGenNode(Node* length, const Type* ty, BasicType ety): TypeNode(ty, 2), _elemType(ety) {
     init_req(1, length);
   }
 
   virtual int Opcode() const;
-  const Type* get_elem_type()  { return _elemType;}
+  BasicType get_elem_type()  { return _elemType;}
   virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
   virtual uint  ideal_reg() const {
     return Op_RegVectMask;
   }
 
   private:
-   const Type* _elemType;
+   BasicType _elemType;
 };
 
 class VectorMaskOpNode : public TypeNode {
  public:
   VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
     TypeNode(ty, 2), _mopc(mopc) {
-    assert(mask->Opcode() == Op_VectorStoreMask, "");
+    assert(mask->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
 

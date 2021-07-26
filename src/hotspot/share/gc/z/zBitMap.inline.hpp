@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZBITMAP_INLINE_HPP
 
 #include "gc/z/zBitMap.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"

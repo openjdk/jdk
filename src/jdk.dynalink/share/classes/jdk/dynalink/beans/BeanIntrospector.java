@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ class BeanIntrospector extends FacetIntrospector {
         if (clazz.isRecord()) {
             try {
                 // Need to use doPrivileged as getRecordComponents is rather strict.
+                @SuppressWarnings("removal")
                 final RecordComponent[] rcs = AccessController.doPrivileged(
                     (PrivilegedAction<RecordComponent[]>) clazz::getRecordComponents);
                 return Arrays.stream(rcs)

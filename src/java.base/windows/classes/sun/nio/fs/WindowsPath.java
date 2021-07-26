@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -880,6 +880,7 @@ class WindowsPath implements Path {
     }
 
     void checkRead() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(getPathForPermissionCheck());
@@ -887,6 +888,7 @@ class WindowsPath implements Path {
     }
 
     void checkWrite() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkWrite(getPathForPermissionCheck());
@@ -894,6 +896,7 @@ class WindowsPath implements Path {
     }
 
     void checkDelete() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkDelete(getPathForPermissionCheck());
@@ -911,6 +914,7 @@ class WindowsPath implements Path {
             return this;
 
         // permission check as per spec
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");
@@ -945,6 +949,7 @@ class WindowsPath implements Path {
         // copy of the modifiers and check for the Windows specific FILE_TREE
         // modifier. When the modifier is present then check that permission
         // has been granted recursively.
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             boolean watchSubtree = false;

@@ -85,6 +85,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
+    private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
+            PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
+
     private static class CertPathHolder {
         static final DisabledAlgorithmConstraints CONSTRAINTS =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS);
@@ -95,7 +98,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
-    private final List<String> disabledAlgorithms;
+    private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
@@ -130,21 +133,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        int ecindex = -1, i = 0;
         for (String s : disabledAlgorithms) {
-            if (s.regionMatches(true, 0,"include ", 0, 8)) {
-                if (s.regionMatches(true, 8, PROPERTY_DISABLED_EC_CURVES, 0,
-                        PROPERTY_DISABLED_EC_CURVES.length())) {
-                    ecindex = i;
-                    break;
-                }
+            Matcher matcher = INCLUDE_PATTERN.matcher(s);
+            if (matcher.matches()) {
+                disabledAlgorithms.remove(matcher.group());
+                disabledAlgorithms.addAll(
+                        getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
+                break;
             }
-            i++;
-        }
-        if (ecindex > -1) {
-            disabledAlgorithms.remove(ecindex);
-            disabledAlgorithms.addAll(ecindex,
-                    getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
         }
         algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
@@ -332,8 +328,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(String propertyName, List<String> constraintArray) {
-            for (String constraintEntry : constraintArray) {
+        public Constraints(String propertyName, Set<String> constraintSet) {
+            for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
                 }

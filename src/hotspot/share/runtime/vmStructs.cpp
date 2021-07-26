@@ -51,6 +51,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
@@ -165,11 +166,6 @@
   #define JVMTI_STRUCTS(static_field)
 #endif // INCLUDE_JVMTI
 
-typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
-typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
-typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
-typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
-
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
 //
@@ -265,7 +261,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
-  nonstatic_field(Klass,                       _prototype_header,                             markWord)                              \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
@@ -408,7 +403,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_refill_waste,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
@@ -470,34 +465,12 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(Symbol,                      _vm_symbols[0],                                Symbol*)                               \
                                                                                                                                      \
   /*******************/                                                                                                              \
-  /* HashtableBucket */                                                                                                              \
-  /*******************/                                                                                                              \
-                                                                                                                                     \
-  nonstatic_field(HashtableBucket<mtInternal>, _entry,                                        BasicHashtableEntry<mtInternal>*)      \
-                                                                                                                                     \
-  /******************/                                                                                                               \
-  /* HashtableEntry */                                                                                                               \
-  /******************/                                                                                                               \
-                                                                                                                                     \
-  nonstatic_field(BasicHashtableEntry<mtInternal>, _next,                                     BasicHashtableEntry<mtInternal>*)      \
-  nonstatic_field(BasicHashtableEntry<mtInternal>, _hash,                                     unsigned int)                          \
-  nonstatic_field(IntptrHashtableEntry,            _literal,                                  intptr_t)                              \
-                                                                                                                                     \
-  /*************/                                                                                                                    \
-  /* Hashtable */                                                                                                                    \
-  /*************/                                                                                                                    \
-                                                                                                                                     \
-  nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
-  nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-                                                                                                                                     \
-  /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \
   /*******************/                                                                                                              \
   nonstatic_field(ClassLoaderData,             _class_loader,                                 OopHandle)                             \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
-  volatile_nonstatic_field(ClassLoaderData,    _dictionary,                                   Dictionary*)                           \
                                                                                                                                      \
   static_ptr_volatile_field(ClassLoaderDataGraph, _head,                                      ClassLoaderData*)                      \
                                                                                                                                      \
@@ -739,9 +712,9 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
-  nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
-  nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
   nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
@@ -880,8 +853,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
-  nonstatic_field(ObjectMonitor,               _contentions,                                  jint)                                  \
-  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
+  nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
+  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
@@ -1309,14 +1282,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(BasicHashtable<mtInternal>)                       \
-    declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
-  declare_toplevel_type(BasicHashtable<mtSymbol>)                         \
-    declare_type(Dictionary, KlassHashtable)                              \
-  declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
-  declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
-    declare_type(DictionaryEntry, KlassHashtableEntry)                    \
-  declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
@@ -1336,6 +1301,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
       declare_type(NonJavaThread, Thread)                                 \
         declare_type(NamedThread, NonJavaThread)                          \
         declare_type(WatcherThread, NonJavaThread)                        \
+        declare_type(AsyncLogWriter, NonJavaThread)                       \
       declare_type(JavaThread, Thread)                                    \
         declare_type(JvmtiAgentThread, JavaThread)                        \
         declare_type(MonitorDeflationThread, JavaThread)                  \
@@ -1525,6 +1491,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
   declare_c2_type(CallNativeNode, CallNode)                               \
   declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
+  declare_c2_type(CallLeafVectorNode, CallLeafNode)                       \
   declare_c2_type(AllocateNode, CallNode)                                 \
   declare_c2_type(AllocateArrayNode, AllocateNode)                        \
   declare_c2_type(LockNode, AbstractLockNode)                             \
@@ -2399,6 +2366,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
+  declare_constant(Deoptimization::Reason_receiver_constraint)            \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
@@ -2626,33 +2594,24 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                           \
   declare_constant(markWord::age_bits)                                    \
   declare_constant(markWord::lock_bits)                                   \
-  declare_constant(markWord::biased_lock_bits)                            \
   declare_constant(markWord::max_hash_bits)                               \
   declare_constant(markWord::hash_bits)                                   \
                                                                           \
   declare_constant(markWord::lock_shift)                                  \
-  declare_constant(markWord::biased_lock_shift)                           \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \
-  declare_constant(markWord::biased_lock_mask)                            \
-  declare_constant(markWord::biased_lock_mask_in_place)                   \
-  declare_constant(markWord::biased_lock_bit_in_place)                    \
   declare_constant(markWord::age_mask)                                    \
   declare_constant(markWord::age_mask_in_place)                           \
-  declare_constant(markWord::epoch_mask)                                  \
-  declare_constant(markWord::epoch_mask_in_place)                         \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
-  declare_constant(markWord::biased_lock_alignment)                       \
                                                                           \
   declare_constant(markWord::locked_value)                                \
   declare_constant(markWord::unlocked_value)                              \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
-  declare_constant(markWord::biased_lock_pattern)                         \
                                                                           \
   declare_constant(markWord::no_hash)                                     \
   declare_constant(markWord::no_hash_in_place)                            \

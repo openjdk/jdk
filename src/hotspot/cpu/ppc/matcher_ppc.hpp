@@ -138,6 +138,11 @@
     return false;
   }
 
+  // Does the CPU supports vector unsigned comparison instructions?
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return false;
+  }
+
   // Some microarchitectures have mask registers used on vectors
   static constexpr bool has_predicated_vectors(void) {
     return false;

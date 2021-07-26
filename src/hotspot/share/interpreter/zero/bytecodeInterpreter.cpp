@@ -576,11 +576,8 @@ void BytecodeInterpreter::run(interpreterState istate) {
         }
 
         // The initial monitor is ours for the taking.
-        // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-
-        assert(!UseBiasedLocking, "Not implemented");
 
         // Traditional lightweight locking.
         markWord displaced = rcvr->mark().set_unlocked();
@@ -675,8 +672,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-
-      assert(!UseBiasedLocking, "Not implemented");
 
       // traditional lightweight locking
       markWord displaced = lockee->mark().set_unlocked();
@@ -1519,8 +1514,6 @@ run:
         if (entry != NULL) {
           entry->set_obj(lockee);
 
-          assert(!UseBiasedLocking, "Not implemented");
-
           // traditional lightweight locking
           markWord displaced = lockee->mark().set_unlocked();
           entry->lock()->set_displaced_header(displaced);
@@ -1552,8 +1545,6 @@ run:
             BasicLock* lock = most_recent->lock();
             markWord header = lock->displaced_header();
             most_recent->set_obj(NULL);
-
-            assert(!UseBiasedLocking, "Not implemented");
 
             // If it isn't recursive we either must swap old header or call the runtime
             bool call_vm = UseHeavyMonitors;
@@ -1877,7 +1868,6 @@ run:
               oop obj = cast_to_oop(result);
 
               // Initialize header
-              assert(!UseBiasedLocking, "Not implemented");
               obj->set_mark(markWord::prototype());
               obj->set_klass_gap(0);
               obj->set_klass(ik);
@@ -2683,8 +2673,6 @@ run:
           markWord header = lock->displaced_header();
           end->set_obj(NULL);
 
-          assert(!UseBiasedLocking, "Not implemented");
-
           // If it isn't recursive we either must swap old header or call the runtime
           if (header.to_pointer() != NULL) {
             markWord old_header = markWord::encode(lock);
@@ -2750,8 +2738,6 @@ run:
             BasicLock* lock = base->lock();
             markWord header = lock->displaced_header();
             base->set_obj(NULL);
-
-            assert(!UseBiasedLocking, "Not implemented");
 
             // If it isn't recursive we either must swap old header or call the runtime
             if (header.to_pointer() != NULL) {

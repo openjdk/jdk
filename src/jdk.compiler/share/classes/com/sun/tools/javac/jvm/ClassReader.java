@@ -568,7 +568,7 @@ public class ClassReader {
                         public Type getEnclosingType() {
                             if (!completed) {
                                 completed = true;
-                                tsym.complete();
+                                tsym.apiComplete();
                                 Type enclosingType = tsym.type.getEnclosingType();
                                 if (enclosingType != Type.noType) {
                                     List<Type> typeArgs =
@@ -1446,6 +1446,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.previewFeatureInternalType.tsym.flatName()) {
                 sym.flags_field |= PREVIEW_API;
                 setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
+            } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
+                Assert.check(sym.kind == TYP);
+                sym.flags_field |= VALUE_BASED;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1457,6 +1460,8 @@ public class ClassReader {
                 }  else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
                     sym.flags_field |= PREVIEW_API;
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
+                }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
+                    sym.flags_field |= VALUE_BASED;
                 }
                 proxies.append(proxy);
             }
@@ -2547,8 +2552,21 @@ public class ClassReader {
         for (int i = 0; i < fieldCount; i++) enterMember(c, readField());
         Assert.check(methodCount == nextChar());
         for (int i = 0; i < methodCount; i++) enterMember(c, readMethod());
-
+        if (c.isRecord()) {
+            for (RecordComponent rc: c.getRecordComponents()) {
+                rc.accessor = lookupMethod(c, rc.name, List.nil());
+            }
+        }
         typevars = typevars.leave();
+    }
+
+    private MethodSymbol lookupMethod(TypeSymbol tsym, Name name, List<Type> argtypes) {
+        for (Symbol s : tsym.members().getSymbolsByName(name, s -> s.kind == MTH)) {
+            if (types.isSameTypes(s.type.getParameterTypes(), argtypes)) {
+                return (MethodSymbol) s;
+            }
+        }
+        return null;
     }
 
     /** Read inner class info. For each inner/outer pair allocate a

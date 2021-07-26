@@ -26,6 +26,7 @@
 #define SHARE_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP
 
 #include "interpreter/zero/bytecodeInterpreter.hpp"
+
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 

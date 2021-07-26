@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,19 +190,18 @@ public class JarFile extends ZipFile {
         String enableMultiRelease = GetPropertyAction
                 .privilegedGetProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
-            case "true":
-            default:
-                MULTI_RELEASE_ENABLED = true;
-                MULTI_RELEASE_FORCED = false;
-                break;
-            case "false":
+            case "false" -> {
                 MULTI_RELEASE_ENABLED = false;
                 MULTI_RELEASE_FORCED = false;
-                break;
-            case "force":
+            }
+            case "force" -> {
                 MULTI_RELEASE_ENABLED = true;
                 MULTI_RELEASE_FORCED = true;
-                break;
+            }
+            default -> {
+                MULTI_RELEASE_ENABLED = true;
+                MULTI_RELEASE_FORCED = false;
+            }
         }
     }
 
@@ -420,7 +419,13 @@ public class JarFile extends ZipFile {
                 if (verify) {
                     byte[] b = getBytes(manEntry);
                     if (!jvInitialized) {
-                        jv = new JarVerifier(b);
+                        if (JUZFA.getManifestNum(this) == 1) {
+                            jv = new JarVerifier(manEntry.getName(), b);
+                        } else {
+                            if (JarVerifier.debug != null) {
+                                JarVerifier.debug.println("Multiple MANIFEST.MF found. Treat JAR file as unsigned");
+                            }
+                        }
                     }
                     man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
@@ -746,7 +751,7 @@ public class JarFile extends ZipFile {
                     mev = new ManifestEntryVerifier
                         (getManifestFromReference());
                 }
-                if (name.equals(MANIFEST_NAME)) {
+                if (name.equalsIgnoreCase(MANIFEST_NAME)) {
                     b = jv.manifestRawBytes;
                 } else {
                     b = getBytes(e);
