@@ -350,6 +350,8 @@ public:
     return T_INT;
   }
 
+  Node* is_canonical_loop_entry();
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -930,8 +932,6 @@ private:
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
-
-  static bool is_canonical_loop_entry(CountedLoopNode* cl);
 
   bool has_node( Node* n ) const {
     guarantee(n != NULL, "No Node.");

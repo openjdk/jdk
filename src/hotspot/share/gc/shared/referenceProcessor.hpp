@@ -160,26 +160,26 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcPhase2Task;
-  friend class RefProcPhase3Task;
-  friend class RefProcPhase4Task;
+  friend class RefProcSoftWeakFinalPhaseTask;
+  friend class RefProcKeepAliveFinalPhaseTask;
+  friend class RefProcPhantomPhaseTask;
 public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
   enum RefProcSubPhases {
-    SoftRefSubPhase2,
-    WeakRefSubPhase2,
-    FinalRefSubPhase2,
-    FinalRefSubPhase3,
-    PhantomRefSubPhase4,
+    ProcessSoftRefSubPhase,
+    ProcessWeakRefSubPhase,
+    ProcessFinalRefSubPhase,
+    KeepAliveFinalRefsSubPhase,
+    ProcessPhantomRefsSubPhase,
     RefSubPhaseMax
   };
 
   // Main phases of reference processing.
   enum RefProcPhases {
-    RefPhase2,
-    RefPhase3,
-    RefPhase4,
+    SoftWeakFinalRefsPhase,
+    KeepAliveFinalRefsPhase,
+    PhantomRefsPhase,
     RefPhaseMax
   };
 
@@ -234,16 +234,16 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Phase 2: Drop Soft/Weak/Final references with a NULL or live referent, and clear
+  // Drop Soft/Weak/Final references with a NULL or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                     ReferenceProcessorPhaseTimes& phase_times);
 
-  // Phase 3: Keep alive followers of Final references, and enqueue.
+  // Keep alive followers of Final references, and enqueue.
   void process_final_keep_alive(RefProcProxyTask& proxy_task,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
-  // Phase 4: Drop and keep alive live Phantom references, or clear and enqueue if dead.
+  // Drop and keep alive live Phantom references, or clear and enqueue if dead.
   void process_phantom_refs(RefProcProxyTask& proxy_task,
                             ReferenceProcessorPhaseTimes& phase_times);
 
