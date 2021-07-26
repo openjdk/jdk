@@ -1171,10 +1171,10 @@ void GenerateOopMap::interp_bb(BasicBlock *bb) {
 }
 
 void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
-  // Check exception edge even if bytecode can not trap since some
-  // bytecodes in try-block will never throw an exception, thus handler
-  // basic blocks becomes unreachable. For such cases, these unreachable
-  // basic block confuse later OopMap generation.
+  // Check exception edge even if bytecode can not trap since some bytecodes
+  // in try-block will never throw an exception, thus exception handler basic
+  // blocks becomes unreachable. For such cases, these unreachable basic blocks
+  // confuse later OopMap generation.
 
   switch (itr->code()) {
     case Bytecodes::_aload_0:
