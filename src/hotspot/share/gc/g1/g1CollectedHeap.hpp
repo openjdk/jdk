@@ -249,7 +249,7 @@ private:
   bool _expand_heap_after_alloc_failure;
 
   // Helper for monitoring and management support.
-  G1MonitoringSupport* _g1mm;
+  G1MonitoringSupport* _monitoring_support;
 
   SlidingForwarding* _forwarding;
 
@@ -409,9 +409,6 @@ private:
   STWGCTimer* _gc_timer_stw;
 
   G1NewTracer* _gc_tracer_stw;
-
-  void gc_tracer_report_gc_start();
-  void gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark, G1EvacuationInfo& evacuation_info);
 
   // The current policy object for the collector.
   G1Policy* _policy;
@@ -587,9 +584,9 @@ public:
     return _verifier;
   }
 
-  G1MonitoringSupport* g1mm() {
-    assert(_g1mm != NULL, "should have been initialized");
-    return _g1mm;
+  G1MonitoringSupport* monitoring_support() {
+    assert(_monitoring_support != nullptr, "should have been initialized");
+    return _monitoring_support;
   }
 
   void resize_heap_if_necessary();
@@ -811,8 +808,6 @@ private:
 
   void set_young_collection_default_active_worker_threads();
 
-  bool determine_start_concurrent_mark_gc();
-
   void prepare_tlabs_for_mutator();
 
   void retire_tlabs();
@@ -1013,6 +1008,9 @@ public:
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize();
+
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
 
   virtual void stop();
   virtual void safepoint_synchronize_begin();

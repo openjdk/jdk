@@ -1930,6 +1930,15 @@ void JavaThread::deoptimize_marked_methods() {
   }
 }
 
+#ifdef ASSERT
+void JavaThread::verify_frame_info() {
+  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
+         (has_last_Java_frame() && java_call_counter() > 0),
+         "unexpected frame info: has_last_frame=%s, java_call_counter=%d",
+         has_last_Java_frame() ? "true" : "false", java_call_counter());
+}
+#endif
+
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
@@ -1937,8 +1946,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
+  DEBUG_ONLY(verify_frame_info();)
 
   if (has_last_Java_frame()) {
     // Traverse the monitor chunks
@@ -1986,18 +1994,12 @@ void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
 #ifdef ASSERT
 void JavaThread::verify_states_for_handshake() {
   // This checks that the thread has a correct frame state during a handshake.
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0),
-         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
-         has_last_Java_frame(), java_call_counter());
+  verify_frame_info();
 }
 #endif
 
 void JavaThread::nmethods_do(CodeBlobClosure* cf) {
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0),
-         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
-         has_last_Java_frame(), java_call_counter());
+  DEBUG_ONLY(verify_frame_info();)
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack

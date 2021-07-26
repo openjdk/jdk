@@ -362,7 +362,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
 }

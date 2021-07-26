@@ -1001,7 +1001,7 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
           } else {
             // Has no upper bound
             Instruction *instr = ai->length();
-            if (instr != NULL) instr = ai->array();
+            if (instr == NULL) instr = ai->array();
             update_bound(pushed, ai->index(), Instruction::lss, instr, 0);
           }
         }
