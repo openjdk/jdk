@@ -36,12 +36,16 @@ import jdk.test.lib.process.*;
 
 public class TestAbortOnVMOperationTimeout {
 
+    // A static array is unlikely to be optimised away by the JIT.
+    static Object[] arr = new Object[10_000_000];
+
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            Object[] arr = new Object[10_000_000];
             for (int i = 0; i < arr.length; i++) {
                arr[i] = new Object();
             }
+            // Try to force at least one full GC cycle.
+            System.gc();
             return;
         }
 
