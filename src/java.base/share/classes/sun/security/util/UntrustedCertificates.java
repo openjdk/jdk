@@ -79,8 +79,9 @@ public final class UntrustedCertificates {
         if (algorithm == null) {
             return false;
         }
+        // if fingerprint cannot be calculated, also treat it as untrusted
         String key = X509CertImpl.getFingerprint(algorithm, cert, debug);
-        return (key == null ? false : props.containsKey(key));
+        return (key == null || props.containsKey(key));
     }
 
     private UntrustedCertificates() {}

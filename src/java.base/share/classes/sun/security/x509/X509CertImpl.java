@@ -1919,22 +1919,20 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     private String getFingerprint(String algorithm, Debug debug) {
         return fingerprints.computeIfAbsent(algorithm,
-            x -> getFingerprintInternal(x, debug));
+            x -> {
+                try {
+                    return getFingerprintInternal(x, getEncodedInternal(), debug);
+                } catch (CertificateEncodingException e) {
+                    if (debug != null) {
+                        debug.println("Cannot encode certificate: " + e);
+                    }
+                    return null;
+                }
+            });
     }
 
-    private String getFingerprintInternal(String algorithm, Debug debug) {
-        try {
-            return getFingerprint(algorithm, getEncodedInternal(), debug);
-        } catch (CertificateEncodingException e) {
-            if (debug != null) {
-                debug.println("Cannot encode certificate: " + e);
-            }
-            return null;
-        }
-    }
-
-    private static String getFingerprint(String algorithm, byte[] encodedCert,
-            Debug debug) {
+    private static String getFingerprintInternal(String algorithm,
+            byte[] encodedCert, Debug debug) {
         try {
             MessageDigest md = MessageDigest.getInstance(algorithm);
             byte[] digest = md.digest(encodedCert);
@@ -1963,7 +1961,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return ((X509CertImpl)cert).getFingerprint(algorithm, debug);
         } else {
             try {
-                return getFingerprint(algorithm, cert.getEncoded(), debug);
+                return getFingerprintInternal(algorithm, cert.getEncoded(), debug);
             } catch (CertificateEncodingException e) {
                 if (debug != null) {
                     debug.println("Cannot encode certificate: " + e);

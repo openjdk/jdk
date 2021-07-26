@@ -158,7 +158,11 @@ final class SymantecTLSPolicy {
                               throws ValidatorException {
         X509Certificate anchor = chain[chain.length-1];
         String fp = fingerprint(anchor);
-        if (fp != null && FINGERPRINTS.contains(fp)) {
+        if (fp == null) {
+            throw new ValidatorException("Cannot generate fingerprint for "
+                + "trust anchor of TLS server certificate");
+        }
+        if (FINGERPRINTS.contains(fp)) {
             Date notBefore = chain[0].getNotBefore();
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);
@@ -166,13 +170,15 @@ final class SymantecTLSPolicy {
             if (chain.length > 2) {
                 X509Certificate subCA = chain[chain.length-2];
                 fp = fingerprint(subCA);
-                if (fp != null) {
-                    LocalDate distrustDate = EXEMPT_SUBCAS.get(fp);
-                    if (distrustDate != null) {
-                        // reject if certificate is issued after specified date
-                        checkNotBefore(ldNotBefore, distrustDate, anchor);
-                        return; // success
-                    }
+                if (fp == null) {
+                    throw new ValidatorException("Cannot generate fingerprint "
+                        + "for intermediate CA of TLS server certificate");
+                }
+                LocalDate distrustDate = EXEMPT_SUBCAS.get(fp);
+                if (distrustDate != null) {
+                    // reject if certificate is issued after specified date
+                    checkNotBefore(ldNotBefore, distrustDate, anchor);
+                    return; // success
                 }
             }
             // reject if certificate is issued after April 16, 2019

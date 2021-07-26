@@ -72,10 +72,12 @@ public class AnchorCertificates {
                                         .getCertificate(alias);
                                 String fp =
                                     X509CertImpl.getFingerprint(HASH, cert, debug);
+                                // only add trust anchor if fingerprint can
+                                // be calculated
                                 if (fp != null) {
                                     certs.add(fp);
+                                    certIssuers.add(cert.getSubjectX500Principal());
                                 }
-                                certIssuers.add(cert.getSubjectX500Principal());
                             }
                         }
                     }
