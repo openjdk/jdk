@@ -830,12 +830,14 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           if (existing_phi == NULL) {
             return false; // BAILOUT in caller
           }
-          // Invalidate the phi function here. This case is very rare except for
-          // JVMTI capability "can_access_local_variables".
-          // In really rare cases we will bail out in LIRGenerator::move_to_phi.
-          existing_phi->make_illegal();
-          existing_state->invalidate_local(index);
-          TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
+          if (new_value != NULL) {
+            // Invalidate the phi function here. This case is very rare except for
+            // JVMTI capability "can_access_local_variables".
+            // In really rare cases we will bail out in LIRGenerator::move_to_phi.
+            existing_phi->make_illegal();
+            existing_state->invalidate_local(index);
+            TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
+          }
         }
       }
 

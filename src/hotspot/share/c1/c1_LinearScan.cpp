@@ -832,6 +832,18 @@ void LinearScan::compute_global_live_sets() {
   if (!ir()->start()->live_in().is_same(live_in_args)) {
 #ifdef ASSERT
     tty->print_cr("Error: live_in set of first block must be empty (when this fails, virtual registers are used before they are defined)");
+    for (int i = num_blocks - 1; i >= 0; i--) {
+      BlockBegin* block = block_at(i);
+      tty->print_cr("Block %d", block->block_id());
+      tty->print_cr("live_in:");
+      print_bitmap(block->live_in());
+      tty->print_cr("live_out:");
+      print_bitmap(block->live_out());
+      tty->print_cr("live_gen:");
+      print_bitmap(block->live_gen());
+      tty->print_cr("live_kill:");
+      print_bitmap(block->live_kill());
+    }
     tty->print_cr("affected registers:");
     print_bitmap(ir()->start()->live_in());
 
