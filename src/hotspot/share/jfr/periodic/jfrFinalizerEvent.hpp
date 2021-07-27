@@ -27,8 +27,11 @@
 
 #include "memory/allocation.hpp"
 
+class InstanceKlass;
+
 class JfrFinalizerEvent : AllStatic {
  public:
+  static void send_unload_event(const InstanceKlass* ik);
   static void generate_events();
 };
 

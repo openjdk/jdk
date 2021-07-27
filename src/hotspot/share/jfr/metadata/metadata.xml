@@ -1083,6 +1083,7 @@
 
   <Event name="Finalizer" category="Java Application" label="Finalizer" thread="false" startTime="false" period="endChunk">
     <Field type="Class" name="overridingClass" label="Class Overriding Finalize" />
+    <Field type="Symbol" name="codeSource" label="Code Source" description="The URL from where the class was loaded" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

@@ -39,6 +39,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
+ * @build jdk.test.lib.jfr.TestClassLoader
  * @run main/othervm -Xlog:class+unload -Xlog:gc -Xmx16m jdk.jfr.event.runtime.TestFinalizerEvent
  */
 
@@ -89,10 +90,12 @@ public final class TestFinalizerEvent {
           RecordedClass overridingClass = event.getValue("overridingClass");
           switch (overridingClass.getName()) {
               case TEST_CLASS_NAME: {
+                  Asserts.assertTrue(event.getString("codeSource").startsWith("file://"));
                   foundTestClassName = true;
                   break;
               }
               case TEST_CLASS_UNLOAD_NAME: {
+                  Asserts.assertTrue(event.getString("codeSource").startsWith("file://"));
                   foundTestClassUnloadName = true;
                   break;
               }
