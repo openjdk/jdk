@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8011675
+ * @bug 8270925
  * @library / /test/lib
  * @summary testing of ciReplay with inlining
  * @requires vm.flightRecorder != true & vm.compMode != "Xint" & vm.debug == true & vm.compiler2.enabled
