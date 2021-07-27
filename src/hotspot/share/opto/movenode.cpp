@@ -155,6 +155,9 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(Condition)) == Type::TOP) {
     return Type::TOP;
   }
+  if (phase->type(in(IfTrue)) == Type::TOP || phase->type(in(IfFalse)) == Type::TOP) {
+    return Type::TOP;
+  }
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }

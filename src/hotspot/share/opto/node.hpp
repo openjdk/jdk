@@ -221,8 +221,7 @@ class Node {
   friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
-  Node(const Node&);            // not defined; linker error to use these
-  Node &operator=(const Node &rhs);
+  NONCOPYABLE(Node);
 
 public:
   friend class Compile;
@@ -240,7 +239,7 @@ public:
 
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    Node* n = (Node*)C->node_arena()->Amalloc_D(x);
+    Node* n = (Node*)C->node_arena()->AmallocWords(x);
     return (void*)n;
   }
 

@@ -55,7 +55,7 @@ void Mutex::check_safepoint_state(Thread* thread) {
            name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    thread->as_Java_thread()->check_for_valid_safepoint_state();
+    JavaThread::cast(thread)->check_for_valid_safepoint_state();
   } else {
     // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
     assert(_safepoint_check_required != _safepoint_check_never,
@@ -85,7 +85,7 @@ void Mutex::lock_contended(Thread* self) {
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVM tbivmdc(self->as_Java_thread(), &in_flight_mutex);
+      { ThreadBlockInVM tbivmdc(JavaThread::cast(self), &in_flight_mutex);
         in_flight_mutex = this;  // save for ~ThreadBlockInVM
         _lock.lock();
       }
@@ -440,7 +440,7 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     // The tty_lock is special because it is released for the safepoint by
     // the safepoint mechanism.
     if (new_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
-      new_owner->as_Java_thread()->inc_no_safepoint_count();
+      JavaThread::cast(new_owner)->inc_no_safepoint_count();
     }
 
   } else {
@@ -477,7 +477,7 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
 
     // ~NSV implied with locking allow_vm_block flag.
     if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
-      old_owner->as_Java_thread()->dec_no_safepoint_count();
+      JavaThread::cast(old_owner)->dec_no_safepoint_count();
     }
   }
 }

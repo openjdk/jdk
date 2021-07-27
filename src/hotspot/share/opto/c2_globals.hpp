@@ -287,13 +287,17 @@
   notproduct(bool, VerifyRegisterAllocator , false,                         \
           "Verify Register Allocator")                                      \
                                                                             \
-  develop_pd(intx, FLOATPRESSURE,                                           \
-          "Number of float LRG's that constitute high register pressure")   \
-          range(0, max_jint)                                                \
+  develop(intx, FLOATPRESSURE, -1,                                          \
+          "Number of float LRG's that constitute high register pressure."   \
+          "-1: means the threshold is determined by number of available "   \
+          "float register for allocation")                                  \
+          range(-1, max_jint)                                               \
                                                                             \
-  develop_pd(intx, INTPRESSURE,                                             \
-          "Number of integer LRG's that constitute high register pressure") \
-          range(0, max_jint)                                                \
+  develop(intx, INTPRESSURE, -1,                                            \
+          "Number of integer LRG's that constitute high register pressure." \
+          "-1: means the threshold is determined by number of available "   \
+          "integer register for allocation")                                \
+          range(-1, max_jint)                                               \
                                                                             \
   notproduct(bool, TraceOptoPipelining, false,                              \
           "Trace pipelining information")                                   \
@@ -448,10 +452,6 @@
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  product(bool, PrintPreciseBiasedLockingStatistics, false, DIAGNOSTIC,     \
-          "(Deprecated) Print per-lock-site statistics of biased locking "  \
-          "in JVM")                                                         \
-                                                                            \
   product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
                                                                             \
@@ -506,9 +506,6 @@
                                                                             \
   notproduct(bool, VerifyConnectionGraph , true,                            \
           "Verify Connection Graph construction in Escape Analysis")        \
-                                                                            \
-  product(bool, UseOptoBiasInlining, true,                                  \
-          "(Deprecated) Generate biased locking code in C2 ideal graph")    \
                                                                             \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
@@ -767,6 +764,9 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
+          "Verify receiver types at runtime")                               \
 
 // end of C2_FLAGS
 

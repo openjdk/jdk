@@ -62,7 +62,9 @@ int addMapping(SCDynamicStoreRef store) {
 
 int addAll(SCDynamicStoreRef store) {
     NSArray *keys = [NSArray arrayWithObjects:@"A.COM", @"B.COM", nil];
-    fprintf(stderr, "%d\n", SCDynamicStoreSetValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS, keys));
+    Boolean b = SCDynamicStoreSetValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS, keys);
+    fprintf(stderr, "%d\n", b);
+    if (!b) return 0;
 
     NSDictionary *k1 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc1.a.com", @"host", nil];

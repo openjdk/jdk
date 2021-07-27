@@ -1,29 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-/*
- * @test
- * @bug 8262891
+ * @test /nodynamiccopyright/
+ * @bug 8262891 8269146
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
@@ -190,4 +167,59 @@ public class SwitchErrors {
     }
     sealed class SealedNonAbstract permits A {}
     final class A extends SealedNonAbstract {}
+    void errorRecoveryNoPattern1(Object o) {
+        switch (o) {
+            case String: break;
+            case Object obj: break;
+        }
+    }
+    Object guardWithMatchingStatement(Object o1, Object o2) {
+        switch (o1) {
+            case String s && s.isEmpty() || o2 instanceof Number n: return n;
+            default: return null;
+        }
+    }
+    Object guardWithMatchingExpression(Object o1, Object o2) {
+        return switch (o1) {
+            case String s && s.isEmpty() || o2 instanceof Number n -> n;
+            default -> null;
+        };
+    }
+    void test8269146a(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and constant:
+            case Integer o && o != null, 1:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269146b(Integer i) {
+        switch (i) {
+            //error - illegal combination of null and pattern other than type pattern:
+            case null, Integer o && o != null:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269146c(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and default:
+            case Integer o, default:
+                break;
+        }
+    }
+    void test8269301(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case Integer o && o != null, 1, default:
+                break;
+        }
+    }
+    void exhaustiveAndNull(String s) {
+        switch (s) {
+            case null: break;
+        }
+    }
 }

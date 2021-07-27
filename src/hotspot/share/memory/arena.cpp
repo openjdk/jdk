@@ -337,10 +337,6 @@ size_t Arena::used() const {
   return sum;                   // Return total consumed space.
 }
 
-void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
-  vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "%s", whence);
-}
-
 // Grow a new Chunk
 void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
@@ -453,21 +449,8 @@ bool Arena::contains( const void *ptr ) const {
 void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
-  char** save = (char**)internal_malloc_4(sizeof(char*));
+  char** save = (char**)internal_amalloc(sizeof(char*));
   return (*save = (char*)os::malloc(size, mtChunk));
-}
-
-// for debugging with UseMallocOnly
-void* Arena::internal_malloc_4(size_t x) {
-  assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-  check_for_overflow(x, "Arena::internal_malloc_4");
-  if (_hwm + x > _max) {
-    return grow(x);
-  } else {
-    char *old = _hwm;
-    _hwm += x;
-    return old;
-  }
 }
 #endif
 

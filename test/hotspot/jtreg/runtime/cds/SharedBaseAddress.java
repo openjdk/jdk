@@ -28,7 +28,39 @@
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires vm.cds
  * @library /test/lib
- * @run driver SharedBaseAddress
+ * @run driver SharedBaseAddress 0
+ */
+
+/**
+ * @test SharedBaseAddress
+ * @bug 8265705 8267351
+ * @summary Test variety of values for SharedBaseAddress, making sure
+ *          VM handles normal values as well as edge values w/o a crash.
+ * @requires vm.cds
+ * @library /test/lib
+ * @run driver SharedBaseAddress 1
+ */
+
+/**
+ * @test SharedBaseAddress
+ * @bug 8265705 8267351
+ * @summary Test variety of values for SharedBaseAddress, making sure
+ *          VM handles normal values as well as edge values w/o a crash.
+ * @requires vm.cds
+ * @requires vm.bits == 64
+ * @library /test/lib
+ * @run driver SharedBaseAddress 0 provoke
+ */
+
+/**
+ * @test SharedBaseAddress
+ * @bug 8265705 8267351
+ * @summary Test variety of values for SharedBaseAddress, making sure
+ *          VM handles normal values as well as edge values w/o a crash.
+ * @requires vm.cds
+ * @requires vm.bits == 64
+ * @library /test/lib
+ * @run driver SharedBaseAddress 1 provoke
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
@@ -58,18 +90,22 @@ public class SharedBaseAddress {
     private static String failedPattern = "os::release_memory\\(0x[0-9a-fA-F]*,\\s[0-9]*\\)\\sfailed";
 
     public static void main(String[] args) throws Exception {
+        int mid = testTable.length / 2;
+        int start = args[0].equals("0") ? 0 : mid;
+        int end   = args[0].equals("0") ? mid : testTable.length;
+        boolean provoke = (args.length > 1 && args[1].equals("provoke"));
 
-        for (int run = 0; run < 2; run ++) {
-            // We run twice:
-            // Once, where we want to increase the chance that mapping the generated archive at the designated base
-            // succeeds, to test Klass pointer encoding at that weird location. We do this by sizing heap + class space
-            // small, and by switching off compressed oops.
-            // On the second run, we don't do this but instead go with default parameters. This is more of a test of
-            // CDS' ability to recover if mapping at runtime fails.
-            for (String testEntry : testTable) {
-                String filename = "SharedBaseAddress-base" + testEntry + "-run" + run + ".jsa";
-                System.out.println("sharedBaseAddress = " + testEntry);
-                CDSOptions opts = (new CDSOptions())
+        // provoke == true: we want to increase the chance that mapping the generated archive at the designated base
+        // succeeds, to test Klass pointer encoding at that weird location. We do this by sizing heap + class space
+        // small, and by switching off compressed oops.
+
+        // provoke == false:  we just go with default parameters. This is more of a test of
+        // CDS' ability to recover if mapping at runtime fails.
+        for (int i = start; i < end; i++) {
+            String testEntry = testTable[i];
+            String filename = "SharedBaseAddress-base" + testEntry + ".jsa";
+            System.out.println("sharedBaseAddress = " + testEntry);
+            CDSOptions opts = (new CDSOptions())
                         .setArchiveName(filename)
                         .addPrefix("-XX:SharedBaseAddress=" + testEntry)
                         .addPrefix("-Xlog:cds=debug")
@@ -79,18 +115,22 @@ public class SharedBaseAddress {
                         .addPrefix("-Xlog:gc+metaspace")
                         .addPrefix("-XX:NativeMemoryTracking=detail");
 
-                if (run == 0 && Platform.is64bit()) {
-                    opts.addPrefix("-Xmx128m")
-                        .addPrefix("-XX:CompressedClassSpaceSize=32m")
-                        .addPrefix("-XX:-UseCompressedOops");
-                }
-                CDSTestUtils.createArchiveAndCheck(opts);
-                OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);
-                if (testEntry.equals("0")) {
-                    out.shouldContain("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.")
-                            .shouldContain("Try to map archive(s) at an alternative address")
-                            .shouldNotMatch(failedPattern);
-                }
+            if (provoke) {
+                opts.addPrefix("-Xmx128m")
+                    .addPrefix("-XX:CompressedClassSpaceSize=32m")
+                    .addPrefix("-XX:-UseCompressedOops");
+            }
+            if (Platform.isDebugBuild()) {
+                // Make VM start faster in debug build with large heap.
+                opts.addPrefix("-XX:-ZapUnusedHeapArea");
+            }
+
+            CDSTestUtils.createArchiveAndCheck(opts);
+            OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);
+            if (testEntry.equals("0")) {
+                out.shouldContain("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.")
+                   .shouldContain("Try to map archive(s) at an alternative address")
+                   .shouldNotMatch(failedPattern);
             }
         }
     }

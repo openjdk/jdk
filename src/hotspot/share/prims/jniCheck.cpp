@@ -99,7 +99,7 @@ extern "C" {                                                             \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
-    JavaThread* thr = cur->as_Java_thread();                             \
+    JavaThread* thr = JavaThread::cast(cur);                             \
     JNIEnv* xenv = thr->jni_environment();                               \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \

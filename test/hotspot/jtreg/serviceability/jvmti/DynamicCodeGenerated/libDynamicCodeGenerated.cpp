@@ -46,7 +46,8 @@ void JNICALL DynamicCodeGenerated(jvmtiEnv* jvmti, const char* name, const void*
 
 }
 
-jint Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     vm->GetEnv((void**)&jvmti, JVMTI_VERSION_1_0);
     jvmtiEventCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));

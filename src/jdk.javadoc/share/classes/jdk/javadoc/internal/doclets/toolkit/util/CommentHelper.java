@@ -192,6 +192,9 @@ public class CommentHelper {
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
+        // Workaround for JDK-8269706
+        if (path == null || dcTree == null || rtree == null)
+            return null;
         DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
         if (docTreePath != null) {
             DocTrees doctrees = configuration.docEnv.getDocTrees();
@@ -225,7 +228,7 @@ public class CommentHelper {
         new SimpleDocTreeVisitor<Void, Void>() {
             @Override
             public Void visitAttribute(AttributeTree node, Void p) {
-                sb.append(SPACER).append(node.getName());
+                sb.append(SPACER).append(node.getName().toString());
                 if (node.getValueKind() == ValueKind.EMPTY) {
                     return null;
                 }
@@ -252,7 +255,7 @@ public class CommentHelper {
             @Override
             public Void visitEndElement(EndElementTree node, Void p) {
                 sb.append("</")
-                        .append(node.getName())
+                        .append(node.getName().toString())
                         .append(">");
                 return null;
             }
@@ -307,7 +310,7 @@ public class CommentHelper {
             @Override
             public Void visitStartElement(StartElementTree node, Void p) {
                 sb.append("<");
-                sb.append(node.getName());
+                sb.append(node.getName().toString());
                 node.getAttributes().forEach(dt -> dt.accept(this, null));
                 sb.append(node.isSelfClosing() ? "/>" : ">");
                 return null;

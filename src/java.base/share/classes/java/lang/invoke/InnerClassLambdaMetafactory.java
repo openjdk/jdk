@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
@@ -56,7 +57,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = 59;
+    private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -180,8 +181,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         implMethodDesc = implInfo.getMethodType().toMethodDescriptorString();
         constructorType = factoryType.changeReturnType(Void.TYPE);
         lambdaClassName = lambdaClassName(targetClass);
-        useImplMethodHandle = !Modifier.isPublic(implInfo.getModifiers()) &&
-                              !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass());
+        // If the target class invokes a protected method inherited from a
+        // superclass in a different package, or does 'invokespecial', the
+        // lambda class has no access to the resolved method. Instead, we need
+        // to pass the live implementation method handle to the proxy class
+        // to invoke directly. (javac prefers to avoid this situation by
+        // generating bridges in the target class)
+        useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
+                               !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
+                               implKind == H_INVOKESPECIAL;
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = factoryType.parameterCount();
         if (parameterCount > 0) {
@@ -394,13 +402,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             // this class is linked at the indy callsite; so define a hidden nestmate
             Lookup lookup;
             if (useImplMethodHandle) {
-                // If the target class invokes a method reference this::m which is
-                // resolved to a protected method inherited from a superclass in a different
-                // package, the target class does not have a bridge and this method reference
-                // has been changed from public to protected after the target class was compiled.
-                // This lambda proxy class has no access to the resolved method.
-                // So this workaround by passing the live implementation method handle
-                // to the proxy class to invoke directly.
                 lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
                                                                NESTMATE, STRONG);
             } else {
@@ -564,7 +565,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             convertArgumentTypes(methodType);
 
             if (useImplMethodHandle) {
-                MethodType mtype = implInfo.getMethodType().insertParameterTypes(0, implClass);
+                MethodType mtype = implInfo.getMethodType();
+                if (implKind != MethodHandleInfo.REF_invokeStatic) {
+                    mtype = mtype.insertParameterTypes(0, implClass);
+                }
                 visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
                                 "invokeExact", mtype.descriptorString(), false);
             } else {
@@ -598,20 +602,14 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
 
         private int invocationOpcode() throws InternalError {
-            switch (implKind) {
-                case MethodHandleInfo.REF_invokeStatic:
-                    return INVOKESTATIC;
-                case MethodHandleInfo.REF_newInvokeSpecial:
-                    return INVOKESPECIAL;
-                 case MethodHandleInfo.REF_invokeVirtual:
-                    return INVOKEVIRTUAL;
-                case MethodHandleInfo.REF_invokeInterface:
-                    return INVOKEINTERFACE;
-                case MethodHandleInfo.REF_invokeSpecial:
-                    return INVOKESPECIAL;
-                default:
-                    throw new InternalError("Unexpected invocation kind: " + implKind);
-            }
+            return switch (implKind) {
+                case MethodHandleInfo.REF_invokeStatic     -> INVOKESTATIC;
+                case MethodHandleInfo.REF_newInvokeSpecial -> INVOKESPECIAL;
+                case MethodHandleInfo.REF_invokeVirtual    -> INVOKEVIRTUAL;
+                case MethodHandleInfo.REF_invokeInterface  -> INVOKEINTERFACE;
+                case MethodHandleInfo.REF_invokeSpecial    -> INVOKESPECIAL;
+                default -> throw new InternalError("Unexpected invocation kind: " + implKind);
+            };
         }
     }
 
