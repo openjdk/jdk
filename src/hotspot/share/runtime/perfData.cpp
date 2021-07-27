@@ -277,7 +277,8 @@ void PerfDataManager::destroy() {
   os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
 
   log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
-                                _all->length(), _sampled->length(), _constants->length());
+                                _all->length(), _sampled == NULL ? -1 : _sampled->length(),
+                                _constants == NULL ? -1 : _constants->length());
 
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);
