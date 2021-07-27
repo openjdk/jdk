@@ -206,9 +206,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                     String lname = kind != ParamKind.TYPE_PARAMETER
                             ? utils.getSimpleName(e)
                             : utils.getTypeName(e.asType(), false);
-                    CommentHelper ch = utils.getCommentHelper(holder);
-                    ch.setOverrideElement(inheritedDoc.holder);
-                    Content content = processParamTag(holder, kind, writer,
+                    Content content = processParamTag(inheritedDoc.holder, kind, writer,
                             (ParamTree) inheritedDoc.holderTag,
                             lname,
                             alreadyDocumented.isEmpty());
