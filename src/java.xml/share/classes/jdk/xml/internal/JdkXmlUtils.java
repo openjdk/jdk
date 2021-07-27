@@ -367,19 +367,40 @@ public class JdkXmlUtils {
     }
 
     /**
-     * Returns the character to be used to quote the input content. Between
-     * single and double quotes, this method returns the one that is not found
-     * in the input. Returns double quote by default.
+     * Returns the external declaration for a DTD construct.
      *
-     * @param s the input string
-     * @return returns the quote not found in the input
+     * @param publicId the public identifier
+     * @param systemId the system identifier
+     * @return a DTD external declaration
      */
-    public static char getQuoteChar(String s) {
-        if (s != null && s.indexOf('"') > -1) {
-            return '\'';
-        } else {
-            return '"';
+    public static String getDTDExternalDecl(String publicId, String systemId) {
+        StringBuilder sb = new StringBuilder();
+        if (null != publicId) {
+            sb.append(" PUBLIC ");
+            sb.append(quoteString(publicId));
         }
+
+        if (null != systemId) {
+            if (null == publicId) {
+                sb.append(" SYSTEM ");
+            } else {
+                sb.append(" ");
+            }
+
+            sb.append(quoteString(systemId));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns the input string quoted with double quotes or single ones if
+     * there is a double quote in the string.
+     * @param s the input string, can not be null
+     * @return the quoted string
+     */
+    private static String quoteString(String s) {
+        char c = (s.indexOf('"') > -1) ? '\'' : '"';
+        return c + s + c;
     }
 
     private static XMLReader getXMLReaderWSAXFactory(boolean overrideDefaultParser) {
