@@ -4669,16 +4669,43 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 // cnt:          Immediate count in HeapWords.
 //
 // r10, r11, rscratch1, and rscratch2 are clobbered.
-#define SmallArraySize (18 * BytesPerLong)
 void MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
-  STATIC_ASSERT(zero_words_block_size < SmallArraySize);
-  if (cnt <= SmallArraySize / BytesPerLong) {
+  guarantee(zero_words_block_size < BlockZeroingLowLimit,
+            "increase BlockZeroingLowLimit");
+  if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
+#ifndef PRODUCT
+    {
+      char buf[64];
+      snprintf(buf, sizeof buf, "zero_words (count = %" PRIu64 ") {", cnt);
+      BLOCK_COMMENT(buf);
+    }
+#endif
+    if (cnt > 16) {
+      uint64_t loops = cnt/16;
+      if (loops > 1) {
+        mov(rscratch2, loops - 1);
+      }
+      {
+        Label loop;
+        bind(loop);
+        for (int i = 0; i < 16; i += 2) {
+          stp(zr, zr, Address(base, i * BytesPerWord));
+        }
+        add(base, base, 16 * BytesPerWord);
+        if (loops > 1) {
+          subs(rscratch2, rscratch2, 1);
+          br(GE, loop);
+        }
+      }
+    }
+    cnt %= 16;
     int i = cnt & 1;  // store any odd word to start
     if (i) str(zr, Address(base));
     for (; i < (int)cnt; i += 2) {
       stp(zr, zr, Address(base, i * wordSize));
     }
+    BLOCK_COMMENT("} zero_words");
   } else {
     mov(r10, base); mov(r11, cnt);
     zero_words(r10, r11);
