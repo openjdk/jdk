@@ -1136,27 +1136,26 @@ void PhaseCFG::latency_from_uses(Node *n) {
 bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
                                 uint end_latency, double least_freq,
                                 int cand_cnt, bool in_latency) {
-  if (StressGCM && C->randomized_select(cand_cnt)) {
+  if (StressGCM) {
     // Should be randomly accepted in stress mode
+    return C->randomized_select(cand_cnt);
+  }
+
+  // Better Frequency
+  if (LCA->_freq < least_freq) {
     return true;
   }
 
-  if (!StressGCM) {
-    // Better Frequency
-    if (LCA->_freq < least_freq) {
-      return true;
-    }
-    // Otherwise, choose with latency
-    const double delta = 1 + PROB_UNLIKELY_MAG(4);
-    if (!in_latency                     &&  // No block containing latency
-        LCA->_freq < least_freq * delta &&  // No worse frequency
-        target_latency >= end_latency   &&  // within latency range
-        !self->is_iteratively_computed()    // But don't hoist IV increments
-             // because they may end up above other uses of their phi forcing
-             // their result register to be different from their input.
-    ) {
-      return true;
-    }
+  // Otherwise, choose with latency
+  const double delta = 1 + PROB_UNLIKELY_MAG(4);
+  if (!in_latency                     &&  // No block containing latency
+      LCA->_freq < least_freq * delta &&  // No worse frequency
+      target_latency >= end_latency   &&  // within latency range
+      !self->is_iteratively_computed()    // But don't hoist IV increments
+            // because they may end up above other uses of their phi forcing
+            // their result register to be different from their input.
+  ) {
+    return true;
   }
 
   return false;
