@@ -174,6 +174,7 @@ class CompileBroker: AllStatic {
   // These counters are used for assigning id's to each compilation
   static volatile jint _compilation_id;
   static volatile jint _osr_compilation_id;
+  static volatile jint _native_compilation_id;
 
   static CompileQueue* _c2_compile_queue;
   static CompileQueue* _c1_compile_queue;

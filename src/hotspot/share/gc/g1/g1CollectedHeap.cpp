@@ -1848,8 +1848,10 @@ void G1CollectedHeap::ref_processing_init() {
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
                            ParallelGCThreads,                              // degree of mt processing
-                           (ConcGCThreads > 1),                            // mt discovery
-                           ConcGCThreads,                                  // degree of mt discovery
+                           // We discover with the gc worker threads during Remark, so both
+                           // thread counts must be considered for discovery.
+                           (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
+                           MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            false,                                          // Reference discovery is not atomic
                            &_is_alive_closure_cm);                         // is alive closure
 
