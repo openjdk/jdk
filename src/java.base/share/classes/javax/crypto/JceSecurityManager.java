@@ -65,15 +65,16 @@ final class JceSecurityManager {
         exemptPolicy = JceSecurity.getExemptPolicy();
         allPerm = CryptoAllPermission.INSTANCE;
 
+        PrivilegedAction<JceSecurityManager> paSM = JceSecurityManager::new;
         @SuppressWarnings("removal")
-        JceSecurityManager dummySecurityManager = AccessController.doPrivileged(
-                (PrivilegedAction<JceSecurityManager>) JceSecurityManager::new);
+        JceSecurityManager dummySecurityManager =
+                AccessController.doPrivileged(paSM);
         INSTANCE = dummySecurityManager;
 
+        PrivilegedAction<StackWalker> paWalker =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
         @SuppressWarnings("removal")
-        StackWalker dummyWalker = AccessController.doPrivileged(
-                (PrivilegedAction<StackWalker>) (() -> StackWalker.getInstance(
-                        Option.RETAIN_CLASS_REFERENCE)));
+        StackWalker dummyWalker = AccessController.doPrivileged(paWalker);
 
         WALKER = dummyWalker;
     }
