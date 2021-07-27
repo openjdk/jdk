@@ -25,6 +25,14 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser;
 
+/**
+ * An exception thrown by a {@link MarkupParser}.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public class ParseException extends Exception {
 
     @java.io.Serial
@@ -32,6 +40,13 @@ public class ParseException extends Exception {
 
     private final int index;
 
+    /**
+     * Constructs an exception with a message and an approximate position of
+     * the erroneous portion of markup within a parsed line.
+     *
+     * @param message the description
+     * @param position the approximate position
+     */
     public ParseException(String message, int position) {
         super(message);
         if (position < 0) {

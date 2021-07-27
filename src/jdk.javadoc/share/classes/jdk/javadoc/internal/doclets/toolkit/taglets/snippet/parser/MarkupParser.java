@@ -35,6 +35,15 @@ import java.util.List;
 // If optional trailing ":" is present, the tag refers to the next line
 // rather than to this line.
 //
+
+/**
+ * A parser of a markup line.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public final class MarkupParser {
 
     private final static int EOI = 0x1A;

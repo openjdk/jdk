@@ -38,10 +38,15 @@ import java.util.Set;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-/*
- * Mutable sequence of characters, each of which can be associated with a set of
- * objects. These objects can be used by clients as character metadata, such as
- * rich text style.
+/**
+ * A mutable sequence of characters, each of which can be associated with a set
+ * of objects. These objects can be used by clients as character metadata, such
+ * as rich text style.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public class AnnotatedText<S> {
 

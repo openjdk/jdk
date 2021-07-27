@@ -32,12 +32,27 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * An action that replaces characters in text.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public final class Replace implements Action {
 
     private final Pattern pattern;
     private final String replacement;
     private final AnnotatedText<?> text;
 
+    /**
+     * Constructs an action that replaces regex finds in text.
+     *
+     * @param replacement the replacement string
+     * @param pattern the regex used to search the text
+     * @param text the text
+     */
     public Replace(String replacement, Pattern pattern, AnnotatedText<?> text) {
         this.replacement = replacement;
         this.pattern = pattern;

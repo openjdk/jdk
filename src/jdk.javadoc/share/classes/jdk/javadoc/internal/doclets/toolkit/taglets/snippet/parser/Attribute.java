@@ -50,6 +50,14 @@ import java.util.Objects;
  * 3. This attribute abstraction is simpler than that of com.sun.source.doctree.AttributeTree.
  * There's no need to have recursive structure similar to that of allowed by AttributeTree.
  */
+/**
+ * A markup attribute.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 // FIXME: uncomment /* sealed */ when minimum boot version >= 17
 public /* sealed */ abstract class Attribute {
 

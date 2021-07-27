@@ -25,8 +25,22 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action;
 
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+
+/**
+ * An action described by markup. Such an action is typically a compound built
+ * from primitive operations of {@link AnnotatedText}.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 // FIXME: uncomment /* sealed */ when minimum boot version >= 17
 public /* sealed */ interface Action /* permits Annotate, Bookmark, Replace */ {
 
+    /**
+     * Performs this action.
+     */
     void perform();
 }

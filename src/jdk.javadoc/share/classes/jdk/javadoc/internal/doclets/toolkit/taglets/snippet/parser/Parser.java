@@ -73,6 +73,14 @@ import java.util.regex.PatternSyntaxException;
 // FIXME: How to treat Form Feed? (i.e. is it vertical or horizontal whitespace?)
 // FIXME: what to do with lines not covered by any markup? (i.e. in between markup)
 // FIXME: all parsing errors must be localized.
+/**
+ * A parser of snippet content.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public final class Parser {
 
     //                  v next line

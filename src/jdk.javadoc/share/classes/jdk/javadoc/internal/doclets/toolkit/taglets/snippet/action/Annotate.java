@@ -31,10 +31,26 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * An action that annotates text.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public final class Annotate implements Action {
 
     private final Runnable action;
 
+    /**
+     * Constructs an action that annotates regex finds in text.
+     *
+     * @param obj the object to annotate regex finds with
+     * @param pattern the regex used to search the text
+     * @param text the text
+     * @param <S> the type of text metadata
+     */
     public <S> Annotate(S obj, Pattern pattern, AnnotatedText<S> text) {
         // This *constructor* is generified and the generic parameter is
         // captured by the Runnable to type-safely call text.annotate(obj)
