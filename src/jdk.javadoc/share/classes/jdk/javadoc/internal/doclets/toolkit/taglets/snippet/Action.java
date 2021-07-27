@@ -23,39 +23,22 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 /**
- * An exception thrown by a {@link MarkupParser}.
+ * An action described by markup. Such an action is typically a compound built
+ * from primitive operations of {@link AnnotatedText}.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-public class ParseException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1;
-
-    private final int index;
+// FIXME: uncomment /* sealed */ when minimum boot version >= 17
+public /* sealed */ interface Action /* permits Annotate, Bookmark, Replace */ {
 
     /**
-     * Constructs an exception with a message and an approximate position of
-     * the erroneous portion of markup within a parsed line.
-     *
-     * @param message the description
-     * @param position the approximate position
+     * Performs this action.
      */
-    public ParseException(String message, int position) {
-        super(message);
-        if (position < 0) {
-            throw new IllegalArgumentException(String.valueOf(position));
-        }
-        this.index = position;
-    }
-
-    public int getPosition() {
-        return index;
-    }
+    void perform();
 }

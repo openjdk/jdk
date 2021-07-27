@@ -32,11 +32,11 @@ import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action.Action;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser.ParseException;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser.Parser;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser.Style;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Action;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.ParseException;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Parser;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.AnnotatedText;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;

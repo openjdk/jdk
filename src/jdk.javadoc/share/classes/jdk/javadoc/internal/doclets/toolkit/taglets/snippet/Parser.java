@@ -23,13 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser;
-
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action.Action;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action.Annotate;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action.Bookmark;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action.Replace;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

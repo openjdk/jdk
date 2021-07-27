@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 import java.util.Collection;
 import java.util.List;

@@ -45,8 +45,8 @@ import com.sun.source.doctree.ThrowsTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser.Style;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.AnnotatedText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 

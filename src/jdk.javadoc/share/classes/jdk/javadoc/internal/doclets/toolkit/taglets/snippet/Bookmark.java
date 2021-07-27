@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,34 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.parser;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 /**
- * A style of a snippet text character.
+ * An action that associates text with a name.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-// FIXME: uncomment /* sealed */ when minimum boot version >= 17
-public /* sealed */ interface Style {
+public final class Bookmark implements Action {
+
+    private final String name;
+    private final AnnotatedText<?> text;
 
     /**
-     * A style that describes a link. Characters of this style are typically
-     * processed by wrapping into an HTML {@code A} element pointing to the
-     * provided target.
+     * Constructs an action that associates text with a name.
+     *
+     * @param name the string (key) to associate text with
+     * @param text the text
      */
-    record Link(String target) implements Style { }
+    public Bookmark(String name, AnnotatedText<?> text) {
+        this.name = name;
+        this.text = text;
+    }
 
-    /**
-     * A named style. Characters of this style are typically processed by
-     * wrapping into an HTML {@code SPAN} element with the {@code class}
-     * attribute which is obtained from the provided name.
-     */
-    record Name(String name) implements Style { }
-
-    /**
-     * A marker of belonging to markup. Characters of this style are typically
-     * processed by omitting from the output.
-     */
-    record Markup() implements Style { }
+    @Override
+    public void perform() {
+        text.subText(0, text.length()).bookmark(name);
+    }
 }

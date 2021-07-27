@@ -23,36 +23,39 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action;
-
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 /**
- * An action that associates text with a name.
+ * An exception thrown by a {@link MarkupParser}.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-public final class Bookmark implements Action {
+public class ParseException extends Exception {
 
-    private final String name;
-    private final AnnotatedText<?> text;
+    @java.io.Serial
+    private static final long serialVersionUID = 1;
+
+    private final int index;
 
     /**
-     * Constructs an action that associates text with a name.
+     * Constructs an exception with a message and an approximate position of
+     * the erroneous portion of markup within a parsed line.
      *
-     * @param name the string (key) to associate text with
-     * @param text the text
+     * @param message the description
+     * @param position the approximate position
      */
-    public Bookmark(String name, AnnotatedText<?> text) {
-        this.name = name;
-        this.text = text;
+    public ParseException(String message, int position) {
+        super(message);
+        if (position < 0) {
+            throw new IllegalArgumentException(String.valueOf(position));
+        }
+        this.index = position;
     }
 
-    @Override
-    public void perform() {
-        text.subText(0, text.length()).bookmark(name);
+    public int getPosition() {
+        return index;
     }
 }

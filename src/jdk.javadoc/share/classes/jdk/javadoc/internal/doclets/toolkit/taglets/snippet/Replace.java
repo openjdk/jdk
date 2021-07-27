@@ -23,9 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets.snippet.action;
-
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.text.AnnotatedText;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 import java.util.ArrayList;
 import java.util.Set;
