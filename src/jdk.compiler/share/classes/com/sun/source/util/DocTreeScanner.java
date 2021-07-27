@@ -500,7 +500,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 17
+     * @since 18
      */
     @Override
     public R visitSnippet(SnippetTree node, P p) {

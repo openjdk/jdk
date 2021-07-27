@@ -332,7 +332,7 @@ public interface DocTreeFactory {
      * @param attributes the attributes of the tag
      * @param text the body of the tag, or {@code null} if the tag has no body (not to be confused with an empty body)
      * @return a {@code SnippetTree} object
-     * @since 17
+     * @since 18
      */
     SnippetTree newSnippetTree(List<? extends DocTree> attributes, TextTree text);
 
