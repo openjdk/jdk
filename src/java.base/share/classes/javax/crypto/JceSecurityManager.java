@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.lang.StackWalker.*;
-import java.util.stream.Stream;
 
 /**
  * The JCE security manager.
@@ -59,6 +58,7 @@ final class JceSecurityManager {
 
     // singleton instance
     static final JceSecurityManager INSTANCE;
+    static final StackWalker WALKER;
 
     static {
         defaultPolicy = JceSecurity.getDefaultPolicy();
@@ -67,12 +67,14 @@ final class JceSecurityManager {
 
         @SuppressWarnings("removal")
         JceSecurityManager dummy = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public JceSecurityManager run() {
-                        return new JceSecurityManager();
-                    }
-                });
+                (PrivilegedAction<JceSecurityManager>) JceSecurityManager::new);
         INSTANCE = dummy;
+
+        PrivilegedAction<StackWalker> pa =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
+        StackWalker dummyWalker = AccessController.doPrivileged(pa);
+        WALKER = dummyWalker;
     }
 
     private JceSecurityManager() {
@@ -83,11 +85,11 @@ final class JceSecurityManager {
      * Returns the maximum allowable crypto strength for the given
      * applet/application, for the given algorithm.
      */
-    CryptoPermission getCryptoPermission(String alg) {
+    CryptoPermission getCryptoPermission(String theAlg) {
 
         // Need to convert to uppercase since the crypto perm
         // lookup is case sensitive.
-        alg = alg.toUpperCase(Locale.ENGLISH);
+        final String alg = theAlg.toUpperCase(Locale.ENGLISH);
 
         // If CryptoAllPermission is granted by default, we return that.
         // Otherwise, this will be the permission we return if anything goes
@@ -102,41 +104,28 @@ final class JceSecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        PrivilegedAction<StackWalker> pa =
-                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
-        @SuppressWarnings("removal")
-Intermediate state, switching tasks.
-        StackWalker walker = AccessController.doPrivileged(pa);
-        URL callerCodeBase = walker.walk(
-                s -> {
-                    return s.map(f -> JceSecurity.getCodeBase(
-                            f.getDeclaringClass()))
-                            .filter(cb -> cb != null)
-                            .findFirst().get();
-                }
-                );
+        return WALKER.walk(s -> s.map(
+                f -> {
+                    Class<?> cls = f.getDeclaringClass();
+                    URL callerCodeBase = JceSecurity.getCodeBase(cls);
+                    if (callerCodeBase != null) {
+                        return getCryptoPermissionFromURL(
+                                callerCodeBase, alg, defaultPerm);
+                    } else {
+                        if (cls.getName().startsWith("javax.crypto.")) {
+                            // skip JCE classes since they aren't the callers
+                            return null;
+                        }
+                        return defaultPerm;
+                    }
+                })
+                .filter(Objects::nonNull)  // Filter javax.crypto frames
+                .findFirst().get()         // Optional nulls not possible
+        );
+    }
 
-/*
-        URL callerCodeBase = null;
-        for (StackFrame stackFrame : stack) {
-            Class<?> cls = stackFrame.getDeclaringClass();
-            callerCodeBase = JceSecurity.getCodeBase(cls);
-            if (callerCodeBase != null) {
-                break;
-            } else {
-                if (cls.getName().startsWith("javax.crypto.")) {
-                    // skip jce classes since they aren't the callers
-                    continue;
-                }
-                // use default permission when the caller is system classes
-                return defaultPerm;
-            }
-        }
-*/
-        if (callerCodeBase == null) {
-            return defaultPerm;
-        }
-
+    CryptoPermission getCryptoPermissionFromURL(URL callerCodeBase,
+            String alg, CryptoPermission defaultPerm) {
         CryptoPermissions appPerms = exemptCache.get(callerCodeBase);
         if (appPerms == null) {
             // no match found in cache
@@ -246,18 +235,9 @@ Intermediate state, switching tasks.
     // Only used by javax.crypto.Cipher constructor to disallow Cipher
     // objects being constructed by untrusted code (See bug 4341369 &
     // 4334690 for more info).
-    boolean isCallerTrusted(Provider provider) {
-        PrivilegedAction<StackWalker> pa =
-                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
-        @SuppressWarnings("removal")
-        Optional<StackFrame> stackFrame = AccessController.doPrivileged(pa)
-                .walk((s) -> s.skip(2).findFirst());
-
-        if (stackFrame.isPresent()) {
-            // context[0]: class javax.crypto.JceSecurityManager
-            // context[1]: class javax.crypto.Cipher (or other JCE API class)
-            // context[2]: this is what we are gonna check
-            Class<?> caller = stackFrame.get().getDeclaringClass();
+    boolean isCallerTrusted(Class<?> caller, Provider provider) {
+        // Get the caller and its codebase.
+        if (caller != null) {
             URL callerCodeBase = JceSecurity.getCodeBase(caller);
             if (callerCodeBase == null) {
                 return true;
