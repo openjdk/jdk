@@ -40,12 +40,12 @@ public class TestRenumberLiveNodesInfiniteLoop {
         do3 = do3;
         return -3480877547L;
     }
-    
+
     public void mainTest (String[] args){
         byte by14 = (byte)9;
         long lo15 = 1502432357L;
         short sha16[] = new short[473];
-        
+
         for (short sh17 : sha16) {
             try {
                 sha16[2] = (short)23;
