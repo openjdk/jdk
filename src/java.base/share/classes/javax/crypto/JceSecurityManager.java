@@ -66,14 +66,15 @@ final class JceSecurityManager {
         allPerm = CryptoAllPermission.INSTANCE;
 
         @SuppressWarnings("removal")
-        JceSecurityManager dummy = AccessController.doPrivileged(
+        JceSecurityManager dummySecurityManager = AccessController.doPrivileged(
                 (PrivilegedAction<JceSecurityManager>) JceSecurityManager::new);
-        INSTANCE = dummy;
+        INSTANCE = dummySecurityManager;
 
-        PrivilegedAction<StackWalker> pa =
-                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
         @SuppressWarnings("removal")
-        StackWalker dummyWalker = AccessController.doPrivileged(pa);
+        StackWalker dummyWalker = AccessController.doPrivileged(
+                (PrivilegedAction<StackWalker>) (() -> StackWalker.getInstance(
+                        Option.RETAIN_CLASS_REFERENCE)));
+
         WALKER = dummyWalker;
     }
 
@@ -104,23 +105,14 @@ final class JceSecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        return WALKER.walk(s -> s.map(
-                f -> {
-                    Class<?> cls = f.getDeclaringClass();
+        return WALKER.walk(s -> s.map(StackFrame::getDeclaringClass)
+                .filter(c -> !c.getPackageName().equals("javax.crypto"))
+                .map(cls -> {
                     URL callerCodeBase = JceSecurity.getCodeBase(cls);
-                    if (callerCodeBase != null) {
-                        return getCryptoPermissionFromURL(
-                                callerCodeBase, alg, defaultPerm);
-                    } else {
-                        if (cls.getName().startsWith("javax.crypto.")) {
-                            // skip JCE classes since they aren't the callers
-                            return null;
-                        }
-                        return defaultPerm;
-                    }
-                })
-                .filter(Objects::nonNull)  // Filter javax.crypto frames
-                .findFirst().get()         // Optional nulls not possible
+                    return (callerCodeBase != null) ?
+                            getCryptoPermissionFromURL(callerCodeBase,
+                                    alg, defaultPerm) : defaultPerm;})
+                .findFirst().get()         // nulls not possible for Optional
         );
     }
 
