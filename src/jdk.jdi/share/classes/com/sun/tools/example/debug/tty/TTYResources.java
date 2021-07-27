@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"dbgtrace command value must be an integer:", "dbgtrace command value must be an integer: {0}"},
         {"Deferring.", "Deferring {0}.\nIt will be set after the class is loaded."},
         {"End of stack.", "End of stack."},
+        {"EOF", "EOF"},
         {"Error popping frame", "Error popping frame - {0}"},
         {"Error reading file", "Error reading ''{0}'' - {1}"},
         {"Error redefining class to file", "Error redefining {0} to {1} - {2}"},
@@ -260,6 +261,9 @@ public class TTYResources extends java.util.ListResourceBundle {
          "    <class_id>.<method>[(argument_type,...)]"
         },
         {"Removed:", "Removed: {0}"},
+        {"repeat is on", "Repeat is on"},
+        {"repeat is off", "Repeat is off"},
+        {"repeat usage", "Usage: repeat <on|off>"},
         {"Requested stack frame is no longer active:", "Requested stack frame is no longer active: {0,number,integer}"},
         {"run <args> command is valid only with launched VMs", "'run <args>' command is valid only with launched VMs"},
         {"run", "run {0}"},
@@ -436,6 +440,8 @@ public class TTYResources extends java.util.ListResourceBundle {
              "\n" +
              "!!                        -- repeat last command\n" +
              "<n> <command>             -- repeat command n times\n" +
+             "repeat                    -- show whether GDB-style empty command repetition is enabled\n" +
+             "repeat <on|off>           -- enable/disable GDB-style repetition\n" +
              "# <command>               -- discard (no-op)\n" +
              "help (or ?)               -- list commands\n" +
              "dbgtrace [flag]           -- same as dbgtrace command line option\n" +
