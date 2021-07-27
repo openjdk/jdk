@@ -872,15 +872,15 @@ pre.snippet {
     white-space: pre;
 }
 
-.italic {
+pre.snippet .italic {
     font-style: italic;
 }
 
-.bold {
+pre.snippet .bold {
     font-weight: bold;
 }
 
-.highlighted {
+pre.snippet .highlighted {
     background-color: sandybrown;
     border-radius: 10%;
 }
