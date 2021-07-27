@@ -148,9 +148,6 @@ class HeapShared: AllStatic {
   static DumpedInternedStrings *_dumped_interned_strings;
 
 public:
-  static bool oop_equals(oop const& p1, oop const& p2) {
-    return p1 == p2;
-  }
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -158,15 +155,11 @@ public:
 
 private:
   typedef ResourceHashtable<oop, oop,
-      HeapShared::oop_hash,
-      HeapShared::oop_equals,
       15889, // prime number
-      ResourceObj::C_HEAP> ArchivedObjectCache;
+      ResourceObj::C_HEAP,
+      mtClassShared,
+      HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
-
-  static bool klass_equals(Klass* const& p1, Klass* const& p2) {
-    return primitive_equals<Klass*>(p1, p2);
-  }
 
   static unsigned klass_hash(Klass* const& klass) {
     // Generate deterministic hashcode even if SharedBaseAddress is changed due to ASLR.
@@ -175,10 +168,10 @@ private:
 
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
-                               HeapShared::klass_hash,
-                               HeapShared::klass_equals,
                                137, // prime number
-                               ResourceObj::C_HEAP> {
+                               ResourceObj::C_HEAP,
+                               mtClassShared,
+                               HeapShared::klass_hash> {
   public:
     int _count;
   };
@@ -230,10 +223,10 @@ private:
   static int     _narrow_oop_shift;
 
   typedef ResourceHashtable<oop, bool,
-      HeapShared::oop_hash,
-      HeapShared::oop_equals,
       15889, // prime number
-      ResourceObj::C_HEAP> SeenObjectsTable;
+      ResourceObj::C_HEAP,
+      mtClassShared,
+      HeapShared::oop_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
@@ -400,10 +393,10 @@ private:
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
   public ResourceHashtable<oop, bool,
-                           HeapShared::string_oop_hash,
-                           HeapShared::oop_equals,
                            15889, // prime number
-                           ResourceObj::C_HEAP>
+                           ResourceObj::C_HEAP,
+                           mtClassShared,
+                           HeapShared::string_oop_hash>
 {};
 #endif
 
