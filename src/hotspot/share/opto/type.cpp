@@ -5565,7 +5565,7 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
 
 //-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
-// It will be NotNull, and exact if and only if the klass type is exact.
+// It will be exact if and only if the klass type is exact.
 const TypeOopPtr* TypeAryKlassPtr::as_instance_type() const {
   ciKlass* k = klass();
   bool    xk = klass_is_exact();

@@ -924,6 +924,11 @@ protected:
   void dump_inline_depth(outputStream *st) const;
 #endif
 
+  // TypeInstPtr (TypeAryPtr resp.) and TypeInstKlassPtr (TypeAryKlassPtr resp.) implement very similar meet logic.
+  // The logic for meeting 2 instances (2 arrays resp.) is shared in the 2 utility methods below. However the logic for
+  // the oop and klass versions can be slightly different and extra logic may have to be executed depending on what
+  // exact case the meet falls into. The MeetResult struct is used by the utility methods to communicate what case was
+  // encountered so the right logic specific to klasses or oops can be executed.,
   enum MeetResult {
     QUICK,
     UNLOADED,
@@ -1883,7 +1888,7 @@ inline const TypeKlassPtr *Type::isa_klassptr() const {
 }
 
 inline const TypeKlassPtr *Type::is_klassptr() const {
-  assert( _base >= KlassPtr && _base <= AryKlassPtr, "Not a klass pointer" );
+  assert(_base >= KlassPtr && _base <= AryKlassPtr, "Not a klass pointer");
   return (TypeKlassPtr*)this;
 }
 
@@ -1892,7 +1897,7 @@ inline const TypeInstKlassPtr *Type::isa_instklassptr() const {
 }
 
 inline const TypeInstKlassPtr *Type::is_instklassptr() const {
-  assert( _base == InstKlassPtr, "Not a klass pointer" );
+  assert(_base == InstKlassPtr, "Not a klass pointer");
   return (TypeInstKlassPtr*)this;
 }
 
@@ -1901,7 +1906,7 @@ inline const TypeAryKlassPtr *Type::isa_aryklassptr() const {
 }
 
 inline const TypeAryKlassPtr *Type::is_aryklassptr() const {
-  assert( _base == AryKlassPtr, "Not a klass pointer" );
+  assert(_base == AryKlassPtr, "Not a klass pointer");
   return (TypeAryKlassPtr*)this;
 }
 
