@@ -53,8 +53,9 @@ import org.testng.annotations.DataProvider;
 /* @test
  * @bug 8234836
  * @build SerialFilterTest
- * @run testng/othervm -Djdk.serialFilterTrace=true SerialFilterTest
- * @run testng/othervm -Djdk.serialSetFilterAfterRead=true -Djdk.serialFilterTrace=true SerialFilterTest
+ * @run testng/othervm -Djava.util.logging.config.file=${test.src}/logging.properties
+ *                      SerialFilterTest
+ * @run testng/othervm -Djdk.serialSetFilterAfterRead=true SerialFilterTest
  *
  * @summary Test ObjectInputFilters using Builtin Filter Factory
  */

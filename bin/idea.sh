@@ -69,6 +69,9 @@ do
   shift
 done
 
+if [ -e $IDEA_OUTPUT ] ; then
+    rm -r $IDEA_OUTPUT
+fi
 mkdir -p $IDEA_OUTPUT || exit 1
 cd $IDEA_OUTPUT; IDEA_OUTPUT=`pwd`
 
@@ -224,26 +227,33 @@ fi
 CP=$ANT_HOME/lib/ant.jar
 rm -rf $CLASSES; mkdir $CLASSES
 
-if [ "x$CYGPATH" != "x" ] ; then ## CYGPATH may be set in env.cfg
-  JAVAC_SOURCE_FILE=`$CYGPATH -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
-  JAVAC_SOURCE_PATH=`$CYGPATH -am $IDEA_OUTPUT/src`
-  JAVAC_CLASSES=`$CYGPATH -am $CLASSES`
-  JAVAC_CP=`$CYGPATH -am $CP`
+# If we have a Windows boot JDK, we need a .exe suffix
+if [ -e "$BOOT_JDK/bin/java.exe" ] ; then
+  JAVAC=javac.exe
+else 
   JAVAC=javac
-elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
+fi
+
+# If we are on WSL, the boot JDK might be either Windows or Linux,
+# and we need to use realpath instead of CYGPATH to make javac work on both.
+# We need to handle this case first since CYGPATH might be set on WSL.
+if [ "x$WSL_DISTRO_NAME" != "x" ]; then
   JAVAC_SOURCE_FILE=`realpath --relative-to=./ $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
   JAVAC_SOURCE_PATH=`realpath --relative-to=./ $IDEA_OUTPUT/src`
   JAVAC_CLASSES=`realpath --relative-to=./ $CLASSES`
   ANT_TEMP=`mktemp -d -p ./`
   cp $ANT_HOME/lib/ant.jar $ANT_TEMP/ant.jar
   JAVAC_CP=$ANT_TEMP/ant.jar
-  JAVAC=javac.exe
+elif [ "x$CYGPATH" != "x" ] ; then ## CYGPATH may be set in env.cfg
+  JAVAC_SOURCE_FILE=`$CYGPATH -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
+  JAVAC_SOURCE_PATH=`$CYGPATH -am $IDEA_OUTPUT/src`
+  JAVAC_CLASSES=`$CYGPATH -am $CLASSES`
+  JAVAC_CP=`$CYGPATH -am $CP`
 else
   JAVAC_SOURCE_FILE=$IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java
   JAVAC_SOURCE_PATH=$IDEA_OUTPUT/src
   JAVAC_CLASSES=$CLASSES
   JAVAC_CP=$CP
-  JAVAC=javac
 fi
 
 $BOOT_JDK/bin/$JAVAC -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE

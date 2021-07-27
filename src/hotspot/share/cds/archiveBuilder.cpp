@@ -160,7 +160,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_region("ro", MAX_SHARED_DELTA),
   _rw_src_objs(),
   _ro_src_objs(),
-  _src_obj_table(INITIAL_TABLE_SIZE),
+  _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _num_instance_klasses(0),
   _num_obj_array_klasses(0),
   _num_type_array_klasses(0),
@@ -190,6 +190,9 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   delete _special_refs;
+  if (_shared_rs.is_reserved()) {
+    _shared_rs.release();
+  }
 }
 
 bool ArchiveBuilder::is_dumping_full_module_graph() {
@@ -463,9 +466,9 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
-  SourceObjInfo* p = _src_obj_table.add_if_absent(src_obj, src_info, &created);
+  SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
-    if (_src_obj_table.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_src_obj_table.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
@@ -659,7 +662,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 }
 
 address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.lookup(src_obj);
+  SourceObjInfo* p = _src_obj_table.get(src_obj);
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
@@ -1077,16 +1080,16 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                               bitmap_size_in_bytes);
 
   if (closed_heap_regions != NULL) {
-    _total_closed_heap_region_size = mapinfo->write_archive_heap_regions(
+    _total_closed_heap_region_size = mapinfo->write_heap_regions(
                                         closed_heap_regions,
                                         closed_heap_oopmaps,
-                                        MetaspaceShared::first_closed_archive_heap_region,
-                                        MetaspaceShared::max_closed_archive_heap_region);
-    _total_open_heap_region_size = mapinfo->write_archive_heap_regions(
+                                        MetaspaceShared::first_closed_heap_region,
+                                        MetaspaceShared::max_closed_heap_region);
+    _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
                                         open_heap_oopmaps,
-                                        MetaspaceShared::first_open_archive_heap_region,
-                                        MetaspaceShared::max_open_archive_heap_region);
+                                        MetaspaceShared::first_open_heap_region,
+                                        MetaspaceShared::max_open_heap_region);
   }
 
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);
@@ -1152,12 +1155,12 @@ void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
                  size, size/double(total_size)*100.0, size);
 }
 
-void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion>* regions,
                                              const char *name, size_t total_size) {
-  int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
+  int arr_len = regions == NULL ? 0 : regions->length();
   for (int i = 0; i < arr_len; i++) {
-      char* start = (char*)heap_mem->at(i).start();
-      size_t size = heap_mem->at(i).byte_size();
+      char* start = (char*)regions->at(i).start();
+      size_t size = regions->at(i).byte_size();
       char* top = start + size;
       log_debug(cds)("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                      name, i, size, size/double(total_size)*100.0, size, p2i(start));

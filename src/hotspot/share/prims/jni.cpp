@@ -44,6 +44,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -2822,13 +2823,8 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
     *isCopy = JNI_FALSE;
   }
   oop a = lock_gc_or_pin_object(thread, array);
-  assert(a->is_array(), "just checking");
-  BasicType type;
-  if (a->is_objArray()) {
-    type = T_OBJECT;
-  } else {
-    type = TypeArrayKlass::cast(a->klass())->element_type();
-  }
+  assert(a->is_typeArray(), "Primitive array only");
+  BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
   void* ret = arrayOop(a)->base(type);
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
   return ret;
@@ -2842,19 +2838,45 @@ HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
 
+static typeArrayOop lock_gc_or_pin_string_value(JavaThread* thread, oop str) {
+  if (Universe::heap()->supports_object_pinning()) {
+    // Forbid deduplication before obtaining the value array, to prevent
+    // deduplication from replacing the value array while setting up or in
+    // the critical section.  That would lead to the release operation
+    // unpinning the wrong object.
+    if (StringDedup::is_enabled()) {
+      NoSafepointVerifier nsv;
+      StringDedup::forbid_deduplication(str);
+    }
+    typeArrayOop s_value = java_lang_String::value(str);
+    return (typeArrayOop) Universe::heap()->pin_object(thread, s_value);
+  } else {
+    Handle h(thread, str);      // Handlize across potential safepoint.
+    GCLocker::lock_critical(thread);
+    return java_lang_String::value(h());
+  }
+}
+
+static void unlock_gc_or_unpin_string_value(JavaThread* thread, oop str) {
+  if (Universe::heap()->supports_object_pinning()) {
+    typeArrayOop s_value = java_lang_String::value(str);
+    Universe::heap()->unpin_object(thread, s_value);
+  } else {
+    GCLocker::unlock_critical(thread);
+  }
+}
+
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
-  oop s = lock_gc_or_pin_object(thread, string);
-  typeArrayOop s_value = java_lang_String::value(s);
-  bool is_latin1 = java_lang_String::is_latin1(s);
-  if (isCopy != NULL) {
-    *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
-  }
+  oop s = JNIHandles::resolve_non_null(string);
   jchar* ret;
-  if (!is_latin1) {
+  if (!java_lang_String::is_latin1(s)) {
+    typeArrayOop s_value = lock_gc_or_pin_string_value(thread, s);
     ret = (jchar*) s_value->base(T_CHAR);
+    if (isCopy != NULL) *isCopy = JNI_FALSE;
   } else {
     // Inflate latin1 encoded string to UTF16
+    typeArrayOop s_value = java_lang_String::value(s);
     int s_len = java_lang_String::length(s, s_value);
     ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
     /* JNI Specification states return NULL on OOM */
@@ -2864,6 +2886,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
       }
       ret[s_len] = 0;
     }
+    if (isCopy != NULL) *isCopy = JNI_TRUE;
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
@@ -2872,15 +2895,16 @@ JNI_END
 
 JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar *chars))
   HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
-  // The str and chars arguments are ignored for UTF16 strings
   oop s = JNIHandles::resolve_non_null(str);
   bool is_latin1 = java_lang_String::is_latin1(s);
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
+  } else {
+    // For non-latin1 string, drop the associated gc-locker/pin.
+    unlock_gc_or_unpin_string_value(thread, s);
   }
-  unlock_gc_or_unpin_object(thread, str);
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 

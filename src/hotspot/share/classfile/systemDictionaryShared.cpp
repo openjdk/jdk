@@ -30,7 +30,9 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -71,7 +73,9 @@
 #include "utilities/stringUtils.hpp"
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
+DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
+DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 // SystemDictionaries in the base layer static archive
 RunTimeSharedDictionary SystemDictionaryShared::_builtin_dictionary;
 RunTimeSharedDictionary SystemDictionaryShared::_unregistered_dictionary;
@@ -190,7 +194,7 @@ DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKla
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
-    _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
+    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
   }
   return _dumptime_table->find_or_allocate_info_for(k, _dump_in_progress);
 }
@@ -258,6 +262,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
     return warn_excluded(k, "In error state");
   }
+  if (k->is_scratch_class()) {
+    return warn_excluded(k, "A scratch class");
+  }
+  if (!k->is_loaded()) {
+    return warn_excluded(k, "Not in loaded state");
+  }
   if (has_been_redefined(k)) {
     return warn_excluded(k, "Has been redefined");
   }
@@ -279,36 +289,21 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     // support them and make CDS more complicated.
     return warn_excluded(k, "JFR event class");
   }
-  if (k->init_state() < InstanceKlass::linked) {
-    // In CDS dumping, we will attempt to link all classes. Those that fail to link will
-    // be recorded in DumpTimeClassInfo.
-    Arguments::assert_is_dumping_archive();
 
-    // TODO -- rethink how this can be handled.
-    // We should try to link ik, however, we can't do it here because
-    // 1. We are at VM exit
-    // 2. linking a class may cause other classes to be loaded, which means
-    //    a custom ClassLoader.loadClass() may be called, at a point where the
-    //    class loader doesn't expect it.
+  if (!k->is_linked()) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
-    } else {
-      if (k->can_be_verified_at_dumptime()) {
-        return warn_excluded(k, "Not linked");
-      }
     }
-  }
-  if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
-    // In order to support old classes during dynamic dump, class rewriting needs to
-    // be reverted. This would result in more complex code and testing but not much gain.
-    ResourceMark rm;
-    log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
-                     k->major_version(),  k->minor_version(), k->name()->as_C_string());
-    return true;
-  }
-
-  if (!k->can_be_verified_at_dumptime() && k->is_linked()) {
-    return warn_excluded(k, "Old class has been linked");
+  } else {
+    if (!k->can_be_verified_at_dumptime()) {
+      // We have an old class that has been linked (e.g., it's been executed during
+      // dump time). This class has been verified using the old verifier, which
+      // doesn't save the verification constraints, so check_verification_constraints()
+      // won't work at runtime.
+      // As a result, we cannot store this class. It must be loaded and fully verified
+      // at runtime.
+      return warn_excluded(k, "Old class has been linked");
+    }
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
@@ -792,7 +787,7 @@ void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(Lamb
   assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_lambda_proxy_class_dictionary == NULL) {
     _dumptime_lambda_proxy_class_dictionary =
-      new (ResourceObj::C_HEAP, mtClass)DumpTimeLambdaProxyClassDictionary();
+      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
   }
   DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
   if (lambda_info == NULL) {
@@ -1537,6 +1532,77 @@ bool SystemDictionaryShared::is_dumptime_table_empty() {
   return false;
 }
 
+class CloneDumpTimeClassTable: public StackObj {
+  DumpTimeSharedClassTable* _table;
+  DumpTimeSharedClassTable* _cloned_table;
+ public:
+  CloneDumpTimeClassTable(DumpTimeSharedClassTable* table, DumpTimeSharedClassTable* clone) :
+                      _table(table), _cloned_table(clone) {
+    assert(_table != NULL, "_dumptime_table is NULL");
+    assert(_cloned_table != NULL, "_cloned_table is NULL");
+  }
+  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
+    if (!info.is_excluded()) {
+      bool created;
+      _cloned_table->put_if_absent(k, info.clone(), &created);
+    }
+    return true; // keep on iterating
+  }
+};
+
+class CloneDumpTimeLambdaProxyClassTable: StackObj {
+  DumpTimeLambdaProxyClassDictionary* _table;
+  DumpTimeLambdaProxyClassDictionary* _cloned_table;
+ public:
+  CloneDumpTimeLambdaProxyClassTable(DumpTimeLambdaProxyClassDictionary* table,
+                                     DumpTimeLambdaProxyClassDictionary* clone) :
+                      _table(table), _cloned_table(clone) {
+    assert(_table != NULL, "_dumptime_table is NULL");
+    assert(_cloned_table != NULL, "_cloned_table is NULL");
+  }
+
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    bool created;
+    // make copies then store in _clone_table
+    LambdaProxyClassKey keyCopy = key;
+    _cloned_table->put_if_absent(keyCopy, info.clone(), &created);
+    ++ _cloned_table->_count;
+    return true; // keep on iterating
+  }
+};
+
+void SystemDictionaryShared::clone_dumptime_tables() {
+  Arguments::assert_is_dumping_archive();
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_dumptime_table != NULL) {
+    assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
+    _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+    CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
+    _dumptime_table->iterate(&copy_classes);
+    _cloned_dumptime_table->update_counts();
+  }
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
+           "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
+    _cloned_dumptime_lambda_proxy_class_dictionary =
+                                          new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+    CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
+                                                          _cloned_dumptime_lambda_proxy_class_dictionary);
+    _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
+  }
+}
+
+void SystemDictionaryShared::restore_dumptime_tables() {
+  assert_lock_strong(DumpTimeTable_lock);
+  delete _dumptime_table;
+  _dumptime_table = _cloned_dumptime_table;
+  _cloned_dumptime_table = NULL;
+  delete _dumptime_lambda_proxy_class_dictionary;
+  _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
+  _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 
 class ArchivedMirrorPatcher {
@@ -1588,7 +1654,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_archive_heap_region_mapped()) {
+  if (!HeapShared::open_regions_mapped()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {
