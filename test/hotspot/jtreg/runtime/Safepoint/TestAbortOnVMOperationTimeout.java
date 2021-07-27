@@ -74,7 +74,7 @@ public class TestAbortOnVMOperationTimeout {
         if (shouldPass) {
             output.shouldHaveExitValue(0);
         } else {
-            output.shouldMatch("VM operation took too long");
+            output.shouldContain("VM operation took too long");
             output.shouldNotHaveExitValue(0);
         }
     }
