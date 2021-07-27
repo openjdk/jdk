@@ -368,6 +368,36 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     /**
+     * Returns path to runtime bundle of the jpackage split-runtime command.
+     */
+    public Path runtimeBundle() {
+        final String bundleName;
+        TKit.assertTrue(hasArgument(SPLIT_RUNTIME),
+                "Use runtimeBundle() only with cli option " + SPLIT_RUNTIME);
+
+        String value = getArgumentValue(SPLIT_RUNTIME);
+        String name;
+        if (value.contains("=")) {
+            String parts[] = value.split("=", 2);
+            name = parts[0];
+        } else {
+            name = value;
+        }
+        String version = System.getProperty("java.version");
+        if (TKit.isLinux()) {
+            bundleName = LinuxHelper.getBundleName(this, name, version);
+        } else if (TKit.isWindows()) {
+            bundleName = WindowsHelper.getBundleName(this, name, version);
+        } else if (TKit.isOSX()) {
+            bundleName = MacHelper.getBundleName(this, name, version);
+        } else {
+            throw TKit.throwUnknownPlatformError();
+        }
+
+        return outputDir().resolve(bundleName);
+    }
+
+    /**
      * Returns application layout.
      *
      * If this is build image command, returns application image layout of the
@@ -957,4 +987,5 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }).get();
 
     private final static String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
+    private final static String SPLIT_RUNTIME = "--split-runtime";
 }

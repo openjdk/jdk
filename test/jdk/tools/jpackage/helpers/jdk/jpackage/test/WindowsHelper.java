@@ -38,10 +38,15 @@ import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
 
-    static String getBundleName(JPackageCommand cmd) {
+    static String getBundleName(JPackageCommand cmd,
+            String name, String version) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
-        return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
+        return String.format("%s-%s%s", name, version,
                 cmd.packageType().getSuffix());
+    }
+
+    static String getBundleName(JPackageCommand cmd) {
+        return getBundleName(cmd, cmd.installerName(), cmd.version());
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {

@@ -518,8 +518,14 @@ public final class PackageTest extends RunnablePackageTest {
                     Executor.Result result = cmd.execute(expectedJPackageExitCode);
                     if (expectedJPackageExitCode == 0) {
                         TKit.assertFileExists(cmd.outputBundle());
+                        if (cmd.hasArgument("--split-runtime")) {
+                            TKit.assertFileExists(cmd.runtimeBundle());
+                        }
                     } else {
                         TKit.assertPathExists(cmd.outputBundle(), false);
+                        if (cmd.hasArgument("--split-runtime")) {
+                            TKit.assertPathExists(cmd.runtimeBundle(), false);
+                        }
                     }
                     verifyPackageBundle(cmd, result);
                     break;

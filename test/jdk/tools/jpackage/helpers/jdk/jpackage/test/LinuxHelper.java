@@ -67,7 +67,8 @@ public class LinuxHelper {
                 desktopFileName);
     }
 
-    static String getBundleName(JPackageCommand cmd) {
+    static String getBundleName(JPackageCommand cmd,
+            String name, String version) {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final PackageType packageType = cmd.packageType();
@@ -83,10 +84,13 @@ public class LinuxHelper {
         }
 
         final String release = getRelease(cmd);
-        final String version = cmd.version();
 
-        return String.format(format, getPackageName(cmd), version, release,
+        return String.format(format, name, version, release,
                 getDefaultPackageArch(packageType)) + packageType.getSuffix();
+    }
+
+    static String getBundleName(JPackageCommand cmd) {
+        return getBundleName(cmd, getPackageName(cmd), cmd.version());
     }
 
     public static Stream<Path> getPackageFiles(JPackageCommand cmd) {

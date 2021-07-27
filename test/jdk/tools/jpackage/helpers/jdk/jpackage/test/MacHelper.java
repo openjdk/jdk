@@ -207,10 +207,16 @@ public class MacHelper {
         return pkg;
     }
 
+    static String getBundleName(JPackageCommand cmd,
+            String name, String version) {
+        cmd.verifyIsOfType(PackageType.MAC);
+        return String.format("%s-%s%s", name, version,
+                cmd.packageType().getSuffix());
+    }
+
     static String getBundleName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
-        return String.format("%s-%s%s", getPackageName(cmd), cmd.version(),
-                cmd.packageType().getSuffix());
+        return getBundleName(cmd, getPackageName(cmd), cmd.version());
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
