@@ -7636,18 +7636,15 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptVectorAESCrypt();
         StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
         StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
-      } else {
-        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
-      }
-    }
-    if (UseAESIntrinsics) {
-      if (VM_Version::supports_avx512_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq()) {
         StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
         StubRoutines::x86::_ghash_poly512_addr = ghash_polynomial512_addr();
         StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
         StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
+      } else {
+        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
       }
     }
+
     if (UseAESCTRIntrinsics) {
       if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
         StubRoutines::x86::_counter_mask_addr = counter_mask_addr();

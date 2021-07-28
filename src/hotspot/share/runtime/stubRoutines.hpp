@@ -206,10 +206,10 @@ class StubRoutines: AllStatic {
   static address _electronicCodeBook_encryptAESCrypt;
   static address _electronicCodeBook_decryptAESCrypt;
   static address _counterMode_AESCrypt;
+  static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
-  static address _galoisCounterMode_AESCrypt;
 
   static address _md5_implCompress;
   static address _md5_implCompressMB;
