@@ -2819,15 +2819,17 @@ bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoo
   return false;
 }
 
-
 //------------------------------ clone_for_use_outside_loop -------------------------------------
-// clone "n" for uses that are outside of loop
-int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
-  int cloned = 0;
+// Clone "n" for uses that are outside of 'loop'. Return the number of cloned nodes or -1 if there
+// are not enough nodes left to create clones.
+int PhaseIdealLoop::clone_for_use_outside_loop(IdealLoopTree* loop, Node* n, Node_List& worklist,
+                                               Node_Array& initial_outside_uses_map) {
+  uint cloned = 0;
+  Node_List clones_of_n_for_use; // Mapping from outside use to cloned node
   assert(worklist.size() == 0, "should be empty");
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
-    if( !loop->is_member(get_loop(has_ctrl(use) ? get_ctrl(use) : use)) ) {
+    if (!loop->is_member(get_loop(has_ctrl(use) ? get_ctrl(use) : use))) {
       worklist.push(use);
     }
   }
@@ -2837,30 +2839,32 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
     return -1;
   }
 
-  while( worklist.size() ) {
-    Node *use = worklist.pop();
-    if (!has_node(use) || use->in(0) == C->top()) continue;
-    uint j;
-    for (j = 0; j < use->req(); j++) {
-      if (use->in(j) == n) break;
+  while (worklist.size() > 0) {
+    Node* outside_use = worklist.pop();
+    if (!has_node(outside_use) || outside_use->in(0) == C->top()) {
+      continue;
     }
-    assert(j < use->req(), "must be there");
+    uint j;
+    for (j = 0; j < outside_use->req(); j++) {
+      if (outside_use->in(j) == n) {
+        break;
+      }
+    }
+    assert(j < outside_use->req(), "must be there");
 
-    // clone "n" and insert it between the inputs of "n" and the use outside the loop
-    Node* n_clone = n->clone();
-    _igvn.replace_input_of(use, j, n_clone);
+    Node* n_clone = get_clone_for_outside_use(n, outside_use, initial_outside_uses_map, clones_of_n_for_use);
+    _igvn.replace_input_of(outside_use, j, n_clone);
     cloned++;
     Node* use_c;
-    if (!use->is_Phi()) {
-      use_c = has_ctrl(use) ? get_ctrl(use) : use->in(0);
+    if (!outside_use->is_Phi()) {
+      use_c = has_ctrl(outside_use) ? get_ctrl(outside_use) : outside_use->in(0);
     } else {
       // Use in a phi is considered a use in the associated predecessor block
-      use_c = use->in(0)->in(j);
+      use_c = outside_use->in(0)->in(j);
     }
     set_ctrl(n_clone, use_c);
     assert(!loop->is_member(get_loop(use_c)), "should be outside loop");
     get_loop(use_c)->_body.push(n_clone);
-    _igvn.register_new_node_with_optimizer(n_clone);
 #ifndef PRODUCT
     if (TracePartialPeeling) {
       tty->print_cr("loop exit cloning old: %d new: %d newbb: %d", n->_idx, n_clone->_idx, get_ctrl(n_clone)->_idx);
@@ -2870,6 +2874,38 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
   return cloned;
 }
 
+// Return a newly created cloned node for an outside of the loop use of 'n' or a cached clone depending on whether
+// 'outside_use' belongs to a chain of nodes for which a clone was already created in an earlier invocation of this
+// method with the same node 'n'. This avoids the creation of unnecessary clones (see move_nodes_to_not_peel()).
+Node* PhaseIdealLoop::get_clone_for_outside_use(const Node* n, Node* outside_use, Node_Array& outside_uses_map,
+                                                Node_List& clones_of_n_for_use) {
+  // Note: outside_uses_map is shared among different n's throughout the entire algorithm.
+  Node* initial_outside_use = outside_uses_map[outside_use->_idx];
+  if (initial_outside_use == NULL) {
+    // outside_use is an outside of the loop use of a node of the initial peel region.
+    initial_outside_use = outside_use;
+    outside_uses_map.map(outside_use->_idx, outside_use);
+  }
+  // else: outside_use is a cloned node from the steps below which is now also not part of the loop anymore.
+  //       Use the cached initial outside of the loop use fetched from the outside_uses_map.
+
+  // Have we already cloned n for the initial_outside_use chain? If so directly use it and do not create another clone
+  // for it. This ensures that we create at most u clones where u is the number of unique node uses outside of the loop
+  // (i.e. an "initial_outside_use chain") of the initial peel_list (see move_nodes_to_not_peel()).
+  // Note: clones_of_n_for_use is only used for a single node 'n' and is reset on the next invocation of this method with
+  // a different 'n'.
+  Node* n_clone = clones_of_n_for_use[initial_outside_use->_idx];
+  if (n_clone == NULL) {
+    // We have not cloned n, yet, for the chain of nodes belonging to the initial outside of the loop use initial_outside_use.
+    // Clone n and insert it between the inputs of n and the use outside of the loop.
+    n_clone = n->clone();
+    _igvn.register_new_node_with_optimizer(n_clone);
+    clones_of_n_for_use.map(initial_outside_use->_idx, n_clone);
+    // Keep track of the initial outside of the loop use for this cloned node to access it later again when visiting the clone.
+    outside_uses_map.map(n_clone->_idx, initial_outside_use);
+  }
+  return n_clone;
+}
 
 //------------------------------ clone_for_special_use_inside_loop -------------------------------------
 // clone "n" for special uses that are in the not_peeled region.
@@ -3326,9 +3362,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
   VectorSet peel;
   VectorSet not_peel;
-  Node_List peel_list;
   Node_List worklist;
-  Node_List sink_list;
 
   uint estimate = loop->est_loop_clone_sz(1);
   if (exceeding_node_budget(estimate)) {
@@ -3366,86 +3400,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 
-  // Step 2: move operations from the peeled section down into the
-  //         not-peeled section
-
-  // Get a post order schedule of nodes in the peel region
-  // Result in right-most operand.
-  scheduled_nodelist(loop, peel, peel_list);
-
-  assert(is_valid_loop_partition(loop, peel, peel_list, not_peel), "bad partition");
-
-  // For future check for too many new phis
-  uint old_phi_cnt = 0;
-  for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
-    Node* use = head->fast_out(j);
-    if (use->is_Phi()) old_phi_cnt++;
-  }
-
-#ifndef PRODUCT
-  if (TracePartialPeeling) {
-    tty->print_cr("\npeeled list");
-  }
-#endif
-
-  // Evacuate nodes in peel region into the not_peeled region if possible
-  bool too_many_clones = false;
-  uint new_phi_cnt = 0;
-  uint cloned_for_outside_use = 0;
-  for (uint i = 0; i < peel_list.size();) {
-    Node* n = peel_list.at(i);
-#ifndef PRODUCT
-  if (TracePartialPeeling) n->dump();
-#endif
-    bool incr = true;
-    if (!n->is_CFG()) {
-      if (has_use_in_set(n, not_peel)) {
-        // If not used internal to the peeled region,
-        // move "n" from peeled to not_peeled region.
-        if (!has_use_internal_to_set(n, peel, loop)) {
-          // if not pinned and not a load (which maybe anti-dependent on a store)
-          // and not a CMove (Matcher expects only bool->cmove).
-          if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
-            int new_clones = clone_for_use_outside_loop(loop, n, worklist);
-            if (new_clones == -1) {
-              too_many_clones = true;
-              break;
-            }
-            cloned_for_outside_use += new_clones;
-            sink_list.push(n);
-            peel.remove(n->_idx);
-            not_peel.set(n->_idx);
-            peel_list.remove(i);
-            incr = false;
-#ifndef PRODUCT
-            if (TracePartialPeeling) {
-              tty->print_cr("sink to not_peeled region: %d newbb: %d",
-                            n->_idx, get_ctrl(n)->_idx);
-            }
-#endif
-          }
-        } else {
-          // Otherwise check for special def-use cases that span
-          // the peel/not_peel boundary such as bool->if
-          clone_for_special_use_inside_loop(loop, n, not_peel, sink_list, worklist);
-          new_phi_cnt++;
-        }
-      }
-    }
-    if (incr) i++;
-  }
-
-  estimate += cloned_for_outside_use + new_phi_cnt;
-  bool exceed_node_budget = !may_require_nodes(estimate);
-  bool exceed_phi_limit = new_phi_cnt > old_phi_cnt + PartialPeelNewPhiDelta;
-
-  if (too_many_clones || exceed_node_budget || exceed_phi_limit) {
-#ifndef PRODUCT
-    if (TracePartialPeeling && exceed_phi_limit) {
-      tty->print_cr("\nToo many new phis: %d  old %d new cmpi: %c",
-                    new_phi_cnt, old_phi_cnt, new_peel_if != NULL?'T':'F');
-    }
-#endif
+  // Step 2: move operations from the peeled section down into the not-peeled section
+  Node_List peel_list;
+  Node_List sink_list;
+  uint cloned_for_outside_use;
+  if (!move_nodes_to_not_peel(loop, new_peel_if, estimate, peel, not_peel, peel_list, worklist, sink_list, cloned_for_outside_use)) {
+    // Exceeded node or phi limit
     if (new_peel_if != NULL) {
       remove_cmpi_loop_exit(new_peel_if, loop);
     }
@@ -3618,6 +3578,119 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   }
 #endif
   return true;
+}
+
+// Move non-pinned data nodes which are neither loads nor cmoves from the peel region ('peel_list'/peel') into the not-peel
+// ('not_peel') region if possible. This is done by walking through the peel region in post order. If a node has a use
+// in the not-peel region and is not used in the peel region (ignoring loop phi nodes), then it can be moved to the not-peel
+// region by cloning it into exit blocks.
+bool PhaseIdealLoop::move_nodes_to_not_peel(IdealLoopTree* loop, const IfNode* new_peel_if, const uint estimate, VectorSet& peel, VectorSet& not_peel,
+                                            Node_List& peel_list, Node_List& worklist, Node_List& sink_list,
+                                            uint& cloned_for_outside_use) {
+  // Get a post order schedule of nodes in the peel region
+  // Result in right-most operand.
+  scheduled_nodelist(loop, peel, peel_list);
+  assert(is_valid_loop_partition(loop, peel, peel_list, not_peel), "bad partition");
+
+  // For future check for too many new phis
+  const LoopNode* head = loop->_head->as_Loop();
+  uint old_phi_cnt = 0;
+  for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
+    Node* use = head->fast_out(j);
+    if (use->is_Phi()) {
+      old_phi_cnt++;
+    }
+  }
+
+  // Evacuate a node n in the peel region into the not_peeled region if n is not used in the peel region and
+  // if it is not pinned and not a load nor a CMove. This is done by cloning n into the loop exit blocks
+  // (done by clone_for_use_outside_loop()). We need to be careful to only clone a node at most u times where
+  // u is the number of unique node uses outside of the loop of the initial peel_list. A straight forward visiting in
+  // post order and continuous cloning of newly visited nodes is inefficient when processing a cycle/diamond in the
+  // graph. For example, assume a use U inside the not-peel region and a use O outside of the loop and nodes A, B, C, D
+  // which we need to clone for the outside use O in order to sink them to the not-peel region:
+  //
+  //      A                        A                               A                        A   A2  A3  A4
+  //     / \     cloning        /      \       cloning        /  |   |  \       cloning     |   |   |    |
+  //    B   C       D         B --\  /-- C       B,C         B   C  B2   C2        A        B   C   B2  C2
+  //     \ /      ====>       |    \/    |      ====>         \ /     \ /        ====>       \ /     \ /
+  //      D                   |    /\    |                     D       D2                     D       D2
+  //     / \                  D --/  \-- D2                    |       |                      |       |
+  //    U   O                 |          |                     U       O                      U       O
+  //                          U          O
+  //
+  // There are two redundant clones of A: A could be merged together with A2 and A3 with A4. This results in the optimal
+  // cloning which requires at most #outside uses * #nodes = 1 * 4 = 4 clones (instead of 6 above).
+  //
+  //      A                           A         A2
+  //     / \      optimal cloning    / \       /  \
+  //    B   C        A,B,C,D        B   C     B2  C2
+  //     \ /         ======>         \ /       \  /
+  //      D                           D         D2
+  //     / \                          |         |
+  //    U   O                         U         O
+  //
+  // The less efficient cloning in the first example could lead to an exponential increase in the number of nodes
+  // when processing a larger graph with many cycles/diamonds. This is avoided in the algorithm used by
+  // clone_for_use_outside_loop() which reuses already cloned nodes ("merging nodes" as mentioned above).
+  uint new_phi_cnt = 0;
+  cloned_for_outside_use = 0;
+  Node_Array outside_uses_map(Thread::current()->resource_area());
+
+  for (uint i = 0; i < peel_list.size();) {
+    Node* n = peel_list.at(i);
+#ifndef PRODUCT
+    if (TracePartialPeeling) {
+      n->dump();
+    }
+#endif
+    bool too_many_clones = false;
+    bool incr = true;
+    if (!n->is_CFG() && has_use_in_set(n, not_peel)) {
+      // If not used internal to the peeled region,
+      // move "n" from peeled to not_peeled region.
+      if (!has_use_internal_to_set(n, peel, loop)) {
+        // if not pinned and not a load (which maybe anti-dependent on a store)
+        // and not a CMove (Matcher expects only bool->cmove).
+        if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
+          int new_clones = clone_for_use_outside_loop(loop, n, worklist, outside_uses_map);
+          if (new_clones == -1) {
+            return false;
+          }
+          assert(new_clones >= 0, "must be positive");
+          cloned_for_outside_use += new_clones;
+          sink_list.push(n);
+          peel.remove(n->_idx);
+          not_peel.set(n->_idx);
+          peel_list.remove(i);
+          incr = false;
+#ifndef PRODUCT
+          if (TracePartialPeeling) {
+            tty->print_cr("sink to not_peeled region: %d newbb: %d", n->_idx, get_ctrl(n)->_idx);
+          }
+#endif
+        }
+      } else {
+        // Otherwise check for special def-use cases that span
+        // the peel/not_peel boundary such as bool->if
+        clone_for_special_use_inside_loop(loop, n, not_peel, sink_list, worklist);
+        new_phi_cnt++;
+      }
+    }
+    if (incr) {
+      i++;
+    }
+  }
+  bool exceed_node_budget = !may_require_nodes(cloned_for_outside_use + new_phi_cnt + estimate);
+  bool exceed_phi_limit = new_phi_cnt > old_phi_cnt + PartialPeelNewPhiDelta;
+  bool exceeded = exceed_node_budget || exceed_phi_limit;
+#ifndef PRODUCT
+  if (TracePartialPeeling && exceed_phi_limit) {
+    tty->print_cr("\nToo many new phis: %d  old %d new cmpi: %c",
+                  new_phi_cnt, old_phi_cnt, new_peel_if != NULL ? 'T' : 'F');
+  }
+#endif
+  return !exceeded;
 }
 
 //------------------------------reorg_offsets----------------------------------

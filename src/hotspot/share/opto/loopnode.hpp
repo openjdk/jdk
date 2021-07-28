@@ -1378,19 +1378,24 @@ public:
   Node* adjust_limit(bool reduce, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round);
 
   // Partially peel loop up through last_peel node.
-  bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
+  bool partial_peel(IdealLoopTree* loop, Node_List& old_new);
 
+  // Move non-pinned data nodes into the not-peel region if possible.
+  bool move_nodes_to_not_peel(IdealLoopTree* loop, const IfNode* new_peel_if, uint estimate, VectorSet& peel, VectorSet& not_peel,
+                              Node_List& peel_list, Node_List& worklist, Node_List& sink_list, uint& cloned_for_outside_use);
   // Create a scheduled list of nodes control dependent on ctrl set.
-  void scheduled_nodelist( IdealLoopTree *loop, VectorSet& ctrl, Node_List &sched );
-  // Has a use in the vector set
-  bool has_use_in_set( Node* n, VectorSet& vset );
-  // Has use internal to the vector set (ie. not in a phi at the loop head)
-  bool has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoopTree *loop );
-  // clone "n" for uses that are outside of loop
-  int  clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist );
-  // clone "n" for special uses that are in the not_peeled region
-  void clone_for_special_use_inside_loop( IdealLoopTree *loop, Node* n,
-                                          VectorSet& not_peel, Node_List& sink_list, Node_List& worklist );
+  static void scheduled_nodelist(IdealLoopTree* loop, VectorSet& ctrl, Node_List& sched);
+  // Has a use in the vector set?
+  static bool has_use_in_set(Node* n, VectorSet& vset);
+  // Has use internal to the vector set (i.e. not in a phi at the loop head)?
+  static bool has_use_internal_to_set(Node* n, VectorSet& vset, IdealLoopTree* loop);
+  // Clone "n" for uses that are outside of loop.
+  int clone_for_use_outside_loop(IdealLoopTree* loop, Node* n, Node_List& worklist, Node_Array& initial_outside_uses_map);
+  // Return a new or cached clone for the outside of the loop use.
+  Node* get_clone_for_outside_use(const Node* n, Node* outside_use, Node_Array& outside_uses_map, Node_List& clones_of_n_for_use);
+  // Clone "n" for special uses that are in the not_peeled region.
+  void clone_for_special_use_inside_loop(IdealLoopTree* loop, Node* n, VectorSet& not_peel, Node_List& sink_list,
+                                         Node_List& worklist);
   // Insert phi(lp_entry_val, back_edge_val) at use->in(idx) for loop lp if phi does not already exist
   void insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_val, Node* back_edge_val, LoopNode* lp );
 #ifdef ASSERT

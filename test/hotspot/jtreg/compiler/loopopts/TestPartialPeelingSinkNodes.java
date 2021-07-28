@@ -24,11 +24,11 @@
 
 /*
  * @test
- * @bug 8256934
+ * @bug 8256934 8268744
  * @summary Sinking of nodes in partial peeling creates too many clones resulting in a live node limit exceeded assertion failure.
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.loopopts.TestPartialPeelingSinkNodes::test
- *                   compiler.loopopts.TestPartialPeelingSinkNodes
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure compiler.loopopts.TestPartialPeelingSinkNodes
  */
 
 package compiler.loopopts;
@@ -42,6 +42,9 @@ public class TestPartialPeelingSinkNodes {
     }
 
     // The algorithm in partial peeling creates ~90000 nodes for this method which triggers the assertion failure.
+    // Edit 8268744: When increasing the node limit (default limit will bailout with 8256934), the old algorithm needs
+    // significantly more time to execute where the new algorithm is much faster and only requires ~140 new nodes.
+    // There is no compilation bailout anymore and -XX:+AbortVMOnCompilationFailure does not abort the VM.
     public static void test() {
         for (int i = 0; i < 2480; i++) {
             int i2 = -37052, i3 = 39651, i4 = -37052;
