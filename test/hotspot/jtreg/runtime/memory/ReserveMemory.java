@@ -26,6 +26,7 @@
  * @test
  * @bug 8012015
  * @requires !(os.family == "aix")
+ * @requires vm.flagless
  * @summary Make sure reserved (but uncommitted) memory is not accessible
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
