@@ -707,6 +707,11 @@
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
                                                                                                                   \
+  /* Preverifier */                                                                                               \
+  template(jdk_internal_vm_Preverifier,                      "jdk/internal/vm/Preverifier")                       \
+  template(preverifier_patch,                                "patch")                                             \
+  template(byte_array_byte_array_signature,                  "([B)[B")                                            \
+                                                                                                                  \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]

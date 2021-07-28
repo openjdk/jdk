@@ -29,11 +29,23 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile sameRetW.jasm
-            TestPatch.java
  * @run main SameRetWTest
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
 public class SameRetWTest {
 	public static void main(String[] args) throws Throwable {
-		TestPatch.test("sameRetW", "Hello\nHello\nWorld!");
+		//TestPatch.test("sameRetW", "Hello\nHello\nWorld!");
+        if (args.length != 0) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("SameRetWTest", "test");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain("Hello\nHello\nWorld!");
+            output.shouldHaveExitValue(0);
+        }
+        else {
+            Class<?> newClass = Class.forName("sameRetW");
+        }
 	}
 }

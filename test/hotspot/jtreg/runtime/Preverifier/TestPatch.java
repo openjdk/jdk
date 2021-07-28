@@ -37,39 +37,35 @@ import java.io.IOException;
  */
 public class TestPatch {
     public static void test(String fileName, String expectedOutput) throws Throwable {
-		Class<?> newClass;
-		//try {
-        	newClass = Class.forName(fileName);
-			// Method m = newClass.getMethod("test");
-			// m.invoke(newClass.newInstance());
-			byte[] newClassBytes = Preverifier.patch(
-				new String[]{newClass.getProtectionDomain()
-				.getCodeSource().getLocation().getPath() + fileName}
-			);
-			try {
-        		Path tmpDir;
-        		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
-        			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
-        		}
-        		else {
-        			tmpDir = Path.of("/tmp/preverifier/");
-        		}
-        		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
-        		Files.write(tmpFile, newClassBytes, 
-					StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-                try {
-                        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                            "-cp", "/tmp/preverifier/", fileName);
-                        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-                        output.shouldContain(expectedOutput);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Incorrect output");
-                    }
-        	} catch (IOException ex) {
-            	throw new Error("Cannot write file", ex);
-        	}
-		/*} catch (Exception f) {
-			System.out.println("Class not found");
-		}*/
+		/*Class<?> newClass;
+    	newClass = Class.forName(fileName);
+		// Method m = newClass.getMethod("main");
+		// m.invoke(newClass.newInstance());
+		byte[] newClassBytes = Preverifier.patch(
+			new String[]{newClass.getProtectionDomain()
+			.getCodeSource().getLocation().getPath() + fileName}
+		);
+		try {
+    		Path tmpDir;
+    		if (!Files.exists(Path.of("/tmp/preverifier/"))) {
+    			tmpDir = Files.createDirectory(Path.of("/tmp/preverifier/"));	
+    		}
+    		else {
+    			tmpDir = Path.of("/tmp/preverifier/");
+    		}
+    		Path tmpFile = Path.of(tmpDir.toString() + File.separator + fileName + ".class");
+    		Files.write(tmpFile, newClassBytes, 
+				StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            try {
+                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                        "-cp", "/tmp/preverifier/", fileName);
+                    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+                    output.shouldContain(expectedOutput);
+                } catch (Exception e) {
+                    throw new RuntimeException("Incorrect output");
+                }
+    	} catch (IOException ex) {
+        	throw new Error("Cannot write file", ex);
+    	}*/
     }
 }

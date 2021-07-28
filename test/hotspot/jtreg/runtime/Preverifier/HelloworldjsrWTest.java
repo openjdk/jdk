@@ -29,11 +29,23 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile helloworldjsrW.jasm
-            TestPatch.java
  * @run main/othervm -Xverify:all HelloworldjsrWTest
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
 public class HelloworldjsrWTest {
 	public static void main(String[] args) throws Throwable {
-		TestPatch.test("helloworldjsrW", "Hello world!");
+		//TestPatch.test("helloworldjsrW", "Hello world!");
+        if (args.length != 0) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("HelloworldjsrWTest", "test");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain("Hello world!");
+            output.shouldHaveExitValue(0);
+        }
+        else {
+            Class<?> newClass = Class.forName("helloworldjsrW");
+        }
 	}
 }

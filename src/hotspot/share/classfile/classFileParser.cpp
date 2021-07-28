@@ -114,7 +114,8 @@
 
 // Used for backward compatibility reasons:
 // - to disallow argument and require ACC_STATIC for <clinit> methods
-#define JAVA_7_VERSION                    51
+// This is in the header file
+// #define JAVA_7_VERSION                    51
 
 // Extension method support.
 #define JAVA_8_VERSION                    52

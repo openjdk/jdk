@@ -29,12 +29,21 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile nestedSameRet.jasm
-            TestWithError.java
  * @run main/othervm -Xverify:all NestedSameRetTest
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+            
 public class NestedSameRetTest {
 	public static void main(String[] args) throws Throwable {
 		//testPatch.test("nestedSameRet", "Not done yet!\nHello world!");
-        TestWithError.test("nestedSameRet", "nestedSameRet passed, error thrown", "nestedSameRet failed, did now throw error");
+        //TestWithError.test("nestedSameRet", "nestedSameRet passed, error thrown", "nestedSameRet failed, did now throw error");
+        try {
+            Class<?> newClass = Class.forName("nestedSameRet");
+            throw new RuntimeException("nestedSameRet failed, did now throw error");
+        } catch (java.lang.VerifyError e) {
+            System.out.println("nestedSameRet passed, error thrown");
+        }
 	}
 }
