@@ -49,39 +49,39 @@ public class bug4251579 {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+                @Override
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        robot.waitForIdle();
-        robot.delay(1000);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                boolean passed = false;
+                @Override
+                public void run() {
+                    boolean passed = false;
 
-                Point p = htmlComponent.getLocationOnScreen();
-                Dimension d = htmlComponent.getSize();
-                int x0 = p.x;
-                int y = p.y + d.height / 2;
+                    Point p = htmlComponent.getLocationOnScreen();
+                    Dimension d = htmlComponent.getSize();
+                    int x0 = p.x;
+                    int y = p.y + d.height / 2;
 
-                for (int x = x0; x < x0 + d.width; x++) {
-                    if (robot.getPixelColor(x, y).equals(Color.blue)) {
-                        passed = true;
-                        break;
+                    for (int x = x0; x < x0 + d.width; x++) {
+                        if (robot.getPixelColor(x, y).equals(Color.blue)) {
+                            passed = true;
+                            break;
+                        }
                     }
-                }
 
-                if (!passed) {
-                    throw new RuntimeException("Test failed.");
-                }
+                    if (!passed) {
+                        throw new RuntimeException("Test failed.");
+                    }
 
-            }
-        });
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (mainFrame != null) {
