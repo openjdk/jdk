@@ -30,7 +30,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.util
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation TestLongRangeCheck
  *
@@ -158,21 +158,41 @@ public class TestLongRangeCheck {
 
         // offset causes overflow
 
-        Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePos", long.class, long.class, long.class, long.class);
-        m.invoke(null, 0, 100, 100, 0);
-        compile(m);
+        {
+            Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePos", long.class, long.class, long.class, long.class);
+            m.invoke(null, 0, 100, 100, 0);
+            compile(m);
 
-        m.invoke(null, 0, 100, 100, 0);
-        assertIsCompiled(m);
-        try {
-            m.invoke(null, 0, 100, 100, Long.MAX_VALUE - 50);
-            throw new RuntimeException("should have thrown");
-        } catch(InvocationTargetException e) {
-            if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
-                throw new RuntimeException("unexpected exception");
+            m.invoke(null, 0, 100, 100, 0);
+            assertIsCompiled(m);
+            try {
+                m.invoke(null, 0, 100, 100, Long.MAX_VALUE - 50);
+                throw new RuntimeException("should have thrown");
+            } catch(InvocationTargetException e) {
+                if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
+                    throw new RuntimeException("unexpected exception");
+                }
             }
+            assertIsNotCompiled(m);
         }
-        assertIsNotCompiled(m);
+
+        // no spurious deopt if the range check doesn't fail because not executed
+        {
+            Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePosConditional", long.class, long.class, long.class, long.class, long.class, long.class);
+            m.invoke(null, 0, 100, 100, 0, 0, 100);
+            compile(m);
+
+            m.invoke(null, 0, 100, 100, -50, 50, 100);
+            assertIsCompiled(m);
+        }
+        {
+            Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePosConditional", long.class, long.class, long.class, long.class, long.class, long.class);
+            m.invoke(null, 0, 100, 100, 0, 0, 100);
+            compile(m);
+
+            m.invoke(null, 0, 100, Long.MAX_VALUE, Long.MAX_VALUE - 50, 0, 50);
+            assertIsCompiled(m);
+        }
     }
 
     public static void testStridePosScalePos(long start, long stop, long length, long offset) {
@@ -268,6 +288,17 @@ public class TestLongRangeCheck {
         final long stride = Integer.MAX_VALUE / 10000;
         for (long i = start; i < stop; i += stride) {
             Preconditions.checkIndex(scale * i + offset, length, null);
+        }
+    }
+
+    public static void testStridePosScalePosConditional(long start, long stop, long length, long offset, long start2, long stop2) {
+        Preconditions.checkIndex(0, length, null);
+        final long scale = 1;
+        final long stride = 1;
+        for (long i = start; i < stop; i += stride) {
+            if (i >= start2 && i < stop2) {
+                Preconditions.checkIndex(scale * i + offset, length, null);
+            }
         }
     }
 }

@@ -1020,6 +1020,9 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
 
 int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
+  if (stride_con < 0) { // only for stride_con > 0 && scale > 0 for now
+    return iters_limit;
+  }
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
   jlong original_iters_limit = iters_limit;
@@ -1033,11 +1036,11 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         jlong scale = 0;
         RangeCheckNode* rc = c->in(0)->as_RangeCheck();
         if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
-            loop->is_invariant(range) && loop->is_invariant(offset)) {
-          if (original_iters_limit / ABS(scale * stride_con) >= min_iters) {
-            reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
-            range_checks.push(c);
-          }
+            loop->is_invariant(range) && loop->is_invariant(offset) &&
+            scale > 0 && // only for stride_con > 0 && scale > 0 for now
+            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+          reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
+          range_checks.push(c);
         }
       }
     }
@@ -1046,73 +1049,77 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
   return checked_cast<int>(reduced_iters_limit);
 }
 
+// One execution of the inner loop covers a sub-range of the entire iteration range of the loop: [A,Z), aka [A=init,
+// Z=limit). If the loop has at least one trip (which is the case here), the iteration variable always takes A as its
+// first value, followed by A+S (S is the stride), next A+2S, etc. The limit is exclusive, so that the final value B of
+// i is never Z.  It will be B=Z-1 if S=1, or B=Z+1 if S=-1.  If |S|>1 the formula for the last value requires a floor
+// operation, specifically B=floor((Z-sgn(S)-A)/S)*S+A.
+
+// Within the loop there may be many range checks.  Each such range check (R.C.) is of the form 0 <= i*K+L < R, where K
+// is a scale factor applied to the loop iteration variable i, and L is some offset; K, L, and R are loop-invariant.
+// Because R is never negative, this check can always be simplified to an unsigned check i*K+L <u R.
+
+// When a long loop over a 64-bit variable i (outer_iv) is decomposed into a series of shorter sub-loops over a 32-bit
+// variable j (inner_iv), the above computations are adjusted so that some of them can be done using 32-bit arithmetic.
+// Suppose the next unprocessed iteration value (for i) is some specific C. The iteration range for the sub-loops is
+// [A2 = 0, Z2) or [A2 = 0, B2]. We have C=B2+S, where B2 is the post-limit iteration value from the previous 32-bit
+// sub-loop, or else is C=A from the whole loop if this is the first sub-loop.
+
+// Returning to range checks, we see that each i*K+L <u R expands to (C+j)*K+L <u R, or j*K+Q <u R, where Q=(C*K+L).
+// (Recall that K and L and R are loop-invariant scale, offset and range values for a particular R.C.)  This is still a
+// 64-bit comparison, so the range check elimination logic will not apply to it.  (The R.C.E. transforms operate only on
+// 32-bit indexes and comparisons, because they use 64-bit temporary values to avoid overflow; see
+// PhaseIdealLoop::add_constraint.)
+
+// We must transform this comparison so that it gets the same answer, but by means of a 32-bit R.C. (using j not i) of
+// the form j*K+L2 <u R2.  Note that L2 and R2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
+// problem reduces to computing values for L2 and R2 (for each R.C. in the loop) in the loop header for the sub-loop.
+// Then the standard R.C.E. transforms can take those as inputs and further computes the necessary minimum and maximum
+// values for the 32-bit counter j within which the range checks can be eliminated.
+
+// So, given j*K+Q <u R, we need to find some j*K+L2 <u R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
+// not overflow. We also need to cover the cases where i*K+L (= j*K+Q) overflows to a 64-bit negative, since that is
+// allowed as an input to the R.C., as long as the R.C. as a whole fails.
+
+// To prevent the multiplication j*K from overflowing, we adjust the sub-loop limit Z2 closer to zero.
+
+// For each R.C. j*K+Q <u R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max)
+
+// Case A: Some Negatives (but no overflow).
+// Number line:
+// |s64_min   .    .    .    0    .    .    .   s64_max|
+// |    .  Q_min..Q_max .    0    .    .    .     .    |  s64 negative
+// |    .     .    .  Q_min..0..Q_max  .    .     .    |  small mixed
+//
+// if Q_min <s64 0, then use this test:
+// j*K + Q_min <u32 clamp(R, 0, Q_max)
+
+// Case B: No Negatives.
+// Number line:
+// |s64_min   .    .    .    0    .    .    .   s64_max|
+// |    .     .    .    .    0 Q_min..Q_max .     .    |  small positive
+// |    .     .    .    .    0    . Q_min..Q_max  .    |  s64 positive
+//
+// if both Q_min, Q_max >=s64 0, then use this test:
+// j*K + 0 <u32 clamp(R, Q_min, Q_max) - Q_min
+
+// Case C: Overflow in the int:N domain
+// Number line:
+// |..Q_max-2^64   .    .    0    .    .    .   Q_min..|  s64 overflow
+//
+// if Q_min >=s64 0 but Q_max <s64 0, then use this test:
+// j*K + 0 <u32 clamp(R, Q_min, R) - Q_min
+//
+// Tests above can be merged into a single one:
+// L_clamp = Q_min < 0 ? 0 : Q_min
+// H_clamp = Q_max < Q_min ? R : Q_max
+// j*K + Q_min - L_clamp <u32 clamp(R, L_clamp, H_clamp) - L_clamp
 void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
-  Node* int_zero = _igvn.intcon(0);
-  set_ctrl(int_zero, C->root());
-  Node* int_stride = _igvn.intcon(stride_con);
-  set_ctrl(int_stride, C->root());
+  Node* long_zero = _igvn.longcon(0);
+  set_ctrl(long_zero, C->root());
 
-  // A range check is: 0 <=? scale * outer_iv + offset <? range
-  // One execution of the inner loop covers a sub range of the entire iteration range of the loop: [lower, upper)
-  //
-  // Note regarding overflow:
-  // scale * inner_iv can't overflow the int range because the number of iterations of the inner loop is adjusted so
-  // it's guaranteed not to happen
-  // scale * outer_iv + offset can overflow the long range but logic below should guarantee overflow doesn't cause incorrect execution.
-  //
-  //
-  // if scale * upper + offset < 0, the range check always fails (unless maybe in the case of an overflow) and can be transformed to:
-  // 0 <=? scale * i <? 0 (1)
-  //
-  // Otherwise, if scale > 0 and stride > 0 then, an equivalent range check is:
-  // 0 <=? scale * lower + offset + scale * inner_iv <? min(range, scale * upper + offset)
-  //
-  // if scale * lower + offset >= 0 then scale * lower + offset + scale * inner_iv >= 0 and an equivalent range check is:
-  // if min(range, scale * upper + offset) >= (scale * lower + offset):
-  // 0 <=? scale * inner_iv <? min(range, scale * upper + offset) - (scale * lower + offset) (2)
-  // if min(range, scale * upper + offset) < (scale * lower + offset):
-  // 0 <=? scale * inner_iv <? 0 (3)
-  //
-  // if scale * lower + offset < 0:
-  // 0 <=? scale * lower + offset + scale * inner_iv <? min(range, scale * upper + offset) (4)
-  // Given, scale * upper + offset >= 0 and scale * inner_iv fits in an int so scale * lower + offset + scale * inner_iv fits in an int
-  //
-  //
-  // if scale > 0 and stride < 0, an equivalent range check is:
-  //
-  // 0 <=? scale * (upper - 1) + offset + scale * inner_iv <? min(range, scale * upper + offset)
-  //
-  // if scale * lower + offset >= 0 then scale * (upper - 1) + offset + scale * inner_iv >= 0 and an equivalent range check is:
-  // 0 <=? scale * lower + offset + (scale * (upper - 1) - scale * lower) + scale * inner_iv <? min(range, scale * upper + offset)
-  // if min(range, scale * upper + offset) >= (scale * lower + offset):
-  // 0 <=? (scale * (upper - 1) - scale * lower) + scale * inner_iv <? min(range, scale * upper + offset) - (scale * lower + offset) (5)
-  // if min(range, scale * upper + offset) < (scale * lower + offset):
-  // 0 <=? (scale * (upper - 1) - scale * lower) + scale * inner_iv <? 0 (6)
-  //
-  // if scale * lower + offset < 0:
-  // 0 <=? scale * (upper - 1) + offset + scale * inner_iv <? min(range, scale * upper + offset) (7)
-  // Given, scale * upper + offset >= 0 and scale * inner_iv fits in an int so scale * (upper - 1) + offset + scale * inner_iv fits in an int
-  //
-  // All of these cases taken together allow conversion of a range check on the long iv of the outer loop into a range
-  // check on the int iv of the inner loop:
-  //
-  // if scale > 0 and stride > 0:
-  // new_range = min(range, scale * upper + offset) - max(0, (scale * lower + offset))
-  // new_range = scale * upper + offset < 0 ? 0 : new_range (1)
-  // new_range = new_range < 0 ? 0 : new_range (3)
-  // inner_iv * scale + (scale * lower + offset < 0 ? scale * lower + offset < 0 : 0) <u new_range (2), (4)
-  //
-  // if scale > 0 and stride < 0:
-  // new_range = min(range, scale * upper + offset) - max(0, (scale * lower + offset))
-  // new_range = scale * upper + offset < 0 ? 0 : new_range (1)
-  // new_range = new_range < 0 ? 0 : new_range (6)
-  // extra_offset = (scale * (upper - 1 - lower)) + offset
-  // inner_iv * scale + extra_offset + (scale * lower + offset < 0 ? scale * lower + offset < 0 : 0) <u new_range (5), (7)
-  //
-  // scale < 0 and stride < 0 is similar to scale > 0 and stride > 0 but with lower and upper swapped
-  // scale < 0 and stride > 0 is similar to scale > 0 and stride < 0 but with lower and upper swapped
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
     ProjNode* unc_proj = proj->other_if_proj();
@@ -1128,102 +1135,85 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     CallStaticJavaNode* call = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
     Node* entry_control = inner_head->in(LoopNode::EntryControl);
 
-    // Compute lower and upper
-    Node* last = new LoopLimitNode(C, int_zero, inner_iters_actual_int, int_stride);
-    register_new_node(last, entry_control);
-    last = new SubINode(last, int_stride);
-    register_new_node(last, entry_control);
+    Node* R = range;
+    Node* K = _igvn.longcon(scale);
+    set_ctrl(K, this->C->root());
+    Node* L = offset;
+    Node* C = outer_phi;
+    Node* Z2 = new ConvI2LNode(inner_iters_actual_int, TypeLong::LONG);
+    register_new_node(Z2, entry_control);
 
-    Node* lower = outer_phi;
-    Node* upper = new ConvI2LNode(last);
-    register_new_node(upper, entry_control);
-    upper = new AddLNode(lower, upper);
-    register_new_node(upper, entry_control);
+    // Start with 64-bit values:
+    //   i*K + L <u64 R
+    //   (C+j)*K + L <u64 R
+    //   j*K + L2 <u64 R    where L2 = C*K+L
+    Node* L2 = new MulLNode(C, K);
+    register_new_node(L2, entry_control);
+    L2 = new AddLNode(L2, L);
+    register_new_node(L2, entry_control);
 
-    Node* scale_node = _igvn.longcon(scale);
-    set_ctrl(scale_node, C->root());
+    // Compute endpoints of the range of values j*K.
+    //  Q_min = (j=0)*K + L2;  Q_max = (j=Z2)*K + L2
+    Node* Q_min = L2;
+    Node* Q_max = new MulLNode(Z2, K);
+    register_new_node(Q_max, entry_control);
+    Q_max = new AddLNode(Q_max, L2);
+    register_new_node(Q_max, entry_control);
 
-    upper = new MulLNode(upper, scale_node);
-    register_new_node(upper, entry_control);
-    upper = new AddLNode(upper, offset);
-    register_new_node(upper, entry_control);
+    // L_clamp = Q_min < 0 ? 0 : Q_min
+    Node* Q_min_cmp = new CmpLNode(Q_min, long_zero);
+    register_new_node(Q_min_cmp, entry_control);
+    Node* Q_min_bool = new BoolNode(Q_min_cmp, BoolTest::lt);
+    register_new_node(Q_min_bool, entry_control);
+    Node* L_clamp = new CMoveLNode(Q_min_bool, Q_min, long_zero, TypeLong::LONG);
+    register_new_node(L_clamp, entry_control);
 
-    lower = new MulLNode(lower, scale_node);
-    register_new_node(lower, entry_control);
-    lower = new AddLNode(lower, offset);
-    register_new_node(lower, entry_control);
+    // H_clamp = Q_max < Q_min ? R : Q_max
+    Node* Q_max_cmp = new CmpLNode(Q_max, Q_min);
+    register_new_node(Q_max_cmp, entry_control);
+    Node* Q_max_bool = new BoolNode(Q_max_cmp, BoolTest::lt);
+    register_new_node(Q_max_bool, entry_control);
+    Node* H_clamp = new CMoveLNode(Q_max_bool, Q_max, R, TypeLong::LONG);
+    register_new_node(H_clamp, entry_control);
 
-    if ((scale > 0) != (stride_con > 0)) {
-      swap(lower, upper);
-    }
+    // R2 = clamp(R, L_clamp, H_clamp) - L_clamp
+    // that is: R2 = clamp(R, L_clamp, H_clamp) if Q_min < 0
+    // or:      R2 = clamp(R, L_clamp, H_clamp) - Q_min if Q_min > 0
+    Node* R2 = clamp(R, L_clamp, H_clamp);
+    R2 = new SubLNode(R2, L_clamp);
+    register_new_node(R2, entry_control);
+    R2 = new ConvL2INode(R2, TypeInt::INT);
+    register_new_node(R2, entry_control);
 
-    Node* long_one = _igvn.longcon(1);
-    set_ctrl(long_one, C->root());
-    upper = new AddLNode(upper, long_one);
-    register_new_node(upper, entry_control);
+    // Q = Q_min - L_clamp
+    // that is: Q = Q_min - 0 if Q_min < 0
+    // or:      Q = Q_min - Q_min = 0 if Q_min > 0
+    Node* Q = new SubLNode(Q_min, L_clamp);
+    register_new_node(Q, entry_control);
+    Q = new ConvL2INode(Q, TypeInt::INT);
+    register_new_node(Q, entry_control);
 
-    // min(range, scale * upper + offset)
-    Node* new_upper = MaxNode::signed_min(range, upper, TypeLong::POS, _igvn);
-    set_subtree_ctrl(new_upper, true);
-
-    // Use the sign bit, shift and mask to test for lower >= 0
-    Node* shift_con = _igvn.intcon(63);
-    set_ctrl(shift_con, C->root());
-    Node* sign = new RShiftLNode(lower, shift_con);
-    register_new_node(sign, entry_control);
-    Node* long_minus_one = _igvn.longcon(-1);
-    set_ctrl(long_minus_one, C->root());
-    Node* not_sign = new XorLNode(sign, long_minus_one);
-    register_new_node(not_sign, entry_control);
-    // lower_pos = lower >= 0 ? lower : 0
-    Node* lower_pos = new AndLNode(lower, not_sign);
-    register_new_node(lower_pos, entry_control);
-    // new_offset = lower >= 0 ? 0 : lower
-    Node* new_offset = new AndLNode(lower, sign);
-    register_new_node(new_offset, entry_control);
-    new_offset = new ConvL2INode(new_offset);
-    register_new_node(new_offset, entry_control);
-
-    Node* new_range = new SubLNode(new_upper, lower_pos);
-    register_new_node(new_range, entry_control);
-
-    // new_range = new_range < 0 ? 0 : new_range
-    // new_range = upper < 0 ? 0 : new_range
-    // Use the sign bit again
-    Node* must_be_non_neg = new OrLNode(new_range, upper);
-    register_new_node(must_be_non_neg, entry_control);
-    sign = new RShiftLNode(must_be_non_neg, shift_con);
-    register_new_node(sign, entry_control);
-    not_sign = new XorLNode(sign, long_minus_one);
-    register_new_node(not_sign, entry_control);
-    new_range = new AndLNode(new_range, not_sign);
-    register_new_node(new_range, entry_control);
-
-    Node* int_range = new ConvL2INode(new_range, TypeInt::POS);
-    register_new_node(int_range, entry_control);
-    Node* int_scale_node = _igvn.intcon((int)scale);
-    set_ctrl(int_scale_node, C->root());
-    Node* scaled_iv = new MulINode(inner_phi, int_scale_node);
+    // Transform the range check
+    K = _igvn.intcon(checked_cast<int>(scale));
+    set_ctrl(K, this->C->root());
+    Node* scaled_iv = new MulINode(inner_phi, K);
     register_new_node(scaled_iv, c);
-    Node* scaled_iv_plus_offset = scaled_iv;
+    Node* scaled_iv_plus_offset = scaled_iv_plus_offset = new AddINode(scaled_iv, Q);
+    register_new_node(scaled_iv_plus_offset, c);
 
-    if (scale > 0 != stride_con > 0) {
-      Node* extra_offset = new MulINode(last, int_scale_node);
-      register_new_node(extra_offset, entry_control);
-      extra_offset = new AddINode(extra_offset, new_offset);
-      register_new_node(extra_offset, entry_control);
-      scaled_iv_plus_offset = new SubINode(scaled_iv, extra_offset);
-      register_new_node(scaled_iv_plus_offset, c);
-    } else {
-      scaled_iv_plus_offset = new AddINode(scaled_iv, new_offset);
-      register_new_node(scaled_iv_plus_offset, c);
-    }
-
-    Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, int_range);
+    Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R2);
     register_new_node(new_rc_cmp, c);
 
     _igvn.replace_input_of(rc_bol, 1, new_rc_cmp);
   }
+}
+
+Node* PhaseIdealLoop::clamp(Node* R, Node* L, Node* H) {
+  Node* min = MaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
+  set_subtree_ctrl(min, true);
+  Node* max = MaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
+  set_subtree_ctrl(max, true);
+  return max;
 }
 
 LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head,

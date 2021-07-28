@@ -1642,6 +1642,7 @@ public:
 
   void try_sink_out_of_loop(Node* n);
 
+  Node* clamp(Node* pNode, Node* pNode1, Node* pNode2);
 };
 
 
