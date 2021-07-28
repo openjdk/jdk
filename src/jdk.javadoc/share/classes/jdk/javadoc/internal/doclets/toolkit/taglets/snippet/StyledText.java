@@ -39,23 +39,21 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
- * A mutable sequence of characters, each of which can be associated with a set
- * of objects. These objects can be used by clients as character metadata, such
- * as rich text style.
+ * A mutable sequence of individually styleable characters.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-public class AnnotatedText<S> {
+public class StyledText {
 
-    private Map<String, AnnotatedText<S>> bookmarks;
+    private Map<String, StyledText> bookmarks;
     private StringBuilder chars;
-    private Metadata<S> metadata;
+    private Styles styles;
     private List<WeakReference<SubText>> subtexts;
 
-    public AnnotatedText() {
+    public StyledText() {
         init();
     }
 
@@ -65,13 +63,13 @@ public class AnnotatedText<S> {
      * unnecessary internal objects. If this is done, then all public methods
      * should be overridden too, otherwise they will not work.
      *
-     * An alternative design would be to provide an interface for annotated text;
+     * An alternative design would be to provide an interface for styled text;
      * but I ruled that out as unnecessarily heavyweight.
      */
     protected void init() {
         this.bookmarks = new HashMap<>();
         this.chars = new StringBuilder();
-        this.metadata = new Metadata<>();
+        this.styles = new Styles();
         this.subtexts = new ArrayList<>();
     }
 
@@ -79,8 +77,8 @@ public class AnnotatedText<S> {
      * For each character of this text adds the provided objects to a set of
      * objects associated with that character.
      */
-    public void annotate(Set<S> additional) {
-        metadata.add(0, length(), additional);
+    public void addStyle(Set<? extends Style> additionalStyles) {
+        styles.add(0, length(), additionalStyles);
     }
 
     public int length() {
@@ -91,8 +89,8 @@ public class AnnotatedText<S> {
      * Replaces all characters of this text with the provided sequence of
      * characters, each of which is associated with all the provided objects.
      */
-    public void replace(Set<? extends S> s, CharSequence plaintext) {
-        replace(0, length(), s, plaintext);
+    public void replace(Set<? extends Style> styles, CharSequence plaintext) {
+        replace(0, length(), styles, plaintext);
     }
 
     /*
@@ -100,10 +98,10 @@ public class AnnotatedText<S> {
      * text. The effect on a text is as if [start, end) were deleted and
      * then plaintext inserted at start.
      */
-    private void replace(int start, int end, Set<? extends S> s, CharSequence plaintext) {
+    private void replace(int start, int end, Set<? extends Style> styles, CharSequence plaintext) {
         chars.replace(start, end, plaintext.toString());
-        metadata.delete(start, end);
-        metadata.insert(start, plaintext.length(), s);
+        this.styles.delete(start, end);
+        this.styles.insert(start, plaintext.length(), styles);
         // The number of subtexts is not expected to be big; hence no
         // optimizations are applied
         var iterator = subtexts.iterator();
@@ -150,11 +148,11 @@ public class AnnotatedText<S> {
         }
     }
 
-    private void annotate(int start, int end, Set<S> additional) {
-        metadata.add(start, end, additional);
+    private void addStyle(int start, int end, Set<? extends Style> additionalStyles) {
+        styles.add(start, end, additionalStyles);
     }
 
-    public AnnotatedText<S> getBookmarkedText(String bookmark) {
+    public StyledText getBookmarkedText(String bookmark) {
         return bookmarks.get(Objects.requireNonNull(bookmark));
     }
 
@@ -179,7 +177,7 @@ public class AnnotatedText<S> {
      * consistency: they reflect structural changes happening to the underlying
      * text and other views thereof.
      */
-    public AnnotatedText<S> subText(int start, int end) {
+    public StyledText subText(int start, int end) {
         Objects.checkFromToIndex(start, end, length());
         var s = new SubText(start, end);
         subtexts.add(new WeakReference<>(s));
@@ -204,35 +202,35 @@ public class AnnotatedText<S> {
      * Provides text to the consumer efficiently. The text always calls the
      * consumer at least once; even if the text is empty.
      */
-    public void consumeBy(AnnotatedText.Consumer<? super S> consumer) {
+    public void consumeBy(StyledText.Consumer consumer) {
         consumeBy(consumer, 0, length());
     }
 
-    private void consumeBy(AnnotatedText.Consumer<? super S> consumer, int start, int end) {
+    private void consumeBy(StyledText.Consumer consumer, int start, int end) {
         Objects.checkFromToIndex(start, end, length());
-        metadata.consumeBy(consumer, chars, start, end);
+        styles.consumeBy(consumer, chars, start, end);
     }
 
-    public AnnotatedText<S> append(Set<? extends S> style, CharSequence sequence) {
-        subText(length(), length()).replace(style, sequence);
+    public StyledText append(Set<? extends Style> styles, CharSequence sequence) {
+        subText(length(), length()).replace(styles, sequence);
         return this;
     }
 
-    public AnnotatedText<S> append(AnnotatedText<? extends S> fragment) {
+    public StyledText append(StyledText fragment) {
         fragment.consumeBy((style, sequence) -> subText(length(), length()).replace(style, sequence));
         return this;
     }
 
     @FunctionalInterface
-    public interface Consumer<S> {
+    public interface Consumer {
 
-        void consume(Set<? extends S> style, CharSequence sequence);
+        void consume(Set<? extends Style> style, CharSequence sequence);
     }
 
     /*
-     * A structure that stores character metadata.
+     * A structure that stores character styles.
      */
-    private static final class Metadata<S> {
+    private static final class Styles {
 
         // Although this structure optimizes neither memory use nor object
         // allocation, it is simple both to implement and reason about.
@@ -240,34 +238,34 @@ public class AnnotatedText<S> {
         // list is a reference to ArrayList because this class accesses list by
         // index, so this is important that the list is RandomAccess, which
         // ArrayList is
-        private final ArrayList<Set<S>> list = new ArrayList<>();
+        private final ArrayList<Set<Style>> list = new ArrayList<>();
 
         private void delete(int fromIndex, int toIndex) {
             list.subList(fromIndex, toIndex).clear();
         }
 
-        private void insert(int fromIndex, int length, Set<? extends S> s) {
+        private void insert(int fromIndex, int length, Set<? extends Style> s) {
             list.addAll(fromIndex, Collections.nCopies(length, Set.copyOf(s)));
         }
 
-        private void add(int fromIndex, int toIndex, Set<S> additional) {
-            var copyOfAdditional = Set.copyOf(additional);
+        private void add(int fromIndex, int toIndex, Set<? extends Style> additional) {
+            Set<Style> copyOfAdditional = Set.copyOf(additional);
             list.subList(fromIndex, toIndex).replaceAll(current -> sum(current, copyOfAdditional));
         }
 
-        private Set<S> sum(Set<S> a, Set<S> b) {
+        private Set<Style> sum(Set<? extends Style> a, Set<Style> b) {
             // assumption: until there are complex texts, the most common
             // scenario is the one where `a` is empty while `b` is not
             if (a.isEmpty()) {
                 return b;
             } else {
-                var c = new HashSet<>(a);
+                Set<Style> c = new HashSet<>(a);
                 c.addAll(b);
                 return Set.copyOf(c);
             }
         }
 
-        private void consumeBy(Consumer<? super S> consumer, CharSequence seq, int start, int end) {
+        private void consumeBy(StyledText.Consumer consumer, CharSequence seq, int start, int end) {
             if (start == end) {
                 // an empty region doesn't have an associated set; special-cased
                 // for simplicity to avoid more complicated implementation of
@@ -285,7 +283,7 @@ public class AnnotatedText<S> {
         }
     }
 
-    final class SubText extends AnnotatedText<S> {
+    final class SubText extends StyledText {
 
         int start, end;
 
@@ -300,8 +298,8 @@ public class AnnotatedText<S> {
         }
 
         @Override
-        public void annotate(Set<S> style) {
-            AnnotatedText.this.annotate(start, end, style);
+        public void addStyle(Set<? extends Style> additionalStyles) {
+            StyledText.this.addStyle(start, end, additionalStyles);
         }
 
         @Override
@@ -310,36 +308,36 @@ public class AnnotatedText<S> {
         }
 
         @Override
-        public void replace(Set<? extends S> s, CharSequence plaintext) {
+        public void replace(Set<? extends Style> styles, CharSequence plaintext) {
             // If the "replace" operation affects this text's size, which it
             // can, then that size will be updated along with all other sizes
             // during the bulk "update" operation in tracking text instance.
-            AnnotatedText.this.replace(start, end, s, plaintext);
+            StyledText.this.replace(start, end, styles, plaintext);
         }
 
         @Override
-        public AnnotatedText<S> getBookmarkedText(String bookmark) {
-            return AnnotatedText.this.getBookmarkedText(bookmark);
+        public StyledText getBookmarkedText(String bookmark) {
+            return StyledText.this.getBookmarkedText(bookmark);
         }
 
         @Override
         public void bookmark(String name) {
-            AnnotatedText.this.bookmark(name, start, end);
+            StyledText.this.bookmark(name, start, end);
         }
 
         @Override
-        public AnnotatedText<S> subText(int start, int end) {
-            return AnnotatedText.this.subText(this.start + start, this.start + end);
+        public StyledText subText(int start, int end) {
+            return StyledText.this.subText(this.start + start, this.start + end);
         }
 
         @Override
         public CharSequence asCharSequence() {
-            return AnnotatedText.this.asCharSequence().subSequence(start, end);
+            return StyledText.this.asCharSequence().subSequence(start, end);
         }
 
         @Override
-        public void consumeBy(AnnotatedText.Consumer<? super S> consumer) {
-            AnnotatedText.this.consumeBy(consumer, start, end);
+        public void consumeBy(StyledText.Consumer consumer) {
+            StyledText.this.consumeBy(consumer, start, end);
         }
     }
 }

@@ -67,7 +67,7 @@ import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.AnnotatedText;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -380,7 +380,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    protected Content snippetTagOutput(Element element, SnippetTree tag, AnnotatedText<Style> content) {
+    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content) {
         HtmlTree result = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         result.add(Text.of(utils.normalizeNewlines("\n")));
         content.consumeBy((styles, sequence) -> {

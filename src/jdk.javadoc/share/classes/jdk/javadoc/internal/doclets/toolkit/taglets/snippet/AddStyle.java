@@ -30,50 +30,41 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * An action that annotates text.
+ * An action that applies an additional style to text.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-public final class Annotate implements Action {
+public final class AddStyle implements Action {
 
-    private final Runnable action;
+    private final Style style;
+    private final Pattern pattern;
+    private final StyledText text;
 
     /**
-     * Constructs an action that annotates regex finds in text.
+     * Constructs an action that applies an additional style to regex finds in
+     * text.
      *
-     * @param obj the object to annotate regex finds with
+     * @param style the style to add (to already existing styles)
      * @param pattern the regex used to search the text
-     * @param text the text
-     * @param <S> the type of text metadata
+     * @param text the text to search
      */
-    public <S> Annotate(S obj, Pattern pattern, AnnotatedText<S> text) {
-        // This *constructor* is generified and the generic parameter is
-        // captured by the Runnable to type-safely call text.annotate(obj)
-        // later. An alternative would be to generify this *class* so as to
-        // capture the generic parameter in this class' instance fields.
-        // However, generifying the class would unduly force its clients to deal
-        // with the generic parameter, whose *sole* purpose is to ensure that
-        // the passed obj is of the type of objects that the passed text can be
-        // annotated with.
-        action = new Runnable() {
-            @Override
-            public void run() {
-                Set<S> s = Set.of(obj);
-                Matcher matcher = pattern.matcher(text.asCharSequence());
-                while (matcher.find()) {
-                    int start = matcher.start();
-                    int end = matcher.end();
-                    text.subText(start, end).annotate(s);
-                }
-            }
-        };
+    public AddStyle(Style style, Pattern pattern, StyledText text) {
+        this.style = style;
+        this.pattern = pattern;
+        this.text = text;
     }
 
     @Override
     public void perform() {
-        action.run();
+        var singleStyle = Set.of(style);
+        Matcher matcher = pattern.matcher(text.asCharSequence());
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            text.subText(start, end).addStyle(singleStyle);
+        }
     }
 }

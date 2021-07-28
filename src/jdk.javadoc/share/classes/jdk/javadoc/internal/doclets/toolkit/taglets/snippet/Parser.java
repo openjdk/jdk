@@ -141,7 +141,7 @@ public final class Parser {
 
         Queue<Action> actions = new LinkedList<>();
 
-        AnnotatedText<Style> text = new AnnotatedText<>();
+        StyledText text = new StyledText();
         boolean trailingNewline = source.endsWith("\r") || source.endsWith("\n");
         int lineStart = 0;
         List<Tag> previousLineTags = new ArrayList<>();
@@ -241,7 +241,7 @@ public final class Parser {
                     if (!typeValue.equals("link") && !typeValue.equals("linkplain")) {
                         throw new ParseException("Unknown link type: '%s'".formatted(typeValue), t.lineSourceOffset + t.markupLineOffset + type.get().valueStartPosition());
                     }
-                    Annotate a = new Annotate(new Style.Link(target.value()),
+                    AddStyle a = new AddStyle(new Style.Link(target.value()),
                                               createRegexPattern(substring, regex, ".+", t.lineSourceOffset + t.markupLineOffset), // different regex not to include newline
                                               text.subText(t.start(), t.end()));
                     actions.add(a);
@@ -259,7 +259,7 @@ public final class Parser {
 
                     String typeValue = type.isPresent() ? type.get().value() : "bold";
 
-                    Annotate a = new Annotate(new Style.Name(typeValue),
+                    AddStyle a = new AddStyle(new Style.Name(typeValue),
                                               createRegexPattern(substring, regex, t.lineSourceOffset + t.markupLineOffset),
                                               text.subText(t.start(), t.end()));
                     actions.add(a);
@@ -405,11 +405,11 @@ public final class Parser {
         start.end = end.end();
     }
 
-    private void append(AnnotatedText<Style> text, Set<Style> style, CharSequence s) {
+    private void append(StyledText text, Set<Style> style, CharSequence s) {
         text.subText(text.length(), text.length()).replace(style, s.toString());
     }
 
-    public record Result(AnnotatedText<Style> text, Queue<Action> actions) { }
+    public record Result(StyledText text, Queue<Action> actions) { }
 
     /*
      * Encapsulates the data structure used to manage regions.

@@ -35,8 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Parser;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.AnnotatedText;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
@@ -178,8 +177,8 @@ public class SnippetTaglet extends BaseTaglet {
 
         // FIXME cache parsed external snippet (WeakHashMap)
 
-        AnnotatedText<Style> inlineSnippet = null;
-        AnnotatedText<Style> externalSnippet = null;
+        StyledText inlineSnippet = null;
+        StyledText externalSnippet = null;
 
         try {
             if (inlineContent != null) {
@@ -207,8 +206,8 @@ public class SnippetTaglet extends BaseTaglet {
         // the region must be matched at least in one content: it can be matched
         // in both, but never in none
         if (r != null) {
-            AnnotatedText<Style> r1 = null;
-            AnnotatedText<Style> r2 = null;
+            StyledText r1 = null;
+            StyledText r2 = null;
             if (inlineSnippet != null) {
                 r1 = inlineSnippet.getBookmarkedText(r);
                 if (r1 != null) {
@@ -246,7 +245,7 @@ public class SnippetTaglet extends BaseTaglet {
         }
 
         assert inlineSnippet != null || externalSnippet != null;
-        AnnotatedText<Style> text = inlineSnippet != null ? inlineSnippet : externalSnippet;
+        StyledText text = inlineSnippet != null ? inlineSnippet : externalSnippet;
 
         return writer.snippetTagOutput(holder, snippetTag, text);
     }
@@ -270,7 +269,7 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private AnnotatedText<Style> parse(String content) throws ParseException {
+    private StyledText parse(String content) throws ParseException {
         // FIXME: need to be able to process more fine-grained, i.e. around a particular region...
         // or, which is even better, cache the styled text
         Parser.Result result = new Parser().parse(content);
@@ -308,7 +307,7 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     /*
-     * Returns a version of annotated text that can be rendered into HTML or
+     * Returns a version of styled text that can be rendered into HTML or
      * compared to another such version. The latter is used to decide if inline
      * and external parts of a hybrid snippet match.
      *
@@ -316,13 +315,13 @@ public class SnippetTaglet extends BaseTaglet {
      * transformations on text have been performed, call this method with that
      * text and then use the returned result as described above.
      */
-    private static <T> AnnotatedText<T> toDisplayForm(AnnotatedText<T> source) {
+    private static StyledText toDisplayForm(StyledText source) {
         var sourceString = source.asCharSequence().toString();
-        var result = new AnnotatedText<T>();
+        var result = new StyledText();
         var originalLines = sourceString.lines().iterator();
         var unindentedLines = sourceString.stripIndent().lines().iterator();
         // done; the rest of the method translates the stripIndent
-        // transformation performed on a character sequence to the annotated
+        // transformation performed on a character sequence to the styled
         // text that this sequence originates from, line by line
         int pos = 0;
         // overcome a "quirk" of String.lines
@@ -335,7 +334,7 @@ public class SnippetTaglet extends BaseTaglet {
             // assume newlines are always of the \n form
             // append the found fragment
             result.append(source.subText(pos + idx, pos + idx + unindentedLine.length()));
-            // append the possibly annotated newline, but not if it's the last line
+            // append the possibly styled newline, but not if it's the last line
             int eol = pos + originalLine.length();
             if (originalLines.hasNext() || endsWithLineFeed) {
                 result.append(source.subText(eol, eol + 1));

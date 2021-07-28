@@ -42,7 +42,7 @@ public final class Replace implements Action {
 
     private final Pattern pattern;
     private final String replacement;
-    private final AnnotatedText<?> text;
+    private final StyledText text;
 
     /**
      * Constructs an action that replaces regex finds in text.
@@ -51,7 +51,7 @@ public final class Replace implements Action {
      * @param pattern the regex used to search the text
      * @param text the text
      */
-    public Replace(String replacement, Pattern pattern, AnnotatedText<?> text) {
+    public Replace(String replacement, Pattern pattern, StyledText text) {
         this.replacement = replacement;
         this.pattern = pattern;
         this.text = text;
