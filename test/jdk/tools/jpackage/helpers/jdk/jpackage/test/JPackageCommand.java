@@ -383,13 +383,12 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else {
             name = value;
         }
-        String version = System.getProperty("java.version");
         if (TKit.isLinux()) {
-            bundleName = LinuxHelper.getBundleName(this, name, version);
+            bundleName = LinuxHelper.getBundleName(this, name, version());
         } else if (TKit.isWindows()) {
-            bundleName = WindowsHelper.getBundleName(this, name, version);
+            bundleName = WindowsHelper.getBundleName(this, name, version());
         } else if (TKit.isOSX()) {
-            bundleName = MacHelper.getBundleName(this, name, version);
+            bundleName = MacHelper.getBundleName(this, name, version());
         } else {
             throw TKit.throwUnknownPlatformError();
         }
@@ -776,7 +775,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                     appInstallationDirectory()), false);
         }
 
-        TKit.assertDirectoryExists(appRuntimeDirectory());
+        if (!hasArgument("--split-runtime")) {
+            TKit.assertDirectoryExists(appRuntimeDirectory());
+        }
 
         if (!isRuntime()) {
             TKit.assertExecutableFileExists(appLauncherPath());

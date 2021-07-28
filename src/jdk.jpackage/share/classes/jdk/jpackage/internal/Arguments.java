@@ -739,16 +739,6 @@ public class Arguments {
                     localParams.put(CLIOptions.INSTALL_DIR.getId(),
                             spr.getInstallDir());
 
-                    // the runtime's version:
-                    // if using --runtime-image we should be getting from image
-                    String jdkVersion = System.getProperty("java.version");
-                    int index = jdkVersion.indexOf("-");
-                    if (index > 0) {
-                        jdkVersion = jdkVersion.substring(0, index);
-                    }
-                    localParams.put(CLIOptions.VERSION.getId(), jdkVersion);
-
-
                     bundler.validate(localParams);
                     result = bundler.execute(localParams, deployParams.outdir);
                     if (result == null) {
