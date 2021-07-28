@@ -48,7 +48,7 @@ public class ExtendLocalVarLifetime {
         int counter = 0;
         int i2, i26, i29, iArr[] = new int[400];
         boolean b3 = true;
-       
+
         for (int smallinvoc = 0; smallinvoc < 139; smallinvoc++) {
         }
         for (i2 = 13; i2 < 1000; i2++) {
