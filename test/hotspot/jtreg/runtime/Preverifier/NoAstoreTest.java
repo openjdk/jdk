@@ -29,7 +29,6 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile noAstore.jasm
-            TestWithError.java
  * @run main/othervm -Xverify:all NoAstoreTest
  */
 
@@ -45,6 +44,12 @@ import java.io.IOException;
 
 public class NoAstoreTest {
 	public static void main(String[] args) throws Throwable {
-        TestWithError.test("noAstore", "noAstore passed, error thrown", "noAstore failed, did now throw error");
+        //TestWithError.test("noAstore", "noAstore passed, error thrown", "noAstore failed, did now throw error");
+        try {
+            Class<?> newClass = Class.forName("noAstore");
+            throw new RuntimeException("noAstore failed, did now throw error");
+        } catch (java.lang.VerifyError e) {
+            System.out.println("noAstore passed, error thrown");
+        }
 	}
 }

@@ -37,6 +37,15 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
+//New additions
+#include "runtime/javaCalls.hpp"
+#include "utilities/utf8.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "oops/access.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+//end new additions
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
@@ -162,6 +171,62 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   return stream;
 }
 
+ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
+  ClassFileStream* newStream;
+
+  // Magic value
+  const u4 magic = stream->get_u4_fast();
+
+  // Version numbers
+  int _minor_version = stream->get_u2_fast();
+  int _major_version = stream->get_u2_fast();
+
+  if (UseNewCode && _major_version < JAVA_7_VERSION) {
+    printf("Updating old class file!\n");
+    typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
+    
+    ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(stream->buffer()),
+          bytecode, 
+          typeArrayOopDesc::element_offset<jbyte>(0),
+          (size_t)stream->length());
+    
+    typeArrayHandle bufhandle(THREAD, bytecode);
+    JavaValue result(T_ARRAY);
+    JavaCallArguments args;
+    args.push_oop(bufhandle); // Push class byte array as argument
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_Preverifier(), false, CHECK_NULL);
+   
+    JavaCalls::call_static(&result,
+          k,
+          vmSymbols::preverifier_patch(),
+          vmSymbols::byte_array_byte_array_signature(),
+          &args,
+          CHECK_NULL);
+
+    oop result_oop = result.get_oop();
+    assert(result_oop != NULL, "Result should be non-null");
+    assert(result_oop->is_typeArray(), "Result must be a byte array");
+    typeArrayOop result_array = typeArrayOop(result_oop);
+    int length = result_array->length();
+    printf("Length: %d", length);
+    assert(length >= 0, "class_bytes_length must not be negative: %d", length);
+    
+    u1* class_bytes = NEW_RESOURCE_ARRAY_RETURN_NULL(u1, length);
+    if (class_bytes == NULL) {
+      THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    }
+
+    ArrayAccess<>::arraycopy_to_native(result_array, 
+          typeArrayOopDesc::element_offset<jbyte>(0),
+          reinterpret_cast<jbyte*>(class_bytes), length);
+    
+    newStream = new ClassFileStream(class_bytes, length, stream->source(), stream->need_verify());
+    newStream->set_current(newStream->buffer());
+    return newStream;
+  }
+  stream->set_current(stream->buffer());
+  return stream;
+}
 
 InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 Symbol* name,
@@ -177,6 +242,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   JvmtiCachedClassFileData* cached_class_file = NULL;
 
   ClassFileStream* old_stream = stream;
+
+  // Upgrade old class file versions
+  stream = process_old_stream(stream, CHECK_NULL);
 
   // increment counter
   THREAD->statistical_info().incr_define_class_count();

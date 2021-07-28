@@ -32,6 +32,10 @@
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 
+// Used for backward compatibility reasons:
+// - to disallow argument and require ACC_STATIC for <clinit> methods
+#define JAVA_7_VERSION                    51
+
 class Annotations;
 template <typename T>
 class Array;

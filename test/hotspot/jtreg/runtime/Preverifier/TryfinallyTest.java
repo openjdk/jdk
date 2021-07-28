@@ -29,11 +29,23 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile tryfinally.jasm
-            TestPatch.java
  * @run main/othervm -Xverify:all TryfinallyTest
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
 public class TryfinallyTest {
 	public static void main(String[] args) throws Throwable {
-		TestPatch.test("tryfinally", "");
+		//TestPatch.test("tryfinally", "");
+        if (args.length != 0) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("TryfinallyTest", "test");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            //output.shouldContain("Hello\nHello\nWorld!");
+            output.shouldHaveExitValue(0);
+        }
+        else {
+            Class<?> newClass = Class.forName("tryfinally");
+        }
 	}
 }

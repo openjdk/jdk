@@ -29,7 +29,6 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile retNoJsr.jasm
-            TestWithError.java
  * @run main/othervm -Xverify:all RetNoJsrTest
  */
 
@@ -45,6 +44,12 @@ import java.io.IOException;
 
 public class RetNoJsrTest {
 	public static void main(String[] args) throws Throwable {
-		TestWithError.test("retNoJsr", "retNoJsr passed, error thrown", "retNoJsr failed, did now throw error");
+		//TestWithError.test("retNoJsr", "retNoJsr passed, error thrown", "retNoJsr failed, did now throw error");
+        try {
+            Class<?> newClass = Class.forName("retNoJsr");
+            throw new RuntimeException("retNoJsr failed, did now throw error");
+        } catch (java.lang.VerifyError e) {
+            System.out.println("retNoJsr passed, error thrown");
+        }
 	}
 }

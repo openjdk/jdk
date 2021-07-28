@@ -29,7 +29,6 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile recursiveJSRW.jasm
-            TestWithError.java
  * @run main/othervm -Xverify:all RecursiveJSRWTest
  */
 
@@ -45,6 +44,12 @@ import java.io.IOException;
 
 public class RecursiveJSRWTest {
 	public static void main(String[] args) throws Throwable {
-        TestWithError.test("recursiveJSRW", "recursiveJSR passed, error thrown", "recursiveJSR failed, error not thrown");
+        //TestWithError.test("recursiveJSRW", "recursiveJSR passed, error thrown", "recursiveJSR failed, error not thrown");
+        try {
+            Class<?> newClass = Class.forName("recursiveJSRW");
+            throw new RuntimeException("recursiveJSRW failed, did now throw error");
+        } catch (java.lang.VerifyError e) {
+            System.out.println("recursiveJSRW passed, error thrown");
+        }
 	}
 }

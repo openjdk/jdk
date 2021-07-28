@@ -29,11 +29,23 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile nestedCopyJSR.jasm
-            TestPatch.java
  * @run main/othervm -Xverify:all NestedCopyJSRTest
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
 public class NestedCopyJSRTest {
 	public static void main(String[] args) throws Throwable {
-		TestPatch.test("nestedCopyJSR", "Not done yet!\nHello world!");
+		//TestPatch.test("nestedCopyJSR", "Not done yet!\nHello world!");
+        if (args.length != 0) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("NestedCopyJSRTest", "test");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain("Not done yet!\nHello world!");
+            output.shouldHaveExitValue(0);
+        }
+        else {
+            Class<?> newClass = Class.forName("nestedCopyJSR");
+        }
 	}
 }
