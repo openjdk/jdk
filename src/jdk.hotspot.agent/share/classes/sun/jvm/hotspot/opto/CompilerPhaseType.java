@@ -38,7 +38,7 @@ public enum CompilerPhaseType {
   PHASE_PHASEIDEALLOOP1 ("PhaseIdealLoop 1"),
   PHASE_PHASEIDEALLOOP2 ("PhaseIdealLoop 2"),
   PHASE_PHASEIDEALLOOP3 ("PhaseIdealLoop 3"),
-  PHASE_CPP1 ("PhaseCPP 1"),
+  PHASE_CCP1 ("PhaseCCP 1"),
   PHASE_ITER_GVN2 ("Iter GVN 2"),
   PHASE_PHASEIDEALLOOP_ITERATIONS ("PhaseIdealLoop iterations"),
   PHASE_OPTIMIZE_FINISHED ("Optimize finished"),
