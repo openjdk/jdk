@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,6 +655,24 @@ public class FileChannelImpl
         }
     }
 
+    private long transferTo(long position, int icount,
+                            WritableByteChannel target)
+        throws IOException
+    {
+        long n;
+
+        // Attempt a direct transfer, if the kernel supports it
+        if ((n = transferToDirectly(position, icount, target)) >= 0)
+            return n;
+
+        // Attempt a mapped transfer, but only to trusted channel types
+        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
+            return n;
+
+        // Slow path for untrusted targets
+        return transferToArbitraryChannel(position, icount, target);
+    }
+
     public long transferTo(long position, long count,
                            WritableByteChannel target)
         throws IOException
@@ -672,22 +690,22 @@ public class FileChannelImpl
         long sz = size();
         if (position > sz)
             return 0;
-        int icount = (int)Math.min(count, Integer.MAX_VALUE);
-        if ((sz - position) < icount)
-            icount = (int)(sz - position);
 
-        long n;
+        long bytesTransferred = 0L;
+        final long maxTransferSize = maxTransferSize0();
+        while (bytesTransferred < count) {
+            int icount =
+                (int)Math.min(count - bytesTransferred, maxTransferSize);
+            if ((sz - position) < icount)
+                icount = (int)(sz - position);
+            long n = transferTo(position, icount, target);
+            if (n <= 0)
+                break;
+            position += n;
+            bytesTransferred += n;
+        }
 
-        // Attempt a direct transfer, if the kernel supports it
-        if ((n = transferToDirectly(position, icount, target)) >= 0)
-            return n;
-
-        // Attempt a mapped transfer, but only to trusted channel types
-        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
-            return n;
-
-        // Slow path for untrusted targets
-        return transferToArbitraryChannel(position, icount, target);
+        return bytesTransferred;
     }
 
     private long transferFromFileChannel(FileChannelImpl src,
@@ -1347,6 +1365,9 @@ public class FileChannelImpl
     // Transfers from src to dst, or returns -2 if kernel can't do that
     private native long transferTo0(FileDescriptor src, long position,
                                     long count, FileDescriptor dst);
+
+    // Retrieves the maximum size of a transfer
+    private native long maxTransferSize0();
 
     // Caches fieldIDs
     private static native long initIDs();
