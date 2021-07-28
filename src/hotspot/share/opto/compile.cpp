@@ -2148,7 +2148,7 @@ void Compile::Optimize() {
   // safepoints
   remove_root_to_sfpts_edges(igvn);
 
-    // Perform escape analysis
+  // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
