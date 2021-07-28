@@ -76,7 +76,6 @@ class VectorNode : public TypeNode {
   static VectorNode* make(int vopc, Node* n1, Node* n2, Node* n3, const TypeVect* vt);
 
   static bool is_shift_opcode(int opc);
-  static bool is_rotate_opcode(int opc);
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
@@ -100,7 +99,6 @@ class VectorNode : public TypeNode {
 
   static bool is_vector_shift(int opc);
   static bool is_vector_shift_count(int opc);
-  static bool is_vector_rotate(int opc);
 
   static bool is_vector_shift(Node* n) {
     return is_vector_shift(n->Opcode());

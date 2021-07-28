@@ -1383,30 +1383,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
             }
         }
     }
-
-    static $type$ ROL_scalar($type$ a, $type$ b) {
-#if[intOrLong]
-        return $Wideboxtype$.rotateLeft(a, ((int)b));
-#else[intOrLong]
-#if[short]
-        return (short)(((((short)a) & 0xFFFF) << (b & 15)) | ((((short)a) & 0xFFFF) >>> (16 - (b & 15))));
-#else[short]
-        return (byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> (8 - (b & 7))));
-#end[short]
-#end[intOrLong]
-    }
-
-    static $type$ ROR_scalar($type$ a, $type$ b) {
-#if[intOrLong]
-        return $Wideboxtype$.rotateRight(a, ((int)b));
-#else[intOrLong]
-#if[short]
-        return (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))));
-#else[short]
-        return (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))));
-#end[short]
-#end[intOrLong]
-    }
 #end[BITWISE]
 
     static boolean eq($type$ a, $type$ b) {
