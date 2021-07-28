@@ -48,34 +48,34 @@ public class RawAllocationRate {
 
     @Setup(Level.Iteration)
     public void up() throws Throwable {
-	if (size % bytesPerLong != 0) {
-	    throw new RuntimeException("I'm sorry Dave, I can't do that");
-	}
-	objects = new Object[1_000_000];
+        if (size % bytesPerLong != 0) {
+            throw new RuntimeException("I'm sorry Dave, I can't do that");
+        }
+        objects = new Object[1_000_000];
     }
 
     @TearDown(Level.Iteration)
     public void down() throws Throwable {
-	objects = null;
+        objects = null;
     }
 
     @Benchmark
     public Object[] arrayTest() {
         var arrays = objects;
-	final int longElements = (int)(size/bytesPerLong) - longsPerHeader;
-	int i, j;
-	for (i = 0, j = 0; ; i += size, j++) {
-	    if (i + size < megabyte) {
-		arrays[j] = new long[longElements];
-	    } else {
-		long remaining = megabyte - i;
-		int elements = (int)(remaining/bytesPerLong) - longsPerHeader;
-		if (elements >= 0) {
-		    arrays[j] = new long[elements];
-		}
-		break;
-	    }
-	}
+        final int longElements = (int)(size/bytesPerLong) - longsPerHeader;
+        int i, j;
+        for (i = 0, j = 0; ; i += size, j++) {
+            if (i + size < megabyte) {
+                arrays[j] = new long[longElements];
+            } else {
+                long remaining = megabyte - i;
+                int elements = (int)(remaining/bytesPerLong) - longsPerHeader;
+                if (elements >= 0) {
+                    arrays[j] = new long[elements];
+                }
+                break;
+            }
+        }
         return arrays;
     }
 
@@ -88,20 +88,20 @@ public class RawAllocationRate {
     @Benchmark
     public Object[] instanceTest() {
         var objects = this.objects;
-	final int longElements = (int)(size);
-	int i, j;
-	for (i = 0, j = 0; ; i += size, j++) {
-	    if (i + size < megabyte) {
-		objects[j] = newInstance(longElements);
-	    } else {
-		long remaining = megabyte - i;
-		int elements = (int)(remaining/bytesPerLong) - longsPerHeader;
-		if (elements >= 0) {
-		    objects[j] = new long[elements];
-		}
-		break;
-	    }
-	}
+        final int longElements = (int)(size);
+        int i, j;
+        for (i = 0, j = 0; ; i += size, j++) {
+            if (i + size < megabyte) {
+                objects[j] = newInstance(longElements);
+            } else {
+                long remaining = megabyte - i;
+                int elements = (int)(remaining/bytesPerLong) - longsPerHeader;
+                if (elements >= 0) {
+                    objects[j] = new long[elements];
+                }
+                break;
+            }
+        }
         return objects;
     }
 
