@@ -380,7 +380,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return maskFactory(bits);
     }
 
-
     /*package-private*/
     @Override
     abstract DoubleSpecies vspecies();

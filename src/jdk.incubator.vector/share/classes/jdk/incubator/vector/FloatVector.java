@@ -380,7 +380,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return maskFactory(bits);
     }
 
-
     /*package-private*/
     @Override
     abstract FloatSpecies vspecies();

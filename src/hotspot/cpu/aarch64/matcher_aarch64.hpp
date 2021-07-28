@@ -138,11 +138,6 @@
     return false;
   }
 
-  // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
-  }
-
   // Does the CPU supports vector unsigned comparison instructions?
   static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     // Not supported on SVE yet.
