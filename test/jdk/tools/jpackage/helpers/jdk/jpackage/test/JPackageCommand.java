@@ -384,7 +384,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             name = value;
         }
         if (TKit.isLinux()) {
-            bundleName = LinuxHelper.getBundleName(this, name, version());
+            bundleName = LinuxHelper.getBundleName(this,
+                    name.toLowerCase(), version());
         } else if (TKit.isWindows()) {
             bundleName = WindowsHelper.getBundleName(this, name, version());
         } else if (TKit.isOSX()) {

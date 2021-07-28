@@ -72,9 +72,6 @@ public class SplitRuntime {
             String[] parts = System.getProperty("java.version").split("-", 2);
             versionSpec = parts[0] + "+";
         }
-        if (installDir == null) {
-            installDir = name;
-        }
     }
 
     public String getName() {
