@@ -1135,14 +1135,6 @@ public class Long128VectorTests extends AbstractVectorTest {
         }
     }
 
-    static long ROL_scalar(long a, long b) {
-        return Long.rotateLeft(a, ((int)b));
-    }
-
-    static long ROR_scalar(long a, long b) {
-        return Long.rotateRight(a, ((int)b));
-    }
-
     static boolean eq(long a, long b) {
         return a == b;
     }
@@ -2315,7 +2307,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
-    static void LSHLLong128VectorTestsScalarShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
+    static void LSHLLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
         long[] r = fr.apply(SPECIES.length());
@@ -2333,7 +2325,7 @@ public class Long128VectorTests extends AbstractVectorTest {
 
 
     @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void LSHLLong128VectorTestsScalarShiftMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
+    static void LSHLLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
@@ -2361,7 +2353,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
-    static void LSHRLong128VectorTestsScalarShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
+    static void LSHRLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
         long[] r = fr.apply(SPECIES.length());
@@ -2379,7 +2371,7 @@ public class Long128VectorTests extends AbstractVectorTest {
 
 
     @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void LSHRLong128VectorTestsScalarShiftMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
+    static void LSHRLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
@@ -2407,7 +2399,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
-    static void ASHRLong128VectorTestsScalarShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
+    static void ASHRLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
         long[] r = fr.apply(SPECIES.length());
@@ -2425,7 +2417,7 @@ public class Long128VectorTests extends AbstractVectorTest {
 
 
     @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void ASHRLong128VectorTestsScalarShiftMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
+    static void ASHRLong128VectorTestsShift(IntFunction<long[]> fa, IntFunction<long[]> fb,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         long[] b = fb.apply(SPECIES.length());
@@ -2446,178 +2438,6 @@ public class Long128VectorTests extends AbstractVectorTest {
 
 
 
-
-
-    static long ROR(long a, long b) {
-        return (long)(ROR_scalar(a,b));
-    }
-
-    @Test(dataProvider = "longBinaryOpProvider")
-    static void RORLong128VectorTests(IntFunction<long[]> fa, IntFunction<long[]> fb) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                LongVector bv = LongVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.ROR, bv).intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, Long128VectorTests::ROR);
-    }
-
-
-
-    @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void RORLong128VectorTestsMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
-                                          IntFunction<boolean[]> fm) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                LongVector bv = LongVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.ROR, bv, vmask).intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, mask, Long128VectorTests::ROR);
-    }
-
-
-    static long ROL(long a, long b) {
-        return (long)(ROL_scalar(a,b));
-    }
-
-    @Test(dataProvider = "longBinaryOpProvider")
-    static void ROLLong128VectorTests(IntFunction<long[]> fa, IntFunction<long[]> fb) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                LongVector bv = LongVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.ROL, bv).intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, Long128VectorTests::ROL);
-    }
-
-
-
-    @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void ROLLong128VectorTestsMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
-                                          IntFunction<boolean[]> fm) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                LongVector bv = LongVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.ROL, bv, vmask).intoArray(r, i);
-            }
-        }
-
-        assertArraysEquals(r, a, b, mask, Long128VectorTests::ROL);
-    }
-
-
-    static long ROR_unary(long a, long b) {
-        return (long)(ROR_scalar(a,b));
-    }
-
-    @Test(dataProvider = "longBinaryOpProvider")
-    static void RORLong128VectorTestsScalarShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.ROR, (int)b[i]).intoArray(r, i);
-            }
-        }
-
-        assertShiftArraysEquals(r, a, b, Long128VectorTests::ROR_unary);
-    }
-
-
-
-    @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void RORLong128VectorTestsScalarShiftMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
-                                          IntFunction<boolean[]> fm) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.ROR, (int)b[i], vmask).intoArray(r, i);
-            }
-        }
-
-        assertShiftArraysEquals(r, a, b, mask, Long128VectorTests::ROR_unary);
-    }
-
-
-    static long ROL_unary(long a, long b) {
-        return (long)(ROL_scalar(a,b));
-    }
-
-    @Test(dataProvider = "longBinaryOpProvider")
-    static void ROLLong128VectorTestsScalarShift(IntFunction<long[]> fa, IntFunction<long[]> fb) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.ROL, (int)b[i]).intoArray(r, i);
-            }
-        }
-
-        assertShiftArraysEquals(r, a, b, Long128VectorTests::ROL_unary);
-    }
-
-
-
-    @Test(dataProvider = "longBinaryOpMaskProvider")
-    static void ROLLong128VectorTestsScalarShiftMasked(IntFunction<long[]> fa, IntFunction<long[]> fb,
-                                          IntFunction<boolean[]> fm) {
-        long[] a = fa.apply(SPECIES.length());
-        long[] b = fb.apply(SPECIES.length());
-        long[] r = fr.apply(SPECIES.length());
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.ROL, (int)b[i], vmask).intoArray(r, i);
-            }
-        }
-
-        assertShiftArraysEquals(r, a, b, mask, Long128VectorTests::ROL_unary);
-    }
 
     static long MIN(long a, long b) {
         return (long)(Math.min(a, b));

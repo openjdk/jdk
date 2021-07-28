@@ -381,18 +381,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
     }
 
     /*package-private*/
-    @ForceInline
-    static int rotateLeft(int a, int n) {
-        return Integer.rotateLeft(a, n);
-    }
-
-    /*package-private*/
-    @ForceInline
-    static int rotateRight(int a, int n) {
-        return Integer.rotateRight(a, n);
-    }
-
-    /*package-private*/
     @Override
     abstract IntSpecies vspecies();
 
@@ -612,7 +600,12 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == AND_NOT) {
+            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
+                IntVector neg = that.lanewise(NEG);
+                IntVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
+                IntVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
+                return hi.lanewise(OR, lo);
+            } else if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -653,10 +646,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
                         v0.bOp(v1, (i, a, n) -> (int)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (int)((a & LSHR_SETUP_MASK) >>> n));
-                case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
-                case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -803,6 +792,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
+        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
+            IntVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
+            IntVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
+            return hi.lanewise(OR, lo);
+        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), int.class, length(),
@@ -815,10 +809,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
                         v.uOp((i, a) -> (int)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (int)((a & LSHR_SETUP_MASK) >>> n));
-                case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> rotateLeft(a, (int)n));
-                case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

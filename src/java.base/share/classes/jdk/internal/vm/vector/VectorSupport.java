@@ -70,10 +70,6 @@ public class VectorSupport {
     public static final int VECTOR_OP_MASK_FIRSTTRUE = 20;
     public static final int VECTOR_OP_MASK_LASTTRUE  = 21;
 
-    // Rotate operations
-    public static final int VECTOR_OP_LROTATE = 22;
-    public static final int VECTOR_OP_RROTATE = 23;
-
     // Math routines
     public static final int VECTOR_OP_TAN = 101;
     public static final int VECTOR_OP_TANH = 102;

@@ -551,9 +551,9 @@ public abstract class VectorOperators {
     /** Produce {@code a>>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", -1 /*VectorSupport.VECTOR_OP_LROTATE*/, VO_SHIFT | VO_SPECIAL);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", -1 /*VectorSupport.VECTOR_OP_RROTATE*/, VO_SHIFT | VO_SPECIAL);
 
     /** Produce {@code atan2(a,b)}. See  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above

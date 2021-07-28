@@ -1962,14 +1962,6 @@ public class Float64VectorTests extends AbstractVectorTest {
 
 
 
-
-
-
-
-
-
-
-
     static float MIN(float a, float b) {
         return (float)(Math.min(a, b));
     }

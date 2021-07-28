@@ -99,9 +99,9 @@ function replace_variables {
   local kernel_smoke=${10}
 
   if [ "x${kernel}" != "x" ]; then
-    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '`')
+    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '|')
     sed "s/\[\[KERNEL\]\]/${kernel_escaped}/g" $filename > ${filename}.current1
-    cat ${filename}.current1 | tr '`' "\n" > ${filename}.current
+    cat ${filename}.current1 | tr '|' "\n" > ${filename}.current
     rm -f "${filename}.current1"
   else
     cp $filename ${filename}.current
@@ -156,9 +156,9 @@ function replace_variables {
   if [[ "$filename" == *"Unit"* ]] && [ "$test_func" != "" ]; then
     if [ "$masked" == "" ] || [ "$withMask" != "" ]; then
       if [ ! -z "$kernel_smoke" ]; then
-        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '`')
+        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '|')
         sed "s/\[\[KERNEL\]\]/${kernel_smoke_escaped}/g" $filename > ${filename}.scurrent1
-        cat ${filename}.scurrent1 | tr '`' "\n" > ${filename}.scurrent
+        cat ${filename}.scurrent1 | tr '|' "\n" > ${filename}.scurrent
         rm -f "${filename}.scurrent1"
       else
         cp $filename.current ${filename}.scurrent
@@ -445,10 +445,6 @@ gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
 gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
-gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
-gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROR" "ROR_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROL" "ROL_scalar(a,b)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
