@@ -1638,6 +1638,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_RotateRightV:
     case Op_RotateLeftV:
+      if (bt != T_INT && bt != T_LONG) {
+        return false;
+      } // fallthrough
     case Op_MacroLogicV:
       if (!VM_Version::supports_evex() ||
           ((size_in_bits != 512) && !VM_Version::supports_avx512vl())) {
