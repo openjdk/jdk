@@ -755,6 +755,14 @@ import jdk.internal.util.ArraysSupport;
  *    within a group; in the latter case, flags are restored at the end of the
  *    group just as in Perl.  </p></li>
  *
+ *    <li><p><i>Free-spacing mode</i> in Perl (called <i>comments
+ *    mode</i> in this class) denoted by {@code (?x)} in the regular
+ *    expression (or by the {@link Pattern#COMMENTS} flag when compiling
+ *    the expression) will not ignore whitespace inside of character classes. In
+ *    this class, whitespace inside of character classes must be escaped to be
+ *    considered as part of the regular expression when in comments mode.
+ *    </p></li>
+ *
  * </ul>
  *
  *
@@ -816,7 +824,9 @@ public final class Pattern
      * Permits whitespace and comments in pattern.
      *
      * <p> In this mode, whitespace is ignored, and embedded comments starting
-     * with {@code #} are ignored until the end of a line.
+     * with {@code #} are ignored until the end of a line. Comments mode ignores
+     * whitespace within a character class contained in a pattern string. Such
+     * whitespace must be escaped in order to be considered significant.  </p>
      *
      * <p> Comments mode can also be enabled via the embedded flag
      * expression&nbsp;{@code (?x)}.

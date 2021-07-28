@@ -166,12 +166,6 @@ class decode_env {
     };
     Link *head, *tail;
 
-    static unsigned hash(const address& a) {
-      return primitive_hash<address>(a);
-    }
-    static bool equals(const address& a0, const address& a1) {
-      return primitive_equals<address>(a0, a1);
-    }
     void append(const char* file, int line) {
       if (tail != NULL && tail->file == file && tail->line == line) {
         // Don't print duplicated lines at the same address. This could happen with C
@@ -193,8 +187,6 @@ class decode_env {
 
   typedef ResourceHashtable<
       address, SourceFileInfo,
-      SourceFileInfo::hash,
-      SourceFileInfo::equals,
       15889,      // prime number
       ResourceObj::C_HEAP> SourceFileInfoTable;
 
@@ -684,7 +676,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
     raw = format+1;
   }
   if (raw != NULL) {
-    st->print_raw(raw, (int) flen);
+    st->print_raw(raw, flen);
     return (int) flen;
   }
   va_list ap;

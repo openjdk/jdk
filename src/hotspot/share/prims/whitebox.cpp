@@ -1933,7 +1933,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
-  return HeapShared::is_archived_object(obj_oop);
+  return Universe::heap()->is_archived_object(obj_oop);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -1941,7 +1941,7 @@ WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
-  return !HeapShared::closed_archive_heap_region_mapped();
+  return !HeapShared::closed_regions_mapped();
 WB_END
 
 WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz))
@@ -1966,7 +1966,7 @@ WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return HeapShared::open_archive_heap_region_mapped();
+  return HeapShared::open_regions_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
@@ -2122,7 +2122,32 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   }
 WB_END
 
-//Some convenience methods to deal with objects from java
+static volatile int _emulated_lock = 0;
+
+WB_ENTRY(void, WB_LockAndBlock(JNIEnv* env, jobject wb, jboolean suspender))
+  JavaThread* self = JavaThread::current();
+
+  {
+    // Before trying to acquire the lock transition into a safepoint safe state.
+    // Otherwise if either suspender or suspendee blocks for a safepoint
+    // in ~ThreadBlockInVM the other one could loop forever trying to acquire
+    // the lock without allowing the safepoint to progress.
+    ThreadBlockInVM tbivm(self);
+
+    // We will deadlock here if we are 'suspender' and 'suspendee'
+    // suspended in ~ThreadBlockInVM. This verifies we only suspend
+    // at the right place.
+    while (Atomic::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
+    assert(_emulated_lock == 1, "Must be locked");
+
+    // Sleep much longer in suspendee to force situation where
+    // 'suspender' is waiting above to acquire lock.
+    os::naked_short_sleep(suspender ? 1 : 10);
+  }
+  Atomic::store(&_emulated_lock, 0);
+WB_END
+
+// Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
@@ -2613,6 +2638,7 @@ static JNINativeMethod methods[] = {
   {CC"handshakeReadMonitors", CC"(Ljava/lang/Thread;)Z", (void*)&WB_HandshakeReadMonitors },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
+  {CC"lockAndBlock", CC"(Z)V",                        (void*)&WB_LockAndBlock},
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
   {CC"verifyFrames",                CC"(ZZ)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",

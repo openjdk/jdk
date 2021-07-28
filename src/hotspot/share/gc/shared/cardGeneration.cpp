@@ -41,9 +41,11 @@ CardGeneration::CardGeneration(ReservedSpace rs,
                                size_t initial_byte_size,
                                CardTableRS* remset) :
   Generation(rs, initial_byte_size), _rs(remset),
-  _shrink_factor(0), _min_heap_delta_bytes(), _capacity_at_prologue(),
+  _min_heap_delta_bytes(), _capacity_at_prologue(),
   _used_at_prologue()
 {
+  // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
+  _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   HeapWord* start = (HeapWord*)rs.base();
   size_t reserved_byte_size = rs.size();
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
@@ -186,7 +188,12 @@ void CardGeneration::invalidate_remembered_set() {
 void CardGeneration::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;
-  _shrink_factor = 0;
+  if (ShrinkHeapInSteps) {
+    // Always reset '_shrink_factor' if the heap is shrunk in steps.
+    // If we shrink the heap in this iteration, '_shrink_factor' will
+    // be recomputed based on the old value further down in this fuction.
+    _shrink_factor = 0;
+  }
 
   // We don't have floating point command-line arguments
   // Note:  argument processing ensures that MinHeapFreeRatio < 100.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -55,6 +55,7 @@ import java.util.Locale;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
+ * @LastModified: Apr 2021
  */
 public class XMLEntityScanner implements XMLLocator  {
 
@@ -860,6 +861,14 @@ public class XMLEntityScanner implements XMLLocator  {
                     prefix = fSymbolTable.addSymbol(fCurrentEntity.ch,
                             offset, prefixLength);
                     int len = length - prefixLength - 1;
+                    int startLocal = index +1;
+                    if (!XMLChar.isNCNameStart(fCurrentEntity.ch[startLocal])){
+                        fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
+                                                 "IllegalQName",
+                                                  new Object[]{rawname},
+                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                    }
+
                     //check the result: localpart
                     checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, index + 1, len);
                     localpart = fSymbolTable.addSymbol(fCurrentEntity.ch,

@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
@@ -136,25 +135,22 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Add the summary link for the member.
      *
-     * @param mw the writer for the member being documented
      * @param member the member to be documented
      * @param contentTree the content tree to which the link will be added
      */
-    public void addSummaryLinkComment(AbstractMemberWriter mw, Element member, Content contentTree) {
+    public void addSummaryLinkComment(Element member, Content contentTree) {
         List<? extends DocTree> tags = utils.getFirstSentenceTrees(member);
-        addSummaryLinkComment(mw, member, tags, contentTree);
+        addSummaryLinkComment(member, tags, contentTree);
     }
 
     /**
      * Add the summary link comment.
      *
-     * @param mw the writer for the member being documented
      * @param member the member being documented
      * @param firstSentenceTags the first sentence tags for the member to be documented
      * @param tdSummary the content tree to which the comment will be added
      */
-    public void addSummaryLinkComment(AbstractMemberWriter mw,
-            Element member, List<? extends DocTree> firstSentenceTags, Content tdSummary) {
+    public void addSummaryLinkComment(Element member, List<? extends DocTree> firstSentenceTags, Content tdSummary) {
         addIndexComment(member, firstSentenceTags, tdSummary);
     }
 

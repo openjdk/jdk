@@ -569,6 +569,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint num
 #endif
 
 void ReferenceProcessor::set_active_mt_degree(uint v) {
+  assert(v <= max_num_queues(), "Mt degree %u too high, maximum %u", v,  max_num_queues());
   _num_queues = v;
   _next_id = 0;
 }
