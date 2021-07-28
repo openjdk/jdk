@@ -4681,7 +4681,7 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
       BLOCK_COMMENT(buf);
     }
 #endif
-    if (cnt > 16) {
+    if (cnt >= 16) {
       uint64_t loops = cnt/16;
       if (loops > 1) {
         mov(rscratch2, loops - 1);
