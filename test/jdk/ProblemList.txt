@@ -702,6 +702,7 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
 javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
+javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 ############################################################################
 
@@ -785,6 +786,9 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 ############################################################################
 
 # jdk_util
+
+java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
+sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 
 ############################################################################
 
