@@ -1162,7 +1162,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(tag);
-        addCommentTags(element, tag, description, false, false, false, htmltree);
+        addCommentTags(element, description, false, false, false, htmltree);
     }
 
     /**
@@ -1248,22 +1248,6 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, boolean inSummary, Content htmltree) {
-        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
-    }
-
-    /**
-     * Adds the comment tags.
-     *
-     * @param element for which the comment tags will be generated
-     * @param holderTag the block tag context for the inline tags
-     * @param tags the first sentence tags for the doc
-     * @param depr true if it is deprecated
-     * @param first true if the first sentence tags should be added
-     * @param inSummary true if the comment tags are added into the summary section
-     * @param htmltree the documentation tree to which the comment tags will be added
-     */
-    private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
         if (options.noComment()) {
             return;
