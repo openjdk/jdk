@@ -257,7 +257,7 @@ void mutex_init() {
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always);
-  def(ClassInitError_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
+  def(ClassInitError_lock          , PaddedMonitor, leaf+1,      true,  _safepoint_check_always);
   def(Module_lock                  , PaddedMutex  , leaf+2,      false, _safepoint_check_always);
   def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(VMStatistic_lock             , PaddedMutex  , leaf,        false, _safepoint_check_always);

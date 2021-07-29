@@ -1017,27 +1017,68 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResizeableResourceHashtable<InstanceKlass*, char*, ResourceObj::C_HEAP, mtClass>
+class InitErrorElement {
+  Symbol* _exception;
+  Symbol* _message;
+  OopHandle _stack_trace;
+  const char* _thread_name;
+ public:
+  InitErrorElement(JavaThread* current, Handle exception, Handle stack_trace) {
+    _exception = exception->klass()->name();
+    _exception->increment_refcount();
+    _message = java_lang_Throwable::detail_message(exception());
+    if (_message != nullptr) {
+      _message->increment_refcount();
+    }
+    _stack_trace = OopHandle(Universe::vm_global(), stack_trace());
+    ResourceMark rm(current);
+    stringStream st;
+    st.print("%s", current->name());
+    _thread_name = st.as_string(/* c_heap */ true);
+  }
+  void clean() {
+    _exception->decrement_refcount();
+    if (_message != nullptr) {
+      _message->decrement_refcount();
+    }
+    _stack_trace.release(Universe::vm_global());
+    FREE_C_HEAP_ARRAY(char*, _thread_name);
+  }
+  Symbol* exception() const { return _exception; }
+  Symbol* message() const   { return _message; }
+  oop stack_trace() const   { return _stack_trace.resolve(); }
+  const char* thread_name() const { return _thread_name; }
+};
+
+ResizeableResourceHashtable<const InstanceKlass*, InitErrorElement, ResourceObj::C_HEAP, mtClass>
       _initialization_error_table(20);
 
-void InstanceKlass::add_initialization_error(Handle exception) {
-  MutexLocker ml(ClassInitError_lock);
-  stringStream st;
-  java_lang_Throwable::print_top_frame(exception, &st);
-  char *message = st.as_string(/*c_heap*/ true);
-
+void InstanceKlass::add_initialization_error(Handle exception, TRAPS) {
   bool created = false;
-  _initialization_error_table.put_if_absent(this, message, &created);
+  // Save the StackTraceElements, and the exception name.
+  // If the initialization error is OOM, this might not work, but a NULL
+  // stack trace with the original OOM exception might be helpful anyway.
+  objArrayOop st = java_lang_Throwable::get_stack_trace(exception, THREAD);
+  CLEAR_PENDING_EXCEPTION;
+  Handle stack_trace(THREAD, st);
+
+  MutexLocker ml(THREAD, ClassInitError_lock);
+  InitErrorElement elem(THREAD, exception, stack_trace);
+  _initialization_error_table.put_if_absent(this, elem, &created);
+  if (!created) {
+    elem.clean();
+  }
 }
 
-// Caller has ResourceMark
-char* InstanceKlass::get_initialization_error() {
-  MutexLocker ml(ClassInitError_lock);
-  char** h = _initialization_error_table.get(this);
+oop InstanceKlass::get_initialization_error(TRAPS) {
+  InitErrorElement* h;
+  {
+    MutexLocker ml(ClassInitError_lock);
+    h = _initialization_error_table.get(this);
+  }
   if (h != nullptr) {
-    stringStream st;
-    st.print(" Caused by: %s", *h);
-    return st.as_string();
+    return java_lang_Throwable::recreate_cause(h->exception(), h->message(), h->thread_name(),
+                                               Handle(THREAD, h->stack_trace()), CHECK_NULL);
   } else {
     return nullptr;
   }
@@ -1045,13 +1086,10 @@ char* InstanceKlass::get_initialization_error() {
 
 // Need to remove entries for unloaded classes.
 void InstanceKlass::clean_initialization_error_table() {
-
-  // A C++ Lambda would be nice here.
-  class InitErrorTableCleaner {
-    public:
-    bool do_entry(InstanceKlass* ik, char* h) {
+  struct InitErrorTableCleaner {
+    bool do_entry(const InstanceKlass* ik, InitErrorElement h) {
       if (!ik->is_loader_alive()) {
-        FREE_C_HEAP_ARRAY(char, h);
+        h.clean();
         return true;
       } else {
         return false;
@@ -1066,7 +1104,7 @@ void InstanceKlass::clean_initialization_error_table() {
 
 void print_initialization_error_table() {
   struct Printer {
-    bool do_entry(InstanceKlass* ik, char* h) {
+    bool do_entry(const InstanceKlass* ik, InitErrorElement) {
       tty->print_cr("klass");
       ik->print();
       return true;
@@ -1122,14 +1160,17 @@ void InstanceKlass::initialize_impl(TRAPS) {
     if (is_in_error_state()) {
       DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
       ResourceMark rm(THREAD);
-      const char* cause = get_initialization_error();
+      Handle cause(THREAD, get_initialization_error(THREAD));
+      CLEAR_PENDING_EXCEPTION; // ignore any OOM here.
 
       stringStream ss;
       ss.print("Cound not initialize class %s", external_name());
-      if (cause != nullptr) {
-        ss.print("%s", cause);
+      if (cause.is_null()) {
+        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
+      } else {
+        THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
+                        ss.as_string(), cause);
       }
-      THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
     }
 
     // Step 6
@@ -1159,7 +1200,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       CLEAR_PENDING_EXCEPTION;
       {
         EXCEPTION_MARK;
-        add_initialization_error(e);
+        add_initialization_error(e, THREAD);
         // Locks object, set state, and notify all waiting threads
         set_initialization_state_and_notify(initialization_error, THREAD);
         CLEAR_PENDING_EXCEPTION;
@@ -1206,7 +1247,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     JvmtiExport::clear_detected_exception(jt);
     {
       EXCEPTION_MARK;
-      add_initialization_error(e);
+      add_initialization_error(e, THREAD);
       set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception

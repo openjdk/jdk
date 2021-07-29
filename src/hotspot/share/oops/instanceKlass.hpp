@@ -1208,8 +1208,8 @@ private:
   /* jni_id_for_impl for jfieldID only */
   JNIid* jni_id_for_impl                         (int offset);
 
-  void add_initialization_error(Handle exception);
-  char* get_initialization_error();
+  void add_initialization_error(Handle exception, TRAPS);
+  oop get_initialization_error(JavaThread* current);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,

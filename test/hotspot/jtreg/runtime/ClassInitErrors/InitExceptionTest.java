@@ -40,7 +40,7 @@ public class InitExceptionTest {
     e.printStackTrace(printStream);
     printStream.close();
     String stackTrace = byteOS.toString("ASCII");
-    if (!stackTrace.contains(expected) && (cause == null || !stackTrace.contains(cause))) {
+    if (!stackTrace.contains(expected) || (cause != null && !stackTrace.contains(cause))) {
       throw new RuntimeException(expected + " and " + cause + " missing from stacktrace: " + stackTrace);
     }
   }
@@ -54,17 +54,17 @@ public class InitExceptionTest {
       err.printStackTrace();
     }
     try {
-      InitOOM e = new InitOOM();
-    } catch (Error err) {
-      System.out.println("Error thrown: " + err);
-      verify_stack(err, "java.lang.OutOfMemoryError", null);
-      err.printStackTrace();
-    }
-    try {
       InitNPE c = new InitNPE();
     } catch (Error err) {
       System.out.println("Error thrown: " + err);
       verify_stack(err, "java.lang.NoClassDefFoundError", "Caused by: java.lang.NullPointerException");
+      err.printStackTrace();
+    }
+    try {
+      InitOOM e = new InitOOM();
+    } catch (Error err) {
+      System.out.println("Error thrown: " + err);
+      verify_stack(err, "java.lang.OutOfMemoryError", "Java heap space");
       err.printStackTrace();
     }
     try {

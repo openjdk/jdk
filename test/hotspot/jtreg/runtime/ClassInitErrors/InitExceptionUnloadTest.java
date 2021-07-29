@@ -29,12 +29,15 @@
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run main/othervm -Xlog:class+unload InitExceptionUnloadTest
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI InitExceptionUnloadTest
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import sun.hotspot.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class InitExceptionUnloadTest {
@@ -47,7 +50,7 @@ public class InitExceptionUnloadTest {
         e.printStackTrace(printStream);
         printStream.close();
         String stackTrace = byteOS.toString("ASCII");
-        if (!stackTrace.contains(expected) && (cause == null || !stackTrace.contains(cause))) {
+        if (!stackTrace.contains(expected) || (cause != null && !stackTrace.contains(cause))) {
             throw new RuntimeException(expected + " and " + cause + " missing from stacktrace: " + stackTrace);
         }
     }
@@ -56,19 +59,22 @@ public class InitExceptionUnloadTest {
         "java.lang.ExceptionInInitializerError",
         "Caused by: java.lang.ArithmeticException: / by zero",
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsRuntimeException",
-        "Caused by: java.lang.ArithmeticException: / by zero at InitExceptionUnloadTest$ThrowsRuntimeException.<clinit>(InitExceptionUnloadTest.java:38)",
+        "Caused by: java.lang.ArithmeticException: / by zero",
         "java.lang.Error",
         null,
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsError",
-        "Caused by: java.lang.Error at InitExceptionUnloadTest$ThrowsError.<clinit>(InitExceptionUnloadTest.java:39)"
-    };
+        "Caused by: java.lang.Error" };
+
+    static String[] classNames = new String[] {
+         "InitExceptionUnloadTest$ThrowsRuntimeException",
+         "InitExceptionUnloadTest$ThrowsError" };
+
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
 
     static void test() throws Throwable {
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
         int i = 0;
-        for (String className : new String[] {
-                 "InitExceptionUnloadTest$ThrowsRuntimeException",
-                 "InitExceptionUnloadTest$ThrowsError" }) {
+        for (String className : classNames) {
             System.err.println("--- try to load " + className);
             for (int tries = 2; tries--> 0; ) {
                 try {
@@ -83,10 +89,11 @@ public class InitExceptionUnloadTest {
         }
         cl = null;
         ClassUnloadCommon.triggerUnloading();  // should unload these classes
+        ClassUnloadCommon.failIf(wb.isClassAlive(classNames[0]), "should be unloaded");
+        ClassUnloadCommon.failIf(wb.isClassAlive(classNames[1]), "should be unloaded");
     }
     public static void main(java.lang.String[] unused) throws Throwable {
         test();
-        ClassUnloadCommon.triggerUnloading();  // should unload these classes
         test();
     }
 }

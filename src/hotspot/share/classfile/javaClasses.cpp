@@ -2282,7 +2282,7 @@ class BacktraceIterator : public StackObj {
 
 // Print stack trace element to resource allocated buffer
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
-                                          int version, int bci, Symbol* name, bool same_line = false) {
+                                          int version, int bci, Symbol* name) {
   ResourceMark rm;
 
   // Get strings and string lengths
@@ -2315,7 +2315,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
 
   // Print stack trace line in buffer
-  sprintf(buf, "%sat %s.%s(", same_line ? " " : "\t", klass_name, method_name);
+  sprintf(buf, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
@@ -2352,11 +2352,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     }
   }
 
-  if (same_line) {
-    st->print("%s", buf);
-  } else {
-    st->print_cr("%s", buf);
-  }
+  st->print_cr("%s", buf);
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
@@ -2365,23 +2361,6 @@ void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, 
   int version = method->constants()->version();
   print_stack_element_to_stream(st, mirror, method_id, version, bci, method->name());
 }
-
-void java_lang_Throwable::print_top_frame(Handle throwable, outputStream* st) {
-  print(throwable(), st);
-
-  JavaThread* current = JavaThread::current();
-  assert(throwable.not_null(), "shouldn't call this");
-  objArrayHandle result (current, objArrayOop(backtrace(throwable())));
-  if (result.is_null()) {
-      st->print_raw_cr("\t<<no stack trace available>>");
-      return;
-  }
-  BacktraceIterator iter(result, current);
-  BacktraceElement bte = iter.next(current);
-  print_stack_element_to_stream(st, bte._mirror, bte._method_id,
-                                bte._version, bte._bci, bte._name, /* same_line */ true);
-}
-
 
 /**
  * Print the throwable message and its stack trace plus all causes by walking the
@@ -2686,6 +2665,41 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
                                          bte._bci,
                                          bte._name, CHECK);
   }
+}
+
+objArrayOop java_lang_Throwable::get_stack_trace(Handle throwable, TRAPS) {
+  // Call to JVM to fill in the stack trace and clear declaringObject to not keep classes alive
+  // in the stack trace.
+  // call this:  public StackTraceElement[] getStackTrace()
+  assert(throwable.not_null(), "shouldn't be");
+
+  TempNewSymbol sym = SymbolTable::new_symbol("getStackTrace");
+  TempNewSymbol sig = SymbolTable::new_symbol("()[Ljava/lang/StackTraceElement;");
+
+  JavaValue result(T_ARRAY);
+  JavaCalls::call_virtual(&result, throwable,
+                          vmClasses::Throwable_klass(),
+                          sym, sig,
+                          CHECK_NULL);
+  oop stack_trace = result.get_oop();
+  assert(stack_trace->is_objArray(), "Should be an array");
+  return (objArrayOop)stack_trace;
+}
+
+oop java_lang_Throwable::recreate_cause(Symbol* exception, Symbol* message, const char* thread_name,
+                                        Handle stack_trace, TRAPS) {
+  ResourceMark rm(THREAD);
+  stringStream st;
+  if (message == NULL) {
+    st.print("in thread %s", thread_name);
+  } else {
+    st.print("%s in thread %s", message->as_C_string(), thread_name);
+  }
+  Handle h_cause = Exceptions::new_exception(THREAD, exception, st.as_string());
+  java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
+  // Clear backtrace because the stacktrace should be used instead.
+  set_backtrace(h_cause(), NULL);
+  return h_cause();
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {

@@ -566,11 +566,16 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
+
+  // For recreating class initialization error exceptions.
+  static objArrayOop get_stack_trace(Handle throwable, TRAPS);
+  static oop  recreate_cause(Symbol* exception, Symbol* message, const char* thread_name,
+                             Handle stack_trace, TRAPS);
+
   // Printing
   static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
-  static void print_top_frame(Handle throwable, outputStream* st);
   // Debugging
   friend class JavaClasses;
   // Gets the method and bci of the top frame (TOS). Returns false if this failed.
