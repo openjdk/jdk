@@ -185,24 +185,19 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 //
 void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
+  assert(t1 == r10 && t2 == r11, "must be");
+
   Label done;
 
   // len_in_bytes is positive and ptr sized
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  RegSet savedRegs;
-  if (t1 != r10 || t2 != r11)  savedRegs = RegSet::of(r10, r11);
-
-  push(savedRegs, sp);
-
   // zero_words() takes ptr in r10 and count in words in r11
   mov(rscratch1, len_in_bytes);
-  lea(r10, Address(obj, hdr_size_in_bytes));
-  lsr(r11, rscratch1, LogBytesPerWord);
-  zero_words(r10, r11);
-
-  pop(savedRegs, sp);
+  lea(t1, Address(obj, hdr_size_in_bytes));
+  lsr(t2, rscratch1, LogBytesPerWord);
+  zero_words(t1, t2);
 
   bind(done);
 }
