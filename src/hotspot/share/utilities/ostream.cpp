@@ -918,7 +918,7 @@ bool ttyLocker::release_tty_if_locked() {
 void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
   if (defaultStream::instance != NULL &&
       defaultStream::instance->writer() == holder) {
-    if (xtty != NULL) {
+    if (Verbose && xtty != NULL) {
       xtty->print_cr("<!-- safepoint while printing -->");
     }
     defaultStream::instance->release(holder);
