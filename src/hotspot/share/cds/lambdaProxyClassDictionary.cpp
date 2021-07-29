@@ -27,6 +27,19 @@
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 
+DumpTimeLambdaProxyClassInfo DumpTimeLambdaProxyClassInfo::clone() {
+  DumpTimeLambdaProxyClassInfo res;
+  res._proxy_klasses = NULL;
+  if (_proxy_klasses != NULL && _proxy_klasses->length() > 0) {
+    int num_proxy_klasses = _proxy_klasses->length();
+    res._proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(num_proxy_klasses, mtClassShared);
+    for (int i = 0; i < num_proxy_klasses; i++) {
+      res._proxy_klasses->append(_proxy_klasses->at(i));
+    }
+  }
+  return res;
+}
+
 void LambdaProxyClassKey::mark_pointers() {
   ArchivePtrMarker::mark_pointer(&_caller_ik);
   ArchivePtrMarker::mark_pointer(&_instantiated_method_type);

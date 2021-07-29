@@ -74,7 +74,7 @@ void VM_G1TryInitiateConcMark::doit() {
   GCCauseSetter x(g1h, _gc_cause);
 
   // Record for handling by caller.
-  _terminating = g1h->_cm_thread->should_terminate();
+  _terminating = g1h->concurrent_mark_is_terminating();
 
   if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
     // When terminating, the request to initiate a concurrent cycle will be
@@ -170,7 +170,7 @@ void VM_G1Concurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
+  TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
   _cl->do_void();

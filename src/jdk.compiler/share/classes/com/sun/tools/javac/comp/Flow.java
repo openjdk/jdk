@@ -664,7 +664,11 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
-            Set<Symbol> constants = tree.patternSwitch ? new HashSet<>() : null;
+            boolean exhaustiveSwitch = tree.patternSwitch ||
+                                       tree.cases.stream()
+                                                 .flatMap(c -> c.labels.stream())
+                                                 .anyMatch(l -> TreeInfo.isNull(l));
+            Set<Symbol> constants = exhaustiveSwitch ? new HashSet<>() : null;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
@@ -673,7 +677,6 @@ public class Flow {
                     handleConstantCaseLabel(constants, pat);
                 }
                 scanStats(c.stats);
-                c.completesNormally = alive != Liveness.DEAD;
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
                     alive = Liveness.DEAD;
@@ -686,7 +689,7 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            if (!tree.hasTotalPattern && tree.patternSwitch &&
+            if (!tree.hasTotalPattern && exhaustiveSwitch &&
                 !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
                 (constants == null || !isExhaustive(tree.selector.type, constants))) {
                 log.error(tree, Errors.NotExhaustiveStatement);
@@ -721,7 +724,6 @@ public class Flow {
                                   Errors.SwitchExpressionCompletesNormally);
                     }
                 }
-                c.completesNormally = alive != Liveness.DEAD;
             }
             if (!tree.hasTotalPattern && !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
                 !isExhaustive(tree.selector.type, constants)) {
@@ -1575,6 +1577,10 @@ public class Flow {
     class SnippetAliveAnalyzer extends AliveAnalyzer {
         @Override
         public void visitClassDef(JCClassDecl tree) {
+            //skip
+        }
+        @Override
+        public void visitLambda(JCLambda tree) {
             //skip
         }
         public boolean isAlive() {

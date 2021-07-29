@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.math.BigInteger;
 
 /**
  * @test Test for Math.*Exact integer and long methods.
- * @bug 6708398
+ * @bug 6708398 8075806
  * @summary Basic tests for Math exact arithmetic operations.
  *
  * @author Roger Riggs
@@ -56,8 +56,9 @@ public class ExactArithTests {
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
-     * decrementExact, negateExact methods with {@code int} arguments.
+     * Test Math.addExact, multiplyExact, divideExact, subtractExact,
+     * incrementExact, decrementExact, negateExact methods with
+     * {@code int} arguments.
      */
     static void testIntegerExact() {
         testIntegerExact(0, 0);
@@ -132,6 +133,39 @@ public class ExactArithTests {
             }
         }
 
+        boolean exceptionExpected = false;
+        try {
+            // Test divideExact
+            BigInteger q = null;
+            try {
+                q = BigInteger.valueOf(x).divide(BigInteger.valueOf(y));
+            } catch (ArithmeticException e) {
+                exceptionExpected = true;
+            }
+            int quotient = 0;
+            if (q != null) {
+                try {
+                    quotient = q.intValueExact();
+                } catch (ArithmeticException e) {
+                    exceptionExpected = true;
+                }
+            }
+            int z = Math.divideExact(x, y);
+            if (exceptionExpected) {
+                fail("FAIL: int Math.divideExact(" + x + " / " + y + ")" +
+                    "; expected ArithmeticException not thrown");
+            }
+            if (z != quotient) {
+                fail("FAIL: int Math.divideExact(" + x + " / " + y + ") = " +
+                    z + "; expected: " + quotient);
+            }
+        } catch (ArithmeticException ex) {
+            if (!exceptionExpected) {
+                fail("FAIL: int Math.divideExact(" + x + " / " + y + ")" +
+                    "; Unexpected exception: " + ex);
+            }
+        }
+
         try {
             // Test incrementExact
             int inc = Math.incrementExact(x);
@@ -182,8 +216,9 @@ public class ExactArithTests {
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
-     * decrementExact, negateExact, toIntExact methods with {@code long} arguments.
+     * Test Math.addExact, multiplyExact, divideExact, subtractExact,
+     * incrementExact, decrementExact, negateExact, toIntExact methods
+     * with {@code long} arguments.
      */
     static void testLongExact() {
         testLongExactTwice(0, 0);
@@ -266,6 +301,26 @@ public class ExactArithTests {
         } catch (ArithmeticException ex) {
             if (inLongRange(resultBig)) {
                 fail("FAIL: long Math.multiplyExact(" + x + " * " + y + ")" + "; Unexpected exception: " + ex);
+            }
+        }
+
+        try {
+            // Test divideExact
+            resultBig = null;
+            try {
+                resultBig = xBig.divide(yBig);
+            } catch (ArithmeticException ex) {
+            }
+            long quotient = Math.divideExact(x, y);
+            if (resultBig == null) {
+                fail("FAIL: long Math.divideExact(" + x + " / " + y + ")" +
+                    "; expected ArithmeticException not thrown");
+            }
+            checkResult("long Math.divideExact", x, y, quotient, resultBig);
+        } catch (ArithmeticException ex) {
+            if (resultBig != null && inLongRange(resultBig)) {
+                fail("FAIL: long Math.divideExact(" + x + " / " + y + ")" +
+                    "; Unexpected exception: " + ex);
             }
         }
 

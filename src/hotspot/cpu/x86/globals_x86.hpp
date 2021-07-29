@@ -109,6 +109,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
                                                                             \
+  product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
+          "Control whether Knights platform setting should be used")        \
+                                                                            \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \
                                                                             \

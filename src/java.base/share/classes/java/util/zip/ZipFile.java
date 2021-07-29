@@ -226,6 +226,7 @@ public class ZipFile implements ZipConstants, Closeable {
                                                Integer.toHexString(mode));
         }
         String name = file.getPath();
+        file = new File(name);
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -1033,6 +1034,18 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
+     * Returns the number of the META-INF/MANIFEST.MF entries, case insensitive.
+     * When this number is greater than 1, JarVerifier will treat a file as
+     * unsigned.
+     */
+    private int getManifestNum() {
+        synchronized (this) {
+            ensureOpen();
+            return res.zsrc.manifestNum;
+        }
+    }
+
+    /**
      * Returns the name of the META-INF/MANIFEST.MF entry, ignoring
      * case. If {@code onlyIfSignatureRelatedFiles} is true, we only return the
      * manifest if there is also at least one signature-related file.
@@ -1077,6 +1090,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 @Override
                 public List<String> getManifestAndSignatureRelatedFiles(JarFile jar) {
                     return ((ZipFile)jar).getManifestAndSignatureRelatedFiles();
+                }
+                @Override
+                public int getManifestNum(JarFile jar) {
+                    return ((ZipFile)jar).getManifestNum();
                 }
                 @Override
                 public String getManifestName(JarFile jar, boolean onlyIfHasSignatureRelatedFiles) {
@@ -1131,6 +1148,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private byte[] comment;              // zip file comment
                                              // list of meta entries in META-INF dir
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
+        private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
         private int[] metaVersions;          // list of unique versions found in META-INF/versions/
         private final boolean startsWithLoc; // true, if zip file starts with LOCSIG (usually true)
@@ -1313,6 +1331,7 @@ public class ZipFile implements ZipConstants, Closeable {
             entries = null;
             table = null;
             manifestPos = -1;
+            manifestNum = 0;
             signatureMetaNames = null;
             metaVersions = EMPTY_META_VERSIONS;
         }
@@ -1504,6 +1523,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int pos = 0;
             int entryPos = CENHDR;
             int limit = cen.length - ENDHDR;
+            manifestNum = 0;
             while (entryPos <= limit) {
                 if (idx >= entriesLength) {
                     // This will only happen if the zip file has an incorrect
@@ -1522,6 +1542,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // nlen is at least META_INF_LENGTH
                     if (isManifestName(entryPos + META_INF_LEN, nlen - META_INF_LEN)) {
                         manifestPos = pos;
+                        manifestNum++;
                     } else {
                         if (isSignatureRelated(entryPos, nlen)) {
                             if (signatureNames == null)

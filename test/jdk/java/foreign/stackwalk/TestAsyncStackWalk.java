@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default_gc
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -44,6 +44,63 @@
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
+ *   TestAsyncStackWalk
+ */
+
+/*
+ * @test id=zgc
+ * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseZGC
+ *   TestAsyncStackWalk
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseZGC
+ *   TestAsyncStackWalk
+ */
+/*
+ * @test id=shenandoah
+ * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseShenandoahGC
+ *   TestAsyncStackWalk
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseShenandoahGC
  *   TestAsyncStackWalk
  */
 

@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
@@ -56,7 +57,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = 59;
+    private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -187,7 +188,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // to invoke directly. (javac prefers to avoid this situation by
         // generating bridges in the target class)
         useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
-                               !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass())) ||
+                               !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
                                implKind == H_INVOKESPECIAL;
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = factoryType.parameterCount();
@@ -564,7 +565,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             convertArgumentTypes(methodType);
 
             if (useImplMethodHandle) {
-                MethodType mtype = implInfo.getMethodType().insertParameterTypes(0, implClass);
+                MethodType mtype = implInfo.getMethodType();
+                if (implKind != MethodHandleInfo.REF_invokeStatic) {
+                    mtype = mtype.insertParameterTypes(0, implClass);
+                }
                 visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
                                 "invokeExact", mtype.descriptorString(), false);
             } else {

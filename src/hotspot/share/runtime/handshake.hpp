@@ -49,6 +49,7 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
+  virtual bool is_suspend()                        { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -92,15 +93,8 @@ class HandshakeState {
   bool possibly_can_process_handshake();
   bool can_process_handshake();
 
-  // Returns false if the JavaThread finished all its handshake operations.
-  // If the method returns true there is still potential work to be done,
-  // but we need to check for a safepoint before.
-  // (This is due to a suspension handshake which put the JavaThread in blocked
-  // state so a safepoint may be in-progress.)
-  bool process_self_inner();
-
   bool have_non_self_executable_operation();
-  HandshakeOperation* get_op_for_self();
+  HandshakeOperation* get_op_for_self(bool allow_suspend);
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
@@ -123,10 +117,14 @@ class HandshakeState {
   bool has_operation() {
     return !_queue.is_empty();
   }
+  bool has_a_non_suspend_operation();
 
   bool operation_pending(HandshakeOperation* op);
 
-  bool process_by_self();
+  // If the method returns true we need to check for a possible safepoint.
+  // This is due to a suspension handshake which put the JavaThread in blocked
+  // state so a safepoint may be in-progress.
+  bool process_by_self(bool allow_suspend);
 
   enum ProcessResult {
     _no_operation = 0,

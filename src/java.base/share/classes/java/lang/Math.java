@@ -91,13 +91,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * will not overflow the range of values of the computation.
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
- * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
- * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
- * throw an {@code ArithmeticException} when the results overflow.
- * For the arithmetic operations divide and absolute value, overflow
- * occurs only with a specific minimum or maximum value and
- * should be checked against the minimum or maximum as appropriate.
+ * overflow errors need to be detected, the methods whose names end with
+ * {@code Exact} throw an {@code ArithmeticException} when the results overflow.
  *
  * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
  * Operations</a></h2>
@@ -1008,6 +1003,60 @@ public final class Math {
     }
 
     /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows an {@code int}.  Such overflow occurs in this method if
+     * {@code x} is {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Integer.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Integer.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows an int
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static int divideExact(int x, int y) {
+        int q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("integer overflow");
+    }
+
+    /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows a {@code long}.  Such overflow occurs in this method if
+     * {@code x} is {@link Long#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Long.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Long.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows a long
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static long divideExact(long x, long y) {
+        long q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("long overflow");
+    }
+
+    /**
      * Returns the argument incremented by one, throwing an exception if the
      * result overflows an {@code int}.
      * The overflow only occurs for {@linkplain Integer#MAX_VALUE the maximum value}.
@@ -1156,35 +1205,43 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @since 9
      */
     @IntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
-        if (x < 0 || y < 0) {
-            // Use technique from section 8-2 of Henry S. Warren, Jr.,
-            // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
-            long x1 = x >> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y1 = y >> 32;
-            long y2 = y & 0xFFFFFFFFL;
-            long z2 = x2 * y2;
-            long t = x1 * y2 + (z2 >>> 32);
-            long z1 = t & 0xFFFFFFFFL;
-            long z0 = t >> 32;
-            z1 += x2 * y1;
-            return x1 * y1 + z0 + (z1 >> 32);
-        } else {
-            // Use Karatsuba technique with two base 2^32 digits.
-            long x1 = x >>> 32;
-            long y1 = y >>> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y2 = y & 0xFFFFFFFFL;
-            long A = x1 * y1;
-            long B = x2 * y2;
-            long C = (x1 + x2) * (y1 + y2);
-            long K = C - A - B;
-            return (((B >>> 32) + K) >>> 32) + A;
-        }
+        // Use technique from section 8-2 of Henry S. Warren, Jr.,
+        // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+        long x1 = x >> 32;
+        long x2 = x & 0xFFFFFFFFL;
+        long y1 = y >> 32;
+        long y2 = y & 0xFFFFFFFFL;
+
+        long z2 = x2 * y2;
+        long t = x1 * y2 + (z2 >>> 32);
+        long z1 = t & 0xFFFFFFFFL;
+        long z0 = t >> 32;
+        z1 += x2 * y1;
+
+        return x1 * y1 + z0 + (z1 >> 32);
+    }
+
+    /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see #multiplyHigh
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        // Compute via multiplyHigh() to leverage the intrinsic
+        long result = Math.multiplyHigh(x, y);
+        result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
+        result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
+        return result;
     }
 
     /**
@@ -1519,7 +1576,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float abs(float a) {
-        return (a <= 0.0F) ? 0.0F - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & FloatConsts.MAG_BIT_MASK);
     }
 
     /**
@@ -1544,7 +1602,9 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double abs(double a) {
-        return (a <= 0.0D) ? 0.0D - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & DoubleConsts.MAG_BIT_MASK);
+
     }
 
     /**

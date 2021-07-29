@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=passive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -40,7 +40,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -52,7 +52,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -64,7 +64,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -76,7 +76,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
@@ -88,7 +88,7 @@
  */
 
 /*
- * @test TestChurnNotifications
+ * @test id=iu
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
