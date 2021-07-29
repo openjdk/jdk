@@ -71,8 +71,8 @@ import java.lang.annotation.RetentionPolicy;
  * </ul>
  *
  * <p>
- * Examples on how to write base tests can be found in {@link jdk.test.lib.hotspot.ir_framework.examples.BaseTestExample}
- * and also as part of the internal testing in the package {@link jdk.test.lib.hotspot.ir_framework.tests}.
+ * Examples on how to write base tests can be found in {@link ir_framework.examples.BaseTestExample}
+ * and also as part of the internal testing in the package {@link ir_framework.tests}.
  *
  * @see Arguments
  */
