@@ -56,6 +56,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+
 /**
  * This class represents ciphers in GaloisCounter (GCM) mode.
  *
@@ -587,6 +589,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     /**
      * Intrinsic for Vector AES Galois Counter Mode implementation.
      * AES and GHASH operations are interleaved in the intrinsic implementation.
+     * return - number of processed bytes
      *
      * Requires 768 bytes (48 AES blocks) to efficiently use the intrinsic.
      * inLen that is less than 768 size block sizes, before or after this
@@ -602,7 +605,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      * @param ghash object for the ghash operation
      * @return number of processed bytes
      */
-    //@IntrinsicCandidate
+    @IntrinsicCandidate
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen,
         byte[] ct, int ctOfs, byte[] out, int outOfs,
         GCTR gctr, GHASH ghash) {
@@ -736,8 +739,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len = srcLen;
                 do {
                     src.get(bin, 0, PARALLEL_LEN);
-                    len -= GaloisCounterMode.implGCMCrypt(bin, 0,
-                        PARALLEL_LEN, ct, 0, bout, 0, gctr, ghash);
+                    len -= GaloisCounterMode.implGCMCrypt(bin, 0, PARALLEL_LEN,
+                        ct, 0, bout, 0, gctr, ghash);
                     dst.put(bout, 0, PARALLEL_LEN);
                 } while (len >= PARALLEL_LEN);
 
