@@ -25694,7 +25694,7 @@
          <style>
             <textForeground/>
             <textBackground/>
-	    <background/>
+            <background/>
             <cacheSettingsInherited>false</cacheSettingsInherited>
             <cacheMode>NO_CACHING</cacheMode>
             <uiproperties/>
