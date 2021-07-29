@@ -185,6 +185,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
     printf("Updating old class file!\n");
     typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
     
+    // Copy Classfile from stream to a java byte array
     ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(stream->buffer()),
           bytecode, 
           typeArrayOopDesc::element_offset<jbyte>(0),
@@ -196,6 +197,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
     args.push_oop(bufhandle); // Push class byte array as argument
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_Preverifier(), false, CHECK_NULL);
    
+    // Call Preverifier.patch()
     JavaCalls::call_static(&result,
           k,
           vmSymbols::preverifier_patch(),
@@ -216,6 +218,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
       THROW_0(vmSymbols::java_lang_OutOfMemoryError());
     }
 
+    // Copy output back to stream
     ArrayAccess<>::arraycopy_to_native(result_array, 
           typeArrayOopDesc::element_offset<jbyte>(0),
           reinterpret_cast<jbyte*>(class_bytes), length);
