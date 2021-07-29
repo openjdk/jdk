@@ -38,13 +38,10 @@ public Method "<init>":"()V"
 public static varargs Method main:"([Ljava/lang/String;)V"
 	stack 5 locals 3
 {
-		//aconst_null;
 		jsr B;
-		//pop;
 		jsr A;
 		return;
 	A:
-		//jsr B;
 		astore_2;
 		jsr B;
 		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";

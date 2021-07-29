@@ -26,75 +26,68 @@ package jdk.internal.vm;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.util.*;
 import jdk.internal.org.objectweb.asm.tree.*;
-
-import java.io.FileInputStream;
+import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import java.io.IOException;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.net.URISyntaxException;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.lang.reflect.*;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.List;
-import java.util.Iterator;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.*;
-import java.nio.file.FileSystems;
-import java.nio.file.LinkOption;
+import java.util.logging.*;
 
 /**
  * Patches a java class file taken as an argument, replacing all JSR and RET instructions with a valid equivalent
  * JSR and RET instructions exist in pairs, usually with an ASTORE_X at the top of the subroutine containing
  * the RET. These instructions are deprecated and must be replaced with valid bytecodes such as GOTO.
+ * 
+ * @version 1.00 28 July 2021 
+ * @author Matias Saavedra Silva
  */
 public class Preverifier extends ClassVisitor {
 
-	//private static HashSet<String> targetMethods = new HashSet<String>(); // Set containing each method with the desired opcode
 	private static byte[] bytecode; // Contents of the class file
 	private static ClassNode cn;
 	private static String fileName;
+	private static Logger logger = Logger.getLogger("jdk.internal.vm");
+    private static FileHandler fh = new FileHandler("%t/mylog.txt");
 
 	/**
 	 * Reads class file, locates all JSR/RET instructions, and writes new class file 
 	 * with new valid instructions
+	 * @param bytecode Byte array with class file contents
+	 * @return Updated classfile as a byte array
 	 */
-	public static byte[] patch(byte [] bytecode) throws IOException {
+	public static byte[] patch(byte [] bytecode) {
+		// Send logger output to our FileHandler.
+        logger.addHandler(fh);
+        // Request that every detail gets logged.
+        logger.setLevel(Level.ALL);
+
         ClassReader cr;
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
-        	System.out.println("Class not written correctly!");
-			System.exit(1);
+        	throw new InternalError("Classfile not parsed correctly")
         }
         return cw.toByteArray();
     }
 
     /**
      * Constructor
+     * @param api ASM API version
+     * @param cw ClassWriter to write out new classfile
      */ 
     public Preverifier(int api, ClassWriter cw) {
         super(api, cw);
     }
 
 	/**
-	 *  Builds map for cloning instructions
+	 * Builds map for cloning instructions
+	 * @param insns Instruction list from a method
+	 * @return Map used for cloning instructions
 	 */
 	public static Map<LabelNode, LabelNode> cloneLabels(InsnList insns) {
 		HashMap<LabelNode, LabelNode> labelMap = new HashMap<>();
@@ -108,21 +101,26 @@ public class Preverifier extends ClassVisitor {
 
 	/**
 	 * Replaces JST and RET opcodes in the class file
-	 * bytecode: byte array containing the contents of the class file
-	 * cr: ClassReader
-	 * Returns ClassNode with altered instruction list
+	 * @param bytecode byte array containing the contents of the class file
+	 * @param cr ClassReader for classfile
+	 * @return ClassNode with altered instruction list
 	 */
-	public static ClassNode replaceOpcodes(ClassReader cr, byte[] bytecode) throws IOException {	
+	public static ClassNode replaceOpcodes(ClassReader cr, byte[] bytecode) {	
 		System.out.println("Replacing opcodes...");
+		logger.info("Replacing opcodes...");
+		// Flag for expanding bytecode when JSRs and RETs overlap
+		boolean mustExpand = false;
+		// Flag for repeated scans through instruction list
+		boolean continueScanning = false;
 		// Create classnode to view methods and instructions
 		ClassNode cn = new ClassNode();
 		cr.accept(cn, 0);
-
+		//List of methods
 		List<MethodNode> mns = cn.methods;
-		boolean mustExpand = false; // Flag for expanding bytecode when JSRs and RETs overlap
+
 		System.out.println("Class name: " + cn.name + "\nMethods: " + mns.size());
-		boolean continueScanning = false;
 		for (MethodNode mn : mns) {
+			boolean hasJSR = false;
 			InsnList inList = mn.instructions;
 			// New list of instructions that should replace the previous list
 			InsnList newInst = new InsnList();
@@ -132,7 +130,6 @@ public class Preverifier extends ClassVisitor {
 			Map<LabelNode, LabelNode> cloneMap = cloneLabels(inList);
 			// Maps a RET instruction to the label it must return to once converted to GOTO instruction
 			HashMap<AbstractInsnNode, LabelNode> retLabelMap = new HashMap<>();				
-			boolean hasJSR = false;
 			do {
 				System.out.println("Method name: " + mn.name + " Instructions: " + inList.size()); 				
 				for (int i = 0; i < inList.size(); i++) {
@@ -143,6 +140,7 @@ public class Preverifier extends ClassVisitor {
 						hasJSR = true;
 						boolean hasRet = false;
 						System.out.println("Replacing JSR...");
+						logger.info("Replacing JSR...");
 						// Extract the operator from JSR
 						LabelNode lb = ((JumpInsnNode)inList.get(i)).label;
 
@@ -197,10 +195,9 @@ public class Preverifier extends ClassVisitor {
 						System.out.println("Replacing RET...");
 						// Replace RET with GOTO which jumps to the label corresponding to its associated JSR
 						if (!retLabelMap.containsKey(inList.get(i))) {
-							//throw new Error("Verifier Error. RET has no matching JSR");
 							System.out.println("RET has no matching JSR yet");
 							newInst.add(inList.get(i));
-							continueScanning = true;
+							continueScanning = true; // Matching JSR may be above RET
 						}
 						else {
 							continueScanning = false; 
