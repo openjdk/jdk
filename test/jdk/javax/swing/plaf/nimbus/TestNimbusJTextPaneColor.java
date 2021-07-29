@@ -48,12 +48,12 @@ public class TestNimbusJTextPaneColor {
                 } catch (Exception checkedExceptionsPleaseDie) {
                     throw new RuntimeException(checkedExceptionsPleaseDie);
                 }
-            
+ 
                 JTextPane tp = new JTextPane();
                 tp.setForeground(Color.WHITE);
                 tp.setBackground(Color.BLACK);
                 tp.setText("This text should be white on black");
-            
+
                 frame = new JFrame();
                 frame.setDefaultCloseOperation(frame.DISPOSE_ON_CLOSE);
                 frame.add(tp);
@@ -61,7 +61,7 @@ public class TestNimbusJTextPaneColor {
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             });
-	    Thread.sleep(1000);
+            Thread.sleep(1000);
             Robot robot = new Robot();
             Point pt = frame.getLocationOnScreen();
             if (!(robot.getPixelColor(pt.x + frame.getBounds().width/2, 
@@ -69,7 +69,7 @@ public class TestNimbusJTextPaneColor {
                                 .equals(Color.BLACK))) {
                 throw new RuntimeException("JTextPane Color not same as the color being set");		
             }
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
