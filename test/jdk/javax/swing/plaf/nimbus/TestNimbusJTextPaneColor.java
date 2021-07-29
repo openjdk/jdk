@@ -41,14 +41,13 @@ public class TestNimbusJTextPaneColor {
     static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        try {	    
+        try {
             SwingUtilities.invokeAndWait(() -> {
                 try {
                     UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
                 } catch (Exception checkedExceptionsPleaseDie) {
                     throw new RuntimeException(checkedExceptionsPleaseDie);
                 }
- 
                 JTextPane tp = new JTextPane();
                 tp.setForeground(Color.WHITE);
                 tp.setBackground(Color.BLACK);
@@ -64,17 +63,15 @@ public class TestNimbusJTextPaneColor {
             Thread.sleep(1000);
             Robot robot = new Robot();
             Point pt = frame.getLocationOnScreen();
-            if (!(robot.getPixelColor(pt.x + frame.getBounds().width/2, 
+            if (!(robot.getPixelColor(pt.x + frame.getBounds().width/2,
                                   pt.y + frame.getBounds().height/2)
                                 .equals(Color.BLACK))) {
-                throw new RuntimeException("JTextPane Color not same as the color being set");		
+                throw new RuntimeException("JTextPane Color not same as the color being set");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }	    
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
+            }
+        }
     }
 }
