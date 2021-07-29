@@ -107,6 +107,7 @@ class ResourceHashtableBase : public STORAGE {
  public:
   unsigned table_size() const { return STORAGE::table_size(); }
   int number_of_entries() const { return _number_of_entries; }
+  void decrement_entries() { _number_of_entries--; }
 
   bool contains(K const& key) const {
     return get(key) != NULL;
@@ -210,6 +211,32 @@ class ResourceHashtableBase : public STORAGE {
       ++bucket;
     }
   }
+
+  // ITER contains bool do_entry(K const&, V const&), which will be
+  // called for each entry in the table.  If do_entry() returns true,
+  // the entry is deleted.
+  template<class ITER>
+  void unlink(ITER* iter) const {
+    const unsigned sz = table_size();
+    for (unsigned index = 0; index < sz; index++) {
+      Node** ptr = bucket_at(index);
+      while (*ptr != NULL) {
+        Node* node = *ptr;
+        // do_entry must clean up the key and value in Node.
+        bool clean = iter->do_entry(node->_key, node->_value);
+        if (clean) {
+          *ptr = node->_next;
+          if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+            delete node;
+          }
+          const_cast<ResourceHashtableBase*>(this)->decrement_entries();
+        } else {
+          ptr = &(node->_next);
+        }
+      }
+    }
+  }
+
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
