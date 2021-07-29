@@ -863,6 +863,9 @@ public final class StrictMath {
      * <p>
      * If {@code y} is zero, an {@code ArithmeticException} is thrown
      * (JLS {@jls 15.17.2}).
+     * <p>
+     * It should be noted that the operator "{@code %}" is a suitable remainder
+     * couterpart of this method as it is of the division operator "{@code /}".
      *
      * @param x the dividend
      * @param y the divisor
@@ -887,6 +890,9 @@ public final class StrictMath {
      * <p>
      * If {@code y} is zero, an {@code ArithmeticException} is thrown
      * (JLS {@jls 15.17.2}).
+     * <p>
+     * It should be noted that the operator "{@code %}" is a suitable remainder
+     * couterpart of this method as it is of the division operator "{@code /}".
      *
      * @param x the dividend
      * @param y the divisor
@@ -899,6 +905,83 @@ public final class StrictMath {
      */
     public static long divideExact(long x, long y) {
         return Math.divideExact(x, y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * If the dividend is {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and
+     * the divisor is {@code -1}, then integer overflow occurs and an
+     * {@code ArithmeticException} is thrown.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * negative infinity (floor) rounding mode.
+     * The floor rounding mode gives different results from truncation
+     * when the exact result is negative.
+     * <ul>
+     *   <li>If the signs of the arguments are the same, the results of
+     *       {@code floorDiv} and the {@code /} operator are the same.  <br>
+     *       For example, {@code floorDiv(4, 3) == 1} and {@code (4 / 3) == 1}.</li>
+     *   <li>If the signs of the arguments are different,  the quotient is negative and
+     *       {@code floorDiv} returns the integer less than or equal to the quotient
+     *       and the {@code /} operator returns the integer closest to zero.<br>
+     *       For example, {@code floorDiv(-4, 3) == -2},
+     *       whereas {@code (-4 / 3) == -1}.
+     *   </li>
+     * </ul>
+     * <p>
+     * It should be noted that the method {@link #floorMod(int,int)} is a
+     * suitable modulus couterpart of this method as it is of the
+     * {@link #floorDiv(int,int)} method.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Integer.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see #floorDiv(int, int)
+     * @see Math#floorDiv(int, int)
+     * @since 18
+     */
+    public static int floorDivExact(int x, int y) {
+        return Math.floorDivExact(x, y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * If the dividend is {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the
+     * divisor is {@code -1}, then integer overflow occurs and an
+     * {@code ArithmeticException} is thrown.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * negative infinity (floor) rounding mode.
+     * The floor rounding mode gives different results from truncation
+     * when the exact result is negative.
+     * <p>
+     * For examples, see {@link #floorDiv(int, int)}.
+     * <p>
+     * It should be noted that the method {@link #floorMod(long,long)} is a
+     * suitable modulus couterpart of this method as it is of the
+     * {@link #floorDiv(long,long)} method.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Long.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see #floorDiv(long, long)
+     * @see Math#floorDiv(long, long)
+     * @since 18
+     */
+    public static long floorDivExact(long x, long y) {
+        return Math.floorDivExact(x, y);
     }
 
     /**
@@ -1051,7 +1134,7 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case, if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to the {@code Integer.MIN_VALUE}.
@@ -1075,7 +1158,7 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case, if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1099,7 +1182,7 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case, if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to the {@code Long.MIN_VALUE}.
