@@ -112,6 +112,7 @@ class ResourceHashtableBase : public STORAGE {
  public:
   unsigned table_size() const { return STORAGE::table_size(); }
   int number_of_entries() const { return _number_of_entries; }
+  void decrement_entries() { _number_of_entries--; }
 
   bool contains(K const& key) const {
     return get(key) != NULL;

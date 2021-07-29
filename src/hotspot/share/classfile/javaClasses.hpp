@@ -570,6 +570,7 @@ class java_lang_Throwable: AllStatic {
   static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
+  static void print_top_frame(Handle throwable, outputStream* st);
   // Debugging
   friend class JavaClasses;
   // Gets the method and bci of the top frame (TOS). Returns false if this failed.

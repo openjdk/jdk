@@ -1017,6 +1017,65 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
+ResizeableResourceHashtable<InstanceKlass*, char*, ResourceObj::C_HEAP, mtClass>
+      _initialization_error_table(20);
+
+void InstanceKlass::add_initialization_error(Handle exception) {
+  MutexLocker ml(ClassInitError_lock);
+  stringStream st;
+  java_lang_Throwable::print_top_frame(exception, &st);
+  char *message = st.as_string(/*c_heap*/ true);
+
+  bool created = false;
+  _initialization_error_table.put_if_absent(this, message, &created);
+}
+
+// Caller has ResourceMark
+char* InstanceKlass::get_initialization_error() {
+  MutexLocker ml(ClassInitError_lock);
+  char** h = _initialization_error_table.get(this);
+  if (h != nullptr) {
+    stringStream st;
+    st.print(" Caused by: %s", *h);
+    return st.as_string();
+  } else {
+    return nullptr;
+  }
+}
+
+// Need to remove entries for unloaded classes.
+void InstanceKlass::clean_initialization_error_table() {
+
+  // A C++ Lambda would be nice here.
+  class InitErrorTableCleaner {
+    public:
+    bool do_entry(InstanceKlass* ik, char* h) {
+      if (!ik->is_loader_alive()) {
+        FREE_C_HEAP_ARRAY(char, h);
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+
+  MutexLocker ml(ClassInitError_lock);
+  InitErrorTableCleaner cleaner;
+  _initialization_error_table.unlink(&cleaner);
+}
+
+void print_initialization_error_table() {
+  struct Printer {
+    bool do_entry(InstanceKlass* ik, char* h) {
+      tty->print_cr("klass");
+      ik->print();
+      return true;
+    }
+  };
+  Printer p;
+  _initialization_error_table.iterate(&p);
+}
+
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);
 
@@ -1063,17 +1122,14 @@ void InstanceKlass::initialize_impl(TRAPS) {
     if (is_in_error_state()) {
       DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
       ResourceMark rm(THREAD);
-      const char* desc = "Could not initialize class ";
-      const char* className = external_name();
-      size_t msglen = strlen(desc) + strlen(className) + 1;
-      char* message = NEW_RESOURCE_ARRAY(char, msglen);
-      if (NULL == message) {
-        // Out of memory: can't create detailed error message
-          THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), className);
-      } else {
-        jio_snprintf(message, msglen, "%s%s", desc, className);
-          THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), message);
+      const char* cause = get_initialization_error();
+
+      stringStream ss;
+      ss.print("Cound not initialize class %s", external_name());
+      if (cause != nullptr) {
+        ss.print("%s", cause);
       }
+      THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
     }
 
     // Step 6
@@ -1103,6 +1159,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       CLEAR_PENDING_EXCEPTION;
       {
         EXCEPTION_MARK;
+        add_initialization_error(e);
         // Locks object, set state, and notify all waiting threads
         set_initialization_state_and_notify(initialization_error, THREAD);
         CLEAR_PENDING_EXCEPTION;
@@ -1138,9 +1195,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
-    {
-      debug_only(vtable().verify(tty, true);)
-    }
+    debug_only(vtable().verify(tty, true);)
   }
   else {
     // Step 10 and 11
@@ -1151,6 +1206,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     JvmtiExport::clear_detected_exception(jt);
     {
       EXCEPTION_MARK;
+      add_initialization_error(e);
       set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception

@@ -149,8 +149,6 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
       ASSERT_TRUE(rh.remove(as_K(step)));
       ASSERT_FALSE(rh.contains(as_K(step)));
       rh.iterate(&et);
-
-
     }
   };
 };

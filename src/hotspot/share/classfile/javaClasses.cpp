@@ -2282,7 +2282,7 @@ class BacktraceIterator : public StackObj {
 
 // Print stack trace element to resource allocated buffer
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
-                                          int version, int bci, Symbol* name) {
+                                          int version, int bci, Symbol* name, bool same_line = false) {
   ResourceMark rm;
 
   // Get strings and string lengths
@@ -2315,7 +2315,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
 
   // Print stack trace line in buffer
-  sprintf(buf, "\tat %s.%s(", klass_name, method_name);
+  sprintf(buf, "%sat %s.%s(", same_line ? " " : "\t", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
@@ -2352,7 +2352,11 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     }
   }
 
-  st->print_cr("%s", buf);
+  if (same_line) {
+    st->print("%s", buf);
+  } else {
+    st->print_cr("%s", buf);
+  }
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
@@ -2361,6 +2365,23 @@ void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, 
   int version = method->constants()->version();
   print_stack_element_to_stream(st, mirror, method_id, version, bci, method->name());
 }
+
+void java_lang_Throwable::print_top_frame(Handle throwable, outputStream* st) {
+  print(throwable(), st);
+
+  JavaThread* current = JavaThread::current();
+  assert(throwable.not_null(), "shouldn't call this");
+  objArrayHandle result (current, objArrayOop(backtrace(throwable())));
+  if (result.is_null()) {
+      st->print_raw_cr("\t<<no stack trace available>>");
+      return;
+  }
+  BacktraceIterator iter(result, current);
+  BacktraceElement bte = iter.next(current);
+  print_stack_element_to_stream(st, bte._mirror, bte._method_id,
+                                bte._version, bte._bci, bte._name, /* same_line */ true);
+}
+
 
 /**
  * Print the throwable message and its stack trace plus all causes by walking the
