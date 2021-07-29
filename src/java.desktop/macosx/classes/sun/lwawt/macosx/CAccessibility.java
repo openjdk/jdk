@@ -62,12 +62,16 @@ import javax.swing.KeyStroke;
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
 
-@SuppressWarnings("removal")
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 
     static {
-        // Need to load the native library for this code.
+        loadAWTLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
+            // Need to load the native library for this code.
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {

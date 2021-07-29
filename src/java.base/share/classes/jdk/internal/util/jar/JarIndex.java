@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,11 +284,11 @@ public class JarIndex {
     public void read(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader
             (new InputStreamReader(is, UTF_8.INSTANCE));
-        String line = null;
+        String line;
         String currentJar = null;
 
         /* an ordered list of jar file names */
-        Vector<String> jars = new Vector<>();
+        ArrayList<String> jars = new ArrayList<>();
 
         /* read until we see a .jar line */
         while((line = br.readLine()) != null && !line.endsWith(".jar"));

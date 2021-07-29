@@ -72,4 +72,4 @@ tools/sjavac/ClasspathDependencies.java                                         
 #
 # jdeps
 
-tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                            8258421    generic-all    Deprecation vs JDK-private annotation class
+tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                            8270060    generic-all    java.util.SplittableRandom extends a non-exported class

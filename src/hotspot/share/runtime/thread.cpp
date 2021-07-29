@@ -446,6 +446,13 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
     return true;
   }
 
+  // If the target hasn't been started yet then it is trivially
+  // "protected". We assume the caller is the thread that will do
+  // the starting.
+  if (p->osthread() == NULL || p->osthread()->get_state() <= INITIALIZED) {
+    return true;
+  }
+
   // Now make the simple checks based on who the caller is:
   Thread* current_thread = Thread::current();
   if (current_thread == p || Threads_lock->owner() == current_thread) {
@@ -1922,6 +1929,15 @@ void JavaThread::deoptimize_marked_methods() {
   }
 }
 
+#ifdef ASSERT
+void JavaThread::verify_frame_info() {
+  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
+         (has_last_Java_frame() && java_call_counter() > 0),
+         "unexpected frame info: has_last_frame=%s, java_call_counter=%d",
+         has_last_Java_frame() ? "true" : "false", java_call_counter());
+}
+#endif
+
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
@@ -1929,8 +1945,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
+  DEBUG_ONLY(verify_frame_info();)
 
   if (has_last_Java_frame()) {
     // Traverse the monitor chunks
@@ -1978,18 +1993,12 @@ void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
 #ifdef ASSERT
 void JavaThread::verify_states_for_handshake() {
   // This checks that the thread has a correct frame state during a handshake.
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0),
-         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
-         has_last_Java_frame(), java_call_counter());
+  verify_frame_info();
 }
 #endif
 
 void JavaThread::nmethods_do(CodeBlobClosure* cf) {
-  assert((!has_last_Java_frame() && java_call_counter() == 0) ||
-         (has_last_Java_frame() && java_call_counter() > 0),
-         "unexpected frame info: has_last_frame=%d, java_call_counter=%d",
-         has_last_Java_frame(), java_call_counter());
+  DEBUG_ONLY(verify_frame_info();)
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack
@@ -2146,7 +2155,7 @@ const char* JavaThread::name() const  {
 }
 
 // Returns a non-NULL representation of this thread's name, or a suitable
-// descriptive string if there is no set name
+// descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
   oop thread_obj = threadObj();
@@ -2167,6 +2176,19 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     name_str = Thread::name();
   }
   assert(name_str != NULL, "unexpected NULL thread name");
+  return name_str;
+}
+
+// Helper to extract the name from the thread oop for logging.
+const char* JavaThread::name_for(oop thread_obj) {
+  assert(thread_obj != NULL, "precondition");
+  oop name = java_lang_Thread::name(thread_obj);
+  const char* name_str;
+  if (name != NULL) {
+    name_str = java_lang_String::as_utf8_string(name);
+  } else {
+    name_str = "<un-named>";
+  }
   return name_str;
 }
 
@@ -3258,7 +3280,7 @@ void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
   // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_and_cleanup_shared_classes to
+  // it will cause MetaspaceShared::link_shared_classes to
   // fail for dynamic dump.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
@@ -3269,7 +3291,7 @@ void JavaThread::invoke_shutdown_hooks() {
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
+    DynamicArchive::prepare_for_dynamic_dumping();
   }
 #endif
 
@@ -3901,13 +3923,50 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 }
 #endif
 
+// Helper function to create the java.lang.Thread object for a
+// VM-internal thread. The thread will have the given name, be
+// part of the System ThreadGroup and if is_visible is true will be
+// discoverable via the system ThreadGroup.
+Handle JavaThread::create_system_thread_object(const char* name,
+                                               bool is_visible, TRAPS) {
+  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
+
+  // Initialize thread_oop to put it into the system threadGroup.
+  // This is done by calling the Thread(ThreadGroup tg, String name)
+  // constructor, which adds the new thread to the group as an unstarted
+  // thread.
+  Handle thread_group(THREAD, Universe::system_thread_group());
+  Handle thread_oop =
+    JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
+                                      vmSymbols::threadgroup_string_void_signature(),
+                                      thread_group,
+                                      string,
+                                      CHECK_NH);
+
+  // If the Thread is intended to be visible then we have to mimic what
+  // Thread.start() would do, by adding it to its ThreadGroup: tg.add(t).
+  if (is_visible) {
+    Klass* group = vmClasses::ThreadGroup_klass();
+    JavaValue result(T_VOID);
+    JavaCalls::call_special(&result,
+                            thread_group,
+                            group,
+                            vmSymbols::add_method_name(),
+                            vmSymbols::thread_void_signature(),
+                            thread_oop,
+                            CHECK_NH);
+  }
+
+  return thread_oop;
+}
+
 // Starts the target JavaThread as a daemon of the given priority, and
 // bound to the given java.lang.Thread instance.
 // The Threads_lock is held for the duration.
 void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
                                        Handle thread_oop, ThreadPriority prio) {
 
-  assert(target->osthread()!= NULL, "target thread is not properly initialized");
+  assert(target->osthread() != NULL, "target thread is not properly initialized");
 
   MutexLocker mu(current, Threads_lock);
 

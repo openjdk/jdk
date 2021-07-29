@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,22 +104,6 @@ utfInitialize(void)
 }
 
 /*
- * Terminate all utf processing
- */
-static void
-utfTerminate(void)
-{
-    if ( iconvFromPlatform!=(iconv_t)-1 ) {
-        (void)iconv_close(iconvFromPlatform);
-    }
-    if ( iconvToPlatform!=(iconv_t)-1 ) {
-        (void)iconv_close(iconvToPlatform);
-    }
-    iconvToPlatform   = (iconv_t)-1;
-    iconvFromPlatform = (iconv_t)-1;
-}
-
-/*
  * Do iconv() conversion.
  *    Returns length or -1 if output overflows.
  */
@@ -174,16 +158,6 @@ static int
 utf8ToPlatform(char *utf8, int len, char *output, int outputMaxLen)
 {
     return iconvConvert(iconvToPlatform, utf8, len, output, outputMaxLen);
-}
-
-/*
- * Convert Platform Encoding to UTF-8.
- *    Returns length or -1 if output overflows.
- */
-static int
-platformToUtf8(char *str, int len, char *output, int outputMaxLen)
-{
-    return iconvConvert(iconvFromPlatform, str, len, output, outputMaxLen);
 }
 
 int
