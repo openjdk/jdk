@@ -167,9 +167,6 @@ public abstract class Validator {
      */
     public static Validator getInstance(String type, String variant,
             Collection<X509Certificate> trustedCerts) {
-        if (variant == null) {
-            throw new NullPointerException("variant cannot be null");
-        }
         if (type.equals(TYPE_SIMPLE)) {
             return new SimpleValidator(variant, trustedCerts);
         } else if (type.equals(TYPE_PKIX)) {
@@ -186,9 +183,6 @@ public abstract class Validator {
      */
     public static Validator getInstance(String type, String variant,
             PKIXBuilderParameters params) {
-        if (variant == null) {
-            throw new NullPointerException("variant cannot be null");
-        }
         if (type.equals(TYPE_PKIX) == false) {
             throw new IllegalArgumentException
                 ("getInstance(PKIXBuilderParameters) can only be used "
