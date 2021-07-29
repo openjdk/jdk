@@ -115,8 +115,21 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
         }
 
         if (*lp == '/') {
-          error_msg = "Method pattern uses '/' together with '::'";
-          return false;
+          // Check wether it's a hidden class method.
+          // According to ClassFileParser::mangle_hidden_class_name, the pattern of
+          // hidden class name in the VM should be: _class_name, "+", and &ik
+          // But "+" will be replaced with "/" when it is printed by PrintCompilation.
+          // So if "/" is followed with a digit or "*", it may be a hidden class method.
+          // There may be false positive cases, but all of them are harmless and won't make anything worse.
+          char next = *(lp + 1);
+          if ('0' <= next && next <= '9' || next == '*') {
+            // May be a hidden class method, so replace '/' with '+'
+            *lp = '+';
+          } else {
+            // Not a hidden class method
+            error_msg = "Method pattern uses '/' together with '::'";
+            return false;
+          }
         }
       }
     }
