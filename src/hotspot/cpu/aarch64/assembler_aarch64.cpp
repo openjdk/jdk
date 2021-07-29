@@ -54,27 +54,28 @@ Assembler::SIMD_Arrangement Assembler::_esize2arrangement_table[9][2] = {
   /*   8  */      {T1D,                 T2D}
   };
 
+Assembler::SIMD_RegVariant Assembler::_esize2regvariant[9] = {
+  INVALID,
+  B,
+  H,
+  INVALID,
+  S,
+  INVALID,
+  INVALID,
+  INVALID,
+  D,
+};
 
-Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
-    guarantee(esize == 1 || esize == 2 || esize == 4 || esize == 8, "unsupported element size");
-    return _esize2arrangement_table[esize][isQ];
+Assembler::SIMD_Arrangement Assembler::esize2arrangement(unsigned esize, bool isQ) {
+  assert(esize < ARRAY_SIZE(_esize2arrangement_table) &&
+         _esize2arrangement_table[esize][isQ] != INVALID_ARRANGEMENT, "unsupported element size");
+  return _esize2arrangement_table[esize][isQ];
 }
 
-Assembler::SIMD_RegVariant Assembler::elemBytes_to_regVariant(int esize) {
-  switch(esize) {
-    case 1:
-      return B;
-    case 2:
-      return H;
-    case 4:
-      return S;
-    case 8:
-      return D;
-    default:
-      assert(false, "unsupported");
-      ShouldNotReachHere();
-  }
-  return INVALID;
+Assembler::SIMD_RegVariant Assembler::elemBytes_to_regVariant(unsigned esize) {
+  assert(esize < ARRAY_SIZE(_esize2regvariant) && _esize2regvariant[esize] != INVALID,
+         "unsupported element size");
+  return _esize2regvariant[esize];
 }
 
 Assembler::SIMD_RegVariant Assembler::elemType_to_regVariant(BasicType bt) {

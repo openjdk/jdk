@@ -584,7 +584,7 @@ void C2_MacroAssembler::string_indexof_char_sve(Register str1, Register cnt1,
 
     // Perform the comparison. An element of the destination predicate is set
     // to active if the particular char is matched.
-    sve_cmpeq(tmp_pdn, T, tmp_pg, ztmp1, ztmp2);
+    sve_cmp(Assembler::EQ, tmp_pdn, T, tmp_pg, ztmp1, ztmp2);
 
     // Branch if the particular char is found.
     br(NE, MATCH);
@@ -905,7 +905,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
 void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                                      FloatRegister src2, int cond, bool isQ) {
-  SIMD_Arrangement size = esize2arrangement(type2aelembytes(bt), isQ);
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
     switch (cond) {
       case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
@@ -947,31 +947,28 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
 
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
                                     FloatRegister zn, FloatRegister zm, int cond) {
+  assert(pg->is_governing(), "This register has to be a governing predicate register");
+  FloatRegister z1 = zn, z2 = zm;
+  // Convert the original BoolTest condition to Assembler::condition.
+  Condition condition;
+  switch (cond) {
+    case BoolTest::eq: condition = Assembler::EQ; break;
+    case BoolTest::ne: condition = Assembler::NE; break;
+    case BoolTest::le: z1 = zm; z2 = zn;  // Swap the two inputs
+    case BoolTest::ge: condition = Assembler::GE; break;
+    case BoolTest::lt: z1 = zm; z2 = zn;  // Swap the two inputs
+    case BoolTest::gt: condition = Assembler::GT; break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+
   SIMD_RegVariant size = elemType_to_regVariant(bt);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: sve_fcmeq(pd, size, pg, zn, zm); break;
-      case BoolTest::ne: sve_fcmne(pd, size, pg, zn, zm); break;
-      case BoolTest::ge: sve_fcmge(pd, size, pg, zn, zm); break;
-      case BoolTest::gt: sve_fcmgt(pd, size, pg, zn, zm); break;
-      case BoolTest::le: sve_fcmge(pd, size, pg, zm, zn); break;
-      case BoolTest::lt: sve_fcmgt(pd, size, pg, zm, zn); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
+    sve_fcm(condition, pd, size, pg, z1, z2);
   } else {
-    switch (cond) {
-      case BoolTest::eq: sve_cmpeq(pd, size, pg, zn, zm); break;
-      case BoolTest::ne: sve_cmpne(pd, size, pg, zn, zm); break;
-      case BoolTest::ge: sve_cmpge(pd, size, pg, zn, zm); break;
-      case BoolTest::gt: sve_cmpgt(pd, size, pg, zn, zm); break;
-      case BoolTest::le: sve_cmpge(pd, size, pg, zm, zn); break;
-      case BoolTest::lt: sve_cmpgt(pd, size, pg, zm, zn); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
+    assert(is_integral_type(bt), "unsupported element type");
+    sve_cmp(condition, pd, size, pg, z1, z2);
   }
 }
 
@@ -979,7 +976,7 @@ void C2_MacroAssembler::sve_vmask_reduction(int opc, Register dst, SIMD_RegVaria
                                             PRegister pg, PRegister pn, int length) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
   // The conditional flags will be clobbered by this function
-  sve_cmpne(pn, size, pg, src, 0);
+  sve_cmp(Assembler::NE, pn, size, pg, src, 0);
   switch (opc) {
     case Op_VectorMaskTrueCount:
       sve_cntp(dst, size, ptrue, pn);

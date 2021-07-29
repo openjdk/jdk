@@ -727,8 +727,8 @@ instruct vblend(vReg dst, vReg src1, vReg src2, vReg src3, pRegGov pTmp, rFlagsR
   ins_encode %{
     Assembler::SIMD_RegVariant size =
       __ elemType_to_regVariant(vector_element_basic_type(this));
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), size, ptrue,
-                 as_FloatRegister($src3$$reg), -1);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), size,
+               ptrue, as_FloatRegister($src3$$reg), -1);
     __ sve_sel(as_FloatRegister($dst$$reg), size, as_PRegister($pTmp$$reg),
                as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
   %}
@@ -2073,8 +2073,8 @@ instruct vtest_$1`'(iRegINoSp dst, vReg src1, vReg src2, pReg pTmp, rFlagsReg cr
     // "src2" is not used for sve.
     BasicType bt = vector_element_basic_type(this, $src1);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), size, ptrue,
-                 as_FloatRegister($src1$$reg), $3);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), size,
+               ptrue, as_FloatRegister($src1$$reg), $3);
     __ csetw(as_Register($dst$$reg), Assembler::$4);
   %}
   ins_pipe(pipe_slow);
@@ -2100,8 +2100,8 @@ instruct vtest_$1_partial`'(iRegINoSp dst, vReg src1, vReg src2, pRegGov pTmp, r
     BasicType bt = vector_element_basic_type(this, $src1);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_whilelo_zr_imm(as_PRegister($pTmp$$reg), size, vector_length(this, $src1));
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), size, as_PRegister($pTmp$$reg),
-                 as_FloatRegister($src1$$reg), $3);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), size,
+               as_PRegister($pTmp$$reg), as_FloatRegister($src1$$reg), $3);
     __ csetw(as_Register($dst$$reg), Assembler::$4);
   %}
   ins_pipe(pipe_slow);
@@ -2129,8 +2129,8 @@ instruct insertI_small(vReg dst, vReg src, iRegIorL2I val, immI idx, pRegGov pTm
     BasicType bt = vector_element_basic_type(this, $src);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_index(as_FloatRegister($dst$$reg), size, -16, 1);
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), size, ptrue,
-                 as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), size, ptrue,
+               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
     __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pTmp$$reg), as_Register($val$$reg));
   %}
@@ -2150,8 +2150,8 @@ instruct insertF_small(vReg dst, vReg src, vRegF val, immI idx, pRegGov pTmp, rF
             "sve_cpy $dst, $pTmp, $val\t# insert into vector (F)" %}
   ins_encode %{
     __ sve_index(as_FloatRegister($dst$$reg), __ S, -16, 1);
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), __ S, ptrue,
-                 as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), __ S, ptrue,
+               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
     __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     __ sve_cpy(as_FloatRegister($dst$$reg), __ S, as_PRegister($pTmp$$reg), as_FloatRegister($val$$reg));
   %}
@@ -2177,8 +2177,8 @@ instruct insertI(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg tmp1, pRegGo
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_index(as_FloatRegister($tmp1$$reg), size, 0, 1);
     __ sve_dup(as_FloatRegister($dst$$reg), size, (int)($idx$$constant));
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), size, ptrue,
-                 as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), size, ptrue,
+               as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
     __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pTmp$$reg), as_Register($val$$reg));
   %}
@@ -2200,8 +2200,8 @@ instruct insert$1`'(vReg dst, vReg src, $2 val, immI idx, pRegGov pTmp, rFlagsRe
             "sve_cpy $dst, $pTmp, $val\t# insert into vector ($1)" %}
   ins_encode %{
     __ sve_index(as_FloatRegister($dst$$reg), __ $3, -16, 1);
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), __ $3, ptrue,
-                 as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), __ $3, ptrue,
+               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
     __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     __ sve_cpy(as_FloatRegister($dst$$reg), __ $3, as_PRegister($pTmp$$reg), as_$4($val$$reg));
   %}
@@ -2226,8 +2226,8 @@ instruct insertF(vReg dst, vReg src, vRegF val, immI idx, vReg tmp1, pRegGov pTm
   ins_encode %{
     __ sve_index(as_FloatRegister($tmp1$$reg), __ S, 0, 1);
     __ sve_dup(as_FloatRegister($dst$$reg), __ S, (int)($idx$$constant));
-    __ sve_cmpeq(as_PRegister($pTmp$$reg), __ S, ptrue,
-                 as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
+    __ sve_cmp(Assembler::EQ, as_PRegister($pTmp$$reg), __ S, ptrue,
+               as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
     __ sve_orr(as_FloatRegister($dst$$reg),
                as_FloatRegister($src$$reg),
                as_FloatRegister($src$$reg));
@@ -2555,7 +2555,7 @@ instruct vstoremask_$1(iRegINoSp dst, vReg src, immI esize, pReg ptmp, rFlagsReg
   ins_cost($3 * SVE_COST);
   format %{ "vstoremask_$1 $dst, $src\t# vector mask $1 (sve)" %}
   ins_encode %{
-    int size = $esize$$constant;
+    unsigned size = $esize$$constant;
     assert(size == 1 || size == 2 || size == 4 || size == 8, "unsupported element size");
     Assembler::SIMD_RegVariant variant = __ elemBytes_to_regVariant(size);
     __ sve_vmask_reduction(this->ideal_Opcode(), $dst$$Register, variant, as_FloatRegister($src$$reg),
@@ -2580,7 +2580,7 @@ instruct vstoremask_$1_partial(iRegINoSp dst, vReg src, immI esize, pRegGov ifel
   ins_cost($3 * SVE_COST);
   format %{ "vstoremask_$1 $dst, $src\t# vector mask $1 partial (sve)" %}
   ins_encode %{
-    int size = $esize$$constant;
+    unsigned size = $esize$$constant;
     assert(size == 1 || size == 2 || size == 4 || size == 8, "unsupported element size");
     Assembler::SIMD_RegVariant variant = __ elemBytes_to_regVariant(size);
     __ sve_whilelo_zr_imm(as_PRegister(ifelse($1, `firsttrue', `$pgtmp', `$ptmp')$$reg), variant, vector_length(this, $src));
