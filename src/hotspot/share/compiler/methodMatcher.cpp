@@ -115,7 +115,7 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
         }
 
         if (*lp == '/') {
-          // Check wether it's a hidden class method.
+          // Check whether it's a hidden class method.
           // According to ClassFileParser::mangle_hidden_class_name, the pattern of
           // hidden class name in the VM should be: _class_name, "+", and &ik
           // But "+" will be replaced with "/" when it is printed by PrintCompilation.
