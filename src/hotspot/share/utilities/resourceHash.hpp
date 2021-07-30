@@ -109,7 +109,7 @@ class ResourceHashtableBase : public STORAGE {
 
   V* get(K const& key) {
     unsigned hv = HASH(key);
-    Node ** ptr = lookup_node(hv, key);
+    Node** ptr = lookup_node(hv, key);
     if (*ptr != NULL) {
       return &((*ptr)->_value);
     } else {
@@ -196,10 +196,10 @@ class ResourceHashtableBase : public STORAGE {
   // or else the table may no longer be properly hashed.
   template<class ITER>
   void iterate(ITER* iter) {
-    Node ** bucket = table();
+    Node** bucket = table();
     const unsigned sz = table_size();
     while (bucket < bucket_at(sz)) {
-      Node * node = *bucket;
+      Node* node = *bucket;
       while (node != NULL) {
         bool cont = iter->do_entry(const_cast<K const&>(node->_key), node->_value);
         if (!cont) { return; }
