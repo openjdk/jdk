@@ -122,7 +122,7 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
           // So if "/" is followed with a digit or "*", it may be a hidden class method.
           // There may be false positive cases, but all of them are harmless and won't make anything worse.
           char next = *(lp + 1);
-          if (('0' <= next && next <= '9') || next == '*') {
+          if (isdigit(next) || next == '*') {
             // May be a hidden class method, so replace '/' with '+'
             *lp = '+';
           } else {
