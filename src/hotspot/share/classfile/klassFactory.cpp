@@ -182,7 +182,6 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
   int _major_version = stream->get_u2_fast();
 
   if (UseNewCode && _major_version < JAVA_7_VERSION) {
-    printf("Updating old class file!\n");
     typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
     
     // Copy Classfile from stream to a java byte array
@@ -210,7 +209,6 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
     assert(result_oop->is_typeArray(), "Result must be a byte array");
     typeArrayOop result_array = typeArrayOop(result_oop);
     int length = result_array->length();
-    printf("Length: %d", length);
     assert(length >= 0, "class_bytes_length must not be negative: %d", length);
     
     u1* class_bytes = NEW_RESOURCE_ARRAY_RETURN_NULL(u1, length);
