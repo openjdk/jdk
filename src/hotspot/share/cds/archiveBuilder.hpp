@@ -386,7 +386,7 @@ public:
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
-  address get_dumped_addr(address src_obj) const;
+  address get_dumped_addr(address src_obj);
 
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }

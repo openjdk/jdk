@@ -76,11 +76,6 @@ class ResourceHashtableBase : public STORAGE {
     return ptr;
   }
 
-  Node const** const_lookup_node(unsigned hash, K const& key) const {
-    return const_cast<Node const**>(
-        const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
-  }
-
   Node** table() { return STORAGE::table(); }
 
  protected:
@@ -109,14 +104,14 @@ class ResourceHashtableBase : public STORAGE {
   int number_of_entries() const { return _number_of_entries; }
 
   bool contains(K const& key) const {
-    return get(key) != NULL;
+    return const_cast<ResourceHashtableBase*>(this)->get(key) != NULL;
   }
 
-  V* get(K const& key) const {
+  V* get(K const& key) {
     unsigned hv = HASH(key);
-    Node const** ptr = const_lookup_node(hv, key);
+    Node ** ptr = lookup_node(hv, key);
     if (*ptr != NULL) {
-      return const_cast<V*>(&(*ptr)->_value);
+      return &((*ptr)->_value);
     } else {
       return NULL;
     }
