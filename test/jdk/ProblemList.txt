@@ -664,7 +664,6 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.java                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
-security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java   8263059 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
