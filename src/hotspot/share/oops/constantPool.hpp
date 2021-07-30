@@ -93,11 +93,52 @@ public:
   }
 };
 
+class CPFieldEntry : public MetaspaceObj {
+  Klass* _field_holder;
+  u4 _field_offset;
+  u2 _flags;
+  u2 _field_index;
+  u2 _cp_index;
+  u1 _b2, _b1;
+
+ public:
+  void set_holder(Klass* holder) {
+    assert(_field_holder != NULL, "field holder should not be set twice");
+    _field_holder = holder;
+  }
+
+  void set_field(Bytecodes::Code get_code,
+                 Bytecodes::Code put_code,
+                 Klass* field_holder,
+                 int field_index,
+                 int field_offset,
+                 TosState field_type,
+                 bool is_final,
+                 bool is_volatile) {
+    _field_holder = field_holder;
+    _field_offset = field_offset;
+    _field_index = field_index;
+    // flags: TODO / FIXME
+    _b1 = get_code;
+    _b2 = put_code;
+  }
+
+  u2 cp_index() const { return _cp_index; }
+  void set_cp_index(u2 idx) { _cp_index = idx; }
+
+  static const int b2_offset() { return offset_of(CPFieldEntry, _b2); }
+  static const int b1_offset() { return offset_of(CPFieldEntry, _b1); }
+  static const int field_offset_offset() { return offset_of(CPFieldEntry, _field_offset); }
+  static const int flags_offset() { return offset_of(CPFieldEntry, _flags); }
+  static const int field_holder_offset() { return offset_of(CPFieldEntry, _field_holder); }
+};
+
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
+  friend class Rewriter;
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -105,6 +146,7 @@ class ConstantPool : public Metadata {
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
   Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
+  Array<CPFieldEntry>* _field_entries;
 
   // Consider using an array of compressed klass pointers to
   // save space on 64-bit platforms.
@@ -246,6 +288,9 @@ class ConstantPool : public Metadata {
   ConstantPoolCache* cache() const        { return _cache; }
   void set_cache(ConstantPoolCache* cache){ _cache = cache; }
 
+  Array<CPFieldEntry>* field_entries() const { return _field_entries; }
+  void set_field_entries(Array<CPFieldEntry>* field_entries) { _field_entries = field_entries; }
+
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ConstantPoolType; }
 
@@ -301,6 +346,7 @@ class ConstantPool : public Metadata {
   static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
   static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
   static int resolved_klasses_offset_in_bytes()    { return offset_of(ConstantPool, _resolved_klasses); }
+  static int field_entries_offset()         { return offset_of(ConstantPool, _field_entries); }
 
   // Storing constants
 
@@ -803,6 +849,7 @@ class ConstantPool : public Metadata {
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   Symbol* uncached_klass_ref_at_noresolve(int which);
+  Klass* uncached_klass_ref_at(int which, TRAPS);
   Symbol* uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
   Symbol* uncached_signature_ref_at(int which)            { return impl_signature_ref_at(which, true); }
   int       uncached_klass_ref_index_at(int which)          { return impl_klass_ref_index_at(which, true); }

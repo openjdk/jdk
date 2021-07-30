@@ -47,8 +47,11 @@ void Rewriter::compute_index_maps() {
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
     switch (tag) {
-      case JVM_CONSTANT_InterfaceMethodref:
-      case JVM_CONSTANT_Fieldref          : // fall through
+      case JVM_CONSTANT_Fieldref          :
+         add_cp_cache_entry(i);
+         add_field_entry(i);
+         break;
+      case JVM_CONSTANT_InterfaceMethodref: // fall through
       case JVM_CONSTANT_Methodref         : // fall through
         add_cp_cache_entry(i);
         break;
@@ -111,10 +114,28 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                         _resolved_reference_limit,
                                         THREAD);
 
+  if (UseNewConstantPool) {
+    Array<CPFieldEntry>* field_entries = MetadataFactory::new_array<CPFieldEntry>(loader_data,
+                                          _field_entries_map.length(),
+                                          CHECK);
+    _pool->set_field_entries(field_entries);
+    for (int i = 0; i < _field_entries_map.length(); i++) {
+      field_entries->adr_at(i)->set_cp_index((u2)_field_entries_map.at(i));
+    }
+  }
+
   // Clean up constant pool cache if initialize_resolved_references() failed.
   if (HAS_PENDING_EXCEPTION) {
-    MetadataFactory::free_metadata(loader_data, cache);
-    _pool->set_cache(NULL);  // so the verifier isn't confused
+    if (_pool->cache() != NULL) {
+      MetadataFactory::free_metadata(loader_data, cache);
+      _pool->set_cache(NULL);  // so the verifier isn't confused
+    }
+    if (UseNewConstantPool) {
+      if (_pool->field_entries() != NULL) {
+        MetadataFactory::free_array(loader_data, _pool->field_entries());
+        _pool->set_field_entries(NULL);
+      }
+    }
   } else {
     DEBUG_ONLY(
     if (DumpSharedSpaces) {

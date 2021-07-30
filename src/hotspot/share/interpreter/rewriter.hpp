@@ -41,6 +41,8 @@ class Rewriter: public StackObj {
                                       // InterfaceMethodref and InvokeDynamic
   GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
   GrowableArray<int>  _resolved_references_map; // for strings, methodHandle, methodType
+  GrowableArray<int>  _field_entries_map;
+  GrowableArray<int>  _cp_to_field_map;
   GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
   GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
@@ -71,6 +73,10 @@ class Rewriter: public StackObj {
     _resolved_reference_limit = -1;
     _first_iteration_cp_cache_limit = -1;
 
+    _field_entries_map.trunc_to(0);
+    _cp_to_field_map.trunc_to(0);
+    _cp_to_field_map.at_grow(length, -1);
+
     // invokedynamic specific fields
     _invokedynamic_cp_cache_map.trunc_to(0);
     _patch_invokedynamic_bcps = new GrowableArray<address>(length / 4);
@@ -94,6 +100,12 @@ class Rewriter: public StackObj {
 
   int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
   bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
+
+  void add_field_entry(int cp_index) {
+    assert(_pool->tag_at(cp_index).value() == JVM_CONSTANT_Fieldref, "works only on fields");
+    int new_idx = _field_entries_map.append(cp_index);
+    _cp_to_field_map.at_put(cp_index, new_idx);
+  }
 
   int add_map_entry(int cp_index, GrowableArray<int>* cp_map, GrowableArray<int>* cp_cache_map) {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");

@@ -113,6 +113,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                                int byte_no,
                                                int bcp_offset,
                                                size_t index_size = sizeof(u2));
+
+  void get_field_entry(Register cache, Register index, int bcp_offset);
+
   void get_cache_entry_pointer_at_bcp(Register cache,
                                       Register tmp,
                                       int bcp_offset,

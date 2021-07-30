@@ -701,6 +701,19 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
     }
   }
 
+if (UseNewConstantPool) {
+  int index = last_frame.get_index_u2_cpcache(bytecode);       // warning, ConstantPool::CPCACHE_INDEX_TAG would cause incorrect index FixMe
+  CPFieldEntry* entry = pool()->field_entries()->adr_at(index);
+  entry->set_field(
+    get_code,
+    put_code,
+    info.field_holder(),
+    info.index(),
+    info.offset(),
+    state,
+    info.access_flags().is_final(),
+    info.access_flags().is_volatile());
+} else {
   cp_cache_entry->set_field(
     get_code,
     put_code,
@@ -709,8 +722,8 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
     info.offset(),
     state,
     info.access_flags().is_final(),
-    info.access_flags().is_volatile()
-  );
+    info.access_flags().is_volatile());
+  }
 }
 
 

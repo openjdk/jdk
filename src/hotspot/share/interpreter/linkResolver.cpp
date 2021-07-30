@@ -228,6 +228,25 @@ void CallInfo::print() {
 
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, LinkInfo_kind kind, TRAPS) {
+  assert(kind == LINKINFO_Field, "Only configuration supported now");
+  // Get original index in constant pool
+  int cp_index = pool->field_entries()->at(index).cp_index();
+
+  // resolve klass
+  _resolved_klass = pool->uncached_klass_ref_at(cp_index, CHECK);
+
+  // Get name, signature, and static klass
+  _name = pool->uncached_name_ref_at(cp_index);
+  _signature = pool->uncached_signature_ref_at(cp_index);
+  _tag = pool->tag_at(cp_index);
+  _current_klass = pool->pool_holder();
+  _current_method = current_method;
+
+  // Coming from the constant pool always checks access
+  _check_access  = true;
+  _check_loader_constraints = true;
+}
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS) {
    // resolve klass
@@ -253,6 +272,7 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
   _name          = pool->name_ref_at(index);
   _signature     = pool->signature_ref_at(index);
   _tag           = pool->tag_ref_at(index);
+  assert(!_tag.is_field(), "Just checking");
   _current_klass = pool->pool_holder();
   _current_method = methodHandle();
 
@@ -943,8 +963,13 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
 }
 
 void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, const methodHandle& method, Bytecodes::Code byte, TRAPS) {
-  LinkInfo link_info(pool, index, method, CHECK);
-  resolve_field(fd, link_info, byte, true, CHECK);
+  if (UseNewConstantPool) {
+    LinkInfo link_info(pool, index, method, LinkInfo::LINKINFO_Field, CHECK);
+    resolve_field(fd, link_info, byte, true, CHECK);
+  } else {
+    LinkInfo link_info(pool, index, method, CHECK);
+    resolve_field(fd, link_info, byte, true, CHECK);
+  }
 }
 
 void LinkResolver::resolve_field(fieldDescriptor& fd,

@@ -115,6 +115,13 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
     set_cache(NULL);
   }
 
+  if (UseNewConstantPool) {
+    if (field_entries() != NULL) {
+      MetadataFactory::free_array(loader_data, field_entries());
+      set_field_entries(NULL);
+    }
+  }
+
   MetadataFactory::free_array<Klass*>(loader_data, resolved_klasses());
   set_resolved_klasses(NULL);
 
@@ -749,6 +756,11 @@ Symbol* ConstantPool::klass_ref_at_noresolve(int which) {
 Symbol* ConstantPool::uncached_klass_ref_at_noresolve(int which) {
   jint ref_index = uncached_klass_ref_index_at(which);
   return klass_at_noresolve(ref_index);
+}
+
+Klass* ConstantPool::uncached_klass_ref_at(int which, TRAPS) {
+  jint ref_index = uncached_klass_ref_index_at(which);
+  return klass_at(ref_index, THREAD);
 }
 
 char* ConstantPool::string_at_noresolve(int which) {

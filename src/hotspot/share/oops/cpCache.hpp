@@ -488,6 +488,7 @@ class ConstantPoolCache: public MetaspaceObj {
     int index = raw_index;
     return (base_offset() + ConstantPoolCacheEntry::size_in_bytes() * index);
   }
+  static ByteSize constant_pool_offset() { return in_ByteSize(offset_of(ConstantPoolCache, _constant_pool)); }
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:

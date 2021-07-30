@@ -485,6 +485,21 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   andl(bytecode, ConstantPoolCacheEntry::bytecode_1_mask);
 }
 
+void InterpreterMacroAssembler::get_field_entry(Register cache,
+                                                                   Register tmp,
+                                                                   int bcp_offset) {
+  Register index = tmp;
+  load_unsigned_short(index, Address(_bcp_register, bcp_offset));
+  movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+  movptr(cache, Address(cache, ConstantPoolCache::constant_pool_offset()));
+  movptr(cache, Address(cache, ConstantPool::field_entries_offset()));
+  // Generic code to handle any size of CPFieldEntry
+  // Could be optimized later for cases where size is a power of two
+  int entry_size = sizeof(CPFieldEntry);
+  imull(index, rscratch1, entry_size);
+  movptr(cache, Address(cache, rscratch1, Address::times_1, Array<CPFieldEntry>::base_offset_in_bytes()));
+}
+
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,

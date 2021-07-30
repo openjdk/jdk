@@ -128,13 +128,18 @@ class CallInfo : public StackObj {
   void         print()  PRODUCT_RETURN;
 };
 
-
 // Condensed information from constant pool to use to resolve the method or field.
 //   resolved_klass = specified class (i.e., static receiver class)
 //   current_klass  = sending method holder (i.e., class containing the method
 //                    containing the call being resolved)
 //   current_method = sending method (relevant for field resolution)
 class LinkInfo : public StackObj {
+ public:
+  enum LinkInfo_kind {
+    LINKINFO_Field  = 0,
+    LINKINFO_Method = 1
+  };
+ private:
   Symbol*     _name;            // extracted from JVM_CONSTANT_NameAndType
   Symbol*     _signature;
   Klass*      _resolved_klass;  // class that the constant pool entry points to
@@ -143,11 +148,13 @@ class LinkInfo : public StackObj {
   bool        _check_access;
   bool        _check_loader_constraints;
   constantTag _tag;
+  LinkInfo_kind  _kind;
 
  public:
   enum class AccessCheck { required, skip };
   enum class LoaderConstraintCheck { required, skip };
 
+  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, LinkInfo_kind kind, TRAPS);
   LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS);
   LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
 

@@ -2690,6 +2690,29 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   }
 }
 
+void TemplateTable::resolve_field_entry(int byte_no, Register fentry, Register tmp) {
+  Bytecodes::Code code = bytecode();
+  Label resolved;
+
+  __ get_field_entry(fentry, tmp, 1);
+  assert(byte_no == TemplateTable::f1_byte || byte_no == TemplateTable::f2_byte, "Sanity check");
+  Register byte_code = tmp;
+  if (byte_no == f1_byte) {
+    __ movb(byte_code, Address(fentry, CPFieldEntry::b1_offset()));
+  } else {
+    __ movb(byte_code, Address(fentry, CPFieldEntry::b2_offset()));
+  }
+  __ cmpl(byte_code, code);
+  __ jcc(Assembler::equal, resolved);
+
+  __ movl(byte_code, code);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache), byte_code);
+  // Update registers with resolved info
+  __ get_field_entry(fentry, tmp, 1);
+
+  __ bind(resolved);
+}
+
 // The cache and index registers must be set before call
 void TemplateTable::load_field_cp_cache_entry(Register obj,
                                               Register cache,
@@ -2714,6 +2737,23 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
     __ movptr(obj, Address(cache, index, Address::times_ptr,
                            in_bytes(cp_base_offset +
                                     ConstantPoolCacheEntry::f1_offset())));
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+    __ movptr(obj, Address(obj, mirror_offset));
+    __ resolve_oop_handle(obj);
+  }
+}
+
+void TemplateTable::load_field_entry(Register obj,
+                               Register fentry,
+                               Register off,
+                               Register flags,
+                               bool is_static) {
+  assert_different_registers(fentry, flags, off);
+  __ movptr(off, Address(fentry, CPFieldEntry::field_offset_offset()));
+  __ movl(flags, Address(fentry, CPFieldEntry::flags_offset()));
+
+  if (is_static) {
+    __ movptr(obj, Address(fentry, CPFieldEntry::field_holder_offset()));
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movptr(obj, Address(obj, mirror_offset));
     __ resolve_oop_handle(obj);
@@ -2798,15 +2838,23 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   transition(vtos, vtos);
 
   const Register cache = rcx;
+  const Register fentry = rcx;
   const Register index = rdx;
   const Register obj   = LP64_ONLY(c_rarg3) NOT_LP64(rcx);
   const Register off   = rbx;
   const Register flags = rax;
   const Register bc    = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // uses same reg as obj, so don't mix them
+  const Register tmp   = rbx;
 
-  resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
-  jvmti_post_field_access(cache, index, is_static, false);
-  load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
+  if (UseNewConstantPool) {
+    resolve_field_entry(byte_no, fentry, tmp);
+    // Note: no JVMTI support yet
+    load_field_entry(obj, fentry, off, flags, is_static);
+  } else {
+    resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
+    jvmti_post_field_access(cache, index, is_static, false);
+    load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
+  }
 
   if (!is_static) pop_and_check_object(obj);
 
@@ -2818,7 +2866,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // Make sure we don't need to mask edx after the above shift
   assert(btos == 0, "change code, btos != 0");
 
-  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);   // must be adjusted if flags in CPFieldEntry have a different format than ConstantPoolCacheEntry
 
   __ jcc(Assembler::notZero, notByte);
   // btos
