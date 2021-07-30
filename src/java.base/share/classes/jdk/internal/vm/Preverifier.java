@@ -62,7 +62,7 @@ public class Preverifier extends ClassVisitor {
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
-        	throw new InternalError("Classfile not parsed correctly")
+        	throw new InternalError("Classfile not parsed correctly");
         }
         return cw.toByteArray();
     }
