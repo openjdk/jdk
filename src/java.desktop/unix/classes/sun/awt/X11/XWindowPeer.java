@@ -47,7 +47,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -1358,12 +1358,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         messageBuilder.append('"');
         messageBuilder.append('\0');
-        final byte[] message;
-        try {
-            message = messageBuilder.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException cannotHappen) {
-            return;
-        }
+        final byte[] message = messageBuilder.toString()
+                .getBytes(StandardCharsets.UTF_8);
 
         XClientMessageEvent req = null;
 

@@ -25,8 +25,12 @@
 
 package com.apple.laf;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.Icon;
@@ -111,11 +115,7 @@ class AquaFileView extends FileView {
         FileInfo(final File file){
             isDirectory = file.isDirectory();
             absolutePath = file.getAbsolutePath();
-            try {
-                pathBytes = absolutePath.getBytes("UTF-8");
-            } catch (final UnsupportedEncodingException e) {
-                pathBytes = new byte[0];
-            }
+            pathBytes = absolutePath.getBytes(StandardCharsets.UTF_8);
         }
     }
 

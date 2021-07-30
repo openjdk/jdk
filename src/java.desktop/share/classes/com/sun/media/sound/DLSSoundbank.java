@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1147,7 +1148,7 @@ public final class DLSSoundbank implements Soundbank {
             return;
         RIFFWriter chunk = writer.writeChunk(name);
         chunk.writeString(value);
-        int len = value.getBytes("ascii").length;
+        int len = value.getBytes(StandardCharsets.US_ASCII).length;
         chunk.write(0);
         len++;
         if (len % 2 != 0)

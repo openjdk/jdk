@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  * questions.
  */
 
-
 package sun.awt.X11;
 
 import java.awt.Frame;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import sun.awt.IconInfo;
 import sun.util.logging.PlatformLogger;
@@ -382,22 +383,18 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
          * mandates UTF8_STRING for _NET_WM_NAME but at least sawfish-1.0
          * still uses STRING.  (mmm, moving targets...).
          */
-        String charSet = "UTF8";
+        Charset charSet = StandardCharsets.UTF_8;
         byte[] net_wm_name = XA_NET_WM_NAME.getByteArrayProperty(NetWindow, XA_UTF8_STRING.getAtom());
         if (net_wm_name == null) {
             net_wm_name = XA_NET_WM_NAME.getByteArrayProperty(NetWindow, XAtom.XA_STRING);
-            charSet = "ASCII";
+            charSet = StandardCharsets.US_ASCII;
         }
 
         if (net_wm_name == null) {
             return null;
         }
-        try {
-            net_wm_name_cache = new String(net_wm_name, charSet);
-            return net_wm_name_cache;
-        } catch (java.io.UnsupportedEncodingException uex) {
-            return null;
-        }
+        net_wm_name_cache = new String(net_wm_name, charSet);
+        return net_wm_name_cache;
     }
 
     /**
