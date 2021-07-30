@@ -118,8 +118,6 @@ serviceability/sa/ClhsdbFindPC.java#id1 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#id3 8269982 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#id1 8269982 macosx-aarch64
 
-serviceability/dcmd/gc/HeapDumpAllTest.java 8270341 generic-x64
-
 #############################################################################
 
 # :hotspot_misc
