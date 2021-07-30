@@ -4191,17 +4191,17 @@ public abstract class JComponent extends Container implements Serializable,
      * @param value Object containing the property value
      */
     void setUIProperty(String propertyName, Object value) {
-        if (propertyName == "opaque") {
+        if (propertyName.equals("opaque")) {
             if (!getFlag(OPAQUE_SET)) {
                 setOpaque(((Boolean)value).booleanValue());
                 setFlag(OPAQUE_SET, false);
             }
-        } else if (propertyName == "autoscrolls") {
+        } else if (propertyName.equals("autoscrolls")) {
             if (!getFlag(AUTOSCROLLS_SET)) {
                 setAutoscrolls(((Boolean)value).booleanValue());
                 setFlag(AUTOSCROLLS_SET, false);
             }
-        } else if (propertyName == "focusTraversalKeysForward") {
+        } else if (propertyName.equals("focusTraversalKeysForward")) {
             @SuppressWarnings("unchecked")
             Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_FORWARD_SET)) {
@@ -4209,7 +4209,7 @@ public abstract class JComponent extends Container implements Serializable,
                                             FORWARD_TRAVERSAL_KEYS,
                                             strokeSet);
             }
-        } else if (propertyName == "focusTraversalKeysBackward") {
+        } else if (propertyName.equals("focusTraversalKeysBackward")) {
             @SuppressWarnings("unchecked")
             Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_BACKWARD_SET)) {
