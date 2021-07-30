@@ -27,6 +27,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
@@ -34,6 +35,7 @@
 
 class ImmutableOopMap;
 class ImmutableOopMapSet;
+class JNIHandleBlock;
 class OopMapSet;
 
 // CodeBlob Types
@@ -77,7 +79,7 @@ struct CodeBlobType {
 
 class CodeBlobLayout;
 class OptimizedEntryBlob; // for as_optimized_entry_blob()
-class JavaFrameAnchor; // for EntryBlob::jfa_for_frame
+class JavaFrameAnchor; // for OptimizedEntryBlob::jfa_for_frame
 
 class CodeBlob {
   friend class VMStructs;
@@ -726,28 +728,40 @@ class SafepointBlob: public SingletonBlob {
 
 //----------------------------------------------------------------------------------------------------
 
-// For optimized upcall stubs
+class ProgrammableUpcallHandler;
+
 class OptimizedEntryBlob: public BufferBlob {
+  friend class ProgrammableUpcallHandler;
  private:
   intptr_t _exception_handler_offset;
   jobject _receiver;
-  ByteSize _jfa_sp_offset;
+  ByteSize _frame_data_offset;
 
   OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
-            jobject receiver, ByteSize jfa_sp_offset);
+                     jobject receiver, ByteSize frame_data_offset);
 
+  struct FrameData {
+    JavaFrameAnchor jfa;
+    JavaThread* thread;
+    JNIHandleBlock* old_handles;
+    JNIHandleBlock* new_handles;
+    bool should_detach;
+  };
+
+  // defined in frame_ARCH.cpp
+  FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
   static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
-                           intptr_t exception_handler_offset, jobject receiver,
-                           ByteSize jfa_sp_offset);
+                                    intptr_t exception_handler_offset, jobject receiver,
+                                    ByteSize frame_data_offset);
 
   address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
-  ByteSize jfa_sp_offset() const { return _jfa_sp_offset; }
 
-  // defined in frame_ARCH.cpp
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
+
+  void oops_do(OopClosure* f, const frame& frame);
 
   // Typing
   virtual bool is_optimized_entry_blob() const override { return true; }

@@ -1046,7 +1046,7 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
-void G1Policy::decide_on_conc_mark_initiation() {
+void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
@@ -1055,6 +1055,12 @@ void G1Policy::decide_on_conc_mark_initiation() {
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
   assert(!collector_state()->in_concurrent_start_gc(), "pre-condition");
+
+  // We should not be starting a concurrent start pause if the concurrent mark
+  // thread is terminating.
+  if (_g1h->concurrent_mark_is_terminating()) {
+    return;
+  }
 
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
@@ -1104,6 +1110,12 @@ void G1Policy::decide_on_conc_mark_initiation() {
       log_debug(gc, ergo)("Do not initiate concurrent cycle (concurrent cycle already in progress)");
     }
   }
+  // Result consistency checks.
+  // We do not allow concurrent start to be piggy-backed on a mixed GC.
+  assert(!collector_state()->in_concurrent_start_gc() ||
+         collector_state()->in_young_only_phase(), "sanity");
+  // We also do not allow mixed GCs during marking.
+  assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {

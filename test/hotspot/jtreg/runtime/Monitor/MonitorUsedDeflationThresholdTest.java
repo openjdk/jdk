@@ -93,6 +93,7 @@ public class MonitorUsedDeflationThresholdTest {
                 "MonitorUsedDeflationThresholdTest", "33");
 
             OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+            output_detail.shouldHaveExitValue(0);
 
             // This mesg means:
             // - AvgMonitorsPerThreadEstimate == 1 reduced in_use_list_ceiling

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Alphabet LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,19 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package metaspace.stressHierarchy.common.exceptions;
 
-/**
- * Usually this means that we got OOME:heap while trying to gain OOME:metaspace.
- * We pass test in this case as this breaks test logic. We have dedicated test configurations
- * for OOME:heap provoking class unloading, that why we are not missing test coverage here.
+/*
+ * @test
+ * @bug 8261088
+ * @summary Repeatable annotations without Target cannot have containers that target module declarations
+ * @compile T8261088.java
  */
-public class GotWrongOOMEException extends RuntimeException {
 
-    private static final long serialVersionUID = 1L;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Target;
 
-    public GotWrongOOMEException(String string) {
-        super(string);
-    }
-
+@Target(ElementType.MODULE)
+@interface TC {
+    T[] value() default {};
 }
+
+@Repeatable(TC.class)
+@interface T {}

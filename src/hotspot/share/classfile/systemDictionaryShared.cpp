@@ -424,8 +424,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
 class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
-  primitive_hash<Symbol*>,
-  primitive_equals<Symbol*>,
   15889, // prime number
   ResourceObj::C_HEAP> {};
 
@@ -1654,7 +1652,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_archive_heap_region_mapped()) {
+  if (!HeapShared::open_regions_mapped()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {

@@ -133,13 +133,13 @@ void vmClasses::resolve_all(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // HeapShared::fixup_mapped_heap_regions() fills the empty
+    // HeapShared::fixup_mapped_regions() fills the empty
     // spaces in the archived heap regions and may use
     // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    HeapShared::fixup_mapped_heap_regions();
+    HeapShared::fixup_mapped_regions();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
