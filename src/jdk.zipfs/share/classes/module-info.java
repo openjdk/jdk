@@ -45,8 +45,8 @@ import java.util.Set;
  *   <li>Open an existing file as a Zip file system</li>
  * </ul>
  *
- * @implNote The Zip File System will throw a ZipException when opening an
- * existing Zip file that contains Zip entries with "." or ".." in its name elements.
+ * The Zip file system provider does not support opening an existing Zip file
+ * that contains entries with "." or ".." in its name elements.
  *
  * <h2>URI Scheme Used to Identify the Zip File System</h2>
  *
