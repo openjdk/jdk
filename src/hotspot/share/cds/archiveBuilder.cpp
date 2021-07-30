@@ -661,8 +661,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
-address ArchiveBuilder::get_dumped_addr(address src_obj) {
-  SourceObjInfo* p = _src_obj_table.get(src_obj);
+address ArchiveBuilder::get_dumped_addr(address src_obj) const {
+  const SourceObjInfo* p = _src_obj_table.get(src_obj);
   assert(p != NULL, "must be");
 
   return p->dumped_addr();

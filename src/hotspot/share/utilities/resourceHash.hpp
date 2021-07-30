@@ -117,6 +117,11 @@ class ResourceHashtableBase : public STORAGE {
     }
   }
 
+  const V* get(K const& key) const {
+    return const_cast<const V*>(const_cast<ResourceHashtableBase*>(this)->get(key));
+  }
+
+
  /**
   * Inserts or replaces a value in the table.
   * @return: true:  if a new item is added
