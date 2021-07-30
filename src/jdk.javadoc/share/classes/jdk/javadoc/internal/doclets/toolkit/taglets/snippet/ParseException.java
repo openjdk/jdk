@@ -26,7 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 /**
- * An exception thrown by a {@link MarkupParser}.
+ * An exception thrown by {@link MarkupParser}.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.

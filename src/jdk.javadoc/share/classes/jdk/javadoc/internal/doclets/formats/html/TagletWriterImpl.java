@@ -405,7 +405,10 @@ public class TagletWriterImpl extends TagletWriter {
                         }
                     } else if (s instanceof Style.Markup) {
                     } else {
-                        // TODO wait for sealed types for exhaustiveness
+                        // TODO: transform this if...else into an exhaustive
+                        // switch over the sealed Style hierarchy when "Pattern
+                        // Matching for switch" has been implemented (JEP 406
+                        // and friends)
                         throw new AssertionError(styles);
                     }
                 }
