@@ -47,15 +47,17 @@ class JfrThreadIterator : public AP {
 
 class JfrJavaThreadIteratorAdapter {
  private:
-  JavaThreadIteratorWithHandle _iter;
-  JavaThread* _next;
+  ThreadsListHandle _tlist;
+  ThreadsListHandle::Iterator _it;
+  ThreadsListHandle::Iterator _end;
   bool _live_only;
+
+  void skip_excluded();
+
  public:
   typedef JavaThread Type;
   JfrJavaThreadIteratorAdapter(bool live_only = true);
-  bool has_next() const {
-    return _next != NULL;
-  }
+  bool has_next() const;
   Type* next();
 };
 
