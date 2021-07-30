@@ -64,7 +64,7 @@ public class ClassPathEnvVar {
 
     }
     private static OutputAnalyzer runCrasher(String option) throws Exception {
-        ProcessBuilder pb = 
+        ProcessBuilder pb =
             ProcessTools.createJavaProcessBuilder(
             "-Xmx128m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName());
 
@@ -108,7 +108,7 @@ public class ClassPathEnvVar {
         }
 
         if (cp_line == null) {
-            throw new RuntimeException("CLASSPATH setting not found in hs err log: " + absPath); 
+            throw new RuntimeException("CLASSPATH setting not found in hs err log: " + absPath);
         }
 
         // Check if the CLASSPATH line has been truncated.
