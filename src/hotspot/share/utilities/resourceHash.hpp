@@ -61,6 +61,10 @@ class ResourceHashtableBase : public STORAGE {
     return &t[index];
   }
 
+  const Node** bucket_at(unsigned index) const {
+    return const_cast<Node const**>(const_cast<ResourceHashtableBase*>(this)->bucket_at(index));
+  }
+
   // Returns a pointer to where the node where the value would reside if
   // it's in the table.
   Node** lookup_node(unsigned hash, K const& key) {
@@ -77,6 +81,10 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   Node** table() { return STORAGE::table(); }
+
+  Node const** table() const {
+    return const_cast<Node const**>(const_cast<ResourceHashtableBase*>(this)->table());
+  }
 
  protected:
   ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
@@ -193,6 +201,22 @@ class ResourceHashtableBase : public STORAGE {
     return false;
   }
 
+ private:
+  template<class TABLE, class NODE, class VALUE, class ITER>
+  static void iterate_impl(TABLE* t, ITER* iter) {
+    NODE** bucket = t->table();
+    const unsigned sz = t->table_size();
+    while (bucket < t->bucket_at(sz)) {
+      NODE* node = *bucket;
+      while (node != NULL) {
+        bool cont = iter->do_entry(const_cast<K const&>(node->_key), const_cast<VALUE>(node->_value));
+        if (!cont) { return; }
+        node = node->_next;
+      }
+      ++bucket;
+    }
+  }
+ public:
   // bool ITER::do_entry(K const& key, V& value) will be
   // called for each entry in the table.  If do_entry() returns false,
   // the iteration is cancelled.
@@ -201,17 +225,15 @@ class ResourceHashtableBase : public STORAGE {
   // or else the table may no longer be properly hashed.
   template<class ITER>
   void iterate(ITER* iter) {
-    Node** bucket = table();
-    const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
-      Node* node = *bucket;
-      while (node != NULL) {
-        bool cont = iter->do_entry(const_cast<K const&>(node->_key), node->_value);
-        if (!cont) { return; }
-        node = node->_next;
-      }
-      ++bucket;
-    }
+    return iterate_impl<ResourceHashtableBase, Node, V&, ITER>(this, iter);
+  }
+
+  // Same as iterate(), except the callback should be
+  // bool ITER::do_entry(K const& key, V const& value), and must not modify
+  // the value.
+  template<class ITER>
+  void const_iterate(ITER* iter) const {
+    return iterate_impl<ResourceHashtableBase const, Node const, V const&, ITER>(this, iter);
   }
 };
 

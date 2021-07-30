@@ -760,7 +760,7 @@ public:
   }
 };
 
-void StringTable::write_to_archive(DumpedInternedStrings* dumped_interned_strings) {
+void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();
@@ -768,7 +768,7 @@ void StringTable::write_to_archive(DumpedInternedStrings* dumped_interned_string
 
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);
-  dumped_interned_strings->iterate(&copier);
+  dumped_interned_strings->const_iterate(&copier);
 
   writer.dump(&_shared_table, "string");
 }
