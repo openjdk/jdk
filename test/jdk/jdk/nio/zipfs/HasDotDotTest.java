@@ -113,7 +113,7 @@ public class HasDotDotTest {
      */
     @Test(dataProvider = "checkForDotOrDotDotPaths")
     public void hasDotOrDotDotTest(String path) throws IOException {
-        if(DEBUG) {
+        if (DEBUG) {
             System.out.printf("Validating entry: %s%n", path);
         }
         Files.deleteIfExists(ZIPFILE);
