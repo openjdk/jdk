@@ -46,10 +46,10 @@ public:
 template<
     class STORAGE,
     typename K, typename V,
-    unsigned (*HASH)  (K const&),
-    bool     (*EQUALS)(K const&, K const&),
     ResourceObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE
+    MEMFLAGS MEM_TYPE,
+    unsigned (*HASH)  (K const&),
+    bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
   using Node = ResourceHashtableNode<K, V>;
@@ -232,19 +232,19 @@ protected:
 
 template<
     typename K, typename V,
-    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
-    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
     unsigned SIZE = 256,
     ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal
+    MEMFLAGS MEM_TYPE = mtInternal,
+    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
 class ResourceHashtable : public ResourceHashtableBase<
   FixedResourceHashtableStorage<SIZE, K, V>,
-    K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
+    K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> {
   NONCOPYABLE(ResourceHashtable);
 public:
   ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
-                                              K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>() {}
+                                              K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>() {}
 };
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP

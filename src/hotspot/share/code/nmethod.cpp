@@ -2227,8 +2227,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                            &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
 
   DepTable* table = new DepTable();
 

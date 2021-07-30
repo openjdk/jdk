@@ -316,47 +316,6 @@ static void print_arg_moves(const GrowableArray<ArgMove>& arg_moves, Method* ent
 }
 #endif
 
-void save_java_frame_anchor(MacroAssembler* _masm, ByteSize store_offset, Register thread) {
-  __ block_comment("{ save_java_frame_anchor ");
-  // upcall->jfa._last_Java_fp = _thread->_anchor._last_Java_fp;
-  __ movptr(rscratch1, Address(thread, JavaThread::last_Java_fp_offset()));
-  __ movptr(Address(rsp, store_offset + JavaFrameAnchor::last_Java_fp_offset()), rscratch1);
-
-  // upcall->jfa._last_Java_pc = _thread->_anchor._last_Java_pc;
-  __ movptr(rscratch1, Address(thread, JavaThread::last_Java_pc_offset()));
-  __ movptr(Address(rsp, store_offset + JavaFrameAnchor::last_Java_pc_offset()), rscratch1);
-
-  // upcall->jfa._last_Java_sp = _thread->_anchor._last_Java_sp;
-  __ movptr(rscratch1, Address(thread, JavaThread::last_Java_sp_offset()));
-  __ movptr(Address(rsp, store_offset + JavaFrameAnchor::last_Java_sp_offset()), rscratch1);
-  __ block_comment("} save_java_frame_anchor ");
-}
-
-void restore_java_frame_anchor(MacroAssembler* _masm, ByteSize load_offset, Register thread) {
-  __ block_comment("{ restore_java_frame_anchor ");
-  // thread->_last_Java_sp = NULL
-  __ movptr(Address(thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
-
-  // ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
-  // __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native);
-
-  //_thread->frame_anchor()->copy(&_anchor);
-//  _thread->_last_Java_fp = upcall->_last_Java_fp;
-//  _thread->_last_Java_pc = upcall->_last_Java_pc;
-//  _thread->_last_Java_sp = upcall->_last_Java_sp;
-
-  __ movptr(rscratch1, Address(rsp, load_offset + JavaFrameAnchor::last_Java_fp_offset()));
-  __ movptr(Address(thread, JavaThread::last_Java_fp_offset()), rscratch1);
-
-  __ movptr(rscratch1, Address(rsp, load_offset + JavaFrameAnchor::last_Java_pc_offset()));
-  __ movptr(Address(thread, JavaThread::last_Java_pc_offset()), rscratch1);
-
-  __ movptr(rscratch1, Address(rsp, load_offset + JavaFrameAnchor::last_Java_sp_offset()));
-  __ movptr(Address(thread, JavaThread::last_Java_sp_offset()), rscratch1);
-  __ block_comment("} restore_java_frame_anchor ");
-}
-
 static void save_native_arguments(MacroAssembler* _masm, const CallRegs& conv, int arg_save_area_offset) {
   __ block_comment("{ save_native_args ");
   int store_offset = arg_save_area_offset;
@@ -440,6 +399,60 @@ static int compute_arg_save_area_size(const CallRegs& conv) {
     // do nothing for stack
   }
   return result_size;
+}
+
+static int compute_res_save_area_size(const CallRegs& conv) {
+  int result_size = 0;
+  for (int i = 0; i < conv._rets_length; i++) {
+    VMReg reg = conv._ret_regs[i];
+    if (reg->is_Register()) {
+      result_size += 8;
+    } else if (reg->is_XMMRegister()) {
+      // Java API doesn't support vector args
+      result_size += 16;
+    } else {
+      ShouldNotReachHere(); // unhandled type
+    }
+  }
+  return result_size;
+}
+
+static void save_java_result(MacroAssembler* _masm, const CallRegs& conv, int res_save_area_offset) {
+  int offset = res_save_area_offset;
+  __ block_comment("{ save java result ");
+  for (int i = 0; i < conv._rets_length; i++) {
+    VMReg reg = conv._ret_regs[i];
+    if (reg->is_Register()) {
+      __ movptr(Address(rsp, offset), reg->as_Register());
+      offset += 8;
+    } else if (reg->is_XMMRegister()) {
+      // Java API doesn't support vector args
+      __ movdqu(Address(rsp, offset), reg->as_XMMRegister());
+      offset += 16;
+    } else {
+      ShouldNotReachHere(); // unhandled type
+    }
+  }
+  __ block_comment("} save java result ");
+}
+
+static void restore_java_result(MacroAssembler* _masm, const CallRegs& conv, int res_save_area_offset) {
+  int offset = res_save_area_offset;
+  __ block_comment("{ restore java result ");
+  for (int i = 0; i < conv._rets_length; i++) {
+    VMReg reg = conv._ret_regs[i];
+    if (reg->is_Register()) {
+      __ movptr(reg->as_Register(), Address(rsp, offset));
+      offset += 8;
+    } else if (reg->is_XMMRegister()) {
+      // Java API doesn't support vector args
+      __ movdqu(reg->as_XMMRegister(), Address(rsp, offset));
+      offset += 16;
+    } else {
+      ShouldNotReachHere(); // unhandled type
+    }
+  }
+  __ block_comment("} restore java result ");
 }
 
 constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
@@ -574,12 +587,6 @@ static void shuffle_arguments(MacroAssembler* _masm, const GrowableArray<ArgMove
   }
 }
 
-struct AuxiliarySaves {
-  JavaFrameAnchor jfa;
-  uintptr_t thread;
-  bool should_detach;
-};
-
 // Register is a class, but it would be assigned numerical value.
 // "0" is assigned for rax and for xmm0. Thus we need to ignore -Wnonnull.
 PRAGMA_DIAG_PUSH
@@ -608,19 +615,17 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
   int arg_save_area_size = compute_arg_save_area_size(conv);
+  int res_save_area_size = compute_res_save_area_size(conv);
   // To spill receiver during deopt
   int deopt_spill_size = 1 * BytesPerWord;
 
   int shuffle_area_offset    = 0;
   int deopt_spill_offset     = shuffle_area_offset    + out_arg_area;
-  int arg_save_area_offset   = deopt_spill_offset     + deopt_spill_size;
+  int res_save_area_offset   = deopt_spill_offset     + deopt_spill_size;
+  int arg_save_area_offset   = res_save_area_offset   + res_save_area_size;
   int reg_save_area_offset   = arg_save_area_offset   + arg_save_area_size;
-  int auxiliary_saves_offset = reg_save_area_offset   + reg_save_area_size;
-  int frame_bottom_offset    = auxiliary_saves_offset + sizeof(AuxiliarySaves);
-
-  ByteSize jfa_offset           = in_ByteSize(auxiliary_saves_offset) + byte_offset_of(AuxiliarySaves, jfa);
-  ByteSize thread_offset        = in_ByteSize(auxiliary_saves_offset) + byte_offset_of(AuxiliarySaves, thread);
-  ByteSize should_detach_offset = in_ByteSize(auxiliary_saves_offset) + byte_offset_of(AuxiliarySaves, should_detach);
+  int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
+  int frame_bottom_offset    = frame_data_offset      + sizeof(OptimizedEntryBlob::FrameData);
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
@@ -631,14 +636,17 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   // FP-> |                     |
   //      |---------------------| = frame_bottom_offset = frame_size
   //      |                     |
-  //      | AuxiliarySaves      |
-  //      |---------------------| = auxiliary_saves_offset
+  //      | FrameData           |
+  //      |---------------------| = frame_data_offset
   //      |                     |
   //      | reg_save_area       |
   //      |---------------------| = reg_save_are_offset
   //      |                     |
   //      | arg_save_area       |
   //      |---------------------| = arg_save_are_offset
+  //      |                     |
+  //      | res_save_area       |
+  //      |---------------------| = res_save_are_offset
   //      |                     |
   //      | deopt_spill         |
   //      |---------------------| = deopt_spill_offset
@@ -650,7 +658,6 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   //////////////////////////////////////////////////////////////////////////////
 
   MacroAssembler* _masm = new MacroAssembler(&buffer);
-  Label call_return;
   address start = __ pc();
   __ enter(); // set up frame
   if ((abi._stack_alignment_bytes % 16) != 0) {
@@ -666,53 +673,14 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
-  __ block_comment("{ get_thread");
+  __ block_comment("{ on_entry");
   __ vzeroupper();
-  __ lea(c_rarg0, Address(rsp, should_detach_offset));
+  __ lea(c_rarg0, Address(rsp, frame_data_offset));
   // stack already aligned
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ProgrammableUpcallHandler::maybe_attach_and_get_thread)));
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ProgrammableUpcallHandler::on_entry)));
   __ movptr(r15_thread, rax);
   __ reinit_heapbase();
-  __ movptr(Address(rsp, thread_offset), r15_thread);
-  __ block_comment("} get_thread");
-
-  // TODO:
-  // We expect not to be coming from JNI code, but we might be.
-  // We should figure out what our stance is on supporting that and then maybe add
-  // some more handling here for:
-  //   - handle blocks
-  //   - check for active exceptions (and emit an error)
-
-  __ block_comment("{ safepoint poll");
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
-
-  if (os::is_MP()) {
-    __ membar(Assembler::Membar_mask_bits(
-                Assembler::LoadLoad  | Assembler::StoreLoad |
-                Assembler::LoadStore | Assembler::StoreStore));
-   }
-
-  // check for safepoint operation in progress and/or pending suspend requests
-  Label L_after_safepoint_poll;
-  Label L_safepoint_poll_slow_path;
-
-  __ safepoint_poll(L_safepoint_poll_slow_path, r15_thread, false /* at_return */, false /* in_nmethod */);
-
-  __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
-  __ jcc(Assembler::notEqual, L_safepoint_poll_slow_path);
-
-  __ bind(L_after_safepoint_poll);
-  __ block_comment("} safepoint poll");
-  // change thread state
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
-
-  __ block_comment("{ reguard stack check");
-  Label L_reguard;
-  Label L_after_reguard;
-  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
-  __ jcc(Assembler::equal, L_reguard);
-  __ bind(L_after_reguard);
-  __ block_comment("} reguard stack check");
+  __ block_comment("} on_entry");
 
   __ block_comment("{ argument shuffle");
   // TODO merge these somehow
@@ -728,13 +696,24 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   __ mov_metadata(rbx, entry);
   __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
-  __ reinit_heapbase();
-
-  save_java_frame_anchor(_masm, jfa_offset, r15_thread);
-  __ reset_last_Java_frame(r15_thread, true);
 
   __ call(Address(rbx, Method::from_compiled_offset()));
 
+  save_java_result(_masm, conv, res_save_area_offset);
+
+  __ block_comment("{ on_exit");
+  __ vzeroupper();
+  __ lea(c_rarg0, Address(rsp, frame_data_offset));
+  // stack already aligned
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ProgrammableUpcallHandler::on_exit)));
+  __ reinit_heapbase();
+  __ block_comment("} on_exit");
+
+  restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
+
+  restore_java_result(_masm, conv, res_save_area_offset);
+
+  // return value shuffle
 #ifdef ASSERT
   if (conv._rets_length == 1) { // 0 or 1
     VMReg j_expected_result_reg;
@@ -761,52 +740,8 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   }
 #endif
 
-  __ bind(call_return);
-
-  // also sets last Java frame
-  __ movptr(r15_thread, Address(rsp, thread_offset));
-  // TODO corrupted thread pointer causes havoc. Can we verify it here?
-  restore_java_frame_anchor(_masm, jfa_offset, r15_thread); // also transitions to native state
-
-  __ block_comment("{ maybe_detach_thread");
-  Label L_after_detach;
-  __ cmpb(Address(rsp, should_detach_offset), 0);
-  __ jcc(Assembler::equal, L_after_detach);
-  __ vzeroupper();
-  __ mov(c_rarg0, r15_thread);
-  // stack already aligned
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ProgrammableUpcallHandler::detach_thread)));
-  __ reinit_heapbase();
-  __ bind(L_after_detach);
-  __ block_comment("} maybe_detach_thread");
-
-  restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
-
   __ leave();
   __ ret(0);
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  __ block_comment("{ L_safepoint_poll_slow_path");
-  __ bind(L_safepoint_poll_slow_path);
-  __ vzeroupper();
-  __ mov(c_rarg0, r15_thread);
-  // stack already aligned
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
-  __ reinit_heapbase();
-  __ jmp(L_after_safepoint_poll);
-  __ block_comment("} L_safepoint_poll_slow_path");
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  __ block_comment("{ L_reguard");
-  __ bind(L_reguard);
-  __ vzeroupper();
-  // stack already aligned
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
-  __ reinit_heapbase();
-  __ jmp(L_after_reguard);
-  __ block_comment("} L_reguard");
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -839,7 +774,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   const char* name = "optimized_upcall_stub";
 #endif // PRODUCT
 
-  OptimizedEntryBlob* blob = OptimizedEntryBlob::create(name, &buffer, exception_handler_offset, receiver, jfa_offset);
+  OptimizedEntryBlob* blob = OptimizedEntryBlob::create(name, &buffer, exception_handler_offset, receiver, in_ByteSize(frame_data_offset));
 
   if (TraceOptimizedUpcallStubs) {
     blob->print_on(tty);
