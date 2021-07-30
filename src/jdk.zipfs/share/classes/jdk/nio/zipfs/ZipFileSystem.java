@@ -1601,7 +1601,6 @@ class ZipFileSystem extends FileSystem {
      * @return true if the path contains a "." or ".." entry; false otherwise
      */
     private boolean hasDotOrDotDot(byte[] path) {
-        boolean dotOrDotDotFound = false;
         // Inode.name always includes "/" in path[0]
         assert path[0] == '/';
         if (path.length == 1) {
@@ -1619,7 +1618,7 @@ class ZipFileSystem extends FileSystem {
             }
             index++;
         }
-        return dotOrDotDotFound;
+        return false;
     }
 
     /**
