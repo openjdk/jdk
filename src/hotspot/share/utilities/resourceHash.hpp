@@ -56,7 +56,12 @@ class ResourceHashtableBase : public STORAGE {
  private:
   int _number_of_entries;
 
-  Node** bucket_at(unsigned index) const {
+  Node** bucket_at(unsigned index) {
+    Node** t = table();
+    return &t[index];
+  }
+
+  const Node* const* bucket_at(unsigned index) const {
     Node** t = table();
     return &t[index];
   }
@@ -107,7 +112,6 @@ class ResourceHashtableBase : public STORAGE {
  public:
   unsigned table_size() const { return STORAGE::table_size(); }
   int number_of_entries() const { return _number_of_entries; }
-  void decrement_entries() { _number_of_entries--; }
 
   bool contains(K const& key) const {
     return get(key) != NULL;
@@ -216,7 +220,7 @@ class ResourceHashtableBase : public STORAGE {
   // called for each entry in the table.  If do_entry() returns true,
   // the entry is deleted.
   template<class ITER>
-  void unlink(ITER* iter) const {
+  void unlink(ITER* iter) {
     const unsigned sz = table_size();
     for (unsigned index = 0; index < sz; index++) {
       Node** ptr = bucket_at(index);
@@ -229,7 +233,7 @@ class ResourceHashtableBase : public STORAGE {
           if (ALLOC_TYPE == ResourceObj::C_HEAP) {
             delete node;
           }
-          const_cast<ResourceHashtableBase*>(this)->decrement_entries();
+          _number_of_entries --;
         } else {
           ptr = &(node->_next);
         }
