@@ -48,9 +48,7 @@ bool ThreadsList::Iterator::operator==(Iterator i) const {
 }
 
 bool ThreadsList::Iterator::operator!=(Iterator i) const {
-  assert_not_singular();
-  assert_same_list(i);
-  return _thread_ptr != i._thread_ptr;
+  return !operator==(i);
 }
 
 JavaThread* ThreadsList::Iterator::operator*() const {
