@@ -192,8 +192,8 @@ class ResourceHashtableBase : public STORAGE {
   // called for each entry in the table.  If do_entry() returns false,
   // the iteration is cancelled.
   //
-  // do_entry() may modify value. However, it should not modify the key, or else
-  // the table may no longer be properly hashed.
+  // do_entry() may modify the value. However, it should not modify the key,
+  // or else the table may no longer be properly hashed.
   template<class ITER>
   void iterate(ITER* iter) {
     Node ** bucket = table();
