@@ -362,7 +362,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       }
 
       // Map the maximal common vector
-      if (VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
+      if (VectorNode::implemented(n, cur_max_vector, bt)) {
         if (cur_max_vector < max_vector && !flag_small_bt) {
           max_vector = cur_max_vector;
         } else if (cur_max_vector > max_vector && UseSubwordForMaxVector) {
@@ -2008,7 +2008,7 @@ bool SuperWord::implemented(Node_List* p) {
         retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
       }
     } else {
-      retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
+      retValue = VectorNode::implemented(p0, size, velt_basic_type(p0));
     }
     if (!retValue) {
       if (is_cmov_pack(p)) {

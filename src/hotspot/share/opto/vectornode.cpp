@@ -27,6 +27,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/convertnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -253,16 +254,16 @@ int VectorNode::replicate_opcode(BasicType bt) {
 
 // Also used to check if the code generator
 // supports the vector operation.
-bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
+bool VectorNode::implemented(Node* n, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
-    int vopc = VectorNode::opcode(opc, bt);
+    int vopc = VectorNode::opcode(n->Opcode(), bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
     // vector rotation instruction.
     if (VectorNode::is_vector_rotate(vopc)) {
-      return is_vector_rotate_supported(vopc, vlen, bt);
+      return is_vector_rotate_supported(n, vlen, bt);
     }
     return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
@@ -295,13 +296,21 @@ bool VectorNode::is_roundopD(Node* n) {
   return false;
 }
 
-bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
+bool VectorNode::is_vector_rotate_supported(Node* n, uint vlen, BasicType bt) {
+  int vopc = VectorNode::opcode(n->Opcode(), bt);
   assert(VectorNode::is_vector_rotate(vopc), "wrong opcode");
 
   // If target defines vector rotation patterns then no
   // need for degeneration.
   if (Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
     return true;
+  }
+
+  // If target does not support variable shift operations then no point
+  // in creating a rotate vector node since it will not be disintegratable.
+  int has_scalar_shift = n->in(2)->Opcode() != Op_LoadI;
+  if (!has_scalar_shift && !Matcher::supports_vector_variable_shifts()) {
+     return false;
   }
 
   // Validate existence of nodes created in case of rotate degeneration.
@@ -1184,21 +1193,45 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     cnt = cnt->in(1);
     if (bt == T_LONG) {
       // Shift count vector for Rotate vector has long elements too.
-      assert(cnt->Opcode() == Op_ConvI2L, "ConvI2L expected");
-      cnt = cnt->in(1);
+      if (cnt->Opcode() == Op_ConvI2L) {
+         cnt = cnt->in(1);
+      } else {
+         assert(cnt->bottom_type()->isa_long() && cnt->bottom_type()->is_long()->is_con(), "");
+         cnt = phase->transform(new ConvL2INode(cnt));
+      }
     }
     shiftRCnt = cnt;
     shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(shift_mask)));
     shiftLCnt = phase->transform(new SubINode(phase->intcon(shift_mask + 1), shiftRCnt));
   } else {
-    // Vector variable shift.
+    // Variable vector rotate count.
+    assert(Matcher::supports_vector_variable_shifts(), "");
+
+    int subVopc = 0;
+    int addVopc = 0;
+    Node* shift_mask_node = NULL;
+    Node* const_one_node = NULL;
+
     assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
     const Type* elem_ty = Type::get_const_basic_type(bt);
-    Node* shift_mask_node = (bt == T_LONG) ? (Node*)(phase->longcon(shift_mask + 1L)) :
-                                             (Node*)(phase->intcon(shift_mask + 1));
-    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node,vlen, elem_ty));
-    int subVopc = VectorNode::opcode((bt == T_LONG) ? Op_SubL : Op_SubI, bt);
+
+    if (bt == T_LONG) {
+      shift_mask_node = phase->longcon(shift_mask);
+      const_one_node = phase->longcon(1L);
+      subVopc = VectorNode::opcode(Op_SubL, bt);
+      addVopc = VectorNode::opcode(Op_AddL, bt);
+    } else {
+      shift_mask_node = phase->intcon(shift_mask);
+      const_one_node = phase->intcon(1);
+      subVopc = VectorNode::opcode(Op_SubI, bt);
+      addVopc = VectorNode::opcode(Op_AddI, bt);
+    }
+    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node, vlen, elem_ty));
+    Node* vector_one = phase->transform(VectorNode::scalar2vector(const_one_node, vlen, elem_ty));
+
     shiftRCnt = cnt;
+    shiftRCnt = phase->transform(VectorNode::make(Op_AndV, shiftRCnt, vector_mask, vt));
+    vector_mask = phase->transform(VectorNode::make(addVopc, vector_one, vector_mask, vt));
     shiftLCnt = phase->transform(VectorNode::make(subVopc, vector_mask, shiftRCnt, vt));
     is_binary_vector_op = true;
   }

@@ -80,7 +80,7 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
-  static bool implemented(int opc, uint vlen, BasicType bt);
+  static bool implemented(Node* n, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
   static bool is_type_transition_short_to_int(Node* n);
@@ -88,7 +88,7 @@ class VectorNode : public TypeNode {
   static bool is_muladds2i(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
-  static bool is_vector_rotate_supported(int vopc, uint vlen, BasicType bt);
+  static bool is_vector_rotate_supported(Node* n, uint vlen, BasicType bt);
   static bool is_invariant_vector(Node* n);
   static bool is_all_ones_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);

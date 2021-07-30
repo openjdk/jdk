@@ -93,8 +93,8 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
     int lshiftvopc = VectorNode::opcode(lshiftopc, elem_bt);
     int rshiftvopc = VectorNode::opcode(rshiftopc, elem_bt);
     if (!is_supported &&
-        arch_supports_vector(lshiftvopc, num_elem, elem_bt, VecMaskNotUsed) &&
-        arch_supports_vector(rshiftvopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(lshiftvopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args) &&
+        arch_supports_vector(rshiftvopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args) &&
         arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
       is_supported = true;
     }
