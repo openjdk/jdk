@@ -760,7 +760,7 @@ public:
   }
 };
 
-void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
+void StringTable::write_to_archive(DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
 
   _shared_table.reset();

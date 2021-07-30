@@ -110,7 +110,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static oop create_archived_string(oop s) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static void write_to_archive(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
+  static void write_to_archive(DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Jcmd

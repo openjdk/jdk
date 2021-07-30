@@ -61,11 +61,6 @@ class ResourceHashtableBase : public STORAGE {
     return &t[index];
   }
 
-  Node const** const_bucket_at(unsigned index) const {
-    return const_cast<Node const**>(
-        const_cast<ResourceHashtableBase*>(this)->bucket_at(index));
-  }
-
   // Returns a pointer to where the node where the value would reside if
   // it's in the table.
   Node** lookup_node(unsigned hash, K const& key) {
@@ -87,11 +82,6 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   Node** table() { return STORAGE::table(); }
-
-  Node const** const_table() const {
-    return const_cast<Node const**>(
-        const_cast<ResourceHashtableBase*>(this)->table());
-  }
 
  protected:
   ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
@@ -203,20 +193,20 @@ class ResourceHashtableBase : public STORAGE {
     return false;
   }
 
-  // ITER contains bool do_entry(K const& key, V& value), which will be
+  // bool ITER::do_entry(K const& key, V& value) will be
   // called for each entry in the table.  If do_entry() returns false,
   // the iteration is cancelled.
   //
-  // do_entry() may modify value, but it should not modify the key, or else
-  // the table may not be properly hashed.
+  // do_entry() may modify value. However, it should not modify the key, or else
+  // the table may no longer be properly hashed.
   template<class ITER>
-  void iterate(ITER* iter) const {
-    Node const** bucket = const_table();
+  void iterate(ITER* iter) {
+    Node ** bucket = table();
     const unsigned sz = table_size();
-    while (bucket < const_bucket_at(sz)) {
-      Node const* node = *bucket;
+    while (bucket < bucket_at(sz)) {
+      Node * node = *bucket;
       while (node != NULL) {
-        bool cont = iter->do_entry(node->_key, const_cast<V&>(node->_value));
+        bool cont = iter->do_entry(const_cast<K const&>(node->_key), node->_value);
         if (!cont) { return; }
         node = node->_next;
       }
