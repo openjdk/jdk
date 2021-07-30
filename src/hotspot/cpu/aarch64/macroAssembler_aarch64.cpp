@@ -4637,6 +4637,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
     // possible.
     CompileTask* task;
     if (StubRoutines::aarch64::complete()
+        && Thread::current()->is_Compiler_thread()
         && (task = ciEnv::current()->task())
         && is_c2_compile(task->comp_level())) {
       address tpc = trampoline_call(zero_blocks);
