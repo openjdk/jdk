@@ -56,9 +56,14 @@ class ResourceHashtableBase : public STORAGE {
  private:
   int _number_of_entries;
 
-  Node** bucket_at(unsigned index) const {
+  Node** bucket_at(unsigned index) {
     Node** t = table();
     return &t[index];
+  }
+
+  Node const** const_bucket_at(unsigned index) const {
+    return const_cast<Node const**>(
+        const_cast<ResourceHashtableBase*>(this)->bucket_at(index));
   }
 
   // Returns a pointer to where the node where the value would reside if
@@ -76,14 +81,19 @@ class ResourceHashtableBase : public STORAGE {
     return ptr;
   }
 
-  Node const** lookup_node(unsigned hash, K const& key) const {
+  Node const** const_lookup_node(unsigned hash, K const& key) const {
     return const_cast<Node const**>(
         const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
   }
 
- protected:
-  Node** table() const { return STORAGE::table(); }
+  Node** table() { return STORAGE::table(); }
 
+  Node const** const_table() const {
+    return const_cast<Node const**>(
+        const_cast<ResourceHashtableBase*>(this)->table());
+  }
+
+ protected:
   ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
   ResourceHashtableBase(unsigned size) : STORAGE(size), _number_of_entries(0) {}
   NONCOPYABLE(ResourceHashtableBase);
@@ -114,7 +124,7 @@ class ResourceHashtableBase : public STORAGE {
 
   V* get(K const& key) const {
     unsigned hv = HASH(key);
-    Node const** ptr = lookup_node(hv, key);
+    Node const** ptr = const_lookup_node(hv, key);
     if (*ptr != NULL) {
       return const_cast<V*>(&(*ptr)->_value);
     } else {
@@ -193,17 +203,20 @@ class ResourceHashtableBase : public STORAGE {
     return false;
   }
 
-  // ITER contains bool do_entry(K const&, V const&), which will be
+  // ITER contains bool do_entry(K const& key, V& value), which will be
   // called for each entry in the table.  If do_entry() returns false,
   // the iteration is cancelled.
+  //
+  // do_entry() may modify value, but it should not modify the key, or else
+  // the table may not be properly hashed.
   template<class ITER>
   void iterate(ITER* iter) const {
-    Node* const* bucket = table();
+    Node const** bucket = const_table();
     const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
-      Node* node = *bucket;
+    while (bucket < const_bucket_at(sz)) {
+      Node const* node = *bucket;
       while (node != NULL) {
-        bool cont = iter->do_entry(node->_key, node->_value);
+        bool cont = iter->do_entry(node->_key, const_cast<V&>(node->_value));
         if (!cont) { return; }
         node = node->_next;
       }
@@ -225,8 +238,8 @@ protected:
     return TABLE_SIZE;
   }
 
-  Node** table() const {
-    return const_cast<Node**>(_table);
+  Node** table() {
+    return _table;
   }
 };
 

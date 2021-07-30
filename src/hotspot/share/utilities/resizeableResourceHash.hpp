@@ -64,7 +64,7 @@ protected:
     return _table_size;
   }
 
-  Node** table() const {
+  Node** table() {
     return _table;
   }
 };

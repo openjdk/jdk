@@ -731,11 +731,11 @@ class IterateDumpTimeLambdaProxyClassDictionary : StackObj {
 public:
   IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
 
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  bool do_entry(LambdaProxyClassKey const& key, DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     if (key.caller_ik()->is_loader_alive()) {
       info.metaspace_pointers_do(_it);
-      key.metaspace_pointers_do(_it);
+      const_cast<LambdaProxyClassKey&>(key).metaspace_pointers_do(_it);
     }
     return true; // keep on iterating
   }
@@ -1210,7 +1210,7 @@ class CopyLambdaProxyClassInfoToArchive : StackObj {
 public:
   CopyLambdaProxyClassInfoToArchive(CompactHashtableWriter* writer)
   : _writer(writer), _builder(ArchiveBuilder::current()) {}
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  bool do_entry(LambdaProxyClassKey const& key, DumpTimeLambdaProxyClassInfo& info) {
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
     //
@@ -1236,7 +1236,7 @@ public:
 class AdjustLambdaProxyClassInfo : StackObj {
 public:
   AdjustLambdaProxyClassInfo() {}
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  bool do_entry(LambdaProxyClassKey const& key, DumpTimeLambdaProxyClassInfo& info) {
     int len = info._proxy_klasses->length();
     if (len > 1) {
       for (int i = 0; i < len-1; i++) {
@@ -1559,7 +1559,7 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     assert(_cloned_table != NULL, "_cloned_table is NULL");
   }
 
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  bool do_entry(LambdaProxyClassKey const& key, DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     bool created;
     // make copies then store in _clone_table

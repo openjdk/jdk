@@ -138,7 +138,7 @@ public:
        const RunTimeLambdaProxyClassInfo* value, LambdaProxyClassKey* key, int len_unused) {
     return (value->_key.equals(*key));
   }
-  void init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  void init(LambdaProxyClassKey const& key, DumpTimeLambdaProxyClassInfo& info) {
     _key = key;
     _key.mark_pointers();
     _proxy_klass_head = info._proxy_klasses->at(0);
