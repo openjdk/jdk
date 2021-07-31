@@ -324,7 +324,8 @@ public:
       // - the allocation must be in the hash map, since all allocations went through
       //   NMTPreInit::handle_malloc()
       // - find the old entry, unhang from map, free it
-      (void)find_and_remove_in_map(p);
+      NMTPreInitAllocation* a = find_and_remove_in_map(p);
+      NMTPreInitAllocation::do_free(a);
       _num_frees_pre++;
       return true;
     } else {

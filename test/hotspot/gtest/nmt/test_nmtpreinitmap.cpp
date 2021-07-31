@@ -104,6 +104,8 @@ TEST_VM(NMTPreInit, stress_test_map) {
   for (int i = 0; i < num_allocs; i ++) {
     NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
+    NMTPreInitAllocation::do_free(a);
+    allocations[i] = NULL;
   }
 
   print_and_check_table(table, 0);
