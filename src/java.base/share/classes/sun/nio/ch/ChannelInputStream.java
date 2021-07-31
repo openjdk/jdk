@@ -201,18 +201,18 @@ public class ChannelInputStream
         long dstPos = dst.position();
         ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
         try {
-            int r;
+            int bytesRead;
             do {
                 bytesWritten += dst.transferFrom(src, dstPos + bytesWritten, Long.MAX_VALUE);
-                r = src.read(bb); // detect end-of-stream
-                if (r > -1) {
+                bytesRead = src.read(bb); // detect end-of-stream
+                if (bytesRead > -1) {
                     bb.flip();
                     while (bb.hasRemaining())
                         dst.write(bb);
                     bb.clear();
-                    bytesWritten += r;
+                    bytesWritten += bytesRead;
                 }
-            } while (r > -1);
+            } while (bytesRead > -1);
             return bytesWritten;
         } finally {
             dst.position(dstPos + bytesWritten);
@@ -224,12 +224,12 @@ public class ChannelInputStream
         long bytesWritten = 0L;
         ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
         try {
-            for (int r = src.read(bb); r > -1; r = src.read(bb)) {
+            for (int bytesRead = src.read(bb); bytesRead > -1; bytesRead = src.read(bb)) {
                 bb.flip();
                 while (bb.hasRemaining())
                     dst.write(bb);
                 bb.clear();
-                bytesWritten += r;
+                bytesWritten += bytesRead;
             }
             return bytesWritten;
         } finally {
