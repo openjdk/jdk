@@ -166,55 +166,12 @@ void* NMTPreInit::do_os_malloc(size_t size) {
   return os::malloc(size, mtNMT);
 }
 
-#ifdef ASSERT
-// We do some small test allocations in pre-init and post-init phase; this is to test
-// os::malloc handling. Most of the test coding for NMT preinit stuff is done in gtests and
-// jtreg tests. This bit, however, cannot be done anywhere else since part of it needs to run during
-// libjvm C++ initialization.
-class TestAllocations {
-  void* p1, *p2, *p3, *p4;
-  // Some shorts to save writing out the flags every time
-  static void* os_malloc(size_t s)              { return os::malloc(s, mtTest); }
-  static void* os_realloc(void* old, size_t s)  { return os::realloc(old, s, mtTest); }
-public:
-  TestAllocations() {
-    test_pre();
-  }
-  void test_pre() {
-    p1 = os_malloc(100);                 // normal allocation
-    os::free(os_malloc(0));              // 0-sized allocation, should be free-able
-    p2 = os_realloc(os_malloc(10), 20);  // realloc, growing
-    p3 = os_realloc(os_malloc(20), 10);  // realloc, shrinking
-    p4 = os_realloc(NULL, 10);           // realloc with NULL pointer
-    os_realloc(os_realloc(os_malloc(20), 0), 30);  // realloc to size 0 and back up again
-    os::free(os_malloc(20));             // malloc, free
-    os::free(os_realloc(os_malloc(20), 30));  // malloc, realloc, free
-    os::free(NULL);                      // free(null)
-    NMTPreInit::verify();
-  }
-  void test_post() {
-    p1 = os_realloc(p1, 140);  // realloc from pre-init-phase, growing
-    p2 = os_realloc(p2, 150);  // realloc from pre-init-phase, growing
-    p3 = os_realloc(p3, 50);   // realloc from pre-init-phase, growing
-    p4 = os_realloc(p4, 8);    // realloc from pre-init-phase, shrinking
-  }
-  void free_all() {
-    os::free(p1); os::free(p2); os::free(p3); os::free(p4);
-  }
-};
-static TestAllocations g_test_allocations; // make this an automatic object to let ctor run during in C++ dynamic initialization.
-#endif // ASSERT
-
 // Switches from NMT pre-init state to NMT post-init state;
 //  in post-init, no modifications to the lookup table are possible.
 void NMTPreInit::pre_to_post() {
   assert(_nmt_was_initialized == false, "just once");
   _nmt_was_initialized = true;
-#ifdef ASSERT
-  g_test_allocations.test_post();
-  g_test_allocations.free_all();
-  verify();
-#endif
+  DEBUG_ONLY(verify();)
 }
 
 #ifdef ASSERT

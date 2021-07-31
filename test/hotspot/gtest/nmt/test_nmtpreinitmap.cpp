@@ -32,6 +32,8 @@
 
 #if INCLUDE_NMT
 
+// This tests the NMTPreInitAllocationTable hash table used to store C-heap allocations before NMT initialization ran.
+
 static size_t small_random_nonzero_size() {
   // We keep the sizes random but not too random; the more regular the sizes, the
   // more regular the malloc return pointers and the better we see how our hash
@@ -45,7 +47,7 @@ static size_t small_random_nonzero_size() {
   return 1;
 }
 
-#define VERBOSE
+//#define VERBOSE
 
 static void print_and_check_table(NMTPreInitAllocationTable& table, int expected_num_entries) {
   char tmp[256];

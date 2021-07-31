@@ -254,6 +254,9 @@ public:
   //  in post-init, no modifications to the lookup table are possible.
   static void pre_to_post();
 
+  // Returns true if we are still in pre-init phase, false if post-init
+  static bool in_preinit_phase()  { return _nmt_was_initialized == false; }
+
   // Called from os::malloc.
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
