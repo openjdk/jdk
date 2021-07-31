@@ -254,16 +254,16 @@ int VectorNode::replicate_opcode(BasicType bt) {
 
 // Also used to check if the code generator
 // supports the vector operation.
-bool VectorNode::implemented(Node* n, uint vlen, BasicType bt) {
+bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
-    int vopc = VectorNode::opcode(n->Opcode(), bt);
+    int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
     // vector rotation instruction.
     if (VectorNode::is_vector_rotate(vopc)) {
-      return is_vector_rotate_supported(n, vlen, bt);
+      return is_vector_rotate_supported(vopc, vlen, bt);
     }
     return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
@@ -296,8 +296,7 @@ bool VectorNode::is_roundopD(Node* n) {
   return false;
 }
 
-bool VectorNode::is_vector_rotate_supported(Node* n, uint vlen, BasicType bt) {
-  int vopc = VectorNode::opcode(n->Opcode(), bt);
+bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
   assert(VectorNode::is_vector_rotate(vopc), "wrong opcode");
 
   // If target defines vector rotation patterns then no
@@ -308,8 +307,9 @@ bool VectorNode::is_vector_rotate_supported(Node* n, uint vlen, BasicType bt) {
 
   // If target does not support variable shift operations then no point
   // in creating a rotate vector node since it will not be disintegratable.
-  int has_scalar_shift = n->in(2)->Opcode() != Op_LoadI;
-  if (!has_scalar_shift && !Matcher::supports_vector_variable_shifts()) {
+  // Adding a pessimistic check to avoid complex pattern mathing which
+  // may not be full proof.
+  if (!Matcher::supports_vector_variable_shifts()) {
      return false;
   }
 
