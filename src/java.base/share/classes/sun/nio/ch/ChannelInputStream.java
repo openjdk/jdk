@@ -156,6 +156,9 @@ public class ChannelInputStream
             }
 
             if (wbc instanceof FileChannel fc) {
+                if (ch instanceof SelectableChannel sc && !sc.isBlocking())
+                    throw new IllegalBlockingModeException();
+
                 if (ch instanceof SeekableByteChannel sbc) {
                     return transfer(sbc, fc);
                 }
