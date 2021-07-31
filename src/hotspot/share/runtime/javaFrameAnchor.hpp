@@ -34,6 +34,8 @@
 //
 class JavaThread;
 class MacroAssembler;
+class ProgrammableUpcallHandler;
+class ZeroFrame;
 
 class JavaFrameAnchor {
 // Too many friends...
@@ -52,6 +54,7 @@ friend class VMStructs;
 friend class JVMCIVMStructs;
 friend class BytecodeInterpreter;
 friend class JavaCallWrapper;
+friend class ProgrammableUpcallHandler;
 
  private:
   //

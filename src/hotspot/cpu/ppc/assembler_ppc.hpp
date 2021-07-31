@@ -824,6 +824,10 @@ class Assembler : public AbstractAssembler {
     // Prefixed addi/li
     PADDI_PREFIX_OPCODE   = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
     PADDI_SUFFIX_OPCODE   = ADDI_OPCODE,
+
+    // xxpermx
+    XXPERMX_PREFIX_OPCODE = PREFIX_PRIMARY_OPCODE | (1u << PRE_TYPE_SHIFT),
+    XXPERMX_SUFFIX_OPCODE = (34u << OPCODE_SHIFT),
   };
 
   // Trap instructions TO bits
@@ -2348,6 +2352,7 @@ class Assembler : public AbstractAssembler {
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
   inline void xxperm(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxpermx(  VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c, int ui3);
   inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
   inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

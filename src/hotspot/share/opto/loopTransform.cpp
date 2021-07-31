@@ -879,8 +879,14 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     if ((future_unroll_cnt / unroll_constraint) > LoopMaxUnroll) return false;
   }
 
+  const int stride_con = cl->stride_con();
+
   // Check for initial stride being a small enough constant
-  if (abs(cl->stride_con()) > (1<<2)*future_unroll_cnt) return false;
+  const int initial_stride_sz = MAX2(1<<2, Matcher::max_vector_size(T_BYTE) / 2);
+  // Maximum stride size should protect against overflow, when doubling stride unroll_count times
+  const int max_stride_size = MIN2<int>(max_jint / 2 - 2, initial_stride_sz * future_unroll_cnt);
+  // No abs() use; abs(min_jint) = min_jint
+  if (stride_con < -max_stride_size || stride_con > max_stride_size) return false;
 
   // Don't unroll if the next round of unrolling would push us
   // over the expected trip count of the loop.  One is subtracted
@@ -906,7 +912,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   Node *init_n = cl->init_trip();
   Node *limit_n = cl->limit();
-  int stride_con = cl->stride_con();
   if (limit_n == NULL) return false; // We will dereference it below.
 
   // Non-constant bounds.
@@ -1990,10 +1995,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // Check the shape of the graph at the loop entry. If an inappropriate
     // graph shape is encountered, the compiler bails out loop unrolling;
     // compilation of the method will still succeed.
-    if (!is_canonical_loop_entry(loop_head)) {
+    opaq = loop_head->is_canonical_loop_entry();
+    if (opaq == NULL) {
       return;
     }
-    opaq = loop_head->skip_predicates()->in(0)->in(1)->in(1)->in(2);
     // Zero-trip test uses an 'opaque' node which is not shared.
     assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
   }
@@ -2005,8 +2010,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   int stride_p = (stride_con > 0) ? stride_con : -stride_con;
   uint old_trip_count = loop_head->trip_count();
   // Verify that unroll policy result is still valid.
-  assert(old_trip_count > 1 &&
-      (!adjust_min_trip || stride_p <= (1<<3)*loop_head->unrolled_count()), "sanity");
+  assert(old_trip_count > 1 && (!adjust_min_trip || stride_p <=
+    MIN2<int>(max_jint / 2 - 2, MAX2(1<<3, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
 
   update_main_loop_skeleton_predicates(ctrl, loop_head, init, stride_con);
 
@@ -2608,7 +2613,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Check graph shape. Cannot optimize a loop if zero-trip
   // Opaque1 node is optimized away and then another round
   // of loop opts attempted.
-  if (!is_canonical_loop_entry(cl)) {
+  if (cl->is_canonical_loop_entry() == NULL) {
     return closed_range_checks;
   }
 
@@ -2937,7 +2942,9 @@ bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoop
   }
 
   // Find RCE'd post loop so that we can stage its guard.
-  if (!is_canonical_loop_entry(legacy_cl)) return multi_version_succeeded;
+  if (legacy_cl->is_canonical_loop_entry() == NULL) {
+    return multi_version_succeeded;
+  }
   Node* ctrl = legacy_cl->in(LoopNode::EntryControl);
   Node* iffm = ctrl->in(0);
 
@@ -3360,6 +3367,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       phase->do_peeling(this, old_new);
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
+      return false; // need to recalculate idom data
     }
     return true;
   }
@@ -3378,7 +3386,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   if (cl->is_normal_loop()) {
     if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
-      return true;
+      return false; // need to recalculate idom data
     }
     if (policy_maximally_unroll(phase)) {
       // Here we did some unrolling and peeling.  Eventually we will
@@ -3491,6 +3499,7 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
       AutoNodeBudget node_budget(phase);
       if (policy_unswitching(phase)) {
         phase->do_unswitching(this, old_new);
+        return false; // need to recalculate idom data
       }
     }
   }
