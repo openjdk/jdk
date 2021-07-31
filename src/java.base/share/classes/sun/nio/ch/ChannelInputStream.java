@@ -149,13 +149,13 @@ public class ChannelInputStream
         Objects.requireNonNull(out, "out");
 
         if (out instanceof ChannelOutputStream cos) {
-            WritableByteChannel oc = cos.channel();
+            WritableByteChannel wbc = cos.channel();
 
             if (ch instanceof FileChannel fc) {
-                return transfer(fc, oc);
+                return transfer(fc, wbc);
             }
 
-            if (oc instanceof FileChannel fc) {
+            if (wbc instanceof FileChannel fc) {
                 if (ch instanceof SeekableByteChannel sbc) {
                     return transfer(sbc, fc);
                 }
@@ -163,71 +163,71 @@ public class ChannelInputStream
                 return transfer(ch, fc);
             }
 
-            return transfer(ch, oc);
+            return transfer(ch, wbc);
         }
 
         return super.transferTo(out);
     }
 
-    private static long transfer(FileChannel src, WritableByteChannel dest) throws IOException {
+    private static long transfer(FileChannel src, WritableByteChannel dst) throws IOException {
         long bytesWritten = 0L;
         long srcPos = src.position();
         long srcSize = src.size();
         try {
             for (long n = srcSize - srcPos; bytesWritten < n;)
-                bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dest);
+                bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dst);
             return bytesWritten;
         } finally {
             src.position(srcPos + bytesWritten);
         }
     }
 
-    private static long transfer(SeekableByteChannel src, FileChannel dest) throws IOException {
+    private static long transfer(SeekableByteChannel src, FileChannel dst) throws IOException {
         long bytesWritten = 0L;
-        long destPos = dest.position();
+        long dstPos = dst.position();
         long srcPos = src.position();
         long srcSize = src.size();
         try {
             for (long n = srcSize - srcPos; bytesWritten < n;)
-                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+                bytesWritten += dst.transferFrom(src, dstPos + bytesWritten, Long.MAX_VALUE);
             return bytesWritten;
         } finally {
-            dest.position(destPos + bytesWritten);
+            dst.position(dstPos + bytesWritten);
         }
     }
 
-    private static long transfer(ReadableByteChannel src, FileChannel dest) throws IOException {
+    private static long transfer(ReadableByteChannel src, FileChannel dst) throws IOException {
         long bytesWritten = 0L;
-        long destPos = dest.position();
+        long dstPos = dst.position();
         ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
         try {
             int r;
             do {
-                bytesWritten += dest.transferFrom(src, destPos + bytesWritten, Long.MAX_VALUE);
+                bytesWritten += dst.transferFrom(src, dstPos + bytesWritten, Long.MAX_VALUE);
                 r = src.read(bb); // detect end-of-stream
                 if (r > -1) {
                     bb.flip();
                     while (bb.hasRemaining())
-                        dest.write(bb);
+                        dst.write(bb);
                     bb.clear();
                     bytesWritten += r;
                 }
             } while (r > -1);
             return bytesWritten;
         } finally {
-            dest.position(destPos + bytesWritten);
+            dst.position(dstPos + bytesWritten);
             Util.releaseTemporaryDirectBuffer(bb);
         }
     }
 
-    private static long transfer(ReadableByteChannel src, WritableByteChannel dest) throws IOException {
+    private static long transfer(ReadableByteChannel src, WritableByteChannel dst) throws IOException {
         long bytesWritten = 0L;
         ByteBuffer bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
         try {
             for (int r = src.read(bb); r > -1; r = src.read(bb)) {
                 bb.flip();
                 while (bb.hasRemaining())
-                    dest.write(bb);
+                    dst.write(bb);
                 bb.clear();
                 bytesWritten += r;
             }
