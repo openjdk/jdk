@@ -172,10 +172,10 @@ public class ChannelInputStream
     private static long transfer(FileChannel src, WritableByteChannel dst) throws IOException {
         long bytesWritten = 0L;
         long srcPos = src.position();
-        long srcSize = src.size();
         try {
-            for (long n = srcSize - srcPos; bytesWritten < n;)
+            while (srcPos + bytesWritten < src.size()) {
                 bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dst);
+            }
             return bytesWritten;
         } finally {
             src.position(srcPos + bytesWritten);
@@ -186,10 +186,10 @@ public class ChannelInputStream
         long bytesWritten = 0L;
         long dstPos = dst.position();
         long srcPos = src.position();
-        long srcSize = src.size();
         try {
-            for (long n = srcSize - srcPos; bytesWritten < n;)
+            while (srcPos + bytesWritten < src.size()) {
                 bytesWritten += dst.transferFrom(src, dstPos + bytesWritten, Long.MAX_VALUE);
+            }
             return bytesWritten;
         } finally {
             dst.position(dstPos + bytesWritten);
