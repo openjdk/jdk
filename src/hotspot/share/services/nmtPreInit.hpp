@@ -111,10 +111,10 @@ class outputStream;
 //     be avoided - should use raw malloc(3).
 //
 // We use a basic open hashmap, dimensioned generously - hash collisions should be very rare.
-//  The table is customized for holding malloced pointers. One main point of this map is that we do
-//  not allocate memory for the nodes themselves. Instead we piggy-back on the user allocation:
-//  the hashmap entry structure precedes, as a header, the malloced block. That way we avoid extra
-//  allocations just to hold the map nodes. This keeps runtime/memory overhead as small as possible.
+//   The table is customized for holding malloced pointers. One main point of this map is that we do
+//   not allocate memory for the nodes themselves. Instead we piggy-back on the user allocation:
+//   the hashmap entry structure precedes, as a header, the malloced block. That way we avoid extra
+//   allocations just to hold the map nodes. This keeps runtime/memory overhead as small as possible.
 
 struct NMTPreInitAllocation {
   NMTPreInitAllocation* next;
@@ -136,8 +136,8 @@ struct NMTPreInitAllocation {
 
 class NMTPreInitAllocationTable {
 
-  // table_size: keep table size a prime and the hash function simple; this
-  //  seems to give a good distribution for malloce'd pointers on all our libc variants.
+  // Table_size: keep table size a prime and the hash function simple; this
+  //  seems to give a good distribution for malloced pointers on all our libc variants.
   // 8000ish is really plenty: normal VM runs have ~500 pre-init allocations to hold,
   //  VMs with insanely long command lines maybe ~700-1000. Which gives us an expected
   //  load factor of ~.1. Hash collisions should be very rare.
@@ -268,7 +268,7 @@ public:
       NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
       add_to_map(a);
       (*rc) = a->payload();
-      _num_mallocs_pre ++;
+      _num_mallocs_pre++;
       return true;
     }
     return false;

@@ -67,7 +67,7 @@ void NMTPreInitAllocation::do_free(NMTPreInitAllocation* p) {
   raw_free(p);
 }
 
-// --------- NMTPreinitHashTable --------------
+// --------- NMTPreInitAllocationTable --------------
 
 NMTPreInitAllocationTable::NMTPreInitAllocationTable() {
   ::memset(_entries, 0, sizeof(_entries));
@@ -80,14 +80,14 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
   int num_primary_entries = 0;
   int longest_chain = 0;
   size_t sum_bytes = 0;
-  for (int i = 0; i < table_size; i ++) {
+  for (int i = 0; i < table_size; i++) {
     int chain_len = 0;
     for (NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
-      chain_len ++;
+      chain_len++;
       sum_bytes += a->size;
     }
     if (chain_len > 0) {
-      num_primary_entries ++;
+      num_primary_entries++;
     }
     num_entries += chain_len;
     longest_chain = MAX2(chain_len, longest_chain);
@@ -100,7 +100,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
 
 #ifdef ASSERT
 void NMTPreInitAllocationTable::print_map(outputStream* st) const {
-  for (int i = 0; i < table_size; i ++) {
+  for (int i = 0; i < table_size; i++) {
     st->print("[%d]: ", i);
     for (NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
       st->print( PTR_FORMAT "(" SIZE_FORMAT ") ", p2i(a->payload()), a->size);
@@ -116,7 +116,7 @@ void NMTPreInitAllocationTable::verify() const {
   // is broken.
   const int longest_acceptable_chain_len = 30;
   int num_chains_too_long = 0;
-  for (index_t i = 0; i < table_size; i ++) {
+  for (index_t i = 0; i < table_size; i++) {
     int len = 0;
     for (const NMTPreInitAllocation* a = _entries[i]; a != NULL; a = a->next) {
       index_t i2 = index_for_key(a->payload());
@@ -133,7 +133,7 @@ void NMTPreInitAllocationTable::verify() const {
       }
     }
     if (len > longest_acceptable_chain_len) {
-      num_chains_too_long ++;
+      num_chains_too_long++;
     }
   }
   if (num_chains_too_long > 0) {

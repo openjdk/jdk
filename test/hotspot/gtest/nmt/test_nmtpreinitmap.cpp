@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +70,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
   NMTPreInitAllocation** allocations = NEW_C_HEAP_ARRAY(NMTPreInitAllocation*, num_allocs, mtTest);
 
   // Fill table with allocations
-  for (int i = 0; i < num_allocs; i ++) {
+  for (int i = 0; i < num_allocs; i++) {
     NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(small_random_nonzero_size());
     table.add(a);
     allocations[i] = a;
@@ -78,7 +79,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
   print_and_check_table(table, num_allocs);
 
   // look them all up
-  for (int i = 0; i < num_allocs; i ++) {
+  for (int i = 0; i < num_allocs; i++) {
     NMTPreInitAllocation* a = table.find(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
   }
@@ -97,13 +98,13 @@ TEST_VM(NMTPreInit, stress_test_map) {
   print_and_check_table(table, num_allocs);
 
   // look them all up
-  for (int i = 0; i < num_allocs; i ++) {
+  for (int i = 0; i < num_allocs; i++) {
     NMTPreInitAllocation* a = table.find(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
   }
 
   // free all
-  for (int i = 0; i < num_allocs; i ++) {
+  for (int i = 0; i < num_allocs; i++) {
     NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
     NMTPreInitAllocation::do_free(a);
@@ -120,7 +121,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 TEST_VM_ASSERT_MSG(NMTPreInit, assert_on_lu_table_overflow, ".*NMT preinit lookup table degenerated.*") {
   NMTPreInitAllocationTable table;
   const int num_allocs = 400 * 1000; // anything above ~250K entries should trigger the assert (note: normal number of entries is ~500)
-  for (int i = 0; i < num_allocs; i ++) {
+  for (int i = 0; i < num_allocs; i++) {
     NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(1);
     table.add(a);
   }

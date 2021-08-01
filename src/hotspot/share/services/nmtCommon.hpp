@@ -124,11 +124,11 @@ class NMTUtil : AllStatic {
     return (amount + scale / 2) / scale;
   }
 
-  // parses the tracking level from a string. Returns NMT_unknown if
+  // Parses the tracking level from a string. Returns NMT_unknown if
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
-  // returns textual representation of a tracking level.
+  // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
 
  private:
