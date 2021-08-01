@@ -152,8 +152,6 @@ bool NMTPreInit::_nmt_was_initialized = false;
 unsigned NMTPreInit::_num_mallocs_pre = 0;
 unsigned NMTPreInit::_num_reallocs_pre = 0;
 unsigned NMTPreInit::_num_frees_pre = 0;
-unsigned NMTPreInit::_num_reallocs_pre_to_post = 0;
-unsigned NMTPreInit::_num_frees_pre_to_post = 0;
 
 void NMTPreInit::create_table() {
   assert(_table == NULL, "just once");
@@ -180,9 +178,7 @@ void NMTPreInit::verify() {
     _table->verify();
   }
   assert(_num_reallocs_pre <= _num_mallocs_pre &&
-         _num_frees_pre <= _num_mallocs_pre &&
-         _num_reallocs_pre_to_post <= _num_mallocs_pre &&
-         _num_frees_pre_to_post <= _num_mallocs_pre, "stats are off");
+         _num_frees_pre <= _num_mallocs_pre, "stats are off");
 }
 #endif // ASSERT
 
@@ -191,10 +187,8 @@ void NMTPreInit::print_state(outputStream* st) {
     _table->print_state(st);
     st->cr();
   }
-  st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u, "
-               "pre-to-post reallocs: %u, pre-to-post frees: %u",
-               _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre,
-               _num_reallocs_pre_to_post, _num_frees_pre_to_post);
+  st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
+               _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }
 
 #endif // INCLUDE_NMT

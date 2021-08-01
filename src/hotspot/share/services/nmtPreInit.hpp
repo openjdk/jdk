@@ -27,6 +27,9 @@
 #define SHARE_SERVICES_NMT_PREINIT_HPP
 
 #include "memory/allStatic.hpp"
+#ifdef ASSERT
+#include "runtime/atomic.hpp"
+#endif
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -127,7 +130,7 @@ struct NMTPreInitAllocation {
   void* payload()             { return this + 1; }
   const void* payload() const { return this + 1; }
 
-  // These functions do allocate/free a raw malloc block of given payload size,
+  // These functions do raw-malloc/realloc/free a C-heap block of given payload size,
   //  preceded with a NMTPreInitAllocation header.
   static NMTPreInitAllocation* do_alloc(size_t payload_size);
   static NMTPreInitAllocation* do_reallocate(NMTPreInitAllocation* old, size_t new_payload_size);
@@ -222,8 +225,6 @@ class NMTPreInit : public AllStatic {
   static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
   static unsigned _num_reallocs_pre;          // Number of pre-init reallocs
   static unsigned _num_frees_pre;             // Number of pre-init frees
-  static unsigned _num_reallocs_pre_to_post;  // Number of post-init reallocs for pre-init blocks
-  static unsigned _num_frees_pre_to_post;     // Number of post-init frees for pre-init blocks
 
   static void create_table();
 
@@ -312,7 +313,6 @@ public:
         void* p_new = do_os_malloc(new_size);
         ::memcpy(p_new, a->payload(), MIN2(a->size, new_size));
         (*rc) = p_new;
-        _num_reallocs_pre_to_post++;
         return true;
       }
     }
@@ -342,7 +342,6 @@ public:
       //   the same address and confusing us.
       // - if not found, we let regular os::free() handle this pointer
       if (find_in_map(p) != NULL) {
-        _num_frees_pre_to_post++;
         return true;
       }
     }
