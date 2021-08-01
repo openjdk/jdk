@@ -151,35 +151,31 @@ public class ChannelInputStream
         Objects.requireNonNull(out, "out");
 
         if (out instanceof ChannelOutputStream cos) {
-            return transferWithBlockingSource(this.ch, cos.channel());
+            return transferInBlockingMode(this.ch, cos.channel());
         }
 
         return super.transferTo(out);
     }
 
-    private static long transferWithBlockingSource(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
-        if (rbc instanceof SelectableChannel sc) {
-            synchronized (sc.blockingLock()) {
-                if (!sc.isBlocking()) {
-                    throw new IllegalBlockingModeException();
-                }
-                return transferWithBlockingTarget(rbc, wbc);
-            }
-        } else {
-            return transferWithBlockingTarget(rbc, wbc);
-        }
+    private static long transferInBlockingMode(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
+        return supplyUsingBlockingChannel(rbc, () -> supplyUsingBlockingChannel(wbc, () -> doTransfer(rbc, wbc)));
     }
 
-    private static long transferWithBlockingTarget(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
-        if (wbc instanceof SelectableChannel sc) {
+    @FunctionalInterface
+    private static interface ThrowingLongSupplier<E extends Exception> {
+        long supply() throws E;
+    }
+
+    private static long supplyUsingBlockingChannel(Channel c, ThrowingLongSupplier<IOException> tls) throws IOException {
+        if (c instanceof SelectableChannel sc) {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking()) {
                     throw new IllegalBlockingModeException();
                 }
-                return doTransfer(rbc, wbc);
+                return tls.supply();
             }
         } else {
-            return doTransfer(rbc, wbc);
+            return tls.supply();
         }
     }
 
