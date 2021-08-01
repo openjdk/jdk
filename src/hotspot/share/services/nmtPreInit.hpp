@@ -161,9 +161,13 @@ class NMTPreInitAllocationTable {
     return hash % table_size;
   }
 
-  NMTPreInitAllocation** find_entry(const void* p) const {
+  const NMTPreInitAllocation* const * find_entry(const void* p) const {
+    return const_cast<NMTPreInitAllocationTable*>(this)->find_entry(p);
+  }
+
+  NMTPreInitAllocation** find_entry(const void* p) {
     const unsigned index = index_for_key(p);
-    NMTPreInitAllocation** aa = (NMTPreInitAllocation**) (&(_entries[index]));
+    NMTPreInitAllocation** aa = (&(_entries[index]));
     while ((*aa) != NULL && (*aa)->payload() != p) {
       aa = &((*aa)->next);
     }
@@ -189,9 +193,8 @@ public:
 
   // Find - but does not remove - an entry in this map.
   // Returns NULL if not found.
-  NMTPreInitAllocation* find(const void* p) const {
-    NMTPreInitAllocation** aa = find_entry(p);
-    return *aa;
+  const NMTPreInitAllocation* find(const void* p) const {
+    return *(find_entry(p));
   }
 
   // Find and removes an entry from the table. Asserts if not found.
@@ -234,7 +237,7 @@ class NMTPreInit : public AllStatic {
     return _table->add(a);
   }
 
-  static NMTPreInitAllocation* find_in_map(void* p) {
+  static const NMTPreInitAllocation* find_in_map(void* p) {
     assert(_table != NULL, "stray allocation?");
     return _table->find(p);
   }
@@ -304,7 +307,7 @@ public:
       // - The lu table is readonly so we keep the old address in the table. And we leave
       //   the old block allocated too, to prevent the libc from returning the same address
       //   and confusing us.
-      NMTPreInitAllocation* a = find_in_map(old_p);
+      const NMTPreInitAllocation* a = find_in_map(old_p);
       if (a != NULL) { // this was originally a pre-init allocation
         void* p_new = do_os_malloc(new_size);
         ::memcpy(p_new, a->payload(), MIN2(a->size, new_size));

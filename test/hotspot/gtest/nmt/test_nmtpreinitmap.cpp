@@ -80,7 +80,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
   }
 
@@ -99,7 +99,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
     ASSERT_EQ(a, allocations[i]);
   }
 
