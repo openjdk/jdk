@@ -30,6 +30,8 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.ToLongBiFunction;
 
 /**
  * This class is defined here rather than in java.nio.channels.Channels
@@ -149,37 +151,52 @@ public class ChannelInputStream
         Objects.requireNonNull(out, "out");
 
         if (out instanceof ChannelOutputStream cos) {
-            WritableByteChannel wbc = cos.channel();
-
-            if (ch instanceof FileChannel fc) {
-                return transfer(fc, wbc);
-            }
-
-            if (wbc instanceof FileChannel fc) {
-                if (ch instanceof SelectableChannel sc) {
-                    synchronized (sc.blockingLock()) {
-                        if (!sc.isBlocking())
-                            throw new IllegalBlockingModeException();
-
-                        if (ch instanceof SeekableByteChannel sbc) {
-                            return transfer(sbc, fc);
-                        }
-
-                        return transfer(ch, fc);
-                    }
-                } else {
-                    if (ch instanceof SeekableByteChannel sbc) {
-                        return transfer(sbc, fc);
-                    }
-
-                    return transfer(ch, fc);
-                }
-            }
-
-            return transfer(ch, wbc);
+            return transferWithBlockingSource(this.ch, cos.channel());
         }
 
         return super.transferTo(out);
+    }
+
+    private static long transferWithBlockingSource(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
+        if (rbc instanceof SelectableChannel sc) {
+            synchronized (sc.blockingLock()) {
+                if (!sc.isBlocking()) {
+                    throw new IllegalBlockingModeException();
+                }
+                return transferWithBlockingTarget(rbc, wbc);
+            }
+        } else {
+            return transferWithBlockingTarget(rbc, wbc);
+        }
+    }
+
+    private static long transferWithBlockingTarget(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
+        if (wbc instanceof SelectableChannel sc) {
+            synchronized (sc.blockingLock()) {
+                if (!sc.isBlocking()) {
+                    throw new IllegalBlockingModeException();
+                }
+                return doTransfer(rbc, wbc);
+            }
+        } else {
+            return doTransfer(rbc, wbc);
+        }
+    }
+
+    private static long doTransfer(ReadableByteChannel rbc, WritableByteChannel wbc) throws IOException {
+        if (rbc instanceof FileChannel fc) {
+            return transfer(fc, wbc);
+        }
+
+        if (wbc instanceof FileChannel fc) {
+            if (rbc instanceof SeekableByteChannel sbc) {
+                return transfer(sbc, fc);
+            }
+
+            return transfer(rbc, fc);
+        }
+
+        return transfer(rbc, wbc);
     }
 
     private static long transfer(FileChannel src, WritableByteChannel dst) throws IOException {
