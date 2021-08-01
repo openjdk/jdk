@@ -156,14 +156,24 @@ public class ChannelInputStream
             }
 
             if (wbc instanceof FileChannel fc) {
-                if (ch instanceof SelectableChannel sc && !sc.isBlocking())
-                    throw new IllegalBlockingModeException();
+                if (ch instanceof SelectableChannel sc) {
+                    synchronized (sc.blockingLock()) {
+                        if (!sc.isBlocking())
+                            throw new IllegalBlockingModeException();
 
-                if (ch instanceof SeekableByteChannel sbc) {
-                    return transfer(sbc, fc);
+                        if (ch instanceof SeekableByteChannel sbc) {
+                            return transfer(sbc, fc);
+                        }
+
+                        return transfer(ch, fc);
+                    }
+                } else {
+                    if (ch instanceof SeekableByteChannel sbc) {
+                        return transfer(sbc, fc);
+                    }
+
+                    return transfer(ch, fc);
                 }
-
-                return transfer(ch, fc);
             }
 
             return transfer(ch, wbc);
