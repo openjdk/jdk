@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +20,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
- * @test
- * @summary Test of diagnostic command GC.heap_dump -all=true
+ * Note: This runs the Arena portion of the gtests with UseMallocOnly
+ * (restricted to debug since UseMallocOnly is debug-only)
+ */
+
+/* @test
+ * @bug 8271242
+ * @summary Run arena tests with UseMallocOnly
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/timeout=240 HeapDumpAllTest
+ *          java.xml
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=Arena* -XX:+UseMallocOnly
  */
-public class HeapDumpAllTest extends HeapDumpTest {
-    public HeapDumpAllTest() {
-        super();
-        heapDumpArgs = "-all=true";
-    }
-
-    /* See HeapDumpTest for test cases */
-}
