@@ -87,7 +87,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     /**
      * Creates a new output stream with the specified buffer size and
-     * flush mode. And leave all other header fields set to default value.
+     * flush mode. Leave all other header fields set to default value.
      *
      * @param out the output stream
      * @param size the output buffer size
@@ -110,7 +110,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     /**
      * Creates a new output stream with the specified buffer size.
-     * And leave all other header fields set to default value.
+     * Leave all other header fields set to default value.
      *
      * <p>The new output stream instance is created as if by invoking
      * the 3-argument constructor GZIPOutputStream(out, size, false).
@@ -127,7 +127,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     /**
      * Creates a new output stream with a default buffer size.
-     * And leave all other header fields set to default value.
+     * Leave all other header fields set to default value.
      *
      * <p>The new output stream instance is created as if by invoking
      * the 2-argument constructor GZIPOutputStream(out, false).
@@ -141,7 +141,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     /**
      * Creates a new output stream with a default buffer size and
-     * the specified flush mode. And leave all other header fields
+     * the specified flush mode. Leave all other header fields
      * set to default value.
      *
      * @param out the output stream
@@ -160,25 +160,6 @@ public class GZIPOutputStream extends DeflaterOutputStream {
         throws IOException
     {
         this(out, 512, syncFlush);
-    }
-
-    /**
-     * Creates a new output stream with the specified flags.
-     *
-     * @param out the output stream
-     * @param gzipHeaderData
-     *        The header of Gzip file, contains header members defined
-     *        in RFC 1952. if {@code null}, use default header data.
-     * @throws    IOException If an I/O error has occurred.
-     * @throws    IllegalArgumentException if {@code size <= 0}
-     *
-     * @since 18
-     */
-    public GZIPOutputStream(OutputStream out,
-                            GZIPHeaderBuilder.GZIPHeaderData gzipHeaderData)
-        throws IOException
-    {
-        this(out, 512, false, gzipHeaderData);
     }
 
     /**

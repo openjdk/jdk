@@ -189,19 +189,19 @@ public class GZIPInputStream extends InflaterInputStream {
         // Skip optional extra field
         if ((flg & FEXTRA) == FEXTRA) {
             int m = readUShort(in);
-            builder.withExtraFieldBytes(readBytes(in, m));
+            builder.extraFieldBytes(readBytes(in, m));
             n += m + 2;
         }
         // Skip optional file name
         if ((flg & FNAME) == FNAME) {
             String filename = readString(in);
-            builder.withFileName(filename);
+            builder.fileName(filename);
             n += filename.getBytes("ISO-8859-1").length + 1;
         }
         // Skip optional file comment
         if ((flg & FCOMMENT) == FCOMMENT) {
             String fcomm = readString(in);
-            builder.withFileComment(fcomm);
+            builder.fileComment(fcomm);
             n += fcomm.getBytes("ISO-8859-1").length + 1;
         }
         // Check optional header CRC

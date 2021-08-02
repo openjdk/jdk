@@ -26,9 +26,11 @@ package java.util.zip;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 /**
- * This class implements the GZIP file header builder
- *
- * @author      Lin Zang
+ * This class implements the GZIP file header builder.
+ * The {@code GZIPHeaderData} could be composed by (optionally) call
+ * the method {@code extraFieldBytes}, {@code fileName}, {@code fileComment},
+ * {@code calculateHeaderCRC} and finally call {@code build}.
+ * 
  * @since 18
  *
  */
@@ -69,7 +71,7 @@ public class GZIPHeaderBuilder {
      *
      * @since 18
      */
-    public GZIPHeaderBuilder withExtraFieldBytes(byte[] extraFieldBytes) throws ZipException {
+    public GZIPHeaderBuilder extraFieldBytes(byte[] extraFieldBytes) throws ZipException {
         /*
          * Here do verification before write data.
          */
@@ -91,7 +93,7 @@ public class GZIPHeaderBuilder {
      *
      * @since 18
      */
-    public GZIPHeaderBuilder withFileName(String filename) {
+    public GZIPHeaderBuilder fileName(String filename) {
         if (filename == null || filename.length() == 0) {
             this.filename = null;
         }
@@ -110,7 +112,7 @@ public class GZIPHeaderBuilder {
      *
      * @since 18
      */
-    public GZIPHeaderBuilder withFileComment(String fileComment) {
+    public GZIPHeaderBuilder fileComment(String fileComment) {
         if (fileComment == null || fileComment.length() == 0) {
             this.fileComment = null;
         }

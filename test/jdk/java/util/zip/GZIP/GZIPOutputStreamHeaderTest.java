@@ -123,12 +123,12 @@ public class GZIPOutputStreamHeaderTest {
         crc.reset();
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GZIPHeaderBuilder.GZIPHeaderData headerData = new GZIPHeaderBuilder()
-                                                            .withExtraFieldBytes(xfield)
-                                                            .withFileName(fname)
-                                                            .withFileComment(fcomment)
+                                                            .extraFieldBytes(xfield)
+                                                            .fileName(fname)
+                                                            .fileComment(fcomment)
                                                             .calculateHeaderCRC(generateHeaderCrc)
                                                             .build();
-        try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos, headerData);) {
+        try (final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(baos, 512, false, headerData);) {
             gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
         }
         final byte[] compressed = baos.toByteArray();
