@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,37 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @summary Test of diagnostic command GC.heap_dump -all=true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/timeout=240 HeapDumpAllTest
+ * @bug 8271272
+ * @summary C2: assert(!had_error) failed: bad dominance
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainNeverExecuted TestMainNeverExecuted
+ *
  */
-public class HeapDumpAllTest extends HeapDumpTest {
-    public HeapDumpAllTest() {
-        super();
-        heapDumpArgs = "-all=true";
-    }
 
-    /* See HeapDumpTest for test cases */
+public class TestMainNeverExecuted {
+    public static long y;
+    static int iArrFld[] = new int[400];
+    static long x = 0;
+
+    public static void main(String[] strArr) {
+        for (int i1 = 0; i1 < 100; i1++)
+            vMeth(3, 5);
+    }
+    static void vMeth(int f, int g) {
+        int i3 = 23;
+        int i11 = 2, i12 = 12, i13 = 32901, i14 = 43741;
+        for (i11 = 7; i11 < 325; ++i11) {
+            i13 = 1;
+            while ((i13 += 3) < 5) {
+                iArrFld[i13 - 1] = 906;
+                for (i14 = i13; i14 < 5; i14 += 2) {
+                    y += i14;
+                    i3 += i14;
+                }
+            }
+        }
+        x += i11 + i12 + i13 + i14;
+    }
 }
