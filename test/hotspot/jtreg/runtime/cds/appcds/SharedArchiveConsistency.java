@@ -36,7 +36,6 @@
  */
 import jdk.test.lib.cds.CDSArchiveUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
 import java.io.File;
 import java.io.IOException;
 
