@@ -35,6 +35,7 @@
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -628,6 +629,29 @@ static JavaThread* const* make_threads_list_data(int entries) {
   data[entries] = NULL;         // Make sure the final entry is NULL.
   return data;
 }
+
+#ifdef ASSERT
+
+ThreadsList::Iterator::Iterator() : _thread_ptr(nullptr), _list(nullptr) {}
+
+uint ThreadsList::Iterator::check_index(ThreadsList* list, uint i) {
+  assert(i <= list->length(), "invalid index %u", i);
+  return i;
+}
+
+void ThreadsList::Iterator::assert_not_singular() const {
+  assert(_list != nullptr, "singular iterator");
+}
+
+void ThreadsList::Iterator::assert_dereferenceable() const {
+  assert(_thread_ptr < (_list->threads() + _list->length()), "not dereferenceable");
+}
+
+void ThreadsList::Iterator::assert_same_list(Iterator i) const {
+  assert(_list == i._list, "iterators from different lists");
+}
+
+#endif // ASSERT
 
 ThreadsList::ThreadsList(int entries) :
   _magic(THREADS_LIST_MAGIC),
