@@ -40,8 +40,8 @@ import javax.swing.UIManager;
 public class TestNimbusJEditorPaneBgColor {
 
     static JFrame frame;
-    static volatile Point pt;    
-    static volatile Rectangle bounds;    
+    static volatile Point pt;
+    static volatile Rectangle bounds;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -54,9 +54,9 @@ public class TestNimbusJEditorPaneBgColor {
                 }
                 JEditorPane editorPane = new JEditorPane();
                 editorPane.setContentType("text/plain");
-                editorPane.setEditable(false);		
+                editorPane.setEditable(false);
                 editorPane.setForeground(Color.GREEN);
-                editorPane.setBackground(Color.RED);		
+                editorPane.setBackground(Color.RED);
                 editorPane.setText("This text should be green on red");
 
                 frame = new JFrame();
@@ -67,12 +67,12 @@ public class TestNimbusJEditorPaneBgColor {
                 frame.setVisible(true);
             });
             robot.waitForIdle();
-            robot.delay(1000);	    
-            SwingUtilities.invokeAndWait(() -> {	    
+            robot.delay(1000);
+            SwingUtilities.invokeAndWait(() -> {
                 pt = frame.getLocationOnScreen();
-                bounds = frame.getBounds();	
+                bounds = frame.getBounds();
             });
-            if (!(robot.getPixelColor(pt.x + bounds.width/2, 
+            if (!(robot.getPixelColor(pt.x + bounds.width/2,
                                       pt.y + bounds.height/2)
                                 .equals(Color.RED))) {
                 throw new RuntimeException("JEditorPane bg Color not same as the color being set");
