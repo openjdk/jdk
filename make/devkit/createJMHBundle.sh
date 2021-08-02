@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 # Create a bundle in the build directory, containing what's needed to
 # build and run JMH microbenchmarks from the OpenJDK build.
 
-JMH_VERSION=1.28
+JMH_VERSION=1.32
 COMMONS_MATH3_VERSION=3.2
 JOPT_SIMPLE_VERSION=4.6
 
