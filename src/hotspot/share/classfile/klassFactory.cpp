@@ -181,7 +181,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
   int _minor_version = stream->get_u2_fast();
   int _major_version = stream->get_u2_fast();
 
-  if (UseNewCode && _major_version < JAVA_7_VERSION) {
+  if (_major_version < JAVA_7_VERSION) {
     typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
     
     // Copy Classfile from stream to a java byte array

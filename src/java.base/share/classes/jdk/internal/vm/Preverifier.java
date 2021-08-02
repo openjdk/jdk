@@ -108,7 +108,9 @@ public class Preverifier extends ClassVisitor {
 		cr.accept(cn, 0);
 		//List of methods
 		List<MethodNode> mns = cn.methods;
-
+		if ((cn.version & 0xFFFF) < 51) {
+			cn.version = 51;
+		}
 		System.out.println("Class name: " + cn.name + "\nMethods: " + mns.size());
 		for (MethodNode mn : mns) {
 			boolean hasJSR = false;
