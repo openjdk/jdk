@@ -1300,14 +1300,14 @@ public final class ZonedDateTime
     @Override
     public ZonedDateTime with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS:
-                    return create(newValue, getNano(), zone);
-                case OFFSET_SECONDS:
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> create(newValue, getNano(), zone);
+                case OFFSET_SECONDS -> {
                     ZoneOffset offset = ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue));
-                    return resolveOffset(offset);
-            }
-            return resolveLocal(dateTime.with(field, newValue));
+                    yield resolveOffset(offset);
+                }
+                default -> resolveLocal(dateTime.with(field, newValue));
+            };
         }
         return field.adjustInto(this, newValue);
     }

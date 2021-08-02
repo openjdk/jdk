@@ -38,7 +38,6 @@ import java.security.cert.Extension;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -97,67 +96,6 @@ public final class OCSP {
     }
 
     private OCSP() {}
-
-
-    /**
-     * Obtains the revocation status of a certificate using OCSP.
-     *
-     * @param cert the certificate to be checked
-     * @param issuerCert the issuer certificate
-     * @param responderURI the URI of the OCSP responder
-     * @param responderCert the OCSP responder's certificate
-     * @param date the time the validity of the OCSP responder's certificate
-     *    should be checked against. If null, the current time is used.
-     * @return the RevocationStatus
-     * @throws IOException if there is an exception connecting to or
-     *    communicating with the OCSP responder
-     * @throws CertPathValidatorException if an exception occurs while
-     *    encoding the OCSP Request or validating the OCSP Response
-     */
-
-    // Called by com.sun.deploy.security.TrustDecider
-    public static RevocationStatus check(X509Certificate cert,
-                                         X509Certificate issuerCert,
-                                         URI responderURI,
-                                         X509Certificate responderCert,
-                                         Date date)
-        throws IOException, CertPathValidatorException
-    {
-        return check(cert, issuerCert, responderURI, responderCert, date,
-                     Collections.<Extension>emptyList(),
-                     Validator.VAR_PLUGIN_CODE_SIGNING);
-    }
-
-
-    public static RevocationStatus check(X509Certificate cert,
-            X509Certificate issuerCert, URI responderURI,
-            X509Certificate responderCert, Date date, List<Extension> extensions,
-            String variant)
-        throws IOException, CertPathValidatorException
-    {
-        return check(cert, responderURI, null, issuerCert, responderCert, date,
-                extensions, variant);
-    }
-
-    public static RevocationStatus check(X509Certificate cert,
-            URI responderURI, TrustAnchor anchor, X509Certificate issuerCert,
-            X509Certificate responderCert, Date date,
-            List<Extension> extensions, String variant)
-            throws IOException, CertPathValidatorException
-    {
-        CertId certId;
-        try {
-            X509CertImpl certImpl = X509CertImpl.toImpl(cert);
-            certId = new CertId(issuerCert, certImpl.getSerialNumberObject());
-        } catch (CertificateException | IOException e) {
-            throw new CertPathValidatorException
-                ("Exception while encoding OCSPRequest", e);
-        }
-        OCSPResponse ocspResponse = check(Collections.singletonList(certId),
-                responderURI, new OCSPResponse.IssuerInfo(anchor, issuerCert),
-                responderCert, date, extensions, variant);
-        return (RevocationStatus) ocspResponse.getSingleResponse(certId);
-    }
 
     /**
      * Checks the revocation status of a list of certificates using OCSP.

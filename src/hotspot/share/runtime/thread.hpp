@@ -1126,6 +1126,8 @@ class JavaThread: public Thread {
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
  private:
+  DEBUG_ONLY(void verify_frame_info();)
+
   // Support for thread handshake operations
   HandshakeState _handshake;
  public:
@@ -1379,6 +1381,7 @@ class JavaThread: public Thread {
   // Misc. operations
   const char* name() const;
   const char* type_name() const { return "JavaThread"; }
+  static const char* name_for(oop thread_obj);
 
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
@@ -1425,6 +1428,9 @@ class JavaThread: public Thread {
   static JavaThread* current() {
     return JavaThread::cast(Thread::current());
   }
+
+  // Returns the current thread as a JavaThread, or NULL if not attached
+  static inline JavaThread* current_or_null();
 
   // Casts
   static JavaThread* cast(Thread* t) {
@@ -1594,6 +1600,12 @@ public:
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 
+  // Helper function to create the java.lang.Thread object for a
+  // VM-internal thread. The thread will have the given name, be
+  // part of the System ThreadGroup and if is_visible is true will be
+  // discoverable via the system ThreadGroup.
+  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.
   static void start_internal_daemon(JavaThread* current, JavaThread* target,
@@ -1603,6 +1615,11 @@ public:
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
 };
+
+inline JavaThread* JavaThread::current_or_null() {
+  Thread* current = Thread::current_or_null();
+  return current != nullptr ? JavaThread::cast(current) : nullptr;
+}
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.

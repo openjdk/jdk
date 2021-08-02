@@ -31,9 +31,9 @@ import sun.hotspot.WhiteBox;
  * @summary Check if VM can kill thread which doesn't reach safepoint.
  * @bug 8219584 8227528
  * @library /testlibrary /test/lib
- * @build TestAbortVMOnSafepointTimeout
+ * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestAbortVMOnSafepointTimeout
+ * @run driver TestAbortVMOnSafepointTimeout
  */
 
 public class TestAbortVMOnSafepointTimeout {
@@ -55,13 +55,13 @@ public class TestAbortVMOnSafepointTimeout {
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("Timed out while spinning to reach a safepoint.");
+        output.shouldContain("Timed out while spinning to reach a safepoint.");
         if (Platform.isWindows()) {
-            output.shouldMatch("Safepoint sync time longer than");
+            output.shouldContain("Safepoint sync time longer than");
         } else {
-            output.shouldMatch("SIGILL");
+            output.shouldContain("SIGILL");
             if (Platform.isLinux()) {
-                output.shouldMatch("(sent by kill)");
+                output.shouldContain("(sent by kill)");
             }
         }
         output.shouldNotHaveExitValue(0);

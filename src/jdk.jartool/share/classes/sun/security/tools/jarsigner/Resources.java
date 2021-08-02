@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"s", "s"},
         {"m", "m"},
         {"k", "k"},
+        {"X", "X"},
+        {"q", "?"},
         {".and.d.more.", "(and %d more)"},
         {".s.signature.was.verified.",
                 "  s = signature was verified "},
@@ -142,9 +144,12 @@ public class Resources extends java.util.ListResourceBundle {
                 "  k = at least one certificate was found in keystore"},
         {".X.not.signed.by.specified.alias.es.",
                 "  X = not signed by specified alias(es)"},
+        {".q.unsigned.entry",
+                "  ? = unsigned entry"},
         {"no.manifest.", "no manifest."},
         {".Signature.related.entries.","(Signature related entries)"},
         {".Unsigned.entries.", "(Unsigned entries)"},
+        {".Directory.entries.", "(Directory entries)"},
         {"jar.is.unsigned",
                 "jar is unsigned."},
         {"jar.treated.unsigned",

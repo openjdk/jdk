@@ -769,6 +769,15 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_VZEROUPPER;
       _features &= ~CPU_AVX512BW;
       _features &= ~CPU_AVX512VL;
+      _features &= ~CPU_AVX512DQ;
+      _features &= ~CPU_AVX512_VNNI;
+      _features &= ~CPU_AVX512_VAES;
+      _features &= ~CPU_AVX512_VPOPCNTDQ;
+      _features &= ~CPU_AVX512_VPCLMULQDQ;
+      _features &= ~CPU_AVX512_VBMI;
+      _features &= ~CPU_AVX512_VBMI2;
+      _features &= ~CPU_CLWB;
+      _features &= ~CPU_FLUSHOPT;
     }
   }
 
@@ -1780,6 +1789,10 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
     // 06_9EH | D | 9th Generation Intel® Core™ Processor Family based on microarchitecturecode name Coffee Lake H (8+2)
     // 06_9EH | D | 9th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake S (8+2)
     return _stepping == 0x9 || _stepping == 0xA || _stepping == 0xB || _stepping == 0xD;
+  case 0xA5:
+    // Not in Intel documentation.
+    // 06_A5H |    | 10th Generation Intel® Core™ Processor Family based on microarchitecture code name Comet Lake S/H
+    return true;
   case 0xA6:
     // 06_A6H | 0  | 10th Generation Intel® Core™ Processor Family based on microarchitecture code name Comet Lake U62
     return _stepping == 0x0;
