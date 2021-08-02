@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,18 @@
  */
 
 /*
- * @test DoubleTest
- * @bug 8028756
- * @library /test/lib
+ * @test WBApi
+ * @summary verify that whitebox functions can be linked and executed
  * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DoubleTest
- * @summary testing of WB::set/getDoubleVMFlag()
- * @author igor.ignatyev@oracle.com
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI WBApi
  */
 
-public class DoubleTest {
-    private static final String FLAG_NAME = "CompileThresholdScaling";
-    private static final Double[] TESTS = {0d, -0d, 1d, Double.MAX_VALUE};
-
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setDoubleVMFlag,
-            VmFlagTest.WHITE_BOX::getDoubleVMFlag);
+import jdk.test.whitebox.WhiteBox;
+public class WBApi {
+    public static void main(String... args) {
+        System.out.printf("args at: %x\n",WhiteBox.getWhiteBox().getObjectAddress(args));
     }
 }
-

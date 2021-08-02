@@ -39,7 +39,7 @@ groups=TEST.groups
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs classes will be added to BCP.
 requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
-requires.extraPropDefns.bootlibs = ../lib/sun
+requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
