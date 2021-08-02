@@ -44,7 +44,7 @@ final class StringLatin1 {
 
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
-        return getChar(value, index);
+        return (char)(value[index] & 0xff);
     }
 
     public static boolean canEncode(int cp) {
