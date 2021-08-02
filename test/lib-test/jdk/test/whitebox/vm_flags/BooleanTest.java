@@ -29,14 +29,14 @@
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BooleanTest
  * @summary testing of WB::set/getBooleanVMFlag()
  * @author igor.ignatyev@oracle.com
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import sun.management.*;
