@@ -98,7 +98,7 @@ public class Preverifier extends ClassVisitor {
 	 * @return ClassNode with altered instruction list
 	 */
 	public static ClassNode replaceOpcodes(ClassReader cr, byte[] bytecode) {	
-		//System.out.println("Replacing opcodes...");
+		System.out.println("Replacing opcodes...");
 		// Flag for expanding bytecode when JSRs and RETs overlap
 		boolean mustExpand = false;
 		// Flag for repeated scans through instruction list
@@ -133,7 +133,7 @@ public class Preverifier extends ClassVisitor {
 					if (inList.get(i).getOpcode() == Opcodes.JSR || inList.get(i).getOpcode() == 201) {
 						hasJSR = true;
 						boolean hasRet = false;
-						//System.out.println("Replacing JSR...");
+						System.out.println("Replacing JSR...");
 						// Extract the operator from JSR
 						LabelNode lb = ((JumpInsnNode)inList.get(i)).label;
 
@@ -142,11 +142,11 @@ public class Preverifier extends ClassVisitor {
 							if (inList.get(j).getOpcode() == Opcodes.RET) {
 								hasRet = true;
 								if (retLabelMap.containsKey(inList.get(j))) {
-									//System.out.println("Another JSR points to this RET!");
+									System.out.println("Another JSR points to this RET!");
 									mustExpand = true;
 								}
 								else {
-									//System.out.println("Matching RET found");
+									System.out.println("Matching RET found");
 									retLb = new LabelNode(new Label());
 									retLabelMap.put(inList.get(j), retLb);
 								}
@@ -154,18 +154,18 @@ public class Preverifier extends ClassVisitor {
 							}
 						}
 						if (mustExpand) {
-							//System.out.println("Expanding code...");
+							System.out.println("Expanding code...");
 							// Push null to stack to replicate JSR pushing address
 							newInst.add(new InsnNode(Opcodes.ACONST_NULL));
 							for (AbstractInsnNode n = inList.get(inList.indexOf(lb)+1); n.getOpcode() != Opcodes.RET; n=n.getNext()) {
 								// If there is a JSR in the code to be copied, replace it with the subroutine it points to
 								if (n.getOpcode() == Opcodes.JSR) {
-									//System.out.println("Replacing nested JSR");
+									System.out.println("Replacing nested JSR");
 									// Push null to stack to replicate JSR pushing address
 									newInst.add(new InsnNode(Opcodes.ACONST_NULL));
 									LabelNode nestedLb = ((JumpInsnNode)n).label;
 									for (AbstractInsnNode m = inList.get(inList.indexOf(nestedLb)+1); m.getOpcode() != Opcodes.RET; m=m.getNext()) {
-										//System.out.println("Insn: " + m.getOpcode());
+										System.out.println("Insn: " + m.getOpcode());
 										newInst.add(m.clone(cloneMap));
 									}
 								}
@@ -185,10 +185,10 @@ public class Preverifier extends ClassVisitor {
 						}
 					}
 					else if (inList.get(i).getOpcode() == Opcodes.RET) {
-						//System.out.println("Replacing RET...");
+						System.out.println("Replacing RET...");
 						// Replace RET with GOTO which jumps to the label corresponding to its associated JSR
 						if (!retLabelMap.containsKey(inList.get(i))) {
-							//System.out.println("RET has no matching JSR yet");
+							System.out.println("RET has no matching JSR yet");
 							newInst.add(inList.get(i));
 							continueScanning = true; // Matching JSR may be above RET
 						}
