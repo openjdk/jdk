@@ -25,6 +25,9 @@
  * @test
  * @bug 8271308
  * @summary Verify that transferTo() copies more than Integer.MAX_VALUE bytes
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main Transfer2GPlus
  */
 
 import java.io.File;
@@ -41,8 +44,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
+import jdk.test.lib.Platform;
 
 public class Transfer2GPlus {
+    private static final int LINUX_MAX_TRANSFER_SIZE = 0x7ffff000;
+
     private static final long BASE   = (long)Integer.MAX_VALUE;
     private static final int  EXTRA  = 1024;
     private static final long LENGTH = BASE + EXTRA;
@@ -78,9 +84,15 @@ public class Transfer2GPlus {
             try (FileChannel dstCh = FileChannel.open(dst,
                  StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                 long n;
-                if ((n = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH)
-                    throw new RuntimeException("Too few bytes transferred: " +
-                        n + " < " + LENGTH);
+                if ((n = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH) {
+                    if (!Platform.isLinux())
+                        throw new RuntimeException("Transfer too small: " + n);
+
+                    if (n != 0x7ffff000)
+                        throw new RuntimeException("Unexpected transfer size: " + n);
+                    if ((n += srcCh.transferTo(n, LENGTH, dstCh)) != LENGTH)
+                        throw new RuntimeException("Unexpected total size: " + n);
+                }
 
                 if (dstCh.size() < LENGTH)
                     throw new RuntimeException("Target file too small: " +

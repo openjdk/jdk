@@ -194,8 +194,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 }
 
 
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_maxTransferSize0(JNIEnv* env, jobject this)
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
     return MAX_TRANSMIT_SIZE;
 }

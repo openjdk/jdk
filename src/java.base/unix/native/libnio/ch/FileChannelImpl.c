@@ -252,8 +252,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 #endif
 }
 
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_maxTransferSize0(JNIEnv* env, jobject this)
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
 #if defined(LINUX)
     return 0x7ffff000; // 2,147,479,552 maximum for sendfile()

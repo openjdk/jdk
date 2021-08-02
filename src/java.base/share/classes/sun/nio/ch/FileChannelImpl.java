@@ -622,18 +622,18 @@ public class FileChannelImpl
         return count - remaining;
     }
 
-    private long transferToArbitraryChannel(long position, int icount,
+    private long transferToArbitraryChannel(long position, long count,
                                             WritableByteChannel target)
         throws IOException
     {
         // Untrusted target: Use a newly-erased buffer
-        int c = Math.min(icount, TRANSFER_SIZE);
+        int c = (int)Math.min(count, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
         long tw = 0;                    // Total bytes written
         long pos = position;
         try {
-            while (tw < icount) {
-                bb.limit(Math.min((int)(icount - tw), TRANSFER_SIZE));
+            while (tw < count) {
+                bb.limit((int)Math.min(count - tw, TRANSFER_SIZE));
                 int nr = read(bb, pos);
                 if (nr <= 0)
                     break;
@@ -655,24 +655,6 @@ public class FileChannelImpl
         }
     }
 
-    private long transferTo(long position, int icount,
-                            WritableByteChannel target)
-        throws IOException
-    {
-        long n;
-
-        // Attempt a direct transfer, if the kernel supports it
-        if ((n = transferToDirectly(position, icount, target)) >= 0)
-            return n;
-
-        // Attempt a mapped transfer, but only to trusted channel types
-        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
-            return n;
-
-        // Slow path for untrusted targets
-        return transferToArbitraryChannel(position, icount, target);
-    }
-
     public long transferTo(long position, long count,
                            WritableByteChannel target)
         throws IOException
@@ -691,21 +673,22 @@ public class FileChannelImpl
         if (position > sz)
             return 0;
 
-        long bytesTransferred = 0L;
-        final long maxTransferSize = maxTransferSize0();
-        while (bytesTransferred < count) {
-            int icount =
-                (int)Math.min(count - bytesTransferred, maxTransferSize);
-            if ((sz - position) < icount)
-                icount = (int)(sz - position);
-            long n = transferTo(position, icount, target);
-            if (n <= 0)
-                break;
-            position += n;
-            bytesTransferred += n;
-        }
+        if ((sz - position) < count)
+            count = (int)(sz - position);
 
-        return bytesTransferred;
+        // Attempt a direct transfer, if the kernel supports it, limiting
+        // the number of bytes according to which platform
+        int icount = (int)Math.min(count, maxDirectTransferSize0());
+        long n;
+        if ((n = transferToDirectly(position, icount, target)) >= 0)
+            return n;
+
+        // Attempt a mapped transfer, but only to trusted channel types
+        if ((n = transferToTrustedChannel(position, count, target)) >= 0)
+            return n;
+
+        // Slow path for untrusted targets
+        return transferToArbitraryChannel(position, count, target);
     }
 
     private long transferFromFileChannel(FileChannelImpl src,
@@ -1367,7 +1350,7 @@ public class FileChannelImpl
                                     long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
-    private native long maxTransferSize0();
+    private native int maxDirectTransferSize0();
 
     // Caches fieldIDs
     private static native long initIDs();
