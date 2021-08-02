@@ -39,8 +39,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
-import sun.hotspot.WhiteBox;
 
 public class SharedArchiveConsistency {
     public static boolean shareAuto;       // true  == -Xshare:auto
@@ -62,8 +60,6 @@ public class SharedArchiveConsistency {
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
         "Unable to use shared archive",
-        "The shared archive file has a bad magic number",
-        "Unable to map shared spaces",
         "An error has occurred while processing the shared archive file.",
         "Checksum verification failed.",
         "The shared archive file has been truncated."
@@ -107,7 +103,6 @@ public class SharedArchiveConsistency {
             throw new RuntimeException("Arg must be 'on' or 'auto'");
         }
         shareAuto = args[0].equals("auto");
-        CDSArchiveUtils.initialize();  // all offsets available
         String jarFile = JarBuilder.getOrCreateHelloJar();
 
         // dump (appcds.jsa created)
@@ -207,14 +202,14 @@ public class SharedArchiveConsistency {
             output.shouldContain(HELLO_WORLD);
         }
 
-        // delete bytes in data section
-        System.out.println("\n5. Delete bytes at beginning of data section, should fail\n");
+        // insert  bytes in data section
+        System.out.println("\n5. Insert bytes at beginning of data section, should fail\n");
         String insertBytes = startNewArchive("insert-bytes");
         CDSArchiveUtils.insertBytesRandomlyAfterHeader(orgJsaFile, insertBytes, new byte[4096]);
         testAndCheck(verifyExecArgs);
 
-        // insert bytes in data section forward
-        System.out.println("\n6. Insert bytes at beginning of data section, should fail\n");
+        // delete bytes in data section forward
+        System.out.println("\n6. Delete bytes at beginning of data section, should fail\n");
         String deleteBytes = startNewArchive("delete-bytes");
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
         testAndCheck(verifyExecArgs);

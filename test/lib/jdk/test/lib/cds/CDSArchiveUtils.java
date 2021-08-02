@@ -69,28 +69,33 @@ public class CDSArchiveUtils {
     };
     public static int num_regions = shared_region_name.length;
 
-    public static void initialize() throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        offsetMagic = wb.getOffsetForName("FileMapHeader::_magic");
-        offsetVersion = wb.getOffsetForName("FileMapHeader::_version");
-        offsetJvmIdent = wb.getOffsetForName("FileMapHeader::_jvm_ident");
-        spOffsetCrc = wb.getOffsetForName("CDSFileMapRegion::_crc");
+    static {
+        WhiteBox wb;
+        try {
+            wb = WhiteBox.getWhiteBox();
+            offsetMagic = wb.getOffsetForName("FileMapHeader::_magic");
+            offsetVersion = wb.getOffsetForName("FileMapHeader::_version");
+            offsetJvmIdent = wb.getOffsetForName("FileMapHeader::_jvm_ident");
+            spOffsetCrc = wb.getOffsetForName("CDSFileMapRegion::_crc");
+            spOffset = wb.getOffsetForName("FileMapHeader::_space[0]") - offsetMagic;
+            spUsedOffset = wb.getOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
+            sizetSize = wb.getOffsetForName("size_t_size");
+            intSize = wb.getOffsetForName("int_size");
+            cdsFileMapRegionSize  = wb.getOffsetForName("CDSFileMapRegion_size");
+            alignment = wb.metaspaceSharedRegionAlignment();
+            // file_header_size is structure size, real size aligned with alignment
+            // so must be calculated after alignment is available
+            fileHeaderSize = (int)alignUpWithAlignment(wb.getOffsetForName("file_header_size"));
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
         try {
             int nonExistOffset = wb.getOffsetForName("FileMapHeader::_non_exist_offset");
             System.exit(-1); // should fail
         } catch (Exception e) {
             // success
         }
-
-        spOffset = wb.getOffsetForName("FileMapHeader::_space[0]") - offsetMagic;
-        spUsedOffset = wb.getOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
-        sizetSize = wb.getOffsetForName("size_t_size");
-        intSize = wb.getOffsetForName("int_size");
-        cdsFileMapRegionSize  = wb.getOffsetForName("CDSFileMapRegion_size");
-        alignment = wb.metaspaceSharedRegionAlignment();
-        // file_header_size is structure size, real size aligned with alignment
-        // so must be after alignment available
-        fileHeaderSize = (int)alignUpWithAlignment(wb.getOffsetForName("file_header_size"));
     }
 
     private static long alignUpWithAlignment(long l) {
@@ -279,6 +284,7 @@ public class CDSArchiveUtils {
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
             outputChannel.transferFrom(inputChannel, 0, offset);
+            outputChannel.position(offset);
             outputChannel.write(ByteBuffer.wrap(bytes));
             outputChannel.transferFrom(inputChannel, offset + bytes.length, orgSize - bytes.length);
         }
