@@ -30,7 +30,7 @@ import java.io.IOException;
  * The {@code GZIPHeaderData} could be composed by (optionally) call
  * the method {@code extraFieldBytes}, {@code fileName}, {@code fileComment},
  * {@code calculateHeaderCRC} and finally call {@code build}.
- * 
+ *
  * @since 18
  *
  */
