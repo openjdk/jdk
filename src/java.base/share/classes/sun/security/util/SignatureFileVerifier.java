@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -279,7 +279,7 @@ public class SignatureFileVerifier {
         Object obj = null;
         try {
             obj = Providers.startJarVerification();
-            processImpl(signers, manifestDigests);
+            processImpl(signers, manifestDigests, manifestName);
         } finally {
             Providers.stopJarVerification(obj);
         }
@@ -287,7 +287,7 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -368,7 +368,7 @@ public class SignatureFileVerifier {
         }
 
         // MANIFEST.MF is always regarded as signed
-        updateSigners(newSigners, signers, JarFile.MANIFEST_NAME);
+        updateSigners(newSigners, signers, manifestName);
     }
 
     /**

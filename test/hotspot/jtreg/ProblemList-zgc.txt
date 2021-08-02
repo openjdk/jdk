@@ -41,6 +41,10 @@ serviceability/sa/ClhsdbPstack.java#id1                       8268722   macosx-x
 serviceability/sa/TestJmapCore.java                           8268722,8268283   macosx-x64,linux-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   generic-all
 
+serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
+serviceability/sa/ClhsdbPstack.java#id0                       8248912   generic-all
+serviceability/sa/ClhsdbPstack.java#id1                       8248912   generic-all
+
 serviceability/dcmd/framework/HelpTest.java                   8268433 windows-x64
 serviceability/dcmd/framework/InvalidCommandTest.java         8268433 windows-x64
 serviceability/dcmd/framework/VMVersionTest.java              8268433 windows-x64

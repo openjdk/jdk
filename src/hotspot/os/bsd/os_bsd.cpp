@@ -2355,9 +2355,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
