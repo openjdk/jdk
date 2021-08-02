@@ -443,7 +443,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      */
     @Override
     public String toString() {
-        return toString(value);
+        return Integer.toString(value);
     }
 
     /**

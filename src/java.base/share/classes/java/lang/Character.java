@@ -8658,7 +8658,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     @Override
     public String toString() {
-        return toString(value);
+        return String.valueOf(value);
     }
 
     /**

@@ -438,7 +438,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      */
     @Override
     public String toString() {
-        return toString(value);
+        return Integer.toString(value);
     }
 
     /**
