@@ -22,6 +22,11 @@ class T6521805 {
         }
     }
 
-    class Outer {}
+    class Outer {
+        {
+            // access enclosing instance so this$0 field is generated
+            T6521805.this.toString();
+        }
+    }
 
 }

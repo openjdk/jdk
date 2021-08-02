@@ -49,9 +49,17 @@
 public class ThisFieldTest {
     {
         class Local {
+            {
+                // access enclosing instance so this$0 field is generated
+                ThisFieldTest.this.toString();
+            }
         }
 
         new Local() {
+            {
+                // access enclosing instance so this$0 field is generated
+                ThisFieldTest.this.toString();
+            }
         };
     }
 }

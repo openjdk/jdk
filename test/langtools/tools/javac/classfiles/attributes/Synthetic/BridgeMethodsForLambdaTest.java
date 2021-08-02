@@ -80,6 +80,11 @@ public class BridgeMethodsForLambdaTest {
         @Override
         public void run() {
         }
+
+        {
+            // access enclosing instance so this$0 field is generated
+            BridgeMethodsForLambdaTest.this.toString();
+        }
     }
 
     private static class Inner2 {
@@ -92,12 +97,22 @@ public class BridgeMethodsForLambdaTest {
     private class Inner3 {
         public void function() {
         }
+
+        {
+            // access enclosing instance so this$0 field is generated
+            BridgeMethodsForLambdaTest.this.toString();
+        }
     }
 
     private class Inner4 extends Inner3 {
         @Override
         public void function() {
             Runnable r = super::function;
+        }
+
+        {
+            // access enclosing instance so this$0 field is generated
+            BridgeMethodsForLambdaTest.this.toString();
         }
     }
 

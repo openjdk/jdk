@@ -65,7 +65,10 @@ public class AccessToPrivateSiblingsTest {
     private class Inner1 {
         private Inner1() {}
         private int var;
-        private void function() {}
+        private void function() {
+            // access enclosing instance so this$0 field is generated
+            AccessToPrivateSiblingsTest.this.toString();
+        }
 
         {
             Inner3 inner = new Inner3();

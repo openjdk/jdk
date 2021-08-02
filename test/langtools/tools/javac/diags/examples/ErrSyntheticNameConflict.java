@@ -30,5 +30,10 @@ class ErrSyntheticNameConflict {
         ErrSyntheticNameConflict this$0 = null;
     }
 
-    public class Inner extends Outer { }
+    public class Inner extends Outer {
+        {
+            // access enclosing instance so this$0 field is generated
+            ErrSyntheticNameConflict.this.toString();
+        }
+    }
 }

@@ -61,18 +61,33 @@ public class AccessToPrivateInnerClassConstructorsTest {
     private class A {
         private A() { }
         private A(AccessToPrivateInnerClassConstructorsTest$1 o) { }
+
+        {
+            // access enclosing instance so this$0 field is generated
+            AccessToPrivateInnerClassConstructorsTest.this.toString();
+        }
     }
 
     void f() {
         new A();
         new A(null);
 
-        class Local {};
+        class Local {
+            {
+                // access enclosing instance so this$0 field is generated
+                AccessToPrivateInnerClassConstructorsTest.this.toString();
+            }
+        };
         new Local();
     }
 
     void g() {
-        class Local {};
+        class Local {
+            {
+                // access enclosing instance so this$0 field is generated
+                AccessToPrivateInnerClassConstructorsTest.this.toString();
+            }
+        };
         new Local();
     }
 }
