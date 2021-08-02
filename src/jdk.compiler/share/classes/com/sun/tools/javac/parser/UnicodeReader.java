@@ -86,6 +86,11 @@ public class UnicodeReader {
     private boolean wasBackslash;
 
     /**
+     * true if the last character was derived from an unicode escape sequence.
+     */
+    private boolean wasUnicodeEscape;
+
+    /**
      * Log for error reporting.
      */
     private final Log log;
@@ -105,6 +110,7 @@ public class UnicodeReader {
         this.character = '\0';
         this.codepoint = 0;
         this.wasBackslash = false;
+        this.wasUnicodeEscape = false;
         this.log = sf.log;
 
         nextCodePoint();
@@ -161,17 +167,22 @@ public class UnicodeReader {
         // Fetch next character.
         nextCodeUnit();
 
-        // If second backslash is detected.
-        if (wasBackslash) {
-            // Treat like a normal character (not part of unicode escape.)
-            wasBackslash = false;
-        } else if (character == '\\') {
-            // May be an unicode escape.
+        if (character == '\\' && (!wasBackslash || wasUnicodeEscape)) {
+            // Is a backslash and may be an unicode escape.
             switch (unicodeEscape()) {
-                case BACKSLASH -> wasBackslash = true;
-                case VALID_ESCAPE -> wasBackslash = false;
+                case BACKSLASH -> {
+                    wasUnicodeEscape = false;
+                    wasBackslash = !wasBackslash;
+                }
+                case VALID_ESCAPE -> {
+                    wasUnicodeEscape = true;
+                    wasBackslash = character == '\\' && !wasBackslash;
+                }
                 case BROKEN_ESCAPE -> nextUnicodeInputCharacter(); //skip broken unicode escapes
             }
+        } else {
+            wasBackslash = false;
+            wasUnicodeEscape = false;
         }
 
         // Codepoint and character match if not surrogate.
@@ -297,6 +308,7 @@ public class UnicodeReader {
         position = pos;
         width = 0;
         wasBackslash = false;
+        wasUnicodeEscape = false;
         nextCodePoint();
     }
 

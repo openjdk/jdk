@@ -55,13 +55,13 @@ public class TestAbortVMOnSafepointTimeout {
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("Timed out while spinning to reach a safepoint.");
+        output.shouldContain("Timed out while spinning to reach a safepoint.");
         if (Platform.isWindows()) {
-            output.shouldMatch("Safepoint sync time longer than");
+            output.shouldContain("Safepoint sync time longer than");
         } else {
-            output.shouldMatch("SIGILL");
+            output.shouldContain("SIGILL");
             if (Platform.isLinux()) {
-                output.shouldMatch("(sent by kill)");
+                output.shouldContain("(sent by kill)");
             }
         }
         output.shouldNotHaveExitValue(0);

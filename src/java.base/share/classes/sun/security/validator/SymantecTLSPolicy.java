@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
+import sun.security.util.Debug;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -39,6 +40,8 @@ import sun.security.x509.X509CertImpl;
  * restricted.
  */
 final class SymantecTLSPolicy {
+
+    private static final Debug debug = Debug.getInstance("certpath");
 
     // SHA-256 certificate fingerprints of distrusted roots
     private static final Set<String> FINGERPRINTS = Set.of(
@@ -154,14 +157,24 @@ final class SymantecTLSPolicy {
     static void checkDistrust(X509Certificate[] chain)
                               throws ValidatorException {
         X509Certificate anchor = chain[chain.length-1];
-        if (FINGERPRINTS.contains(fingerprint(anchor))) {
+        String fp = fingerprint(anchor);
+        if (fp == null) {
+            throw new ValidatorException("Cannot generate fingerprint for "
+                + "trust anchor of TLS server certificate");
+        }
+        if (FINGERPRINTS.contains(fp)) {
             Date notBefore = chain[0].getNotBefore();
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);
             // check if chain goes through one of the subCAs
             if (chain.length > 2) {
                 X509Certificate subCA = chain[chain.length-2];
-                LocalDate distrustDate = EXEMPT_SUBCAS.get(fingerprint(subCA));
+                fp = fingerprint(subCA);
+                if (fp == null) {
+                    throw new ValidatorException("Cannot generate fingerprint "
+                        + "for intermediate CA of TLS server certificate");
+                }
+                LocalDate distrustDate = EXEMPT_SUBCAS.get(fp);
                 if (distrustDate != null) {
                     // reject if certificate is issued after specified date
                     checkNotBefore(ldNotBefore, distrustDate, anchor);
@@ -174,9 +187,7 @@ final class SymantecTLSPolicy {
     }
 
     private static String fingerprint(X509Certificate cert) {
-        return (cert instanceof X509CertImpl)
-               ? ((X509CertImpl)cert).getFingerprint("SHA-256")
-               : X509CertImpl.getFingerprint("SHA-256", cert);
+        return X509CertImpl.getFingerprint("SHA-256", cert, debug);
     }
 
     private static void checkNotBefore(LocalDate notBeforeDate,
