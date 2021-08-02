@@ -59,7 +59,7 @@ public class Preverifier extends ClassVisitor {
         ClassReader cr;
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
-        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
         	throw new InternalError("Classfile not parsed correctly");
@@ -108,6 +108,7 @@ public class Preverifier extends ClassVisitor {
 		cr.accept(cn, 0);
 		//List of methods
 		List<MethodNode> mns = cn.methods;
+		// Major version is 16 LSB
 		if ((cn.version & 0xFFFF) < 51) {
 			cn.version = 51;
 		}
