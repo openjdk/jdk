@@ -106,7 +106,7 @@ applications/jcstress/copy.java 8229852 linux-x64
 
 # :hotspot_serviceability
 
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-all
 
@@ -117,8 +117,6 @@ serviceability/sa/ClhsdbCDSCore.java 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#id1 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#id3 8269982 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#id1 8269982 macosx-aarch64
-
-serviceability/dcmd/gc/HeapDumpAllTest.java 8270341 generic-x64
 
 #############################################################################
 

@@ -424,8 +424,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
 class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
-  primitive_hash<Symbol*>,
-  primitive_equals<Symbol*>,
   15889, // prime number
   ResourceObj::C_HEAP> {};
 

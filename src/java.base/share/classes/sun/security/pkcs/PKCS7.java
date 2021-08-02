@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,19 +578,18 @@ public class PKCS7 {
     public SignerInfo[] verify(byte[] bytes)
     throws NoSuchAlgorithmException, SignatureException {
 
-        Vector<SignerInfo> intResult = new Vector<>();
+        ArrayList<SignerInfo> intResult = new ArrayList<>();
         for (int i = 0; i < signerInfos.length; i++) {
 
             SignerInfo signerInfo = verify(signerInfos[i], bytes);
             if (signerInfo != null) {
-                intResult.addElement(signerInfo);
+                intResult.add(signerInfo);
             }
         }
         if (!intResult.isEmpty()) {
 
             SignerInfo[] result = new SignerInfo[intResult.size()];
-            intResult.copyInto(result);
-            return result;
+            return intResult.toArray(result);
         }
         return null;
     }
