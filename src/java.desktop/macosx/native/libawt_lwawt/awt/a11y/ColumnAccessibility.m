@@ -65,7 +65,7 @@ static jmethodID jm_getChildrenAndRoles = NULL;
         jsize arrayLen = (*env)->GetArrayLength(env, jchildrenAndRoles);
         NSMutableArray *childrenCells = [NSMutableArray arrayWithCapacity:arrayLen/2];
 
-        NSUInteger childIndex = [self columnNumberInTable];
+        NSUInteger childIndex = fIndex;
 
         int inc = [(TableAccessibility *)[self accessibilityParent] accessibilityRowCount] * 2;
         NSInteger i = childIndex * 2;
@@ -104,9 +104,9 @@ static jmethodID jm_getChildrenAndRoles = NULL;
     }
 }
 
-- (NSUInteger)columnNumberInTable
+- (NSInteger)accessibilityIndex
 {
-    return self->fIndex;
+    return fIndex;
 }
 
 @end

@@ -73,12 +73,8 @@ static jmethodID sjm_getAccessibleEditableText = NULL;
 
     // We cheat because we know that the array is 4 elements long (x, y, width, height)
     jdouble *values = (*env)->GetDoubleArrayElements(env, axBounds, 0);
+    CHECK_EXCEPTION();
 
-    if (values == NULL) {
-        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
-        NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__);
-        return NSMakeRect(0, 0, 0, 0);
-    };
     NSRect bounds;
     bounds.origin.x = values[0];
     bounds.origin.y = [[[[self view] window] screen] frame].size.height - values[1] - values[3]; //values[1] is y-coord from top-left of screen. Flip. Account for the height (values[3]) when flipping

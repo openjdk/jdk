@@ -69,9 +69,9 @@ static jmethodID jm_getChildrenAndRoles = NULL;
         jsize arrayLen = (*env)->GetArrayLength(env, jchildrenAndRoles);
         NSMutableArray *childrenCells = [NSMutableArray arrayWithCapacity:arrayLen/2];
 
-        NSUInteger childIndex = [self rowNumberInTable] * [(TableAccessibility *)parent accessibilityColumnCount];
+        NSUInteger childIndex = fIndex * [(TableAccessibility *)parent accessibilityColumnCount];
         NSInteger i = childIndex * 2;
-        NSInteger n = ([self rowNumberInTable] + 1) * [(TableAccessibility *)parent accessibilityColumnCount] * 2;
+        NSInteger n = (fIndex + 1) * [(TableAccessibility *)parent accessibilityColumnCount] * 2;
         for(i; i < n; i+=2)
         {
             jobject /* Accessible */ jchild = (*env)->GetObjectArrayElement(env, jchildrenAndRoles, i);
@@ -131,11 +131,6 @@ static jmethodID jm_getChildrenAndRoles = NULL;
     return [super accessibilityParent];
 }
 
-- (NSUInteger)rowNumberInTable
-{
-    return (NSUInteger)self->fIndex;
-}
-
 - (NSRect)accessibilityFrame
 {
         int height = [[[self accessibilityChildren] objectAtIndex:0] accessibilityFrame].size.height;
@@ -148,4 +143,3 @@ static jmethodID jm_getChildrenAndRoles = NULL;
 }
 
 @end
-

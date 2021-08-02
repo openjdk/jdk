@@ -70,7 +70,7 @@
         location = [table accessibleRowAtIndex:fIndex];
     }
 
-    return NSMakeRange(location, 0);
+    return NSMakeRange(location, 1);
 }
 
 - (NSRange)accessibilityColumnIndexRange {
@@ -80,7 +80,7 @@
         location = [table accessibleColumnAtIndex:fIndex];
     }
 
-    return NSMakeRange(location, 0);
+    return NSMakeRange(location, 1);
 }
 
 @end
