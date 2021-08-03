@@ -71,7 +71,7 @@ public class IORedirector extends Thread {
     public IORedirector(BufferedReader in, Log log, String prefix) {
         this();
         this.bin  = in;
-        addProcessor( s -> log.println(prefix + s));
+        addProcessor(s -> log.println(prefix + s));
     }
 
     public void addProcessor(Consumer<String> lineProcessor) {

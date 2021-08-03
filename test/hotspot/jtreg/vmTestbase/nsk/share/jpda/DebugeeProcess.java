@@ -304,8 +304,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     /**
      * Start thread redirecting the debugee's stdout to the
-     * given <code>out</code> stream. If the debugee's stdout
-     * was already redirected, the TestBug exception is thrown.
+     * given <code>out</code> stream.
      *
      * @deprecated Use redirectStdout(Log, String) instead.
      */
@@ -314,7 +313,6 @@ abstract public class DebugeeProcess extends FinalizableObject {
         if (stdoutRedirector != null) {
             return;
         }
-//            throw new TestBug("Debugee's stdout is already redirected");
         stdoutRedirector = new IORedirector(getOutPipe(), out, DEBUGEE_STDOUT_LOG_PREFIX);
         stdoutRedirector.setName("IORedirector for stdout");
         stdoutRedirector.setDaemon(true);
@@ -323,8 +321,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     /**
      * Start thread redirecting the debugee's stdout to the
-     * given <code>Log</code>. If the debugee's stdout
-     * was already redirected, the TestBug exception is thrown.
+     * given <code>Log</code>.
      */
     public void redirectStdout(Log log, String prefix) {
         redirectStdout(log, prefix, null);
@@ -332,9 +329,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     private void redirectStdout(Log log, String prefix, Consumer<String> stdoutProcessor) {
         if (stdoutRedirector != null) {
-//            stdoutRedirector.setPrefix(prefix);
             return;
-//            throw new TestBug("the debugee's stdout is already redirected");
         }
         stdoutRedirector = new IORedirector(new BufferedReader(new InputStreamReader(getOutPipe())), log, prefix);
         if (stdoutProcessor != null) {
@@ -347,8 +342,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     /**
      * Start thread redirecting the debugee's stderr to the
-     * given <code>err</code> stream. If the debugee's stderr
-     * was already redirected, the TestBug exception is thrown.
+     * given <code>err</code> stream.
      *
      * @deprecated Use redirectStderr(Log, String) instead.
      */
@@ -357,7 +351,6 @@ abstract public class DebugeeProcess extends FinalizableObject {
         if (stderrRedirector != null) {
             return;
         }
-//            throw new TestBug("Debugee's stderr is already redirected");
         stderrRedirector = new IORedirector(getErrPipe(), err, DEBUGEE_STDERR_LOG_PREFIX);
         stdoutRedirector.setName("IORedirector for stderr");
         stderrRedirector.setDaemon(true);
@@ -366,14 +359,11 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     /**
      * Start thread redirecting the debugee's stderr to the
-     * given <code>Log</code>. If the debugee's stderr
-     * was already redirected, the TestBug exception is thrown.
+     * given <code>Log</code>.
      */
     public void redirectStderr(Log log, String prefix) {
         if (stderrRedirector != null) {
-//            stderrRedirector.setPrefix(prefix);
             return;
-//            throw new TestBug("Debugee's stderr is already redirected");
         }
         stderrRedirector = new IORedirector(new BufferedReader(new InputStreamReader(getErrPipe())), log, prefix);
         stdoutRedirector.setName("IORedirector for stderr");
@@ -384,8 +374,6 @@ abstract public class DebugeeProcess extends FinalizableObject {
     /**
      * Start thread redirecting the debugee's stdout/stderr to the
      * given <code>Log</code> using standard prefixes.
-     * If the debugee's stdout/stderr were already redirected,
-     * the TestBug exception is thrown.
      */
     public void redirectOutput(Log log) {
         redirectStdout(log, DEBUGEE_STDOUT_LOG_PREFIX);
