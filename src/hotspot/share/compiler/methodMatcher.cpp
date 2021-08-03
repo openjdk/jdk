@@ -95,6 +95,49 @@ void MethodMatcher::init(Symbol* class_name, Mode class_mode,
  _signature = signature;
 }
 
+static bool is_hidden_calss_pattern(const char * start) {
+  int index = 0;
+  char c = *start;
+  while (c != '\0' && c != '*' && c != ':') {
+    if (index == 0) {
+      // The first non-'*' char after '/' should be '0'
+      if (c != '0') {
+        return false;
+      }
+    } else if (index == 1) {
+      // The second non-'*' char after '/' should be 'x'
+      if (c != 'x') {
+        return false;
+      }
+    } else {
+      // The remaining non-'*' chars should be xdigits
+      if (!isxdigit(c)) {
+        return false;
+      }
+    }
+    index++;
+    c = *(++start);
+  }
+
+  if (c == '*' || c == ':') {
+    char next = *(++start);
+    if (next == ':') {
+      if (c == ':') {
+        // full hidden class name without '*'
+        return true;
+      } else {
+        char next_next = *(++start);
+        if (next_next == ':') {
+          // partial hidden class name with suffix '*'
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
   char* colon = strstr(line, "::");
   bool have_colon = (colon != NULL);
@@ -116,14 +159,11 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
 
         if (*lp == '/') {
           // Check whether it's a hidden class method.
-          // According to ClassFileParser::mangle_hidden_class_name, the pattern of
-          // hidden class name in the VM should be: _class_name, "+", and &ik
-          // But "+" will be replaced with "/" when it is printed by PrintCompilation.
-          // So if "/" is followed with a digit or "*", it may be a hidden class method.
-          // There may be false positive cases, but all of them are harmless and won't make anything worse.
-          char next = *(lp + 1);
-          if (isdigit(next) || next == '*') {
-            // May be a hidden class method, so replace '/' with '+'
+          if (is_hidden_calss_pattern(lp + 1)) {
+            // According to ClassFileParser::mangle_hidden_class_name, the pattern of
+            // hidden class name in the VM should be: _class_name, "+", and &ik
+            // But "+" will be replaced with "/" when it is printed by PrintCompilation.
+            // So replace '/' with '+'
             *lp = '+';
           } else {
             // Not a hidden class method
