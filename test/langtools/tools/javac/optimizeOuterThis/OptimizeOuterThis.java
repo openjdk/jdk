@@ -22,6 +22,8 @@
  */
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @test
@@ -47,6 +49,13 @@ public class OptimizeOuterThis {
         checkInner(StaticMemberClass.class, false);
         checkInner(NonStaticMemberClass.class, false);
         checkInner(NonStaticMemberClassCapturesEnclosing.class, true);
+
+        checkInner(N0.class, false);
+        checkInner(N0.N1.class, true);
+        checkInner(N0.N1.N2.class, true);
+        checkInner(N0.N1.N2.N3.class, true);
+        checkInner(N0.N1.N2.N3.N4.class, false);
+        checkInner(N0.N1.N2.N3.N4.N5.class, false);
     }
 
     public Class<?> localCapturesParameter(final int x) {
@@ -112,21 +121,35 @@ public class OptimizeOuterThis {
         }
     }
 
-    private static void checkInner(Class<?> clazz, boolean expectOuterThis) {
-        Field outerThis;
-        try {
-            outerThis = clazz.getDeclaredField("this$0");
-        } catch (NoSuchFieldException e) {
-            outerThis = null;
+    static class N0 {
+        int x;
+
+        class N1 {
+            class N2 {
+                class N3 {
+                    void f() {
+                        System.err.println(x);
+                    }
+
+                    class N4 {
+                        class N5 {}
+                    }
+                }
+            }
         }
+    }
+
+    private static void checkInner(Class<?> clazz, boolean expectOuterThis) {
+        Optional<Field> outerThis = Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> f.getName().startsWith("this$")).findFirst();
         if (expectOuterThis) {
-            if (outerThis == null) {
+            if (outerThis.isEmpty()) {
                 throw new AssertionError(
                         String.format(
                                 "expected %s to have an enclosing instance", clazz.getName()));
             }
         } else {
-            if (outerThis != null) {
+            if (outerThis.isPresent()) {
                 throw new AssertionError(
                         String.format("%s had an unexpected enclosing instance", clazz.getName()));
             }
