@@ -306,7 +306,6 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
   threshold = _bot->address_for_index(end_index) + BOTConstants::N_words;
   assert(threshold >= blk_end, "Incorrect offset threshold");
 
-  // index_ and threshold_ updated here.
   *threshold_ = threshold;
 
 #ifdef ASSERT
