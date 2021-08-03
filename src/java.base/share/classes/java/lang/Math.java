@@ -1247,7 +1247,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case: if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Integer.MIN_VALUE}.
@@ -1265,7 +1265,7 @@ public final class Math {
      *       returns the largest integer less than or equal to the quotient
      *       while the {@code /} operator returns the smallest integer greater
      *       than or equal to the quotient.
-     *       There's a difference if and only if the quotient is not an integer.<br>
+     *       They differ if and only if the quotient is not an integer.<br>
      *       For example, {@code floorDiv(-4, 3) == -2},
      *       whereas {@code (-4 / 3) == -1}.
      *   </li>
@@ -1292,7 +1292,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case: if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1321,7 +1321,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case: if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
