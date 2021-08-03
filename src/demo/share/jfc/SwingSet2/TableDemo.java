@@ -550,7 +550,7 @@ public class TableDemo extends DemoModule {
             public Object getValueAt(int row, int col) {return data[row][col];}
             public String getColumnName(int column) {return names[column];}
             public Class<?> getColumnClass(int c) {
-	        Object obj = getValueAt(0, c);
+                Object obj = getValueAt(0, c);
                 if (obj != null) {
                     return obj.getClass();
                 }
