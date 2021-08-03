@@ -47,7 +47,7 @@ public class TestHiddenClassMethod {
         analyzer.shouldNotContain("Error: Method pattern uses '/' together with '::'");
 
         pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/*::run",
+                "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/0x*::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
@@ -62,6 +62,13 @@ public class TestHiddenClassMethod {
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/0x23u*::run",
+                "-version");
+        analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.shouldContain("Error: Method pattern uses '/' together with '::'");
+
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:CompileCommand=exclude,java/*::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
