@@ -81,7 +81,7 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
                                                 executable, expectedKind, actualKind));
         }
 
-        // Get kind from the type of the executable directly 
+        // Get kind from the type of the executable directly
         TypeKind kindFromType = new TypeKindVisitor<TypeKind, Object>(null) {
             @Override
             public TypeKind visitExecutable(ExecutableType t, Object p) {
