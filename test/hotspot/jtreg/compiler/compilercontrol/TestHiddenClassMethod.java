@@ -39,39 +39,41 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestHiddenClassMethod {
     public static void main(String[] args) throws Exception {
+        String err_msg = "Error: Method pattern uses '/' together with '::'";
+
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/0x00000008010413c8::run",
                 "-version");
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
-        analyzer.shouldNotContain("Error: Method pattern uses '/' together with '::'");
+        analyzer.shouldNotContain(err_msg);
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/0x*::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
-        analyzer.shouldNotContain("Error: Method pattern uses '/' together with '::'");
+        analyzer.shouldNotContain(err_msg);
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/01234::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
-        analyzer.shouldContain("Error: Method pattern uses '/' together with '::'");
+        analyzer.shouldContain(err_msg);
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/0x23u*::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
-        analyzer.shouldContain("Error: Method pattern uses '/' together with '::'");
+        analyzer.shouldContain(err_msg);
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:CompileCommand=exclude,java/*::run",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
-        analyzer.shouldContain("Error: Method pattern uses '/' together with '::'");
+        analyzer.shouldContain(err_msg);
     }
 }
