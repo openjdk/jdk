@@ -397,8 +397,6 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
                   (uint) _bot->offset_array(i));
   }
   out->print_cr("  next offset threshold: " PTR_FORMAT, p2i(_next_offset_threshold));
-  out->print_cr("  next offset index:     " SIZE_FORMAT,
-                _bot->index_for_raw(_next_offset_threshold));
 }
 #endif // !PRODUCT
 
