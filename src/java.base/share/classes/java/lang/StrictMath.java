@@ -864,8 +864,8 @@ public final class StrictMath {
      * If {@code y} is zero, an {@code ArithmeticException} is thrown
      * (JLS {@jls 15.17.2}).
      * <p>
-     * It should be noted that the operator "{@code %}" is a suitable remainder
-     * couterpart of this method as it is of the division operator "{@code /}".
+     * The built-in remainder operator "{@code %}" is a suitable counterpart
+     * both for this method and for the built-in division operator "{@code /}".
      *
      * @param x the dividend
      * @param y the divisor
@@ -891,8 +891,8 @@ public final class StrictMath {
      * If {@code y} is zero, an {@code ArithmeticException} is thrown
      * (JLS {@jls 15.17.2}).
      * <p>
-     * It should be noted that the operator "{@code %}" is a suitable remainder
-     * couterpart of this method as it is of the division operator "{@code /}".
+     * The built-in remainder operator "{@code %}" is a suitable counterpart
+     * both for this method and for the built-in division operator "{@code /}".
      *
      * @param x the dividend
      * @param y the divisor
@@ -931,9 +931,9 @@ public final class StrictMath {
      *   </li>
      * </ul>
      * <p>
-     * It should be noted that the method {@link #floorMod(int,int)} is a
-     * suitable modulus couterpart of this method as it is of the
-     * {@link #floorDiv(int,int)} method.
+     * The floor modulus method {@link #floorMod(int,int)} is a suitable
+     * counterpart both for this method and for the {@link #floorDiv(int,int)}
+     * method.
      *
      * @param x the dividend
      * @param y the divisor
@@ -965,9 +965,9 @@ public final class StrictMath {
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
      * <p>
-     * It should be noted that the method {@link #floorMod(long,long)} is a
-     * suitable modulus couterpart of this method as it is of the
-     * {@link #floorDiv(long,long)} method.
+     * The floor modulus method {@link #floorMod(long,long)} is a suitable
+     * counterpart both for this method and for the {@link #floorDiv(long,long)}
+     * method.
      *
      * @param x the dividend
      * @param y the divisor
