@@ -32,27 +32,31 @@
  * @run main/othervm -Xverify:all HelloworldjsrTest
  */
 
-import java.lang.reflect.Method;
-import java.io.File;
+//import java.lang.reflect.Method;
+//import java.io.File;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.internal.vm.Preverifier;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.io.IOException;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.StandardOpenOption;
+//import java.io.IOException;
 
 public class HelloworldjsrTest {
 	public static void main(String[] args) throws Throwable {
 		//TestPatch.test("helloworldjsr", "Hello world!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("HelloworldjsrTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Hello world!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("helloworldjsr");
-        }
+        // if (args.length != 0) {
+        //     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("HelloworldjsrTest", "test");
+        //     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        //     output.shouldContain("Hello world!");
+        //     output.shouldHaveExitValue(0);
+        // }
+        // else {
+        //     Class<?> newClass = Class.forName("helloworldjsr");
+        // }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("helloworldjsr");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello world!");
+        output.shouldHaveExitValue(0);
 	}
 }

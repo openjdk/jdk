@@ -48,7 +48,7 @@ public class Preverifier extends ClassVisitor {
 	private static byte[] bytecode; // Contents of the class file
 	private static ClassNode cn;
 	private static String fileName;
-	private static boolean shouldPrint = true;
+	private static boolean shouldPrint = false;
 
 	/**
 	 * Reads class file, locates all JSR/RET instructions, and writes new class file 
@@ -97,7 +97,7 @@ public class Preverifier extends ClassVisitor {
 	 * @param msg Message to be printed
 	 * @param shouldPrint Flag for printing
 	 */
-	public static log(String msg, boolean shouldPrint) {
+	public static void log(String msg, boolean shouldPrint) {
 		if (shouldPrint) {
 			System.out.println(msg);
 		}
@@ -126,6 +126,7 @@ public class Preverifier extends ClassVisitor {
 		}
 		log("Class name: " + cn.name + "\nMethods: " + mns.size(), shouldPrint);
 		for (MethodNode mn : mns) {
+			int timesScanned = 0;
 			boolean hasJSR = false;
 			InsnList inList = mn.instructions;
 			// New list of instructions that should replace the previous list
@@ -199,10 +200,13 @@ public class Preverifier extends ClassVisitor {
 					else if (inList.get(i).getOpcode() == Opcodes.RET) {
 						log("Replacing RET...", shouldPrint);
 						// Replace RET with GOTO which jumps to the label corresponding to its associated JSR
-						if (!retLabelMap.containsKey(inList.get(i))) {
+						if (!retLabelMap.containsKey(inList.get(i)) && (timesScanned < 1)) {
 							log("RET has no matching JSR yet", shouldPrint);
 							newInst.add(inList.get(i));
 							continueScanning = true; // Matching JSR may be above RET
+						}
+						else if (!retLabelMap.containsKey(inList.get(i)) && (timesScanned > 0)) {
+							throw new VerifyError("RET has no matching JSR");
 						}
 						else {
 							continueScanning = false; 
@@ -218,6 +222,7 @@ public class Preverifier extends ClassVisitor {
 				inList.clear();
 				inList.add(newInst);
 				inList.resetLabels(); // Don't know if this is necessary
+				timesScanned++;
 			} while (continueScanning);
 		} 
 		return cn;
