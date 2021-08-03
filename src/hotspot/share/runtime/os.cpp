@@ -990,6 +990,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
         st->print("%s", env_list[i]);
         st->print("=");
         st->print("%s", envvar);
+        // Use separate cr() printing to avoid unnecessary buffer operations that might cause truncation.
         st->cr();
       }
     }
