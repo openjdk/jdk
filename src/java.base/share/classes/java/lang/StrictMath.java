@@ -1149,7 +1149,7 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the floor modulus of the {@code int} arguments.
+     * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
      * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
      * has the same sign as the divisor {@code y} or is zero, and
@@ -1177,7 +1177,7 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the floor modulus of the {@code int} arguments.
+     * Returns the floor modulus of the {@code long} arguments.
      * <p>
      * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
      * has the same sign as the divisor {@code y} or is zero, and
