@@ -1767,9 +1767,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
                    InputStream is = urlConnection.getInputStream();
                    if (is != null) {
-                       BufferedReader d =
-                           new BufferedReader(new InputStreamReader(is,
-                                                  ISO_8859_1));
+                       BufferedReader d = new BufferedReader(
+                               new InputStreamReader(is, ISO_8859_1));
                        String lineStr;
                        while ((lineStr = d.readLine()) != null) {
                            if (lineStr.startsWith("*cupsFilter:")) {
