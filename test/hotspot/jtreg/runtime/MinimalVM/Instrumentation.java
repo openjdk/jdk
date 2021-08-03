@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib
  * @requires vm.flavor == "minimal"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  * @run driver Instrumentation

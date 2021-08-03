@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires vm.flavor == "minimal"
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm JMX
  */
