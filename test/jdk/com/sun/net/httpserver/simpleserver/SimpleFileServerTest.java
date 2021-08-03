@@ -241,10 +241,11 @@ public class SimpleFileServerTest {
                                           String expectedContent,
                                           boolean serveIndexFile) throws Exception {
         var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"));
-        if (serveIndexFile) {
-            Files.writeString(root.resolve(filename), expectedContent, CREATE);
-        }
         var lastModified = getLastModified(root);
+        if (serveIndexFile) {
+            var file = Files.writeString(root.resolve(filename), expectedContent, CREATE);
+            lastModified = getLastModified(file);
+        }
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
