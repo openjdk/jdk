@@ -4656,18 +4656,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
-    __ ldr(rscratch1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, tmp1, tmp2);
-    __ ldr(cnt1, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF1);
-    __ ldr(tmp1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, rscratch1, cnt1);
-    __ ldr(tmp2, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF2);
-  }
 
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
@@ -4867,20 +4855,20 @@ class StubGenerator: public StubCodeGenerator {
   // r4  = cnt2
   // r10 = tmp1
   // r11 = tmp2
-  address generate_compare_long_string_same_encoding_withLdp(bool isLL) {
+  address generate_compare_long_string_same_encoding(bool isLL) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isLL
-                                            ? "compare_long_string_same_encoding LL"
-                                            : "compare_long_string_same_encoding UU");
-
-    address  entry  = __ pc();
+        ? "compare_long_string_same_encoding LL"
+        : "compare_long_string_same_encoding UU");
+    address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-             tmp1   = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
+        tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
 
+    Label LARGE_LOOP_PREFETCH, LOOP_COMPARE16, DIFF, LESS16, LESS8, CAL_DIFFERENCE, LENGTH_DIFF;
 
-    Label LOOP_COMPARE64, LOOP_COMPARE16, DIFF, LESS16, LESS8, CAL_DIFFERENCE, LENGTH_DIFF;
-
-    int largeLoopSize = 64/(isLL ? 1 : 2);
+    // exit from large loop when less than 64 bytes left to read or we're about
+    // to prefetch memory behind array border
+    int largeLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
 
     // before jumping to stub, pre-load 8 bytes already, so do comparison directly
     __ eor(rscratch2, tmp1, tmp2);
@@ -4890,49 +4878,33 @@ class StubGenerator: public StubCodeGenerator {
     // update pointers, because of previous read
     __ add(str1, str1, wordSize);
     __ add(str2, str2, wordSize);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ bind(LARGE_LOOP_PREFETCH);
+        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
+        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
 
-    __ align(OptoLoopAlignment);
-    __ bind(LOOP_COMPARE64);
-      __ ldp(tmp1, tmp1h, Address(str1));
-      __ ldp(tmp2, tmp2h, Address(str2));
-      __ cmp(tmp1, tmp2);
-      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
-
-      __ ldp(tmp1, tmp1h, Address(str1,16));
-      __ ldp(tmp2, tmp2h, Address(str2,16));
-      __ cmp(tmp1, tmp2);
-      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
-
-      __ ldp(tmp1, tmp1h, Address(str1, 32));
-      __ ldp(tmp2, tmp2h, Address(str2, 32));
-      __ cmp(tmp1, tmp2);
-      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
-
-      __ ldp(tmp1, tmp1h, Address(str1,48));
-      __ ldp(tmp2, tmp2h, Address(str2,48));
-      __ cmp(tmp1, tmp2);
-      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
-
-      __ sub(cnt2, cnt2, isLL ? 64 : 32);
-      __ add(str1, str1, 64);
-      __ add(str2, str2, 64);
-      __ subs(rscratch2, cnt2, largeLoopSize);
-      __ br(__ GE, LOOP_COMPARE64);
-      __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
-
+        __ align(OptoLoopAlignment);
+        for (int i = 0; i < 4; i++) {
+          __ ldp(tmp1, tmp1h, Address(str1, i * 16));
+          __ ldp(tmp2, tmp2h, Address(str2, i * 16));
+          __ cmp(tmp1, tmp2);
+          __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+          __ br(__ NE, DIFF);
+        }
+        __ sub(cnt2, cnt2, isLL ? 64 : 32);
+        __ add(str1, str1, 64);
+        __ add(str2, str2, 64);
+        __ subs(rscratch2, cnt2, largeLoopExitCondition);
+        __ br(__ GE, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
+    }
 
     __ subs(rscratch1, cnt2, isLL ? 16 : 8);
     __ br(__ LE, LESS16);
     __ align(OptoLoopAlignment);
-
     __ bind(LOOP_COMPARE16);
       __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
       __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
-
       __ cmp(tmp1, tmp2);
       __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
       __ br(__ NE, DIFF);
@@ -4942,12 +4914,10 @@ class StubGenerator: public StubCodeGenerator {
 
       __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
       __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
-
       __ cmp(tmp1, tmp2);
       __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
       __ br(__ NE, DIFF);
       __ sub(cnt2, cnt2, isLL ? 16 : 8);
-
       __ subs(rscratch2, cnt2, isLL ? 16 : 8);
       __ br(__ GE, LOOP_COMPARE16);
       __ cbz(cnt2, LENGTH_DIFF);
@@ -4962,7 +4932,7 @@ class StubGenerator: public StubCodeGenerator {
       __ cbnz(rscratch2, CAL_DIFFERENCE);
       __ sub(cnt2, cnt2, isLL ? 8 : 4);
 
-    __ bind(LESS8);                          // directly load last 8 bytes
+    __ bind(LESS8); // directly load last 8 bytes
       if (!isLL) {
         __ add(cnt2, cnt2, cnt2);
       }
@@ -4971,7 +4941,6 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(rscratch2, tmp1, tmp2);
       __ cbz(rscratch2, LENGTH_DIFF);
       __ b(CAL_DIFFERENCE);
-
 
     __ bind(DIFF);
       __ cmp(tmp1, tmp2);
@@ -4993,134 +4962,19 @@ class StubGenerator: public StubCodeGenerator {
         __ uxthw(tmp1, tmp1);
         __ uxthw(tmp2, tmp2);
       }
-
       __ subw(result, tmp1, tmp2);
       __ b(LENGTH_DIFF);
 
-    __ bind(LENGTH_DIFF);
-      __ ret(lr);
-    return entry;
-  }
-
-
-  // r0  = result
-  // r1  = str1
-  // r2  = cnt1
-  // r3  = str2
-  // r4  = cnt2
-  // r10 = tmp1
-  // r11 = tmp2
-  address generate_compare_long_string_same_encoding(bool isLL) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", isLL
-        ? "compare_long_string_same_encoding LL"
-        : "compare_long_string_same_encoding UU");
-    address entry = __ pc();
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-        tmp1 = r10, tmp2 = r11;
-    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
-        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
-        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
-    // exit from large loop when less than 64 bytes left to read or we're about
-    // to prefetch memory behind array border
-    int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
-    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
-    // update cnt2 counter with already loaded 8 bytes
-    __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
-    // update pointers, because of previous read
-    __ add(str1, str1, wordSize);
-    __ add(str2, str2, wordSize);
-    if (SoftwarePrefetchHintDistance >= 0) {
-      __ bind(LARGE_LOOP_PREFETCH);
-        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
-        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ sub(cnt2, cnt2, isLL ? 64 : 32);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ br(__ GT, LARGE_LOOP_PREFETCH);
-        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
-    }
-    // less than 16 bytes left?
-    __ subs(cnt2, cnt2, isLL ? 16 : 8);
-    __ br(__ LT, TAIL);
-    __ align(OptoLoopAlignment);
-    __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2);
-      __ subs(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, SMALL_LOOP);
-    __ bind(TAIL);
-      __ adds(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
-      __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, CHECK_LAST);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
-      __ ldr(tmp1, Address(__ post(str1, 8)));
-      __ ldr(tmp2, Address(__ post(str2, 8)));
-      __ sub(cnt2, cnt2, isLL ? 8 : 4);
-    __ bind(CHECK_LAST);
-      if (!isLL) {
-        __ add(cnt2, cnt2, cnt2); // now in bytes
-      }
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
-      __ ldr(rscratch1, Address(str1, cnt2));
-      __ ldr(cnt1, Address(str2, cnt2));
-      __ eor(rscratch2, rscratch1, cnt1);
-      __ cbz(rscratch2, LENGTH_DIFF);
-      // Find the first different characters in the longwords and
-      // compute their difference.
-    __ bind(DIFF2);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      __ lsrv(rscratch1, rscratch1, rscratch2);
-      if (isLL) {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxtbw(rscratch1, rscratch1);
-        __ uxtbw(cnt1, cnt1);
-      } else {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxthw(rscratch1, rscratch1);
-        __ uxthw(cnt1, cnt1);
-      }
-      __ subw(result, rscratch1, cnt1);
-      __ b(LENGTH_DIFF);
-    __ bind(DIFF);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      __ lsrv(tmp1, tmp1, rscratch2);
-      if (isLL) {
-        __ lsrv(tmp2, tmp2, rscratch2);
-        __ uxtbw(tmp1, tmp1);
-        __ uxtbw(tmp2, tmp2);
-      } else {
-        __ lsrv(tmp2, tmp2, rscratch2);
-        __ uxthw(tmp1, tmp1);
-        __ uxthw(tmp2, tmp2);
-      }
-      __ subw(result, tmp1, tmp2);
-      __ b(LENGTH_DIFF);
-    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
     __ bind(LENGTH_DIFF);
       __ ret(lr);
     return entry;
   }
 
   void generate_compare_long_strings() {
-      if (UseStringCompareWithLdp) {
-          StubRoutines::aarch64::_compare_long_string_LL = generate_compare_long_string_same_encoding_withLdp(true);
-          StubRoutines::aarch64::_compare_long_string_UU = generate_compare_long_string_same_encoding_withLdp(false);
-      } else {
-          StubRoutines::aarch64::_compare_long_string_LL = generate_compare_long_string_same_encoding(true);
-          StubRoutines::aarch64::_compare_long_string_UU = generate_compare_long_string_same_encoding(false);
-      }
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_same_encoding(true);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_same_encoding(false);
       StubRoutines::aarch64::_compare_long_string_LU
           = generate_compare_long_string_different_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UL

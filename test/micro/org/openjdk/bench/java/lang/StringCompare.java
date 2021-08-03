@@ -32,10 +32,10 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 public class StringCompare {
-    @Param({"77", "128"})
+    @Param({"256"})
     int size;
 
-    @Param({"7", "15", "31", "47", "63", "71"})
+    @Param({"7", "15", "31", "47", "63", "127", "255"})
     int diff_pos;
 
 
@@ -71,31 +71,9 @@ public class StringCompare {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = { "-XX:+UseStringCompareWithLdp"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareLLDiffStringsWithLdp() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str1.compareTo(str2);
-        }
-        return result;
-    }
-
-    @Benchmark
     @Fork(jvmArgsAppend = {"-XX:-CompactStrings"})
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public int compareUUDiffStrings() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str1.compareTo(str2);
-        }
-        return result;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:-CompactStrings", "-XX:+UseStringCompareWithLdp"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareUUDiffStringsWithLdp() {
         int result = 0;
         for (int i = 0; i < 1000; i++) {
             result ^= str1.compareTo(str2);
@@ -114,15 +92,5 @@ public class StringCompare {
         return result;
     }
 
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:-CompactStrings", "-XX:-UseCompressedClassPointers", "-XX:+UseStringCompareWithLdp"})
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int compareUUDiffStringsTurnOffCCPWithLdp() {
-        int result = 0;
-        for (int i = 0; i < 1000; i++) {
-            result ^= str1.compareTo(str2);
-        }
-        return result;
-    }
 }
 
