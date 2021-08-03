@@ -403,11 +403,15 @@ void VMThread::inner_execute(VM_Operation* op) {
                       _cur_vm_operation->name());
 
   bool end_safepoint = false;
+  bool should_abort_on_timeout = AbortVMOnVMOperationTimeout;
+  jlong vm_op_start_ns;
   if (_cur_vm_operation->evaluate_at_safepoint() &&
       !SafepointSynchronize::is_at_safepoint()) {
     SafepointSynchronize::begin();
-    if (_timeout_task != NULL) {
+    if (should_abort_on_timeout) {
+      assert(_timeout_task != nullptr, "must created");
       _timeout_task->arm();
+      vm_op_start_ns = os::javaTimeNanos();
     }
     end_safepoint = true;
   }
@@ -415,8 +419,14 @@ void VMThread::inner_execute(VM_Operation* op) {
   evaluate_operation(_cur_vm_operation);
 
   if (end_safepoint) {
-    if (_timeout_task != NULL) {
+    if (should_abort_on_timeout) {
+      jlong vm_op_end_ns = os::javaTimeNanos();
       _timeout_task->disarm();
+      jlong delay = nanos_to_millis(vm_op_end_ns - vm_op_start_ns);
+      if (delay > AbortVMOnVMOperationTimeoutDelay) {
+        fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+              _cur_vm_operation->name(), delay, AbortVMOnVMOperationTimeoutDelay);
+      }
     }
     SafepointSynchronize::end();
   }
