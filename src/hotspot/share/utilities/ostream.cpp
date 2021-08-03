@@ -131,33 +131,10 @@ void outputStream::do_vsnprintf_and_write_with_automatic_buffer(const char* form
   write(str, len);
 }
 
-const char* outputStream::handle_simple_format(const char* format, va_list ap, size_t& len) {
-  const char* str = nullptr;
-  if (strchr(format, '%') == nullptr) {
-      // constant format string
-      str = format;
-      len = strlen(str);
-  } else if (format[0] == '%' && format[1] == 's' && format[2] == '\0') {
-      // trivial copy-through format string
-      str = va_arg(ap, const char*);
-      len = strlen(str);
-  }
-  return str;
-}
-
 void outputStream::do_vsnprintf_and_write_with_scratch_buffer(const char* format, va_list ap, bool add_cr) {
   size_t len;
-  const char* str = nullptr;
-  bool simple_format = true;
-  str = handle_simple_format(format, ap, len);
-  if (str == nullptr) {
-    str = do_vsnprintf(_scratch, _scratch_len, format, ap, add_cr, len);
-    simple_format = false;
-  }
+  const char* str = do_vsnprintf(_scratch, _scratch_len, format, ap, add_cr, len);
   write(str, len);
-  if (simple_format && add_cr) {
-    cr();
-  }
 }
 
 void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) {

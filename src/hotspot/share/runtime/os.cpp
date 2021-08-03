@@ -989,7 +989,8 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       if (envvar != NULL) {
         st->print("%s", env_list[i]);
         st->print("=");
-        st->print_cr("%s", envvar);
+        st->print("%s", envvar);
+        st->cr();
       }
     }
   }

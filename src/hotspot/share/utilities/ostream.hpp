@@ -67,7 +67,6 @@ class outputStream : public ResourceObj {
    void do_vsnprintf_and_write_with_scratch_buffer(const char* format, va_list ap, bool add_cr) ATTRIBUTE_PRINTF(2, 0);
    // calls do_vsnprintf, then writes output to stream.
    void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) ATTRIBUTE_PRINTF(2, 0);
-   const char* handle_simple_format(const char* format, va_list ap, size_t& len);
 
  public:
    // creation
