@@ -99,11 +99,6 @@ static bool is_hidden_class_pattern(const char * start) {
   int index = 0;
   char c = *start;
 
-  if (c == '*') {
-    // Return false for '/*' pattern to avoid applying to package names
-    return false;
-  }
-
   while (c != '\0' && c != '*' && c != ':') {
     if (index == 0) {
       // The first non-'*' char after '/' should be '0'

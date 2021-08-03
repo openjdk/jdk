@@ -70,7 +70,14 @@ public class TestHiddenClassMethod {
         analyzer.shouldContain(err_msg);
 
         pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:CompileCommand=exclude,java/*::run",
+                "-XX:CompileCommand=exclude,java.util.ResourceBundle$$Lambda$1/*::run",
+                "-version");
+        analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.shouldNotContain(err_msg);
+
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:CompileCommand=exclude,java.util/*.ResourceBundle$$Lambda$1/0x1234::method",
                 "-version");
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
