@@ -65,6 +65,9 @@ public class FileChannelImpl
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
+    // Maximum direct transfer size
+    private static final int MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
+
     // Used to make native read and write calls
     private final FileDispatcher nd;
 
@@ -678,7 +681,7 @@ public class FileChannelImpl
 
         // Attempt a direct transfer, if the kernel supports it, limiting
         // the number of bytes according to which platform
-        int icount = (int)Math.min(count, maxDirectTransferSize0());
+        int icount = (int)Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
         long n;
         if ((n = transferToDirectly(position, icount, target)) >= 0)
             return n;
@@ -1350,7 +1353,7 @@ public class FileChannelImpl
                                     long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
-    private native int maxDirectTransferSize0();
+    private static native int maxDirectTransferSize0();
 
     // Caches fieldIDs
     private static native long initIDs();
