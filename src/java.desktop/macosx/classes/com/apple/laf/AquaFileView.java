@@ -27,7 +27,6 @@ package com.apple.laf;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -37,6 +36,8 @@ import javax.swing.Icon;
 import javax.swing.filechooser.FileView;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("serial") // JDK implementation class
 class AquaFileView extends FileView {
@@ -115,7 +116,7 @@ class AquaFileView extends FileView {
         FileInfo(final File file){
             isDirectory = file.isDirectory();
             absolutePath = file.getAbsolutePath();
-            pathBytes = absolutePath.getBytes(StandardCharsets.UTF_8);
+            pathBytes = absolutePath.getBytes(UTF_8);
         }
     }
 

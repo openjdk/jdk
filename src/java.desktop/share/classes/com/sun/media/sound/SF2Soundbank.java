@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -42,6 +41,8 @@ import javax.sound.midi.Instrument;
 import javax.sound.midi.Patch;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A SoundFont 2.04 soundbank reader.
@@ -540,7 +541,7 @@ public final class SF2Soundbank implements Soundbank {
             return;
         RIFFWriter chunk = writer.writeChunk(name);
         chunk.writeString(value);
-        int len = value.getBytes(StandardCharsets.US_ASCII).length;
+        int len = value.getBytes(US_ASCII).length;
         chunk.write(0);
         len++;
         if (len % 2 != 0)

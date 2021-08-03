@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StreamTokenizer;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Dictionary;
@@ -49,6 +48,8 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.TabStop;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * Takes a sequence of RTF tokens and text and appends the text
@@ -610,7 +611,7 @@ static char[] readCharset(InputStream strm)
     char[] values = new char[256];
     int i;
     StreamTokenizer in = new StreamTokenizer(new BufferedReader(
-            new InputStreamReader(strm, StandardCharsets.ISO_8859_1)));
+            new InputStreamReader(strm, ISO_8859_1)));
 
     in.eolIsSignificant(false);
     in.commentChar('#');

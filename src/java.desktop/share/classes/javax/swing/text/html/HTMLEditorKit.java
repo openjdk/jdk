@@ -53,7 +53,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
@@ -96,6 +95,8 @@ import javax.swing.text.ViewFactory;
 import javax.swing.text.html.parser.ParserDelegator;
 
 import sun.awt.AppContext;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * The Swing JEditorPane text component supports different kinds
@@ -458,7 +459,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
                 Reader r = new BufferedReader(
-                        new InputStreamReader(is, StandardCharsets.ISO_8859_1));
+                        new InputStreamReader(is, ISO_8859_1));
                 defaultStyles.loadRules(r, null);
                 r.close();
             } catch (Throwable e) {

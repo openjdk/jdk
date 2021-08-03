@@ -26,9 +26,10 @@
 package sun.awt;
 
 import java.awt.Color;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Per-screen XSETTINGS.
@@ -195,7 +196,7 @@ public class XSettings {
         {
             needBytes(len);
 
-            String str = new String(data, idx, len, StandardCharsets.UTF_8);
+            String str = new String(data, idx, len, UTF_8);
 
             idx = (idx + len + 3) & ~0x3;
             return str;

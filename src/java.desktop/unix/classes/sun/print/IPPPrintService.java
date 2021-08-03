@@ -40,7 +40,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -101,6 +100,9 @@ import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
 import javax.print.event.PrintServiceAttributeListener;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class IPPPrintService implements PrintService, SunPrinterJobService {
 
@@ -363,7 +365,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if ((name == null) || (url == null)){
             throw new IllegalArgumentException("null uri or printer name");
         }
-        printer = java.net.URLDecoder.decode(name, StandardCharsets.UTF_8);
+        printer = java.net.URLDecoder.decode(name, UTF_8);
         supportedDocFlavors = null;
         supportedCats = null;
         mediaSizeNames = null;
@@ -393,7 +395,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if ((name == null) || (uriStr == null)){
             throw new IllegalArgumentException("null uri or printer name");
         }
-        printer = java.net.URLDecoder.decode(name, StandardCharsets.UTF_8);
+        printer = java.net.URLDecoder.decode(name, UTF_8);
         supportedDocFlavors = null;
         supportedCats = null;
         mediaSizeNames = null;
@@ -1767,7 +1769,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                    if (is != null) {
                        BufferedReader d =
                            new BufferedReader(new InputStreamReader(is,
-                                                  StandardCharsets.ISO_8859_1));
+                                                  ISO_8859_1));
                        String lineStr;
                        while ((lineStr = d.readLine()) != null) {
                            if (lineStr.startsWith("*cupsFilter:")) {
@@ -1859,8 +1861,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     public static boolean writeIPPRequest(OutputStream os,
                                            String operCode,
                                            AttributeClass[] attCl) {
-        OutputStreamWriter osw = new OutputStreamWriter(os,
-                                                        StandardCharsets.UTF_8);
+        OutputStreamWriter osw = new OutputStreamWriter(os, UTF_8);
         debug_println(debugPrefix+"writeIPPRequest, op code= "+operCode);
         char[] opCode =  new char[2];
         opCode[0] =  (char)Byte.parseByte(operCode.substring(0,2), 16);

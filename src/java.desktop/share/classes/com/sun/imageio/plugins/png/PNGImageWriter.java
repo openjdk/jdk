@@ -33,7 +33,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.zip.Deflater;
@@ -48,6 +47,9 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.ImageOutputStreamImpl;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class CRC {
 
@@ -803,16 +805,14 @@ public final class PNGImageWriter extends ImageWriter {
             cs.writeBytes(languageIter.next());
             cs.writeByte(0);
 
-
-            cs.write(translatedKeywordIter.next()
-                             .getBytes(StandardCharsets.UTF_8));
+            cs.write(translatedKeywordIter.next().getBytes(UTF_8));
             cs.writeByte(0);
 
             String text = textIter.next();
             if (compressed) {
-                cs.write(deflate(text.getBytes(StandardCharsets.UTF_8)));
+                cs.write(deflate(text.getBytes(UTF_8)));
             } else {
-                cs.write(text.getBytes(StandardCharsets.UTF_8));
+                cs.write(text.getBytes(UTF_8));
             }
             cs.finish();
         }
@@ -836,7 +836,7 @@ public final class PNGImageWriter extends ImageWriter {
             cs.writeByte(compressionMethod);
 
             String text = textIter.next();
-            cs.write(deflate(text.getBytes(StandardCharsets.ISO_8859_1)));
+            cs.write(deflate(text.getBytes(ISO_8859_1)));
             cs.finish();
         }
     }

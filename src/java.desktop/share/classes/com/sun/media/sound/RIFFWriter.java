@@ -30,7 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Resource Interchange File Format (RIFF) stream encoder.
@@ -209,12 +210,11 @@ public final class RIFFWriter extends OutputStream {
             raf.write(0);
 
         if (chunktype == 0)
-            raf.write("RIFF".getBytes(StandardCharsets.US_ASCII));
+            raf.write("RIFF".getBytes(US_ASCII));
         else if (chunktype == 1)
-            raf.write("LIST".getBytes(StandardCharsets.US_ASCII));
+            raf.write("LIST".getBytes(US_ASCII));
         else
-            raf.write((format + "    ").substring(0, 4)
-                              .getBytes(StandardCharsets.US_ASCII));
+            raf.write((format + "    ").substring(0, 4).getBytes(US_ASCII));
 
         chunksizepointer = raf.getPointer();
         this.chunktype = 2;
@@ -222,9 +222,7 @@ public final class RIFFWriter extends OutputStream {
         this.chunktype = chunktype;
         startpointer = raf.getPointer();
         if (chunktype != 2)
-            raf.write((format + "    ").substring(0, 4)
-                              .getBytes(StandardCharsets.US_ASCII));
-
+            raf.write((format + "    ").substring(0, 4).getBytes(US_ASCII));
     }
 
     public void seek(long pos) throws IOException {

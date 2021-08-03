@@ -35,12 +35,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /*
  * Adobe Technical Note 5040 details the format of PFB files.
@@ -608,7 +609,7 @@ public class Type1Font extends FileFont {
         byte[] nameBytes = new byte[pos2-pos1-1];
         bb.position(pos1);
         bb.get(nameBytes);
-        return new String(nameBytes, StandardCharsets.US_ASCII);
+        return new String(nameBytes, US_ASCII);
     }
 
     private String getString(ByteBuffer bb) {
@@ -618,7 +619,7 @@ public class Type1Font extends FileFont {
         byte[] nameBytes = new byte[pos2-pos1-1];
         bb.position(pos1);
         bb.get(nameBytes);
-        return new String(nameBytes, StandardCharsets.US_ASCII);
+        return new String(nameBytes, US_ASCII);
     }
 
 

@@ -40,7 +40,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -59,6 +58,8 @@ import javax.imageio.stream.MemoryCacheImageOutputStream;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A JFIF (JPEG File Interchange Format) APP0 (Application-Specific)
@@ -1353,7 +1354,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             ios.write(0xff);
             ios.write(JPEG.APP2);
             MarkerSegment.write2bytes(ios, segLength);
-            byte[] id = ID.getBytes(StandardCharsets.US_ASCII);
+            byte[] id = ID.getBytes(US_ASCII);
             ios.write(id);
             ios.write(0); // Null-terminate the string
             ios.write(chunkNum++);

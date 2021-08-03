@@ -26,8 +26,9 @@
 package sun.print;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class AttributeClass {
     private String myName;
@@ -189,7 +190,7 @@ public class AttributeClass {
 
             byte[] strBytes = new byte[valLength];
             bufStream.read(strBytes, 0, valLength);
-            strVal = new String(strBytes, StandardCharsets.UTF_8);
+            strVal = new String(strBytes, UTF_8);
         }
         return strVal;
     }
@@ -218,7 +219,7 @@ public class AttributeClass {
                 int valLength = bufStream.read();
                 byte[] bufBytes = new byte[valLength];
                 bufStream.read(bufBytes, 0, valLength);
-                valueArray[i] = new String(bufBytes, StandardCharsets.UTF_8);
+                valueArray[i] = new String(bufBytes, UTF_8);
             }
             return valueArray;
         }

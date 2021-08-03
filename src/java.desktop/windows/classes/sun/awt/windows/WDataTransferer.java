@@ -53,7 +53,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,6 +65,9 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
+
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -239,8 +241,7 @@ final class WDataTransferer extends DataTransferer {
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            String st = new String(bytes, 0, bytes.length,
-                                   StandardCharsets.UTF_16LE);
+            String st = new String(bytes, 0, bytes.length, UTF_16LE);
             String[] filenames = st.split("\0");
             if( 0 == filenames.length ){
                 return null;
@@ -266,8 +267,7 @@ final class WDataTransferer extends DataTransferer {
             {
                 try {
                     charset = new String((byte[])localeTransferable.
-                        getTransferData(javaTextEncodingFlavor),
-                                         StandardCharsets.UTF_8);
+                        getTransferData(javaTextEncodingFlavor), UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
@@ -661,8 +661,8 @@ class HTMLCodec extends InputStream {
         //HTML
         header.append(htmlPrefix);
 
-        byte[] headerBytes = header.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] trailerBytes = htmlSuffix.getBytes(StandardCharsets.UTF_8);
+        byte[] headerBytes = header.toString().getBytes(UTF_8);
+        byte[] trailerBytes = htmlSuffix.getBytes(UTF_8);
 
         byte[] retval = new byte[headerBytes.length + bytes.length +
                 trailerBytes.length];
@@ -771,7 +771,7 @@ class HTMLCodec extends InputStream {
         BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(
                         bufferedStream,
-                        StandardCharsets.UTF_8
+                        UTF_8
                 ),
                 CHAR_BUFFER_LEN
         );

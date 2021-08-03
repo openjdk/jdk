@@ -28,7 +28,8 @@ package com.sun.media.sound;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Resource Interchange File Format (RIFF) stream decoder.
@@ -77,14 +78,14 @@ public final class RIFFReader extends InputStream {
         byte[] fourcc = new byte[4];
         fourcc[0] = (byte) b;
         readFully(fourcc, 1, 3);
-        this.fourcc = new String(fourcc, StandardCharsets.US_ASCII);
+        this.fourcc = new String(fourcc, US_ASCII);
         ckSize = readUnsignedInt();
         avail = ckSize;
 
         if (getFormat().equals("RIFF") || getFormat().equals("LIST")) {
             byte[] format = new byte[4];
             readFully(format);
-            this.riff_type = new String(format, StandardCharsets.US_ASCII);
+            this.riff_type = new String(format, US_ASCII);
         }
     }
 
@@ -228,10 +229,10 @@ public final class RIFFReader extends InputStream {
         readFully(buff);
         for (int i = 0; i < buff.length; i++) {
             if (buff[i] == 0) {
-                return new String(buff, 0, i, StandardCharsets.US_ASCII);
+                return new String(buff, 0, i, US_ASCII);
             }
         }
-        return new String(buff, StandardCharsets.US_ASCII);
+        return new String(buff, US_ASCII);
     }
 
     // Read 8 bit signed integer from stream

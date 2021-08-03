@@ -26,13 +26,14 @@
 package com.sun.imageio.plugins.jpeg;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * A Comment marker segment.  Retains an array of bytes representing the
@@ -95,7 +96,7 @@ class COMMarkerSegment extends MarkerSegment {
      * consulted directly.
      */
     String getComment() {
-        return new String(data, StandardCharsets.ISO_8859_1);
+        return new String(data, ISO_8859_1);
     }
 
     /**

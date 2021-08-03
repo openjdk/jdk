@@ -26,7 +26,6 @@
 package com.sun.imageio.plugins.gif;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import javax.imageio.metadata.IIOInvalidTreeException;
@@ -34,6 +33,8 @@ import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.metadata.IIOMetadataNode;
 
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 class GIFWritableImageMetadata extends GIFImageMetadata {
 
@@ -92,7 +93,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
     }
 
     private byte[] fromISO8859(String data) {
-        return data.getBytes(StandardCharsets.ISO_8859_1);
+        return data.getBytes(ISO_8859_1);
     }
 
     protected void mergeNativeTree(Node root) throws IIOInvalidTreeException {

@@ -33,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
@@ -45,6 +44,8 @@ import java.util.regex.Pattern;
 
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class CDataTransferer extends DataTransferer {
     private static final Map<String, Long> predefinedClipboardNameMap;
@@ -138,7 +139,7 @@ public class CDataTransferer extends DataTransferer {
             String charset = Charset.defaultCharset().name();
             if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
                 try {
-                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), StandardCharsets.UTF_8);
+                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
@@ -165,9 +166,8 @@ public class CDataTransferer extends DataTransferer {
             // class by base method
             format = CF_STRING;
         } else if (format == CF_STRING) {
-            String src = new String(bytes, StandardCharsets.UTF_8);
-            String nfc = Normalizer.normalize(src, Form.NFC);
-            bytes = nfc.getBytes(StandardCharsets.UTF_8);
+            String src = new String(bytes, UTF_8);
+            bytes = Normalizer.normalize(src, Form.NFC).getBytes(UTF_8);
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);

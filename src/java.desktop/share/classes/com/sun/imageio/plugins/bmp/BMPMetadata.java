@@ -25,8 +25,6 @@
 
 package com.sun.imageio.plugins.bmp;
 
-import java.nio.charset.StandardCharsets;
-
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.metadata.IIOMetadataNode;
@@ -34,6 +32,8 @@ import javax.imageio.metadata.IIOMetadataNode;
 import com.sun.imageio.plugins.common.I18N;
 import com.sun.imageio.plugins.common.ImageUtil;
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class BMPMetadata extends IIOMetadata implements BMPConstants {
     public static final String nativeMetadataFormatName =
@@ -110,7 +110,7 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
     }
 
     private String toISO8859(byte[] data) {
-        return new String(data, StandardCharsets.ISO_8859_1);
+        return new String(data, ISO_8859_1);
     }
 
     private Node getNativeTree() {

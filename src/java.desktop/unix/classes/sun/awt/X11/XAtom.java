@@ -58,10 +58,12 @@ package sun.awt.X11;
  * @since       1.5
  */
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import jdk.internal.misc.Unsafe;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class XAtom {
 
@@ -310,7 +312,7 @@ public final class XAtom {
             throw new IllegalStateException("Atom should be initialized");
         }
         checkWindow(window);
-        byte[] bdata = str.getBytes(StandardCharsets.UTF_8);
+        byte[] bdata = str.getBytes(UTF_8);
         if (bdata != null) {
             setAtomData(window, XA_UTF8_STRING.atom, bdata);
         }
@@ -324,7 +326,7 @@ public final class XAtom {
             throw new IllegalStateException("Atom should be initialized");
         }
         checkWindow(window);
-        byte[] bdata = str.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] bdata = str.getBytes(ISO_8859_1);
         if (bdata != null) {
             setAtomData(window, XA_STRING, bdata);
         }

@@ -32,8 +32,9 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * Ideally there would be no native fonts used, and this class would be
@@ -212,11 +213,11 @@ public class NativeFont extends PhysicalFont {
             pos = sb.indexOf("-0-", pos);
         };
         String xlfd = sb.toString();
-        return haveBitmapFonts(xlfd.getBytes(StandardCharsets.UTF_8));
+        return haveBitmapFonts(xlfd.getBytes(UTF_8));
     }
 
     public static boolean fontExists(String xlfd) {
-        return fontExists(xlfd.getBytes(StandardCharsets.UTF_8));
+        return fontExists(xlfd.getBytes(UTF_8));
     }
 
     private static native boolean haveBitmapFonts(byte[] xlfd);
@@ -367,7 +368,7 @@ public class NativeFont extends PhysicalFont {
         }
 
         String xlfd = sb.toString();
-        return xlfd.getBytes(StandardCharsets.UTF_8);
+        return xlfd.getBytes(UTF_8);
     }
 
     public String toString() {

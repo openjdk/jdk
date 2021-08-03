@@ -60,7 +60,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -91,6 +90,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import sun.swing.SwingUtilities2;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  */
@@ -583,7 +584,7 @@ class Metacity implements SynthConstants {
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
                     Reader reader = new InputStreamReader(url.openStream(),
-                                                  StandardCharsets.ISO_8859_1);
+                                                          ISO_8859_1);
                     char[] buf = new char[1024];
                     StringBuilder sb = new StringBuilder();
                     int n;
