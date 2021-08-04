@@ -118,7 +118,7 @@ class Outer {
         void foo() {return;}
         static void bar() {return;}
         static <R> R baz(Class<? extends R> clazz) {return null;}
-        
+
         private class InnerInnerClass {
             public InnerInnerClass() {}
         }
