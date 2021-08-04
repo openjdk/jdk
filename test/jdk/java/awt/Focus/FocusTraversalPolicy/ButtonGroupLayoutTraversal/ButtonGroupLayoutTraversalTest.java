@@ -51,10 +51,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 public class ButtonGroupLayoutTraversalTest {
 
-    private static final int nx = 3;
-    private static final int ny = 3;
+    private static final int NX = 3;
+    private static final int NY = 3;
 
-    private static final int[] focusCnt = new int[nx * ny];
+    private static final int[] focusCnt = new int[NX * NY];
 
     private static JFrame window;
     private static Robot robot;
@@ -66,7 +66,7 @@ public class ButtonGroupLayoutTraversalTest {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             try {
                 SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-                SwingUtilities.invokeAndWait(() -> initLayout(nx, ny));
+                SwingUtilities.invokeAndWait(() -> initLayout(NX, NY));
                 test();
             } finally {
                 SwingUtilities.invokeAndWait(() -> {
@@ -87,13 +87,13 @@ public class ButtonGroupLayoutTraversalTest {
         robot.waitForIdle();
         robot.delay(1000);
 
-        for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
+        for (int i = 0; i < NX * NY - NX * NY / 2 - 1; i++) {
             robot.keyPress(KeyEvent.VK_RIGHT);
             robot.keyRelease(KeyEvent.VK_RIGHT);
             robot.waitForIdle();
         }
 
-        for (int i = 0; i < nx * ny / 2; i++) {
+        for (int i = 0; i < NX * NY / 2; i++) {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.waitForIdle();
@@ -102,7 +102,7 @@ public class ButtonGroupLayoutTraversalTest {
         robot.delay(200);
 
         synchronized (focusCnt) {
-            for (int i = 0; i < nx * ny; i++) {
+            for (int i = 0; i < NX * NY; i++) {
                 if (focusCnt[i] < 1) {
                     throw new RuntimeException("Component " + i
                             + " is not reachable in the forward focus cycle");
@@ -113,7 +113,7 @@ public class ButtonGroupLayoutTraversalTest {
             }
         }
 
-        for (int i = 0; i < nx * ny / 2; i++) {
+        for (int i = 0; i < NX * NY / 2; i++) {
             robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
@@ -121,7 +121,7 @@ public class ButtonGroupLayoutTraversalTest {
             robot.waitForIdle();
         }
 
-        for (int i = 0; i < nx * ny - nx * ny / 2 - 1; i++) {
+        for (int i = 0; i < NX * NY - NX * NY / 2 - 1; i++) {
             robot.keyPress(KeyEvent.VK_LEFT);
             robot.keyRelease(KeyEvent.VK_LEFT);
             robot.waitForIdle();
@@ -136,7 +136,7 @@ public class ButtonGroupLayoutTraversalTest {
         robot.delay(200);
 
         synchronized (focusCnt) {
-            for (int i = 0; i < nx * ny; i++) {
+            for (int i = 0; i < NX * NY; i++) {
                 if (focusCnt[i] < 2) {
                     throw new RuntimeException("Component " + i
                             + " is not reachable in the backward focus cycle");
