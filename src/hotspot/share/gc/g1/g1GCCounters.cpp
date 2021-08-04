@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1PERIODICGCTASK_HPP
-#define SHARE_GC_G1_G1PERIODICGCTASK_HPP
+#include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1GCCounters.hpp"
 
-#include "gc/g1/g1ServiceThread.hpp"
+G1GCCounters::G1GCCounters(G1CollectedHeap* g1h) :
+  _total_collections(g1h->total_collections()),
+  _total_full_collections(g1h->total_full_collections()),
+  _old_marking_cycles_started(g1h->old_marking_cycles_started())
+{}
 
-class G1CollectedHeap;
-class G1GCCounters;
-
-// Task handling periodic GCs
-class G1PeriodicGCTask : public G1ServiceTask {
-  bool should_start_periodic_gc(G1CollectedHeap* g1h,
-                                G1GCCounters* counters);
-  void check_for_periodic_gc();
-
-public:
-  G1PeriodicGCTask(const char* name);
-  virtual void execute();
-};
-
-#endif // SHARE_GC_G1_G1PERIODICGCTASK_HPP
