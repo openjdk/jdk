@@ -199,7 +199,7 @@ import sun.security.action.GetBooleanAction;
  * @since 1.2
  */
 /// PENDING(klobad) Who should be opaque in this component?
-@SuppressWarnings({"removal","serial"})
+@SuppressWarnings("serial")
 public class JRootPane extends JComponent implements Accessible {
 
     private static final String uiClassID = "RootPaneUI";
@@ -208,13 +208,19 @@ public class JRootPane extends JComponent implements Accessible {
      * Whether or not we should dump the stack when true double buffering
      * is disabled. Default is false.
      */
-    private static final boolean LOG_DISABLE_TRUE_DOUBLE_BUFFERING;
+    @SuppressWarnings("removal")
+    private static final boolean LOG_DISABLE_TRUE_DOUBLE_BUFFERING
+            = AccessController.doPrivileged(new GetBooleanAction(
+                                   "swing.logDoubleBufferingDisable"));
 
     /**
      * Whether or not we should ignore requests to disable true double
      * buffering. Default is false.
      */
-    private static final boolean IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING;
+    @SuppressWarnings("removal")
+    private static final boolean IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING
+            = AccessController.doPrivileged(new GetBooleanAction(
+                                   "swing.ignoreDoubleBufferingDisable"));
 
     /**
      * Constant used for the windowDecorationStyle property. Indicates that
@@ -325,15 +331,6 @@ public class JRootPane extends JComponent implements Accessible {
      * heavy weight popups (backed by a window) set this to false.
      */
     boolean useTrueDoubleBuffering = true;
-
-    static {
-        LOG_DISABLE_TRUE_DOUBLE_BUFFERING =
-            AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.logDoubleBufferingDisable"));
-        IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING =
-            AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.ignoreDoubleBufferingDisable"));
-    }
 
     /**
      * Creates a <code>JRootPane</code>, setting up its

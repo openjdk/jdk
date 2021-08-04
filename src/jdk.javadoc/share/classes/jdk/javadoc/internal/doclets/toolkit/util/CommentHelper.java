@@ -165,26 +165,8 @@ public class CommentHelper {
             }
             return configuration.docEnv.getTypeUtils().asElement(symbol);
         }
-        // case A: the element contains no comments associated and
-        // the comments need to be copied from ancestor
-        // case B: the element has @inheritDoc, then the ancestral comment
-        // as appropriate has to be copied over.
-
-        // Case A.
-        if (dcTree == null && overriddenElement != null) {
-            CommentHelper ovch = utils.getCommentHelper(overriddenElement);
-            return ovch.getElement(rtree);
-        }
-        if (dcTree == null) {
-            return null;
-        }
-        DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
+        DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath == null) {
-            // Case B.
-            if (overriddenElement != null) {
-                CommentHelper ovch = utils.getCommentHelper(overriddenElement);
-                return ovch.getElement(rtree);
-            }
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
@@ -192,10 +174,7 @@ public class CommentHelper {
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
-        // Workaround for JDK-8269706
-        if (path == null || dcTree == null || rtree == null)
-            return null;
-        DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
+        DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath != null) {
             DocTrees doctrees = configuration.docEnv.getDocTrees();
             return doctrees.getType(docTreePath);
@@ -700,9 +679,18 @@ public class CommentHelper {
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (path == null || dcTree == null || dtree == null)
+        if (dcTree == null && overriddenElement != null) {
+            // This is an inherited comment, return path from ancestor.
+            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
+        } else if (path == null || dcTree == null || dtree == null) {
             return null;
-        return DocTreePath.getPath(path, dcTree, dtree);
+        }
+        DocTreePath dtPath = DocTreePath.getPath(path, dcTree, dtree);
+        if (dtPath == null && overriddenElement != null) {
+            // The overriding element has a doc tree, but it doesn't contain what we're looking for.
+            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
+        }
+        return dtPath;
     }
 
     public Element getOverriddenElement() {

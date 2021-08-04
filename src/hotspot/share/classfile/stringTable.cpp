@@ -720,7 +720,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   assert(java_lang_String::is_instance(s), "sanity");
-  assert(!HeapShared::is_archived_object(s), "sanity");
+  assert(!HeapShared::is_archived_object_during_dumptime(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
