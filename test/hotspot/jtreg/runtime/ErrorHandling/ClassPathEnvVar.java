@@ -25,6 +25,7 @@
  * @test
  * @bug 8271003
  * @summary CLASSPATH env variable setting should not be truncated in a hs err log.
+ * @requires vm.debug
  * @library /test/lib
  * @run driver ClassPathEnvVar
  */
