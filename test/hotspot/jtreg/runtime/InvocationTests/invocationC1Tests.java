@@ -26,6 +26,7 @@
  * @test
  * @bug 8226956
  * @summary Run invocation tests against C1 compiler
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc

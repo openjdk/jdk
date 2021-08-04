@@ -26,6 +26,7 @@
  * @test
  * @bug 8224137
  * @summary Run invokespecial invocation tests
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
