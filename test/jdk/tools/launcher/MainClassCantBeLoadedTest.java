@@ -77,7 +77,7 @@ public class MainClassCantBeLoadedTest extends TestHelper {
         bClass.delete();
 
         // if A is executed
-        TestResult trExecution = doExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "-cp", "out", "A");
+        TestResult trExecution = doExec(javaCmd, System.getProperty("test.vm.opts", "").trim(), "-cp", "out", "A");
         // then this error message should be generated
         trExecution.contains("Error: Could not find or load main class A");
         trExecution.contains("Caused by: java.lang.NoClassDefFoundError: B");
@@ -134,7 +134,7 @@ public class MainClassCantBeLoadedTest extends TestHelper {
 
         // Execute C with security manager will fail with AccessControlException
         trExecution = doExec(javaCmd,
-            "-Duser.language=en", "-Duser.country=US",
+            System.getProperty("test.vm.opts", "").trim(),
             "-Djava.security.manager",
             "--add-exports", "java.base/com.sun.crypto.provider=ALL-UNNAMED",
             "-cp", "out", "C");

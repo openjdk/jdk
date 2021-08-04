@@ -53,7 +53,7 @@ public class MainClassAttributeTest extends TestHelper {
      */
     static void runTest(File jarFile, String expectedErrorMessage) {
         TestResult tr = doExec(TestHelper.javaCmd,
-                "-Duser.language=en", "-Duser.country=US",
+                System.getProperty("test.vm.opts", "").trim(),
                 "-jar", jarFile.getAbsolutePath());
         if (isEnglishLocale() && !tr.contains(expectedErrorMessage)) {
             System.out.println(tr);

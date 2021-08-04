@@ -208,9 +208,13 @@ public class HelpFlagsTest extends TestHelper {
 
     static TestResult runToolWithFlag(File f, String flag) {
         String x = f.getAbsolutePath();
-        String language = f.getName().equals("java.exe") ? "-Duser.language=en" : "-J-Duser.language=en";
-        String country = f.getName().equals("java.exe") ? "-Duser.country=US" : "-J-Duser.country=US";
-        TestResult tr = doExec(x, language, country, flag);
+        String opts;
+        if (f.getName().equals("java.exe")) {
+            opts = System.getProperty("test.vm.opts", "").trim();
+        } else {
+            opts = System.getProperty("test.tool.vm.opts", "").trim();
+        }
+        TestResult tr = doExec(x, opts, flag);
         System.out.println("Testing " + f.getName());
         System.out.println("#> " + x + " " + flag);
         tr.testOutput.forEach(System.out::println);

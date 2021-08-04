@@ -368,7 +368,7 @@ public class FXLauncherTest extends TestHelper {
         createFile(ManifestFile, createManifestContents(null, StdMainClass)); // No MC, but supply JAC
         createJar(FXtestJar, ManifestFile);
         String sTestJar = FXtestJar.getAbsolutePath();
-        TestResult tr = doFxExec(javaCmd, "-Duser.language=en", "-Duser.country=US", "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+        TestResult tr = doFxExec(javaCmd, System.getProperty("test.vm.opts", "").trim(), "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
         tr.checkNegative(); // should abort if no Main-Class
         if (tr.testStatus) {
             if (!tr.contains("no main manifest attribute")) {
