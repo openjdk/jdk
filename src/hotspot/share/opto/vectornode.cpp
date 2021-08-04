@@ -1171,7 +1171,6 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
          cnt = phase->transform(new ConvL2INode(cnt));
       }
     }
-    shiftRCnt = cnt;
     shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(shift_mask)));
     shiftLCnt = phase->transform(new SubINode(phase->intcon(shift_mask + 1), shiftRCnt));
   } else {
