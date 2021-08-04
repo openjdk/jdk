@@ -25,6 +25,7 @@
  * @test
  * @bug 8022865
  * @summary Tests for the -XX:ObjectAlignmentInBytes command line option
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

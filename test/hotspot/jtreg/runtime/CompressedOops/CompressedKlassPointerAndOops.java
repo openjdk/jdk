@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.bits == 64
+ * @requires vm.flagless
  * @run driver CompressedKlassPointerAndOops
  */
 

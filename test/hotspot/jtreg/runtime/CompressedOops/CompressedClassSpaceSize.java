@@ -26,6 +26,7 @@
  * @bug 8022865
  * @summary Tests for the -XX:CompressedClassSpaceSize command line option
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
