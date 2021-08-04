@@ -749,6 +749,7 @@ javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 javax/swing/JFileChooser/FileSystemView/SystemIconTest.java 8268280 windows-x64
 
 javax/swing/plaf/basic/BasicHTML/4251579/bug4251579.java 8137101 linux-x64
+javax/swing/JComponent/7154030/bug7154030.java 8268284 macosx-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
