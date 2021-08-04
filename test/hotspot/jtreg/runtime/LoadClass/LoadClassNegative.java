@@ -25,6 +25,7 @@
  * @test
  * @bug 8020675
  * @summary make sure there is no fatal error if a class is loaded from an invalid jar file which is in the bootclasspath
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

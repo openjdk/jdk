@@ -26,6 +26,7 @@
  * @bug 8184765
  * @summary make sure the SystemDictionary gets resized when load factor is too high
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
