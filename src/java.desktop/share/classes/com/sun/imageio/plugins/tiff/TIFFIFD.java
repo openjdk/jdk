@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ public class TIFFIFD extends TIFFDirectory {
                         while (bytesToRead != 0) {
                             int sz = Math.min(bytesToRead, UNIT_SIZE);
                             byte[] unit = new byte[sz];
-                            stream.readFully(unit, bytesRead, sz);
+                            stream.readFully(unit, 0, sz);
                             bufs.add(unit);
                             bytesRead += sz;
                             bytesToRead -= sz;
@@ -455,7 +455,7 @@ public class TIFFIFD extends TIFFDirectory {
                     while (shortsToRead != 0) {
                         int sz = Math.min(shortsToRead, SSHORT_TILE_SIZE);
                         short[] unit = new short[sz];
-                        stream.readFully(unit, shortsRead, sz);
+                        stream.readFully(unit, 0, sz);
                         bufs.add(unit);
                         shortsRead += sz;
                         shortsToRead -= sz;
@@ -486,7 +486,7 @@ public class TIFFIFD extends TIFFDirectory {
                     while (intsToRead != 0) {
                         int sz = Math.min(intsToRead, INT_TILE_SIZE);
                         int[] unit = new int[sz];
-                        stream.readFully(unit, intsToRead, sz);
+                        stream.readFully(unit, 0, sz);
                         bufs.add(unit);
                         intsRead += sz;
                         intsToRead -= sz;
@@ -518,7 +518,7 @@ public class TIFFIFD extends TIFFDirectory {
                     while (srationalsToRead != 0) {
                         int sz = Math.min(srationalsToRead, SRATIONAL_TILE_SIZE);
                         int[] unit = new int[sz * 2];
-                        stream.readFully(unit, (srationalsToRead * 2), (sz * 2));
+                        stream.readFully(unit, 0, (sz * 2));
                         bufs.add(unit);
                         srationalsRead += sz;
                         srationalsToRead -= sz;
@@ -552,7 +552,7 @@ public class TIFFIFD extends TIFFDirectory {
                     while (floatsToRead != 0) {
                         int sz = Math.min(floatsToRead, FLOAT_TILE_SIZE);
                         float[] unit = new float[sz];
-                        stream.readFully(unit, floatsToRead, sz);
+                        stream.readFully(unit, 0, sz);
                         bufs.add(unit);
                         floatsRead += sz;
                         floatsToRead -= sz;
@@ -583,7 +583,7 @@ public class TIFFIFD extends TIFFDirectory {
                     while (doublesToRead != 0) {
                         int sz = Math.min(doublesToRead, DOUBLE_TILE_SIZE);
                         double[] unit = new double[sz];
-                        stream.readFully(unit, doublesToRead, sz);
+                        stream.readFully(unit, 0, sz);
                         bufs.add(unit);
                         doublesRead += sz;
                         doublesToRead -= sz;

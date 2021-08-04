@@ -94,7 +94,6 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -2478,28 +2477,6 @@ size_t      JavaThread::_stack_size_at_create = 0;
 bool        Threads::_vm_complete = false;
 #endif
 
-static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
-  Prefetch::read((void*)addr, prefetch_interval);
-  return *addr;
-}
-
-// Possibly the ugliest for loop the world has seen. C++ does not allow
-// multiple types in the declaration section of the for loop. In this case
-// we are only dealing with pointers and hence can cast them. It looks ugly
-// but macros are ugly and therefore it's fine to make things absurdly ugly.
-#define DO_JAVA_THREADS(LIST, X)                                                                                          \
-    for (JavaThread *MACRO_scan_interval = (JavaThread*)(uintptr_t)PrefetchScanIntervalInBytes,                           \
-             *MACRO_list = (JavaThread*)(LIST),                                                                           \
-             **MACRO_end = ((JavaThread**)((ThreadsList*)MACRO_list)->threads()) + ((ThreadsList*)MACRO_list)->length(),  \
-             **MACRO_current_p = (JavaThread**)((ThreadsList*)MACRO_list)->threads(),                                     \
-             *X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval);                 \
-         MACRO_current_p != MACRO_end;                                                                                    \
-         MACRO_current_p++,                                                                                               \
-             X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval))
-
-// All JavaThreads
-#define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_java_thread_list(), X)
-
 // All NonJavaThreads (i.e., every non-JavaThread in the system).
 void Threads::non_java_threads_do(ThreadClosure* tc) {
   NoSafepointVerifier nsv;
@@ -2507,6 +2484,10 @@ void Threads::non_java_threads_do(ThreadClosure* tc) {
     tc->do_thread(njti.current());
   }
 }
+
+// All JavaThreads
+#define ALL_JAVA_THREADS(X) \
+  for (JavaThread* X : *ThreadsSMRSupport::get_java_thread_list())
 
 // All JavaThreads
 void Threads::java_threads_do(ThreadClosure* tc) {
@@ -2725,6 +2706,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Note: this internally calls os::init_container_support()
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
+
+#if INCLUDE_NMT
+  // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
+  MemTracker::initialize();
+#endif // INCLUDE_NMT
 
   os::init_before_ergo();
 
@@ -3641,7 +3627,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   GrowableArray<JavaThread*>* result = new GrowableArray<JavaThread*>(count);
 
   int i = 0;
-  DO_JAVA_THREADS(t_list, p) {
+  for (JavaThread* p : *t_list) {
     if (!p->can_call_java()) continue;
 
     // The first stage of async deflation does not affect any field
@@ -3662,7 +3648,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // NULL owner means not locked so we can skip the search
   if (owner == NULL) return NULL;
 
-  DO_JAVA_THREADS(t_list, p) {
+  for (JavaThread* p : *t_list) {
     // first, see if owner is the address of a Java thread
     if (owner == (address)p) return p;
   }
@@ -3677,7 +3663,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // Lock Word in the owning Java thread's stack.
   //
   JavaThread* the_owner = NULL;
-  DO_JAVA_THREADS(t_list, q) {
+  for (JavaThread* q : *t_list) {
     if (q->is_lock_owned(owner)) {
       the_owner = q;
       break;

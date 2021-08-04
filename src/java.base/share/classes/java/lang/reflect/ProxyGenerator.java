@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -245,7 +244,7 @@ final class ProxyGenerator extends ClassWriter {
          * List of return types that are not yet known to be
          * assignable from ("covered" by) any of the others.
          */
-        LinkedList<Class<?>> uncoveredReturnTypes = new LinkedList<>();
+        List<Class<?>> uncoveredReturnTypes = new ArrayList<>(1);
 
         nextNewReturnType:
         for (ProxyMethod pm : methods) {
