@@ -101,6 +101,7 @@ void ClassListWriter::handle_class_unloading(const InstanceKlass* klass) {
 }
 
 void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs) {
+  assert_locked();
   ClassLoaderData* loader_data = k->class_loader_data();
 
   if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {

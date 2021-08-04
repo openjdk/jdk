@@ -60,7 +60,7 @@ public:
   static bool is_enabled() {
     return false;
   }
-#endif
+#endif // INCLUDE_CDS
 
 
   static void init() NOT_CDS_RETURN;

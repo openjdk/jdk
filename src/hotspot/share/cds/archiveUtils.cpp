@@ -333,10 +333,10 @@ void ReadClosure::do_region(u_char* start, size_t size) {
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
     if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
-      ResourceMark rm(THREAD);
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.
+        ResourceMark rm(THREAD);
         int pool_index = bootstrap_specifier->bss_index();
         ClassListWriter w;
         w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
