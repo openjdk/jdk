@@ -25,6 +25,7 @@
  * @test
  * @bug 8228485
  * @summary Correctly handle initialization error for Condy BSM.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile Example.jasm

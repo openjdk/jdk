@@ -25,6 +25,7 @@
  * @test
  * @bug 8186211
  * @summary CONSTANT_Dynamic_info structure's tries to use a BSM index whose signature is for an invokedynamic and vice versa.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyUsesIndyBSM.jcod

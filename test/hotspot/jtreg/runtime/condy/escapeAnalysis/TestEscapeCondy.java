@@ -26,6 +26,7 @@
  * @bug 8216970
  * @summary Ensure escape analysis can handle an ldc of a dynamic
  *          constant whose return type is an array of boolean.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile TestEscapeThroughInvokeWithCondy$A.jasm

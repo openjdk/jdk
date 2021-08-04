@@ -25,6 +25,7 @@
  * @test
  * @bug 8186211
  * @summary Tests various ldc, ldc_w, ldc2_w instructions of CONSTANT_Dynamic.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyUseLDC_W.jasm
