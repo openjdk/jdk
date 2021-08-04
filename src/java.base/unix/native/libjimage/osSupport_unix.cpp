@@ -38,7 +38,7 @@
  * Return the file descriptor.
  */
 jint osSupport::openReadOnly(const char *path) {
-    return ::open(path, 0);
+    return ::open(path, O_CLOEXEC);
 }
 
 /**
