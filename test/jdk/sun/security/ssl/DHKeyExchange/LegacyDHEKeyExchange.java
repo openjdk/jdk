@@ -35,6 +35,7 @@
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
+import java.io.IOException;
 import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
@@ -43,6 +44,9 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
     private final CountDownLatch connDoneLatch = new CountDownLatch(2);
 
     private static final int LINGER_TIMEOUT = 30; // in seconds
+
+    private static final String CONN_ABORTED_EX = "An established connection was" +
+            " aborted by the software in your host machine";
 
     @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
@@ -56,9 +60,12 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             }
             System.out.println("Expected exception thrown in server");
         } catch (SSLException | SocketException se) {
-            // The client side may have closed the socket.
-            System.out.println("Server exception:");
-            se.printStackTrace(System.out);
+            if (isConnectionAborted(se)) {
+                System.out.println("Server exception:");
+                se.printStackTrace(System.out);
+            } else {
+                throw se;
+            }
         } finally {
             connDoneLatch.countDown();
             connDoneLatch.await();
@@ -82,13 +89,20 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             }
             System.out.println("Expected exception thrown in client");
         } catch (SSLException | SocketException se) {
-            // The server side may have closed the socket.
-            System.out.println("Client exception:");
-            se.printStackTrace(System.out);
+            if (isConnectionAborted(se)) {
+                System.out.println("Client exception:");
+                se.printStackTrace(System.out);
+            } else {
+                throw se;
+            }
         } finally {
             connDoneLatch.countDown();
             connDoneLatch.await();
         }
+    }
+
+    private boolean isConnectionAborted(IOException ioe) {
+        return CONN_ABORTED_EX.equals(ioe.getMessage());
     }
 
     public static void main(String[] args) throws Exception {
