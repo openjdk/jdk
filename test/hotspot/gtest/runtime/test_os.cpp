@@ -413,7 +413,11 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-TEST_VM(os, release_multi_mappings) {
+#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8267341.
+  TEST_VM(os, DISABLED_release_multi_mappings) {
+#else
+  TEST_VM(os, release_multi_mappings) {
+#endif
 
   // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
   if (MemTracker::tracking_level() > NMT_off) {
