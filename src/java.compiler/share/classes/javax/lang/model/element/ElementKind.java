@@ -126,6 +126,10 @@ public enum ElementKind {
      */
     BINDING_VARIABLE;
 
+    // Maintenance note: check if the default implementation of
+    // Elements.getOutermostTypeElement needs updating when new kind
+    // constants are added.
+
     /**
      * Returns {@code true} if this is a kind of class:
      * either {@code CLASS} or {@code ENUM} or {@code RECORD}.
