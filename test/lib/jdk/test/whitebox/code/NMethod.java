@@ -21,28 +21,38 @@
  * questions.
  */
 
-/*
- * @test Uint64Test
- * @bug 8028756
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI Uint64Test
- * @summary testing of WB::set/getUint64VMFlag()
- * @author igor.ignatyev@oracle.com
- */
+package jdk.test.whitebox.code;
 
-public class Uint64Test {
-    private static final String FLAG_NAME = "MaxRAM";
-    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
-            -1L, Long.MAX_VALUE, Long.MIN_VALUE};
+import java.lang.reflect.Executable;
+import jdk.test.whitebox.WhiteBox;
 
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setUint64VMFlag,
-            VmFlagTest.WHITE_BOX::getUint64VMFlag);
-    }
+public class NMethod extends CodeBlob {
+  private static final WhiteBox wb = WhiteBox.getWhiteBox();
+  public static NMethod get(Executable method, boolean isOsr) {
+    Object[] obj = wb.getNMethod(method, isOsr);
+    return obj == null ? null : new NMethod(obj);
+  }
+  private NMethod(Object[] obj) {
+    super((Object[])obj[0]);
+    assert obj.length == 5;
+    comp_level = (Integer) obj[1];
+    insts = (byte[]) obj[2];
+    compile_id = (Integer) obj[3];
+    entry_point = (Long) obj[4];
+  }
+  public final byte[] insts;
+  public final int comp_level;
+  public final int compile_id;
+  public final long entry_point;
+
+  @Override
+  public String toString() {
+    return "NMethod{"
+        + super.toString()
+        + ", insts=" + insts
+        + ", comp_level=" + comp_level
+        + ", compile_id=" + compile_id
+        + ", entry_point=" + entry_point
+        + '}';
+  }
 }
-

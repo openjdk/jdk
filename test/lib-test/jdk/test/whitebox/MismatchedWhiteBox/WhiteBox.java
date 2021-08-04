@@ -29,11 +29,11 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile WhiteBox.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-CheckIntrinsics sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-CheckIntrinsics jdk.test.whitebox.WhiteBox
  */
 
-package sun.hotspot;
+package jdk.test.whitebox;
 
 public class WhiteBox {
     @SuppressWarnings("serial")

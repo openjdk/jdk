@@ -25,8 +25,8 @@
  * @test
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   CPUInfoTest
@@ -35,8 +35,8 @@
 import java.util.Set;
 import java.util.List;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 import static jdk.test.lib.Asserts.*;
 
