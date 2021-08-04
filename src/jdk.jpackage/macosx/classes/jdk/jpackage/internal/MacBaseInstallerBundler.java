@@ -200,12 +200,10 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 return null;
             }
             String matchedKey = m.group(1);
-/*
             if (m.find()) {
                 Log.error(MessageFormat.format(I18N.getString(
                         "error.multiple.certs.found"), key, keychainName));
             }
-*/
             return matchedKey;
         } catch (IOException ioe) {
             Log.verbose(ioe);
