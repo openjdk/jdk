@@ -41,6 +41,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.MacAppImageBuilder.SIGN_BUNDLE;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
@@ -134,6 +135,19 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                         I18N.getString(
                             "message.app-image-requires-app-name.advice"));
             }
+            if (SIGN_BUNDLE.fetchFrom(params)) {
+                // if signing bundle with app-image, warn user if app-image
+                // is not allready signed.
+                Path launcher = applicationImage.resolve("Contents/MacOS")
+                        .resolve(APP_NAME.fetchFrom(params));
+
+                if (IOUtils.exists(launcher) &&
+                        !MacAppImageBuilder.isFileSigned(launcher)) {
+                    Log.info(getID() + I18N.getString("warning.unsigned.app.image"));
+                    Log.info(MessageFormat.format(I18N.getString(
+                             "warning.unsigned.app.image"), getID()));
+                }
+            }
         } else {
             appImageBundler.validate(params);
         }
@@ -187,10 +201,12 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 return null;
             }
             String matchedKey = m.group(1);
+/*
             if (m.find()) {
                 Log.error(MessageFormat.format(I18N.getString(
                         "error.multiple.certs.found"), key, keychainName));
             }
+*/
             return matchedKey;
         } catch (IOException ioe) {
             Log.verbose(ioe);

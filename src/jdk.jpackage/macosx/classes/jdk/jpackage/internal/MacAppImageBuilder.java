@@ -864,4 +864,21 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return null;
     }
 
+     /*
+      * isFileSigned()
+      * We cannot use this internally to decide whether to unsign a file
+      * or not before resigning, because both unsigned and badly signed
+      * return false. It can be used to differentiate between a signed and
+      * unsigned app-image.
+      */
+     public static boolean isFileSigned(Path file) {
+         try {
+             IOUtils.exec(new ProcessBuilder("/usr/bin/codesign",
+                         "--verify", file.toString()));
+         } catch (IOException ex) {
+             return false;
+         }
+         return true;
+     } 
+
 }
