@@ -1383,7 +1383,6 @@ public final class Math {
      *       </ul>
      *   </li>
      * </ul>
-     * <p>
      *
      * @param x the dividend
      * @param y the divisor
