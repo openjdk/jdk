@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test Uint64Test
- * @bug 8028756
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI Uint64Test
- * @summary testing of WB::set/getUint64VMFlag()
- * @author igor.ignatyev@oracle.com
- */
+#ifndef SHARE_GC_G1_G1GCCOUNTERS_HPP
+#define SHARE_GC_G1_G1GCCOUNTERS_HPP
 
-public class Uint64Test {
-    private static final String FLAG_NAME = "MaxRAM";
-    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
-            -1L, Long.MAX_VALUE, Long.MIN_VALUE};
+#include "utilities/globalDefinitions.hpp"
 
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setUint64VMFlag,
-            VmFlagTest.WHITE_BOX::getUint64VMFlag);
-    }
-}
+class G1CollectedHeap;
 
+// Record collection counters for later use when deciding whether a GC has
+// been run since the counter state was recorded.
+class G1GCCounters {
+  uint _total_collections;
+  uint _total_full_collections;
+  uint _old_marking_cycles_started;
+
+public:
+  G1GCCounters() {}             // Uninitialized
+
+  // Capture the current counters from the heap.  The caller must ensure no
+  // collections will occur while this constructor is executing.
+  explicit G1GCCounters(G1CollectedHeap* g1h);
+
+  uint total_collections() const { return _total_collections; }
+  uint total_full_collections() const { return _total_full_collections; }
+  uint old_marking_cycles_started() const { return _old_marking_cycles_started; }
+};
+
+#endif // SHARE_GC_G1_G1GCCOUNTERS_HPP

@@ -892,7 +892,7 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public ClassLoader getClassLoader() {
-        ClassLoader cl = getClassLoader0();
+        ClassLoader cl = classLoader;
         if (cl == null)
             return null;
         @SuppressWarnings("removal")
@@ -1041,7 +1041,7 @@ public final class Class<T> implements java.io.Serializable,
         if (isPrimitive() || isArray()) {
             return null;
         }
-        ClassLoader cl = getClassLoader0();
+        ClassLoader cl = classLoader;
         return cl != null ? cl.definePackage(this)
                           : BootLoader.definePackage(this);
     }
@@ -2823,7 +2823,7 @@ public final class Class<T> implements java.io.Serializable,
 
             // resource not encapsulated or in package open to caller
             String mn = thisModule.getName();
-            ClassLoader cl = getClassLoader0();
+            ClassLoader cl = classLoader;
             try {
 
                 // special-case built-in class loaders to avoid the
@@ -2843,7 +2843,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         // unnamed module
-        ClassLoader cl = getClassLoader0();
+        ClassLoader cl = classLoader;
         if (cl == null) {
             return ClassLoader.getSystemResourceAsStream(name);
         } else {
@@ -2919,7 +2919,7 @@ public final class Class<T> implements java.io.Serializable,
 
             // resource not encapsulated or in package open to caller
             String mn = thisModule.getName();
-            ClassLoader cl = getClassLoader0();
+            ClassLoader cl = classLoader;
             try {
                 if (cl == null) {
                     return BootLoader.findResource(mn, name);
@@ -2932,7 +2932,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         // unnamed module
-        ClassLoader cl = getClassLoader0();
+        ClassLoader cl = classLoader;
         if (cl == null) {
             return ClassLoader.getSystemResource(name);
         } else {
@@ -3046,7 +3046,7 @@ public final class Class<T> implements java.io.Serializable,
          */
         final ClassLoader ccl = ClassLoader.getClassLoader(caller);
         if (which != Member.PUBLIC) {
-            final ClassLoader cl = getClassLoader0();
+            final ClassLoader cl = classLoader;
             if (ccl != cl) {
                 sm.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
             }
@@ -3063,7 +3063,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     private void checkPackageAccess(@SuppressWarnings("removal") SecurityManager sm, final ClassLoader ccl,
                                     boolean checkProxyInterfaces) {
-        final ClassLoader cl = getClassLoader0();
+        final ClassLoader cl = classLoader;
 
         if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
             String pkg = this.getPackageName();
@@ -3092,7 +3092,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     private static void checkPackageAccessForPermittedSubclasses(@SuppressWarnings("removal") SecurityManager sm,
                                     final ClassLoader ccl, Class<?>[] subClasses) {
-        final ClassLoader cl = subClasses[0].getClassLoader0();
+        final ClassLoader cl = subClasses[0].classLoader;
 
         if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
             Set<String> packages = new HashSet<>();
@@ -3717,7 +3717,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since  1.4
      */
     public boolean desiredAssertionStatus() {
-        ClassLoader loader = getClassLoader0();
+        ClassLoader loader = classLoader;
         // If the loader is null this is a system class, so ask the VM
         if (loader == null)
             return desiredAssertionStatus0(this);

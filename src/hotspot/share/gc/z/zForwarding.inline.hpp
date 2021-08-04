@@ -137,7 +137,7 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
   const ZForwardingEntry old_entry; // Empty
 
   for (;;) {
-    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry);
+    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry, memory_order_release);
     if (!prev_entry.populated()) {
       // Success
       return to_offset;
