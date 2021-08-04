@@ -88,6 +88,15 @@
   static void child_ ## category ## _ ## name ## _() {              \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
+    JavaVM* jvm[1];                                                 \
+    jsize nVMs = 0;                                                 \
+    JNI_GetCreatedJavaVMs(&jvm[0], 1, &nVMs);                       \
+    if (nVMs == 1) {                                                \
+      int ret = jvm[0]->DestroyJavaVM();                            \
+      if (ret != 0) {                                               \
+        fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);  \
+      }                                                             \
+    }                                                               \
     fprintf(stderr, "OKIDOKI");                                     \
     exit(0);                                                        \
   }                                                                 \
