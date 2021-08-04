@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,8 +318,14 @@ class Runner implements Runnable {
     }
 
     private Node mergeImplWeakCAS(Node startNode, Node expectedNext, Node head) {
-        // Weak CAS - should always be true within a single thread - no other thread can have overwritten
-        if (!UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head)) {
+        // Weak CAS - should almost always be true within a single thread - no other thread can have overwritten
+        // Spurious failures are allowed. We expect the 2nd attempt to work.
+        boolean ok = false;
+        for (int i = 0; i < 2; ++i) {
+            ok = UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head);
+            if (ok) break;
+        }
+        if (!ok) {
             throw new Error("Weak CAS should always succeed on thread local objects, check you barrier implementation");
         }
         return expectedNext; // continue on old circle
