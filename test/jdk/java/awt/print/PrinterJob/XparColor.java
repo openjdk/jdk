@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
     printout should show transparent rings with increasing darkness toward
     the center.
   @run main/manual XparColor
+  @run main/manual/othervm -Dsun.java2d.metal=true XparColor
  */
 
 import java.awt.Dialog;
@@ -52,8 +53,9 @@ public class XparColor implements Printable {
     private static void init() {
         String[] instructions =
                 {
-                        "This test verify that the BullsEye rings are printed correctly.",
-                        "The printout should show transparent rings with increasing darkness toward the center"
+			"This testcase will be launched twice, once for opengl and once for metal.",
+			"This test verify that the BullsEye rings are printed correctly.",
+			"The printout should show transparent rings with increasing darkness toward the center"
                 };
         Sysout.createDialog();
         Sysout.printInstructions(instructions);
