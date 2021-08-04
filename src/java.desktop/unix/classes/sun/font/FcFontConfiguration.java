@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,23 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Scanner;
+
 import sun.awt.FcFontManager;
 import sun.awt.FontConfiguration;
 import sun.awt.FontDescriptor;
 import sun.awt.SunToolkit;
-import sun.font.CompositeFontDescriptor;
-import sun.font.FontConfigManager.FontConfigInfo;
 import sun.font.FontConfigManager.FcCompFont;
 import sun.font.FontConfigManager.FontConfigFont;
+import sun.font.FontConfigManager.FontConfigInfo;
 import sun.util.logging.PlatformLogger;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class FcFontConfiguration extends FontConfiguration {
 
@@ -178,7 +179,7 @@ public class FcFontConfiguration extends FontConfiguration {
         String[] componentFaceNames = cfi[idx].getComponentFaceNames();
         FontDescriptor[] ret = new FontDescriptor[componentFaceNames.length];
         for (int i = 0; i < componentFaceNames.length; i++) {
-            ret[i] = new FontDescriptor(componentFaceNames[i], StandardCharsets.ISO_8859_1.newEncoder(), new int[0]);
+            ret[i] = new FontDescriptor(componentFaceNames[i], ISO_8859_1.newEncoder(), new int[0]);
         }
 
         return ret;
