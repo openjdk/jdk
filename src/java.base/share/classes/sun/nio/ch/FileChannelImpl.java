@@ -66,7 +66,7 @@ public class FileChannelImpl
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Maximum direct transfer size
-    private static final int MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
+    private static final int MAX_DIRECT_TRANSFER_SIZE;
 
     // Used to make native read and write calls
     private final FileDispatcher nd;
@@ -1361,5 +1361,6 @@ public class FileChannelImpl
     static {
         IOUtil.load();
         allocationGranularity = initIDs();
+        MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 }
