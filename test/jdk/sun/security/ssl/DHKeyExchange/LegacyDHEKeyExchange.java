@@ -60,6 +60,7 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             }
             System.out.println("Expected exception thrown in server");
         } catch (SSLException | SocketException se) {
+            // The client side may have closed the socket.
             if (isConnectionAborted(se)) {
                 System.out.println("Server exception:");
                 se.printStackTrace(System.out);
@@ -89,6 +90,7 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             }
             System.out.println("Expected exception thrown in client");
         } catch (SSLException | SocketException se) {
+            // The server side may have closed the socket.
             if (isConnectionAborted(se)) {
                 System.out.println("Client exception:");
                 se.printStackTrace(System.out);
