@@ -24,6 +24,7 @@
 /**
  * @test
  * @requires vm.cds
+ * @requires vm.flagless
  * @bug 8005933
  * @summary -Xshare:auto is the default when -Xshare is not specified
  * @library /test/lib

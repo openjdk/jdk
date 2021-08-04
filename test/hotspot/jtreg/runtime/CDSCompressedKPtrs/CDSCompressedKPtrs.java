@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @requires vm.bits == 64
+ * @requires vm.flagless
  * @bug 8003424
  * @summary Testing UseCompressedClassPointers with CDS
  * @library /test/lib
