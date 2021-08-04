@@ -5806,6 +5806,7 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
 instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegL tmp2) %{
   predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
   match(Set dst (CopySignF dst src));
@@ -5846,6 +5847,7 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   %}
   ins_pipe( pipe_slow );
 %}
+#endif // _LP64
 
 // --------------------------------- Sqrt --------------------------------------
 
