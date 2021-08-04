@@ -163,7 +163,8 @@ public class VM {
     private static final int PREVIEW_MINOR_VERSION = 65535;
 
     /**
-     * Returns the current class file format version the VM supports.
+     * Returns the class file version of the current release.
+     * @jvms 4.1 Table 4.1-A. class file format major versions
      */
     public static int classFileVersion() {
         return classFileMajorVersion;

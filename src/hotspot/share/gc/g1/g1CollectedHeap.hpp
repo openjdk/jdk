@@ -146,6 +146,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
 
+  friend class G1YoungGCVerifierMark;
+
   // Closures used in implementation.
   friend class G1ParScanThreadState;
   friend class G1ParScanThreadStateSet;
@@ -400,9 +402,6 @@ private:
   STWGCTimer* _gc_timer_stw;
 
   G1NewTracer* _gc_tracer_stw;
-
-  void gc_tracer_report_gc_start();
-  void gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark, G1EvacuationInfo& evacuation_info);
 
   // The current policy object for the collector.
   G1Policy* _policy;
@@ -799,6 +798,14 @@ private:
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
+
+  void set_young_collection_default_active_worker_threads();
+
+  bool determine_start_concurrent_mark_gc();
+
+  void prepare_tlabs_for_mutator();
+
+  void retire_tlabs();
 
   G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -1451,7 +1458,6 @@ private:
   void print_regions_on(outputStream* st) const;
 
 public:
-
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;

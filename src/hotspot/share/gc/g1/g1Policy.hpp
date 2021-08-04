@@ -301,7 +301,9 @@ public:
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
-  void note_gc_start();
+  // Record the start and end of the young gc pause.
+  void record_young_gc_pause_start();
+  void record_young_gc_pause_end();
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -309,9 +311,9 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
-  void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
+  // Record the start and end of the actual collection part of the evacuation pause.
+  void record_young_collection_start();
+  void record_young_collection_end(bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -327,8 +329,6 @@ public:
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
-
-  void print_phases();
 
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
@@ -427,11 +427,11 @@ public:
     return _max_survivor_regions;
   }
 
-  void note_start_adding_survivor_regions() {
+  void start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
-  void note_stop_adding_survivor_regions() {
+  void stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
 
