@@ -143,7 +143,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
                 if (IOUtils.exists(launcher) &&
                         !MacAppImageBuilder.isFileSigned(launcher)) {
-                    Log.info(getID() + I18N.getString("warning.unsigned.app.image"));
                     Log.info(MessageFormat.format(I18N.getString(
                              "warning.unsigned.app.image"), getID()));
                 }
