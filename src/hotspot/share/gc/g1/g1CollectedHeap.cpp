@@ -4187,6 +4187,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
       _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
+      register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
       _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);

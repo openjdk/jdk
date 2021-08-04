@@ -207,9 +207,18 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   if (HeapRegion::is_in_same_region(p, obj)) {
     return;
   }
-  HeapRegion* from = _g1h->heap_region_containing(p);
-  if (!from->is_young()) {
-    enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
+  G1HeapRegionAttr from_attr = _g1h->region_attr(p);
+  // If this is a reference from (current) survivor regions, we do not need
+  // to track references from it.
+  if (from_attr.is_new_survivor()) {
+    return;
+  }
+  G1HeapRegionAttr dest_attr = _g1h->region_attr(obj);
+  // References to the current collection set are references to objects that failed
+  // evacuation. Currently these regions are always relabelled as old without
+  // remembered sets, so skip them.
+  if (!dest_attr.is_in_cset()) {
+    enqueue_card_if_tracked(dest_attr, p, obj);
   }
 }
 
@@ -234,8 +243,9 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  HeapRegion* hr = _g1h->heap_region_containing(to_array);
-  G1ScanInYoungSetter x(&_scanner, hr->is_young());
+  G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
+  assert(!dest_attr.is_in_cset(), "must not scan object from cset here");
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor() || dest_attr.is_in_cset());
   // Process claimed task.  The length of to_array is not correct, but
   // fortunately the iteration ignores the length field and just relies
   // on start/end.
@@ -267,7 +277,10 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+  // FIXME: check if we could just use dest_attr
+  dest_attr = _g1h->region_attr(to_array);
+  assert(!_g1h->region_attr(to_array).is_in_cset(), "must not scan object from cset here");
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor() || dest_attr.is_in_cset());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module. The length of to_array is not correct, but fortunately
@@ -521,7 +534,13 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+    // If dest_attr still refers to Young at this point, this object must be
+    // in a survivor region (evacuation succeeded), so we can use this for the
+    // G1SkipCardEnqueueSetter instead of re-evaluating the G1HeapRegionAttr of
+    // obj (dest_attr here is used to select the allocation generation, and this
+    // is either "Young" or "Old").
+    // The region of "obj" is the source region for this iteration.
+    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
 
@@ -611,8 +630,15 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);
 
-    G1ScanFailedObjClosure cl(_g1h, this);
-    old->oop_iterate_backwards(&cl);
+    // For iterating objects that failed evacuation currently we can reuse the
+    // existing closure to scan evacuated objects because:
+    // - for objects into the collection set we do not need to gather cards at this
+    // time. The regions they are in will be unconditionally turned to old regions
+    // without remembered sets.
+    // - since we are iterating from a collection set region (i.e. never a Survivor
+    // region), we always need to gather cards for this case.
+    G1SkipCardEnqueueSetter x(&_scanner, false /* skip_enqueue_cards */);
+    old->oop_iterate_backwards(&_scanner);
 
     return old;
   } else {

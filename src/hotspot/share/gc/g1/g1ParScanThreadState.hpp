@@ -129,8 +129,11 @@ public:
   void push_on_queue(ScannerTask task);
 
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
-    // assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
-    //assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+    assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
+    assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-survivor references already.");
+    // We relabel all regions that failed evacuation as old gen without remembered,
+    // and so pre-filter them out in the caller.
+    assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to enqueue reference into collection set region");
 
 #ifdef ASSERT
     HeapRegion* const hr_obj = _g1h->heap_region_containing(o);

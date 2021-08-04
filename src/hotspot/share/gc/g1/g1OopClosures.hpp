@@ -85,7 +85,7 @@ public:
 
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
-  friend class G1ScanInYoungSetter;
+  friend class G1SkipCardEnqueueSetter;
 
   enum ScanningInYoungValues {
     False = 0,
@@ -93,11 +93,11 @@ class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
     Uninitialized
   };
 
-  ScanningInYoungValues _scanning_in_young;
+  ScanningInYoungValues _skip_card_enqueue;
 
 public:
   G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1h, par_scan_state), _scanning_in_young(Uninitialized) { }
+    G1ScanClosureBase(g1h, par_scan_state), _skip_card_enqueue(Uninitialized) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }
@@ -112,34 +112,17 @@ public:
 };
 
 // RAII object to properly set the _scanning_in_young field in G1ScanEvacuatedObjClosure.
-class G1ScanInYoungSetter : public StackObj {
+class G1SkipCardEnqueueSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 
 public:
-  G1ScanInYoungSetter(G1ScanEvacuatedObjClosure* closure, bool new_value) : _closure(closure) {
-    assert(_closure->_scanning_in_young == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
-    _closure->_scanning_in_young = new_value ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_enqueue_cards) : _closure(closure) {
+    assert(_closure->_skip_card_enqueue == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
+    _closure->_skip_card_enqueue = skip_enqueue_cards ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
   }
 
-  ~G1ScanInYoungSetter() {
-    DEBUG_ONLY(_closure->_scanning_in_young = G1ScanEvacuatedObjClosure::Uninitialized;)
-  }
-};
-
-class G1ScanFailedObjClosure : public G1ScanClosureBase {
-public:
-  G1ScanFailedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1h, par_scan_state) { }
-
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)          { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
-
-  // We need to do reference discovery while processing evacuated objects.
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
-
-  void set_ref_discoverer(ReferenceDiscoverer* rd) {
-    set_ref_discoverer_internal(rd);
+  ~G1SkipCardEnqueueSetter() {
+    DEBUG_ONLY(_closure->_skip_card_enqueue = G1ScanEvacuatedObjClosure::Uninitialized;)
   }
 };
 

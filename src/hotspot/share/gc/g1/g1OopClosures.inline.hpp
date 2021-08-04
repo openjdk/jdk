@@ -58,7 +58,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
          (obj->is_forwarded() &&
          obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
-
+  assert(!_g1h->heap_region_containing(obj)->is_humongous(), "trying to push humongous object " PTR_FORMAT, p2i(obj));
   _par_scan_state->push_on_queue(ScannerTask(p));
 }
 
@@ -88,29 +88,10 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
-    assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
-    if (_scanning_in_young == True) {
+    assert(_skip_card_enqueue != Uninitialized, "Scan location has not been initialized.");
+    if (_skip_card_enqueue == True) {
       return;
     }
-    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
-  }
-}
-
-template <class T>
-inline void G1ScanFailedObjClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-
-  if (CompressedOops::is_null(heap_oop)) {
-    return;
-  }
-  oop obj = CompressedOops::decode_not_null(heap_oop);
-  const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
-
-  if (region_attr.is_in_cset()) {
-    prefetch_and_push(p, obj);
-    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
-  } else if (!HeapRegion::is_in_same_region(p, obj)) {
-    handle_non_cset_obj_common(region_attr, p, obj);
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
   }
 }
