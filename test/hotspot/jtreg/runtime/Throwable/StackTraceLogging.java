@@ -25,6 +25,7 @@
  * @test
  * @bug 8150778
  * @summary check stacktrace logging
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -25,6 +25,7 @@
  * @test
  * @bug 7179701
  * @summary MaxJavaStackTraceDepth of zero is not handled correctly/consistently in the VM
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  * @library /test/lib
