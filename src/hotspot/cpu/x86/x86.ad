@@ -1681,6 +1681,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_CopySignD:
+    case Op_CopySignF:
+      if (UseAVX < 3)  {
+        return false;
+      }
+      if (!VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
     case Op_AddReductionVI:
       if (bt == T_INT && (UseSSE < 3 || !VM_Version::supports_ssse3())) {
         return false;
@@ -5793,6 +5802,47 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegL tmp2) %{
+  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
+  match(Set dst (CopySignF dst src));
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "CopySignF $dst, $src" %}
+  ins_encode %{
+    __ movl($tmp2$$Register, 0x7FFFFFFF);
+    __ vmovd($tmp1$$XMMRegister, $tmp2$$Register);
+    __ vpternlogd($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignD_reg(regD dst, regD src, regD tmp1, rRegL tmp2, regD zero) %{
+  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
+  match(Set dst (CopySignD dst (Binary src zero)));
+  ins_cost(125);
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "CopySignD $dst, $src" %}
+  ins_encode %{
+    __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
+    __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
+    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
+  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
+  match(Set dst (CopySignD dst (Binary src zero)));
+  ins_cost(100);
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "CopySignD $dst, $src" %}
+  ins_encode %{
+    __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
+    __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
+    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
