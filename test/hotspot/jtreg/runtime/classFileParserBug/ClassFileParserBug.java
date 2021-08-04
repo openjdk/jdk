@@ -26,6 +26,7 @@
  * @bug 8040018
  * @library /test/lib
  * @summary Check for exception instead of assert.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile LambdaMath.jcod

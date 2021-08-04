@@ -26,6 +26,7 @@
  * @bug 8245487
  * @summary Check that if the VM rejects classes from packages starting with "java/", it will exit
  *          cleanly after InstanceKlass::verify_on(), and not leave freed memory in _local_interfaces.
+ * @requires vm.flagless
  * @library /test/lib
  * @compile BadClassPackage.jasm
  * @run driver TestBadPackageWithInterface

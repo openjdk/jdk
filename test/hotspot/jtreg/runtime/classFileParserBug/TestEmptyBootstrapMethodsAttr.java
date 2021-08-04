@@ -26,6 +26,7 @@
  * @bug 8041918
  * @library /test/lib
  * @summary Test empty bootstrap_methods table within BootstrapMethods attribute
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile emptynumbootstrapmethods1.jcod emptynumbootstrapmethods2.jcod
