@@ -1247,7 +1247,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Integer.MIN_VALUE}.
@@ -1256,14 +1256,16 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact quotient is not an integer and is negative.
      * <ul>
      *   <li>If the signs of the arguments are the same, the results of
      *       {@code floorDiv} and the {@code /} operator are the same.  <br>
      *       For example, {@code floorDiv(4, 3) == 1} and {@code (4 / 3) == 1}.</li>
-     *   <li>If the signs of the arguments are different,  the quotient is negative and
-     *       {@code floorDiv} returns the integer less than or equal to the quotient
-     *       and the {@code /} operator returns the integer closest to zero.<br>
+     *   <li>If the signs of the arguments are different, {@code floorDiv}
+     *       returns the largest integer less than or equal to the quotient
+     *       while the {@code /} operator returns the smallest integer greater
+     *       than or equal to the quotient.
+     *       They differ if and only if the quotient is not an integer.<br>
      *       For example, {@code floorDiv(-4, 3) == -2},
      *       whereas {@code (-4 / 3) == -1}.
      *   </li>
@@ -1290,7 +1292,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1299,7 +1301,7 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact result is not an integer and is negative.
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
      *
@@ -1319,7 +1321,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1328,7 +1330,7 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact result is not an integer and is negative.
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
      *
@@ -1353,40 +1355,35 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
-     * The difference in values between {@code floorMod} and
-     * the {@code %} operator is due to the difference between
-     * {@code floorDiv} that returns the integer less than or equal to the quotient
-     * and the {@code /} operator that returns the integer closest to zero.
+     * The difference in values between {@code floorMod} and the {@code %} operator
+     * is due to the difference between {@code floorDiv} and the {@code /}
+     * operator, as detailed in {@linkplain #floorDiv(int, int)}.
      * <p>
      * Examples:
      * <ul>
-     *   <li>If the signs of the arguments are the same, the results
-     *       of {@code floorMod} and the {@code %} operator are the same.<br>
+     *   <li>Regardless of the signs of the arguments, {@code floorMod}(x, y)
+     *       is zero exactly when {@code x % y} is zero as well.</li>
+     *   <li>If neither of {@code floorMod}(x, y) or {@code x % y} is zero,
+     *       their results differ exactly when the signs of the arguments differ.<br>
      *       <ul>
      *       <li>{@code floorMod(+4, +3) == +1}; &nbsp; and {@code (+4 % +3) == +1}</li>
      *       <li>{@code floorMod(-4, -3) == -1}; &nbsp; and {@code (-4 % -3) == -1}</li>
-     *       </ul>
-     *   <li>If the signs of the arguments are different, the results
-     *       differ from the {@code %} operator.<br>
-     *       <ul>
      *       <li>{@code floorMod(+4, -3) == -2}; &nbsp; and {@code (+4 % -3) == +1}</li>
      *       <li>{@code floorMod(-4, +3) == +2}; &nbsp; and {@code (-4 % +3) == -1}</li>
      *       </ul>
      *   </li>
      * </ul>
      * <p>
-     * If the signs of arguments are unknown and a positive modulus
-     * is needed it can be computed as {@code (floorMod(x, y) + abs(y)) % abs(y)}.
      *
      * @param x the dividend
      * @param y the divisor
@@ -1407,14 +1404,14 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * For examples, see {@link #floorMod(int, int)}.
@@ -1434,14 +1431,14 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code long} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * For examples, see {@link #floorMod(int, int)}.
