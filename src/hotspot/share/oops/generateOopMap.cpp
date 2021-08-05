@@ -1928,9 +1928,17 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
 void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   // Dig up signature for field in constant pool
   ConstantPool* cp     = method()->constants();
-  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
-  int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
-  Symbol* signature      = cp->symbol_at(signatureIdx);
+  Symbol* signature = NULL;
+  if (UseNewConstantPool) {
+    int cp_index= cp->field_entries()->adr_at(idx - ConstantPool::CPCACHE_INDEX_TAG)->cp_index();
+    int nameAndTypeIdx = cp->uncached_name_and_type_ref_index_at(cp_index);
+    int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
+    signature      = cp->symbol_at(signatureIdx);
+  } else {
+    int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
+    int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
+    signature      = cp->symbol_at(signatureIdx);
+  }
 
   CellTypeState temp[4];
   CellTypeState *eff  = signature_to_effect(signature, bci, temp);

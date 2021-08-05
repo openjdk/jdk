@@ -655,7 +655,11 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.
-    LinkResolver::resolve_field_access(info, pool, last_frame.get_index_u2_cpcache(bytecode),
+    int index = last_frame.get_index_u2_cpcache(bytecode);
+    if (UseNewConstantPool) {
+      index -= ConstantPool::CPCACHE_INDEX_TAG;
+    }
+    LinkResolver::resolve_field_access(info, pool, index,
                                        m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
@@ -702,7 +706,8 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
   }
 
 if (UseNewConstantPool) {
-  int index = last_frame.get_index_u2_cpcache(bytecode);       // warning, ConstantPool::CPCACHE_INDEX_TAG would cause incorrect index FixMe
+  int index = last_frame.get_index_u2_cpcache(bytecode);
+  index -= ConstantPool::CPCACHE_INDEX_TAG;
   CPFieldEntry* entry = pool()->field_entries()->adr_at(index);
   entry->set_field(
     get_code,

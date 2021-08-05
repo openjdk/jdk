@@ -189,15 +189,21 @@ void Rewriter::rewrite_Object_init(const methodHandle& method, TRAPS) {
 
 
 // Rewrite a classfile-order CP index into a native-order CPC index.
-void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
+void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse, bool is_field) {
   address p = bcp + offset;
   if (!reverse) {
     int  cp_index    = Bytes::get_Java_u2(p);
     int  cache_index = cp_entry_to_cp_cache(cp_index);
+    if (UseNewConstantPool && is_field) {
+      cache_index = cp_entry_to_field_entry(cp_index);
+    }
     Bytes::put_native_u2(p, cache_index);
     if (!_method_handle_invokers.is_empty())
       maybe_rewrite_invokehandle(p - 1, cp_index, cache_index, reverse);
   } else {
+    if (UseNewConstantPool) {
+      fatal("Not supported yet");
+    }
     int cache_index = Bytes::get_native_u2(p);
     int pool_index = cp_cache_entry_pool_index(cache_index);
     Bytes::put_Java_u2(p, pool_index);
@@ -221,10 +227,10 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
       }
       Bytes::put_native_u2(p, cache_index);
     } else {
-      rewrite_member_reference(bcp, offset, reverse);
+      rewrite_member_reference(bcp, offset, reverse, false);
     }
   } else {
-    rewrite_member_reference(bcp, offset, reverse);
+    rewrite_member_reference(bcp, offset, reverse, false);
   }
 }
 
@@ -488,12 +494,14 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
       }
       // fall through
       case Bytecodes::_getstatic      : // fall through
-      case Bytecodes::_getfield       : // fall through
+      case Bytecodes::_getfield       :
+        rewrite_member_reference(bcp, prefix_length+1, reverse, true);
+        break;
       case Bytecodes::_invokevirtual  : // fall through
       case Bytecodes::_invokestatic   :
       case Bytecodes::_invokeinterface:
       case Bytecodes::_invokehandle   : // if reverse=true
-        rewrite_member_reference(bcp, prefix_length+1, reverse);
+        rewrite_member_reference(bcp, prefix_length+1, reverse, false);
         break;
       case Bytecodes::_invokedynamic:
         rewrite_invokedynamic(bcp, prefix_length+1, reverse);

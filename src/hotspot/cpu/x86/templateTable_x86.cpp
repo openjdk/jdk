@@ -2862,11 +2862,19 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   Label Done, notByte, notBool, notInt, notShort, notChar, notLong, notFloat, notObj;
 
-  __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  if (UseNewConstantPool) {
+    __ shrl(flags, CPFieldEntry::tos_state_shift);
+  } else {
+    __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  }
   // Make sure we don't need to mask edx after the above shift
   assert(btos == 0, "change code, btos != 0");
 
-  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);   // must be adjusted if flags in CPFieldEntry have a different format than ConstantPoolCacheEntry
+  if (UseNewConstantPool) {
+    __ andl(flags, CPFieldEntry::tos_state_mask);
+  } else {
+    __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+  }
 
   __ jcc(Assembler::notZero, notByte);
   // btos
@@ -3098,10 +3106,18 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register obj   = rcx;
   const Register off   = rbx;
   const Register flags = rax;
+  const Register fentry = rcx;
+  const Register tmp   = rbx;
 
-  resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
-  jvmti_post_field_mod(cache, index, is_static);
-  load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
+  if (UseNewConstantPool) {
+    resolve_field_entry(byte_no, fentry, tmp);
+    // Note: no JVMTI support yet
+    load_field_entry(obj, fentry, off, flags, is_static);
+  } else {
+    resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
+    jvmti_post_field_mod(cache, index, is_static);
+    load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
+  }
 
   // [jk] not needed currently
   // volatile_barrier(Assembler::Membar_mask_bits(Assembler::LoadStore |
@@ -3109,7 +3125,11 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   Label notVolatile, Done;
   __ movl(rdx, flags);
-  __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
+  if (UseNewConstantPool) {
+    __ shrl(rdx, CPFieldEntry::is_volatile_shift);
+  } else {
+    __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
+  }
   __ andl(rdx, 0x1);
 
   // Check for volatile store
@@ -3140,10 +3160,18 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
 
   const Register bc    = LP64_ONLY(c_rarg3) NOT_LP64(rcx);
 
-  __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  if (UseNewConstantPool) {
+    __ shrl(flags, CPFieldEntry::tos_state_shift);
+  } else {
+    __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  }
 
   assert(btos == 0, "change code, btos != 0");
-  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+  if (UseNewConstantPool) {
+    __ andl(flags, CPFieldEntry::tos_state_mask);
+  } else {
+    __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+  }
   __ jcc(Assembler::notZero, notByte);
 
   // btos
@@ -3477,19 +3505,26 @@ void TemplateTable::fast_accessfield(TosState state) {
     __ bind(L1);
   }
 
-  // access constant pool cache
-  __ get_cache_and_index_at_bcp(rcx, rbx, 1);
-  // replace index with field offset from cache entry
-  // [jk] not needed currently
-  // __ movl(rdx, Address(rcx, rbx, Address::times_8,
-  //                      in_bytes(ConstantPoolCache::base_offset() +
-  //                               ConstantPoolCacheEntry::flags_offset())));
-  // __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
-  // __ andl(rdx, 0x1);
-  //
-  __ movptr(rbx, Address(rcx, rbx, Address::times_ptr,
-                         in_bytes(ConstantPoolCache::base_offset() +
-                                  ConstantPoolCacheEntry::f2_offset())));
+  if (UseNewConstantPool) {
+    Register fentry = rcx;
+    Register tmp = rdx;
+    __ get_field_entry(fentry, tmp, 1);
+    __ movptr(rbx, Address(fentry, CPFieldEntry::field_offset_offset()));
+  } else {
+    // access constant pool cache
+    __ get_cache_and_index_at_bcp(rcx, rbx, 1);
+    // replace index with field offset from cache entry
+    // [jk] not needed currently
+    // __ movl(rdx, Address(rcx, rbx, Address::times_8,
+    //                      in_bytes(ConstantPoolCache::base_offset() +
+    //                               ConstantPoolCacheEntry::flags_offset())));
+    // __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
+    // __ andl(rdx, 0x1);
+    //
+    __ movptr(rbx, Address(rcx, rbx, Address::times_ptr,
+                          in_bytes(ConstantPoolCache::base_offset() +
+                                    ConstantPoolCacheEntry::f2_offset())));
+  }
 
   // rax: object
   __ verify_oop(rax);

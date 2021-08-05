@@ -95,13 +95,23 @@ public:
 
 class CPFieldEntry : public MetaspaceObj {
   Klass* _field_holder;
-  u4 _field_offset;
+  u8 _field_offset;
   u2 _flags;
   u2 _field_index;
   u2 _cp_index;
   u1 _b2, _b1;
 
  public:
+
+  enum {
+    // high order bits are the TosState corresponding to field type or method return type
+    tos_state_bits             = 4,
+    tos_state_mask             = right_n_bits(tos_state_bits),
+    tos_state_shift            = 2 * BitsPerByte - tos_state_bits,
+    is_final_shift             = 0,  // (f) is the field final?
+    is_volatile_shift          = 1,  // (v) is the field volatile?
+  };
+
   void set_holder(Klass* holder) {
     assert(_field_holder != NULL, "field holder should not be set twice");
     _field_holder = holder;
@@ -119,6 +129,11 @@ class CPFieldEntry : public MetaspaceObj {
     _field_offset = field_offset;
     _field_index = field_index;
     // flags: TODO / FIXME
+    // more assertions should be ensure safety of flags constructions (field index range, etc.)
+    assert(field_type < number_of_states, "Invalid field_type");
+    int option_bits = ((is_volatile ? 1 : 0) << CPFieldEntry::is_volatile_shift) |
+                       ((is_final    ? 1 : 0) << CPFieldEntry::is_final_shift);
+    _flags = ((int)field_type << CPFieldEntry::tos_state_shift) | option_bits;
     _b1 = get_code;
     _b2 = put_code;
   }

@@ -76,6 +76,7 @@ class BytecodePrinter: public BytecodeClosure {
   void      print_constant(int i, outputStream* st = tty);
   void      print_field_or_method(int i, outputStream* st = tty);
   void      print_field_or_method(int orig_i, int i, outputStream* st = tty);
+  void      print_field(int i, outputStream* st = tty);
   void      print_attributes(int bci, outputStream* st = tty);
   void      bytecode_epilog(int bci, outputStream* st = tty);
 
@@ -348,6 +349,23 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   }
 }
 
+void BytecodePrinter::print_field(int i, outputStream* st) {
+  assert(UseNewConstantPool, "Must be");
+  ConstantPool* constants = method()->constants();
+  int cp_index;
+  if (constants->field_entries() != NULL) {
+    cp_index = constants->field_entries()->adr_at(i - ConstantPool::CPCACHE_INDEX_TAG)->cp_index();
+  } else {
+    cp_index = i;  // Not rewritten yet?
+  }
+  constantTag tag = constants->tag_at(cp_index);
+  Symbol* name = constants->uncached_name_ref_at(cp_index);
+  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
+  const char* sep = (tag.is_field() ? "/" : "");
+  st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+}
+
 void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
   int orig_i = i;
   if (!check_index(orig_i, i, st))  return;
@@ -545,7 +563,11 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
     case Bytecodes::_getfield:
-      print_field_or_method(get_index_u2_cpcache(), st);
+      if (UseNewConstantPool) {
+        print_field(get_index_u2_cpcache(), st);
+      } else {
+        print_field_or_method(get_index_u2_cpcache(), st);
+      }
       break;
 
     case Bytecodes::_invokevirtual:

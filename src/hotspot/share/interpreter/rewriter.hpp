@@ -99,6 +99,7 @@ class Rewriter: public StackObj {
   }
 
   int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
+  int  cp_entry_to_field_entry(int i) { return _cp_to_field_map.at(i); }
   bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
 
   void add_field_entry(int cp_index) {
@@ -198,7 +199,7 @@ class Rewriter: public StackObj {
   void make_constant_pool_cache(TRAPS);
   void scan_method(Thread* thread, Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(const methodHandle& m, TRAPS);
-  void rewrite_member_reference(address bcp, int offset, bool reverse);
+  void rewrite_member_reference(address bcp, int offset, bool reverse, bool is_field);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);
   void maybe_rewrite_ldc(address bcp, int offset, bool is_wide, bool reverse);
