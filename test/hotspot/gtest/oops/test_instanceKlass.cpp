@@ -53,9 +53,12 @@ TEST_VM(InstanceKlass, class_loader_printer) {
   mirror->print_on(&st);
   ASSERT_TRUE(strstr(st.as_string(), "internal 'protection_domain'") != NULL) << "Must contain internal fields";
   // We should test other printing functions too.
+#ifndef PRODUCT
   st.reset();
+  // method printing is non-product
   Method* method = vmClasses::ClassLoader_klass()->methods()->at(0);  // we know there's a method here!
   method->print_on(&st);
   ASSERT_TRUE(strstr(st.as_string(), "method holder:") != NULL) << "Must contain method_holder field";
   ASSERT_TRUE(strstr(st.as_string(), "'java/lang/ClassLoader'") != NULL) << "Must be in ClassLoader";
+#endif
 }

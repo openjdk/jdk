@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ import java.security.cert.*;
  * <li>VAR_CODE_SIGNING (code signing specific checks).
  * <li>VAR_JCE_SIGNING (JCE code signing specific checks).
  * <li>VAR_TSA_SERVER (TSA server specific checks).
- * <li>VAR_PLUGIN_CODE_SIGNING (Plugin/WebStart code signing specific checks).
  * </ul>
  * See EndEntityChecker for more information.
  * <p>
@@ -135,13 +134,6 @@ public abstract class Validator {
      * @see #getInstance
      */
     public static final String VAR_TSA_SERVER = "tsa server";
-
-    /**
-     * Constant for a Code Signing variant of a validator for use by
-     * the J2SE Plugin/WebStart code.
-     * @see #getInstance
-     */
-    public static final String VAR_PLUGIN_CODE_SIGNING = "plugin code signing";
 
     private final String type;
     final EndEntityChecker endEntityChecker;
