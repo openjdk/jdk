@@ -354,6 +354,27 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public long transferTo(OutputStream out) throws IOException {
+        if (out instanceof FileOutputStream fos) {
+            FileChannel fci = getChannel();
+            long pos = fci.position();
+            long count = fci.size() - pos;
+            if (pos >= 0 && count >= 0) {
+                FileChannel fco = fos.getChannel();
+
+                // Return if transferTo() copies enough bytes, but if it does
+                // not, then use the superclass method to copy those remaining
+                if (fci.transferTo(pos, count, fco) == count) {
+                    return count;
+                }
+            }
+        }
+        return super.transferTo(out);
+    }
+
     private long length() throws IOException {
         return length0();
     }
