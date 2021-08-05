@@ -66,6 +66,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -142,16 +143,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 return f;
             },
             (s, p) -> Path.of(s));
-
-    public static final StandardBundlerParam<Boolean> SIGN_BUNDLE  =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.MAC_SIGN.getId(),
-            Boolean.class,
-            params -> false,
-            // valueOf(null) is false, we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                    null : Boolean.valueOf(s)
-        );
 
     public static final StandardBundlerParam<Boolean> APP_STORE =
             new StandardBundlerParam<>(
@@ -863,21 +854,4 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         return null;
     }
-
-     /*
-      * isFileSigned()
-      * We cannot use this internally to decide whether to unsign a file
-      * or not before resigning, because both unsigned and badly signed
-      * return false. It can be used to differentiate between a signed and
-      * unsigned app-image.
-      */
-     public static boolean isFileSigned(Path file) {
-         try {
-             IOUtils.exec(new ProcessBuilder("/usr/bin/codesign",
-                         "--verify", file.toString()));
-         } catch (IOException ex) {
-             return false;
-         }
-         return true;
-     }
 }
