@@ -103,7 +103,7 @@ public class IdempotencyAndCommutativityTest {
                 new ExchangeValues("UNKNOWN", MISSING_FILE_NAME, 501, null)
         );
 
-        return sequences.stream()
+        return sequences.stream()  // cartesian product
                         .flatMap(s1 -> sequences.stream().map(s2 -> new ExchangeValues[] { s1, s2 }))
                         .toArray(Object[][]::new);
     }

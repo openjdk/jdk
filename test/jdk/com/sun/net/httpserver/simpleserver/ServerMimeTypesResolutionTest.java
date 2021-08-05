@@ -40,11 +40,13 @@ import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import sun.net.www.MimeTable;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
@@ -174,30 +176,36 @@ public class ServerMimeTypesResolutionTest {
                 .buildUnchecked();
     }
 
-    // This is not a unit test but a one-off test to check which common file extensions are not supported
-    // Source common mime types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-//    @DataProvider
-//    public static Object[][] commonExtensions() {
-//        Set<String> extensions = Set.of(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
-//                ".bz2", ".csh", ".css", ".csv", ".doc", ".docx",".eot", ".epub", ".gz", ".gif", ".htm", ".html", ".ico",
-//                ".ics", ".jar", ".jpeg", ".jpg", ".js", ".json", ".jsonld", ".mid", ".midi", ".mjs", ".mp3", ".cda",
-//                ".mp4", ".mpeg", ".mpkg", ".odp", ".ods", ".odt", ".oga", ".ogv", ".ogx", ".opus", ".otf", ".png",
-//                ".pdf", ".php", ".ppt", ".pptx", ".rar", ".rtf", ".sh", ".svg", ".swf", ".tar", ".tif", ".tiff", ".ts",
-//                ".ttf", ".txt", ".vsd", ".wav", ".weba", ".webm", ".webp", ".woff", ".woff2", ".xhtml", ".xls", ".xlsx",
-//                ".xml", ".xul", ".zip", ".3gp", ".3g2", ".7z");
-//        return extensions.stream().map(e -> new Object[]{e}).toArray(Object[][]::new);
-//    }
-//
+    @DataProvider
+    public static Object[][] commonExtensions() {
+        Set<String> extensions = Set.of(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
+                ".bz2", ".csh", ".css", ".csv", ".doc", ".docx",".eot", ".epub", ".gz", ".gif", ".htm", ".html", ".ico",
+                ".ics", ".jar", ".jpeg", ".jpg", ".js", ".json", ".jsonld", ".mid", ".midi", ".mjs", ".mp3", ".cda",
+                ".mp4", ".mpeg", ".mpkg", ".odp", ".ods", ".odt", ".oga", ".ogv", ".ogx", ".opus", ".otf", ".png",
+                ".pdf", ".php", ".ppt", ".pptx", ".rar", ".rtf", ".sh", ".svg", ".swf", ".tar", ".tif", ".tiff", ".ts",
+                ".ttf", ".txt", ".vsd", ".wav", ".weba", ".webm", ".webp", ".woff", ".woff2", ".xhtml", ".xls", ".xlsx",
+                ".xml", ".xul", ".zip", ".3gp", ".3g2", ".7z");
+        return extensions.stream().map(e -> new Object[]{e}).toArray(Object[][]::new);
+    }
+
+    /**
+     * This is a one-off test to check which common file extensions are
+     * currently supported by the system-wide mime table returned by
+     * {@linkplain java.net.FileNameMap#getContentTypeFor(String) getContentTypeFor}.
+     *
+     * Source common mime types:
+     * https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+     */
 //    @Test(dataProvider = "commonExtensions")
-//    public static void testCommonExtensions(String extension) {
-//        var contains = supportedFileExtensions.contains(extension);
-//        if (!contains) UNSUPPORTED_FILE_EXTENSIONS.add(extension);
-//        assertTrue(contains, "expecting %s to be present".formatted(extension));
-//    }
-//
+    public static void testCommonExtensions(String extension) {
+        var contains = supportedFileExtensions.contains(extension);
+        if (!contains) UNSUPPORTED_FILE_EXTENSIONS.add(extension);
+        assertTrue(contains, "expecting %s to be present".formatted(extension));
+    }
+
 //    @AfterTest
-//    public static void printUnsupportedFileExtensions() {
-//        System.out.println("Unsupported file extensions: " + UNSUPPORTED_FILE_EXTENSIONS.size());
-//        UNSUPPORTED_FILE_EXTENSIONS.forEach(System.out::println);
-//    }
+    public static void printUnsupportedFileExtensions() {
+        System.out.println("Unsupported file extensions: " + UNSUPPORTED_FILE_EXTENSIONS.size());
+        UNSUPPORTED_FILE_EXTENSIONS.forEach(System.out::println);
+    }
 }

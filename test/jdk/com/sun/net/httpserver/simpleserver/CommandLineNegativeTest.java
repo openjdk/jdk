@@ -61,7 +61,7 @@ public class CommandLineNegativeTest {
         Files.createFile(TEST_FILE);
     }
 
-    @DataProvider(name = "badOption")
+    @DataProvider
     public Object[][] badOption() {
         return new Object[][] {
                 {"--badOption"},
@@ -77,7 +77,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: unknown option: " + opt);
     }
 
-    @DataProvider(name = "tooManyOptionArgs")
+    @DataProvider
     public Object[][] tooManyOptionArgs() {
         return new Object[][] {
                 {"-b", "localhost"},
@@ -100,7 +100,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: unknown option: " + arg);
     }
 
-    @DataProvider(name = "noArg")
+    @DataProvider
     public Object[][] noArg() {
         return new Object[][] {
                 {"-b"},
@@ -123,7 +123,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: no value given for " + opt);
     }
 
-    @DataProvider(name = "invalidValue")
+    @DataProvider
     public Object[][] invalidValue() {
         return new Object[][] {
                 {"-b", "[127.0.0.1]"},

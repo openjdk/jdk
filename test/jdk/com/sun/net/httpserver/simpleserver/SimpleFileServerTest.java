@@ -542,16 +542,6 @@ public class SimpleFileServerTest {
                 }
             }
         }
-        {   // not of the default file system
-            Path p = createDirectoryInZipFs(TEST_DIR.resolve("aFile.zip")).toAbsolutePath();
-            assert p.getFileSystem() != FileSystems.getDefault();
-            try {
-                var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
-                assertTrue(iae.getMessage().contains("not associated with the system-default file system"));
-            } finally {
-                p.getFileSystem().close();
-            }
-        }
     }
 
     static Path createDirectoryInZipFs(Path zipFile) throws Exception {
