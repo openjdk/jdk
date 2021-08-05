@@ -910,30 +910,18 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * If the dividend is {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and
-     * the divisor is {@code -1}, then integer overflow occurs and an
-     * {@code ArithmeticException} is thrown.
-     * <p>
-     * Normal integer division operates under the round to zero rounding mode
-     * (truncation).  This operation instead acts under the round toward
-     * negative infinity (floor) rounding mode.
-     * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
-     * <ul>
-     *   <li>If the signs of the arguments are the same, the results of
-     *       {@code floorDiv} and the {@code /} operator are the same.  <br>
-     *       For example, {@code floorDiv(4, 3) == 1} and {@code (4 / 3) == 1}.</li>
-     *   <li>If the signs of the arguments are different,  the quotient is negative and
-     *       {@code floorDiv} returns the integer less than or equal to the quotient
-     *       and the {@code /} operator returns the integer closest to zero.<br>
-     *       For example, {@code floorDiv(-4, 3) == -2},
-     *       whereas {@code (-4 / 3) == -1}.
-     *   </li>
-     * </ul>
+     * This method is identical to {@link #floorDiv(int,int)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Integer.MIN_VALUE}.
      * <p>
      * The floor modulus method {@link #floorMod(int,int)} is a suitable
      * counterpart both for this method and for the {@link #floorDiv(int,int)}
      * method.
+     * <p>
+     * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
      *
      * @param x the dividend
      * @param y the divisor
@@ -942,7 +930,6 @@ public final class StrictMath {
      * @throws ArithmeticException if the divisor {@code y} is zero, or the
      * dividend {@code x} is {@code Integer.MIN_VALUE} and the divisor {@code y}
      * is {@code -1}.
-     * @see #floorDiv(int, int)
      * @see Math#floorDiv(int, int)
      * @since 18
      */
@@ -953,21 +940,17 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * If the dividend is {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the
-     * divisor is {@code -1}, then integer overflow occurs and an
-     * {@code ArithmeticException} is thrown.
-     * <p>
-     * Normal integer division operates under the round to zero rounding mode
-     * (truncation).  This operation instead acts under the round toward
-     * negative infinity (floor) rounding mode.
-     * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
-     * <p>
-     * For examples, see {@link #floorDiv(int, int)}.
+     * This method is identical to {@link #floorDiv(long,long)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Long.MIN_VALUE}.
      * <p>
      * The floor modulus method {@link #floorMod(long,long)} is a suitable
      * counterpart both for this method and for the {@link #floorDiv(long,long)}
      * method.
+     * <p>
+     * For examples, see {@link Math#floorDiv(int, int) Math.floorDiv}.
      *
      * @param x the dividend
      * @param y the divisor
@@ -976,8 +959,8 @@ public final class StrictMath {
      * @throws ArithmeticException if the divisor {@code y} is zero, or the
      * dividend {@code x} is {@code Long.MIN_VALUE} and the divisor {@code y}
      * is {@code -1}.
-     * @see #floorDiv(long, long)
-     * @see Math#floorDiv(long, long)
+     * @see Math#floorDiv(int, int)
+     * @see Math#floorDiv(long,long)
      * @since 18
      */
     public static long floorDivExact(long x, long y) {
