@@ -186,14 +186,14 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     if (transcendental_entry) {
       __ mov(Rtmp_save0, LR);
       continuation = Rtmp_save0;
-      generate_transcendental_entry(kind);
+      generate_math_runtime_call(kind);
     }
     __ ret(continuation);
   }
   return entry_point;
 }
 
-void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::MethodKind kind) {
+void TemplateInterpreterGenerator::generate_math_runtime_call(AbstractInterpreter::MethodKind kind) {
   address fn;
   switch (kind) {
 #ifdef __SOFTFP__

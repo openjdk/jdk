@@ -115,7 +115,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #endif // AARCH64
 
 #ifdef ARM32
-  void generate_transcendental_entry(AbstractInterpreter::MethodKind kind);
+  void generate_math_runtime_call(AbstractInterpreter::MethodKind kind);
 #endif // ARM32
 
 #ifdef PPC
