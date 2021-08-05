@@ -45,6 +45,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleComponent;
@@ -1790,7 +1791,7 @@ public class JTabbedPane extends JComponent
 
     private void checkIndex(int index) {
         if (index < 0 || index >= pages.size()) {
-            throw new IndexOutOfBoundsException("Index: "+index+", Tab count: "+pages.size());
+            throw new IndexOutOfBoundsException("Index: " + index + ", Tab count: " + pages.size());
         }
     }
 
