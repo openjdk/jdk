@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public final class Options {
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final boolean DEFAULT_SAMPLE_THREADS = true;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
-    private static final SafePath DEFAULT_DUMP_PATH = SecuritySupport.USER_HOME;
+    private static final SafePath DEFAULT_DUMP_PATH = new SafePath(".");
 
     private static long memorySize;
     private static long globalBufferSize;
@@ -57,7 +57,6 @@ public final class Options {
     private static int stackDepth;
     private static boolean sampleThreads;
     private static long maxChunkSize;
-    private static SafePath dumpPath;
 
     static {
         final long pageSize = Unsafe.getUnsafe().pageSize();
@@ -114,11 +113,11 @@ public final class Options {
     }
 
     public static synchronized void setDumpPath(SafePath path) {
-        dumpPath = path;
+        jvm.setDumpPath(path.toString());
     }
 
     public static synchronized SafePath getDumpPath() {
-        return dumpPath;
+        return new SafePath(jvm.getDumpPath());
     }
 
     public static synchronized void setStackDepth(Integer stackTraceDepth) {

@@ -75,6 +75,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"flush", (char*)"(Ljdk/jfr/internal/EventWriter;II)Z", (void*)jfr_event_writer_flush,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,
       (char*)"setRepositoryLocation", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_repository_location,
+      (char*)"setDumpPath", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_dump_path,
+      (char*)"getDumpPath", (char*)"()Ljava/lang/String;", (void*)jfr_get_dump_path,
       (char*)"abort", (char*)"(Ljava/lang/String;)V", (void*)jfr_abort,
       (char*)"addStringConstant", (char*)"(JLjava/lang/String;)Z", (void*)jfr_add_string_constant,
       (char*)"uncaughtException", (char*)"(Ljava/lang/Thread;Ljava/lang/Throwable;)V", (void*)jfr_uncaught_exception,
