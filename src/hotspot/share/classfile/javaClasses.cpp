@@ -2668,18 +2668,16 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
 }
 
 objArrayOop java_lang_Throwable::get_stack_trace(Handle throwable, TRAPS) {
-  // Call to JVM to fill in the stack trace and clear declaringObject to not keep classes alive
-  // in the stack trace.
+  // Call to JVM to fill in the stack trace and clear declaringClassObject to
+  // not keep classes alive in the stack trace.
   // call this:  public StackTraceElement[] getStackTrace()
   assert(throwable.not_null(), "shouldn't be");
-
-  TempNewSymbol sym = SymbolTable::new_symbol("getStackTrace");
-  TempNewSymbol sig = SymbolTable::new_symbol("()[Ljava/lang/StackTraceElement;");
 
   JavaValue result(T_ARRAY);
   JavaCalls::call_virtual(&result, throwable,
                           vmClasses::Throwable_klass(),
-                          sym, sig,
+                          vmSymbols::getStackTrace_name(),
+                          vmSymbols::getStackTrace_signature(),
                           CHECK_NULL);
   oop stack_trace = result.get_oop();
   assert(stack_trace->is_objArray(), "Should be an array");
@@ -2691,9 +2689,9 @@ oop java_lang_Throwable::recreate_cause(Symbol* exception, Symbol* message, cons
   ResourceMark rm(THREAD);
   stringStream st;
   if (message == NULL) {
-    st.print("in thread %s", thread_name);
+    st.print("[in thread \"%s\"]", thread_name);
   } else {
-    st.print("%s in thread %s", message->as_C_string(), thread_name);
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), thread_name);
   }
   Handle h_cause = Exceptions::new_exception(THREAD, exception, st.as_string());
   java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());

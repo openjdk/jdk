@@ -24,13 +24,31 @@
 /**
  * @test
  * @bug 8048190
- * @summary Test that the CNFE saves original exception during class initialization.
- * @compile InitNPE.jasm InitOOM.jasm
+ * @summary Test that the NCDFE saves original exception during class initialization.
  * @run main InitExceptionTest
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+
+class InitNPE {
+    static {
+        if (true) throw new NullPointerException();
+    }
+}
+
+class InitOOM {
+    static {
+        if (true) foo();
+    }
+    static void foo() {
+        ArrayList<byte[]> l = new ArrayList<>();
+        while (true) {
+            l.add(new byte[16*1024]);
+        }
+    }
+}
 
 public class InitExceptionTest {
 

@@ -1065,20 +1065,19 @@ void InstanceKlass::add_initialization_error(Handle exception, TRAPS) {
   MutexLocker ml(THREAD, ClassInitError_lock);
   InitErrorElement elem(THREAD, exception, stack_trace);
   _initialization_error_table.put_if_absent(this, elem, &created);
-  if (!created) {
-    elem.clean();
-  }
+  assert(created, "Initialization is single threaded");
 }
 
 oop InstanceKlass::get_initialization_error(TRAPS) {
   InitErrorElement* h;
   {
-    MutexLocker ml(ClassInitError_lock);
+    MutexLocker ml(THREAD, ClassInitError_lock);
     h = _initialization_error_table.get(this);
   }
   if (h != nullptr) {
-    return java_lang_Throwable::recreate_cause(h->exception(), h->message(), h->thread_name(),
-                                               Handle(THREAD, h->stack_trace()), CHECK_NULL);
+    oop cause = java_lang_Throwable::recreate_cause(h->exception(), h->message(), h->thread_name(),
+                                                    Handle(THREAD, h->stack_trace()), CHECK_NULL);
+    return cause;
   } else {
     return nullptr;
   }

@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 8048190
- * @summary Test that the CNFE saves original exception during class initialization.
- *          And is unloaded
+ * @summary Test that the NCDFE saves original exception during class initialization,
+ *          and doesn't cause the classes in the stacktrace to be unloaded.
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
