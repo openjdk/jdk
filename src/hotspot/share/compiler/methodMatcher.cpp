@@ -95,7 +95,7 @@ void MethodMatcher::init(Symbol* class_name, Mode class_mode,
  _signature = signature;
 }
 
-static bool is_hidden_class_pattern(const char * current, const char* start) {
+static bool is_hidden_class_pattern(const char * current, const char * start) {
   int index = 0;
   char c = *(++current);
 
