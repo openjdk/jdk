@@ -170,7 +170,7 @@ void VM_G1Concurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
+  TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
   _cl->do_void();

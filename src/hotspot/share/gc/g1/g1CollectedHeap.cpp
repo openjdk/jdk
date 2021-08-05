@@ -347,7 +347,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // A successful humongous object allocation changes the used space
     // information of the old generation so we need to recalculate the
     // sizes and update the jstat counters here.
-    g1mm()->update_sizes();
+    monitoring_support()->update_sizes();
   }
 
   _verifier->verify_region_sets_optional();
@@ -1028,6 +1028,9 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
 void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
   assert_used_and_recalculate_used_equal(this);
+  if (!VerifyBeforeGC) {
+    return;
+  }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
@@ -1073,6 +1076,9 @@ void G1CollectedHeap::abort_refinement() {
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
+  if (!VerifyAfterGC) {
+    return;
+  }
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
@@ -1450,7 +1456,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
-  _g1mm(NULL),
+  _monitoring_support(nullptr),
   _humongous_reclaim_candidates(),
   _num_humongous_objects(0),
   _num_humongous_reclaim_candidates(0),
@@ -1763,7 +1769,7 @@ jint G1CollectedHeap::initialize() {
 
   // Do create of the monitoring and management support so that
   // values in the heap have been properly initialized.
-  _g1mm = new G1MonitoringSupport(this);
+  _monitoring_support = new G1MonitoringSupport(this);
 
   _preserved_marks_set.init(ParallelGCThreads);
 
@@ -2867,21 +2873,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
   return true;
 }
 
-void G1CollectedHeap::gc_tracer_report_gc_start() {
-  _gc_timer_stw->register_gc_start();
-  _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
-}
-
-void G1CollectedHeap::gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark,
-                                              G1EvacuationInfo& evacuation_info) {
-  _gc_tracer_stw->report_evacuation_info(&evacuation_info);
-  _gc_tracer_stw->report_tenuring_threshold(_policy->tenuring_threshold());
-
-  _gc_timer_stw->register_gc_end();
-  _gc_tracer_stw->report_gc_end(_gc_timer_stw->gc_end(),
-  _gc_timer_stw->time_partitions());
-}
-
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
 // The code relies on the fact that GCTraceTimeWrapper stores the string passed
@@ -3088,7 +3079,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // JFR
     G1YoungGCJFRTracerMark jtm(_gc_timer_stw, _gc_tracer_stw, gc_cause());
     // JStat/MXBeans
-    G1MonitoringScope ms(g1mm(),
+    G1MonitoringScope ms(monitoring_support(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
 
@@ -4186,7 +4177,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
   // used space has been recorded in _summary_bytes_used.
-  g1mm()->update_eden_size();
+  monitoring_support()->update_eden_size();
 }
 
 // Methods for the GC alloc regions
@@ -4386,17 +4377,17 @@ void G1CollectedHeap::rebuild_strong_code_roots() {
 }
 
 void G1CollectedHeap::initialize_serviceability() {
-  _g1mm->initialize_serviceability();
+  _monitoring_support->initialize_serviceability();
 }
 
 MemoryUsage G1CollectedHeap::memory_usage() {
-  return _g1mm->memory_usage();
+  return _monitoring_support->memory_usage();
 }
 
 GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
-  return _g1mm->memory_managers();
+  return _monitoring_support->memory_managers();
 }
 
 GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
-  return _g1mm->memory_pools();
+  return _monitoring_support->memory_pools();
 }

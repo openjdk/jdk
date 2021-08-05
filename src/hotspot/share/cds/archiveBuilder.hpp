@@ -216,7 +216,7 @@ private:
                           GrowableArray<MemRegion>* closed_heap_regions,
                           GrowableArray<MemRegion>* open_heap_regions);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+  void print_heap_region_stats(GrowableArray<MemRegion>* regions,
                                const char *name, size_t total_size);
 
   // For global access.

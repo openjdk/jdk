@@ -2034,7 +2034,7 @@ public:
   INSN(fmovs, 0b000, 0b00, 0b00, 0b110);
   INSN(fmovd, 0b100, 0b01, 0b00, 0b110);
 
-  // INSN(fmovhid, 0b100, 0b10, 0b01, 0b110);
+  INSN(fmovhid, 0b100, 0b10, 0b01, 0b110);
 
 #undef INSN
 
