@@ -335,7 +335,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
-            writer.addSummaryLinkComment(this, element, desc);
+            writer.addSummaryLinkComment(element, desc);
             useTable.addRow(summaryType, typeContent, desc);
         }
         contentTree.add(useTable);
@@ -363,7 +363,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         addSummaryLink(tElement, member, summaryLink);
         rowContents.add(summaryLink);
         Content desc = new ContentBuilder();
-        writer.addSummaryLinkComment(this, member, firstSentenceTrees, desc);
+        writer.addSummaryLinkComment(member, firstSentenceTrees, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);
     }
