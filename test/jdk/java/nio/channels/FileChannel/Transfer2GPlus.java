@@ -96,6 +96,8 @@ public class Transfer2GPlus {
                         long n = srcCh.transferTo(total, LENGTH, dstCh);
                         if (n == 0)
                             break;
+                        if (n > LINUX_MAX_TRANSFER_SIZE)
+                            throw new RuntimeException("Unexpected transfer size: " + n);
                         total += n;
                     } while (total < LENGTH);
                 }
