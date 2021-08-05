@@ -25,6 +25,7 @@
 
 package sun.security.jgss.krb5;
 
+import sun.security.krb5.JavaxSecurityAuthKerberosAccess;
 import sun.security.krb5.KerberosSecrets;
 
 import javax.security.auth.kerberos.KerberosTicket;
@@ -150,83 +151,58 @@ class SubjectComber {
                     Iterator<Object> iterator = pcs.iterator();
                     while (iterator.hasNext()) {
                         Object obj = iterator.next();
-                        if (obj instanceof KerberosTicket) {
-                            @SuppressWarnings("unchecked")
-                            KerberosTicket ticket = (KerberosTicket)obj;
-                            if (DEBUG) {
-                                System.out.println("Found ticket for "
-                                                    + ticket.getClient()
-                                                    + " to go to "
-                                                    + ticket.getServer()
-                                                    + " expiring on "
-                                                    + ticket.getEndTime());
-                            }
-                            if (!ticket.isCurrent()) {
-                                // let us remove the ticket from the Subject
-                                // Note that both TGT and service ticket will be
-                                // removed  upon expiration
-                                if (!subject.isReadOnly()) {
-                                    iterator.remove();
-                                    try {
-                                        ticket.destroy();
-                                        if (DEBUG) {
-                                            System.out.println("Removed and destroyed "
-                                                        + "the expired Ticket \n"
-                                                        + ticket);
+                        if (!(obj instanceof KerberosTicket)) {
+                            continue;
+                        }
+                        @SuppressWarnings("unchecked")
+                        KerberosTicket ticket = (KerberosTicket)obj;
+                        if (DEBUG) {
+                            System.out.println("Found ticket for "
+                                                + ticket.getClient()
+                                                + " to go to "
+                                                + ticket.getServer()
+                                                + " expiring on "
+                                                + ticket.getEndTime());
+                        }
+                        if (!ticket.isCurrent()) {
+                            // let us remove the ticket from the Subject
+                            // Note that both TGT and service ticket will be
+                            // removed  upon expiration
+                            if (!subject.isReadOnly()) {
+                                iterator.remove();
+                                try {
+                                    ticket.destroy();
+                                    if (DEBUG) {
+                                        System.out.println("Removed and destroyed "
+                                                    + "the expired Ticket \n"
+                                                    + ticket);
 
-                                        }
-                                    } catch (DestroyFailedException dfe) {
-                                        if (DEBUG) {
-                                            System.out.println("Expired ticket not" +
-                                                    " detroyed successfully. " + dfe);
-                                        }
                                     }
-
+                                } catch (DestroyFailedException dfe) {
+                                    if (DEBUG) {
+                                        System.out.println("Expired ticket not" +
+                                                " detroyed successfully. " + dfe);
+                                    }
                                 }
-                            } else {
-                                KerberosPrincipal serverAlias = KerberosSecrets
-                                        .getJavaxSecurityAuthKerberosAccess()
-                                        .kerberosTicketGetServerAlias(ticket);
-                                if (serverPrincipal == null ||
-                                    ticket.getServer().getName().equals(serverPrincipal) ||
-                                            (serverAlias != null &&
-                                                    serverPrincipal.equals(
-                                                            serverAlias.getName())))  {
-                                    KerberosPrincipal clientAlias = KerberosSecrets
-                                            .getJavaxSecurityAuthKerberosAccess()
-                                            .kerberosTicketGetClientAlias(ticket);
-                                    if (clientPrincipal == null ||
-                                        clientPrincipal.equals(
-                                            ticket.getClient().getName()) ||
-                                            (clientAlias != null &&
-                                            clientPrincipal.equals(
-                                                    clientAlias.getName()))) {
-                                        if (oneOnly) {
-                                            return ticket;
-                                        } else {
-                                            // Record names so that tickets will
-                                            // all belong to same principals
-                                            if (clientPrincipal == null) {
-                                                if (clientAlias == null) {
-                                                    clientPrincipal =
-                                                            ticket.getClient().getName();
-                                                } else {
-                                                    clientPrincipal =
-                                                            clientAlias.getName();
-                                                }
-                                            }
-                                            if (serverPrincipal == null) {
-                                                if (serverAlias == null) {
-                                                    serverPrincipal =
-                                                            ticket.getServer().getName();
-                                                } else {
-                                                    serverPrincipal =
-                                                            serverAlias.getName();
-                                                }
-                                            }
-                                            answer.add(credClass.cast(ticket));
-                                        }
+                            }
+                            continue;
+                        }
+                        String serverMatch = findServerMatch(serverPrincipal, ticket);
+                        if (serverMatch != null) {
+                            String clientMatch = findClientMatch(clientPrincipal, ticket);
+                            if (clientMatch != null) {
+                                if (oneOnly) {
+                                    return ticket;
+                                } else {
+                                    // Record names so that tickets will
+                                    // all belong to same principals
+                                    if (clientPrincipal == null) {
+                                        clientPrincipal = clientMatch;
                                     }
+                                    if (serverPrincipal == null) {
+                                        serverPrincipal = serverMatch;
+                                    }
+                                    answer.add(credClass.cast(ticket));
                                 }
                             }
                         }
@@ -234,6 +210,42 @@ class SubjectComber {
                 }
             }
             return answer;
+        }
+    }
+
+    private static String findServerMatch(String input, KerberosTicket ticket) {
+        KerberosPrincipal serverAlias = KerberosSecrets
+                .getJavaxSecurityAuthKerberosAccess()
+                .kerberosTicketGetServerAlias(ticket);
+        if (input != null) {
+            return ((serverAlias != null && input.equals(serverAlias.getName())) ||
+                    input.equals(ticket.getServer().getName()))
+                    ? input : null;
+        } else {
+            return serverAlias != null
+                    ? serverAlias.getName()
+                    : ticket.getServer().getName();
+        }
+    }
+
+    private static String findClientMatch(String input, KerberosTicket ticket) {
+        JavaxSecurityAuthKerberosAccess access = KerberosSecrets
+                .getJavaxSecurityAuthKerberosAccess();
+        KerberosPrincipal clientAlias = access.kerberosTicketGetClientAlias(ticket);
+        KerberosTicket proxy = access.kerberosTicketGetProxy(ticket);
+        if (input != null) {
+            return ((clientAlias != null && input.equals(clientAlias.getName())) ||
+                    (proxy != null && input.equals(proxy.getClient().getName())) ||
+                    (proxy == null && input.equals(ticket.getClient().getName())))
+                    ? input : null;
+        } else {
+            if (clientAlias != null) {
+                return clientAlias.getName();
+            } else if (proxy != null) {
+                return proxy.getClient().getName();
+            } else {
+                return ticket.getClient().getName();
+            }
         }
     }
 }
