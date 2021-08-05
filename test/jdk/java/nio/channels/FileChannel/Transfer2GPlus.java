@@ -83,22 +83,28 @@ public class Transfer2GPlus {
         try (FileChannel srcCh = FileChannel.open(src)) {
             try (FileChannel dstCh = FileChannel.open(dst,
                  StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                long n;
-                if ((n = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH) {
+                long total = 0L;
+                if ((total = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH) {
                     if (!Platform.isLinux())
-                        throw new RuntimeException("Transfer too small: " + n);
+                        throw new RuntimeException("Transfer too small: " + total);
 
-                    if (n != 0x7ffff000)
-                        throw new RuntimeException("Unexpected transfer size: " + n);
-                    if ((n += srcCh.transferTo(n, LENGTH, dstCh)) != LENGTH)
-                        throw new RuntimeException("Unexpected total size: " + n);
+                    // if this point is reached we're on Linux
+                    if (total > LINUX_MAX_TRANSFER_SIZE)
+                        throw new RuntimeException("Unexpected transfer size: " + total);
+
+                    do {
+                        long n = srcCh.transferTo(total, LENGTH, dstCh);
+                        if (n == 0)
+                            break;
+                        total += n;
+                    } while (total < LENGTH);
                 }
 
                 if (dstCh.size() < LENGTH)
                     throw new RuntimeException("Target file too small: " +
                         dstCh.size() + " < " + LENGTH);
 
-                System.out.println("Transferred " + n + " bytes");
+                System.out.println("Transferred " + total + " bytes");
 
                 dstCh.position(BASE);
                 ByteBuffer bb = ByteBuffer.allocate(EXTRA);
