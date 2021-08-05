@@ -25,4 +25,5 @@
 #include "gc/z/zMarkContext.hpp"
 
 ZMarkContext::ZMarkContext(size_t nstripes) :
-    _cache(nstripes) {}
+    _cache(nstripes),
+    _string_dedup_requests() {}

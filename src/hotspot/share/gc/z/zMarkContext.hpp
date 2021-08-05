@@ -25,16 +25,20 @@
 #define SHARE_GC_Z_ZMARKCONTEXT_HPP
 
 #include "gc/z/zMarkCache.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
 
 class ZMarkContext : public StackObj {
 private:
   ZMarkCache            _cache;
+  StringDedup::Requests _string_dedup_requests;
 
 public:
   ZMarkContext(size_t nstripes);
 
   void inc_live(ZPage* page, size_t bytes);
+
+  void try_deduplicate(oop obj);
 };
 
 #endif // SHARE_GC_Z_ZMARKCONTEXT_HPP

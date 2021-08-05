@@ -319,7 +319,11 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
     if (is_array(addr)) {
       follow_array_object(objArrayOop(ZOop::from_address(addr)), finalizable);
     } else {
-      follow_object(ZOop::from_address(addr), finalizable);
+      const oop obj = ZOop::from_address(addr);
+      follow_object(obj, finalizable);
+
+      // Try deduplicate
+      context->try_deduplicate(obj);
     }
   }
 }

@@ -24,11 +24,32 @@
 #ifndef SHARE_GC_Z_ZMARKCONTEXT_INLINE_HPP
 #define SHARE_GC_Z_ZMARKCONTEXT_INLINE_HPP
 
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkContext.hpp"
 
 inline void ZMarkContext::inc_live(ZPage* page, size_t bytes) {
   _cache.inc_live(page, bytes);
+}
+
+inline void ZMarkContext::try_deduplicate(oop obj) {
+  if (!StringDedup::is_enabled()) {
+    // Not enabled
+    return;
+  }
+
+  if (!java_lang_String::is_instance_inlined(obj)) {
+    // Not a String object
+    return;
+  }
+
+  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
+    // Already deduplicated
+    return;
+  }
+
+  // Request deduplication
+  _string_dedup_requests.add(obj);
 }
 
 #endif // SHARE_GC_Z_ZMARKCACHE_INLINE_HPP
