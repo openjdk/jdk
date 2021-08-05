@@ -47,7 +47,7 @@ public:
   virtual void task();
 
   bool is_armed();
-  void arm();
+  jlong arm();
   void disarm();
 };
 

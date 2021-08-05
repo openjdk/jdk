@@ -70,9 +70,10 @@ bool VMOperationTimeoutTask::is_armed() {
   return Atomic::load_acquire(&_armed) != 0;
 }
 
-void VMOperationTimeoutTask::arm() {
+jlong VMOperationTimeoutTask::arm() {
   _arm_time = os::javaTimeNanos();
   Atomic::release_store_fence(&_armed, 1);
+  return _arm_time;
 }
 
 void VMOperationTimeoutTask::disarm() {
@@ -410,8 +411,7 @@ void VMThread::inner_execute(VM_Operation* op) {
     SafepointSynchronize::begin();
     if (should_abort_on_timeout) {
       assert(_timeout_task != nullptr, "must created");
-      _timeout_task->arm();
-      vm_op_start_ns = os::javaTimeNanos();
+      vm_op_start_ns = _timeout_task->arm();
     }
     end_safepoint = true;
   }
@@ -420,9 +420,8 @@ void VMThread::inner_execute(VM_Operation* op) {
 
   if (end_safepoint) {
     if (should_abort_on_timeout) {
-      jlong vm_op_end_ns = os::javaTimeNanos();
       _timeout_task->disarm();
-      jlong delay = nanos_to_millis(vm_op_end_ns - vm_op_start_ns);
+      jlong delay = nanos_to_millis(os::javaTimeNanos() - vm_op_start_ns);
       if (delay > AbortVMOnVMOperationTimeoutDelay) {
         fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
               _cur_vm_operation->name(), delay, AbortVMOnVMOperationTimeoutDelay);
