@@ -29,7 +29,7 @@
  *          java.management
  *          java.base/jdk.internal.vm
  * @compile helloworldjsr.jasm
- * @run main/othervm -Xverify:all HelloworldjsrTest
+ * @run main/othervm -Xverify:all -XX:+UseNewCode HelloworldjsrTest
  */
 
 //import java.lang.reflect.Method;

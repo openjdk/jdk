@@ -48,7 +48,7 @@ public class Preverifier extends ClassVisitor {
 	private static byte[] bytecode; // Contents of the class file
 	private static ClassNode cn;
 	private static String fileName;
-	private static boolean shouldPrint = false;
+	private static boolean shouldPrint = true;
 
 	/**
 	 * Reads class file, locates all JSR/RET instructions, and writes new class file 
@@ -60,7 +60,7 @@ public class Preverifier extends ClassVisitor {
         ClassReader cr;
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
-        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
+        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
         	throw new InternalError("Classfile not parsed correctly");
@@ -143,7 +143,7 @@ public class Preverifier extends ClassVisitor {
 					mustExpand = false;
 					// JSR instructions are replaced with GOTO to the same label
 					// A new label is added after the new GOTO that the associated RET will return to 
-					if (inList.get(i).getOpcode() == Opcodes.JSR || inList.get(i).getOpcode() == 201) {
+					if (inList.get(i).getOpcode() == Opcodes.JSR || inList.get(i).getOpcode() == 201) { // JSR_W = 201
 						hasJSR = true;
 						boolean hasRet = false;
 						log("Replacing JSR...", shouldPrint);
@@ -218,7 +218,6 @@ public class Preverifier extends ClassVisitor {
 					}
 				}
 				// Replace instructions in the method
-				log("Writing new instruction list", shouldPrint);
 				inList.clear();
 				inList.add(newInst);
 				inList.resetLabels(); // Don't know if this is necessary

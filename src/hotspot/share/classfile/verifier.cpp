@@ -311,7 +311,7 @@ Symbol* Verifier::inference_verify(
 
   ResourceMark rm(thread);
   log_info(verification)("Verifying class %s with old format", klass->external_name());
-  //tty->print_cr("Verifying class %s with old format", klass->external_name());
+  tty->print_cr("Verifying class %s with old format", klass->external_name());
   jclass cls = (jclass) JNIHandles::make_local(thread, klass->java_mirror());
   jint result;
 

@@ -171,7 +171,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   return stream;
 }
 
-ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
+ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS) {
   ClassFileStream* newStream;
 
   // Magic value
@@ -181,7 +181,15 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
   int _minor_version = stream->get_u2_fast();
   int _major_version = stream->get_u2_fast();
 
-  if (UseNewCode && (_major_version < JAVA_7_VERSION)) {
+  if (UseNewCode && (_major_version < JAVA_7_VERSION)  
+    ) { //&& (strcmp(name->as_klass_external_name(),"com.sun.javatest.regtest.agent.AgentServer") != 0)
+    if (0) {
+      stringStream fn0;
+      fn0.print("/tmp/%s_old.class", name->as_klass_external_name());
+      fileStream fds0(fn0.as_string());
+      fds0.write((const char*)stream->buffer(), stream->length());
+    }
+
     typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
     
     // Copy Classfile from stream to a java byte array
@@ -202,7 +210,21 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
           vmSymbols::preverifier_patch(),
           vmSymbols::byte_array_byte_array_signature(),
           &args,
-          CHECK_NULL);
+          THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      Handle ex(THREAD, PENDING_EXCEPTION);
+      CLEAR_PENDING_EXCEPTION;
+
+      stringStream fn1;
+      fn1.print("/tmp/preverifier/%s_error", name->as_klass_external_name());
+      fileStream fds1(fn1.as_string());
+      fds1.print_cr("Exception thrown: %s", ex->klass()->name()->as_C_string());
+      java_lang_Throwable::print_stack_trace(ex, &fds1);
+
+      // If there is an error, return the original classfile
+      stream->set_current(stream->buffer());
+      return stream;
+    }
 
     oop result_oop = result.get_oop();
     assert(result_oop != NULL, "Result should be non-null");
@@ -223,6 +245,13 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, TRAPS) {
     
     newStream = new ClassFileStream(class_bytes, length, stream->source(), stream->need_verify());
     newStream->set_current(newStream->buffer());
+
+    #if 0
+    stringStream fn;
+    fn.print("/tmp/%s.class", name->as_klass_external_name());
+    fileStream fds(fn.as_string());
+    fds.write((const char*)newStream->buffer(), newStream->length());
+    #endif
     return newStream;
   }
   stream->set_current(stream->buffer());
@@ -245,7 +274,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   ClassFileStream* old_stream = stream;
 
   // Upgrade old class file versions
-  stream = process_old_stream(stream, CHECK_NULL);
+  stream = process_old_stream(stream, name, CHECK_NULL);
 
   // increment counter
   THREAD->statistical_info().incr_define_class_count();
