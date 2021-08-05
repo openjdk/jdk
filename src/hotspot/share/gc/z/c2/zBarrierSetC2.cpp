@@ -300,13 +300,16 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       // BarrierSetC2::clone sets the offsets via BarrierSetC2::arraycopy_payload_base_offset
       // which 8-byte aligns them to allow for word size copies. Make sure the offsets point
       // to the first element in the array when cloning object arrays. Otherwise, load
-      // barriers are applied to parts of the header.
+      // barriers are applied to parts of the header. Also adjust the length accordingly.
       assert(src_offset == dest_offset, "should be equal");
-      assert((src_offset->get_long() == arrayOopDesc::base_offset_in_bytes(T_OBJECT) && UseCompressedClassPointers) ||
-             (src_offset->get_long() == arrayOopDesc::length_offset_in_bytes() && !UseCompressedClassPointers),
-             "unexpected offset for object array clone");
-      src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-      dest_offset = src_offset;
+      jlong offset = src_offset->get_long();
+      if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
+        assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
+        assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
+        length = phase->transform_later(new SubXNode(length, phase->longcon(1))); // Size is in longs
+        src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+        dest_offset = src_offset;
+      }
     }
     Node* payload_src = phase->basic_plus_adr(src, src_offset);
     Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
