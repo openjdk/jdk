@@ -47,9 +47,8 @@ import java.util.concurrent.Executors;
  *
  * <p>The server is an HttpServer bound to a given address. It comes with an
  * HttpHandler that serves files from a given directory path
- * (and its subdirectories) on the file-system, and an optional Filter that
- * prints log messages related to the exchanges handled by the server to a given
- * output stream.
+ * (and its subdirectories), and an optional Filter that prints log messages
+ * related to the exchanges handled by the server to a given output stream.
  *
  * <p>Unless specified as arguments, the default values are:<ul>
  * <li>bind address: wildcard address (all interfaces)</li>

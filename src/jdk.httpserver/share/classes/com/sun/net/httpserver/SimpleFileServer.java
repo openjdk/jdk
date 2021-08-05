@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URLConnection;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -45,7 +44,7 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * <ul>
  *   <li> an {@link HttpServer HttpServer} that is bound to a given address, </li>
  *   <li> an {@link HttpHandler HttpHandler} that serves files from a given
- *        path on the file-system, and </li>
+ *        directory path, and </li>
  *   <li> an optional {@link Filter Filter} that prints log messages relating to
  *        the exchanges handled by the server. </li>
  * </ul>
@@ -57,8 +56,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * <p> The {@link #createFileServer(InetSocketAddress,Path,OutputLevel) createFileServer}
  * static factory method returns an {@link HttpServer HttpServer} that is a
  * simple out-of-the-box file server. The server comes with an initial handler
- * that serves files from a given directory path (and its subdirectories) on the
- * file-system. The output level determines what log messages are printed to
+ * that serves files from a given directory path (and its subdirectories).
+ * The output level determines what log messages are printed to
  * {@code System.out}, if any.
  *
  * <p> Example of a simple file server:
@@ -169,8 +168,7 @@ public final class SimpleFileServer {
     }
 
     /**
-     * Creates a <i>file server</i> the serves files from a given path on the
-     * file-system.
+     * Creates a <i>file server</i> the serves files from a given path.
      *
      * <p> The server is configured with an initial handler that maps the
      * URI path "/" to a <i>file handler</i>. The initial handler is a <i>file
@@ -187,8 +185,7 @@ public final class SimpleFileServer {
      * @param outputLevel the log message output level
      * @return an HttpServer
      * @throws IllegalArgumentException if root does not exist, is not absolute,
-     *         is not a directory, is not readable, or is not associated with
-     *         the {@linkplain FileSystems#getDefault system-default file system}
+     *         is not a directory, or is not readable
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if any argument is null
      */
@@ -211,15 +208,15 @@ public final class SimpleFileServer {
 
     /**
      * Creates a <i>file handler</i> that serves files from a given directory
-     * path (and it subdirectories) on the file-system.
+     * path (and its subdirectories).
      *
      * <p> The file handler resolves the request URI against the given
-     * {@code root} path to determine the path {@code p} on the file-system to
-     * serve in the response. If the path {@code p} is a directory, then the
-     * response contains a directory listing, formatted in HTML, as the response
-     * body. If the path {@code p} is a file, then the response contains a
-     * "Content-Type" header based on the best-guess content type, as determined
-     * by an invocation of
+     * {@code root} path to determine the path {@code p} on the associated file
+     * system to serve the response. If the path {@code p} is a directory, then
+     * the response contains a directory listing, formatted in HTML, as the
+     * response body. If the path {@code p} is a file, then the response
+     * contains a "Content-Type" header based on the best-guess content type,
+     * as determined by an invocation of
      * {@linkplain java.net.FileNameMap#getContentTypeFor(String) getContentTypeFor},
      * on the system-wide {@link URLConnection#getFileNameMap() mimeTable}, as
      * well as the contents of the file as the response body.
@@ -231,8 +228,7 @@ public final class SimpleFileServer {
      * @param root the root directory to be served, must be an absolute path
      * @return a file handler
      * @throws IllegalArgumentException if root does not exist, is not absolute,
-     *         is not a directory, is not readable, or is not associated with
-     *         the {@linkplain FileSystems#getDefault system-default file system}
+     *         is not a directory, or is not readable
      * @throws NullPointerException if the argument is null
      */
     public static HttpHandler createFileHandler(Path root) {

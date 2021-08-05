@@ -29,7 +29,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -70,10 +69,6 @@ public final class FileServerHandler implements HttpHandler {
             throw new IllegalArgumentException("Path is not a directory: " + root);
         if (!Files.isReadable(root))
             throw new IllegalArgumentException("Path is not readable: " + root);
-        if (root.getFileSystem() != FileSystems.getDefault()
-                || root.getFileSystem().getClass().getModule() != Object.class.getModule())
-            throw new IllegalArgumentException("Path is not associated with " +
-                    "the system-default file system: " + root);
         this.root = root;
         this.mimeTable = mimeTable;
     }
