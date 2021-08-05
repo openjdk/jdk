@@ -27,18 +27,19 @@ package javax.security.auth;
 
 import java.util.*;
 import java.io.*;
-import java.lang.reflect.*;
 import java.text.MessageFormat;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.DomainCombiner;
-import java.security.Permission;
-import java.security.PermissionCollection;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.ProtectionDomain;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
+import java.util.function.Supplier;
+
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -317,6 +318,101 @@ public final class Subject implements java.io.Serializable {
                 return sdc.getSubject();
             }
         });
+    }
+
+    /**
+     * Return the current installed subject.
+     * <p>
+     * The current installed subject is installed by the {@link #call}
+     * or {@link #run} method. When either {@code call(subject, action)} or
+     * {@code run(subject, action)} is called, {@code action} is executed
+     * with {@code subject} as its current installed subject which can be
+     * retrieved by this method. After {@code action} is finished, the current
+     * installed subject is reset to its previous value. The current installed
+     * subject is {@code null} before the first call of {@code call()}
+     * or {@code run()}.
+     * <p>
+     * When a new thread is created, its current installed subject
+     * is the same as the one of its creator, and will not change even if
+     * its creator's current installed subject is changed to another value.
+     *
+     * @implNote
+     * In this implementation, this method returns the same value as
+     * {@code getSubject(AccessController.getContext())}. Also, each of
+     * the various {@code doAs(subject, action)} and
+     * {@code doAsPrivileged(subject, action, acc)} methods will
+     * run {@code action} with {@code subject} as its current
+     * installed subject.
+     *
+     * @return the current installed subject. The return value can be
+     *      {@code null} if no current installed subject is installed
+     *      yet or a {@code null} value is installed.
+     * @see #callAs(Subject, Callable)
+     * @see #getAs(Subject, Supplier)
+     * @since 18
+     */
+    @SuppressWarnings("removal")
+    public static Subject current() {
+        return getSubject(AccessController.getContext());
+    }
+
+    /**
+     * Execute a {@code Callable} with {@code subject} as the
+     * current installed subject.
+     *
+     * @implNote
+     * In this implementation, this method is implemented based on
+     * {@link #doAs(Subject, PrivilegedExceptionAction)}.
+     *
+     * @param subject the intended current installed subject for {@code action}.
+     *                Can be {@code null}.
+     * @param action the code to be run with {@code subject} as its current
+     *               installed subject. Must not be {@code null}.
+     * @param <T> the type of value returned by the {@code call} method
+     *            of {@code action}
+     * @return the value returned by the {@code call} method of {@code action}
+     * @throws NullPointerException if the {@code Callable} is {@code null}.
+     * @throws CompletionException if {@action.call()} throws a checked
+     *          exception, which will be the cause of this
+     *          {@code CompletionException}.
+     * @see #current()
+     * @since 18
+     */
+    public static <T> T callAs(final Subject subject,
+            final Callable<T> action) throws CompletionException {
+        Objects.requireNonNull(action);
+        try {
+            PrivilegedExceptionAction<T> pa = () -> action.call();
+            return doAs(subject, pa);
+        } catch (PrivilegedActionException e) {
+            throw new CompletionException(e.getException());
+        }
+    }
+
+    /**
+     * Execute a {@code Supplier} with {@code subject} as the
+     * current installed subject.
+     *
+     * @implNote
+     * In this implementation, this method is implemented based on
+     * {@link #doAs(Subject, PrivilegedAction)}.
+     *
+     * @param subject the intended current installed subject for {@code action}.
+     *                Can be {@code null}.
+     * @param action the code to be run with {@code subject} as its current
+     *               installed subject. Must not be {@code null}.
+     * @param <T> the type of value returned by the {@code get} method
+     *            of {@code action}
+     * @return the value returned by the {@code get} method of {@code action}
+     * @throws NullPointerException if the {@code Supplier} is {@code null}.
+     * @see #current()
+     * @since 18
+     */
+    public static <T> T getAs(final Subject subject,
+            final Supplier<T> action) {
+        Objects.requireNonNull(action);
+        PrivilegedAction<T> pa = () -> action.get();
+        return doAs(subject, pa);
     }
 
     /**
