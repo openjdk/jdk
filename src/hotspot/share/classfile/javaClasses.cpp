@@ -1380,14 +1380,6 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
   java_lang_Class::set_module(k->java_mirror(), module());
 }
 
-int  java_lang_Class::oop_size(oop java_class) {
-  assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field(_oop_size_offset);
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  return size;
-}
-
-
 void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
@@ -1397,11 +1389,6 @@ void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
 int  java_lang_Class::static_oop_field_count(oop java_class) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   return java_class->int_field(_static_oop_field_count_offset);
-}
-
-int  java_lang_Class::static_oop_field_count_raw(oop java_class) {
-  assert(_static_oop_field_count_offset != 0, "must be set");
-  return java_class->int_field_raw(_static_oop_field_count_offset);
 }
 
 void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
@@ -1509,16 +1496,6 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
 #endif
   return java_class;
 }
-
-
-Klass* java_lang_Class::as_Klass_raw(oop java_class) {
-  //%note memory_2
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  Klass* k = ((Klass*)java_class->metadata_field_raw(_klass_offset));
-  assert(k == NULL || k->is_klass(), "type check");
-  return k;
-}
-
 
 void java_lang_Class::set_klass(oop java_class, Klass* klass) {
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
