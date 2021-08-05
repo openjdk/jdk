@@ -744,6 +744,8 @@ javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JRootPane/4670486/bug4670486.java 8042381 macosx-all
 javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 
+javax/swing/JComponent/7154030/bug7154030.java 8268284 macosx-x64
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
@@ -824,6 +826,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java        8263461 linux-all,windows-x64
 jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
 jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
