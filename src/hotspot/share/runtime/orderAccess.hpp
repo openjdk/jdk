@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_ORDERACCESS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 //                Memory Access Ordering Model

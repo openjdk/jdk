@@ -42,6 +42,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1GCCounters.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
@@ -2015,8 +2016,14 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
   ml.notify_all();
 }
 
+// Helper for collect().
+static G1GCCounters collection_counters(G1CollectedHeap* g1h) {
+  MutexLocker ml(Heap_lock);
+  return G1GCCounters(g1h);
+}
+
 void G1CollectedHeap::collect(GCCause::Cause cause) {
-  try_collect(cause);
+  try_collect(cause, collection_counters(this));
 }
 
 // Return true if (x < y) with allowance for wraparound.
@@ -2211,25 +2218,13 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
   }
 }
 
-bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
-  assert_heap_not_locked();
-
-  // Lock to get consistent set of values.
-  uint gc_count_before;
-  uint full_gc_count_before;
-  uint old_marking_started_before;
-  {
-    MutexLocker ml(Heap_lock);
-    gc_count_before = total_collections();
-    full_gc_count_before = total_full_collections();
-    old_marking_started_before = _old_marking_cycles_started;
-  }
-
+bool G1CollectedHeap::try_collect(GCCause::Cause cause,
+                                  const G1GCCounters& counters_before) {
   if (should_do_concurrent_full_gc(cause)) {
     return try_collect_concurrently(cause,
-                                    gc_count_before,
-                                    old_marking_started_before);
-  } else if (GCLocker::should_discard(cause, gc_count_before)) {
+                                    counters_before.total_collections(),
+                                    counters_before.old_marking_cycles_started());
+  } else if (GCLocker::should_discard(cause, counters_before.total_collections())) {
     // Indicate failure to be consistent with VMOp failure due to
     // another collection slipping in after our gc_count but before
     // our request is processed.
@@ -2240,14 +2235,16 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
     // Schedule a standard evacuation pause. We're setting word_size
     // to 0 which means that we are not requesting a post-GC allocation.
     VM_G1CollectForAllocation op(0,     /* word_size */
-                                 gc_count_before,
+                                 counters_before.total_collections(),
                                  cause,
                                  policy()->max_pause_time_ms());
     VMThread::execute(&op);
     return op.gc_succeeded();
   } else {
     // Schedule a Full GC.
-    VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
+    VM_G1CollectFull op(counters_before.total_collections(),
+                        counters_before.total_full_collections(),
+                        cause);
     VMThread::execute(&op);
     return op.gc_succeeded();
   }
