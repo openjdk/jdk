@@ -1790,7 +1790,9 @@ public class JTabbedPane extends JComponent
     }
 
     private void checkIndex(int index) {
-        Objects.checkIndex(index, pages.size());
+        if (index < 0 || index >= pages.size()) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Tab count: " + pages.size());
+        }
     }
 
 
