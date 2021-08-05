@@ -31,10 +31,13 @@
  * @build TestPidsLimit
  * @run driver TestPidsLimit
  */
+import java.util.ArrayList;
+import java.util.List;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Asserts;
 
 public class TestPidsLimit {
     private static final String imageName = Common.imageName("pids");
@@ -57,6 +60,48 @@ public class TestPidsLimit {
         }
     }
 
+    private static void checkResult(List<String> lines, String lineMarker, String expectedValue) {
+        boolean lineMarkerFound = false;
+
+        for (String line : lines) {
+            if (line.contains("WARNING: Your kernel does not support pids limit capabilities")) {
+                System.out.println("Docker pids limitation seems not to work, avoiding check");
+                return;
+            }
+
+            if (line.contains(lineMarker)) {
+                lineMarkerFound = true;
+                String[] parts = line.split(":");
+                System.out.println("DEBUG: line = " + line);
+                System.out.println("DEBUG: parts.length = " + parts.length);
+
+                Asserts.assertEquals(parts.length, 2);
+                String actual = parts[1].replaceAll("\\s","");
+                // Unlimited pids leads on some setups not to "max" in the output, but to a high number
+                if (expectedValue.equals("Unlimited")) {
+                    if (actual.equals("Unlimited")) {
+                        System.out.println("Found expected value for unlimited pids.");
+                    } else {
+                        try {
+                            int ai = Integer.parseInt(actual);
+                            if (ai > 20000) {
+                                System.out.println("Limit value " + ai + " got accepted as unlimited, log line was " + line);
+                            } else {
+                                throw new RuntimeException("Limit value " + ai + " is not accepted as unlimited, log line was " + line);
+                            }
+                        } catch (NumberFormatException ex) {
+                            throw new RuntimeException("Could not convert " + actual + " to an integer, log line was " + line);
+                        }
+                    }
+                } else {
+                    Asserts.assertEquals(actual, expectedValue);
+                }
+                break;
+            }
+        }
+        Asserts.assertTrue(lineMarkerFound);
+    }
+
     private static void testPidsLimit(String pidsLimit) throws Exception {
         Common.logNewTestCase("testPidsLimit (limit: " + pidsLimit + ")");
         DockerRunOptions opts = Common.newOptsShowSettings(imageName);
@@ -73,7 +118,9 @@ public class TestPidsLimit {
         if (sdr.contains("WARNING: Your kernel does not support pids limit capabilities")) {
             System.out.println("Docker pids limitation seems not to work, avoiding check");
         } else {
-            out.shouldContain("Maximum Processes Limit: " + pidsLimit);
+            List<String> lines = new ArrayList<>();
+            sdr.lines().forEach(s -> lines.add(s));
+            checkResult(lines, "Maximum Processes Limit: ", pidsLimit);
         }
     }
 }

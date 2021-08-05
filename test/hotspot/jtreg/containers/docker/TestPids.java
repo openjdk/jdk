@@ -78,7 +78,7 @@ public class TestPids {
         return opts;
     }
 
-    private static void checkResult(List<String> lines, String lineMarker, String value) {
+    private static void checkResult(List<String> lines, String lineMarker, String expectedValue) {
         boolean lineMarkerFound = false;
 
         for (String line : lines) {
@@ -95,7 +95,25 @@ public class TestPids {
 
                 Asserts.assertEquals(parts.length, 2);
                 String actual = parts[1].replaceAll("\\s","");
-                Asserts.assertEquals(actual, value);
+                // Unlimited pids leads on some setups not to "max" in the output, but to a high number
+                if (expectedValue.equals("max")) {
+                    if (actual.equals("max")) {
+                        System.out.println("Found expected max for unlimited pids value.");
+                    } else {
+                        try {
+                            int ai = Integer.parseInt(actual);
+                            if (ai > 20000) {
+                                System.out.println("Limit value " + ai + " got accepted as unlimited, log line was " + line);
+                            } else {
+                                throw new RuntimeException("Limit value " + ai + " is not accepted as unlimited, log line was " + line);
+                            }
+                        } catch (NumberFormatException ex) {
+                            throw new RuntimeException("Could not convert " + actual + " to an integer, log line was " + line);
+                        }
+                    }
+                } else {
+                    Asserts.assertEquals(actual, expectedValue);
+                }
                 break;
             }
         }
