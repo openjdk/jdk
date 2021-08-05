@@ -95,9 +95,9 @@ void MethodMatcher::init(Symbol* class_name, Mode class_mode,
  _signature = signature;
 }
 
-static bool is_hidden_class_pattern(const char * start) {
+static bool is_hidden_class_pattern(const char * current, const char* start) {
   int index = 0;
-  char c = *start;
+  char c = *(++current);
 
   while (c != '\0' && c != '*' && c != ':') {
     if (index == 0) {
@@ -117,20 +117,29 @@ static bool is_hidden_class_pattern(const char * start) {
       }
     }
     index++;
-    c = *(++start);
+    c = *(++current);
   }
 
   if (c == '*' || c == ':') {
-    char next = *(++start);
+    char next = *(++current);
     if (next == ':') {
       if (c == ':') {
-        // full hidden class name without '*'
+        // Full hidden class name without '*'
         return true;
       } else {
-        char next_next = *(++start);
+        char next_next = *(++current);
         if (next_next == ':') {
-          // partial hidden class name with suffix '*'
-          return true;
+          // May be partial hidden class name with suffix '*'
+          if (index == 0) {
+            // To be conservative for "/*::" pattern
+            // Check if '$' exists to avoid cases like "java.util/*::method"
+            const char* pos = strchr(start, '$');
+            if (pos != NULL && pos < current) {
+              return true;
+            }
+          } else {
+            return true;
+          }
         }
       }
     }
@@ -160,7 +169,7 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
 
         if (*lp == '/') {
           // Check whether it's a hidden class method.
-          if (is_hidden_class_pattern(lp + 1)) {
+          if (is_hidden_class_pattern(lp, line)) {
             // According to ClassFileParser::mangle_hidden_class_name, the pattern of
             // hidden class name in the VM should be: _class_name, "+", and &ik
             // But "+" will be replaced with "/" when it is printed by PrintCompilation.

@@ -158,6 +158,7 @@ public class MethodMatcherTest {
 
         testCases.add(toString, "java.util.ResourceBundle$$Lambda$1/0x00000008010413c8::run", NO_MATCH);
         testCases.add(toString, "java.util.ResourceBundle$$Lambda$1/*::run", NO_MATCH);
+        testCases.add(toString, "java.util/*::run", PARSING_FAILURE);
         testCases.add(toString, "java.util.ResourceBundle$$Lambda$1/01234::run", PARSING_FAILURE);
         testCases.add(toString, "java.util.ResourceBundle$$Lambda$1/0x1234u::run", PARSING_FAILURE);
         testCases.add(toString, "java.util/*.ResourceBundle$$Lambda$1/0x00000008010413c8::run", PARSING_FAILURE);
