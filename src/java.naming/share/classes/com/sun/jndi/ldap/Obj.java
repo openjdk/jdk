@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,6 +466,12 @@ final class Obj {
                     // Empty content
                     refAddrList.setElementAt(new StringRefAddr(type, null), posn);
                 } else if (val.charAt(start) == separator) {
+                    // Check if deserialization of binary RefAddr is allowed from
+                    // 'javaReferenceAddress' LDAP attribute.
+                    if (!VersionHelper.isSerialDataAllowed()) {
+                        throw new NamingException("Object deserialization is not allowed");
+                    }
+
                     // Double separators indicate a non-StringRefAddr
                     // Content is a Base64-encoded serialized RefAddr
 
