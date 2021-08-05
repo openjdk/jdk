@@ -551,10 +551,7 @@ public class TableDemo extends DemoModule {
             public String getColumnName(int column) {return names[column];}
             public Class<?> getColumnClass(int c) {
                 Object obj = getValueAt(0, c);
-                if (obj != null) {
-                    return obj.getClass();
-                }
-                return Object.class;
+                return obj != null ? obj.getClass() : Object.class;
             }
             public boolean isCellEditable(int row, int col) {return col != 5;}
             public void setValueAt(Object aValue, int row, int column) { data[row][column] = aValue; }
