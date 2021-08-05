@@ -21,29 +21,38 @@
  * questions.
  */
 
-/*
- * @test StringTest
- * @bug 8028756
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StringTest
- * @summary testing of WB::set/getStringVMFlag()
- * @author igor.ignatyev@oracle.com
- */
+package jdk.test.whitebox.code;
 
-public class StringTest {
-    private static final String FLAG_NAME = "CompileOnly";
-    private static final String FLAG_DEBUG_NAME = "SuppressErrorAt";
-    private static final String[] TESTS = {"StringTest::*", ""};
+import java.lang.reflect.Executable;
+import jdk.test.whitebox.WhiteBox;
 
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setStringVMFlag,
-            VmFlagTest.WHITE_BOX::getStringVMFlag);
-        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getStringVMFlag);
-    }
+public class NMethod extends CodeBlob {
+  private static final WhiteBox wb = WhiteBox.getWhiteBox();
+  public static NMethod get(Executable method, boolean isOsr) {
+    Object[] obj = wb.getNMethod(method, isOsr);
+    return obj == null ? null : new NMethod(obj);
+  }
+  private NMethod(Object[] obj) {
+    super((Object[])obj[0]);
+    assert obj.length == 5;
+    comp_level = (Integer) obj[1];
+    insts = (byte[]) obj[2];
+    compile_id = (Integer) obj[3];
+    entry_point = (Long) obj[4];
+  }
+  public final byte[] insts;
+  public final int comp_level;
+  public final int compile_id;
+  public final long entry_point;
+
+  @Override
+  public String toString() {
+    return "NMethod{"
+        + super.toString()
+        + ", insts=" + insts
+        + ", comp_level=" + comp_level
+        + ", compile_id=" + compile_id
+        + ", entry_point=" + entry_point
+        + '}';
+  }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test WBApi
- * @summary verify that whitebox functions can be linked and executed
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI WBApi
- */
+#include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1GCCounters.hpp"
 
-import sun.hotspot.WhiteBox;
-public class WBApi {
-    public static void main(String... args) {
-        System.out.printf("args at: %x\n",WhiteBox.getWhiteBox().getObjectAddress(args));
-    }
-}
+G1GCCounters::G1GCCounters(G1CollectedHeap* g1h) :
+  _total_collections(g1h->total_collections()),
+  _total_full_collections(g1h->total_full_collections()),
+  _old_marking_cycles_started(g1h->old_marking_cycles_started())
+{}
+

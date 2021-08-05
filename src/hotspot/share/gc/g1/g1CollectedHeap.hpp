@@ -81,6 +81,7 @@ class Space;
 class G1BatchedGangTask;
 class G1CardTableEntryClosure;
 class G1CollectionSet;
+class G1GCCounters;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
@@ -670,7 +671,11 @@ public:
   // to only parts, or aborted before completion).
   void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
-  uint old_marking_cycles_completed() {
+  uint old_marking_cycles_started() const {
+    return _old_marking_cycles_started;
+  }
+
+  uint old_marking_cycles_completed() const {
     return _old_marking_cycles_completed;
   }
 
@@ -1136,7 +1141,7 @@ public:
 
   // Perform a collection of the heap with the given cause.
   // Returns whether this collection actually executed.
-  bool try_collect(GCCause::Cause cause);
+  bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
