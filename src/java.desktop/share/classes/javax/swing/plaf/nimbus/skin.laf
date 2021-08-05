@@ -25694,7 +25694,9 @@
          <style>
             <textForeground/>
             <textBackground/>
-            <background/>
+            <background>
+               <matte red="255" green="255" blue="255" alpha="255" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+            </background>
             <cacheSettingsInherited>false</cacheSettingsInherited>
             <cacheMode>NO_CACHING</cacheMode>
             <uiproperties/>
@@ -25747,7 +25749,12 @@
                      <blendingMode>NORMAL</blendingMode>
                      <locked>false</locked>
                      <visible>true</visible>
-		     <shapes/>
+                     <shapes>
+                        <rectangle x1="0.0" x2="100.0" y1="0.0" y2="30.0" rounding="0.0">
+                           <matte red="255" green="255" blue="255" alpha="255" componentPropertyName="background" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.2" y2="0.1"/>
+                        </rectangle>
+                     </shapes>
                      <effects/>
                   </layer>
                </canvas>
@@ -25793,7 +25800,9 @@
          <style>
             <textForeground/>
             <textBackground/>
-            <background/>
+            <background>
+               <matte red="255" green="255" blue="255" alpha="255" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+            </background>
             <cacheSettingsInherited>false</cacheSettingsInherited>
             <cacheMode>NO_CACHING</cacheMode>
             <uiproperties/>
@@ -25846,7 +25855,12 @@
                      <blendingMode>NORMAL</blendingMode>
                      <locked>false</locked>
                      <visible>true</visible>
-                     <shapes/>
+                     <shapes>
+                        <rectangle x1="0.0" x2="100.0" y1="0.0" y2="30.0" rounding="0.0">
+                           <matte red="255" green="255" blue="255" alpha="255" componentPropertyName="background" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.2" y2="0.1"/>
+                        </rectangle>
+                     </shapes>
                      <effects/>
                   </layer>
                </canvas>
