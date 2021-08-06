@@ -68,6 +68,7 @@
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
@@ -1450,6 +1451,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(NULL),
+  _evac_failure_injector(),
   _verifier(NULL),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
@@ -1483,11 +1485,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _regions_failed_evacuation(mtGC),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
-#ifndef PRODUCT
-  _evacuation_failure_alot_for_current_gc(false),
-  _evacuation_failure_alot_gc_number(0),
-  _evacuation_failure_alot_count(0),
-#endif
   _ref_processor_stw(NULL),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1520,8 +1517,7 @@ G1CollectedHeap::G1CollectedHeap() :
     ::new (&_evacuation_failed_info_array[i]) EvacuationFailedInfo();
   }
 
-  // Initialize the G1EvacuationFailureALot counters and flags.
-  NOT_PRODUCT(reset_evacuation_should_fail();)
+  _evac_failure_injector.reset();
   _gc_tracer_stw->initialize();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
@@ -3584,7 +3580,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
   }
 
   // Should G1EvacuationFailureALot be in effect for this GC?
-  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
+  evac_failure_injector()->arm_if_needed();
 }
 
 class G1EvacuateRegionsBaseTask : public AbstractGangTask {
@@ -4300,7 +4296,7 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
 void G1CollectedHeap::update_used_after_gc() {
   if (evacuation_failed()) {
     // Reset the G1EvacuationFailureALot counters and flags
-    NOT_PRODUCT(reset_evacuation_should_fail();)
+    evac_failure_injector()->reset();
 
     set_used(recalculate_used());
 
