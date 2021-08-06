@@ -27,11 +27,9 @@ package java.lang;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;

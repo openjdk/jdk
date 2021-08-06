@@ -272,7 +272,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  *     JOptionPane pane = new JOptionPane(<i>arguments</i>);
  *     pane.set<i>.Xxxx(...); // Configure</i>
  *     JDialog dialog = pane.createDialog(<i>parentComponent, title</i>);
- *     dialog.show();
+ *     dialog.setVisible(true);
  *     Object selectedValue = pane.getValue();
  *     if(selectedValue == null)
  *       return CLOSED_OPTION;

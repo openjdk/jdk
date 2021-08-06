@@ -118,6 +118,8 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
   // local poll already checked, if used.
   bool need_rechecking;
   do {
+    JavaThreadState state = thread->thread_state();
+    guarantee(SafepointSynchronize::is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
     if (global_poll()) {
       // Any load in ::block() must not pass the global poll load.
       // Otherwise we might load an old safepoint counter (for example).
