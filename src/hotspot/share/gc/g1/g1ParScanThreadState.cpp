@@ -611,8 +611,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);
 
-    G1ScanInYoungSetter x(&_scanner, r->is_young());
-    old->oop_iterate_backwards(&_scanner);
+    G1ScanFailedObjClosure cl(_g1h, this);
+    old->oop_iterate_backwards(&cl);
 
     return old;
   } else {

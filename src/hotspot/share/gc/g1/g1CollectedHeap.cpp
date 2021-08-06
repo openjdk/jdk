@@ -3819,7 +3819,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo* evacuation_
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
-  post_evacuate_cleanup_1(per_thread_states, rdcqs);
+  post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(&_preserved_marks_set, rdcqs, evacuation_info, per_thread_states->surviving_young_words());
 
@@ -3906,11 +3906,10 @@ void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
   decrease_used(bytes);
 }
 
-void G1CollectedHeap::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
-                                              G1RedirtyCardsQueueSet* rdcqs) {
+void G1CollectedHeap::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, rdcqs);
+    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states);
     run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);

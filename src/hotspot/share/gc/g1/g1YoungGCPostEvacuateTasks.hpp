@@ -33,7 +33,6 @@ class FreeCSetStats;
 class G1CollectedHeap;
 class G1EvacuationInfo;
 class G1ParScanThreadStateSet;
-class G1RedirtyCardsQueueSet;
 
 // First set of post evacuate collection set tasks containing ("s" means serial):
 // - Merge PSS (s)
@@ -48,8 +47,7 @@ class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
   class RemoveSelfForwardPtrsTask;
 
 public:
-  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                          G1RedirtyCardsQueueSet* rdcqs);
+  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -84,7 +82,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
   G1ParRemoveSelfForwardPtrsTask _task;
 
 public:
-  RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
+  RemoveSelfForwardPtrsTask();
   ~RemoveSelfForwardPtrsTask();
 
   static bool should_execute();

@@ -857,8 +857,7 @@ public:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
-  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
-                               G1RedirtyCardsQueueSet* rdcqs);
+  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states);
   void post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks,
                                G1RedirtyCardsQueueSet* rdcqs,
                                G1EvacuationInfo* evacuation_info,

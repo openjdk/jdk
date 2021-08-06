@@ -126,6 +126,23 @@ public:
   }
 };
 
+class G1ScanFailedObjClosure : public G1ScanClosureBase {
+public:
+  G1ScanFailedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
+    G1ScanClosureBase(g1h, par_scan_state) { }
+
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)          { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
+
+  // We need to do reference discovery while processing evacuated objects.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+
+  void set_ref_discoverer(ReferenceDiscoverer* rd) {
+    set_ref_discoverer_internal(rd);
+  }
+};
+
 // Add back base class for metadata
 class G1ParCopyHelper : public OopClosure {
 protected:

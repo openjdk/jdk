@@ -97,6 +97,25 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
 }
 
 template <class T>
+inline void G1ScanFailedObjClosure::do_oop_work(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+
+  if (CompressedOops::is_null(heap_oop)) {
+    return;
+  }
+  oop obj = CompressedOops::decode_not_null(heap_oop);
+  const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
+
+  if (region_attr.is_in_cset()) {
+    prefetch_and_push(p, obj);
+    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
+  } else if (!HeapRegion::is_in_same_region(p, obj)) {
+    handle_non_cset_obj_common(region_attr, p, obj);
+    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
+  }
+}
+
+template <class T>
 inline void G1CMOopClosure::do_oop_work(T* p) {
   _task->deal_with_reference(p);
 }

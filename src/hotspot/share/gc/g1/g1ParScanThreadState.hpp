@@ -129,8 +129,8 @@ public:
   void push_on_queue(ScannerTask task);
 
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
-    assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
-    assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+    // assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
+    //assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
 
 #ifdef ASSERT
     HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
