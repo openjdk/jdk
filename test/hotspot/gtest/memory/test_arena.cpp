@@ -366,3 +366,34 @@ TEST_VM(Arena, Arena_grows_large_unaligned) {
 }
 
 #endif //  LP64
+
+static size_t random_arena_chunk_size() {
+  // Return with a 50% rate a standard size, otherwise some random size
+  if (os::random() % 10 < 5) {
+    static const size_t standard_sizes[4] = {
+        Chunk::tiny_size, Chunk::init_size, Chunk::size, Chunk::medium_size
+    };
+    return standard_sizes[os::random() % 4];
+  }
+  return ARENA_ALIGN(os::random() % 1024);
+}
+
+TEST_VM(Arena, different_chunk_sizes) {
+  // Test the creation/pooling of chunks; since ChunkPool is hidden, the
+  //  only way to test this is to create/destroy arenas with different init sizes,
+  //  which determines the initial chunk size.
+  // Note that since the chunk pools are global and get cleaned out periodically,
+  //  there is no safe way to actually test their occupancy here.
+  for (int i = 0; i < 1000; i ++) {
+    // Unfortunately, Arenas cannot be newed,
+    // so we are left with awkwardly placing a few on the stack.
+    Arena ar0(mtTest, random_arena_chunk_size());
+    Arena ar1(mtTest, random_arena_chunk_size());
+    Arena ar2(mtTest, random_arena_chunk_size());
+    Arena ar3(mtTest, random_arena_chunk_size());
+    Arena ar4(mtTest, random_arena_chunk_size());
+    Arena ar5(mtTest, random_arena_chunk_size());
+    Arena ar6(mtTest, random_arena_chunk_size());
+    Arena ar7(mtTest, random_arena_chunk_size());
+  }
+}
