@@ -54,7 +54,7 @@ public class FoldMultilinesTest {
         output.shouldHaveExitValue(0);
 
         String logs = Files.readString(EXCEPTION_LOG_FILE);
-        if (!logs.contains("line 1\nline 2\\nstring")) {
+        if (!logs.contains("line 1" + System.lineSeparator() + "line 2\\nstring")) {
             throw new RuntimeException("foldmultilines=false did not work.");
         }
     }
