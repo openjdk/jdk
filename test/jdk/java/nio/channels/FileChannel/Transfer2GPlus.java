@@ -47,8 +47,6 @@ import java.util.Random;
 import jdk.test.lib.Platform;
 
 public class Transfer2GPlus {
-    private static final int LINUX_MAX_TRANSFER_SIZE = 0x7ffff000;
-
     private static final long BASE   = (long)Integer.MAX_VALUE;
     private static final int  EXTRA  = 1024;
     private static final long LENGTH = BASE + EXTRA;
@@ -88,16 +86,13 @@ public class Transfer2GPlus {
                     if (!Platform.isLinux())
                         throw new RuntimeException("Transfer too small: " + total);
 
-                    // if this point is reached we're on Linux
-                    if (total > LINUX_MAX_TRANSFER_SIZE)
-                        throw new RuntimeException("Unexpected transfer size: " + total);
-
+                    // If this point is reached we're on Linux which cannot
+                    // transfer all LENGTH bytes in one call to sendfile(2),
+                    // so loop to get the rest.
                     do {
                         long n = srcCh.transferTo(total, LENGTH, dstCh);
                         if (n == 0)
                             break;
-                        if (n > LINUX_MAX_TRANSFER_SIZE)
-                            throw new RuntimeException("Unexpected transfer size: " + n);
                         total += n;
                     } while (total < LENGTH);
                 }
