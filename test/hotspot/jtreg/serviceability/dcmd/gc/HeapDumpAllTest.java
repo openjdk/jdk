@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng HeapDumpAllTest
+ * @run testng/timeout=240 HeapDumpAllTest
  */
 public class HeapDumpAllTest extends HeapDumpTest {
     public HeapDumpAllTest() {
@@ -39,4 +39,3 @@ public class HeapDumpAllTest extends HeapDumpTest {
 
     /* See HeapDumpTest for test cases */
 }
-

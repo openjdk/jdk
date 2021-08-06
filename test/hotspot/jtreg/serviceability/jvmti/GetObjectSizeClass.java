@@ -54,6 +54,7 @@ public class GetObjectSizeClass {
 
         ProcessBuilder pt = ProcessTools.createTestJvm("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
+        output.shouldHaveExitValue(0);
 
         output.stdoutShouldContain("GetObjectSizeClass passed");
     }

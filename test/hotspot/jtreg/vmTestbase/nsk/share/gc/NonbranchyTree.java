@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 
 package nsk.share.gc;
 
-import java.io.*;
-import java.util.*;
-
 import nsk.share.test.ExecutionController;
 import nsk.share.test.LocalRandom;
+
+import java.io.PrintStream;
 
 /**
  * <tt>NonbranchyTree</tt> defines a tree structure. Each node of the tree
@@ -38,11 +37,9 @@ public class NonbranchyTree {
 
     /** Minimal size of each node (in bytes) */
     public final static int MIN_NODE_SIZE = 20;
-    private Node root;
-    private int numberOfNodes;
-    private float branchiness;
-    private int size;
-    private ExecutionController controller;
+    private final Node root;
+    private final float branchiness;
+    private final ExecutionController controller;
 
     /**
      * Creates a new tree with number of nodes not more than
@@ -62,36 +59,26 @@ public class NonbranchyTree {
      */
     public NonbranchyTree(int numberOfNodes, float branchiness, int size) {
         this(numberOfNodes, branchiness, size, null);
-        initTree();
     }
 
     public NonbranchyTree(int numberOfNodes, float branchiness, int size, ExecutionController controller) {
-        this.numberOfNodes = numberOfNodes;
-        this.branchiness = branchiness;
-        this.size = size;
-        this.controller = controller;
-        initTree();
-    }
-
-    private void initTree() {
         if (numberOfNodes < 1) {
             throw new IllegalArgumentException("Illegal number of nodes: "
-                                             + numberOfNodes + ", must be at "
-                                             + "least 1.");
+                    + numberOfNodes + ", must be at least 1.");
         }
-        if ( (branchiness >= 1) || (branchiness <= 0) ) {
+        if ((branchiness >= 1) || (branchiness <= 0)) {
             throw new IllegalArgumentException("Illegal value of branchiness: "
-                                             + numberOfNodes + ", must be at "
-                                             + "greater than 0 and less than "
-                                             + " 1.");
+                    + branchiness + ", must be greater than 0 and less than 1.");
         }
         if (size < 1) {
             throw new IllegalArgumentException("Illegal size of nodes: "
-                                             + size + ", must be at least 1.");
+                    + size + ", must be at least 1.");
         }
         // ensure that LocalRandom is loaded and has enough memory
         LocalRandom.nextBoolean();
-        root = createTree(numberOfNodes, size);
+        this.branchiness = branchiness;
+        this.controller = controller;
+        this.root = createTree(numberOfNodes, size);
     }
 
     // Create a new tree with specified number of nodes and size of each node

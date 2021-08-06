@@ -11282,7 +11282,7 @@ instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Univ
 instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                          rax_RegI result, legRegD tmp1, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11298,7 +11298,7 @@ instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
 instruct string_compareL_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                               rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11314,7 +11314,7 @@ instruct string_compareL_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_R
 instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                          rax_RegI result, legRegD tmp1, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11330,7 +11330,7 @@ instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
 instruct string_compareU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                               rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11346,7 +11346,7 @@ instruct string_compareU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_R
 instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                           rax_RegI result, legRegD tmp1, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11362,7 +11362,7 @@ instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI 
 instruct string_compareLU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
                                rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11378,7 +11378,7 @@ instruct string_compareLU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_
 instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI cnt2,
                           rax_RegI result, legRegD tmp1, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11394,7 +11394,7 @@ instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI 
 instruct string_compareUL_evex(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI cnt2,
                                rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11577,7 +11577,7 @@ instruct stringL_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
 instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
@@ -11593,7 +11593,7 @@ instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI resu
 instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
                            legRegD tmp1, legRegD tmp2, kReg ktmp, rbx_RegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
@@ -11610,7 +11610,7 @@ instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI
 instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
 
@@ -11626,7 +11626,7 @@ instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 instruct array_equalsB_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                             legRegD tmp1, legRegD tmp2, kReg ktmp, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
 
@@ -11642,7 +11642,7 @@ instruct array_equalsB_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 instruct array_equalsC(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
 
@@ -11658,7 +11658,7 @@ instruct array_equalsC(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                             legRegD tmp1, legRegD tmp2, kReg ktmp, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
 
@@ -11674,7 +11674,7 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set result (HasNegatives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
@@ -11690,7 +11690,7 @@ instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
 instruct has_negatives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                             legRegD tmp1, legRegD tmp2, kReg ktmp1, kReg ktmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set result (HasNegatives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
@@ -11706,7 +11706,7 @@ instruct has_negatives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
 // fast char[] to byte[] compression
 instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legRegD tmp1, legRegD tmp2, legRegD tmp3,
                          legRegD tmp4, rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst,
          USE_KILL len, KILL tmp5, KILL cr);
@@ -11723,7 +11723,7 @@ instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legRegD tmp1,
 
 instruct string_compress_evex(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legRegD tmp1, legRegD tmp2, legRegD tmp3,
                               legRegD tmp4, kReg ktmp1, kReg ktmp2, rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ktmp1, TEMP ktmp2, USE_KILL src, USE_KILL dst,
          USE_KILL len, KILL tmp5, KILL cr);
@@ -11740,7 +11740,7 @@ instruct string_compress_evex(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legRegD 
 // fast byte[] to char[] inflation
 instruct string_inflate(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len,
                         legRegD tmp1, rcx_RegI tmp2, rFlagsReg cr) %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
@@ -11754,7 +11754,7 @@ instruct string_inflate(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len
 
 instruct string_inflate_evex(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len,
                              legRegD tmp1, kReg ktmp, rcx_RegI tmp2, rFlagsReg cr) %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
