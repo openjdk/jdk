@@ -753,11 +753,11 @@ bool ShenandoahHeap::is_in(const void* p) const {
 }
 
 bool ShenandoahHeap::is_in_young(const void* p) const {
-  return heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION;
+  return is_in(p) && heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION;
 }
 
 bool ShenandoahHeap::is_in_old(const void* p) const {
-  return heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION;
+  return is_in(p) && heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION;
 }
 
 void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
