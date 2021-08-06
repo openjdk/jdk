@@ -22,13 +22,13 @@
  */
 
 /**
-  @test
-  @bug 4179262
-  @summary Confirm that transparent colors are printed correctly. The
-    printout should show transparent rings with increasing darkness toward
-    the center.
-  @run main/manual XparColor
-  @run main/manual/othervm -Dsun.java2d.metal=true XparColor
+ * @test
+ * @bug 4179262
+ * @summary Confirm that transparent colors are printed correctly. The
+ * printout should show transparent rings with increasing darkness toward
+ * the center.
+ * @run main/manual XparColor
+ * @run main/manual/othervm -Dsun.java2d.metal=true XparColor
  */
 
 import java.awt.Dialog;
@@ -53,9 +53,9 @@ public class XparColor implements Printable {
     private static void init() {
         String[] instructions =
                 {
-			"This testcase will be launched twice, once for opengl and once for metal.",
-			"This test verify that the BullsEye rings are printed correctly.",
-			"The printout should show transparent rings with increasing darkness toward the center"
+                        "This testcase will be launched twice, once for opengl and once for metal.",
+                        "This test verify that the BullsEye rings are printed correctly.",
+                        "The printout should show transparent rings with increasing darkness toward the center"
                 };
         Sysout.createDialog();
         Sysout.printInstructions(instructions);
