@@ -4889,43 +4889,43 @@ class StubGenerator: public StubCodeGenerator {
           __ ldp(tmp2, tmp2h, Address(str2, i * 16));
           __ cmp(tmp1, tmp2);
           __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-          __ br(__ NE, DIFF);
+          __ br(Assembler::NE, DIFF);
         }
         __ sub(cnt2, cnt2, isLL ? 64 : 32);
         __ add(str1, str1, 64);
         __ add(str2, str2, 64);
         __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        __ br(__ GE, LARGE_LOOP_PREFETCH);
+        __ br(Assembler::GE, LARGE_LOOP_PREFETCH);
         __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
     }
 
     __ subs(rscratch1, cnt2, isLL ? 16 : 8);
-    __ br(__ LE, LESS16);
+    __ br(Assembler::LE, LESS16);
     __ align(OptoLoopAlignment);
     __ bind(LOOP_COMPARE16);
       __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
       __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
       __ cmp(tmp1, tmp2);
       __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
+      __ br(Assembler::NE, DIFF);
       __ sub(cnt2, cnt2, isLL ? 16 : 8);
       __ subs(rscratch2, cnt2, isLL ? 16 : 8);
-      __ br(__ LT, LESS16);
+      __ br(Assembler::LT, LESS16);
 
       __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
       __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
       __ cmp(tmp1, tmp2);
       __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
-      __ br(__ NE, DIFF);
+      __ br(Assembler::NE, DIFF);
       __ sub(cnt2, cnt2, isLL ? 16 : 8);
       __ subs(rscratch2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, LOOP_COMPARE16);
+      __ br(Assembler::GE, LOOP_COMPARE16);
       __ cbz(cnt2, LENGTH_DIFF);
 
     __ bind(LESS16);
       // each 8 compare
       __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, LESS8);
+      __ br(Assembler::LE, LESS8);
       __ ldr(tmp1, Address(__ post(str1, 8)));
       __ ldr(tmp2, Address(__ post(str2, 8)));
       __ eor(rscratch2, tmp1, tmp2);
@@ -4963,7 +4963,6 @@ class StubGenerator: public StubCodeGenerator {
         __ uxthw(tmp2, tmp2);
       }
       __ subw(result, tmp1, tmp2);
-      __ b(LENGTH_DIFF);
 
     __ bind(LENGTH_DIFF);
       __ ret(lr);
