@@ -1596,8 +1596,7 @@ public final class LocalTime
      */
     @Override
     public int hashCode() {
-        long nod = toNanoOfDay();
-        return (int) (nod ^ (nod >>> 32));
+        return Long.hashCode(toNanoOfDay());
     }
 
     //-----------------------------------------------------------------------
