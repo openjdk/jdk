@@ -31,6 +31,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @compile ThrowsSpecialException.jasm
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI InitExceptionUnloadTest
  */
 
@@ -43,6 +44,13 @@ import jdk.test.lib.classloader.ClassUnloadCommon;
 public class InitExceptionUnloadTest {
     static public class ThrowsRuntimeException { static int x = 1/0; }
     static public class ThrowsError { static { if (true) throw new Error(); } }
+    static public class SpecialException extends Throwable {
+        SpecialException(int count, String message) {
+            super(message + count);
+        }
+    }
+    // Has to be in jasm to throw special exception in class initializer.
+    // static public class ThrowsSpecialException
 
     private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
         ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
@@ -51,7 +59,7 @@ public class InitExceptionUnloadTest {
         printStream.close();
         String stackTrace = byteOS.toString("ASCII");
         if (!stackTrace.contains(expected) || (cause != null && !stackTrace.contains(cause))) {
-            throw new RuntimeException(expected + " and " + cause + " missing from stacktrace: " + stackTrace);
+            throw new RuntimeException(expected + " and " + cause + " missing from stacktrace");
         }
     }
 
@@ -63,11 +71,16 @@ public class InitExceptionUnloadTest {
         "java.lang.Error",
         null,
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsError",
-        "Caused by: java.lang.Error" };
+        "Caused by: java.lang.Error",
+        "java.lang.ExceptionInInitializerError",
+        "Caused by: InitExceptionUnloadTest$SpecialException: Very Special 3",
+        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsSpecialException",
+        "Caused by: java.lang.ExceptionInInitializerError: Exception InitExceptionUnloadTest$SpecialException: Very Special 3" };
 
     static String[] classNames = new String[] {
-         "InitExceptionUnloadTest$ThrowsRuntimeException",
-         "InitExceptionUnloadTest$ThrowsError" };
+        "InitExceptionUnloadTest$ThrowsRuntimeException",
+        "InitExceptionUnloadTest$ThrowsError",
+        "InitExceptionUnloadTest$ThrowsSpecialException" };
 
     public static WhiteBox wb = WhiteBox.getWhiteBox();
 
@@ -75,22 +88,26 @@ public class InitExceptionUnloadTest {
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
         int i = 0;
         for (String className : classNames) {
-            System.err.println("--- try to load " + className);
             for (int tries = 2; tries--> 0; ) {
+                System.err.println("--- try to load " + className);
                 try {
                     Class<?> c = cl.loadClass(className);
                     Object inst = c.newInstance();
                 } catch (Throwable t) {
                     t.printStackTrace();
+                    System.err.println();
+                    System.err.println("Check results");
                     verify_stack(t, expected[i], expected[i+1]);
                     i += 2;
+                    System.err.println();
                 }
             }
         }
         cl = null;
         ClassUnloadCommon.triggerUnloading();  // should unload these classes
-        ClassUnloadCommon.failIf(wb.isClassAlive(classNames[0]), "should be unloaded");
-        ClassUnloadCommon.failIf(wb.isClassAlive(classNames[1]), "should be unloaded");
+        for (String className : classNames) {
+          ClassUnloadCommon.failIf(wb.isClassAlive(className), "should be unloaded");
+        }
     }
     public static void main(java.lang.String[] unused) throws Throwable {
         test();

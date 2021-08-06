@@ -2667,7 +2667,7 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
   }
 }
 
-objArrayOop java_lang_Throwable::get_stack_trace(Handle throwable, TRAPS) {
+Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) {
   // Call to JVM to fill in the stack trace and clear declaringClassObject to
   // not keep classes alive in the stack trace.
   // call this:  public StackTraceElement[] getStackTrace()
@@ -2678,26 +2678,43 @@ objArrayOop java_lang_Throwable::get_stack_trace(Handle throwable, TRAPS) {
                           vmClasses::Throwable_klass(),
                           vmSymbols::getStackTrace_name(),
                           vmSymbols::getStackTrace_signature(),
-                          CHECK_NULL);
-  oop stack_trace = result.get_oop();
+                          CHECK_NH);
+  Handle stack_trace(THREAD, result.get_oop());
   assert(stack_trace->is_objArray(), "Should be an array");
-  return (objArrayOop)stack_trace;
-}
 
-oop java_lang_Throwable::recreate_cause(Symbol* exception, Symbol* message, const char* thread_name,
-                                        Handle stack_trace, TRAPS) {
+  // If the original exception was in java.base, then use that otherwise use
+  // ExceptionInInitializerError as the cause with this stack trace, which might be a
+  // little wierd but still helpful.
+  Klass* tk = throwable->klass();
+  bool null_classloader = tk->class_loader() == nullptr;
+
+  Symbol* exception_name = null_classloader ?  tk->name() :
+                             vmSymbols::java_lang_ExceptionInInitializerError();
+
+  // Now create a the same exception with this stacktrace and thread name.
+  Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(THREAD);
   stringStream st;
-  if (message == NULL) {
-    st.print("[in thread \"%s\"]", thread_name);
-  } else {
-    st.print("%s [in thread \"%s\"]", message->as_C_string(), thread_name);
+  if (!null_classloader) {
+    st.print("Exception %s%s ", tk->name()->as_klass_external_name(),
+             message == nullptr ? "" : ":");
   }
-  Handle h_cause = Exceptions::new_exception(THREAD, exception, st.as_string());
+  if (message == NULL) {
+    st.print("[in thread \"%s\"]", THREAD->name());
+  } else {
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
+  }
+
+  Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
+
+  // If new exception returns a different exception while creating the exception, return null.
+  if (h_cause->klass()->name() != exception_name) {
+    return Handle();
+  }
   java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
   // Clear backtrace because the stacktrace should be used instead.
   set_backtrace(h_cause(), NULL);
-  return h_cause();
+  return h_cause;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {

@@ -1017,78 +1017,36 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-class InitErrorElement {
-  Symbol* _exception;
-  Symbol* _message;
-  OopHandle _stack_trace;
-  const char* _thread_name;
- public:
-  InitErrorElement(JavaThread* current, Handle exception, Handle stack_trace) {
-    _exception = exception->klass()->name();
-    _exception->increment_refcount();
-    _message = java_lang_Throwable::detail_message(exception());
-    if (_message != nullptr) {
-      _message->increment_refcount();
-    }
-    _stack_trace = OopHandle(Universe::vm_global(), stack_trace());
-    ResourceMark rm(current);
-    stringStream st;
-    st.print("%s", current->name());
-    _thread_name = st.as_string(/* c_heap */ true);
-  }
-  void clean() {
-    _exception->decrement_refcount();
-    if (_message != nullptr) {
-      _message->decrement_refcount();
-    }
-    _stack_trace.release(Universe::vm_global());
-    FREE_C_HEAP_ARRAY(char*, _thread_name);
-  }
-  Symbol* exception() const { return _exception; }
-  Symbol* message() const   { return _message; }
-  oop stack_trace() const   { return _stack_trace.resolve(); }
-  const char* thread_name() const { return _thread_name; }
-};
-
-ResizeableResourceHashtable<const InstanceKlass*, InitErrorElement, ResourceObj::C_HEAP, mtClass>
+ResizeableResourceHashtable<const InstanceKlass*, OopHandle, ResourceObj::C_HEAP, mtClass>
       _initialization_error_table(20);
 
 void InstanceKlass::add_initialization_error(Handle exception, TRAPS) {
   bool created = false;
-  // Save the StackTraceElements, and the exception name.
-  // If the initialization error is OOM, this might not work, but a NULL
-  // stack trace with the original OOM exception might be helpful anyway.
-  objArrayOop st = java_lang_Throwable::get_stack_trace(exception, THREAD);
+  // Create the same exception with a message indicating the thread name,
+  // and the StackTraceElements.
+  // If the initialization error is OOM, this might not work, but if GC kicks in
+  // this would be still be helpful.
+  Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
   CLEAR_PENDING_EXCEPTION;
-  Handle stack_trace(THREAD, st);
 
   MutexLocker ml(THREAD, ClassInitError_lock);
-  InitErrorElement elem(THREAD, exception, stack_trace);
+  OopHandle elem = OopHandle(Universe::vm_global(), cause());
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
 }
 
-oop InstanceKlass::get_initialization_error(TRAPS) {
-  InitErrorElement* h;
-  {
-    MutexLocker ml(THREAD, ClassInitError_lock);
-    h = _initialization_error_table.get(this);
-  }
-  if (h != nullptr) {
-    oop cause = java_lang_Throwable::recreate_cause(h->exception(), h->message(), h->thread_name(),
-                                                    Handle(THREAD, h->stack_trace()), CHECK_NULL);
-    return cause;
-  } else {
-    return nullptr;
-  }
+oop InstanceKlass::get_initialization_error(JavaThread* current) {
+  MutexLocker ml(current, ClassInitError_lock);
+  OopHandle* h = _initialization_error_table.get(this);
+  return (h != nullptr) ? h->resolve() : nullptr;
 }
 
 // Need to remove entries for unloaded classes.
 void InstanceKlass::clean_initialization_error_table() {
   struct InitErrorTableCleaner {
-    bool do_entry(const InstanceKlass* ik, InitErrorElement h) {
+    bool do_entry(const InstanceKlass* ik, OopHandle h) {
       if (!ik->is_loader_alive()) {
-        h.clean();
+        h.release(Universe::vm_global());
         return true;
       } else {
         return false;
@@ -1099,18 +1057,6 @@ void InstanceKlass::clean_initialization_error_table() {
   MutexLocker ml(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
   _initialization_error_table.unlink(&cleaner);
-}
-
-void print_initialization_error_table() {
-  struct Printer {
-    bool do_entry(const InstanceKlass* ik, InitErrorElement) {
-      tty->print_cr("klass");
-      ik->print();
-      return true;
-    }
-  };
-  Printer p;
-  _initialization_error_table.iterate(&p);
 }
 
 void InstanceKlass::initialize_impl(TRAPS) {
