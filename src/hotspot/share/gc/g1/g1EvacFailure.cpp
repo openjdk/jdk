@@ -142,18 +142,11 @@ public:
       _marked_bytes += (obj_size * HeapWordSize);
       PreservedMarks::init_forwarded_mark(obj);
 
-      // While we were processing RSet buffers during the collection,
-      // we actually didn't scan any cards on the collection set,
-      // since we didn't want to update remembered sets with entries
-      // that point into the collection set, given that live objects
-      // from the collection set are about to move and such entries
-      // will be stale very soon.
-      // This change also dealt with a reliability issue which
-      // involved scanning a card in the collection set and coming
-      // across an array that was being chunked and looking malformed.
-      // The problem is that, if evacuation fails, we might have
-      // remembered set entries missing given that we skipped cards on
-      // the collection set. So, we'll recreate such entries now.
+      // During evacuation failure we do not record inter-region
+      // references referencing regions that need a remembered set
+      // update originating from young regions (including eden) that
+      // failed evacuation. Make up for that omission now by rescanning
+      // these failed objects.
       if (_is_young) {
         obj->oop_iterate(_log_buffer_cl);
       }
