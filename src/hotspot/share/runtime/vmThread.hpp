@@ -39,7 +39,7 @@ class VMOperationTimeoutTask : public PeriodicTask {
 private:
   volatile int _armed;
   jlong _arm_time;
-
+  const char* _vm_op_name = nullptr;
 public:
   VMOperationTimeoutTask(size_t interval_time) :
           PeriodicTask(interval_time), _armed(0), _arm_time(0) {}
@@ -47,7 +47,7 @@ public:
   virtual void task();
 
   bool is_armed();
-  jlong arm();
+  void arm(const char* vm_op_name);
   void disarm();
 };
 
