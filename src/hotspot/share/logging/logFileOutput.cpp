@@ -195,7 +195,7 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
     char* value_str = equals_pos + 1;
     *equals_pos = '\0';
 
-    if (strcmp(NewLineOptionKey, key) == 0) {
+    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
       // We need to pass <key>=<value> style option to LogFileStreamOutput::initialize().
       // Thus we restore '=' temporally.
       *equals_pos = '=';

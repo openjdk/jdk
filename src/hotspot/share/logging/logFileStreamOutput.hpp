@@ -42,16 +42,16 @@ static LogFileStreamInitializer log_stream_initializer;
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
  private:
-  char*               _new_line;
+  bool                _fold_multilines;
   bool                _write_error_is_shown;
 
   int write_internal(const char* msg);
  protected:
-  static const char* const NewLineOptionKey;
+  static const char* const FoldMultilinesOptionKey;
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _new_line(NULL), _write_error_is_shown(false), _stream(stream) {
+  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
@@ -61,13 +61,6 @@ class LogFileStreamOutput : public LogOutput {
   bool flush();
 
  public:
-
-  virtual ~LogFileStreamOutput() {
-    if (_new_line != NULL) {
-      os::free(_new_line);
-    }
-  }
-
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);

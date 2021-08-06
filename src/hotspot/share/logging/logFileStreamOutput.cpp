@@ -30,7 +30,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
-const char* const LogFileStreamOutput::NewLineOptionKey = "newline";
+const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
 
 static bool initialized;
 static union {
@@ -68,9 +68,16 @@ bool LogFileStreamOutput::initialize(const char* options, outputStream* errstrea
     char* value_str = equals_pos + 1;
     *equals_pos = '\0';
 
-    if (strcmp(NewLineOptionKey, key) == 0) {
-      _new_line = os::strdup_check_oom(value_str, mtLogging);
-      success = true;
+    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
+      if (strcmp(value_str, "true") == 0) {
+        _fold_multilines = true;
+        success = true;
+      } else if (strcmp(value_str, "false") == 0) {
+        _fold_multilines = false;
+        success = true;
+      } else {
+        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
+      }
     } else {
       errstream->print_cr("Invalid option '%s' for log file stream output.", options);
     }
@@ -148,19 +155,20 @@ bool LogFileStreamOutput::flush() {
 
 int LogFileStreamOutput::write_internal(const char* msg) {
   int written = 0;
-  if (_new_line == NULL) {
+  if (!_fold_multilines) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
   } else {
     char *dupstr = os::strdup_check_oom(msg, mtLogging);
     char *cur = dupstr;
     char *next;
     do {
-      next = strchr(cur, '\n');
+      next = strpbrk(cur, "\n\\");
       if (next == NULL) {
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
       } else {
+        const char *found = (*next == '\n') ? "\\n" : "\\\\";
         *next = '\0';
-        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, _new_line), written);
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, found), written);
         cur = next + 1;
       }
     } while (next != NULL);
