@@ -37,7 +37,7 @@ final class MHFieldAccessorDelegate implements MHFieldAccessor {
     MHFieldAccessorDelegate(VarHandle varHandle) {
         this.varHandle = varHandle;
     }
-    
+
     // accessors for instance fields
     @Hidden public Object get(Object obj) {
         return varHandle.get(obj);
