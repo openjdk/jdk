@@ -109,33 +109,28 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
  private:
   int _argc;
   char** _argv;
-  bool _is_initialized;
-  JavaVM* jvm;
-
-  void initialize_jvm() {
-  }
+  JavaVM* _jvm;
 
  public:
   JVMInitializerListener(int argc, char** argv) :
-    _argc(argc), _argv(argv), _is_initialized(false), jvm(NULL) {
+    _argc(argc), _argv(argv), _jvm(nullptr) {
   }
 
   virtual void OnTestStart(const ::testing::TestInfo& test_info) {
     const char* name = test_info.name();
-    if (!_is_initialized && is_same_vm_test(name)) {
+    if ( _jvm == nullptr && is_same_vm_test(name)) {
       // we want to have hs_err and core files when we execute regular tests
-      int ret_val = init_jvm(_argc, _argv, false, &jvm);
+      int ret_val = init_jvm(_argc, _argv, false, &_jvm);
       if (ret_val != 0) {
-        ADD_FAILURE() << "Could not initialize the JVM";
+        ADD_FAILURE() << "Could not initialize the JVM: " << ret_val;
         exit(1);
       }
-      _is_initialized = true;
     }
   }
 
   void destroy_jvm() {
-    if (_is_initialized && jvm != NULL) {
-      int ret = jvm->DestroyJavaVM();
+    if (_jvm != NULL) {
+      int ret = _jvm->DestroyJavaVM();
       if (ret != 0) {
         fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);
       }
@@ -216,11 +211,15 @@ static char** remove_test_runner_arguments(int* argcp, char **argv) {
   return new_argv;
 }
 
-// This is generally run once for a set of tests, but if we have vm_assert, or other_vm
-// tests, a new process is forked and this will be called, for each of those tests.
+// This is generally run once for a set of tests. But if that set includes a vm_assert or
+// other_vm test, then a new process is forked, and runUnitTestsInner is called, passing
+// just that test as the one to be executed.
+//
 // When we execute a vm_assert or other_vm test we create and initialize the JVM below.
+//
 // A vm_assert test crashes the VM so no cleanup is needed, but for other_vm we call
 // DestroyJavaVM via the TEST_OTHER_VM macro prior to the call to exit().
+//
 // For same_vm tests we use an event listener to create the JVM when the first same_vm
 // test is executed. Once all tests are completed we can then call DestroyJavaVM on that
 // JVM directly.
@@ -276,7 +275,9 @@ static void runUnitTestsInner(int argc, char** argv) {
     JavaVM* jvm = NULL;
     // both vmassert and other vm tests require inited jvm
     // but only vmassert tests disable hs_err and core file generation
-    if (init_jvm(argc, argv, is_vmassert_test, &jvm) != 0) {
+    int ret;
+    if ((ret = init_jvm(argc, argv, is_vmassert_test, &jvm)) != 0) {
+      fprintf(stderr, "ERROR: JNI_CreateJavaVM failed: %d\n", ret);
       abort();
     }
   } else {
