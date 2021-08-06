@@ -41,7 +41,7 @@ struct ZStoreBarrierEntry {
 
 class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
 private:
-  static const size_t _buffer_length = 128;
+  static const size_t _buffer_length = 32;
   static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
   ZStoreBarrierEntry _buffer[_buffer_length];
   uintptr_t _last_processed_color;
