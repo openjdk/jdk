@@ -1051,10 +1051,10 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Integer.MIN_VALUE}.
+     * the result is equal to {@code Integer.MIN_VALUE}.
      * <p>
      * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
      * a comparison to the integer division {@code /} operator.
@@ -1075,7 +1075,7 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1099,10 +1099,10 @@ public final class StrictMath {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Long.MIN_VALUE}.
+     * the result is equal to {@code Long.MIN_VALUE}.
      * <p>
      * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
      * a comparison to the integer division {@code /} operator.
@@ -1123,13 +1123,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
@@ -1150,14 +1151,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
@@ -1178,13 +1179,14 @@ public final class StrictMath {
     /**
      * Returns the floor modulus of the {@code long} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * See {@link Math#floorMod(int, int) Math.floorMod} for examples and

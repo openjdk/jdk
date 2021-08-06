@@ -25,6 +25,7 @@
 /*
  * @test
  * @summary Run invocation tests with old CHA (-XX:-UseVtableBasedCHA)
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc

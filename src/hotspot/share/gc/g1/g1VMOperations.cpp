@@ -36,6 +36,17 @@
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
+bool VM_G1CollectFull::skip_operation() const {
+  // There is a race between the periodic collection task's checks for
+  // wanting a collection and processing its request.  A collection in that
+  // gap should cancel the request.
+  if ((_gc_cause == GCCause::_g1_periodic_collection) &&
+      (G1CollectedHeap::heap()->total_collections() != _gc_count_before)) {
+    return true;
+  }
+  return VM_GC_Operation::skip_operation();
+}
+
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test Uint64Test
- * @bug 8028756
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI Uint64Test
- * @summary testing of WB::set/getUint64VMFlag()
- * @author igor.ignatyev@oracle.com
- */
+public class CustomLoadee4WithLambda {
+    public static void test() {
+        doit(() -> {
+                System.out.println("Hello inside a Lambda expression");
+            });
+    }
 
-public class Uint64Test {
-    private static final String FLAG_NAME = "MaxRAM";
-    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
-            -1L, Long.MAX_VALUE, Long.MIN_VALUE};
-
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setUint64VMFlag,
-            VmFlagTest.WHITE_BOX::getUint64VMFlag);
+    static void doit(Runnable r) {
+        r.run();
     }
 }
-
