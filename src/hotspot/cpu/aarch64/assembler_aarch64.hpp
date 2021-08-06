@@ -2036,15 +2036,6 @@ public:
 
   INSN(fmovhid, 0b100, 0b10, 0b01, 0b110);
 
-  public:
-  void fcvtzv(SIMD_Arrangement T, FloatRegister Rd, FloatRegister Rn) {
-    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
-    starti;
-    f(0, 31), f(T & 1, 30), f(0b0011101, 29, 23);
-    f((T >> 1) & 1, 22), f(0b100001101110, 21, 10);
-    rf(Rn, 5), rf(Rd, 0);
-  }
-
 #undef INSN
 
 #define INSN(NAME, op31, type, rmode, opcode)                           \
@@ -2829,6 +2820,7 @@ public:
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
+  // Advanced SIMD scalar copy
   void dups(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int index = 0)
   {
     starti;
@@ -2915,6 +2907,7 @@ public:
   INSN(frintn, 0, 0b00, 0b01, 0b11000);
   INSN(frintm, 0, 0b00, 0b01, 0b11001);
   INSN(frintp, 0, 0b10, 0b01, 0b11000);
+  INSN(fcvtzv, 0, 0b10, 0b01, 0b11011); // converts each element in a vector from a floating-point value to a signed integer value, and Arm's name is fcvtzs
 #undef ASSERTION
 
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)

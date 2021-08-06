@@ -726,7 +726,7 @@
     __ umov(r0, v1, __ B, 3);                          //       umov    w0, v1.b[3]
     __ fmovhid(r0, v1);                                //       fmov    x0, v1.d[1]
     __ ld1(v31, v0, __ T2D, Address(__ post(r1, r0))); //       ld1     {v31.2d, v0.2d}, [x1], x0
-    __ fcvtzv(__ T4S, v0, v1);                         //       fcvtzs  v0.4s, v1.4s
+    __ fcvtzv(v0, __ T4S, v1);                         //       fcvtzs  v0.4s, v1.4s
     __ sve_cpy(z0, __ S, p0, v1);                      //       mov     z0.s, p0/m, s1
     __ sve_inc(r0, __ S);                              //       incw    x0
     __ sve_dec(r1, __ H);                              //       dech    x1
