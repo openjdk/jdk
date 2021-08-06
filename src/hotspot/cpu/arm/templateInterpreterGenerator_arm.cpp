@@ -126,12 +126,12 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   address entry_point = NULL;
   Register continuation = LR;
-  bool use_runtime_function = false;
+  bool use_runtime_call = false;
   switch (kind) {
   case Interpreter::java_lang_math_abs:
     entry_point = __ pc();
 #ifdef __SOFTFP__
-    use_runtime_function = true;
+    use_runtime_call = true;
     __ ldrd(R0, Address(SP));
 #else // !__SOFTFP__
     __ ldr_double(D0, Address(SP));
@@ -141,7 +141,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   case Interpreter::java_lang_math_sqrt:
     entry_point = __ pc();
 #ifdef __SOFTFP__
-    use_runtime_function = true;
+    use_runtime_call = true;
     __ ldrd(R0, Address(SP));
 #else // !__SOFTFP__
     __ ldr_double(D0, Address(SP));
@@ -155,7 +155,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   case Interpreter::java_lang_math_log10:
   case Interpreter::java_lang_math_exp:
     entry_point = __ pc();
-    use_runtime_function = true;
+    use_runtime_call = true;
 #ifdef __SOFTFP__
     __ ldrd(R0, Address(SP));
 #else // !__SOFTFP__
@@ -164,7 +164,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_pow:
     entry_point = __ pc();
-    use_runtime_function = true;
+    use_runtime_call = true;
 #ifdef __SOFTFP__
     __ ldrd(R0, Address(SP, 2 * Interpreter::stackElementSize));
     __ ldrd(R2, Address(SP));
@@ -183,7 +183,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   if (entry_point != NULL) {
     __ mov(SP, Rsender_sp);
-    if (use_runtime_function) {
+    if (use_runtime_call) {
       __ mov(Rtmp_save0, LR);
       continuation = Rtmp_save0;
       generate_math_runtime_call(kind);
