@@ -1,4 +1,4 @@
-File-Date: 2021-07-21
+File-Date: 2021-08-06
 %%
 Type: language
 Subtag: aa
@@ -47355,6 +47355,12 @@ Subtag: fonxsamp
 Description: X-SAMPA transcription
 Added: 2010-10-23
 Comments: Indicates that the content is transcribed according to X-SAMPA
+%%
+Type: variant
+Subtag: gallo
+Description: Gallo
+Added: 2021-08-05
+Prefix: fr
 %%
 Type: variant
 Subtag: gascon
