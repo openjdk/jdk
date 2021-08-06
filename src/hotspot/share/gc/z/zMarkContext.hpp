@@ -28,13 +28,24 @@
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
 
+class ZMarkStripe;
+class ZMarkThreadLocalStacks;
+
 class ZMarkContext : public StackObj {
 private:
-  ZMarkCache            _cache;
-  StringDedup::Requests _string_dedup_requests;
+  ZMarkCache                    _cache;
+  ZMarkStripe* const            _stripe;
+  ZMarkThreadLocalStacks* const _stacks;
+  StringDedup::Requests         _string_dedup_requests;
 
 public:
-  ZMarkContext(size_t nstripes);
+  ZMarkContext(size_t nstripes,
+               ZMarkStripe* stripe,
+               ZMarkThreadLocalStacks* stacks);
+
+  ZMarkStripe* stripe();
+
+  ZMarkThreadLocalStacks* stacks();
 
   void inc_live(ZPage* page, size_t bytes);
 

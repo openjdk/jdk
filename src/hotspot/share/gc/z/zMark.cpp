@@ -329,7 +329,9 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
 }
 
 template <typename T>
-bool ZMark::drain(ZMarkContext* context, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, T* timeout) {
+bool ZMark::drain(ZMarkContext* context, T* timeout) {
+  ZMarkStripe* const stripe = context->stripe();
+  ZMarkThreadLocalStacks* const stacks = context->stacks();
   ZMarkStackEntry entry;
 
   // Drain stripe stacks
@@ -347,7 +349,10 @@ bool ZMark::drain(ZMarkContext* context, ZMarkStripe* stripe, ZMarkThreadLocalSt
   return !timeout->has_expired();
 }
 
-bool ZMark::try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+bool ZMark::try_steal_local(ZMarkContext* context) {
+  ZMarkStripe* const stripe = context->stripe();
+  ZMarkThreadLocalStacks* const stacks = context->stacks();
+
   // Try to steal a local stack from another stripe
   for (ZMarkStripe* victim_stripe = _stripes.stripe_next(stripe);
        victim_stripe != stripe;
@@ -364,7 +369,10 @@ bool ZMark::try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks)
   return false;
 }
 
-bool ZMark::try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+bool ZMark::try_steal_global(ZMarkContext* context) {
+  ZMarkStripe* const stripe = context->stripe();
+  ZMarkThreadLocalStacks* const stacks = context->stacks();
+
   // Try to steal a stack from another stripe
   for (ZMarkStripe* victim_stripe = _stripes.stripe_next(stripe);
        victim_stripe != stripe;
@@ -381,8 +389,8 @@ bool ZMark::try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks
   return false;
 }
 
-bool ZMark::try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
-  return try_steal_local(stripe, stacks) || try_steal_global(stripe, stacks);
+bool ZMark::try_steal(ZMarkContext* context) {
+  return try_steal_local(context) || try_steal_global(context);
 }
 
 void ZMark::idle() const {
@@ -500,17 +508,17 @@ public:
   }
 };
 
-void ZMark::work_without_timeout(ZMarkContext* context, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+void ZMark::work_without_timeout(ZMarkContext* context) {
   ZStatTimer timer(ZSubPhaseConcurrentMark);
   ZMarkNoTimeout no_timeout;
 
   for (;;) {
-    if (!drain(context, stripe, stacks, &no_timeout)) {
+    if (!drain(context, &no_timeout)) {
       // Abort
       break;
     }
 
-    if (try_steal(stripe, stacks)) {
+    if (try_steal(context)) {
       // Stole work
       continue;
     }
@@ -565,17 +573,17 @@ public:
   }
 };
 
-void ZMark::work_with_timeout(ZMarkContext* context, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_micros) {
+void ZMark::work_with_timeout(ZMarkContext* context, uint64_t timeout_in_micros) {
   ZStatTimer timer(ZSubPhaseMarkTryComplete);
   ZMarkTimeout timeout(timeout_in_micros);
 
   for (;;) {
-    if (!drain(context, stripe, stacks, &timeout)) {
+    if (!drain(context, &timeout)) {
       // Timed out
       break;
     }
 
-    if (try_steal(stripe, stacks)) {
+    if (try_steal(context)) {
       // Stole work
       continue;
     }
@@ -586,14 +594,14 @@ void ZMark::work_with_timeout(ZMarkContext* context, ZMarkStripe* stripe, ZMarkT
 }
 
 void ZMark::work(uint64_t timeout_in_micros) {
-  ZMarkContext context(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
+  ZMarkContext context(_stripes.nstripes(), stripe, stacks);
 
   if (timeout_in_micros == 0) {
-    work_without_timeout(&context, stripe, stacks);
+    work_without_timeout(&context);
   } else {
-    work_with_timeout(&context, stripe, stacks, timeout_in_micros);
+    work_with_timeout(&context, timeout_in_micros);
   }
 
   // Flush and publish stacks

@@ -28,6 +28,22 @@
 #include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkContext.hpp"
 
+inline ZMarkContext::ZMarkContext(size_t nstripes,
+                                  ZMarkStripe* stripe,
+                                  ZMarkThreadLocalStacks* stacks) :
+    _cache(nstripes),
+    _stripe(stripe),
+    _stacks(stacks),
+    _string_dedup_requests() {}
+
+inline ZMarkStripe* ZMarkContext::stripe() {
+  return _stripe;
+}
+
+inline ZMarkThreadLocalStacks* ZMarkContext::stacks() {
+  return _stacks;
+}
+
 inline void ZMarkContext::inc_live(ZPage* page, size_t bytes) {
   _cache.inc_live(page, bytes);
 }
