@@ -95,59 +95,6 @@ void MethodMatcher::init(Symbol* class_name, Mode class_mode,
  _signature = signature;
 }
 
-static bool is_hidden_class_pattern(const char * current, const char * start) {
-  int index = 0;
-  char c = *(++current);
-
-  while (c != '\0' && c != '*' && c != ':') {
-    if (index == 0) {
-      // The first non-'*' char after '/' should be '0'
-      if (c != '0') {
-        return false;
-      }
-    } else if (index == 1) {
-      // The second non-'*' char after '/' should be 'x'
-      if (c != 'x') {
-        return false;
-      }
-    } else {
-      // The remaining non-'*' chars should be xdigits
-      if (!isxdigit(c)) {
-        return false;
-      }
-    }
-    index++;
-    c = *(++current);
-  }
-
-  if (c == '*' || c == ':') {
-    char next = *(++current);
-    if (next == ':') {
-      if (c == ':') {
-        // Full hidden class name without '*'
-        return true;
-      } else {
-        char next_next = *(++current);
-        if (next_next == ':') {
-          // May be partial hidden class name with suffix '*'
-          if (index == 0) {
-            // To be conservative for "/*::" pattern
-            // Check if '$' exists to avoid cases like "java.util/*::method"
-            const char* pos = strchr(start, '$');
-            if (pos != NULL && pos < current) {
-              return true;
-            }
-          } else {
-            return true;
-          }
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
 bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
   char* colon = strstr(line, "::");
   bool have_colon = (colon != NULL);
@@ -168,18 +115,8 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
         }
 
         if (*lp == '/') {
-          // Check whether it's a hidden class method.
-          if (is_hidden_class_pattern(lp, line)) {
-            // According to ClassFileParser::mangle_hidden_class_name, the pattern of
-            // hidden class name in the VM should be: _class_name, "+", and &ik
-            // But "+" will be replaced with "/" when it is printed by PrintCompilation.
-            // So replace '/' with '+'
-            *lp = '+';
-          } else {
-            // Not a hidden class method
-            error_msg = "Method pattern uses '/' together with '::'";
-            return false;
-          }
+          error_msg = "Method pattern uses '/' together with '::'";
+          return false;
         }
       }
     }
