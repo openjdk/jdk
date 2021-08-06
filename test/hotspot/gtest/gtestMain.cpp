@@ -118,7 +118,7 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
 
   virtual void OnTestStart(const ::testing::TestInfo& test_info) {
     const char* name = test_info.name();
-    if ( _jvm == nullptr && is_same_vm_test(name)) {
+    if (_jvm == nullptr && is_same_vm_test(name)) {
       // we want to have hs_err and core files when we execute regular tests
       int ret_val = init_jvm(_argc, _argv, false, &_jvm);
       if (ret_val != 0) {
