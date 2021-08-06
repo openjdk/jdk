@@ -1517,7 +1517,6 @@ G1CollectedHeap::G1CollectedHeap() :
     ::new (&_evacuation_failed_info_array[i]) EvacuationFailedInfo();
   }
 
-  _evac_failure_injector.reset();
   _gc_tracer_stw->initialize();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
@@ -1773,6 +1772,8 @@ jint G1CollectedHeap::initialize() {
   _collection_set.initialize(max_reserved_regions());
 
   _regions_failed_evacuation.resize(max_regions());
+
+  evac_failure_injector()->reset();
 
   G1InitLogger::print();
 
