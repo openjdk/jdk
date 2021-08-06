@@ -107,6 +107,9 @@ inline void ThreadsList::threads_do(T *cl) const {
   }
 }
 
+ThreadsListHandle::Iterator ThreadsListHandle::begin() { return list()->begin(); }
+ThreadsListHandle::Iterator ThreadsListHandle::end() { return list()->end(); }
+
 // These three inlines are private to ThreadsSMRSupport, but
 // they are called by public inline update_tlh_stats() below:
 

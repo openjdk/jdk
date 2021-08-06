@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8148854
- * @summary Ensure class name loaded by app class loader is format checked by default
- * @requires vm.flagless
- * @library /test/lib
- * @compile BadHelloWorld.jcod
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver FormatCheckingTest
- */
+import java.util.*;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+// This is a test case executed by DumpClassList.java to load classes
+// from various places to ensure that they are not written to the class list.
+public class DumpClassListApp {
+    public static void main(String args[]) throws Exception {
+        // The following lambda usage should generate various classes like
+        // java.lang.invoke.LambdaForm$MH/1146743572. All of them should be excluded from
+        // the class list.
+        List<String> a = new ArrayList<>();
+        a.add("hello world.");
+        a.forEach(str -> System.out.println(str));
 
-public class FormatCheckingTest {
-    public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("BadHelloWorld");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("java.lang.ClassFormatError: Illegal class name");
-        output.shouldHaveExitValue(1);
+        System.out.println(Class.forName("jdk.jfr.NewClass")); // should be excluded from the class list.
+        System.out.println(Class.forName("boot.append.Foo"));    // should be excluded from the class list.
     }
 }
