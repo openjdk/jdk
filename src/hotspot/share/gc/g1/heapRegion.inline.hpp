@@ -112,6 +112,10 @@ inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
 }
 
+inline HeapWord* HeapRegion::block_start(const void* p, HeapWord*& iterated_hint) {
+  return _bot_part.block_start(p, iterated_hint);
+}
+
 inline HeapWord* HeapRegion::block_start_const(const void* p) const {
   return _bot_part.block_start_const(p);
 }
@@ -340,6 +344,14 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 template <bool is_gc_active, class Closure>
 HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
                                                             Closure* cl) {
+  HeapWord* no_hint = NULL;
+  return oops_on_memregion_seq_iterate_careful<is_gc_active>(mr, cl, no_hint);
+}
+
+template <bool is_gc_active, class Closure>
+HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
+                                                            Closure* cl,
+                                                            HeapWord*& iterated_hint) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -361,7 +373,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   // Find the obj that extends onto mr.start().
   // Update BOT as needed while finding start of (possibly dead)
   // object containing the start of the region.
-  HeapWord* cur = block_start(start);
+  HeapWord* cur = block_start(start, iterated_hint);
 
 #ifdef ASSERT
   {

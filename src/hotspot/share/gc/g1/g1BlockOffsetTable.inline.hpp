@@ -37,6 +37,21 @@ inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   return forward_to_block_containing_addr(q, addr);
 }
 
+inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr, HeapWord*& iterated_hint) {
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  HeapWord* q = block_at_or_preceding(addr);
+  // If there is a hint, which indicates that BOT has previously fixed up to this
+  // position in the same region, and the hint position must be a block start, we avoid
+  // having to go back to the position of q. If addr is lower than the hint, do regular forward.
+  if (iterated_hint != NULL && iterated_hint > q && iterated_hint <= addr) {
+    q = iterated_hint;
+  }
+  q = forward_to_block_containing_addr(q, addr);
+  // Record the BOT-fixed range.
+  iterated_hint = MAX2(q + block_size(q), iterated_hint);
+  return q;
+}
+
 inline HeapWord* G1BlockOffsetTablePart::block_start_const(const void* addr) const {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
   HeapWord* q = block_at_or_preceding(addr);

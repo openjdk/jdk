@@ -190,6 +190,7 @@ public:
   // backwards.  This can occur, for example, when lab allocation is used
   // in a space covered by the table.)
   inline HeapWord* block_start(const void* addr);
+  inline HeapWord* block_start(const void* addr, HeapWord*& iterated_hint);
   // Same as above, but does not have any of the possible side effects
   // discussed above.
   inline HeapWord* block_start_const(const void* addr) const;
