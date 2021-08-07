@@ -79,9 +79,7 @@ public final class TestHiddenMethod {
 
             assertTrue(hasHiddenStackFrame(hiddenEvent), "No hidden frame in hidden event: " + hiddenEvent);
 
-            // Method::invoke is reimplemented using MethodHandle.  Hidden frames can be found
-            // the stack frame.
-            // TODO: need a different way to validate
+            // Temporary disable this test until JDK-8272064 is resolved.
             // assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
         }
     }
