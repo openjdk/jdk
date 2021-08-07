@@ -308,21 +308,6 @@ public:
 // necessarily, a space that is normally contiguous.  But, for example, a
 // free-list-based space whose normal collection is a mark-sweep without
 // compaction could still support compaction in full GC's.
-//
-// The compaction operations are implemented by the
-// scan_and_{adjust_pointers,compact,forward} function templates.
-// The following are, non-virtual, auxiliary functions used by these function templates:
-// These functions are to be used exclusively by the scan_and_* function templates,
-// and must be defined for all (non-abstract) subclasses of CompactibleSpace.
-//
-// NOTE: Any subclasses to CompactibleSpace wanting to change/define the behavior
-// in any of the auxiliary functions must also override the corresponding
-// prepare_for_compaction/adjust_pointers/compact functions using them.
-// If not, such changes will not be used or have no effect on the compaction operations.
-//
-// This translates to the following dependencies:
-// Similar dependencies exist between
-
 class CompactibleSpace: public Space {
   friend class VMStructs;
 private:
