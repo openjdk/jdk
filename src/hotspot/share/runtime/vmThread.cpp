@@ -91,6 +91,7 @@ void VMOperationTimeoutTask::disarm() {
     fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
           _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
   }
+  _vm_op_name = nullptr;
 }
 
 //------------------------------------------------------------------------------------------------------------------
