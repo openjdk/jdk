@@ -230,7 +230,7 @@ public class MethodHandles {
 
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+        if (sm != null) sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
             throw new IllegalArgumentException(targetClass + " is a primitive class");
         if (targetClass.isArray())
@@ -443,13 +443,10 @@ public class MethodHandles {
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
         @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
-        if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
+        if (smgr != null)  smgr.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
         return lookup.revealDirect(target).reflectAs(expected, lookup);
     }
-    // Copied from AccessibleObject, as used by Method.setAccessible, etc.:
-    private static final java.security.Permission ACCESS_PERMISSION =
-        new ReflectPermission("suppressAccessChecks");
 
     /**
      * A <em>lookup object</em> is a factory for creating method handles,

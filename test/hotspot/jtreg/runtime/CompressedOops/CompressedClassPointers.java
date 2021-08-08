@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -47,6 +47,8 @@ import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 /**
  * A DLS Level 1 and Level 2 soundbank reader (from files/url/streams).
  *
@@ -1147,7 +1149,7 @@ public final class DLSSoundbank implements Soundbank {
             return;
         RIFFWriter chunk = writer.writeChunk(name);
         chunk.writeString(value);
-        int len = value.getBytes("ascii").length;
+        int len = value.getBytes(US_ASCII).length;
         chunk.write(0);
         len++;
         if (len % 2 != 0)

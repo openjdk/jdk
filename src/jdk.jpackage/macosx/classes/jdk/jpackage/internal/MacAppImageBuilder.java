@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SPLIT_RUNTIME;
 import static jdk.jpackage.internal.StandardBundlerParam.RUNTIME_ROOT;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -144,16 +145,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 return f;
             },
             (s, p) -> Path.of(s));
-
-    public static final StandardBundlerParam<Boolean> SIGN_BUNDLE  =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.MAC_SIGN.getId(),
-            Boolean.class,
-            params -> false,
-            // valueOf(null) is false, we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                    null : Boolean.valueOf(s)
-        );
 
     public static final StandardBundlerParam<Boolean> APP_STORE =
             new StandardBundlerParam<>(
@@ -870,5 +861,4 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         return null;
     }
-
 }

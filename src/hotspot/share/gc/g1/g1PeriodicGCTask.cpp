@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,19 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1GCCounters.hpp"
 #include "gc/g1/g1PeriodicGCTask.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-bool G1PeriodicGCTask::should_start_periodic_gc() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
+                                                G1GCCounters* counters) {
+  // Ensure no GC safepoints while we're doing the checks, to avoid data races.
+  SuspendibleThreadSetJoiner sts;
+
   // If we are currently in a concurrent mark we are going to uncommit memory soon.
   if (g1h->concurrent_mark()->cm_thread()->in_progress()) {
     log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
@@ -56,6 +61,11 @@ bool G1PeriodicGCTask::should_start_periodic_gc() {
                             recent_load, G1PeriodicGCSystemLoadThreshold);
     return false;
   }
+
+  // Record counters with GC safepoints blocked, to get a consistent snapshot.
+  // These are passed to try_collect so a GC between our release of the
+  // STS-joiner and the GC VMOp can be detected and cancel the request.
+  *counters = G1GCCounters(g1h);
   return true;
 }
 
@@ -66,8 +76,10 @@ void G1PeriodicGCTask::check_for_periodic_gc() {
   }
 
   log_debug(gc, periodic)("Checking for periodic GC.");
-  if (should_start_periodic_gc()) {
-    if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection)) {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1GCCounters counters;
+  if (should_start_periodic_gc(g1h, &counters)) {
+    if (!g1h->try_collect(GCCause::_g1_periodic_collection, counters)) {
       log_debug(gc, periodic)("GC request denied. Skipping.");
     }
   }
