@@ -30,8 +30,6 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileLock;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -40,6 +38,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * HashedPasswordManager loads passwords from the password file and optionally
@@ -139,7 +139,7 @@ final public class HashedPasswordManager {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
             digest.reset();
             digest.update(salt);
-            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(password.getBytes(UTF_8));
             String saltStr = Base64.getEncoder().encodeToString(salt);
             String hashStr = Base64.getEncoder().encodeToString(hash);
 
@@ -167,7 +167,7 @@ final public class HashedPasswordManager {
                 }
                 lock.release();
             }
-            String str = new String(data, StandardCharsets.UTF_8);
+            String str = new String(data, UTF_8);
             return str.split("\\r?\\n");
         }
     }
@@ -175,7 +175,7 @@ final public class HashedPasswordManager {
     private void writePasswordFile(String input) throws IOException {
         synchronized (HashedPasswordManager.class) {
             try (FileOutputStream fout = new FileOutputStream(passwordFile);
-                    OutputStreamWriter out = new OutputStreamWriter(fout, StandardCharsets.UTF_8);
+                    OutputStreamWriter out = new OutputStreamWriter(fout, UTF_8);
                     FileLock lock = fout.getChannel().lock()) {
                 out.write(input);
                 lock.release();
@@ -199,7 +199,7 @@ final public class HashedPasswordManager {
                 MessageDigest digest = MessageDigest.getInstance(us.hashAlgorithm);
                 digest.reset();
                 digest.update(salt);
-                ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(CharBuffer.wrap(inputPassword));
+                ByteBuffer byteBuffer = UTF_8.encode(CharBuffer.wrap(inputPassword));
                 byte[] passwordBytes = new byte[byteBuffer.limit()];
                 byteBuffer.get(passwordBytes);
                 byte[] hash = digest.digest(passwordBytes);
