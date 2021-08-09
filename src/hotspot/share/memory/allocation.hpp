@@ -421,11 +421,11 @@ protected:
 
  public:
   void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() = delete;
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
       allocation_type type, MEMFLAGS flags) throw();
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw();
+      allocation_type type, MEMFLAGS flags) throw() = delete;
 
   void* operator new(size_t size, Arena *arena) throw();
 

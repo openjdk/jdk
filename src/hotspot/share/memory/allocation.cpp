@@ -133,10 +133,6 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
   return res;
 }
 
-void* ResourceObj::operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() {
-  return (address) operator new(size, type, flags);
-}
-
 void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
     allocation_type type, MEMFLAGS flags) throw() {
   // should only call this with std::nothrow, use other operator new() otherwise
@@ -154,11 +150,6 @@ void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_cons
     ShouldNotReachHere();
   }
   return res;
-}
-
-void* ResourceObj::operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-    allocation_type type, MEMFLAGS flags) throw() {
-  return (address)operator new(size, nothrow_constant, type, flags);
 }
 
 void ResourceObj::operator delete(void* p) {
