@@ -244,8 +244,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   }
 
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-  assert(!dest_attr.is_in_cset(), "must not scan object from cset here");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor() || dest_attr.is_in_cset());
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.  The length of to_array is not correct, but
   // fortunately the iteration ignores the length field and just relies
   // on start/end.
@@ -277,10 +276,12 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  // FIXME: check if we could just use dest_attr
-  dest_attr = _g1h->region_attr(to_array);
-  assert(!_g1h->region_attr(to_array).is_in_cset(), "must not scan object from cset here");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor() || dest_attr.is_in_cset());
+  // Same reason to use dest_attr.is_young() here as for the successfully evacuated
+  // regular object case. Is_survivor() may not have been set, but to_array must
+  // be in a Survivor region (if dest_attr.is_young()) or Old here.
+  // Assert this here as it is not immediately obvious.
+  assert(!dest_attr.is_young() || _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module. The length of to_array is not correct, but fortunately
@@ -540,6 +541,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // obj (dest_attr here is used to select the allocation generation, and this
     // is either "Young" or "Old").
     // The region of "obj" is the source region for this iteration.
+    // Assert this here although almost obvious.
+    assert(!dest_attr.is_young() || _g1h->heap_region_containing(obj)->is_survivor(), "must be");
     G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;

@@ -87,13 +87,13 @@ public:
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
   friend class G1SkipCardEnqueueSetter;
 
-  enum ScanningInYoungValues {
+  enum SkipCardEnqueueTristate {
     False = 0,
     True,
     Uninitialized
   };
 
-  ScanningInYoungValues _skip_card_enqueue;
+  SkipCardEnqueueTristate _skip_card_enqueue;
 
 public:
   G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
@@ -111,14 +111,13 @@ public:
   }
 };
 
-// RAII object to properly set the _scanning_in_young field in G1ScanEvacuatedObjClosure.
 class G1SkipCardEnqueueSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 
 public:
-  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_enqueue_cards) : _closure(closure) {
+  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_card_enqueue) : _closure(closure) {
     assert(_closure->_skip_card_enqueue == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
-    _closure->_skip_card_enqueue = skip_enqueue_cards ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+    _closure->_skip_card_enqueue = skip_card_enqueue ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
   }
 
   ~G1SkipCardEnqueueSetter() {
