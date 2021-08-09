@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -150,7 +152,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   size_t used = _space->used();
 
   // Allocation successful, update counters
-  {
+  if (Metaspace::initialized()) {
     size_t last = _last_counter_update;
     if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
@@ -158,7 +160,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   }
 
   // ...and print the occupancy line, if needed
-  {
+  if (Metaspace::initialized()) {
     size_t last = _last_heap_print;
     if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
@@ -260,6 +262,10 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
 
 HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
   *gc_overhead_limit_was_exceeded = false;
+  return allocate_work(size);
+}
+
+HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
   return allocate_work(size);
 }
 

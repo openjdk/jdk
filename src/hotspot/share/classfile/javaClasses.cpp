@@ -903,7 +903,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::open_regions_mapped()) {
+    if (HeapShared::are_archived_mirrors_available()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1146,8 +1146,7 @@ static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass
 }
 
 void java_lang_Class::archive_basic_type_mirrors() {
-  assert(HeapShared::is_heap_object_archiving_allowed(),
-         "HeapShared::is_heap_object_archiving_allowed() must be true");
+  assert(HeapShared::can_write(), "must be");
 
   for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
     BasicType bt = (BasicType)t;
@@ -1185,8 +1184,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
 // be used at runtime, new mirror object is created for the shared
 // class. The _has_archived_raw_mirror is cleared also during the process.
 oop java_lang_Class::archive_mirror(Klass* k) {
-  assert(HeapShared::is_heap_object_archiving_allowed(),
-         "HeapShared::is_heap_object_archiving_allowed() must be true");
+  assert(HeapShared::can_write(), "must be");
 
   // Mirror is already archived
   if (k->has_archived_mirror_index()) {
@@ -1340,7 +1338,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
+  if (HeapShared::is_mapped()) {
+    assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
+  }
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
