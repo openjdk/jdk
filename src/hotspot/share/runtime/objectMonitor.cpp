@@ -69,7 +69,7 @@
   char* bytes = NULL;                                                      \
   int len = 0;                                                             \
   jlong jtid = SharedRuntime::get_java_tid(thread);                        \
-  Symbol* klassname = ((oop)obj)->klass()->name();                         \
+  Symbol* klassname = obj->klass()->name();                                \
   if (klassname != NULL) {                                                 \
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
@@ -252,7 +252,7 @@ static void check_object_context() {
   Thread* self = Thread::current();
   if (self->is_Java_thread()) {
     // Mostly called from JavaThreads so sanity check the thread state.
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     switch (jt->thread_state()) {
     case _thread_in_vm:    // the usual case
     case _thread_in_Java:  // during deopt
@@ -305,6 +305,27 @@ oop ObjectMonitor::object_peek() const {
     return NULL;
   }
   return _object.peek();
+}
+
+void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
+  if (current->is_suspended()) {
+    _om->_recursions = 0;
+    _om->_succ = NULL;
+    // Don't need a full fence after clearing successor here because of the call to exit().
+    _om->exit(current, false /* not_suspended */);
+    _om_exited = true;
+
+    current->set_current_pending_monitor(_om);
+  }
+}
+
+void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
+  if (current->is_suspended()) {
+    if (_om->_succ == current) {
+      _om->_succ = NULL;
+      OrderAccess::fence(); // always do a full fence when successor is cleared
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -388,6 +409,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   { // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
 
+    assert(current->current_pending_monitor() == NULL, "invariant");
     current->set_current_pending_monitor(this);
 
     DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
@@ -402,39 +424,32 @@ bool ObjectMonitor::enter(JavaThread* current) {
     }
 
     OSThreadContendState osts(current->osthread());
-    ThreadBlockInVM tbivm(current);
 
-    // TODO-FIXME: change the following for(;;) loop to straight-line code.
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
     for (;;) {
-      current->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-
-      EnterI(current);
-
-      if (!current->handle_special_suspend_equivalent_condition()) break;
-
-      // We have acquired the contended monitor, but while we were
-      // waiting another thread suspended us. We don't want to enter
-      // the monitor while suspended because that would surprise the
-      // thread that suspended us.
-      //
-      _recursions = 0;
-      _succ = NULL;
-      exit(false, current);
-
-      current->java_suspend_self();
+      ExitOnSuspend eos(this);
+      {
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
+        EnterI(current);
+        current->set_current_pending_monitor(NULL);
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending.
+      }
+      if (!eos.exited()) {
+        // ExitOnSuspend did not exit the OM
+        assert(owner_raw() == current, "invariant");
+        break;
+      }
     }
-    current->set_current_pending_monitor(NULL);
 
-    // We cleared the pending monitor info since we've just gotten past
-    // the enter-check-for-suspend dance and we now own the monitor free
-    // and clear, i.e., it is no longer pending. The ThreadBlockInVM
-    // destructor can go to a safepoint at the end of this block. If we
-    // do a thread dump during that safepoint, then this thread will show
-    // as having "-locked" the monitor, but the OS and java.lang.Thread
-    // states will still report that the thread is blocked trying to
-    // acquire it.
+    // We've just gotten past the enter-check-for-suspend dance and we now own
+    // the monitor free and clear.
   }
 
   add_to_contentions(-1);
@@ -470,7 +485,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     // just exited the monitor.
   }
   if (event.should_commit()) {
-    event.set_previousOwner((uintptr_t)_previous_owner_tid);
+    event.set_previousOwner(_previous_owner_tid);
     event.commit();
   }
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
@@ -508,7 +523,7 @@ int ObjectMonitor::TryLock(JavaThread* current) {
 // Contending threads that see that condition know to retry their operation.
 //
 bool ObjectMonitor::deflate_monitor() {
-  if (is_busy() != 0) {
+  if (is_busy()) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
   }
@@ -530,7 +545,7 @@ bool ObjectMonitor::deflate_monitor() {
     // Java threads. The GC already broke the association with the object.
     set_owner_from(NULL, DEFLATER_MARKER);
     assert(contentions() >= 0, "must be non-negative: contentions=%d", contentions());
-    _contentions = -max_jint;
+    _contentions = INT_MIN; // minimum negative int
   } else {
     // Attempt async deflation protocol.
 
@@ -557,7 +572,7 @@ bool ObjectMonitor::deflate_monitor() {
 
     // Make a zero contentions field negative to force any contending threads
     // to retry. This is the second part of the async deflation dance.
-    if (Atomic::cmpxchg(&_contentions, (jint)0, -max_jint) != 0) {
+    if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
       // ObjectMonitor is now busy. Restore owner to NULL if it is
       // still DEFLATER_MARKER:
@@ -953,24 +968,15 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     if (TryLock(current) > 0) break;
     if (TrySpin(current) > 0) break;
 
-    // State transition wrappers around park() ...
-    // ReenterI() wisely defers state transitions until
-    // it's clear we must park the thread.
     {
       OSThreadContendState osts(current->osthread());
-      ThreadBlockInVM tbivm(current);
 
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-      current->set_suspend_equivalent();
-      current->_ParkEvent->park();
+      assert(current->thread_state() == _thread_in_vm, "invariant");
 
-      // were we externally suspended while we were waiting?
-      for (;;) {
-        if (!current->handle_special_suspend_equivalent_condition()) break;
-        if (_succ == current) { _succ = NULL; OrderAccess::fence(); }
-        current->java_suspend_self();
-        current->set_suspend_equivalent();
+      {
+        ClearSuccOnSuspend csos(this);
+        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+        current->_ParkEvent->park();
       }
     }
 
@@ -1139,7 +1145,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void ObjectMonitor::exit(bool not_suspended, JavaThread* current) {
+void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
     if (current->is_lock_owned((address)cur)) {
@@ -1372,7 +1378,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   guarantee(current == owner_raw(), "complete_exit not owner");
   intx save = _recursions; // record the old recursion count
   _recursions = 0;         // set the recursion level to be 0
-  exit(true, current);     // exit the monitor
+  exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
 }
@@ -1409,7 +1415,7 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 // (IMSE). If there is a pending exception and the specified thread
 // is not the owner, that exception will be replaced by the IMSE.
 bool ObjectMonitor::check_owner(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   void* cur = owner_raw();
   if (cur == current) {
     return true;
@@ -1425,7 +1431,7 @@ bool ObjectMonitor::check_owner(TRAPS) {
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
-                                    jlong notifier_tid,
+                                    uint64_t notifier_tid,
                                     jlong timeout,
                                     bool timedout) {
   assert(event != NULL, "invariant");
@@ -1447,7 +1453,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
 // Note: a subset of changes to ObjectMonitor::wait()
 // will need to be replicated in complete_exit
 void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1506,7 +1512,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
-  exit(true, current);         // exit the monitor
+  exit(current);               // exit the monitor
   guarantee(owner_raw() != current, "invariant");
 
   // The thread is on the WaitSet list - now park() it.
@@ -1525,11 +1531,12 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-    {
-      ThreadBlockInVM tbivm(current);
-      // Thread is in thread_blocked state and oop access is unsafe.
-      current->set_suspend_equivalent();
 
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
+    {
+      ClearSuccOnSuspend csos(this);
+      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {
@@ -1539,14 +1546,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
           ret = current->_ParkEvent->park(millis);
         }
       }
-
-      // were we externally suspended while we were waiting?
-      if (current->handle_special_suspend_equivalent_condition()) {
-        // TODO-FIXME: add -- if succ == current then succ = null.
-        current->java_suspend_self();
-      }
-
-    } // Exit thread safepoint: transition _thread_blocked -> _thread_in_vm
+    }
 
     // Node may be on the WaitSet, the EntryList (or cxq), or in transition
     // from the WaitSet to the EntryList.
@@ -1735,7 +1735,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
 // that suggests a lost wakeup bug.
 
 void ObjectMonitor::notify(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;
@@ -1754,7 +1754,7 @@ void ObjectMonitor::notify(TRAPS) {
 // mode the waitset will be empty and the EntryList will be "DCBAXYZ".
 
 void ObjectMonitor::notifyAll(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;
@@ -2187,7 +2187,7 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
-  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak", mtSynchronizer);
 
   DEBUG_ONLY(InitDone = true;)
 }
@@ -2243,7 +2243,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
   st->print_cr("  }");
   st->print_cr("  _owner = " INTPTR_FORMAT, p2i(owner_raw()));
-  st->print_cr("  _previous_owner_tid = " JLONG_FORMAT, _previous_owner_tid);
+  st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf1 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");

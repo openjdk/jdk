@@ -47,11 +47,12 @@ import sun.reflect.generics.repository.ConstructorRepository;
  *
  * @since 1.8
  */
-public abstract class Executable extends AccessibleObject
-    implements Member, GenericDeclaration {
+public abstract sealed class Executable extends AccessibleObject
+    implements Member, GenericDeclaration permits Constructor, Method {
     /*
      * Only grant package-visibility to the constructor.
      */
+    @SuppressWarnings("deprecation")
     Executable() {}
 
     /**
@@ -201,8 +202,8 @@ public abstract class Executable extends AccessibleObject
     public abstract String getName();
 
     /**
-     * Returns the Java language {@linkplain Modifier modifiers} for
-     * the executable represented by this object.
+     * {@return the Java language {@linkplain Modifier modifiers} for
+     * the executable represented by this object}
      */
     public abstract int getModifiers();
 
@@ -257,13 +258,20 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an array of {@code Type} objects that represent the formal
-     * parameter types, in declaration order, of the executable represented by
-     * this object. Returns an array of length 0 if the
-     * underlying executable takes no parameters.
-     * Note that the constructors of some inner classes
-     * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * Returns an array of {@code Type} objects that represent the
+     * formal parameter types, in declaration order, of the executable
+     * represented by this object. An array of length 0 is returned if the
+     * underlying executable takes no parameters.  Note that the
+     * constructors of some inner classes may have an implicitly
+     * declared parameter in addition to explicitly declared ones.
+     * Also note that as a <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
+     * artifact</a>, the number of returned parameters can differ
+     * depending on whether or not generic information is present. If
+     * generic information is present, only parameters explicitly
+     * present in the source will be returned; if generic information
+     * is not present, implicit and synthetic parameters may be
+     * returned as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
@@ -340,19 +348,17 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an array of {@code Parameter} objects that represent
+     * {@return an array of {@code Parameter} objects representing
      * all the parameters to the underlying executable represented by
-     * this object.  Returns an array of length 0 if the executable
+     * this object} An array of length 0 is returned if the executable
      * has no parameters.
      *
      * <p>The parameters of the underlying executable do not necessarily
      * have unique names, or names that are legal identifiers in the
-     * Java programming language (JLS 3.8).
+     * Java programming language (JLS {@jls 3.8}).
      *
      * @throws MalformedParametersException if the class file contains
      * a MethodParameters attribute that is improperly formatted.
-     * @return an array of {@code Parameter} objects representing all
-     * the parameters to the executable this object represents.
      */
     public Parameter[] getParameters() {
         // TODO: This may eventually need to be guarded by security
@@ -492,19 +498,14 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns a string describing this {@code Executable}, including
-     * any type parameters.
-     * @return a string describing this {@code Executable}, including
-     * any type parameters
+     * {@return a string describing this {@code Executable}, including
+     * any type parameters}
      */
     public abstract String toGenericString();
 
     /**
-     * Returns {@code true} if this executable was declared to take a
-     * variable number of arguments; returns {@code false} otherwise.
-     *
-     * @return {@code true} if an only if this executable was declared
-     * to take a variable number of arguments.
+     * {@return {@code true} if this executable was declared to take a
+     * variable number of arguments; returns {@code false} otherwise}
      */
     public boolean isVarArgs()  {
         return (getModifiers() & Modifier.VARARGS) != 0;
@@ -566,17 +567,19 @@ public abstract class Executable extends AccessibleObject
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
         if (result.length != numParameters &&
-            handleParameterNumberMismatch(result.length, numParameters)) {
-            Annotation[][] tmp = new Annotation[result.length+1][];
-            // Shift annotations down one to account for an implicit leading parameter
-            System.arraycopy(result, 0, tmp, 1, result.length);
-            tmp[0] = new Annotation[0];
+            handleParameterNumberMismatch(result.length, parameterTypes)) {
+            Annotation[][] tmp = new Annotation[numParameters][];
+            // Shift annotations down to account for any implicit leading parameters
+            System.arraycopy(result, 0, tmp, numParameters - result.length, result.length);
+            for (int i = 0; i < numParameters - result.length; i++) {
+                tmp[i] = new Annotation[0];
+            }
             result = tmp;
         }
         return result;
     }
 
-    abstract boolean handleParameterNumberMismatch(int resultLength, int numParameters);
+    abstract boolean handleParameterNumberMismatch(int resultLength, Class<?>[] parameterTypes);
 
     /**
      * {@inheritDoc}
@@ -672,7 +675,7 @@ public abstract class Executable extends AccessibleObject
      * by this {@code Executable} object.
      *
      * The receiver type of a method/constructor is available only if the
-     * method/constructor has a receiver parameter (JLS 8.4.1). If this {@code
+     * method/constructor has a receiver parameter (JLS {@jls 8.4.1}). If this {@code
      * Executable} object <em>represents an instance method or represents a
      * constructor of an inner member class</em>, and the
      * method/constructor <em>either</em> has no receiver parameter or has a

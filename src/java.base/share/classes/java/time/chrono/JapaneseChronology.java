@@ -202,10 +202,10 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      */
     @Override
     public JapaneseDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        if (era instanceof JapaneseEra == false) {
+        if (!(era instanceof JapaneseEra jera)) {
             throw new ClassCastException("Era must be JapaneseEra");
         }
-        return JapaneseDate.of((JapaneseEra) era, yearOfEra, month, dayOfMonth);
+        return JapaneseDate.of(jera, yearOfEra, month, dayOfMonth);
     }
 
     /**

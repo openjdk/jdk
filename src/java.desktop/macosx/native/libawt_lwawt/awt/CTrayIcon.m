@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,14 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
     view = [[AWTTrayIconView alloc] initWithTrayIcon:self];
     [theItem setView:view];
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
 
     return self;
 }
 
 -(void) dealloc {
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:nil];
+
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteGlobalRef(env, peer);
 
@@ -165,6 +168,12 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     (*env)->CallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jEvent);
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES; // We always show notifications to the user
 }
 
 @end //AWTTrayIcon

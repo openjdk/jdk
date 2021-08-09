@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +37,6 @@ class Mutex;
 class outputStream;
 class ReservedSpace;
 
-namespace metaspace {
-  class MetaspaceSizesSnapshot;
-}
-
 ////////////////// Metaspace ///////////////////////
 
 // Namespace for important central static functions
@@ -65,8 +62,6 @@ public:
 
 private:
 
-  DEBUG_ONLY(static bool   _frozen;)
-
   static const MetaspaceTracer* _tracer;
 
   static bool _initialized;
@@ -74,13 +69,6 @@ private:
 public:
 
   static const MetaspaceTracer* tracer() { return _tracer; }
-  static void freeze() {
-    assert(DumpSharedSpaces, "sanity");
-    DEBUG_ONLY(_frozen = true;)
-  }
-  static void assert_not_frozen() {
-    assert(!_frozen, "sanity");
-  }
 
  private:
 
@@ -123,6 +111,11 @@ public:
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
+
+  // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
+  // NULL on failure.
+  static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
+                            MetaspaceObj::Type type);
 
   static bool contains(const void* ptr);
   static bool contains_non_shared(const void* ptr);

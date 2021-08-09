@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8145136 8202537 8221432 8251317
+ * @bug 8145136 8202537 8221432 8251317 8258794
  * @modules jdk.localedata
  * @summary Tests LikelySubtags is correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8145136
@@ -37,7 +37,7 @@ public class Bug8145136 {
 
     public static void main(String[] args) {
         /* This golden data is names of all *.xml files which contain locale
-         * specific data in CLDR 38. With LikelySubtags,
+         * specific data in CLDR 39. With LikelySubtags,
          * these locales should be present in output of getAvailableLocales()
          * method.
          *
@@ -112,7 +112,7 @@ public class Bug8145136 {
             "mas", "mer-KE", "mer", "mfe-MU", "mfe", "mgh-MZ", "mgh", "mg-MG", "mgo-CM",
             "mgo", "mg", "mi-NZ", "mi", "mk-MK", "mk", "ml-IN", "ml", "mn-MN", "mn", "mr-IN", "mr",
             "ms-BN", "ms-MY", "ms-SG", "ms", "mt-MT", "mt", "mua-CM", "mua", "my-MM",
-            "my", "mzn-IR", "mzn", "naq-NA", "naq", "nb-NO", "nb-SJ", "nb", "nds-DE", "nds-NL", "nds", "nd",
+            "my", "mzn-IR", "mzn", "naq-NA", "naq", "no-NO", "no", "nds-DE", "nds-NL", "nds", "nd",
             "nd-ZW", "ne-IN", "ne-NP", "ne", "nl-AW", "nl-BE", "nl-BQ", "nl-CW",
             "nl-NL", "nl-SR", "nl-SX", "nl", "nmg-CM", "nmg", "nnh-CM", "nnh",
             "nn-NO", "nn", "nus-SS", "nus", "nyn-UG", "nyn", "om-ET", "om-KE",

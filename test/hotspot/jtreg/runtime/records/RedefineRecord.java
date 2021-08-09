@@ -29,8 +29,9 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
- * @run main RedefineRecord buildagent
- * @run main/othervm/timeout=6000 RedefineRecord runtest
+ * @requires vm.flagless
+ * @run driver RedefineRecord buildagent
+ * @run driver/timeout=6000 RedefineRecord runtest
  */
 
 import java.io.FileNotFoundException;
@@ -43,6 +44,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.util.spi.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineRecord {
 

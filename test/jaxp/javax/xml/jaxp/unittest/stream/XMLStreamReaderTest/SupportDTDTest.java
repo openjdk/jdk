@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.SupportDTDTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.SupportDTDTest
  * @run testng/othervm stream.XMLStreamReaderTest.SupportDTDTest
  * @summary Test SUPPORT_DTD and IS_REPLACING_ENTITY_REFERENCES.
  */

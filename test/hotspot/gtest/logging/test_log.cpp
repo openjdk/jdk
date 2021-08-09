@@ -58,6 +58,7 @@ TEST_VM_F(LogTest, large_message) {
   memset(big_msg, Xchar, sizeof(big_msg) - 1);
   log_trace(logging)("%s", big_msg);
 
+  AsyncLogWriter::flush();
   ResourceMark rm;
   FILE* fp = fopen(TestLogFileName, "r");
   ASSERT_NE((void*)NULL, fp);

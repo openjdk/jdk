@@ -45,15 +45,15 @@ public final class Unknown extends Attribute {
 
     private byte[] bytes;
     private final String name;
-    private static final Map<String, Unknown> unknown_attributes = new HashMap<>();
+    private static final Map<String, Unknown> unknownAttributes = new HashMap<>();
 
 
     /** @return array of unknown attributes, but just one for each kind.
      */
     static Unknown[] getUnknownAttributes() {
-        final Unknown[] unknowns = new Unknown[unknown_attributes.size()];
-        unknown_attributes.values().toArray(unknowns);
-        unknown_attributes.clear();
+        final Unknown[] unknowns = new Unknown[unknownAttributes.size()];
+        unknownAttributes.values().toArray(unknowns);
+        unknownAttributes.clear();
         return unknowns;
     }
 
@@ -80,7 +80,7 @@ public final class Unknown extends Attribute {
         this.bytes = bytes;
         name = ((ConstantUtf8) constant_pool.getConstant(name_index, Const.CONSTANT_Utf8))
                 .getBytes();
-        unknown_attributes.put(name, this);
+        unknownAttributes.put(name, this);
     }
 
 

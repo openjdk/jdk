@@ -64,7 +64,7 @@ static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS) {
 }
 
 static jint get_properties(AttachOperation* op, outputStream* out, Symbol* serializePropertiesMethod) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
   // load VMSupport
@@ -95,7 +95,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   }
 
   // The result should be a [B
-  oop res = (oop)result.get_jobject();
+  oop res = result.get_oop();
   assert(res->is_typeArray(), "just checking");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
@@ -116,7 +116,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
 
   // If loading a java agent then need to ensure that the java.instrument module is loaded
   if (strcmp(agent, "instrument") == 0) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
     JavaValue result(T_OBJECT);
@@ -183,17 +183,13 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
     }
   }
 
-  // thread stacks
-  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info);
+  // thread stacks and JNI global handles
+  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info, true /* print JNI handle info */);
   VMThread::execute(&op1);
 
-  // JNI global handles
-  VM_PrintJNI op2(out);
-  VMThread::execute(&op2);
-
   // Deadlock detection
-  VM_FindDeadlocks op3(out);
-  VMThread::execute(&op3);
+  VM_FindDeadlocks op2(out);
+  VMThread::execute(&op2);
 
   return JNI_OK;
 }
@@ -201,7 +197,7 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
 // A jcmd attach operation request was received, which will now
 // dispatch to the diagnostic commands used for serviceability functions.
 static jint jcmd(AttachOperation* op, outputStream* out) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   // All the supplied jcmd arguments are stored as a single
   // string (op->arg(0)). This is parsed by the Dcmd framework.
   DCmd::parse_and_execute(DCmd_Source_AttachAPI, out, op->arg(0), ' ', THREAD);
@@ -455,55 +451,17 @@ bool AttachListener::has_init_error(TRAPS) {
 void AttachListener::init() {
   EXCEPTION_MARK;
 
-  const char thread_name[] = "Attach Listener";
-  Handle string = java_lang_String::create_from_str(thread_name, THREAD);
+  const char* name = "Attach Listener";
+  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, THREAD);
   if (has_init_error(THREAD)) {
     set_state(AL_NOT_INITIALIZED);
     return;
   }
 
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
+  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-  Klass* group = vmClasses::ThreadGroup_klass();
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result,
-                        thread_group,
-                        group,
-                        vmSymbols::add_method_name(),
-                        vmSymbols::thread_void_signature(),
-                        thread_oop,
-                        THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
-
-  { MutexLocker mu(THREAD, Threads_lock);
-    JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);
-
-    // Check that thread and osthread were created
-    if (listener_thread == NULL || listener_thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), listener_thread);
-    java_lang_Thread::set_daemon(thread_oop());
-
-    listener_thread->set_threadObj(thread_oop());
-    Threads::add(listener_thread);
-    Thread::start(listener_thread);
-  }
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
 }
 
 // Performs clean-up tasks on platforms where we can detect that the last

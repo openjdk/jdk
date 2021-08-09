@@ -44,9 +44,9 @@ public class XTextField extends JPanel
 
     private static boolean allowNullSelection = false;
 
-    protected final static int COMPATIBLE_VALUE = 1;
-    protected final static int CURRENT_VALUE = 2;
-    protected final static int NULL_VALUE = 3;
+    protected static final int COMPATIBLE_VALUE = 1;
+    protected static final int CURRENT_VALUE = 2;
+    protected static final int NULL_VALUE = 3;
 
     private JButton button;
     private XOperations operation;

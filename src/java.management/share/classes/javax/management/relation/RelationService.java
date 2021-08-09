@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1485,7 +1485,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 ObjectName unregMBeanName = currNtf.getMBeanName();
 
-                // Adds the unregsitered MBean in the list of references to
+                // Adds the unregistered MBean in the list of references to
                 // remove from the listener filter
                 obsRefList.add(unregMBeanName);
 

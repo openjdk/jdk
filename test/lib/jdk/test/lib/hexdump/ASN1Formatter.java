@@ -151,6 +151,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @param prefix a string to prefix each line of output, used for indentation
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("fallthrough")
     private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
         int origAvailable = available;
         while (available != 0 || origAvailable < 0) {

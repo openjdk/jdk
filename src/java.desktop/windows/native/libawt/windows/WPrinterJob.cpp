@@ -191,12 +191,6 @@ Java_sun_print_PrintServiceLookupProvider_getAllPrinterNames(JNIEnv *env,
     return getPrinterNames(env, PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS);
 }
 
-JNIEXPORT jobjectArray JNICALL
-Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
-                                                                 jobject peer)
-{
-    return getPrinterNames(env, PRINTER_ENUM_CONNECTIONS);
-}
 
 JNIEXPORT void JNICALL
 Java_sun_print_PrintServiceLookupProvider_notifyLocalPrinterChange(JNIEnv *env,
@@ -237,6 +231,37 @@ Java_sun_print_PrintServiceLookupProvider_notifyLocalPrinterChange(JNIEnv *env,
         FindClosePrinterChangeNotification(chgObj);
     }
     ::ClosePrinter(hPrinter);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_print_PrintServiceLookupProvider_notifyRemotePrinterChange(JNIEnv *env,
+                                                                    jobject peer)
+{
+    jclass cls = env->GetObjectClass(peer);
+    CHECK_NULL(cls);
+    jmethodID refresh = env->GetMethodID(cls, "refreshServices", "()V");
+    CHECK_NULL(refresh);
+
+    HKEY hKey;
+    if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_CURRENT_USER,
+                                      _T("Printers\\Connections"),
+                                      0, KEY_NOTIFY, &hKey)) {
+        return;
+    }
+
+    BOOL keepMonitoring;
+    do {
+        keepMonitoring =
+                ERROR_SUCCESS == RegNotifyChangeKeyValue(hKey, TRUE,
+                                                         REG_NOTIFY_CHANGE_NAME,
+                                                         NULL,
+                                                         FALSE);
+        if (keepMonitoring) {
+            env->CallVoidMethod(peer, refresh);
+        }
+    } while (keepMonitoring && !env->ExceptionCheck());
+
+    RegCloseKey(hKey);
 }
 
 

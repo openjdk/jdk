@@ -73,3 +73,46 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
   EXPECT_LE(committed_class, committed);
 }
 
+TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
+  if (UseCompressedClassPointers) {
+    return;
+  }
+
+  size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
+  EXPECT_EQ(committed_class, 0UL);
+
+  size_t used_class = MetaspaceUtils::used_bytes(Metaspace::ClassType);
+  EXPECT_EQ(used_class, 0UL);
+
+  size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
+  EXPECT_EQ(reserved_class, 0UL);
+}
+
+static void check_metaspace_stats_are_consistent(const MetaspaceStats& stats) {
+  EXPECT_LT(stats.committed(), stats.reserved());
+  EXPECT_LT(stats.used(), stats.committed());
+}
+
+static void check_metaspace_stats_are_not_null(const MetaspaceStats& stats) {
+  EXPECT_GT(stats.reserved(), 0UL);
+  EXPECT_GT(stats.committed(), 0UL);
+  EXPECT_GT(stats.used(), 0UL);
+}
+
+TEST_VM(MetaspaceUtils, get_statistics) {
+  MetaspaceCombinedStats combined_stats = MetaspaceUtils::get_combined_statistics();
+  check_metaspace_stats_are_not_null(combined_stats);
+  check_metaspace_stats_are_consistent(combined_stats);
+  check_metaspace_stats_are_not_null(combined_stats.non_class_space_stats());
+  check_metaspace_stats_are_consistent(combined_stats.non_class_space_stats());
+
+  if (UseCompressedClassPointers) {
+    check_metaspace_stats_are_not_null(combined_stats.class_space_stats());
+    check_metaspace_stats_are_consistent(combined_stats.class_space_stats());
+  } else {
+    // if we don't have a class space, combined stats should equal non-class stats
+    EXPECT_EQ(combined_stats.non_class_space_stats().reserved(), combined_stats.reserved());
+    EXPECT_EQ(combined_stats.non_class_space_stats().committed(), combined_stats.committed());
+    EXPECT_EQ(combined_stats.non_class_space_stats().used(), combined_stats.used());
+  }
+}

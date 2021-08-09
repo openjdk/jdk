@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,15 @@ import sun.util.resources.LocaleData;
 public class LocaleDataProvider extends LocaleData.CommonResourceBundleProvider {
     @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
-        return loadResourceBundle(toBundleName(baseName, locale));
+        var bundleName = toBundleName(baseName, locale);
+        var rb = loadResourceBundle(bundleName);
+        if (rb == null) {
+            var otherBundleName = toOtherBundleName(baseName, bundleName, locale);
+            if (!bundleName.equals(otherBundleName)) {
+                rb = loadResourceBundle(otherBundleName);
+            }
+        }
+        return rb;
     }
 
     /**

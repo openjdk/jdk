@@ -179,8 +179,10 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  ShenandoahDisarmNMethodsTask task;
-  ShenandoahHeap::heap()->workers()->run_task(&task);
+  if (ShenandoahNMethodBarrier) {
+    ShenandoahDisarmNMethodsTask task;
+    ShenandoahHeap::heap()->workers()->run_task(&task);
+  }
 }
 
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {

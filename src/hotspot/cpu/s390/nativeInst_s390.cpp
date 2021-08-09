@@ -429,7 +429,7 @@ address NativeMovConstReg::set_data_plain(intptr_t src, CodeBlob *cb) {
   }
   // cOops
   else if (MacroAssembler::is_load_narrow_oop(loc)) {
-    MacroAssembler::patch_load_narrow_oop(loc, (oop) (void*) x);
+    MacroAssembler::patch_load_narrow_oop(loc, cast_to_oop((void*) x));
     ICache::invalidate_range(loc, MacroAssembler::load_narrow_oop_size());
     next_address = next_instruction_address();
   }
@@ -441,7 +441,7 @@ address NativeMovConstReg::set_data_plain(intptr_t src, CodeBlob *cb) {
   }
   // cOops
   else if (MacroAssembler::is_compare_immediate_narrow_oop(loc)) {
-    MacroAssembler::patch_compare_immediate_narrow_oop(loc, (oop) (void*) x);
+    MacroAssembler::patch_compare_immediate_narrow_oop(loc, cast_to_oop((void*) x));
     ICache::invalidate_range(loc, MacroAssembler::compare_immediate_narrow_oop_size());
     next_address = next_instruction_address();
   }

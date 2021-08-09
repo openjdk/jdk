@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.security.spec.InvalidParameterSpecException;
  * in feedback-mode. IV is defined in the standards as follows:
  *
  * <pre>
- * IV ::= OCTET STRING  -- 16 octets
+ * IV ::= OCTET STRING  -- 8 octets for KW, 4 octets for KWP, and 16 octets for
+ *                         other feedback modes
  * </pre>
  *
  * @author Valerie Peng
@@ -46,7 +47,7 @@ public final class AESParameters extends AlgorithmParametersSpi {
     private BlockCipherParamsCore core;
 
     public AESParameters() {
-        core = new BlockCipherParamsCore(AESConstants.AES_BLOCK_SIZE);
+        core = new BlockCipherParamsCore(AESConstants.AES_BLOCK_SIZE, 4, 8);
     }
 
     protected void engineInit(AlgorithmParameterSpec paramSpec)

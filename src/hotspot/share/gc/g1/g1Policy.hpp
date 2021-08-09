@@ -98,6 +98,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
+  // These values are predictions of how much we think will survive in each
+  // section of the heap.
+  size_t _predicted_surviving_bytes_from_survivor;
+  size_t _predicted_surviving_bytes_from_old;
+
   size_t _rs_length;
 
   size_t _rs_length_prediction;
@@ -296,7 +301,9 @@ public:
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
-  void note_gc_start();
+  // Record the start and end of the young gc pause.
+  void record_young_gc_pause_start();
+  void record_young_gc_pause_end();
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -304,9 +311,9 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
-  void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
+  // Record the start and end of the actual collection part of the evacuation pause.
+  void record_young_collection_start();
+  void record_young_collection_end(bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -321,9 +328,7 @@ public:
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end();
-
-  void print_phases();
+  void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
@@ -345,7 +350,17 @@ public:
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
 
+  // Returns whether a collection should be done proactively, taking into
+  // account the current number of free regions and the expected survival
+  // rates in each section of the heap.
+  bool preventive_collection_required(uint region_count);
+
 private:
+
+  // Predict the number of bytes of surviving objects from survivor and old
+  // regions and update the associated members.
+  void update_survival_estimates_for_next_collection();
+
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
   // acted on.
@@ -358,13 +373,13 @@ public:
   // progress or not is stable.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
-  // This is called at the very beginning of an evacuation pause (it
-  // has to be the first thing that the pause does). If
-  // initiate_conc_mark_if_possible() is true, and the concurrent
-  // marking thread has completed its work during the previous cycle,
-  // it will set in_concurrent_start_gc() to so that the pause does
-  // the concurrent start work and start a marking cycle.
-  void decide_on_conc_mark_initiation();
+  // Decide whether this garbage collection pause should be a concurrent start
+  // pause and update the collector state accordingly.
+  // We decide on a concurrent start pause if initiate_conc_mark_if_possible() is
+  // true, the concurrent marking thread has completed its work for the previous
+  // cycle, and we are not shutting down the VM.
+  // This must be called at the very beginning of an evacuation pause.
+  void decide_on_concurrent_start_pause();
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 
@@ -412,11 +427,11 @@ public:
     return _max_survivor_regions;
   }
 
-  void note_start_adding_survivor_regions() {
+  void start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
-  void note_stop_adding_survivor_regions() {
+  void stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
 

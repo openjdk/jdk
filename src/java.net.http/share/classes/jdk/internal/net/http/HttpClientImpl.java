@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             namePrefix = "HttpClient-" + clientID + "-Worker-";
         }
 
+        @SuppressWarnings("removal")
         @Override
         public Thread newThread(Runnable r) {
             String name = namePrefix + nextId.getAndIncrement();
@@ -157,6 +158,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             }
         }
 
+        @SuppressWarnings("removal")
         private void shutdown() {
             if (delegate instanceof ExecutorService service) {
                 PrivilegedAction<?> action = () -> {
@@ -353,6 +355,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return params;
     }
 
+    @SuppressWarnings("removal")
     private static ProxySelector getDefaultProxySelector() {
         PrivilegedAction<ProxySelector> action = ProxySelector::getDefault;
         return AccessController.doPrivileged(action);
@@ -604,6 +607,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sendAsync(userRequest, responseHandler, pushPromiseHandler, delegatingExecutor.delegate);
     }
 
+    @SuppressWarnings("removal")
     private <T> CompletableFuture<HttpResponse<T>>
     sendAsync(HttpRequest userRequest,
               BodyHandler<T> responseHandler,
@@ -1286,6 +1290,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     int getReceiveBufferSize() {
         return Utils.getIntegerNetProperty(
                 "jdk.httpclient.receiveBufferSize",
+                0 // only set the size if > 0
+        );
+    }
+
+    // used for testing
+    int getSendBufferSize() {
+        return Utils.getIntegerNetProperty(
+                "jdk.httpclient.sendBufferSize",
                 0 // only set the size if > 0
         );
     }

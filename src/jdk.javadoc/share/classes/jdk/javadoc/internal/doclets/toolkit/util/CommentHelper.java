@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,26 +165,8 @@ public class CommentHelper {
             }
             return configuration.docEnv.getTypeUtils().asElement(symbol);
         }
-        // case A: the element contains no comments associated and
-        // the comments need to be copied from ancestor
-        // case B: the element has @inheritDoc, then the ancestral comment
-        // as appropriate has to be copied over.
-
-        // Case A.
-        if (dcTree == null && overriddenElement != null) {
-            CommentHelper ovch = utils.getCommentHelper(overriddenElement);
-            return ovch.getElement(rtree);
-        }
-        if (dcTree == null) {
-            return null;
-        }
-        DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
+        DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath == null) {
-            // Case B.
-            if (overriddenElement != null) {
-                CommentHelper ovch = utils.getCommentHelper(overriddenElement);
-                return ovch.getElement(rtree);
-            }
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
@@ -192,7 +174,7 @@ public class CommentHelper {
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
-        DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
+        DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath != null) {
             DocTrees doctrees = configuration.docEnv.getDocTrees();
             return doctrees.getType(docTreePath);
@@ -225,7 +207,7 @@ public class CommentHelper {
         new SimpleDocTreeVisitor<Void, Void>() {
             @Override
             public Void visitAttribute(AttributeTree node, Void p) {
-                sb.append(SPACER).append(node.getName());
+                sb.append(SPACER).append(node.getName().toString());
                 if (node.getValueKind() == ValueKind.EMPTY) {
                     return null;
                 }
@@ -252,7 +234,7 @@ public class CommentHelper {
             @Override
             public Void visitEndElement(EndElementTree node, Void p) {
                 sb.append("</")
-                        .append(node.getName())
+                        .append(node.getName().toString())
                         .append(">");
                 return null;
             }
@@ -307,7 +289,7 @@ public class CommentHelper {
             @Override
             public Void visitStartElement(StartElementTree node, Void p) {
                 sb.append("<");
-                sb.append(node.getName());
+                sb.append(node.getName().toString());
                 node.getAttributes().forEach(dt -> dt.accept(this, null));
                 sb.append(node.isSelfClosing() ? "/>" : ">");
                 return null;
@@ -461,9 +443,61 @@ public class CommentHelper {
         return new ReferenceDocTreeVisitor<String>() {
             @Override
             public String visitReference(ReferenceTree node, Void p) {
-                return node.getSignature();
+                return normalizeSignature(node.getSignature());
             }
         }.visit(dtree, null);
+    }
+
+    @SuppressWarnings("fallthrough")
+    private static String normalizeSignature(String sig) {
+        if (sig == null
+                || (!sig.contains(" ") && !sig.contains("\n")
+                 && !sig.contains("\r") && !sig.endsWith("/"))) {
+            return sig;
+        }
+        StringBuilder sb = new StringBuilder();
+        char lastChar = 0;
+        for (int i = 0; i < sig.length(); i++) {
+            char ch = sig.charAt(i);
+            switch (ch) {
+                case '\n':
+                case '\r':
+                case '\f':
+                case '\t':
+                case ' ':
+                    // Add at most one space char, or none if it isn't needed
+                    switch (lastChar) {
+                        case 0:
+                        case'(':
+                        case'<':
+                        case ' ':
+                        case '.':
+                            break;
+                        default:
+                            sb.append(' ');
+                            lastChar = ' ';
+                            break;
+                    }
+                    break;
+                case ',':
+                case '>':
+                case ')':
+                case '.':
+                    // Remove preceding space character
+                    if (lastChar == ' ') {
+                        sb.setLength(sb.length() - 1);
+                    }
+                    // fallthrough
+                default:
+                    sb.append(ch);
+                    lastChar = ch;
+            }
+        }
+        // Delete trailing slash
+        if (lastChar == '/') {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     private static class ReferenceDocTreeVisitor<R> extends SimpleDocTreeVisitor<R, Void> {
@@ -645,9 +679,18 @@ public class CommentHelper {
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (path == null || dcTree == null || dtree == null)
+        if (dcTree == null && overriddenElement != null) {
+            // This is an inherited comment, return path from ancestor.
+            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
+        } else if (path == null || dcTree == null || dtree == null) {
             return null;
-        return DocTreePath.getPath(path, dcTree, dtree);
+        }
+        DocTreePath dtPath = DocTreePath.getPath(path, dcTree, dtree);
+        if (dtPath == null && overriddenElement != null) {
+            // The overriding element has a doc tree, but it doesn't contain what we're looking for.
+            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
+        }
+        return dtPath;
     }
 
     public Element getOverriddenElement() {

@@ -88,7 +88,7 @@ WorkGang* OopStorageParIterPerf::workers() const {
 }
 
 OopStorageParIterPerf::OopStorageParIterPerf() :
-  _storage("Test Storage")
+  _storage("Test Storage", mtGC)
 {
   for (size_t i = 0; i < _storage_entries; ++i) {
     _entries[i] = _storage.allocate();

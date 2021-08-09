@@ -72,6 +72,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -123,8 +124,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 #endif // ASSERT
 
 
-#define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, save_arg_regs, return_pc) \
-  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, save_arg_regs, return_pc); \
+#define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, return_pc) \
+  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, return_pc); \
   if (var == NULL) { return false; }
 
 bool OptoRuntime::generate(ciEnv* env) {
@@ -133,23 +134,23 @@ bool OptoRuntime::generate(ciEnv* env) {
 
   // Note: tls: Means fetching the return oop out of the thread-local storage
   //
-  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,save_args,retpc
+  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,retpc
   // -------------------------------------------------------------------------------------------------------------------------------
-  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true , false, false);
-  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true , false, false);
-  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true , false, false);
-  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true , false, false);
-  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true , false, false);
-  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true , false, false);
-  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true , false, false);
-  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true , false, false);
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false, false);
-  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false, false);
-  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false, false);
-  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , false, true );
+  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true, false);
+  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true, false);
+  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true, false);
+  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true, false);
+  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true, false);
+  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
+  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
+  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
+  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
+  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
+  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
+  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , true );
 
-  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false, false);
-  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false, false);
+  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false);
+  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false);
 
   return true;
 }
@@ -158,17 +159,16 @@ bool OptoRuntime::generate(ciEnv* env) {
 
 
 // Helper method to do generation of RunTimeStub's
-address OptoRuntime::generate_stub( ciEnv* env,
-                                    TypeFunc_generator gen, address C_function,
-                                    const char *name, int is_fancy_jump,
-                                    bool pass_tls,
-                                    bool save_argument_registers,
-                                    bool return_pc) {
+address OptoRuntime::generate_stub(ciEnv* env,
+                                   TypeFunc_generator gen, address C_function,
+                                   const char *name, int is_fancy_jump,
+                                   bool pass_tls,
+                                   bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
   ResourceMark rm;
-  Compile C( env, gen, C_function, name, is_fancy_jump, pass_tls, save_argument_registers, return_pc, directive);
+  Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);
   return  C.stub_entry_point();
 }
@@ -196,17 +196,17 @@ const char* OptoRuntime::stub_name(address entry) {
 // and try allocation again.
 
 // object allocation
-JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thread))
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* current))
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_instance_ctr++;         // new instance requires GC
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
 
   // These checks are cheap to make and support reflective allocation.
   int lh = klass->layout_helper();
   if (Klass::layout_helper_needs_slow_path(lh) || !InstanceKlass::cast(klass)->is_initialized()) {
-    Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
+    Handle holder(current, klass->klass_holder()); // keep the klass alive
     klass->check_valid_for_instantiation(false, THREAD);
     if (!HAS_PENDING_EXCEPTION) {
       InstanceKlass::cast(klass)->initialize(THREAD);
@@ -215,9 +215,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thre
 
   if (!HAS_PENDING_EXCEPTION) {
     // Scavenge and allocate an instance.
-    Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
+    Handle holder(current, klass->klass_holder()); // keep the klass alive
     oop result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
-    thread->set_vm_result(result);
+    current->set_vm_result(result);
 
     // Pass oops back through thread local storage.  Our apparent type to Java
     // is that we return an oop, but we can block on exit from this routine and
@@ -225,21 +225,21 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thre
     // fetch the oop from TLS after any possible GC.
   }
 
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
   JRT_BLOCK_END;
 
   // inform GC that we won't do card marks for initializing writes.
-  SharedRuntime::on_slowpath_allocation_exit(thread);
+  SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
 
 
 // array allocation
-JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaThread *thread))
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaThread* current))
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_array_ctr++;            // new array requires GC
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
 
   // Scavenge and allocate an instance.
   oop result;
@@ -253,7 +253,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
     // Although the oopFactory likes to work with the elem_type,
     // the compiler prefers the array_type, since it must already have
     // that latter value in hand for the fast path.
-    Handle holder(THREAD, array_type->klass_holder()); // keep the array klass alive
+    Handle holder(current, array_type->klass_holder()); // keep the array klass alive
     Klass* elem_type = ObjArrayKlass::cast(array_type)->element_klass();
     result = oopFactory::new_objArray(elem_type, len, THREAD);
   }
@@ -262,21 +262,21 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // is that we return an oop, but we can block on exit from this routine and
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(result);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(result);
   JRT_BLOCK_END;
 
   // inform GC that we won't do card marks for initializing writes.
-  SharedRuntime::on_slowpath_allocation_exit(thread);
+  SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
 
 // array allocation without zeroing
-JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len, JavaThread *thread))
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len, JavaThread* current))
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_array_ctr++;            // new array requires GC
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
 
   // Scavenge and allocate an instance.
   oop result;
@@ -290,19 +290,19 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   // is that we return an oop, but we can block on exit from this routine and
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(result);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(result);
   JRT_BLOCK_END;
 
 
   // inform GC that we won't do card marks for initializing writes.
-  SharedRuntime::on_slowpath_allocation_exit(thread);
+  SharedRuntime::on_slowpath_allocation_exit(current);
 
-  oop result = thread->vm_result();
+  oop result = current->vm_result();
   if ((len > 0) && (result != NULL) &&
-      is_deoptimized_caller_frame(thread)) {
+      is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
-    int size = ((typeArrayOop)result)->object_size();
+    int size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
@@ -320,62 +320,62 @@ JRT_END
 // Note: multianewarray for one dimension is handled inline by GraphKit::new_array.
 
 // multianewarray for 2 dimensions
-JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int len2, JavaThread *thread))
+JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int len2, JavaThread* current))
 #ifndef PRODUCT
   SharedRuntime::_multi2_ctr++;                // multianewarray for 1 dimension
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
   assert(elem_type->is_klass(), "not a class");
   jint dims[2];
   dims[0] = len1;
   dims[1] = len2;
-  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
+  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(obj);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(obj);
 JRT_END
 
 // multianewarray for 3 dimensions
-JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int len2, int len3, JavaThread *thread))
+JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int len2, int len3, JavaThread* current))
 #ifndef PRODUCT
   SharedRuntime::_multi3_ctr++;                // multianewarray for 1 dimension
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
   assert(elem_type->is_klass(), "not a class");
   jint dims[3];
   dims[0] = len1;
   dims[1] = len2;
   dims[2] = len3;
-  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
+  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(obj);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(obj);
 JRT_END
 
 // multianewarray for 4 dimensions
-JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int len2, int len3, int len4, JavaThread *thread))
+JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int len2, int len3, int len4, JavaThread* current))
 #ifndef PRODUCT
   SharedRuntime::_multi4_ctr++;                // multianewarray for 1 dimension
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
   assert(elem_type->is_klass(), "not a class");
   jint dims[4];
   dims[0] = len1;
   dims[1] = len2;
   dims[2] = len3;
   dims[3] = len4;
-  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
+  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(obj);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(obj);
 JRT_END
 
 // multianewarray for 5 dimensions
-JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int len2, int len3, int len4, int len5, JavaThread *thread))
+JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int len2, int len3, int len4, int len5, JavaThread* current))
 #ifndef PRODUCT
   SharedRuntime::_multi5_ctr++;                // multianewarray for 1 dimension
 #endif
-  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(check_compiled_frame(current), "incorrect caller");
   assert(elem_type->is_klass(), "not a class");
   jint dims[5];
   dims[0] = len1;
@@ -383,14 +383,14 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int l
   dims[2] = len3;
   dims[3] = len4;
   dims[4] = len5;
-  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
+  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(obj);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(obj);
 JRT_END
 
-JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* dims, JavaThread *thread))
-  assert(check_compiled_frame(thread), "incorrect caller");
+JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* dims, JavaThread* current))
+  assert(check_compiled_frame(current), "incorrect caller");
   assert(elem_type->is_klass(), "not a class");
   assert(oop(dims)->is_typeArray(), "not an array");
 
@@ -401,20 +401,20 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   ArrayAccess<>::arraycopy_to_native<>(dims, typeArrayOopDesc::element_offset<jint>(0),
                                        c_dims, len);
 
-  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
+  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
-  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
-  thread->set_vm_result(obj);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result(obj);
 JRT_END
 
-JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread *thread))
+JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread* current))
 
   // Very few notify/notifyAll operations find any threads on the waitset, so
   // the dominant fast-path is to simply return.
   // Relatedly, it's critical that notify/notifyAll be fast in order to
   // reduce lock hold times.
   if (!SafepointSynchronize::is_synchronizing()) {
-    if (ObjectSynchronizer::quick_notify(obj, thread, false)) {
+    if (ObjectSynchronizer::quick_notify(obj, current, false)) {
       return;
     }
   }
@@ -424,15 +424,15 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread *th
   // (The fast-path is just a degenerate variant of the slow-path).
   // Perform the dreaded state transition and pass control into the slow-path.
   JRT_BLOCK;
-  Handle h_obj(THREAD, obj);
+  Handle h_obj(current, obj);
   ObjectSynchronizer::notify(h_obj, CHECK);
   JRT_BLOCK_END;
 JRT_END
 
-JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread *thread))
+JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread* current))
 
   if (!SafepointSynchronize::is_synchronizing() ) {
-    if (ObjectSynchronizer::quick_notify(obj, thread, true)) {
+    if (ObjectSynchronizer::quick_notify(obj, current, true)) {
       return;
     }
   }
@@ -442,7 +442,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread 
   // (The fast-path is just a degenerate variant of the slow-path).
   // Perform the dreaded state transition and pass control into the slow-path.
   JRT_BLOCK;
-  Handle h_obj(THREAD, obj);
+  Handle h_obj(current, obj);
   ObjectSynchronizer::notifyall(h_obj, CHECK);
   JRT_BLOCK_END;
 JRT_END
@@ -659,6 +659,25 @@ const TypeFunc *OptoRuntime::Math_D_D_Type() {
   fields[TypeFunc::Parms+0] = Type::DOUBLE;
   fields[TypeFunc::Parms+1] = Type::HALF;
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(num_arg);
+  // Symbol* name of class to be loaded
+  assert(num_arg > 0, "must have at least 1 input");
+  for (uint i = 0; i < num_arg; i++) {
+    fields[TypeFunc::Parms+i] = in_type;
+  }
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+num_arg, fields);
+
+  // create result type (range)
+  const uint num_ret = 1;
+  fields = TypeTuple::fields(num_ret);
+  fields[TypeFunc::Parms+0] = out_type;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+num_ret, fields);
 
   return TypeFunc::make(domain, range);
 }
@@ -1174,7 +1193,7 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
 }
 // Base64 decode function
 const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
-  int argcnt = 6;
+  int argcnt = 7;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1184,6 +1203,7 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // dest array
   fields[argp++] = TypeInt::INT;        // dest offset
   fields[argp++] = TypeInt::BOOL;       // isURL
+  fields[argp++] = TypeInt::BOOL;       // isMIME
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1233,22 +1253,22 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // The method is an entry that is always called by a C++ method not
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
-JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* thread, nmethod* &nm))
+JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* current, nmethod* &nm))
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
   // the runtime stubs checks this on exit.
-  assert(thread->exception_oop() != NULL, "exception oop is found");
+  assert(current->exception_oop() != NULL, "exception oop is found");
   address handler_address = NULL;
 
-  Handle exception(thread, thread->exception_oop());
-  address pc = thread->exception_pc();
+  Handle exception(current, current->exception_oop());
+  address pc = current->exception_pc();
 
   // Clear out the exception oop and pc since looking up an
   // exception handler can cause class loading, which might throw an
   // exception and those fields are expected to be clear during
   // normal bytecode execution.
-  thread->clear_exception_oop_and_pc();
+  current->clear_exception_oop_and_pc();
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
@@ -1284,19 +1304,19 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
       // since we're notifying the VM on every catch.
       // Force deoptimization and the rest of the lookup
       // will be fine.
-      deoptimize_caller_frame(thread);
+      deoptimize_caller_frame(current);
     }
 
     // Check the stack guard pages.  If enabled, look for handler in this frame;
     // otherwise, forcibly unwind the frame.
     //
     // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
-    bool force_unwind = !thread->stack_overflow_state()->reguard_stack();
+    bool force_unwind = !current->stack_overflow_state()->reguard_stack();
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
-      RegisterMap map(thread, false);
-      frame deoptee = thread->last_frame().sender(&map);
+      RegisterMap map(current, false);
+      frame deoptee = current->last_frame().sender(&map);
       assert(deoptee.is_deoptimized_frame(), "must be deopted");
       // Adjust the pc back to the original throwing pc
       pc = deoptee.pc();
@@ -1333,15 +1353,15 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
       }
     }
 
-    thread->set_exception_pc(pc);
-    thread->set_exception_handler_pc(handler_address);
+    current->set_exception_pc(pc);
+    current->set_exception_handler_pc(handler_address);
 
     // Check if the exception PC is a MethodHandle call site.
-    thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
+    current->set_is_method_handle_return(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
-  thread->set_exception_oop(exception());
+  current->set_exception_oop(exception());
   return handler_address;
 
 JRT_END
@@ -1353,7 +1373,7 @@ JRT_END
 // will do the normal VM entry. We do it this way so that we can see if the nmethod
 // we looked up the handler for has been deoptimized in the meantime. If it has been
 // we must not use the handler and instead return the deopt blob.
-address OptoRuntime::handle_exception_C(JavaThread* thread) {
+address OptoRuntime::handle_exception_C(JavaThread* current) {
 //
 // We are in Java not VM and in debug mode we have a NoHandleMark
 //
@@ -1367,7 +1387,7 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
     // Enter the VM
 
     ResetNoHandleMark rnhm;
-    handler_address = handle_exception_C_helper(thread, nm);
+    handler_address = handle_exception_C_helper(current, nm);
   }
 
   // Back in java: Use no oops, DON'T safepoint
@@ -1376,8 +1396,8 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(thread, false);
-    frame caller = thread->last_frame().sender(&map);
+    RegisterMap map(current, false);
+    frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
 #endif // ASSERT
@@ -1411,6 +1431,10 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
+
+  // Enable WXWrite: the function called directly by compiled code.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   // The frame we rethrow the exception to might not have been processed by the GC yet.
   // The stack watermark barrier takes care of detecting that and ensuring the frame
   // has updated oops.
@@ -1494,6 +1518,21 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+#if INCLUDE_JFR
+const TypeFunc *OptoRuntime::get_class_id_intrinsic_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 0, fields);
+
+  return TypeFunc::make(domain,range);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature
@@ -1529,7 +1568,7 @@ const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
 }
 
 
-JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThread* thread))
+JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
@@ -1559,12 +1598,6 @@ void OptoRuntime::print_named_counters() {
         if (eliminated) {
           eliminated_lock_count += count;
         }
-      }
-    } else if (c->tag() == NamedCounter::BiasedLockingCounter) {
-      BiasedLockingCounters* blc = ((BiasedLockingNamedCounter*)c)->counters();
-      if (blc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        blc->print_on(tty);
       }
 #if INCLUDE_RTM_OPT
     } else if (c->tag() == NamedCounter::RTMLockingCounter) {
@@ -1616,9 +1649,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
   NamedCounter* c;
-  if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(st.as_string());
-  } else if (tag == NamedCounter::RTMLockingCounter) {
+  if (tag == NamedCounter::RTMLockingCounter) {
     c = new RTMLockingNamedCounter(st.as_string());
   } else {
     c = new NamedCounter(st.as_string(), tag);

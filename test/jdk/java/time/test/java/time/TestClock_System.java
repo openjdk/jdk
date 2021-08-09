@@ -68,8 +68,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /**
  * Test system clock.
@@ -274,7 +274,7 @@ public class TestClock_System {
 
         static {
             try {
-                offsetField = Class.forName("java.time.Clock$SystemClock").getDeclaredField("offset");
+                offsetField = Class.forName("java.time.Clock").getDeclaredField("offset");
                 offsetField.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchFieldException ex) {
                 throw new ExceptionInInitializerError(ex);
@@ -315,11 +315,11 @@ public class TestClock_System {
 
         static void testWithOffset(String name, long offset, Clock clock)
                 throws IllegalAccessException {
-            offsetField.set(clock, offset);
+            offsetField.set(null, offset);
             long beforeMillis = System.currentTimeMillis();
             final Instant instant = clock.instant();
             long afterMillis = System.currentTimeMillis();
-            long actualOffset = offsetField.getLong(clock);
+            long actualOffset = offsetField.getLong(null);
             long instantMillis = instant.getEpochSecond() * MILLIS_IN_SECOND
                     + instant.getNano() / NANOS_IN_MILLI;
             if (instantMillis < beforeMillis || instantMillis > afterMillis) {

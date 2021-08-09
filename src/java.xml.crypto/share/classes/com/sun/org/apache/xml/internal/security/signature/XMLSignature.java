@@ -25,15 +25,15 @@ package com.sun.org.apache.xml.internal.security.signature;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Key;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.SecretKey;
 
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm;
-import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
-import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.KeyInfo;
 import com.sun.org.apache.xml.internal.security.keys.content.X509Data;
@@ -44,7 +44,6 @@ import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.SignerOutputStream;
 import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -202,11 +201,15 @@ public final class XMLSignature extends SignatureElementProxy {
     public static final String ALGO_ID_SIGNATURE_ECDSA_RIPEMD160 =
         "http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160";
 
+    /** Signature - Optional RSASSA-PSS */
+    public static final String ALGO_ID_SIGNATURE_RSA_PSS =
+            Constants.XML_DSIG_NS_MORE_07_05 + "rsa-pss";
+
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(XMLSignature.class);
 
     /** ds:Signature.ds:SignedInfo element */
-    private SignedInfo signedInfo;
+    private final SignedInfo signedInfo;
 
     /** ds:Signature.ds:KeyInfo */
     private KeyInfo keyInfo;
@@ -238,14 +241,32 @@ public final class XMLSignature extends SignatureElementProxy {
      */
     public XMLSignature(Document doc, String baseURI, String signatureMethodURI)
         throws XMLSecurityException {
-        this(doc, baseURI, signatureMethodURI, 0, Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
+        this(doc, baseURI, signatureMethodURI, 0, Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS, null, null);
+    }
+
+    /**
+     * This creates a new {@code ds:Signature} Element and adds an empty
+     * {@code ds:SignedInfo}.
+     * The {@code ds:SignedInfo} is initialized with the specified Signature
+     * algorithm and Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS which is REQUIRED
+     * by the spec. This method's main use is for creating a new signature.
+     *
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
+     * @param signatureMethodURI signature algorithm to use.
+     * @param provider security provider to use.
+     * @throws XMLSecurityException
+     */
+    public XMLSignature(Document doc, String baseURI, String signatureMethodURI, Provider provider)
+        throws XMLSecurityException {
+        this(doc, baseURI, signatureMethodURI, 0, Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS, provider, null);
     }
 
     /**
      * Constructor XMLSignature
      *
-     * @param doc
-     * @param baseURI
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
      * @param signatureMethodURI the Signature method to be used.
      * @param hmacOutputLength
      * @throws XMLSecurityException
@@ -254,18 +275,35 @@ public final class XMLSignature extends SignatureElementProxy {
                         int hmacOutputLength) throws XMLSecurityException {
         this(
             doc, baseURI, signatureMethodURI, hmacOutputLength,
-            Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS
+            Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS, null, null
         );
     }
 
     /**
      * Constructor XMLSignature
      *
-     * @param doc
-     * @param baseURI
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
      * @param signatureMethodURI the Signature method to be used.
-     * @param canonicalizationMethodURI the canonicalization algorithm to be
-     * used to c14nize the SignedInfo element.
+     * @param hmacOutputLength
+     * @param provider security provider to use.
+     * @throws XMLSecurityException
+     */
+    public XMLSignature(Document doc, String baseURI, String signatureMethodURI,
+                        int hmacOutputLength, Provider provider) throws XMLSecurityException {
+        this(
+            doc, baseURI, signatureMethodURI, hmacOutputLength,
+            Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS, provider, null
+        );
+    }
+
+    /**
+     * Constructor XMLSignature
+     *
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
+     * @param signatureMethodURI the Signature method to be used.
+     * @param canonicalizationMethodURI the canonicalization algorithm to be used to c14nize the SignedInfo element.
      * @throws XMLSecurityException
      */
     public XMLSignature(
@@ -274,17 +312,37 @@ public final class XMLSignature extends SignatureElementProxy {
         String signatureMethodURI,
         String canonicalizationMethodURI
     ) throws XMLSecurityException {
-        this(doc, baseURI, signatureMethodURI, 0, canonicalizationMethodURI);
+        this(doc, baseURI, signatureMethodURI, 0, canonicalizationMethodURI, null, null);
     }
 
     /**
      * Constructor XMLSignature
      *
-     * @param doc
-     * @param baseURI
-     * @param signatureMethodURI
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
+     * @param signatureMethodURI the Signature method to be used.
+     * @param canonicalizationMethodURI the canonicalization algorithm to be used to c14nize the SignedInfo element.
+     * @param provider security provider to use.
+     * @throws XMLSecurityException
+     */
+    public XMLSignature(
+        Document doc,
+        String baseURI,
+        String signatureMethodURI,
+        String canonicalizationMethodURI,
+        Provider provider
+    ) throws XMLSecurityException {
+        this(doc, baseURI, signatureMethodURI, 0, canonicalizationMethodURI, provider, null);
+    }
+
+    /**
+     * Constructor XMLSignature
+     *
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
+     * @param signatureMethodURI the Signature method to be used.
      * @param hmacOutputLength
-     * @param canonicalizationMethodURI
+     * @param canonicalizationMethodURI the canonicalization algorithm to be used to c14nize the SignedInfo element.
      * @throws XMLSecurityException
      */
     public XMLSignature(
@@ -293,6 +351,30 @@ public final class XMLSignature extends SignatureElementProxy {
         String signatureMethodURI,
         int hmacOutputLength,
         String canonicalizationMethodURI
+    ) throws XMLSecurityException {
+        this(doc, baseURI, signatureMethodURI, hmacOutputLength, canonicalizationMethodURI, null, null);
+    }
+
+    /**
+     * Constructor XMLSignature
+     *
+     * @param doc Document in which the signature will be appended after creation.
+     * @param baseURI URI to be used as context for all relative URIs.
+     * @param signatureMethodURI the Signature method to be used.
+     * @param hmacOutputLength
+     * @param canonicalizationMethodURI the canonicalization algorithm to be used to c14nize the SignedInfo element.
+     * @param provider security provider to use.
+     * @param spec
+     * @throws XMLSecurityException
+     */
+    public XMLSignature(
+        Document doc,
+        String baseURI,
+        String signatureMethodURI,
+        int hmacOutputLength,
+        String canonicalizationMethodURI,
+        Provider provider,
+        AlgorithmParameterSpec spec
     ) throws XMLSecurityException {
         super(doc);
 
@@ -311,7 +393,7 @@ public final class XMLSignature extends SignatureElementProxy {
         this.baseURI = baseURI;
         this.signedInfo =
             new SignedInfo(
-                getDocument(), signatureMethodURI, hmacOutputLength, canonicalizationMethodURI
+                getDocument(), signatureMethodURI, hmacOutputLength, canonicalizationMethodURI, provider, spec
             );
 
         appendSelf(this.signedInfo);
@@ -329,15 +411,25 @@ public final class XMLSignature extends SignatureElementProxy {
      *  Creates a XMLSignature in a Document
      * @param doc
      * @param baseURI
-     * @param SignatureMethodElem
-     * @param CanonicalizationMethodElem
+     * @param signatureMethodElem
+     * @param canonicalizationMethodElem
      * @throws XMLSecurityException
      */
     public XMLSignature(
         Document doc,
         String baseURI,
-        Element SignatureMethodElem,
-        Element CanonicalizationMethodElem
+        Element signatureMethodElem,
+        Element canonicalizationMethodElem
+    ) throws XMLSecurityException {
+        this(doc, baseURI, signatureMethodElem, canonicalizationMethodElem, null);
+    }
+
+    public XMLSignature(
+        Document doc,
+        String baseURI,
+        Element signatureMethodElem,
+        Element canonicalizationMethodElem,
+        Provider provider
     ) throws XMLSecurityException {
         super(doc);
 
@@ -355,7 +447,7 @@ public final class XMLSignature extends SignatureElementProxy {
 
         this.baseURI = baseURI;
         this.signedInfo =
-            new SignedInfo(getDocument(), SignatureMethodElem, CanonicalizationMethodElem);
+            new SignedInfo(getDocument(), signatureMethodElem, canonicalizationMethodElem, provider);
 
         appendSelf(this.signedInfo);
         addReturnToSelf();
@@ -379,7 +471,22 @@ public final class XMLSignature extends SignatureElementProxy {
      */
     public XMLSignature(Element element, String baseURI)
         throws XMLSignatureException, XMLSecurityException {
-        this(element, baseURI, true);
+        this(element, baseURI, true, null);
+    }
+
+    /**
+     * This will parse the element and construct the Java Objects.
+     * That will allow a user to validate the signature.
+     *
+     * @param element ds:Signature element that contains the whole signature
+     * @param baseURI URI to be prepended to all relative URIs
+     * @param provider security provider to use
+     * @throws XMLSecurityException
+     * @throws XMLSignatureException if the signature is badly formatted
+     */
+    public XMLSignature(Element element, String baseURI, Provider provider)
+        throws XMLSignatureException, XMLSecurityException {
+        this(element, baseURI, true, provider);
     }
 
     /**
@@ -394,19 +501,43 @@ public final class XMLSignature extends SignatureElementProxy {
      */
     public XMLSignature(Element element, String baseURI, boolean secureValidation)
         throws XMLSignatureException, XMLSecurityException {
+        this(element, baseURI, secureValidation, null);
+    }
+
+    /**
+     * This will parse the element and construct the Java Objects.
+     * That will allow a user to validate the signature.
+     *
+     * @param element ds:Signature element that contains the whole signature
+     * @param baseURI URI to be prepended to all relative URIs
+     * @param secureValidation whether secure secureValidation is enabled or not
+     * @param provider security provider to use
+     * @throws XMLSecurityException
+     * @throws XMLSignatureException if the signature is badly formatted
+     */
+    public XMLSignature(Element element, String baseURI, boolean secureValidation, Provider provider)
+        throws XMLSignatureException, XMLSecurityException {
         super(element, baseURI);
+
+        if (!(Constants.SignatureSpecNS.equals(element.getNamespaceURI())
+            && Constants._TAG_SIGNATURE.equals(element.getLocalName()))) {
+            Object[] exArgs = { element.getLocalName() };
+            throw new XMLSignatureException("signature.Verification.InvalidElement", exArgs);
+        }
 
         // check out SignedInfo child
         Element signedInfoElem = XMLUtils.getNextElement(element.getFirstChild());
 
         // check to see if it is there
-        if (signedInfoElem == null) {
-            Object exArgs[] = { Constants._TAG_SIGNEDINFO, Constants._TAG_SIGNATURE };
+        if (signedInfoElem == null ||
+            !(Constants.SignatureSpecNS.equals(signedInfoElem.getNamespaceURI())
+                && Constants._TAG_SIGNEDINFO.equals(signedInfoElem.getLocalName()))) {
+            Object[] exArgs = { Constants._TAG_SIGNEDINFO, Constants._TAG_SIGNATURE };
             throw new XMLSignatureException("xml.WrongContent", exArgs);
         }
 
         // create a SignedInfo object from that element
-        this.signedInfo = new SignedInfo(signedInfoElem, baseURI, secureValidation);
+        this.signedInfo = new SignedInfo(signedInfoElem, baseURI, secureValidation, provider);
         // get signedInfoElem again in case it has changed
         signedInfoElem = XMLUtils.getNextElement(element.getFirstChild());
 
@@ -415,8 +546,10 @@ public final class XMLSignature extends SignatureElementProxy {
             XMLUtils.getNextElement(signedInfoElem.getNextSibling());
 
         // check to see if it exists
-        if (signatureValueElement == null) {
-            Object exArgs[] = { Constants._TAG_SIGNATUREVALUE, Constants._TAG_SIGNATURE };
+        if (signatureValueElement == null ||
+            !(Constants.SignatureSpecNS.equals(signatureValueElement.getNamespaceURI())
+                && Constants._TAG_SIGNATUREVALUE.equals(signatureValueElement.getLocalName()))) {
+            Object[] exArgs = { Constants._TAG_SIGNATUREVALUE, Constants._TAG_SIGNATURE };
             throw new XMLSignatureException("xml.WrongContent", exArgs);
         }
         Attr signatureValueAttr = signatureValueElement.getAttributeNodeNS(null, "Id");
@@ -429,17 +562,27 @@ public final class XMLSignature extends SignatureElementProxy {
             XMLUtils.getNextElement(signatureValueElement.getNextSibling());
 
         // If it exists use it, but it's not mandatory
+        Element objectElem = null;
         if (keyInfoElem != null
             && Constants.SignatureSpecNS.equals(keyInfoElem.getNamespaceURI())
             && Constants._TAG_KEYINFO.equals(keyInfoElem.getLocalName())) {
             this.keyInfo = new KeyInfo(keyInfoElem, baseURI);
             this.keyInfo.setSecureValidation(secureValidation);
+            objectElem = XMLUtils.getNextElement(keyInfoElem.getNextSibling());
+        } else {
+            // If we have no KeyInfo
+            objectElem = keyInfoElem;
         }
 
         // <element ref="ds:Object" minOccurs="0" maxOccurs="unbounded"/>
-        Element objectElem =
-            XMLUtils.getNextElement(signatureValueElement.getNextSibling());
         while (objectElem != null) {
+            // Make sure it actually is an Object
+            if (!(Constants.SignatureSpecNS.equals(objectElem.getNamespaceURI())
+                && Constants._TAG_OBJECT.equals(objectElem.getLocalName()))) {
+                Object[] exArgs = { objectElem.getLocalName() };
+                throw new XMLSignatureException("signature.Verification.InvalidElement", exArgs);
+            }
+
             Attr objectAttr = objectElem.getAttributeNodeNS(null, "Id");
             if (objectAttr != null) {
                 objectElem.setIdAttributeNode(objectAttr, true);
@@ -652,24 +795,9 @@ public final class XMLSignature extends SignatureElementProxy {
             this.setSignatureValueElement(sa.sign());
         } catch (XMLSignatureException ex) {
             throw ex;
-        } catch (CanonicalizationException ex) {
-            throw new XMLSignatureException(ex);
-        } catch (InvalidCanonicalizerException ex) {
-            throw new XMLSignatureException(ex);
-        } catch (XMLSecurityException ex) {
-            throw new XMLSignatureException(ex);
-        } catch (IOException ex) {
+        } catch (XMLSecurityException | IOException ex) {
             throw new XMLSignatureException(ex);
         }
-    }
-
-    /**
-     * Adds a {@link ResourceResolver} to enable the retrieval of resources.
-     *
-     * @param resolver
-     */
-    public void addResourceResolver(ResourceResolver resolver) {
-        this.getSignedInfo().addResourceResolver(resolver);
     }
 
     /**
@@ -700,7 +828,7 @@ public final class XMLSignature extends SignatureElementProxy {
             return this.checkSignatureValue(cert.getPublicKey());
         }
 
-        Object exArgs[] = { "Didn't get a certificate" };
+        Object[] exArgs = { "Didn't get a certificate" };
         throw new XMLSignatureException("empty", exArgs);
     }
 
@@ -718,7 +846,7 @@ public final class XMLSignature extends SignatureElementProxy {
         //COMMENT: pk suggests it can only be a public key?
         //check to see if the key is not null
         if (pk == null) {
-            Object exArgs[] = { "Didn't get a key" };
+            Object[] exArgs = { "Didn't get a key" };
             throw new XMLSignatureException("empty", exArgs);
         }
         // all references inside the signedinfo need to be dereferenced and
@@ -733,14 +861,14 @@ public final class XMLSignature extends SignatureElementProxy {
             SignatureAlgorithm sa = si.getSignatureAlgorithm();
             LOG.debug("signatureMethodURI = {}", sa.getAlgorithmURI());
             LOG.debug("jceSigAlgorithm = {}", sa.getJCEAlgorithmString());
-            LOG.debug("jceSigProvider = {}", sa.getJCEProviderName());
             LOG.debug("PublicKey = {}", pk);
 
-            byte sigBytes[] = null;
+            byte[] sigBytes = null;
             try (SignerOutputStream so = new SignerOutputStream(sa);
                 OutputStream bos = new UnsyncBufferedOutputStream(so)) {
 
                 sa.initVerify(pk);
+                LOG.debug("jceSigProvider = {}", sa.getJCEProviderName());
 
                 // Get the canonicalized (normalized) SignedInfo
                 si.signInOctetStream(bos);

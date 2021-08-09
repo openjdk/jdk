@@ -129,6 +129,9 @@ public:
     // Nothing is in progress, no forwarded objects
     _verify_gcstate_stable,
 
+    // Nothing is in progress, no forwarded objects, weak roots handling
+    _verify_gcstate_stable_weakroots,
+
     // Nothing is in progress, some objects are forwarded
     _verify_gcstate_forwarded,
 

@@ -53,10 +53,10 @@ public final class StringParser extends Parser {
         }
 
     }
-    private final static Charset UTF8 = Charset.forName("UTF-8");
-    private final static Charset LATIN1 = Charset.forName("ISO-8859-1");
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset LATIN1 = Charset.forName("ISO-8859-1");
 
-    private final static class CharsetParser extends Parser {
+    private static final class CharsetParser extends Parser {
         private final Charset charset;
         private int lastSize;
         private byte[] buffer = new byte[16];
@@ -106,7 +106,7 @@ public final class StringParser extends Parser {
         }
     }
 
-    private final static class CharArrayParser extends Parser {
+    private static final class CharArrayParser extends Parser {
         private char[] buffer = new char[16];
         private int lastSize = -1;
         private String lastString = null;

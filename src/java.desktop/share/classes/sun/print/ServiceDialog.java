@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,6 +455,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Initialize ResourceBundle
      */
+    @SuppressWarnings("removal")
     public static void initResource() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Object>() {
@@ -548,6 +549,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Returns URL for image resource
      */
     private static URL getImageResource(final String key) {
+        @SuppressWarnings("removal")
         URL url = java.security.AccessController.doPrivileged(
                        new java.security.PrivilegedAction<URL>() {
                 public URL run() {
@@ -908,6 +910,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
          * to throw a SecurityException if the permission is not granted.
          */
         private void throwPrintToFile() {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (printToFilePermission == null) {
@@ -2842,6 +2845,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         {
             super(new FlowLayout(FlowLayout.LEADING));
             final URL imgURL = getImageResource(img);
+            @SuppressWarnings("removal")
             Icon icon = java.security.AccessController.doPrivileged(
                                  new java.security.PrivilegedAction<Icon>() {
                 public Icon run() {

@@ -63,17 +63,17 @@ final class EventHandlerCreator {
     private static final String FIELD_EVENT_TYPE = "platformEventType";
     private static final String FIELD_PREFIX_STRING_POOL = "stringPool";
 
-    private final static Type TYPE_STRING_POOL = Type.getType(StringPool.class);
-    private final static Type TYPE_EVENT_WRITER = Type.getType(EventWriter.class);
-    private final static Type TYPE_PLATFORM_EVENT_TYPE = Type.getType(PlatformEventType.class);
-    private final static Type TYPE_EVENT_HANDLER = Type.getType(EventHandler.class);
-    private final static Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
-    private final static Type TYPE_EVENT_TYPE = Type.getType(EventType.class);
-    private final static Type TYPE_EVENT_CONTROL = Type.getType(EventControl.class);
-    private final static String DESCRIPTOR_EVENT_HANDLER = "(" + Type.BOOLEAN_TYPE.getDescriptor() + TYPE_EVENT_TYPE.getDescriptor() + TYPE_EVENT_CONTROL.getDescriptor() + ")V";
-    private final static Method METHOD_GET_EVENT_WRITER = new Method("getEventWriter", "()" + TYPE_EVENT_WRITER.getDescriptor());
-    private final static Method METHOD_EVENT_HANDLER_CONSTRUCTOR = new Method("<init>", DESCRIPTOR_EVENT_HANDLER);
-    private final static Method METHOD_RESET = new Method("reset", "()V");
+    private static final Type TYPE_STRING_POOL = Type.getType(StringPool.class);
+    private static final Type TYPE_EVENT_WRITER = Type.getType(EventWriter.class);
+    private static final Type TYPE_PLATFORM_EVENT_TYPE = Type.getType(PlatformEventType.class);
+    private static final Type TYPE_EVENT_HANDLER = Type.getType(EventHandler.class);
+    private static final Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
+    private static final Type TYPE_EVENT_TYPE = Type.getType(EventType.class);
+    private static final Type TYPE_EVENT_CONTROL = Type.getType(EventControl.class);
+    private static final String DESCRIPTOR_EVENT_HANDLER = "(" + Type.BOOLEAN_TYPE.getDescriptor() + TYPE_EVENT_TYPE.getDescriptor() + TYPE_EVENT_CONTROL.getDescriptor() + ")V";
+    private static final Method METHOD_GET_EVENT_WRITER = new Method("getEventWriter", "()" + TYPE_EVENT_WRITER.getDescriptor());
+    private static final Method METHOD_EVENT_HANDLER_CONSTRUCTOR = new Method("<init>", DESCRIPTOR_EVENT_HANDLER);
+    private static final Method METHOD_RESET = new Method("reset", "()V");
 
     private final ClassWriter classWriter;
     private final String className;

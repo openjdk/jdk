@@ -34,7 +34,7 @@ import java.net.URLDecoder;
  * @author Vincent Ryan
  */
 
-final public class UrlUtil {
+public final class UrlUtil {
 
     // To prevent creation of this static class
     private UrlUtil() {

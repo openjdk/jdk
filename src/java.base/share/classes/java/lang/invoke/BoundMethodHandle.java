@@ -64,19 +64,14 @@ abstract class BoundMethodHandle extends MethodHandle {
     static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
         // for some type signatures, there exist pre-defined concrete BMH classes
         try {
-            switch (xtype) {
-            case L_TYPE:
-                return bindSingle(type, form, x);  // Use known fast path.
-            case I_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
-            case J_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
-            case F_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
-            case D_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
-            default : throw newInternalError("unexpected xtype: " + xtype);
-            }
+            return switch (xtype) {
+                case L_TYPE -> bindSingle(type, form, x);  // Use known fast path.
+                case I_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
+                case J_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
+                case F_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
+                case D_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
+                default -> throw newInternalError("unexpected xtype: " + xtype);
+            };
         } catch (Throwable t) {
             throw uncaughtException(t);
         }
@@ -301,7 +296,7 @@ abstract class BoundMethodHandle extends MethodHandle {
     static final class SpeciesData
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
         // This array is filled in lazily, as new species come into being over time.
-        @Stable final private SpeciesData[] extensions = new SpeciesData[ARG_TYPE_LIMIT];
+        @Stable private final SpeciesData[] extensions = new SpeciesData[ARG_TYPE_LIMIT];
 
         public SpeciesData(Specializer outer, String key) {
             outer.super(key);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126 7020517
+ * @bug 4313887 6873621 6979526 7006126 7020517 8264400
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
@@ -36,8 +36,8 @@ import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-
 
 public class Basic {
 
@@ -79,6 +79,15 @@ public class Basic {
         assertTrue(store1.equals(store2));
         assertTrue(store2.equals(store1));
         assertTrue(store1.hashCode() == store2.hashCode());
+
+        if (Platform.isWindows()) {
+            /**
+             * Test: FileStore.equals() should not be case sensitive
+             */
+            FileStore upper = Files.getFileStore(Path.of("C:\\"));
+            FileStore lower = Files.getFileStore(Path.of("c:\\"));
+            assertTrue(lower.equals(upper));
+        }
 
         /**
          * Test: File and FileStore attributes

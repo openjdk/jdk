@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.crypto.provider;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactorySpi;
 import javax.crypto.spec.PBEKeySpec;
@@ -94,9 +95,17 @@ public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
                 && PBEKeySpec.class.isAssignableFrom(keySpecCl)) {
                 javax.crypto.interfaces.PBEKey pKey =
                     (javax.crypto.interfaces.PBEKey) key;
-                return new PBEKeySpec
-                    (pKey.getPassword(), pKey.getSalt(),
-                     pKey.getIterationCount(), pKey.getEncoded().length*8);
+                char[] passwd = pKey.getPassword();
+                byte[] encoded = pKey.getEncoded();
+                try {
+                    return new PBEKeySpec(passwd, pKey.getSalt(),
+                            pKey.getIterationCount(), encoded.length * 8);
+                } finally {
+                    if (passwd != null) {
+                        Arrays.fill(passwd, (char) 0);
+                    }
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else {
                 throw new InvalidKeySpecException("Invalid key spec");
             }
@@ -132,18 +141,26 @@ public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
             if (key instanceof javax.crypto.interfaces.PBEKey) {
                 javax.crypto.interfaces.PBEKey pKey =
                     (javax.crypto.interfaces.PBEKey) key;
+                char[] password = pKey.getPassword();
+                byte[] encoding = pKey.getEncoded();
+                PBEKeySpec spec =
+                        new PBEKeySpec(password,
+                                pKey.getSalt(),
+                                pKey.getIterationCount(),
+                                encoding.length*8);
                 try {
-                    PBEKeySpec spec =
-                        new PBEKeySpec(pKey.getPassword(),
-                                       pKey.getSalt(),
-                                       pKey.getIterationCount(),
-                                       pKey.getEncoded().length*8);
                     return new PBKDF2KeyImpl(spec, "HmacSHA1");
                 } catch (InvalidKeySpecException re) {
                     InvalidKeyException ike = new InvalidKeyException
                         ("Invalid key component(s)");
                     ike.initCause(re);
                     throw ike;
+                } finally {
+                    if (password != null) {
+                        Arrays.fill(password, (char) 0);
+                        spec.clearPassword();
+                    }
+                    Arrays.fill(encoding, (byte)0);
                 }
             }
         }

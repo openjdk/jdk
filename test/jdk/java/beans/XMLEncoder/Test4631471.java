@@ -25,6 +25,7 @@
  * @test
  * @bug 4631471 6972468
  * @summary Tests DefaultTreeModel encoding
+ * @run main/othervm -Djava.security.manager=allow Test4631471
  * @author Sergey Malenkov, Mark Davidson
  */
 

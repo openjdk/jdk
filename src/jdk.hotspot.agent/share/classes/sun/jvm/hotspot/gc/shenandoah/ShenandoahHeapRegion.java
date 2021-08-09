@@ -127,7 +127,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
 
     @Override
     public int hashCode() {
-        return (int)index();
+        return Long.hashCode(index());
     }
 
     @Override

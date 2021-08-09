@@ -26,7 +26,7 @@
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
 #include "c1/c1_ValueMap.hpp"
-#include "c1/c1_ValueSet.inline.hpp"
+#include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -521,7 +521,6 @@ public:
   void do_BlockBegin     (BlockBegin*      x);
   void do_Goto           (Goto*            x);
   void do_If             (If*              x);
-  void do_IfInstanceOf   (IfInstanceOf*    x);
   void do_TableSwitch    (TableSwitch*     x);
   void do_LookupSwitch   (LookupSwitch*    x);
   void do_Return         (Return*          x);
@@ -530,11 +529,9 @@ public:
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
   void do_RoundFP        (RoundFP*         x);
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  void do_UnsafeGetObject(UnsafeGetObject* x);
-  void do_UnsafePutObject(UnsafePutObject* x);
-  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  void do_UnsafeGet      (UnsafeGet*       x);
+  void do_UnsafePut      (UnsafePut*       x);
+  void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileReturnType (ProfileReturnType*  x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
@@ -707,7 +704,6 @@ void NullCheckVisitor::do_Intrinsic      (Intrinsic*       x) { nce()->handle_In
 void NullCheckVisitor::do_BlockBegin     (BlockBegin*      x) {}
 void NullCheckVisitor::do_Goto           (Goto*            x) {}
 void NullCheckVisitor::do_If             (If*              x) {}
-void NullCheckVisitor::do_IfInstanceOf   (IfInstanceOf*    x) {}
 void NullCheckVisitor::do_TableSwitch    (TableSwitch*     x) {}
 void NullCheckVisitor::do_LookupSwitch   (LookupSwitch*    x) {}
 void NullCheckVisitor::do_Return         (Return*          x) {}
@@ -716,11 +712,9 @@ void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
 void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
-void NullCheckVisitor::do_UnsafeGetRaw   (UnsafeGetRaw*    x) {}
-void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
-void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
-void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
-void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
+void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
+void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
+void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check();
                                                                 nce()->handle_ProfileCall(x); }
 void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }

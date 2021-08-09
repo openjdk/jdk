@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import sun.rmi.runtime.NewThreadAction;
 public final class ObjectTable {
 
     /** maximum interval between complete garbage collections of local heap */
+    @SuppressWarnings("removal")
     private final static long gcInterval =              // default 1 hour
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.dgc.server.gcInterval", 3600000));
@@ -269,6 +270,7 @@ public final class ObjectTable {
      * thread operates, the reaper thread also serves as the non-daemon
      * VM keep-alive thread; a new reaper thread is created if necessary.
      */
+    @SuppressWarnings("removal")
     static void incrementKeepAliveCount() {
         synchronized (keepAliveLock) {
             keepAliveCount++;
@@ -305,6 +307,7 @@ public final class ObjectTable {
      * reaper thread is terminated to cease keeping the VM alive (and
      * because there are no more non-permanent remote objects to reap).
      */
+    @SuppressWarnings("removal")
     static void decrementKeepAliveCount() {
         synchronized (keepAliveLock) {
             keepAliveCount--;

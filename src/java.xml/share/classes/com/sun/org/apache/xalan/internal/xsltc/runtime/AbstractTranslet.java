@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
@@ -44,6 +43,7 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Templates;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -54,7 +54,7 @@ import org.w3c.dom.Document;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author John Howard, JohnH@schemasoft.com
- * @LastModified: Aug 2019
+ * @LastModified: May 2021
  */
 public abstract class AbstractTranslet implements Translet {
 
@@ -65,7 +65,7 @@ public abstract class AbstractTranslet implements Translet {
     public String  _encoding = "UTF-8";
     public boolean _omitHeader = false;
     public String  _standalone = null;
-    //see OutputPropertiesFactory.ORACLE_IS_STANDALONE
+    //see JdkConstants.SP_XSLTC_IS_Standalone
     public boolean  _isStandalone = false;
     public String  _doctypePublic = null;
     public String  _doctypeSystem = null;
@@ -114,7 +114,7 @@ public abstract class AbstractTranslet implements Translet {
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Document() function, Import and Include element.
      */
-    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     /************************************************************************
      * Debugging

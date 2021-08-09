@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,35 +117,55 @@ public class JarURLConnection extends java.net.JarURLConnection {
         }
     }
 
-
-
     public void connect() throws IOException {
         if (!connected) {
+            boolean useCaches = getUseCaches();
+            String entryName = this.entryName;
+
             /* the factory call will do the security checks */
-            jarFile = factory.get(getJarFileURL(), getUseCaches());
+            URL url = getJarFileURL();
+            // if we have an entry name, and the jarfile is local,
+            // don't put the jar into the cache until after we have
+            // validated that the entry name exists
+            jarFile = entryName == null
+                    ? factory.get(url, useCaches)
+                    : factory.getOrCreate(url, useCaches);
+
+            if ((entryName != null)) {
+                jarEntry = (JarEntry) jarFile.getEntry(entryName);
+                if (jarEntry == null) {
+                    try {
+                        // only close the jar file if it isn't in the
+                        // cache. If the jar file is local, it won't be
+                        // in the cache yet, and so will be closed here.
+                        factory.closeIfNotCached(url, jarFile);
+                    } catch (Exception e) {
+                    }
+                    throw new FileNotFoundException("JAR entry " + entryName +
+                            " not found in " +
+                            jarFile.getName());
+                }
+            }
+
+            // we have validated that the entry exists.
+            // if useCaches was requested, update the cache now.
+            if (useCaches && entryName != null) {
+                // someone may have beat us and updated the cache
+                // already - in which case - cacheIfAbsent will
+                // return false. cacheIfAbsent returns true if
+                // our jarFile is in the cache when the method
+                // returns, whether because it put it there or
+                // because it found it there.
+                useCaches = factory.cacheIfAbsent(url, jarFile);
+            }
 
             /* we also ask the factory the permission that was required
              * to get the jarFile, and set it as our permission.
              */
-            if (getUseCaches()) {
+            if (useCaches) {
                 boolean oldUseCaches = jarFileURLConnection.getUseCaches();
                 jarFileURLConnection = factory.getConnection(jarFile);
                 jarFileURLConnection.setUseCaches(oldUseCaches);
-            }
-
-            if ((entryName != null)) {
-                jarEntry = (JarEntry)jarFile.getEntry(entryName);
-                if (jarEntry == null) {
-                    try {
-                        if (!getUseCaches()) {
-                            jarFile.close();
-                        }
-                    } catch (Exception e) {
-                    }
-                    throw new FileNotFoundException("JAR entry " + entryName +
-                                                    " not found in " +
-                                                    jarFile.getName());
-                }
             }
             connected = true;
         }

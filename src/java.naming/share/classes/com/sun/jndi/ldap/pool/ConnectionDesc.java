@@ -34,14 +34,14 @@ package com.sun.jndi.ldap.pool;
  * @author Rosanna Lee
  */
 final class ConnectionDesc {
-    private final static boolean debug = Pool.debug;
+    private static final boolean debug = Pool.debug;
 
     // Package private because used by Pool.showStats()
     static final byte BUSY = (byte)0;
     static final byte IDLE = (byte)1;
     static final byte EXPIRED = (byte)2;
 
-    final private PooledConnection conn;
+    private final PooledConnection conn;
 
     private byte state = IDLE;  // initial state
     private long idleSince;

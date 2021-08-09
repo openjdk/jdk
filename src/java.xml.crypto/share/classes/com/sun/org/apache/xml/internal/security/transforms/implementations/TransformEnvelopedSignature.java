@@ -26,7 +26,6 @@ import java.io.OutputStream;
 
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -42,24 +41,21 @@ import org.w3c.dom.Node;
  */
 public class TransformEnvelopedSignature extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI =
-        Transforms.TRANSFORM_ENVELOPED_SIGNATURE;
-
     /**
-     * Method engineGetURI
-     *
      * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_ENVELOPED_SIGNATURE;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream os, Transform transformObject
+        XMLSignatureInput input, OutputStream os, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws TransformationException {
         /**
          * If the actual input is an octet stream, then the application MUST
@@ -73,9 +69,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
          * (including comments) in the node-set representing the octet stream.
          */
 
-        Node signatureElement = transformObject.getElement();
-
-        signatureElement = searchSignatureElement(signatureElement);
+        Node signatureElement = searchSignatureElement(transformElement);
         input.setExcludeNode(signatureElement);
         input.addNodeFilter(new EnvelopedNodeFilter(signatureElement));
         return input;
@@ -114,7 +108,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
 
     static class EnvelopedNodeFilter implements NodeFilter {
 
-        Node exclude;
+        private final Node exclude;
 
         EnvelopedNodeFilter(Node n) {
             exclude = n;

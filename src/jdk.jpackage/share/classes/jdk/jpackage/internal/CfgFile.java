@@ -144,5 +144,5 @@ final class CfgFile {
     List<String> javaOptions;
     private final ApplicationLayout appLayout;
 
-    private final static Object SECTION_TAG = new Object();
+    private static final Object SECTION_TAG = new Object();
 }

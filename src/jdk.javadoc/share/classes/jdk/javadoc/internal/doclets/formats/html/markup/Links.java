@@ -54,13 +54,26 @@ public class Links {
     /**
      * Creates a link of the form {@code <a href="#id">label</a>}.
      *
-     * @param id      the position of the link in the file
-     * @param label      the content for the link
+     * @param id    the position of the link in the file
+     * @param label the content for the link
      * @return a content tree for the link
      */
     public Content createLink(HtmlId id, Content label) {
         DocLink l = DocLink.fragment(id.name());
         return createLink(l, label, "");
+    }
+
+    /**
+     * Creates a link of the form {@code <a href="#id">label</a>} if {@code link}
+     * is {@code true}, or else just returns {@code label}.
+     *
+     * @param id    the position of the link in the file
+     * @param label the content for the link
+     * @param link  whether to create a link or just return the label
+     * @return a content tree for the link or just the label
+     */
+    public Content createLink(HtmlId id, Content label, boolean link) {
+        return link ? createLink(id, label) : label;
     }
 
     /**

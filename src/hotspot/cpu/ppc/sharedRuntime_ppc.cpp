@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "frame_ppc.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -915,6 +916,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return align_up(stk, 2);
 }
 #endif // COMPILER2
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
 
 static address gen_c2i_adapter(MacroAssembler *masm,
                             int total_args_passed,
@@ -2146,14 +2154,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Get the lock box slot's address.
     __ addi(r_box, R1_SP, lock_offset);
 
-#   ifdef ASSERT
-    if (UseBiasedLocking) {
-      // Making the box point to itself will make it clear it went unused
-      // but also be obviously invalid.
-      __ std(r_box, 0, r_box);
-    }
-#   endif // ASSERT
-
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
     __ compiler_fast_lock_object(r_flag, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
@@ -2262,7 +2262,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   if (is_critical_native) {
     Label needs_safepoint;
     Register sync_state      = r_temp_5;
-    __ safepoint_poll(needs_safepoint, sync_state);
+    // Note: We should not reach here with active stack watermark. There's no safepoint between
+    //       start of the native wrapper and this check where it could have been added.
+    //       We don't check the watermark in the fast path.
+    __ safepoint_poll(needs_safepoint, sync_state, false /* at_return */, false /* in_nmethod */);
 
     Register suspend_flags   = r_temp_6;
     __ lwz(suspend_flags, thread_(suspend_flags));
@@ -2309,7 +2312,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // No synchronization in progress nor yet synchronized
     // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
-    __ safepoint_poll(sync, sync_state);
+    __ safepoint_poll(sync, sync_state, true /* at_return */, false /* in_nmethod */);
 
     // Not suspended.
     // TODO: PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
@@ -3008,7 +3011,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (cause_return) {
     // Nothing to do here. The frame has already been popped in MachEpilogNode.
     // Register LR already contains the return pc.
-    return_pc_location = RegisterSaver::return_pc_is_lr;
+    return_pc_location = RegisterSaver::return_pc_is_pre_saved;
   } else {
     // Use thread()->saved_exception_pc() as return pc.
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;

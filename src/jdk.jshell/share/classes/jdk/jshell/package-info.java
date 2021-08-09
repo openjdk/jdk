@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  * <p>
  * Any change to the compilation status of a snippet is reported with a
  * {@link jdk.jshell.SnippetEvent}.  There are three major kinds of
- * changes to the status of a snippet: it can created with <code>eval</code>,
+ * changes to the status of a snippet: it can be created with <code>eval</code>,
  * it can be dropped from the active source state with
  * {@link jdk.jshell.JShell#drop(jdk.jshell.Snippet)}, and it can have
  * its status updated as a result of a status change in another snippet.
@@ -68,7 +68,7 @@
  * fixed strings, but would come from the user. Below is a very simplified
  * example of how the API might be used to implement a REPL.
  * <pre>
-* {@code
+ * {@code
  *     import java.io.ByteArrayInputStream;
  *     import java.io.Console;
  *     import java.util.List;
@@ -88,9 +88,9 @@
  *                     List<SnippetEvent> events = js.eval(input);
  *                     for (SnippetEvent e : events) {
  *                         StringBuilder sb = new StringBuilder();
- *                         if (e.causeSnippet == null) {
+ *                         if (e.causeSnippet() == null) {
  *                             //  We have a snippet creation event
- *                             switch (e.status) {
+ *                             switch (e.status()) {
  *                                 case VALID:
  *                                     sb.append("Successful ");
  *                                     break;
@@ -104,16 +104,16 @@
  *                                     sb.append("Failed ");
  *                                     break;
  *                             }
- *                             if (e.previousStatus == Status.NONEXISTENT) {
+ *                             if (e.previousStatus() == Status.NONEXISTENT) {
  *                                 sb.append("addition");
  *                             } else {
  *                                 sb.append("modification");
  *                             }
  *                             sb.append(" of ");
- *                             sb.append(e.snippet.source());
+ *                             sb.append(e.snippet().source());
  *                             System.out.println(sb);
- *                             if (e.value != null) {
- *                                 System.out.printf("Value is: %s\n", e.value);
+ *                             if (e.value() != null) {
+ *                                 System.out.printf("Value is: %s\n", e.value());
  *                             }
  *                             System.out.flush();
  *                         }

@@ -750,11 +750,13 @@ public class ForkJoinPool extends AbstractExecutorService {
      * permission to modify threads.
      */
     private static void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(modifyThreadPermission);
     }
 
+    @SuppressWarnings("removal")
     static AccessControlContext contextWithPermissions(Permission ... perms) {
         Permissions permissions = new Permissions();
         for (Permission perm : perms)
@@ -798,9 +800,11 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final class DefaultForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
         // ACC for access to the factory
+        @SuppressWarnings("removal")
         private static final AccessControlContext ACC = contextWithPermissions(
             new RuntimePermission("getClassLoader"),
             new RuntimePermission("setContextClassLoader"));
+        @SuppressWarnings("removal")
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
@@ -820,6 +824,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     static final class DefaultCommonPoolForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
+        @SuppressWarnings("removal")
         private static final AccessControlContext ACC = contextWithPermissions(
             modifyThreadPermission,
             new RuntimePermission("enableContextClassLoaderOverride"),
@@ -827,6 +832,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             new RuntimePermission("getClassLoader"),
             new RuntimePermission("setContextClassLoader"));
 
+        @SuppressWarnings("removal")
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
             return AccessController.doPrivileged(
                  new PrivilegedAction<>() {
@@ -1252,11 +1258,13 @@ public class ForkJoinPool extends AbstractExecutorService {
         // misc
 
         /** AccessControlContext for innocuous workers, created on 1st use. */
+        @SuppressWarnings("removal")
         private static AccessControlContext INNOCUOUS_ACC;
 
         /**
          * Initializes (upon registration) InnocuousForkJoinWorkerThreads.
          */
+        @SuppressWarnings("removal")
         final void initializeInnocuousWorker() {
             AccessControlContext acc; // racy construction OK
             if ((acc = INNOCUOUS_ACC) == null)
@@ -2572,6 +2580,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         this.saturate = null;
         this.workerNamePrefix = null;
         int p = Math.min(Math.max(parallelism, 0), MAX_CAP), size;
+        this.mode = p;
         if (p > 0) {
             size = 1 << (33 - Integer.numberOfLeadingZeros(p - 1));
             this.bounds = ((1 - p) & SMASK) | (COMMON_MAX_SPARES << SWIDTH);
@@ -3495,9 +3504,11 @@ public class ForkJoinPool extends AbstractExecutorService {
         defaultForkJoinWorkerThreadFactory =
             new DefaultForkJoinWorkerThreadFactory();
         modifyThreadPermission = new RuntimePermission("modifyThread");
-        common = AccessController.doPrivileged(new PrivilegedAction<>() {
+        @SuppressWarnings("removal")
+        ForkJoinPool tmp = AccessController.doPrivileged(new PrivilegedAction<>() {
             public ForkJoinPool run() {
                 return new ForkJoinPool((byte)0); }});
+        common = tmp;
 
         COMMON_PARALLELISM = Math.max(common.mode & SMASK, 1);
     }

@@ -104,13 +104,13 @@ class MemoryImpl extends NotificationEmitterSupport
     private native MemoryUsage getMemoryUsage0(boolean heap);
     private native void setVerboseGC(boolean value);
 
-    private final static String notifName =
+    private static final String notifName =
         "javax.management.Notification";
-    private final static String[] notifTypes = {
+    private static final String[] notifTypes = {
         MemoryNotificationInfo.MEMORY_THRESHOLD_EXCEEDED,
         MemoryNotificationInfo.MEMORY_COLLECTION_THRESHOLD_EXCEEDED
     };
-    private final static String[] notifMsgs  = {
+    private static final String[] notifMsgs  = {
         "Memory usage exceeds usage threshold",
         "Memory usage exceeds collection usage threshold"
     };

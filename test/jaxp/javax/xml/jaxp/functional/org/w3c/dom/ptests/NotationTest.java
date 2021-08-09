@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.NotationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NotationTest
  * @run testng/othervm org.w3c.dom.ptests.NotationTest
  * @summary Test for Notation interface
  */

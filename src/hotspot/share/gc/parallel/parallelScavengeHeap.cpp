@@ -184,7 +184,6 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -748,7 +747,7 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
   // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
   if(log_is_enabled(Info, pagesize)) {
-    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    const size_t page_size = rs.page_size();
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,

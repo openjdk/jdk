@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,12 @@ class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 
     static {
-        // Need to load the native library for this code.
+        loadAWTLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
+            // Need to load the native library for this code.
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {

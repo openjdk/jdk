@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,8 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
   // Do not insert between a call and his Catch
   if( b->get_node(i)->is_Catch() ) {
     // Put the instruction at the top of the fall-thru block.
+    // This assumes that the instruction is not used in the other exception
+    // blocks. Global code motion is responsible for maintaining this invariant.
     // Find the fall-thru projection
     while( 1 ) {
       const CatchProjNode *cp = b->get_node(++i)->as_CatchProj();
@@ -445,7 +447,7 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
   // Bound live ranges will split at the binding points first;
   // Intermediate splits should assume the live range's register set
   // got "freed up" and that num_regs will become INT_PRESSURE.
-  int bound_pres = is_float_or_vector ? FLOATPRESSURE : INTPRESSURE;
+  int bound_pres = is_float_or_vector ? Matcher::float_pressure_limit() : Matcher::int_pressure_limit();
   // Effective register pressure limit.
   int lrg_pres = (lrg->get_invalid_mask_size() > lrg->num_regs())
     ? (lrg->get_invalid_mask_size() >> (lrg->num_regs()-1)) : bound_pres;
@@ -798,12 +800,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         continue;
       }
       assert( insidx > b->_ihrp_index ||
-              (b->_reg_pressure < (uint)INTPRESSURE) ||
+              (b->_reg_pressure < Matcher::int_pressure_limit()) ||
               b->_ihrp_index > 4000000 ||
               b->_ihrp_index >= b->end_idx() ||
               !b->get_node(b->_ihrp_index)->is_Proj(), "" );
       assert( insidx > b->_fhrp_index ||
-              (b->_freg_pressure < (uint)FLOATPRESSURE) ||
+              (b->_freg_pressure < Matcher::float_pressure_limit()) ||
               b->_fhrp_index > 4000000 ||
               b->_fhrp_index >= b->end_idx() ||
               !b->get_node(b->_fhrp_index)->is_Proj(), "" );
@@ -1278,15 +1280,17 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       IndexSet *liveout = _live->live(b);
       if( !liveout->member(defidx) ) {
 #ifdef ASSERT
-        // The index defidx is not live.  Check the liveout array to ensure that
-        // it contains no members which compress to defidx.  Finding such an
-        // instance may be a case to add liveout adjustment in compress_uf_map().
-        // See 5063219.
-        if (!liveout->is_empty()) {
-          uint member;
-          IndexSetIterator isi(liveout);
-          while ((member = isi.next()) != 0) {
-            assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+        if (VerifyRegisterAllocator) {
+          // The index defidx is not live.  Check the liveout array to ensure that
+          // it contains no members which compress to defidx.  Finding such an
+          // instance may be a case to add liveout adjustment in compress_uf_map().
+          // See 5063219.
+          if (!liveout->is_empty()) {
+            uint member;
+            IndexSetIterator isi(liveout);
+            while ((member = isi.next()) != 0) {
+              assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+            }
           }
         }
 #endif

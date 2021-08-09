@@ -27,8 +27,7 @@ package gc;
  * @requires vm.gc != "Shenandoah" | vm.opt.ShenandoahGCMode != "iu"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @modules java.base
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

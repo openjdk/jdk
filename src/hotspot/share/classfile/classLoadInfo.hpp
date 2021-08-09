@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@ class ClassInstanceInfo : public StackObj {
 class ClassLoadInfo : public StackObj {
  private:
   Handle                 _protection_domain;
-  const InstanceKlass*   _unsafe_anonymous_host;
-  GrowableArray<Handle>* _cp_patches;
   ClassInstanceInfo      _class_hidden_info;
   bool                   _is_hidden;
   bool                   _is_strong_hidden;
@@ -64,8 +62,6 @@ class ClassLoadInfo : public StackObj {
  public:
   ClassLoadInfo(Handle protection_domain) {
     _protection_domain = protection_domain;
-    _unsafe_anonymous_host = NULL;
-    _cp_patches = NULL;
     _class_hidden_info._dynamic_nest_host = NULL;
     _class_hidden_info._class_data = Handle();
     _is_hidden = false;
@@ -73,13 +69,10 @@ class ClassLoadInfo : public StackObj {
     _can_access_vm_annotations = false;
   }
 
-  ClassLoadInfo(Handle protection_domain, const InstanceKlass* unsafe_anonymous_host,
-                GrowableArray<Handle>* cp_patches, InstanceKlass* dynamic_nest_host,
+  ClassLoadInfo(Handle protection_domain, InstanceKlass* dynamic_nest_host,
                 Handle class_data, bool is_hidden, bool is_strong_hidden,
                 bool can_access_vm_annotations) {
     _protection_domain = protection_domain;
-    _unsafe_anonymous_host = unsafe_anonymous_host;
-    _cp_patches = cp_patches;
     _class_hidden_info._dynamic_nest_host = dynamic_nest_host;
     _class_hidden_info._class_data = class_data;
     _is_hidden = is_hidden;
@@ -88,8 +81,6 @@ class ClassLoadInfo : public StackObj {
   }
 
   Handle protection_domain()             const { return _protection_domain; }
-  const InstanceKlass* unsafe_anonymous_host() const { return _unsafe_anonymous_host; }
-  GrowableArray<Handle>* cp_patches()    const { return _cp_patches; }
   const ClassInstanceInfo* class_hidden_info_ptr() const { return &_class_hidden_info; }
   bool is_hidden()                       const { return _is_hidden; }
   bool is_strong_hidden()                const { return _is_strong_hidden; }

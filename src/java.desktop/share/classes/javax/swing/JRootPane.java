@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,13 +208,19 @@ public class JRootPane extends JComponent implements Accessible {
      * Whether or not we should dump the stack when true double buffering
      * is disabled. Default is false.
      */
-    private static final boolean LOG_DISABLE_TRUE_DOUBLE_BUFFERING;
+    @SuppressWarnings("removal")
+    private static final boolean LOG_DISABLE_TRUE_DOUBLE_BUFFERING
+            = AccessController.doPrivileged(new GetBooleanAction(
+                                   "swing.logDoubleBufferingDisable"));
 
     /**
      * Whether or not we should ignore requests to disable true double
      * buffering. Default is false.
      */
-    private static final boolean IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING;
+    @SuppressWarnings("removal")
+    private static final boolean IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING
+            = AccessController.doPrivileged(new GetBooleanAction(
+                                   "swing.ignoreDoubleBufferingDisable"));
 
     /**
      * Constant used for the windowDecorationStyle property. Indicates that
@@ -325,15 +331,6 @@ public class JRootPane extends JComponent implements Accessible {
      * heavy weight popups (backed by a window) set this to false.
      */
     boolean useTrueDoubleBuffering = true;
-
-    static {
-        LOG_DISABLE_TRUE_DOUBLE_BUFFERING =
-            AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.logDoubleBufferingDisable"));
-        IGNORE_DISABLE_TRUE_DOUBLE_BUFFERING =
-            AccessController.doPrivileged(new GetBooleanAction(
-                                   "swing.ignoreDoubleBufferingDisable"));
-    }
 
     /**
      * Creates a <code>JRootPane</code>, setting up its

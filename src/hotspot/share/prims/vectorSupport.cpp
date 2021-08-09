@@ -30,8 +30,10 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -40,6 +42,29 @@
 #ifdef COMPILER2
 #include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
 #endif // COMPILER2
+
+#ifdef COMPILER2
+const char* VectorSupport::svmlname[VectorSupport::NUM_SVML_OP] = {
+    "tan",
+    "tanh",
+    "sin",
+    "sinh",
+    "cos",
+    "cosh",
+    "asin",
+    "acos",
+    "atan",
+    "atan2",
+    "cbrt",
+    "log",
+    "log10",
+    "log1p",
+    "pow",
+    "exp",
+    "expm1",
+    "hypot",
+};
+#endif
 
 bool VectorSupport::is_vector(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
@@ -65,6 +90,8 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
 
   if (is_vector_shuffle(ik)) {
     return T_BYTE;
+  } else if (is_vector_mask(ik)) {
+    return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
     BasicType elem_bt = java_lang_Class::as_BasicType(value);
@@ -86,48 +113,33 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   return vlen;
 }
 
-void VectorSupport::init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr) {
-  if (is_mask) {
-    // Masks require special handling: when boxed they are packed and stored in boolean
-    // arrays, but in scalarized form they have the same size as corresponding vectors.
-    // For example, Int512Mask is represented in memory as boolean[16], but
-    // occupies the whole 512-bit vector register when scalarized.
-    // (In generated code, the conversion is performed by VectorStoreMask.)
-    //
-    // TODO: revisit when predicate registers are fully supported.
-    switch (elem_bt) {
-      case T_BYTE:   arr->bool_at_put(index,  (*(jbyte*)addr) != 0); break;
-      case T_SHORT:  arr->bool_at_put(index, (*(jshort*)addr) != 0); break;
-      case T_INT:    // fall-through
-      case T_FLOAT:  arr->bool_at_put(index,   (*(jint*)addr) != 0); break;
-      case T_LONG:   // fall-through
-      case T_DOUBLE: arr->bool_at_put(index,  (*(jlong*)addr) != 0); break;
+// Masks require special handling: when boxed they are packed and stored in boolean
+// arrays, but in scalarized form they have the same size as corresponding vectors.
+// For example, Int512Mask is represented in memory as boolean[16], but
+// occupies the whole 512-bit vector register when scalarized.
+// During scalarization inserting a VectorStoreMask node between mask
+// and safepoint node always ensures the existence of masks in a boolean array.
 
-      default: fatal("unsupported: %s", type2name(elem_bt));
-    }
-  } else {
-    switch (elem_bt) {
-      case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
-      case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
-      case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;
-      case T_FLOAT:  arr-> float_at_put(index,  *(jfloat*)addr); break;
-      case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
-      case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
-
-      default: fatal("unsupported: %s", type2name(elem_bt));
-    }
+void VectorSupport::init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr) {
+  switch (elem_bt) {
+    case T_BOOLEAN: arr->bool_at_put(index, *(jboolean*)addr); break;
+    case T_BYTE:    arr->byte_at_put(index, *(jbyte*)addr); break;
+    case T_SHORT:   arr->short_at_put(index, *(jshort*)addr); break;
+    case T_INT:     arr->int_at_put(index, *(jint*)addr); break;
+    case T_FLOAT:   arr->float_at_put(index, *(jfloat*)addr); break;
+    case T_LONG:    arr->long_at_put(index, *(jlong*)addr); break;
+    case T_DOUBLE:  arr->double_at_put(index, *(jdouble*)addr); break;
+    default: fatal("unsupported: %s", type2name(elem_bt));
   }
 }
 
 Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS) {
-  bool is_mask = is_vector_mask(ik);
-
   int num_elem = klass2length(ik);
   BasicType elem_bt = klass2bt(ik);
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(is_mask ? T_BOOLEAN : elem_bt));
+  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(elem_bt));
 
   typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 
@@ -140,29 +152,40 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
       int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
       address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
-      init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
+      init_payload_element(arr, elem_bt, i, elem_addr);
     }
   } else {
     // Value was directly saved on the stack.
     address base_addr = ((address)fr->unextended_sp()) + location.stack_offset();
     for (int i = 0; i < num_elem; i++) {
-      init_payload_element(arr, is_mask, elem_bt, i, base_addr + i * elem_size);
+      init_payload_element(arr, elem_bt, i, base_addr + i * elem_size);
     }
   }
   return Handle(THREAD, arr);
 }
 
 Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
-  if (payload->is_location() &&
-      payload->as_LocationValue()->location().type() == Location::vector) {
-    // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
+  if (payload->is_location()) {
     Location location = payload->as_LocationValue()->location();
-    return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
-  } else {
-    // Scalar-replaced boxed vector representation.
-    StackValue* value = StackValue::create_stack_value(fr, reg_map, payload);
-    return value->get_obj();
+    if (location.type() == Location::vector) {
+      // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
+      return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
+    }
+#ifdef ASSERT
+    // Other payload values are: 'oop' type location and Scalar-replaced boxed vector representation.
+    // They will be processed in Deoptimization::reassign_fields() after all objects are reallocated.
+    else {
+      Location::Type loc_type = location.type();
+      assert(loc_type == Location::oop || loc_type == Location::narrowoop,
+             "expected 'oop'(%d) or 'narrowoop'(%d) types location but got: %d", Location::oop, Location::narrowoop, loc_type);
+    }
+  } else if (!payload->is_object()) {
+    stringStream ss;
+    payload->print_on(&ss);
+    assert(payload->is_object(), "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.as_string());
+#endif
   }
+  return Handle(THREAD, nullptr);
 }
 
 instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {
@@ -351,6 +374,61 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_MASK_LASTTRUE: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskLastTrue;
+        default: fatal("MASK_LASTTRUE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_FIRSTTRUE: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskFirstTrue;
+        default: fatal("MASK_FIRSTTRUE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_TRUECOUNT: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskTrueCount;
+        default: fatal("MASK_TRUECOUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_TAN:
+    case VECTOR_OP_TANH:
+    case VECTOR_OP_SIN:
+    case VECTOR_OP_SINH:
+    case VECTOR_OP_COS:
+    case VECTOR_OP_COSH:
+    case VECTOR_OP_ASIN:
+    case VECTOR_OP_ACOS:
+    case VECTOR_OP_ATAN:
+    case VECTOR_OP_ATAN2:
+    case VECTOR_OP_CBRT:
+    case VECTOR_OP_LOG:
+    case VECTOR_OP_LOG10:
+    case VECTOR_OP_LOG1P:
+    case VECTOR_OP_POW:
+    case VECTOR_OP_EXP:
+    case VECTOR_OP_EXPM1:
+    case VECTOR_OP_HYPOT:
+      return Op_CallLeafVector;
     default: fatal("unknown op: %d", vop);
   }
   return 0; // Unimplemented

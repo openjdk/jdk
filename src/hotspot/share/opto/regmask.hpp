@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ class RegMask {
          SlotsPerVecX = 4,
          SlotsPerVecY = 8,
          SlotsPerVecZ = 16,
+         SlotsPerRegVectMask = X86_ONLY(2) NOT_X86(1)
          };
 
   // A constructor only used by the ADLC output.  All mask fields are filled
@@ -356,6 +357,7 @@ class RegMask {
 #endif
 
   static const RegMask Empty;   // Common empty mask
+  static const RegMask All;     // Common all mask
 
   static bool can_represent(OptoReg::Name reg) {
     // NOTE: -1 in computation reflects the usage of the last

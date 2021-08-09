@@ -209,8 +209,8 @@ public abstract class AsynchronousFileChannel
      * FileAttribute file-attributes} to set atomically when creating the file.
      *
      * <p> The new channel is created by invoking the {@link
-     * FileSystemProvider#newFileChannel newFileChannel} method on the
-     * provider that created the {@code Path}.
+     * FileSystemProvider#newAsynchronousFileChannel newAsynchronousFileChannel}
+     * method on the provider that created the {@code Path}.
      *
      * @param   file
      *          The path of the file to open or create
@@ -232,6 +232,12 @@ public abstract class AsynchronousFileChannel
      *          support creating asynchronous file channels, or an unsupported
      *          open option is specified, or the array contains an attribute that
      *          cannot be set atomically when creating the file
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          and the file is being opened for writing
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -287,6 +293,12 @@ public abstract class AsynchronousFileChannel
      *          If the {@code file} is associated with a provider that does not
      *          support creating file channels, or an unsupported open option is
      *          specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          and the file is being opened for writing
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException

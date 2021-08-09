@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,12 +197,9 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof DedupedLambda)) {
-                return false;
-            }
-            DedupedLambda that = (DedupedLambda) o;
-            return types.isSameType(symbol.asType(), that.symbol.asType())
-                    && new TreeDiffer(symbol.params(), that.symbol.params()).scan(tree, that.tree);
+            return (o instanceof DedupedLambda dedupedLambda)
+                    && types.isSameType(symbol.asType(), dedupedLambda.symbol.asType())
+                    && new TreeDiffer(symbol.params(), dedupedLambda.symbol.params()).scan(tree, dedupedLambda.tree);
         }
     }
 
@@ -1558,12 +1555,9 @@ public class LambdaToMethod extends TreeTranslator {
         @Override
         public void visitVarDef(JCVariableDecl tree) {
             TranslationContext<?> context = context();
-            LambdaTranslationContext ltc = (context != null && context instanceof LambdaTranslationContext)?
-                    (LambdaTranslationContext)context :
-                    null;
-            if (ltc != null) {
+            if (context != null && context instanceof LambdaTranslationContext lambdaContext) {
                 if (frameStack.head.tree.hasTag(LAMBDA)) {
-                    ltc.addSymbol(tree.sym, LOCAL_VAR);
+                    lambdaContext.addSymbol(tree.sym, LOCAL_VAR);
                 }
                 // Check for type variables (including as type arguments).
                 // If they occur within class nested in a lambda, mark for erasure
@@ -1767,10 +1761,7 @@ public class LambdaToMethod extends TreeTranslator {
          *  set of nodes that select `this' (qualified this)
          */
         private boolean lambdaFieldAccessFilter(JCFieldAccess fAccess) {
-            LambdaTranslationContext lambdaContext =
-                    context instanceof LambdaTranslationContext ?
-                            (LambdaTranslationContext) context : null;
-            return lambdaContext != null
+            return (context instanceof LambdaTranslationContext lambdaContext)
                     && !fAccess.sym.isStatic()
                     && fAccess.name == names._this
                     && (fAccess.sym.owner.kind == TYP)

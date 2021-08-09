@@ -122,6 +122,11 @@ public class HtmlOptions extends BaseOptions {
     private String helpFile = "";
 
     /**
+     * Argument for command-line option {@code --legal-notices}.
+     */
+    private String legalNotices = "";
+
+    /**
      * Argument for command-line option {@code -nodeprecatedlist}.
      * True if command-line option "-nodeprecatedlist" is used. Default value is
      * false.
@@ -261,6 +266,14 @@ public class HtmlOptions extends BaseOptions {
                 new Option(resources, "-html5") {
                     @Override
                     public boolean process(String opt,  List<String> args) {
+                        return true;
+                    }
+                },
+
+                new XOption(resources, "--legal-notices", 1) {
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        legalNotices = args.get(0);
                         return true;
                     }
                 },
@@ -598,6 +611,13 @@ public class HtmlOptions extends BaseOptions {
      */
     public String helpFile() {
         return helpFile;
+    }
+
+    /**
+     * Argument for command-line option {@code --legal-notices}.
+     */
+    public String legalNotices() {
+        return legalNotices;
     }
 
     /**

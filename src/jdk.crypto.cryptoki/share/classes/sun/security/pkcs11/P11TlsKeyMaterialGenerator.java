@@ -50,7 +50,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsKeyMaterialGenerator must be "
+    private static final String MSG = "TlsKeyMaterialGenerator must be "
         + "initialized using a TlsKeyMaterialParameterSpec";
 
     // token instance

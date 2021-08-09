@@ -908,23 +908,33 @@ class SVEVectorOp(Instruction):
         self.numRegs = len(regs)
         if regTypes[0] != "p" and regTypes[1] == 'P':
            self._isPredicated = True
-           self._merge = "/m"
+           assert len(args) > 2, "Must specify predicate type"
+           for arg in args[2:]:
+              if arg == 'm':
+                 self._merge = "/m"
+              elif arg == 'z':
+                 self._merge = "/z"
+              else:
+                 assert arg == "dn", "Unknown predicate type"
         else:
            self._isPredicated = False
-           self._merge =""
+           self._merge = ""
 
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name == "and" or name == "eor" or name == "orr"):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         else:
             self._width = RegVariant(0, 3)
+
+        self._dnm = None
         if len(args) > 2:
-            self._dnm = args[2]
-        else:
-            self._dnm = None
+           for arg in args[2:]:
+             if arg == "dn":
+               self._dnm = arg
+
         Instruction.__init__(self, name)
 
     def cstr(self):
@@ -1401,9 +1411,12 @@ generate(NEONReduceInstruction,
           ["smaxv", "smaxv", "8B"], ["smaxv", "smaxv", "16B"],
           ["smaxv", "smaxv", "4H"], ["smaxv", "smaxv", "8H"],
           ["smaxv", "smaxv", "4S"], ["fmaxv", "fmaxv", "4S"],
-          ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
-          ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
-          ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ["sminv", "sminv", "8B"], ["uminv", "uminv", "8B"],
+          ["sminv", "sminv", "16B"],["uminv", "uminv", "16B"],
+          ["sminv", "sminv", "4H"], ["uminv", "uminv", "4H"],
+          ["sminv", "sminv", "8H"], ["uminv", "uminv", "8H"],
+          ["sminv", "sminv", "4S"], ["uminv", "uminv", "4S"],
+          ["fminv", "fminv", "4S"],
           ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
@@ -1458,11 +1471,17 @@ generate(ThreeRegNEONOp,
           ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
           ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
           ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
+          ["smaxp", "smaxp", "8B"], ["smaxp", "smaxp", "16B"],
+          ["smaxp", "smaxp", "4H"], ["smaxp", "smaxp", "8H"],
+          ["smaxp", "smaxp", "2S"], ["smaxp", "smaxp", "4S"],
           ["fmax", "fmax", "2S"], ["fmax", "fmax", "4S"],
           ["fmax", "fmax", "2D"],
           ["minv", "smin", "8B"], ["minv", "smin", "16B"],
           ["minv", "smin", "4H"], ["minv", "smin", "8H"],
           ["minv", "smin", "2S"], ["minv", "smin", "4S"],
+          ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
+          ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
+          ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
           ["fmin", "fmin", "2D"],
           ["cmeq", "cmeq", "8B"], ["cmeq", "cmeq", "16B"],
@@ -1475,6 +1494,14 @@ generate(ThreeRegNEONOp,
           ["cmgt", "cmgt", "4H"], ["cmgt", "cmgt", "8H"],
           ["cmgt", "cmgt", "2S"], ["cmgt", "cmgt", "4S"],
           ["cmgt", "cmgt", "2D"],
+          ["cmhi", "cmhi", "8B"], ["cmhi", "cmhi", "16B"],
+          ["cmhi", "cmhi", "4H"], ["cmhi", "cmhi", "8H"],
+          ["cmhi", "cmhi", "2S"], ["cmhi", "cmhi", "4S"],
+          ["cmhi", "cmhi", "2D"],
+          ["cmhs", "cmhs", "8B"], ["cmhs", "cmhs", "16B"],
+          ["cmhs", "cmhs", "4H"], ["cmhs", "cmhs", "8H"],
+          ["cmhs", "cmhs", "2S"], ["cmhs", "cmhs", "4S"],
+          ["cmhs", "cmhs", "2D"],
           ["fcmgt", "fcmgt", "2S"], ["fcmgt", "fcmgt", "4S"],
           ["fcmgt", "fcmgt", "2D"],
           ["cmge", "cmge", "8B"], ["cmge", "cmge", "16B"],
@@ -1506,6 +1533,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ S, 1);",                          "umov\tw0, v1.s[1]"],
                         ["umov",   "__ umov(r0, v1, __ H, 2);",                          "umov\tw0, v1.h[2]"],
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
+                        ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         # SVE instructions
                         ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
@@ -1526,6 +1554,8 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["dup",    "__ sve_dup(z1, __ H, -128);",                        "dup\tz1.h, -128"],
                         ["dup",    "__ sve_dup(z2, __ S, 32512);",                       "dup\tz2.s, 32512"],
                         ["dup",    "__ sve_dup(z7, __ D, -32768);",                      "dup\tz7.d, -32768"],
+                        ["dup",    "__ sve_dup(z4, __ B, r3);",                          "dup\tz4.b, w3"],
+                        ["dup",    "__ sve_dup(z14, __ H, r22);",                        "dup\tz14.h, w22"],
                         ["ld1b",   "__ sve_ld1b(z0, __ B, p0, Address(sp));",            "ld1b\t{z0.b}, p0/z, [sp]"],
                         ["ld1h",   "__ sve_ld1h(z10, __ H, p1, Address(sp, -8));",       "ld1h\t{z10.h}, p1/z, [sp, #-8, MUL VL]"],
                         ["ld1w",   "__ sve_ld1w(z20, __ S, p2, Address(r0, 7));",        "ld1w\t{z20.s}, p2/z, [x0, #7, MUL VL]"],
@@ -1541,6 +1571,17 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["ldr",    "__ sve_ldr(z0, Address(sp));",                       "ldr\tz0, [sp]"],
                         ["ldr",    "__ sve_ldr(z31, Address(sp, -256));",                "ldr\tz31, [sp, #-256, MUL VL]"],
                         ["str",    "__ sve_str(z8, Address(r8, 255));",                  "str\tz8, [x8, #255, MUL VL]"],
+                        ["cntb",   "__ sve_cntb(r9);",                                   "cntb\tx9"],
+                        ["cnth",   "__ sve_cnth(r10);",                                  "cnth\tx10"],
+                        ["cntw",   "__ sve_cntw(r11);",                                  "cntw\tx11"],
+                        ["cntd",   "__ sve_cntd(r12);",                                  "cntd\tx12"],
+                        ["brka",   "__ sve_brka(p2, p0, p2, false);",                    "brka\tp2.b, p0/z, p2.b"],
+                        ["brka",   "__ sve_brka(p1, p2, p3, true);",                     "brka\tp1.b, p2/m, p3.b"],
+                        ["incp",   "__ sve_incp(r0, __ B, p2);",                         "incp\tx0, p2.b"],
+                        ["whilelt",   "__ sve_whilelt(p0, __ B, r1, r28);",              "whilelt\tp0.b, x1, x28"],
+                        ["whilele",   "__ sve_whilele(p2, __ H, r11, r8);",              "whilele\tp2.h, x11, x8"],
+                        ["whilelo",   "__ sve_whilelo(p3, __ S, r7, r2);",               "whilelo\tp3.s, x7, x2"],
+                        ["whilels",   "__ sve_whilels(p4, __ D, r17, r10);",             "whilels\tp4.d, x17, x10"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -1576,39 +1617,44 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["fadd", "ZZZ"],
                        ["fmul", "ZZZ"],
                        ["fsub", "ZZZ"],
-                       ["abs", "ZPZ"],
-                       ["add", "ZPZ", "dn"],
-                       ["asr", "ZPZ", "dn"],
-                       ["cnt", "ZPZ"],
-                       ["lsl", "ZPZ", "dn"],
-                       ["lsr", "ZPZ", "dn"],
-                       ["mul", "ZPZ", "dn"],
-                       ["neg", "ZPZ"],
-                       ["not", "ZPZ"],
-                       ["smax", "ZPZ", "dn"],
-                       ["smin", "ZPZ", "dn"],
-                       ["sub", "ZPZ", "dn"],
-                       ["fabs", "ZPZ"],
-                       ["fadd", "ZPZ", "dn"],
-                       ["fdiv", "ZPZ", "dn"],
-                       ["fmax", "ZPZ", "dn"],
-                       ["fmin", "ZPZ", "dn"],
-                       ["fmul", "ZPZ", "dn"],
-                       ["fneg", "ZPZ"],
-                       ["frintm", "ZPZ"],
-                       ["frintn", "ZPZ"],
-                       ["frintp", "ZPZ"],
-                       ["fsqrt", "ZPZ"],
-                       ["fsub", "ZPZ", "dn"],
-                       ["fmla", "ZPZZ"],
-                       ["fmls", "ZPZZ"],
-                       ["fnmla", "ZPZZ"],
-                       ["fnmls", "ZPZZ"],
-                       ["mla", "ZPZZ"],
-                       ["mls", "ZPZZ"],
+                       ["abs", "ZPZ", "m"],
+                       ["add", "ZPZ", "m", "dn"],
+                       ["asr", "ZPZ", "m", "dn"],
+                       ["cnt", "ZPZ", "m"],
+                       ["lsl", "ZPZ", "m", "dn"],
+                       ["lsr", "ZPZ", "m", "dn"],
+                       ["mul", "ZPZ", "m", "dn"],
+                       ["neg", "ZPZ", "m"],
+                       ["not", "ZPZ", "m"],
+                       ["smax", "ZPZ", "m", "dn"],
+                       ["smin", "ZPZ", "m", "dn"],
+                       ["sub", "ZPZ", "m", "dn"],
+                       ["fabs", "ZPZ", "m"],
+                       ["fadd", "ZPZ", "m", "dn"],
+                       ["fdiv", "ZPZ", "m", "dn"],
+                       ["fmax", "ZPZ", "m", "dn"],
+                       ["fmin", "ZPZ", "m", "dn"],
+                       ["fmul", "ZPZ", "m", "dn"],
+                       ["fneg", "ZPZ", "m"],
+                       ["frintm", "ZPZ", "m"],
+                       ["frintn", "ZPZ", "m"],
+                       ["frintp", "ZPZ", "m"],
+                       ["fsqrt", "ZPZ", "m"],
+                       ["fsub", "ZPZ", "m", "dn"],
+                       ["fmla", "ZPZZ", "m"],
+                       ["fmls", "ZPZZ", "m"],
+                       ["fnmla", "ZPZZ", "m"],
+                       ["fnmls", "ZPZZ", "m"],
+                       ["mla", "ZPZZ", "m"],
+                       ["mls", "ZPZZ", "m"],
                        ["and", "ZZZ"],
                        ["eor", "ZZZ"],
                        ["orr", "ZZZ"],
+                       ["bic", "ZZZ"],
+                       ["cmpeq", "PPZZ", "z"],
+                       ["cmpge", "PPZZ", "z"],
+                       ["cmpgt", "PPZZ", "z"],
+                       ["cmpne", "PPZZ", "z"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],

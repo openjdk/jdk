@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +26,8 @@ import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
@@ -38,6 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
+ * @LastModified: May 2021
  */
 public class SAXParser
     extends AbstractSAXParser {
@@ -140,13 +142,13 @@ public class SAXParser
             super.setProperty(Constants.SECURITY_MANAGER, securityManager);
             return;
         }
-        if (name.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+        if (name.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
                 securityPropertyManager = new XMLSecurityPropertyManager();
             } else {
                 securityPropertyManager = (XMLSecurityPropertyManager)value;
             }
-            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            super.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
             return;
         }
 
@@ -157,7 +159,7 @@ public class SAXParser
 
         if (securityPropertyManager == null) {
             securityPropertyManager = new XMLSecurityPropertyManager();
-            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            super.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
         }
 
         int index = securityPropertyManager.getIndex(name);
@@ -170,7 +172,7 @@ public class SAXParser
             securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
         } else {
             //check if the property is managed by security manager
-            if (!securityManager.setLimit(name, XMLSecurityManager.State.APIPROPERTY, value)) {
+            if (!securityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
                 //fall back to the default configuration to handle the property
                 super.setProperty(name, value);
             }

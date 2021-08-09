@@ -103,8 +103,7 @@ void ClassLoaderData::init_null_class_loader_data() {
 // and klass are available after the class_loader oop is no longer alive,
 // during unloading.
 void ClassLoaderData::initialize_name(Handle class_loader) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
+  ResourceMark rm;
 
   // Obtain the class loader's name.  If the class loader's name was not
   // explicitly set during construction, the CLD's _name field will be null.
@@ -138,8 +137,8 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
                             Mutex::_safepoint_check_never)),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
-  // An unsafe anonymous class loader data doesn't have anything to keep
-  // it from being unloaded during parsing of the unsafe anonymous class.
+  // A non-strong hidden class loader data doesn't have anything to keep
+  // it from being unloaded during parsing of the non-strong hidden class.
   // The null-class-loader should always be kept alive.
   _keep_alive((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
   _claim(0),
@@ -157,13 +156,12 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   }
 
   if (!has_class_mirror_holder) {
-    // The holder is initialized later for non-strong hidden classes and unsafe anonymous classes,
+    // The holder is initialized later for non-strong hidden classes,
     // and before calling anything that call class_loader().
     initialize_holder(h_class_loader);
 
-    // A ClassLoaderData created solely for a non-strong hidden class or unsafe anonymous class should
-    // never have a ModuleEntryTable or PackageEntryTable created for it. The defining package
-    // and module for an unsafe anonymous class will be found in its host class.
+    // A ClassLoaderData created solely for a non-strong hidden class should never
+    // have a ModuleEntryTable or PackageEntryTable created for it.
     _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
@@ -297,10 +295,10 @@ bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
-// Weak hidden and unsafe anonymous classes have their own ClassLoaderData that is marked to keep alive
+// Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
 // while the class is being parsed, and if the class appears on the module fixup list.
-// Due to the uniqueness that no other class shares the hidden or unsafe anonymous class' name or
-// ClassLoaderData, no other non-GC thread has knowledge of the hidden or unsafe anonymous class while
+// Due to the uniqueness that no other class shares the hidden class' name or
+// ClassLoaderData, no other non-GC thread has knowledge of the hidden class while
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
@@ -426,13 +424,13 @@ void ClassLoaderData::record_dependency(const Klass* k) {
 
   oop to;
   if (to_cld->has_class_mirror_holder()) {
-    // Just return if a non-strong hidden class or unsafe anonymous class is attempting to record a dependency
-    // to itself.  (Note that every non-strong hidden class or unsafe anonymous class has its own unique class
+    // Just return if a non-strong hidden class class is attempting to record a dependency
+    // to itself.  (Note that every non-strong hidden class has its own unique class
     // loader data.)
     if (to_cld == from_cld) {
       return;
     }
-    // Hidden and unsafe anonymous class dependencies are through the mirror.
+    // Hidden class dependencies are through the mirror.
     to = k->java_mirror();
   } else {
     to = to_cld->class_loader();
@@ -552,6 +550,21 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
+  // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
+  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
+  // This is done intentionally because native code (e.g. JVMTI agent) holding
+  // jmethod_ids may access them after the associated classes and class loader
+  // are unloaded. The Java Native Interface Specification says "method ID
+  // does not prevent the VM from unloading the class from which the ID has
+  // been derived. After the class is unloaded, the method or field ID becomes
+  // invalid". In real world usages, the native code may rely on jmethod_ids
+  // being NULL after class unloading. Hence, it is unsafe to free the memory
+  // from the VM side without knowing when native code is going to stop using
+  // them.
+  if (_jmethod_ids != NULL) {
+    Method::clear_jmethod_ids(this);
+  }
+
   // Clean up global class iterator for compiler
   ClassLoaderDataGraph::adjust_saved_class(this);
 }
@@ -626,7 +639,7 @@ oop ClassLoaderData::holder_no_keepalive() const {
 
 // Unloading support
 bool ClassLoaderData::is_alive() const {
-  bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class or unsafe anonymous class.
+  bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class.
       || (_holder.peek() != NULL);  // and not cleaned by the GC weak handle processing.
 
   return alive;
@@ -696,15 +709,7 @@ ClassLoaderData::~ClassLoaderData() {
     _metaspace = NULL;
     delete m;
   }
-  // Clear all the JNI handles for methods
-  // These aren't deallocated and are going to look like a leak, but that's
-  // needed because we can't really get rid of jmethodIDs because we don't
-  // know when native code is going to stop using them.  The spec says that
-  // they're "invalid" but existing programs likely rely on their being
-  // NULL after class unloading.
-  if (_jmethod_ids != NULL) {
-    Method::clear_jmethod_ids(this);
-  }
+
   // Delete lock
   delete _metaspace_lock;
 
@@ -738,7 +743,7 @@ bool ClassLoaderData::is_platform_class_loader_data() const {
 // Returns true if the class loader for this class loader data is one of
 // the 3 builtin (boot application/system or platform) class loaders,
 // including a user-defined system class loader.  Note that if the class
-// loader data is for a non-strong hidden class or unsafe anonymous class then it may
+// loader data is for a non-strong hidden class then it may
 // get freed by a GC even if its class loader is one of these loaders.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
   return (is_boot_class_loader_data() ||
@@ -748,7 +753,7 @@ bool ClassLoaderData::is_builtin_class_loader_data() const {
 
 // Returns true if this class loader data is a class loader data
 // that is not ever freed by a GC.  It must be the CLD for one of the builtin
-// class loaders and not the CLD for a non-strong hidden class or unsafe anonymous class.
+// class loaders and not the CLD for a non-strong hidden class.
 bool ClassLoaderData::is_permanent_class_loader_data() const {
   return is_builtin_class_loader_data() && !has_class_mirror_holder();
 }
@@ -801,6 +806,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != NULL) {
     return;
   } else {
+    record_modified_oops();
     dest = _handles.add(h());
   }
 }
@@ -930,20 +936,57 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 void ClassLoaderData::print_value() const { print_value_on(tty); }
 
 #ifndef PRODUCT
-void ClassLoaderData::print_on(outputStream* out) const {
-  out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
-              p2i(this), p2i(_class_loader.ptr_raw()), loader_name_and_id());
-  if (has_class_mirror_holder()) out->print(" has a class holder");
-  if (claimed()) out->print(" claimed");
-  if (is_unloading()) out->print(" unloading");
-  out->print(" metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
+class PrintKlassClosure: public KlassClosure {
+  outputStream* _out;
+public:
+  PrintKlassClosure(outputStream* out): _out(out) { }
 
-  if (_jmethod_ids != NULL) {
-    Method::print_jmethod_ids(this, out);
+  void do_klass(Klass* k) {
+    ResourceMark rm;
+    _out->print("%s,", k->external_name());
   }
-  out->print(" handles count %d", _handles.count());
-  out->print(" dependencies %d", _dependency_count);
-  out->print_cr("}");
+};
+
+void ClassLoaderData::print_on(outputStream* out) const {
+  ResourceMark rm;
+  out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
+  out->print_cr(" - name                %s", loader_name_and_id());
+  if (!_holder.is_null()) {
+    out->print   (" - holder              ");
+    _holder.print_on(out);
+    out->print_cr("");
+  }
+  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
+  out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
+  out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
+  out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
+  out->print_cr(" - keep alive          %d", _keep_alive);
+  out->print   (" - claim               ");
+  switch(_claim) {
+    case _claim_none:       out->print_cr("none"); break;
+    case _claim_finalizable:out->print_cr("finalizable"); break;
+    case _claim_strong:     out->print_cr("strong"); break;
+    case _claim_other:      out->print_cr("other"); break;
+    default:                ShouldNotReachHere();
+  }
+  out->print_cr(" - handles             %d", _handles.count());
+  out->print_cr(" - dependency count    %d", _dependency_count);
+  out->print   (" - klasses             {");
+  PrintKlassClosure closure(out);
+  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print_cr(" }");
+  out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
+  out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
+  out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
+  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  if (_jmethod_ids != NULL) {
+    out->print   (" - jmethod count       ");
+    Method::print_jmethod_ids_count(this, out);
+    out->print_cr("");
+  }
+  out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
+  out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
 }
 #endif // PRODUCT
 

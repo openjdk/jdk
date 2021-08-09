@@ -1091,6 +1091,8 @@ public class JFormattedTextField extends JTextField {
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
          *
+         * @implSpec The default implementation returns <code>null</code>.
+         *
          * @return DocumentFilter to restrict edits
          */
         protected DocumentFilter getDocumentFilter() {
@@ -1102,6 +1104,8 @@ public class JFormattedTextField extends JTextField {
          * where the user can navigate to.
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
+         *
+         * @implSpec The default implementation returns <code>null</code>.
          *
          * @return NavigationFilter to restrict navigation
          */

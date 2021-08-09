@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
@@ -105,7 +103,7 @@ class TaskFactory {
     private final MemoryFileManager fileManager;
     private final JShell state;
     private String classpath = System.getProperty("java.class.path");
-    private final static Version INITIAL_SUPPORTED_VER = Version.parse("9");
+    private static final Version INITIAL_SUPPORTED_VER = Version.parse("9");
 
     TaskFactory(JShell state) {
         this.state = state;
@@ -169,7 +167,7 @@ class TaskFactory {
         List<String> allOptions = new ArrayList<>();
 
         allOptions.add("--should-stop=at=FLOW");
-        allOptions.add("-Xlint:unchecked");
+        allOptions.add("-Xlint:unchecked,-strictfp");
         allOptions.add("-proc:none");
         allOptions.addAll(extraArgs);
 
@@ -186,7 +184,7 @@ class TaskFactory {
 
         return runTask(wraps.stream(),
                        sh,
-                       List.of("-Xlint:unchecked", "-proc:none", "-parameters"),
+                       List.of("-Xlint:unchecked,-strictfp", "-proc:none", "-parameters"),
                        (jti, diagnostics) -> new CompileTask(sh, jti, diagnostics),
                        worker);
     }
@@ -201,7 +199,7 @@ class TaskFactory {
             allOptions.addAll(state.extraCompilerOptions);
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
-                            .collect(Collectors.toList());
+                            .toList();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             state.debug(DBG_FMGR, "Task (%s %s) Options: %s\n", this, compilationUnits, allOptions);
             return javacTaskPool.getTask(null, fileManager, diagnostics, allOptions, null,
@@ -351,7 +349,7 @@ class TaskFactory {
                         List<? extends ImportTree> imps = cut.getImports();
                         return (!imps.isEmpty() ? imps : cut.getTypeDecls()).stream();
                     })
-                    .collect(toList());
+                    .toList();
         }
 
         private Iterable<? extends CompilationUnitTree> parse() {

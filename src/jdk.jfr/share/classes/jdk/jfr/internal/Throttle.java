@@ -49,8 +49,8 @@ public @interface Throttle {
     /**
      * Settings name {@code "throttle"} for configuring an event emission rate in events per time unit.
      */
-    public final static String NAME = "throttle";
-    public final static String DEFAULT = "off";
+    public static final String NAME = "throttle";
+    public static final String DEFAULT = "off";
 
     /**
      * Throttle, for example {@code "100/s"}.

@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventLocationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventLocationTest
  * @run testng/othervm stream.XMLEventLocationTest
  * @summary Test XMLEvent Location.
  */

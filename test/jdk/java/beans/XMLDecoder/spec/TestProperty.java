@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <property> element
+ * @run main/othervm -Djava.security.manager=allow TestProperty
  * @author Sergey Malenkov
  */
 

@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.ProviderException;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class EdDSAKeyFactory extends KeyFactorySpi {
@@ -79,10 +80,15 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
             return result;
         } else if (key instanceof PrivateKey &&
                    key.getFormat().equals("PKCS#8")) {
-            EdDSAPrivateKeyImpl result =
-                new EdDSAPrivateKeyImpl(key.getEncoded());
-            checkLockedParams(InvalidKeyException::new, result.getParams());
-            return result;
+            byte[] encoded = key.getEncoded();
+            try {
+                EdDSAPrivateKeyImpl result =
+                        new EdDSAPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeyException::new, result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else {
             throw new InvalidKeyException("Unsupported key type or format");
         }
@@ -158,17 +164,27 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
 
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec) keySpec;
-            EdDSAPrivateKeyImpl result =
-                new EdDSAPrivateKeyImpl(pkcsSpec.getEncoded());
-            checkLockedParams(InvalidKeySpecException::new,
-                result.getParams());
-            return result;
+            byte[] encoded = pkcsSpec.getEncoded();
+            try {
+                EdDSAPrivateKeyImpl result =
+                        new EdDSAPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeySpecException::new,
+                        result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
+            }
         } else if (keySpec instanceof EdECPrivateKeySpec) {
             EdECPrivateKeySpec privateKeySpec = (EdECPrivateKeySpec) keySpec;
             EdDSAParameters params = EdDSAParameters.get(
                 InvalidKeySpecException::new, privateKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
-            return new EdDSAPrivateKeyImpl(params, privateKeySpec.getBytes());
+            byte[] bytes = privateKeySpec.getBytes();
+            try {
+                return new EdDSAPrivateKeyImpl(params, bytes);
+            } finally {
+                Arrays.fill(bytes, (byte)0);
+            }
         } else {
             throw new InvalidKeySpecException(
                 "Only PKCS8EncodedKeySpec and EdECPrivateKeySpec supported");
@@ -203,14 +219,23 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 if (!key.getFormat().equals("PKCS#8")) {
                     throw new InvalidKeySpecException("Format is not PKCS#8");
                 }
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (keySpec.isAssignableFrom(EdECPrivateKeySpec.class)) {
                 EdECPrivateKey edKey = (EdECPrivateKey) key;
                 byte[] scalar = edKey.getBytes().orElseThrow(
                     () -> new InvalidKeySpecException("No private key value")
                 );
-                return keySpec.cast(
-                    new EdECPrivateKeySpec(edKey.getParams(), scalar));
+                try {
+                    return keySpec.cast(
+                            new EdECPrivateKeySpec(edKey.getParams(), scalar));
+                } finally {
+                    Arrays.fill(scalar, (byte)0);
+                }
             } else {
                 throw new InvalidKeySpecException
                 ("KeySpec must be PKCS8EncodedKeySpec or EdECPrivateKeySpec");

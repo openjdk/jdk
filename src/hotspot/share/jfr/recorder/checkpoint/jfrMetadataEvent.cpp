@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
 
-static void write_metadata_blob(JfrChunkWriter& chunkwriter, Thread* thread) {
+static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread) {
   assert(chunkwriter.is_valid(), "invariant");
   assert(thread != NULL, "invariant");
   assert(metadata_blob != NULL, "invariant");

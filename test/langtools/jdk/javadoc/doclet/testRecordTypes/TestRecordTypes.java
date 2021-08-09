@@ -77,7 +77,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -149,7 +149,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -182,7 +182,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -463,7 +463,7 @@ public class TestRecordTypes extends JavadocTester {
 
         Set<ElementType> t = types.isEmpty() ? EnumSet.allOf(ElementType.class) : types;
         String anno = """
-            <a href="Anno.html" title="annotation in p">@Anno</a>""";
+            <a href="Anno.html" title="annotation interface in p">@Anno</a>""";
         String rcAnno = t.contains(ElementType.RECORD_COMPONENT) ? anno + " " : "";
         String fAnno = t.contains(ElementType.FIELD) ? "<span class=\"annotations\">" + anno + "\n</span>" : "";
         String pAnno = t.contains(ElementType.PARAMETER) ? anno + "\n " : "";
@@ -484,7 +484,7 @@ public class TestRecordTypes extends JavadocTester {
                             /span>&nbsp;<span class="element-name">i</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="element-name">R</span>&#8203;<span class="parameters">("""
+                    lass="element-name">R</span><wbr><span class="parameters">("""
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"
@@ -520,7 +520,7 @@ public class TestRecordTypes extends JavadocTester {
                     </ul>""",
                 """
                     <div id="record-class">
-                    <div class="caption"><span>Record Classes</span></div>
+                    <div class="caption"><span>Deprecated Record Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
@@ -552,7 +552,7 @@ public class TestRecordTypes extends JavadocTester {
                     </ul>""",
                 """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>

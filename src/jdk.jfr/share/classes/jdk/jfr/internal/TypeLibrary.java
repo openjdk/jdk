@@ -26,7 +26,6 @@
 package jdk.jfr.internal;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
@@ -58,7 +57,6 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.tool.PrettyWriter;
 
 public final class TypeLibrary {
 
@@ -79,7 +77,7 @@ public final class TypeLibrary {
     }
 
     private static ValueDescriptor createStartTimeField() {
-        List<AnnotationElement> annos = createStandardAnnotations("Start Time", null);
+        var annos = createStandardAnnotations("Start Time", null);
         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_START_TIME, Type.LONG, annos, 0, false,
                 EventInstrumentation.FIELD_START_TIME);
@@ -87,22 +85,19 @@ public final class TypeLibrary {
     }
 
     private static ValueDescriptor createStackTraceField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
+        var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
                 EventInstrumentation.FIELD_STACK_TRACE);
     }
 
     private static ValueDescriptor createThreadField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
+        var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_EVENT_THREAD, Type.THREAD, annos, 0, true,
                 EventInstrumentation.FIELD_EVENT_THREAD);
     }
 
     private static ValueDescriptor createDurationField() {
-        List<AnnotationElement> annos = new ArrayList<>();
-        annos = createStandardAnnotations("Duration", null);
+        var annos = createStandardAnnotations("Duration", null);
         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_DURATION, Type.LONG, annos, 0, false, EventInstrumentation.FIELD_DURATION);
     }
@@ -142,7 +137,6 @@ public final class TypeLibrary {
                         aes.add(ae);
                     }
                 }
-                aes.trimToSize();
                 type.setAnnotations(aes);
             }
             return getType(a);
@@ -419,8 +413,8 @@ public final class TypeLibrary {
         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Cleaning out obsolete metadata");
         List<Type> registered = new ArrayList<>();
         for (Type type : types.values()) {
-            if (type instanceof PlatformEventType) {
-                if (((PlatformEventType) type).isRegistered()) {
+            if (type instanceof PlatformEventType pType) {
+                if (pType.isRegistered()) {
                     registered.add(type);
                 }
             }
@@ -472,8 +466,7 @@ public final class TypeLibrary {
                     typeQ.add(PrivateAccess.getInstance().getType(v));
                     visitAnnotations(typeQ, v.getAnnotationElements());
                 }
-                if (type instanceof PlatformEventType) {
-                    PlatformEventType pe = (PlatformEventType) type;
+                if (type instanceof PlatformEventType pe) {
                     for (SettingDescriptor s : pe.getAllSettings()) {
                         typeQ.add(PrivateAccess.getInstance().getType(s));
                         visitAnnotations(typeQ, s.getAnnotationElements());

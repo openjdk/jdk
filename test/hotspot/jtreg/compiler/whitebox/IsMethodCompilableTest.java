@@ -34,7 +34,7 @@
  * @requires !vm.emulatedClient
  *
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=2400 -XX:-TieredCompilation -Xmixed
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay

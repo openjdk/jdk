@@ -896,6 +896,7 @@ public class Font implements java.io.Serializable
      * If a thread can create temp files anyway, no point in counting
      * font bytes.
      */
+    @SuppressWarnings("removal")
     private static boolean hasTempPermission() {
 
         if (System.getSecurityManager() == null) {
@@ -1094,6 +1095,7 @@ public class Font implements java.io.Serializable
         }
     }
 
+    @SuppressWarnings("removal")
     private static Font[] createFont0(int fontFormat, InputStream fontStream,
                                       boolean allFonts,
                                       CreatedFontTracker tracker)
@@ -1257,6 +1259,7 @@ public class Font implements java.io.Serializable
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             FilePermission filePermission =

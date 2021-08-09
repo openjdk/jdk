@@ -101,12 +101,10 @@ public:
   static jobject get_module(jclass clazz, TRAPS);
 
   // Return the java.lang.Module object for this class loader and package.
-  // Returns NULL if the class loader has not loaded any classes in the package.
+  // Returns NULL if the package name is empty, if the resulting package
+  // entry is NULL, if the module is not found or is unnamed.
   // The package should contain /'s, not .'s, as in java/lang, not java.lang.
-  // NullPointerException is thrown if package is null.
-  // IllegalArgumentException is thrown if loader is neither null nor a subtype of
-  // java/lang/ClassLoader.
-  static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
+  static oop get_named_module(Handle h_loader, const char* package);
 
   // Marks the specified package as exported to all unnamed modules.
   // If either module or package is null then NullPointerException is thrown.
@@ -115,7 +113,7 @@ public:
   static void add_module_exports_to_all_unnamed(Handle module, jstring package, TRAPS);
 
   // Return TRUE iff package is defined by loader
-  static bool is_package_defined(Symbol* package_name, Handle h_loader, TRAPS);
+  static bool is_package_defined(Symbol* package_name, Handle h_loader);
   static ModuleEntryTable* get_module_entry_table(Handle h_loader);
 };
 

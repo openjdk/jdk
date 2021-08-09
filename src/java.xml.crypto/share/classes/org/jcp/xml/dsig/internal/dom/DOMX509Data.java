@@ -21,17 +21,22 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMX509Data.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.MarshalException;
@@ -63,7 +68,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
      * @param content a list of one or more X.509 data types. Valid types are
      *    {@link String} (subject names), {@code byte[]} (subject key ids),
      *    {@link java.security.cert.X509Certificate}, {@link X509CRL},
-     *    or {@link javax.xml.dsig.XMLStructure}
+     *    or {@link javax.xml.crypto.XMLStructure}
      *    objects or elements from an external namespace). The list is
      *    defensively copied to protect against subsequent modification.
      * @throws NullPointerException if {@code content} is {@code null}

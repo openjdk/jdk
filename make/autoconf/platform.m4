@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
     ia64)
       VAR_CPU=ia64
       VAR_CPU_ARCH=ia64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    loongarch64)
+      VAR_CPU=loongarch64
+      VAR_CPU_ARCH=loongarch
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -480,9 +486,11 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
 
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
-  # Macosx is osx and x86_64 is x64
+  # The macOS bundle name was revised in JDK 17
+  #
+  # macosx is macos and x86_64 is x64
   if test "x$OPENJDK_$1_OS" = xmacosx; then
-    OPENJDK_$1_OS_BUNDLE="osx"
+    OPENJDK_$1_OS_BUNDLE="macos"
   else
     OPENJDK_$1_OS_BUNDLE="$OPENJDK_TARGET_OS"
   fi

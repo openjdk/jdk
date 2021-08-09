@@ -25,9 +25,8 @@
 
 // External Java Accessibility links:
 //
-// <https://docs.oracle.com/javase/8/docs/technotes/guides/access/index.html>
-// <http://www-106.ibm.com/developerworks/library/j-access/?n-j-10172>
-// <http://archives.java.sun.com/archives/java-access.html> (Sun's mailing list for Java accessibility)
+// <https://docs.oracle.com/en/java/javase/11/access/java-accessibility-overview.html>
+// <https://www.ibm.com/able/guidelines/java/snsjavagjfc.html>
 
 #import "JavaComponentAccessibility.h"
 #import "a11y/CommonComponentAccessibility.h"
@@ -45,13 +44,6 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 #import "AWTView.h"
-
-
-// these constants are duplicated in CAccessibility.java
-#define JAVA_AX_ALL_CHILDREN (-1)
-#define JAVA_AX_SELECTED_CHILDREN (-2)
-#define JAVA_AX_VISIBLE_CHILDREN (-3)
-// If the value is >=0, it's an index
 
 // GET* macros defined in JavaAccessibilityUtilities.h, so they can be shared.
 static jclass sjc_CAccessibility = NULL;
@@ -83,9 +75,6 @@ static jmethodID sjm_getAccessibleIndexInParent = NULL;
 static jclass sjc_CAccessible = NULL;
 #define GET_CACCESSIBLE_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
-
-
-static jobject sAccessibilityClass = NULL;
 
 // sAttributeNamesForRoleCache holds the names of the attributes to which each java
 // AccessibleRole responds (see AccessibleRole.java).
@@ -121,19 +110,6 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (void)getActionsWithEnv:(JNIEnv *)env;
 
 - (id)accessibilityValueAttribute;
-@end
-
-
-@interface ScrollAreaAccessibility : JavaComponentAccessibility {
-
-}
-- (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env;
-- (NSArray *)accessibilityContentsAttribute;
-- (BOOL)accessibilityIsContentsAttributeSettable;
-- (id)accessibilityVerticalScrollBarAttribute;
-- (BOOL)accessibilityIsVerticalScrollBarAttributeSettable;
-- (id)accessibilityHorizontalScrollBarAttribute;
-- (BOOL)accessibilityIsHorizontalScrollBarAttributeSettable;
 @end
 
 @interface TableAccessibility : JavaComponentAccessibility {
@@ -286,39 +262,6 @@ static NSObject *sAttributeNamesLOCK = nil;
     if (sRoles == nil) {
         initializeRoles();
     }
-
-    if (sAccessibilityClass == NULL) {
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-
-        GET_CACCESSIBILITY_CLASS();
-        DECLARE_STATIC_METHOD(jm_getAccessibility, sjc_CAccessibility, "getAccessibility", "([Ljava/lang/String;)Lsun/lwawt/macosx/CAccessibility;");
-
-#ifdef JAVA_AX_NO_IGNORES
-        NSArray *ignoredKeys = [NSArray array];
-#else
-        NSArray *ignoredKeys = [sRoles allKeysForObject:JavaAccessibilityIgnore];
-#endif
-        jobjectArray result = NULL;
-        jsize count = [ignoredKeys count];
-
-        DECLARE_CLASS(jc_String, "java/lang/String");
-        result = (*env)->NewObjectArray(env, count, jc_String, NULL);
-        CHECK_EXCEPTION();
-        if (!result) {
-            NSLog(@"In %s, can't create Java array of String objects", __FUNCTION__);
-            return;
-        }
-
-        NSInteger i;
-        for (i = 0; i < count; i++) {
-            jstring jString = NSStringToJavaString(env, [ignoredKeys objectAtIndex:i]);
-            (*env)->SetObjectArrayElement(env, result, i, jString);
-            (*env)->DeleteLocalRef(env, jString);
-        }
-
-        sAccessibilityClass = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibility, result); // AWT_THREADING Safe (known object)
-        CHECK_EXCEPTION();
-    }
 }
 
 + (void)postFocusChanged:(id)message
@@ -425,8 +368,6 @@ static NSObject *sAttributeNamesLOCK = nil;
             newChild = [TabGroupAccessibility alloc];
         } else if ([javaRole isEqualToString:@"table"]) {
             newChild = [TableAccessibility alloc];
-        } else if ([javaRole isEqualToString:@"scrollpane"]) {
-            newChild = [ScrollAreaAccessibility alloc];
         } else {
             NSString *nsRole = [sRoles objectForKey:javaRole];
             if ([nsRole isEqualToString:NSAccessibilityStaticTextRole] ||
@@ -953,6 +894,14 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (BOOL)accessibilityIsIndexAttributeSettable
 {
     return NO;
+}
+
+- (NSInteger)accessibilityIndex {
+    int index = 0;
+    if (fParent != NULL) {
+        index = [fParent accessibilityIndexOfChild:self];
+    }
+    return index;
 }
 
 /*
@@ -1492,6 +1441,7 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
 - (id)accessibilityFocusedUIElement
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_STATIC_METHOD_RETURN(jm_getFocusOwner, sjc_CAccessibility, "getFocusOwner",
                                   "(Ljava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
     id value = nil;
@@ -1918,105 +1868,6 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 
 @end
 
-
-@implementation ScrollAreaAccessibility
-
-- (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env
-{
-    NSMutableArray *names = (NSMutableArray *)[super initializeAttributeNamesWithEnv:env];
-
-    [names addObject:NSAccessibilityHorizontalScrollBarAttribute];
-    [names addObject:NSAccessibilityVerticalScrollBarAttribute];
-    [names addObject:NSAccessibilityContentsAttribute];
-
-    return names;
-}
-
-- (id)accessibilityHorizontalScrollBarAttribute
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
-    if ([children count] <= 0) return nil;
-
-    // The scroll bars are in the children.
-    JavaComponentAccessibility *aElement;
-    NSEnumerator *enumerator = [children objectEnumerator];
-    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
-        if ([[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
-            jobject elementAxContext = [aElement axContextWithEnv:env];
-            if (isHorizontal(env, elementAxContext, fComponent)) {
-                (*env)->DeleteLocalRef(env, elementAxContext);
-                return aElement;
-            }
-            (*env)->DeleteLocalRef(env, elementAxContext);
-        }
-    }
-
-    return nil;
-}
-
-- (BOOL)accessibilityIsHorizontalScrollBarAttributeSettable
-{
-    return NO;
-}
-
-- (id)accessibilityVerticalScrollBarAttribute
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
-    if ([children count] <= 0) return nil;
-
-    // The scroll bars are in the children.
-    NSEnumerator *enumerator = [children objectEnumerator];
-    JavaComponentAccessibility *aElement;
-    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
-        if ([[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
-            jobject elementAxContext = [aElement axContextWithEnv:env];
-            if (isVertical(env, elementAxContext, fComponent)) {
-                (*env)->DeleteLocalRef(env, elementAxContext);
-                return aElement;
-            }
-            (*env)->DeleteLocalRef(env, elementAxContext);
-        }
-    }
-
-    return nil;
-}
-
-- (BOOL)accessibilityIsVerticalScrollBarAttributeSettable
-{
-    return NO;
-}
-
-- (NSArray *)accessibilityContentsAttribute
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
-
-    if ([children count] <= 0) return nil;
-    NSArray *contents = [NSMutableArray arrayWithCapacity:[children count]];
-
-    // The scroll bars are in the children. children less the scroll bars is the contents
-    NSEnumerator *enumerator = [children objectEnumerator];
-    JavaComponentAccessibility *aElement;
-    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
-        if (![[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
-            // no scroll bars in contents
-            [(NSMutableArray *)contents addObject:aElement];
-        }
-    }
-
-    return contents;
-}
-
-- (BOOL)accessibilityIsContentsAttributeSettable
-{
-    return NO;
-}
-
-@end
 
 // these constants are duplicated in CAccessibility.java
 #define JAVA_AX_ROWS (1)

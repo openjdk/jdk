@@ -458,7 +458,7 @@ public class ISO2022_JP
 
     static class Encoder extends CharsetEncoder {
 
-        final static DoubleByte.Encoder ENC0208 =
+        static final DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
         private static final byte[] repl = { (byte)0x21, (byte)0x29 };

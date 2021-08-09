@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrStackTrace;
-class JfrStackTraceRepository;
 class Klass;
 class ObjectSample;
 class ObjectSampleMarker;
@@ -42,6 +41,7 @@ class Thread;
 
 class ObjectSampleCheckpoint : AllStatic {
   friend class EventEmitter;
+  friend class ObjectSampler;
   friend class PathToGcRootsOperation;
   friend class StackTraceBlobInstaller;
  private:
@@ -49,11 +49,12 @@ class ObjectSampleCheckpoint : AllStatic {
   static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
+  static void clear();
  public:
   static void on_type_set(JfrCheckpointWriter& writer);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
   static void on_thread_exit(JavaThread* jt);
-  static void on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& repo);
+  static void on_rotation(const ObjectSampler* sampler);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -152,7 +153,7 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  calling_thread()->as_Java_thread()->make_zombies();
+  JavaThread::cast(calling_thread())->make_zombies();
 }
 
 #endif // !PRODUCT
@@ -167,6 +168,9 @@ bool VM_PrintThreads::doit_prologue() {
 
 void VM_PrintThreads::doit() {
   Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
+  if (_print_jni_handle_info) {
+    JNIHandles::print_on(_out);
+  }
 }
 
 void VM_PrintThreads::doit_epilogue() {
@@ -174,10 +178,6 @@ void VM_PrintThreads::doit_epilogue() {
     // Release Heap_lock
     Heap_lock->unlock();
   }
-}
-
-void VM_PrintJNI::doit() {
-  JNIHandles::print_on(_out);
 }
 
 void VM_PrintMetadata::doit() {

@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -377,20 +378,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
             bits[i] = f.apply(cond, i, vec1[i], vec2[i]);
         }
         return maskFactory(bits);
-    }
-
-    /*package-private*/
-    @ForceInline
-    static boolean doBinTest(int cond, int a, int b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
     }
 
     /*package-private*/
@@ -1766,17 +1753,20 @@ public abstract class IntVector extends AbstractVector<Integer> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, int a, int b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, int a, int b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            case BT_ult -> Integer.compareUnsigned(a, b) < 0;
+            case BT_ule -> Integer.compareUnsigned(a, b) <= 0;
+            case BT_ugt -> Integer.compareUnsigned(a, b) > 0;
+            case BT_uge -> Integer.compareUnsigned(a, b) >= 0;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -1980,14 +1970,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector sliceTemplate(int origin, Vector<Integer> v1) {
         IntVector that = (IntVector) v1;
         that.check(this);
-        int[] a0 = this.vec();
-        int[] a1 = that.vec();
-        int[] res = new int[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Integer> iota = iotaShuffle();
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2009,6 +1996,17 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public abstract
     IntVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    IntVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Integer> iota = iotaShuffle();
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2023,21 +2021,12 @@ public abstract class IntVector extends AbstractVector<Integer> {
     unsliceTemplate(int origin, Vector<Integer> w, int part) {
         IntVector that = (IntVector) w;
         that.check(this);
-        int[] slice = this.vec();
-        int[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Integer> iota = iotaShuffle();
+        VectorMask<Integer> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((int)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2066,6 +2055,19 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @Override
     public abstract
     IntVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    IntVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Integer> iota = iotaShuffle();
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((int)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
@@ -2162,6 +2164,29 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Integer> toShuffle0(IntSpecies dsp) {
+        int[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Integer> toShuffleTemplate(Class<?> shuffleType) {
+        IntSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), int.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     IntVector::toShuffle0);
     }
 
     /**
@@ -2839,6 +2864,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
     }
 
+
+
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
@@ -2971,7 +2998,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     }
 
     /**
-     * Stores this vector into an array of {@code int}
+     * Stores this vector into an array of type {@code int[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3109,6 +3136,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
     }
 
+
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -3215,6 +3244,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+
+
     @Override
     abstract
     IntVector fromByteArray0(byte[] a, int offset);
@@ -3239,15 +3270,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     IntVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         IntSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getInt(o + i * 4));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getInt(o + i * 4));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3290,15 +3320,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         IntSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putInt(o + i * 4, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putInt(o + i * 4, e));
+                });
     }
 
     // End of low-level memory operations.
@@ -3349,6 +3378,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
     static long arrayAddress(int[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {

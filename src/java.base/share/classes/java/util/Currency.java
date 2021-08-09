@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,11 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 3;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
@@ -942,13 +947,13 @@ public final class Currency implements Serializable {
      */
     private static class SpecialCaseEntry {
 
-        final private long cutOverTime;
-        final private String oldCurrency;
-        final private String newCurrency;
-        final private int oldCurrencyFraction;
-        final private int newCurrencyFraction;
-        final private int oldCurrencyNumericCode;
-        final private int newCurrencyNumericCode;
+        private final long cutOverTime;
+        private final String oldCurrency;
+        private final String newCurrency;
+        private final int oldCurrencyFraction;
+        private final int newCurrencyFraction;
+        private final int oldCurrencyNumericCode;
+        private final int newCurrencyNumericCode;
 
         private SpecialCaseEntry(long cutOverTime, String oldCurrency, String newCurrency,
                 int oldCurrencyFraction, int newCurrencyFraction,
@@ -1041,9 +1046,9 @@ public final class Currency implements Serializable {
      */
     private static class OtherCurrencyEntry {
 
-        final private String currencyCode;
-        final private int fraction;
-        final private int numericCode;
+        private final String currencyCode;
+        private final int fraction;
+        private final int numericCode;
 
         private OtherCurrencyEntry(String currencyCode, int fraction,
                 int numericCode) {
@@ -1078,11 +1083,11 @@ public final class Currency implements Serializable {
      * - date: cutover date
      */
     private static class CurrencyProperty {
-        final private String country;
-        final private String currencyCode;
-        final private int fraction;
-        final private int numericCode;
-        final private String date;
+        private final String country;
+        private final String currencyCode;
+        private final int fraction;
+        private final int numericCode;
+        private final String date;
 
         private CurrencyProperty(String country, String currencyCode,
                 int fraction, int numericCode, String date) {

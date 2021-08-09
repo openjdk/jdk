@@ -50,6 +50,7 @@ import static org.jemmy2ext.JemmyExt.getUIValue;
  * @library /sanity/client/lib/SwingSet3/src
  * @modules java.desktop
  *          java.logging
+ * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.gridbaglayout.GridBagLayoutDemo
  * @run testng/timeout=600 GridBagLayoutDemoTest
  */

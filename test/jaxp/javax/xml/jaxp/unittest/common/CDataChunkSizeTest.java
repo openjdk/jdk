@@ -43,7 +43,7 @@ import org.xml.sax.ext.DefaultHandler2;
  * @test
  * @bug 8158619
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.CDataChunkSizeTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.CDataChunkSizeTest
  * @run testng/othervm common.CDataChunkSizeTest
  * @summary Verifies the support of property jdk.xml.cdataChunkSize
  */

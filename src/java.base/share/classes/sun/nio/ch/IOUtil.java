@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
+import java.util.Objects;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.ScopedMemoryAccess.Scope;
 
 /**
  * File-descriptor based I/O utilities that are shared by NIO classes.
@@ -47,15 +50,30 @@ public class IOUtil {
                      NativeDispatcher nd)
         throws IOException
     {
-        return write(fd, src, position, false, -1, nd);
+        return write(fd, src, position, false, false, -1, nd);
+    }
+
+    static int write(FileDescriptor fd, ByteBuffer src, long position,
+                     boolean async, NativeDispatcher nd)
+        throws IOException
+    {
+        return write(fd, src, position, false, async, -1, nd);
     }
 
     static int write(FileDescriptor fd, ByteBuffer src, long position,
                      boolean directIO, int alignment, NativeDispatcher nd)
         throws IOException
     {
+        return write(fd, src, position, directIO, false, alignment, nd);
+    }
+
+    static int write(FileDescriptor fd, ByteBuffer src, long position,
+                     boolean directIO, boolean async, int alignment,
+                     NativeDispatcher nd)
+        throws IOException
+    {
         if (src instanceof DirectBuffer) {
-            return writeFromNativeBuffer(fd, src, position, directIO, alignment, nd);
+            return writeFromNativeBuffer(fd, src, position, directIO, async, alignment, nd);
         }
 
         // Substitute a native buffer
@@ -76,7 +94,7 @@ public class IOUtil {
             // Do not update src until we see how many bytes were written
             src.position(pos);
 
-            int n = writeFromNativeBuffer(fd, bb, position, directIO, alignment, nd);
+            int n = writeFromNativeBuffer(fd, bb, position, directIO, async, alignment, nd);
             if (n > 0) {
                 // now update src
                 src.position(pos + n);
@@ -89,7 +107,8 @@ public class IOUtil {
 
     private static int writeFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
                                              long position, boolean directIO,
-                                             int alignment, NativeDispatcher nd)
+                                             boolean async, int alignment,
+                                             NativeDispatcher nd)
         throws IOException
     {
         int pos = bb.position();
@@ -105,46 +124,62 @@ public class IOUtil {
         int written = 0;
         if (rem == 0)
             return 0;
-        if (position != -1) {
-            written = nd.pwrite(fd,
-                                ((DirectBuffer)bb).address() + pos,
-                                rem, position);
-        } else {
-            written = nd.write(fd, ((DirectBuffer)bb).address() + pos, rem);
+        var handle = acquireScope(bb, async);
+        try {
+            if (position != -1) {
+                written = nd.pwrite(fd, bufferAddress(bb) + pos, rem, position);
+            } else {
+                written = nd.write(fd, bufferAddress(bb) + pos, rem);
+            }
+        } finally {
+            releaseScope(handle);
         }
         if (written > 0)
             bb.position(pos + written);
         return written;
     }
 
-    static long write(FileDescriptor fd, ByteBuffer[] bufs, NativeDispatcher nd)
+    static long write(FileDescriptor fd, ByteBuffer[] bufs, boolean async,
+                      NativeDispatcher nd)
         throws IOException
     {
-        return write(fd, bufs, 0, bufs.length, false, -1, nd);
+        return write(fd, bufs, 0, bufs.length, false, async, -1, nd);
     }
 
     static long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
                       NativeDispatcher nd)
         throws IOException
     {
-        return write(fd, bufs, offset, length, false, -1, nd);
+        return write(fd, bufs, offset, length, false, false, -1, nd);
     }
 
     static long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
-                      boolean directIO, int alignment, NativeDispatcher nd)
+                      boolean direct, int alignment, NativeDispatcher nd)
+        throws IOException
+    {
+        return write(fd, bufs, offset, length, direct, false, alignment, nd);
+    }
+
+    static long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
+                      boolean directIO, boolean async,
+                      int alignment, NativeDispatcher nd)
         throws IOException
     {
         IOVecWrapper vec = IOVecWrapper.get(length);
 
         boolean completed = false;
         int iov_len = 0;
+        Runnable handleReleasers = null;
         try {
-
             // Iterate over buffers to populate native iovec array.
             int count = offset + length;
             int i = offset;
             while (i < count && iov_len < IOV_MAX) {
                 ByteBuffer buf = bufs[i];
+                var h = acquireScope(buf, async);
+                if (h != null) {
+                    handleReleasers = LinkedRunnable.of(Releaser.of(h), handleReleasers);
+                }
                 int pos = buf.position();
                 int lim = buf.limit();
                 assert (pos <= lim);
@@ -170,7 +205,7 @@ public class IOUtil {
                         pos = shadow.position();
                     }
 
-                    vec.putBase(iov_len, ((DirectBuffer)buf).address() + pos);
+                    vec.putBase(iov_len, bufferAddress(buf) + pos);
                     vec.putLen(iov_len, rem);
                     iov_len++;
                 }
@@ -203,6 +238,7 @@ public class IOUtil {
             return bytesWritten;
 
         } finally {
+            releaseScopes(handleReleasers);
             // if an error occurred then clear refs to buffers and return any shadow
             // buffers to cache
             if (!completed) {
@@ -220,17 +256,32 @@ public class IOUtil {
                     NativeDispatcher nd)
         throws IOException
     {
-        return read(fd, dst, position, false, -1, nd);
+        return read(fd, dst, position, false, false, -1, nd);
+    }
+
+    static int read(FileDescriptor fd, ByteBuffer dst, long position,
+                    boolean async, NativeDispatcher nd)
+        throws IOException
+    {
+        return read(fd, dst, position, false, async, -1, nd);
     }
 
     static int read(FileDescriptor fd, ByteBuffer dst, long position,
                     boolean directIO, int alignment, NativeDispatcher nd)
         throws IOException
     {
+        return read(fd, dst, position, directIO, false, alignment, nd);
+    }
+
+    static int read(FileDescriptor fd, ByteBuffer dst, long position,
+                    boolean directIO, boolean async,
+                    int alignment, NativeDispatcher nd)
+        throws IOException
+    {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
         if (dst instanceof DirectBuffer)
-            return readIntoNativeBuffer(fd, dst, position, directIO, alignment, nd);
+            return readIntoNativeBuffer(fd, dst, position, directIO, async, alignment, nd);
 
         // Substitute a native buffer
         ByteBuffer bb;
@@ -242,7 +293,7 @@ public class IOUtil {
             bb = Util.getTemporaryDirectBuffer(rem);
         }
         try {
-            int n = readIntoNativeBuffer(fd, bb, position, directIO, alignment,nd);
+            int n = readIntoNativeBuffer(fd, bb, position, directIO, async, alignment, nd);
             bb.flip();
             if (n > 0)
                 dst.put(bb);
@@ -254,7 +305,8 @@ public class IOUtil {
 
     private static int readIntoNativeBuffer(FileDescriptor fd, ByteBuffer bb,
                                             long position, boolean directIO,
-                                            int alignment, NativeDispatcher nd)
+                                            boolean async, int alignment,
+                                            NativeDispatcher nd)
         throws IOException
     {
         int pos = bb.position();
@@ -270,10 +322,15 @@ public class IOUtil {
         if (rem == 0)
             return 0;
         int n = 0;
-        if (position != -1) {
-            n = nd.pread(fd, ((DirectBuffer)bb).address() + pos, rem, position);
-        } else {
-            n = nd.read(fd, ((DirectBuffer)bb).address() + pos, rem);
+        var handle = acquireScope(bb, async);
+        try {
+            if (position != -1) {
+                n = nd.pread(fd, bufferAddress(bb) + pos, rem, position);
+            } else {
+                n = nd.read(fd, bufferAddress(bb) + pos, rem);
+            }
+        } finally {
+            releaseScope(handle);
         }
         if (n > 0)
             bb.position(pos + n);
@@ -283,26 +340,43 @@ public class IOUtil {
     static long read(FileDescriptor fd, ByteBuffer[] bufs, NativeDispatcher nd)
         throws IOException
     {
-        return read(fd, bufs, 0, bufs.length, false, -1, nd);
+        return read(fd, bufs, 0, bufs.length, false, false, -1, nd);
+    }
+
+    static long read(FileDescriptor fd, ByteBuffer[] bufs, boolean async,
+                     NativeDispatcher nd)
+        throws IOException
+    {
+        return read(fd, bufs, 0, bufs.length, false, async, -1, nd);
     }
 
     static long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
                      NativeDispatcher nd)
         throws IOException
     {
-        return read(fd, bufs, offset, length, false, -1, nd);
+        return read(fd, bufs, offset, length, false, false, -1, nd);
     }
 
     static long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
                      boolean directIO, int alignment, NativeDispatcher nd)
+
+        throws IOException
+    {
+        return read(fd, bufs, offset, length, directIO, false, alignment, nd);
+    }
+
+    static long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,
+                     boolean directIO, boolean async,
+                     int alignment, NativeDispatcher nd)
+
         throws IOException
     {
         IOVecWrapper vec = IOVecWrapper.get(length);
 
         boolean completed = false;
         int iov_len = 0;
+        Runnable handleReleasers = null;
         try {
-
             // Iterate over buffers to populate native iovec array.
             int count = offset + length;
             int i = offset;
@@ -310,6 +384,10 @@ public class IOUtil {
                 ByteBuffer buf = bufs[i];
                 if (buf.isReadOnly())
                     throw new IllegalArgumentException("Read-only buffer");
+                var h = acquireScope(buf, async);
+                if (h != null) {
+                    handleReleasers = LinkedRunnable.of(Releaser.of(h), handleReleasers);
+                }
                 int pos = buf.position();
                 int lim = buf.limit();
                 assert (pos <= lim);
@@ -334,7 +412,7 @@ public class IOUtil {
                         pos = shadow.position();
                     }
 
-                    vec.putBase(iov_len, ((DirectBuffer)buf).address() + pos);
+                    vec.putBase(iov_len, bufferAddress(buf) + pos);
                     vec.putLen(iov_len, rem);
                     iov_len++;
                 }
@@ -371,6 +449,7 @@ public class IOUtil {
             return bytesRead;
 
         } finally {
+            releaseScopes(handleReleasers);
             // if an error occurred then clear refs to buffers and return any shadow
             // buffers to cache
             if (!completed) {
@@ -382,6 +461,83 @@ public class IOUtil {
                 }
             }
         }
+    }
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
+    static Scope.Handle acquireScope(ByteBuffer bb, boolean async) {
+        return NIO_ACCESS.acquireScope(bb, async);
+    }
+
+    private static void releaseScope(Scope.Handle handle) {
+        if (handle == null)
+            return;
+        try {
+            handle.scope().release(handle);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static Runnable acquireScopes(ByteBuffer[] buffers) {
+        return acquireScopes(null, buffers);
+    }
+
+    static Runnable acquireScopes(ByteBuffer buf, ByteBuffer[] buffers) {
+        if (buffers == null) {
+            assert buf != null;
+            return IOUtil.Releaser.ofNullable(IOUtil.acquireScope(buf, true));
+        } else {
+            assert buf == null;
+            Runnable handleReleasers = null;
+            for (var b : buffers) {
+                var h = IOUtil.acquireScope(b, true);
+                if (h != null) {
+                    handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(h), handleReleasers);
+                }
+            }
+            return handleReleasers;
+        }
+    }
+
+    static void releaseScopes(Runnable releasers) {
+        if (releasers != null)
+            releasers.run();
+    }
+
+    static record LinkedRunnable(Runnable node, Runnable next)
+        implements Runnable
+    {
+        LinkedRunnable {
+            Objects.requireNonNull(node);
+        }
+        @Override
+        public void run() {
+            try {
+                node.run();
+            } finally {
+                if (next != null)
+                    next.run();
+            }
+        }
+        static LinkedRunnable of(Runnable first, Runnable second) {
+            return new LinkedRunnable(first, second);
+        }
+    }
+
+    static record Releaser(Scope.Handle handle) implements Runnable {
+        Releaser { Objects.requireNonNull(handle) ; }
+        @Override public void run() { releaseScope(handle); }
+        static Runnable of(Scope.Handle handle) { return new Releaser(handle); }
+        static Runnable ofNullable(Scope.Handle handle) {
+            if (handle == null)
+                return () -> { };
+            return new Releaser(handle);
+        }
+    }
+
+    static long bufferAddress(ByteBuffer buf) {
+        return NIO_ACCESS.getBufferAddress(buf);
     }
 
     public static FileDescriptor newFD(int i) {

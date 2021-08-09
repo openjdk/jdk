@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+
 import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -164,15 +166,13 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (hotspotField.isStatic()) {
             HotSpotResolvedObjectTypeImpl holder = (HotSpotResolvedObjectTypeImpl) hotspotField.getDeclaringClass();
             if (holder.isInitialized()) {
-                return holder.readFieldValue(hotspotField, field.isVolatile());
+                return runtime().compilerToVm.readFieldValue(holder, (HotSpotResolvedObjectTypeImpl) hotspotField.getDeclaringClass(), hotspotField.getOffset(), field.isVolatile(),
+                                hotspotField.getType().getJavaKind());
             }
-        } else {
-            if (receiver.isNonNull() && receiver instanceof HotSpotObjectConstantImpl) {
-                HotSpotObjectConstantImpl object = ((HotSpotObjectConstantImpl) receiver);
-                if (hotspotField.isInObject(receiver)) {
-                    return object.readFieldValue(hotspotField, field.isVolatile());
-                }
-            }
+        } else if (receiver instanceof HotSpotObjectConstantImpl) {
+            return ((HotSpotObjectConstantImpl) receiver).readFieldValue(hotspotField, field.isVolatile());
+        } else if (receiver == null) {
+            throw new NullPointerException("receiver is null");
         }
         return null;
     }

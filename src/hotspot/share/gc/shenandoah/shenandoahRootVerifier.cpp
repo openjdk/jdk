@@ -43,16 +43,13 @@
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
-  _gc_state(_heap->gc_state()),
-  _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+  _gc_state(_heap->gc_state()) {
   _heap->_gc_state.clear();
-  _heap->set_concurrent_weak_root_in_progress(false);
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   _heap->_gc_state.set(_gc_state);
   assert(_heap->gc_state() == _gc_state, "Should be restored");
-  _heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
 }
 
 void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
@@ -64,10 +61,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&clds);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
@@ -85,10 +78,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&clds);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class ObjectMethods {
             MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
+            @SuppressWarnings("removal")
             ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override public ClassLoader run() { return ClassLoader.getPlatformClassLoader(); }
             });
@@ -338,28 +339,27 @@ public class ObjectMethods {
                 throw new IllegalArgumentException(type.toString());
         }
         List<MethodHandle> getterList = List.of(getters);
-        MethodHandle handle;
-        switch (methodName) {
-            case "equals":
+        MethodHandle handle = switch (methodName) {
+            case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeEquals(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "hashCode":
+                yield makeEquals(recordClass, getterList);
+            }
+            case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeHashCode(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "toString":
+                yield makeHashCode(recordClass, getterList);
+            }
+            case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
                 List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
-                handle = makeToString(recordClass, getterList, nameList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            default:
-                throw new IllegalArgumentException(methodName);
-        }
+                yield makeToString(recordClass, getterList, nameList);
+            }
+            default -> throw new IllegalArgumentException(methodName);
+        };
+        return methodType != null ? new ConstantCallSite(handle) : handle;
     }
 }

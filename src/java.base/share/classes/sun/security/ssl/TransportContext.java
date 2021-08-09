@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ final class TransportContext implements ConnectionContext {
 
     // registered plaintext consumers
     final Map<Byte, SSLConsumer>    consumers;
+    @SuppressWarnings("removal")
     final AccessControlContext      acc;
 
     final SSLContextImpl            sslContext;
@@ -133,6 +134,7 @@ final class TransportContext implements ConnectionContext {
                 inputRecord, outputRecord, false);
     }
 
+    @SuppressWarnings("removal")
     private TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             SSLConfiguration sslConfig, InputRecord inputRecord,
             OutputRecord outputRecord, boolean isUnsureMode) {
@@ -584,10 +586,10 @@ final class TransportContext implements ConnectionContext {
         closeNotify(useUserCanceled);
     }
 
-    // Note; HandshakeStatus.FINISHED status is retrieved in other places.
+    // Note: HandshakeStatus.FINISHED status is retrieved in other places.
     HandshakeStatus getHandshakeStatus() {
         if (!outputRecord.isEmpty()) {
-            // If no handshaking, special case to wrap alters or
+            // If not handshaking, special case to wrap alerts or
             // post-handshake messages.
             return HandshakeStatus.NEED_WRAP;
         } else if (isOutboundClosed() && isInboundClosed()) {
@@ -596,8 +598,7 @@ final class TransportContext implements ConnectionContext {
             if (!handshakeContext.delegatedActions.isEmpty()) {
                 return HandshakeStatus.NEED_TASK;
             } else if (!isInboundClosed()) {
-                if (sslContext.isDTLS() &&
-                        !inputRecord.isEmpty()) {
+                if (sslContext.isDTLS() && !inputRecord.isEmpty()) {
                     return HandshakeStatus.NEED_UNWRAP_AGAIN;
                 } else {
                     return HandshakeStatus.NEED_UNWRAP;
@@ -661,17 +662,20 @@ final class TransportContext implements ConnectionContext {
     // A separate thread is allocated to deliver handshake completion
     // events.
     private static class NotifyHandshake implements Runnable {
+        @SuppressWarnings("removal")
         private final Set<Map.Entry<HandshakeCompletedListener,
                 AccessControlContext>> targets;         // who gets notified
         private final HandshakeCompletedEvent event;    // the notification
 
         NotifyHandshake(
+                @SuppressWarnings("removal")
                 Map<HandshakeCompletedListener,AccessControlContext> listeners,
                 HandshakeCompletedEvent event) {
             this.targets = new HashSet<>(listeners.entrySet());     // clone
             this.event = event;
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void run() {
             // Don't need to synchronize, as it only runs in one thread.

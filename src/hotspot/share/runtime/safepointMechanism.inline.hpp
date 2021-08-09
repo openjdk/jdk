@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #ifndef SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/safepointMechanism.hpp"
+
+#include "runtime/atomic.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -60,24 +62,42 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::local_poll(Thread* thread) {
-  if (thread->is_Java_thread()) {
-    return local_poll_armed(thread->as_Java_thread());
+bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
+  if (global_poll() || thread->handshake_state()->has_a_non_suspend_operation()) {
+    return true;
   } else {
-    // If the poll is on a non-java thread we can only check the global state.
-    return global_poll();
+    // We ignore suspend requests if any and just check before returning if we need
+    // to fix the thread's oops and first few frames due to a possible safepoint.
+    StackWatermarkSet::on_safepoint(thread);
+    update_poll_values(thread);
+    OrderAccess::cross_modify_fence();
+    return false;
   }
 }
 
-bool SafepointMechanism::should_process(Thread* thread) {
-  return local_poll(thread);
-}
-
-void SafepointMechanism::process_if_requested(JavaThread *thread) {
+bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
   if (!local_poll_armed(thread)) {
-    return;
+    return false;
+  } else if (allow_suspend) {
+    return true;
   }
-  process_if_requested_slow(thread);
+  return should_process_no_suspend(thread);
+}
+
+void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend) {
+
+  // Macos/aarch64 should be in the right state for safepoint (e.g.
+  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
+  // happens in practice, making such issues hard to find and reproduce.
+#if defined(ASSERT) && defined(__APPLE__) && defined(AARCH64)
+  if (AssertWXAtThreadSync) {
+    thread->assert_wx_state(WXWrite);
+  }
+#endif
+
+  if (local_poll_armed(thread)) {
+    process(thread, allow_suspend);
+  }
 }
 
 void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs) {

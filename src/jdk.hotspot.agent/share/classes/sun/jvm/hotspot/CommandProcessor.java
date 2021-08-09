@@ -39,6 +39,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,8 +48,6 @@ import sun.jvm.hotspot.ci.ciEnv;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
-import sun.jvm.hotspot.debugger.cdbg.CDebugger;
-import sun.jvm.hotspot.debugger.cdbg.LoadObject;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
@@ -227,7 +226,7 @@ public class CommandProcessor {
             }
         }
         String join(String sep) {
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             for (int w = i; w < length; w++) {
                 result.append(tokens[w]);
                 if (w + 1 < length) {
@@ -238,9 +237,7 @@ public class CommandProcessor {
         }
 
         String at(int i) {
-            if (i < 0 || i >= length) {
-                throw new IndexOutOfBoundsException(String.valueOf(i));
-            }
+            Objects.checkIndex(i, length);
             return tokens[i];
         }
     }
@@ -350,7 +347,7 @@ public class CommandProcessor {
     Address lookup(String symbol) {
         if (symbol.indexOf("::") != -1) {
             String[] parts = symbol.split("::");
-            StringBuffer mangled = new StringBuffer("__1c");
+            StringBuilder mangled = new StringBuilder("__1c");
             for (int i = 0; i < parts.length; i++) {
                 int len = parts[i].length();
                 if (len >= 26) {
@@ -599,32 +596,8 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    String symbol = t.nextToken();
-                    Address addr = VM.getVM().getDebugger().lookup(null, symbol);
-                    if (addr == null && VM.getVM().getDebugger().getOS().equals("win32")) {
-                        // On win32 symbols are prefixed with the dll name. Do the user
-                        // a favor and see if this is a symbol in jvm.dll or java.dll.
-                        addr = VM.getVM().getDebugger().lookup(null, "jvm!" + symbol);
-                        if (addr == null) {
-                            addr = VM.getVM().getDebugger().lookup(null, "java!" + symbol);
-                        }
-                    }
-                    if (addr == null) {
-                        out.println("Symbol not found");
-                        return;
-                    }
-                    out.print(addr);  // Print the address of the symbol.
-                    CDebugger cdbg = VM.getVM().getDebugger().getCDebugger();
-                    LoadObject loadObject = cdbg.loadObjectContainingPC(addr);
-                    // Print the shared library path and the offset of the symbol.
-                    if (loadObject != null) {
-                        out.print(": " + loadObject.getName());
-                        long diff = addr.minus(loadObject.getBase());
-                        if (diff != 0L) {
-                            out.print(" + 0x" + Long.toHexString(diff));
-                        }
-                    }
-                    out.println();
+                    String result = VM.getVM().getDebugger().findSymbol(t.nextToken());
+                    out.println(result == null ? "Symbol not found" : result);
                 }
             }
         },
@@ -1136,7 +1109,7 @@ public class CommandProcessor {
         },
         new Command("pmap", "pmap", false) {
             public void doit(Tokens t) {
-                PMap pmap = new PMap();
+                PMap pmap = new PMap(debugger.getAgent());
                 pmap.run(out, debugger.getAgent().getDebugger());
             }
         },
@@ -1146,7 +1119,7 @@ public class CommandProcessor {
                 if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
                     verbose = true;
                 }
-                PStack pstack = new PStack(verbose, true);
+                PStack pstack = new PStack(verbose, true, debugger.getAgent());
                 pstack.run(out, debugger.getAgent().getDebugger());
             }
         },
@@ -1743,19 +1716,19 @@ public class CommandProcessor {
                     if (metadata instanceof InstanceKlass) {
                         ik = (InstanceKlass) metadata;
                     } else {
-                        System.out.println("Specified address is not an InstanceKlass");
+                        out.println("Specified address is not an InstanceKlass");
                         return;
                     }
                 } else {
                     ik = SystemDictionaryHelper.findInstanceKlass(classname);
                     if (ik == null) {
-                        System.out.println("class not found: " + classname);
+                        out.println("class not found: " + classname);
                         return;
                     }
                 }
 
                 /* Compute filename for class. */
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 if (tokenCount > 1) {
                     buf.append(t.nextToken());
                 } else {
@@ -1861,9 +1834,9 @@ public class CommandProcessor {
                 String classname = t.nextToken();
                 InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(classname);
                 if (ik == null) {
-                    System.out.println("class not found: " + classname);
+                    out.println("class not found: " + classname);
                 } else {
-                    System.out.println(ik.getName().asString() + " @" + ik.getAddress());
+                    out.println(ik.getName().asString() + " @" + ik.getAddress());
                 }
             }
         },
@@ -1876,7 +1849,7 @@ public class CommandProcessor {
                 ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
                 cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                         public void visit(Klass k) {
-                            System.out.println(k.getName().asString() + " @" + k.getAddress());
+                            out.println(k.getName().asString() + " @" + k.getAddress());
                         }
                     }
                 );
@@ -1967,7 +1940,7 @@ public class CommandProcessor {
                 ln = "";
                 err.println("History is empty");
             } else {
-                StringBuffer result = new StringBuffer();
+                StringBuilder result = new StringBuilder();
                 Matcher m = historyPattern.matcher(ln);
                 int start = 0;
                 while (m.find()) {

@@ -112,7 +112,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop p = (instanceOop) result.get_jobject();
+    instanceOop p = (instanceOop) result.get_oop();
     instanceHandle pool(THREAD, p);
 
     {
@@ -188,8 +188,8 @@ MetaspacePool::MetaspacePool() :
   MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes();
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }
 
 size_t MetaspacePool::used_in_bytes() {
@@ -209,6 +209,6 @@ size_t CompressedKlassSpacePool::used_in_bytes() {
 }
 
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceStats stats = MetaspaceUtils::get_statistics(Metaspace::ClassType);
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }

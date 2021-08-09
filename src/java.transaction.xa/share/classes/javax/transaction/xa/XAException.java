@@ -75,127 +75,127 @@ public class XAException extends Exception {
     /**
      * The inclusive lower bound of the rollback codes.
      */
-    public final static int XA_RBBASE = 100;
+    public static final int XA_RBBASE = 100;
 
     /**
      * Indicates that the rollback was caused by an unspecified reason.
      */
-    public final static int XA_RBROLLBACK = XA_RBBASE;
+    public static final int XA_RBROLLBACK = XA_RBBASE;
 
     /**
      * Indicates that the rollback was caused by a communication failure.
      */
-    public final static int XA_RBCOMMFAIL = XA_RBBASE + 1;
+    public static final int XA_RBCOMMFAIL = XA_RBBASE + 1;
 
     /**
      * A deadlock was detected.
      */
-    public final static int XA_RBDEADLOCK = XA_RBBASE + 2;
+    public static final int XA_RBDEADLOCK = XA_RBBASE + 2;
 
     /**
      * A condition that violates the integrity of the resource was detected.
      */
-    public final static int XA_RBINTEGRITY = XA_RBBASE + 3;
+    public static final int XA_RBINTEGRITY = XA_RBBASE + 3;
 
     /**
      * The resource manager rolled back the transaction branch for a reason
      * not on this list.
      */
-    public final static int XA_RBOTHER = XA_RBBASE + 4;
+    public static final int XA_RBOTHER = XA_RBBASE + 4;
 
     /**
      * A protocol error occurred in the resource manager.
      */
-    public final static int XA_RBPROTO = XA_RBBASE + 5;
+    public static final int XA_RBPROTO = XA_RBBASE + 5;
 
     /**
      * A transaction branch took too long.
      */
-    public final static int XA_RBTIMEOUT = XA_RBBASE + 6;
+    public static final int XA_RBTIMEOUT = XA_RBBASE + 6;
 
     /**
      * May retry the transaction branch.
      */
-    public final static int XA_RBTRANSIENT = XA_RBBASE + 7;
+    public static final int XA_RBTRANSIENT = XA_RBBASE + 7;
 
     /**
      * The inclusive upper bound of the rollback error code.
      */
-    public final static int XA_RBEND = XA_RBTRANSIENT;
+    public static final int XA_RBEND = XA_RBTRANSIENT;
 
     /**
      * Resumption must occur where the suspension occurred.
      */
-    public final static int XA_NOMIGRATE = 9;
+    public static final int XA_NOMIGRATE = 9;
 
     /**
      * The transaction branch may have been heuristically completed.
      */
-    public final static int XA_HEURHAZ = 8;
+    public static final int XA_HEURHAZ = 8;
 
     /**
      * The transaction branch has been heuristically committed.
      */
-    public final static int XA_HEURCOM = 7;
+    public static final int XA_HEURCOM = 7;
 
     /**
      * The transaction branch has been heuristically rolled back.
      */
-    public final static int XA_HEURRB = 6;
+    public static final int XA_HEURRB = 6;
 
     /**
      * The transaction branch has been heuristically committed and
      * rolled back.
      */
-    public final static int XA_HEURMIX = 5;
+    public static final int XA_HEURMIX = 5;
 
     /**
      * Routine returned with no effect and may be reissued.
      */
-    public final static int XA_RETRY = 4;
+    public static final int XA_RETRY = 4;
 
     /**
      * The transaction branch was read-only and has been committed.
      */
-    public final static int XA_RDONLY = 3;
+    public static final int XA_RDONLY = 3;
 
     /**
      * There is an asynchronous operation already outstanding.
      */
-    public final static int XAER_ASYNC = -2;
+    public static final int XAER_ASYNC = -2;
 
     /**
      * A resource manager error has occurred in the transaction branch.
      */
-    public final static int XAER_RMERR = -3;
+    public static final int XAER_RMERR = -3;
 
     /**
      * The XID is not valid.
      */
-    public final static int XAER_NOTA = -4;
+    public static final int XAER_NOTA = -4;
 
     /**
      * Invalid arguments were given.
      */
-    public final static int XAER_INVAL = -5;
+    public static final int XAER_INVAL = -5;
 
     /**
      * Routine was invoked in an inproper context.
      */
-    public final static int XAER_PROTO = -6;
+    public static final int XAER_PROTO = -6;
 
     /**
      * Resource manager is unavailable.
      */
-    public final static int XAER_RMFAIL = -7;
+    public static final int XAER_RMFAIL = -7;
 
     /**
      * The XID already exists.
      */
-    public final static int XAER_DUPID = -8;
+    public static final int XAER_DUPID = -8;
 
     /**
      * The resource manager is doing work outside a global transaction.
      */
-    public final static int XAER_OUTSIDE = -9;
+    public static final int XAER_OUTSIDE = -9;
 }

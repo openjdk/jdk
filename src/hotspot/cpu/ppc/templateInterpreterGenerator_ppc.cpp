@@ -1449,7 +1449,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label do_safepoint, sync_check_done;
   // No synchronization in progress nor yet synchronized.
-  __ safepoint_poll(do_safepoint, sync_state);
+  __ safepoint_poll(do_safepoint, sync_state, true /* at_return */, false /* in_nmethod */);
 
   // Not suspended.
   // TODO PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
@@ -1749,7 +1749,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     // Safepoint check
     const Register sync_state = R11_scratch1;
-    __ safepoint_poll(slow_path, sync_state);
+    __ safepoint_poll(slow_path, sync_state, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we not even call stub code (we generate the code inline)
@@ -1803,7 +1803,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     // Safepoint check
     const Register sync_state = R11_scratch1;
-    __ safepoint_poll(slow_path, sync_state);
+    __ safepoint_poll(slow_path, sync_state, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we not even call stub code (we generate the code inline)

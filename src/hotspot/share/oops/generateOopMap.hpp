@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,7 +374,7 @@ class GenerateOopMap {
   static void   reachable_basicblock        (GenerateOopMap *c, int deltaBci, int *data);
 
   // Interpretation methods (primary)
-  void  do_interpretation                   (Thread* thread);
+  void  do_interpretation                   ();
   void  init_basic_blocks                   ();
   void  setup_method_entry_state            ();
   void  interp_all                          ();
@@ -459,8 +459,11 @@ class GenerateOopMap {
  public:
   GenerateOopMap(const methodHandle& method);
 
-  // Compute the map.
-  void compute_map(TRAPS);
+  // Compute the map - returns true on success and false on error.
+  bool compute_map(Thread* current);
+  // Returns the exception related to any error, if the map was computed by a suitable JavaThread.
+  Handle exception() { return _exception; }
+
   void result_for_basicblock(int bci);    // Do a callback on fill_stackmap_for_opcodes for basicblock containing bci
 
   // Query
@@ -559,7 +562,7 @@ class GeneratePairingInfo: public GenerateOopMap {
  public:
   GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
 
-  // Call compute_map(CHECK) to generate info.
+  // Call compute_map() to generate info.
 };
 
 #endif // SHARE_OOPS_GENERATEOOPMAP_HPP

@@ -47,7 +47,6 @@
   template(DeoptimizeAll)                         \
   template(ZombieAll)                             \
   template(Verify)                                \
-  template(PrintJNI)                              \
   template(HeapDumper)                            \
   template(DeoptimizeTheWorld)                    \
   template(CollectForMetadataAllocation)          \
@@ -68,8 +67,6 @@
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
-  template(EnableBiasedLocking)                   \
-  template(BulkRevokeBias)                        \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
   template(RedefineClasses)                       \
@@ -88,6 +85,7 @@
   template(ShenandoahFinalMarkStartEvac)          \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
+  template(ShenandoahFinalRoots)                  \
   template(ShenandoahDegeneratedGC)               \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \

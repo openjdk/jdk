@@ -51,7 +51,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.SecureProcessingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.SecureProcessingTest
  * @run testng/othervm xpath.SecureProcessingTest
  * @summary Test when FEATURE_SECURE_PROCESSING is true, calling an external function will cause XPathFunctionException.
  */

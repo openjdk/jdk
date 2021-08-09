@@ -46,7 +46,7 @@ import java.util.function.Consumer;
  * blocking mode of this channel as well as its current set of selection keys.
  * It performs all of the synchronization required to implement the {@link
  * java.nio.channels.SelectableChannel} specification.  Implementations of the
- * abstract protected methods defined in this class need not synchronize
+ * protected abstract methods defined in this class need not synchronize
  * against other threads that might be engaged in the same operations.  </p>
  *
  *

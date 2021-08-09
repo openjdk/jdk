@@ -58,9 +58,9 @@ public class TestIndex extends JavadocTester {
                     <a href="pkg/Interface.html" class="type-name-link" title="interface in pkg">Int\
                     erface</a> - Interface in <a href="pkg/package-summary.html">pkg</a>""",
                 """
-                    <a href="pkg/AnnotationType.html" class="type-name-link" title="annotation in pk\
-                    g">AnnotationType</a> - Annotation Interface in <a href="pkg/packag\
-                    e-summary.html">pkg</a>""",
+                    <a href="pkg/AnnotationType.html" class="type-name-link" title="annotation inter\
+                    face in pkg">AnnotationType</a> - Annotation Interface in <a href="pkg/package-s\
+                    ummary.html">pkg</a>""",
                 """
                     <a href="pkg/Coin.html" class="type-name-link" title="enum class in pkg">Coin</a\
                     > - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",

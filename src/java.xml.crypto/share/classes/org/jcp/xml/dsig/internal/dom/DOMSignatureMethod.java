@@ -23,9 +23,6 @@
 /*
  * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
-/*
- * $Id: DOMSignatureMethod.java 1854026 2019-02-21 09:30:01Z coheigea $
- */
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
@@ -52,6 +49,8 @@ import sun.security.util.KeyUtil;
  *
  */
 public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
+
+    private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignatureMethod.class);
@@ -189,6 +188,8 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return new SHA384withRSAandMGF1(smElem);
         } else if (alg.equals(RSA_SHA512_MGF1)) {
             return new SHA512withRSAandMGF1(smElem);
+        } else if (alg.equals(DOMRSAPSSSignatureMethod.RSA_PSS)) {
+            return new DOMRSAPSSSignatureMethod.RSAPSS(smElem);
         } else if (alg.equals(RSA_RIPEMD160_MGF1)) {
             return new RIPEMD160withRSAandMGF1(smElem);
         } else if (alg.equals(SignatureMethod.DSA_SHA1)) {
@@ -259,8 +260,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider) context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
+            Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
             try {
                 signature = getSignature(p);
             } catch (NoSuchAlgorithmException nsae) {
@@ -325,8 +325,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider)context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
+            Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
             try {
                 signature = getSignature(p);
             } catch (NoSuchAlgorithmException nsae) {

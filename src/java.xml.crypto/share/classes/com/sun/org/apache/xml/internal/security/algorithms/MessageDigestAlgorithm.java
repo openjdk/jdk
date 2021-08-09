@@ -23,6 +23,7 @@
 package com.sun.org.apache.xml.internal.security.algorithms;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
@@ -37,7 +38,7 @@ import org.w3c.dom.Document;
  * MessageDigestAlgorithm.getInstance()
  * </pre>
  */
-public class MessageDigestAlgorithm extends Algorithm {
+public final class MessageDigestAlgorithm extends Algorithm {
 
     /** Message Digest - NOT RECOMMENDED MD5*/
     public static final String ALGO_ID_DIGEST_NOT_RECOMMENDED_MD5 =
@@ -118,11 +119,7 @@ public class MessageDigestAlgorithm extends Algorithm {
             } else {
                 md = MessageDigest.getInstance(algorithmID, provider);
             }
-        } catch (java.security.NoSuchAlgorithmException ex) {
-            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
-
-            throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
-        } catch (NoSuchProviderException ex) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
             Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
 
             throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
@@ -169,7 +166,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @param input
      * @return the result of the {@link java.security.MessageDigest#digest(byte[])} method
      */
-    public byte[] digest(byte input[]) {
+    public byte[] digest(byte[] input) {
         return algorithm.digest(input);
     }
 
@@ -183,7 +180,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @return the result of the {@link java.security.MessageDigest#digest(byte[], int, int)} method
      * @throws java.security.DigestException
      */
-    public int digest(byte buf[], int offset, int len) throws java.security.DigestException {
+    public int digest(byte[] buf, int offset, int len) throws java.security.DigestException {
         return algorithm.digest(buf, offset, len);
     }
 
@@ -254,7 +251,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @param offset
      * @param len
      */
-    public void update(byte buf[], int offset, int len) {
+    public void update(byte[] buf, int offset, int len) {
         algorithm.update(buf, offset, len);
     }
 

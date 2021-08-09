@@ -256,7 +256,7 @@ public final class TraceSignatureVisitor extends SignatureVisitor {
     @Override
     public void visitClassType(final String name) {
         if ("java/lang/Object".equals(name)) {
-            // 'Map<java.lang.Object,java.util.List>' or 'abstract public V get(Object key);' should have
+            // 'Map<java.lang.Object,java.util.List>' or 'public abstract V get(Object key);' should have
             // Object 'but java.lang.String extends java.lang.Object' is unnecessary.
             boolean needObjectClass = argumentStack % 2 != 0 || parameterTypeVisited;
             if (needObjectClass) {

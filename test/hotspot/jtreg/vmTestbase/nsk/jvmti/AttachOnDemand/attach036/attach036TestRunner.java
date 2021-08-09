@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  *
  * @comment create attach036Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach036Agent00.jar ${test.src}/attach036Agent00.mf

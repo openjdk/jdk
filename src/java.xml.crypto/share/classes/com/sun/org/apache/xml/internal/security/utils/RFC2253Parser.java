@@ -72,7 +72,7 @@ public class RFC2253Parser {
      */
     public static String normalize(String dn, boolean toXml) {
         //if empty string
-        if (dn == null || dn.equals("")) {
+        if (dn == null || dn.isEmpty()) {
             return "";
         }
 
@@ -88,7 +88,7 @@ public class RFC2253Parser {
                 l += countQuotes(DN, j, k);
 
                 if (k > 0 && DN.charAt(k - 1) != '\\' && (l % 2) == 0) {
-                    sb.append(parseRDN(DN.substring(i, k).trim(), toXml)).append(",");
+                    sb.append(parseRDN(DN.substring(i, k).trim(), toXml)).append(',');
 
                     i = k + 1;
                     l = 0;
@@ -121,7 +121,7 @@ public class RFC2253Parser {
             l += countQuotes(str, j, k);
 
             if (k > 0 && str.charAt(k - 1) != '\\' && (l % 2) == 0) {
-                sb.append(parseATAV(trim(str.substring(i, k)), toXml)).append("+");
+                sb.append(parseATAV(trim(str.substring(i, k)), toXml)).append('+');
 
                 i = k + 1;
                 l = 0;
@@ -210,7 +210,7 @@ public class RFC2253Parser {
         }
 
         if (toXml) {
-            if (value.startsWith("#")) {
+            if (value.length() > 0 && value.charAt(0) == '#') {
                 value = '\\' + value;
             }
         } else {

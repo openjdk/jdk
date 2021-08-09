@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8157797
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.HandleError
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.HandleError
  * @run testng/othervm parsers.HandleError
  * @summary Tests that the parser handles errors properly.
  */

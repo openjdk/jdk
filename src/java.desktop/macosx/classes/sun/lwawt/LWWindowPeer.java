@@ -726,7 +726,7 @@ public class LWWindowPeer
             setPlatformMaximizedBounds(getDefaultMaximizedBounds());
         }
 
-        if (pResized || isNewDevice) {
+        if (pResized || isNewDevice || invalid) {
             replaceSurfaceData();
             updateMinimumSize();
         }

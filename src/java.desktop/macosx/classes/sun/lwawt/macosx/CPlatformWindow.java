@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -67,6 +68,7 @@ import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformWindow;
+import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
@@ -85,6 +87,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeRevalidateNSWindowShadow(long nsWindowPtr);
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
+    private static native void nativeSetAllowAutomaticTabbingProperty(boolean allowAutomaticWindowTabbing);
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr, int eventType);
@@ -122,6 +125,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULLSCREENABLE = "apple.awt.fullscreenable";
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
+    public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
+
+    // This system property is named as jdk.* because it is not specific to AWT
+    // and it is also used in JavaFX
+    @SuppressWarnings("removal")
+    public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
+            new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -164,10 +174,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int DOCUMENT_MODIFIED = 1 << 21;
     static final int FULLSCREENABLE = 1 << 23;
     static final int TRANSPARENT_TITLE_BAR = 1 << 18;
+    static final int TITLE_VISIBLE = 1 << 25;
 
     static final int _METHOD_PROP_BITMASK = RESIZABLE | HAS_SHADOW | ZOOMABLE | ALWAYS_ON_TOP | HIDES_ON_DEACTIVATE
                                               | DRAGGABLE_BACKGROUND | DOCUMENT_MODIFIED | FULLSCREENABLE
-                                              | TRANSPARENT_TITLE_BAR;
+                                              | TRANSPARENT_TITLE_BAR | TITLE_VISIBLE;
 
     // corresponds to callback-based properties
     static final int SHOULD_BECOME_KEY = 1 << 12;
@@ -183,6 +194,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     static boolean IS(final int bits, final int mask) {
         return (bits & mask) != 0;
+    }
+
+    static {
+        nativeSetAllowAutomaticTabbingProperty(Boolean.parseBoolean(MAC_OS_TABBED_WINDOW));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -247,6 +262,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             public void applyProperty(final CPlatformWindow c, final Object value) {
                 boolean isTransparentTitleBar = Boolean.parseBoolean(value.toString());
                 c.setStyleBits(TRANSPARENT_TITLE_BAR, isTransparentTitleBar);
+            }
+        },
+        new Property<CPlatformWindow>(WINDOW_TITLE_VISIBLE) {
+            public void applyProperty(final CPlatformWindow c, final Object value) {
+                c.setStyleBits(TITLE_VISIBLE, value == null ? true : Boolean.parseBoolean(value.toString()));
             }
         }
     }) {
@@ -374,7 +394,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     protected int getInitialStyleBits() {
         // defaults style bits
-        int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE;
+        int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE | TITLE_VISIBLE;
 
         if (isNativelyFocusableWindow()) {
             styleBits = SET(styleBits, SHOULD_BECOME_KEY, true);
@@ -495,6 +515,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             prop = rootpane.getClientProperty(WINDOW_TRANSPARENT_TITLE_BAR);
             if (prop != null) {
                 styleBits = SET(styleBits, TRANSPARENT_TITLE_BAR, Boolean.parseBoolean(prop.toString()));
+            }
+
+            prop = rootpane.getClientProperty(WINDOW_TITLE_VISIBLE);
+            if (prop != null) {
+                styleBits = SET(styleBits, TITLE_VISIBLE, Boolean.parseBoolean(prop.toString()));
             }
         }
 

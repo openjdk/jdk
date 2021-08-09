@@ -499,10 +499,12 @@ public class ZipFSTester {
                 }
                 // System.out.printf("  --> %d, %d%n", pos, len);
                 bb.position(0).limit(len);    // bb.flip().limit(len);
+                int expectedReadResult = sbc.size() == 0 ? -1 : len;
                 if (sbc.position(pos).position() != pos ||
-                    sbc.read(bb) != len ||
+                    sbc.read(bb) != expectedReadResult ||
                     !Arrays.equals(buf, 0, bb.position(), expected, pos, pos + len)) {
                     System.out.printf("read()/position() failed%n");
+                    throw new RuntimeException("CHECK FAILED!");
                 }
             }
         } catch (IOException x) {

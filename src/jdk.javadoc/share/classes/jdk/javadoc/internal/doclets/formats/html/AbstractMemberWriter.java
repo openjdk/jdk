@@ -192,7 +192,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
-            code.add(utils.isClass(member) ? "class" : "interface");
+            code.add(switch (member.getKind()) {
+                case ENUM -> "enum";
+                case INTERFACE -> "interface";
+                case ANNOTATION_TYPE -> "@interface";
+                case RECORD -> "record";
+                default -> "class";
+            });
             code.add(Entity.NO_BREAK_SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)
@@ -243,6 +249,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (utils.isStatic(member)) {
             code.add("static ");
         }
+        if (!utils.isEnum(member) && utils.isFinal(member)) {
+            code.add("final ");
+        }
     }
 
     /**
@@ -286,20 +295,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Returns {@code true} if the given element is inherited
-     * by the class that is being documented.
-     *
-     * @param ped the element being checked
-     *
-     * @return {@code true} if inherited
-     */
-    protected boolean isInherited(Element ped){
-        return (!utils.isPrivate(ped) &&
-                (!utils.isPackagePrivate(ped) ||
-                    ped.getEnclosingElement().equals(ped.getEnclosingElement())));
-    }
-
-    /**
      * Adds use information to the documentation tree.
      *
      * @param members     list of program elements for which the use information will be added
@@ -340,7 +335,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
-            writer.addSummaryLinkComment(this, element, desc);
+            writer.addSummaryLinkComment(element, desc);
             useTable.addRow(summaryType, typeContent, desc);
         }
         contentTree.add(useTable);
@@ -368,7 +363,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         addSummaryLink(tElement, member, summaryLink);
         rowContents.add(summaryLink);
         Content desc = new ContentBuilder();
-        writer.addSummaryLinkComment(this, member, firstSentenceTrees, desc);
+        writer.addSummaryLinkComment(member, firstSentenceTrees, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);
     }

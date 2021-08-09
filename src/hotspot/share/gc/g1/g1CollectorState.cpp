@@ -24,37 +24,24 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1GCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 
 G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is_full_mark) const {
   assert(!in_full_gc(), "must be");
   if (in_concurrent_start_gc()) {
     assert(!in_young_gc_before_mixed(), "must be");
-    return concurrent_operation_is_full_mark ? ConcurrentStartMarkGC : ConcurrentStartUndoGC;
+    return concurrent_operation_is_full_mark ? G1GCPauseType::ConcurrentStartMarkGC :
+                                               G1GCPauseType::ConcurrentStartUndoGC;
   } else if (in_young_gc_before_mixed()) {
     assert(!in_concurrent_start_gc(), "must be");
-    return LastYoungGC;
+    return G1GCPauseType::LastYoungGC;
   } else if (in_mixed_phase()) {
     assert(!in_concurrent_start_gc(), "must be");
     assert(!in_young_gc_before_mixed(), "must be");
-    return MixedGC;
+    return G1GCPauseType::MixedGC;
   } else {
     assert(!in_concurrent_start_gc(), "must be");
     assert(!in_young_gc_before_mixed(), "must be");
-    return YoungGC;
-  }
-}
-
-G1GCYoungPhase G1CollectorState::young_gc_phase() const {
-  assert(!in_full_gc(), "must be");
-
-  if (in_concurrent_start_gc()) {
-    return ConcurrentStart;
-  } else if (mark_or_rebuild_in_progress()) {
-    return DuringMarkOrRebuild;
-  } else if (in_young_only_phase()) {
-    return Normal;
-  } else {
-    return Mixed;
+    return G1GCPauseType::YoungGC;
   }
 }

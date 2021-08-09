@@ -101,6 +101,11 @@ public abstract class Cache<K,V> {
     public abstract void remove(Object key);
 
     /**
+     * Pull an entry from the cache.
+     */
+    public abstract V pull(Object key);
+
+    /**
      * Set the maximum size.
      */
     public abstract void setCapacity(int size);
@@ -222,6 +227,10 @@ class NullCache<K,V> extends Cache<K,V> {
 
     public void remove(Object key) {
         // empty
+    }
+
+    public V pull(Object key) {
+        return null;
     }
 
     public void setCapacity(int size) {
@@ -409,6 +418,26 @@ class MemoryCache<K,V> extends Cache<K,V> {
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry != null) {
             entry.invalidate();
+        }
+    }
+
+    public synchronized V pull(Object key) {
+        emptyQueue();
+        CacheEntry<K,V> entry = cacheMap.remove(key);
+        if (entry == null) {
+            return null;
+        }
+
+        long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
+        if (entry.isValid(time)) {
+            V value = entry.getValue();
+            entry.invalidate();
+            return value;
+        } else {
+            if (DEBUG) {
+                System.out.println("Ignoring expired entry");
+            }
+            return null;
         }
     }
 

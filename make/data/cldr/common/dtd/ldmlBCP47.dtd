@@ -16,7 +16,7 @@ $Revision$
 <!ATTLIST version number CDATA #REQUIRED >
 	<!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "38" >
+<!ATTLIST version cldrVersion CDATA #FIXED "39" >
 	<!--@MATCH:version-->
     <!--@VALUE-->
 

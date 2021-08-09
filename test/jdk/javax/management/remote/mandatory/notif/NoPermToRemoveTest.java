@@ -27,7 +27,7 @@
  * @summary checks the behaviour of  mbeanServerConnection.removeNotificationListener
  * operation when there is a exception thrown during removal
  * @modules java.management
- * @run main NoPermToRemoveTest
+ * @run main/othervm -Djava.security.manager=allow NoPermToRemoveTest
  */
 
 import java.lang.management.ManagementFactory;

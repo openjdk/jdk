@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_TASKQUEUE_INLINE_HPP
 
 #include "gc/shared/taskqueue.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

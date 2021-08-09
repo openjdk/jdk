@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,7 +543,7 @@ void PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_
     }
 #endif
     _igvn.rehash_node_delayed(u);
-    int nb = u->replace_edge(iv_to_replace, iv_replacement);
+    int nb = u->replace_edge(iv_to_replace, iv_replacement, &_igvn);
     i -= nb;
   }
 }
@@ -764,7 +764,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List &old_new) {
   Node* x = loop->_head;
   // Only for inner loops
-  if (loop->_child != NULL || !x->is_LongCountedLoop()) {
+  if (loop->_child != NULL || !x->is_LongCountedLoop() || x->as_Loop()->is_transformed_long_outer_loop()) {
     return false;
   }
 
@@ -812,7 +812,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
     return false;
   }
 
-  const TypeLong* phi_t = _igvn.type(phi)->is_long();
+  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
+  const TypeLong* phi_t = phi->bottom_type()->is_long();
   assert(phi_t->_hi >= phi_t->_lo, "dead phi?");
   iters_limit = (int)MIN2((julong)iters_limit, (julong)(phi_t->_hi - phi_t->_lo));
 
@@ -832,8 +833,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Node* outer_exit_test = new IfNode(exit_test->in(0), exit_test->in(1), exit_test->_prob, exit_test->_fcnt);
   Node* inner_exit_branch = exit_branch->clone();
 
-  Node* outer_head = new LoopNode(entry_control, outer_back_branch);
-  IdealLoopTree* outer_ilt = insert_outer_loop(loop, outer_head->as_Loop(), outer_back_branch);
+  LoopNode* outer_head = new LoopNode(entry_control, outer_back_branch);
+  IdealLoopTree* outer_ilt = insert_outer_loop(loop, outer_head, outer_back_branch);
 
   const bool body_populated = true;
   register_control(outer_head, outer_ilt, entry_control, body_populated);
@@ -1005,7 +1006,8 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Atomic::inc(&_long_loop_nests);
 #endif
 
-  inner_head->mark_transformed_long_loop();
+  inner_head->mark_transformed_long_inner_loop();
+  outer_head->mark_transformed_long_outer_loop();
 
   return true;
 }
@@ -1170,7 +1172,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
         set_subtree_ctrl(m, false);
       }
       _igvn.rehash_node_delayed(u);
-      int nb = u->replace_edge(n, m);
+      int nb = u->replace_edge(n, m, &_igvn);
       --i, imax -= nb;
     }
   }
@@ -1389,7 +1391,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     if (sov < 0) {
       return false;  // Bailout: integer overflow is certain.
     }
-    assert(!x->as_Loop()->is_transformed_long_loop(), "long loop was transformed");
+    assert(!x->as_Loop()->is_transformed_long_inner_loop(), "long loop was transformed");
     // Generate loop's limit check.
     // Loop limit check predicate should be near the loop.
     ProjNode *limit_check_proj = find_predicate_insertion_point(init_control, Deoptimization::Reason_loop_limit_check);
@@ -1479,7 +1481,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
 #ifdef ASSERT
   if (iv_bt == T_INT &&
-      !x->as_Loop()->is_transformed_long_loop() &&
+      !x->as_Loop()->is_transformed_long_inner_loop() &&
       StressLongCountedLoop > 0 &&
       trunc1 == NULL &&
       convert_to_long_loop(cmp, phi, loop)) {
@@ -1636,6 +1638,16 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         Node* sfpt = sfpt2->clone();
         sfpt->set_req(0, iffalse);
         outer_le->set_req(0, sfpt);
+
+        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        if (polladdr != nullptr && polladdr->is_Load()) {
+          // Polling load should be pinned outside inner loop.
+          Node* new_polladdr = polladdr->clone();
+          new_polladdr->set_req(0, iffalse);
+          _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
+          set_ctrl(new_polladdr, iffalse);
+          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+        }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
         register_control(sfpt, outer_ilt, iffalse, body_populated);
@@ -1674,10 +1686,13 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
 #ifndef PRODUCT
-  if (x->as_Loop()->is_transformed_long_loop()) {
+  if (x->as_Loop()->is_transformed_long_inner_loop()) {
     Atomic::inc(&_long_loop_counted_loops);
   }
 #endif
+  if (iv_bt == T_LONG && x->as_Loop()->is_transformed_long_outer_loop()) {
+    l->mark_transformed_long_outer_loop();
+  }
 
   return true;
 }
@@ -1756,34 +1771,6 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     Node* sfpt = outer_le->in(0);
     assert(sfpt->Opcode() == Op_SafePoint, "where's the safepoint?");
     Node* inner_out = sfpt->in(0);
-    if (inner_out->outcnt() != 1) {
-      ResourceMark rm;
-      Unique_Node_List wq;
-
-      for (DUIterator_Fast imax, i = inner_out->fast_outs(imax); i < imax; i++) {
-        Node* u = inner_out->fast_out(i);
-        if (u == sfpt) {
-          continue;
-        }
-        wq.clear();
-        wq.push(u);
-        bool found_sfpt = false;
-        for (uint next = 0; next < wq.size() && !found_sfpt; next++) {
-          Node* n = wq.at(next);
-          for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax && !found_sfpt; i++) {
-            Node* u = n->fast_out(i);
-            if (u == sfpt) {
-              found_sfpt = true;
-            }
-            if (!u->is_CFG()) {
-              wq.push(u);
-            }
-          }
-        }
-        assert(found_sfpt, "no node in loop that's not input to safepoint");
-      }
-    }
-
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
     assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
@@ -1802,7 +1789,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
             Node* n = be->fast_out(j);
             if (n->is_Load()) {
-              assert(n->in(0) == be, "should be on the backedge");
+              assert(n->in(0) == be || n->find_prec_edge(be) > 0, "should be on the backedge");
               do {
                 n = n->raw_out(0);
               } while (!n->is_Phi());
@@ -2058,7 +2045,7 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
 }
 
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
-  if (is_strip_mined() && is_valid_counted_loop(T_INT)) {
+  if (is_strip_mined() && in(EntryControl) != NULL && in(EntryControl)->is_OuterStripMinedLoop()) {
     verify_strip_mined(expect_skeleton);
     return in(EntryControl)->as_Loop();
   }
@@ -2152,9 +2139,10 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 }
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
-    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0)->is_If() &&
-           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
-           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt) {
+    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
+            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+             (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
+              ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
     }
 
@@ -3313,7 +3301,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_transformed_long_loop(), "transformation to counted loop should not fail");
+    assert(!_head->is_Loop() || !_head->as_Loop()->is_transformed_long_inner_loop(), "transformation to counted loop should not fail");
     if (_parent != NULL && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;
@@ -4026,6 +4014,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // all the code before the peeled area, so the verify pass will always
     // complain about it.
   }
+
+  // Check for bailout, and return
+  if (C->failing()) {
+    return;
+  }
+
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 
@@ -4927,28 +4921,34 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
 // loop unswitching, and IGVN, or a combination of them) can freely change
 // the graph's shape. As a result, the graph shape outlined below cannot
 // be guaranteed anymore.
-bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
-  if (!cl->is_main_loop() && !cl->is_post_loop()) {
-    return false;
+Node* CountedLoopNode::is_canonical_loop_entry() {
+  if (!is_main_loop() && !is_post_loop()) {
+    return NULL;
   }
-  Node* ctrl = cl->skip_predicates();
+  Node* ctrl = skip_predicates();
 
   if (ctrl == NULL || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
-    return false;
+    return NULL;
   }
   Node* iffm = ctrl->in(0);
   if (iffm == NULL || !iffm->is_If()) {
-    return false;
+    return NULL;
   }
   Node* bolzm = iffm->in(1);
   if (bolzm == NULL || !bolzm->is_Bool()) {
-    return false;
+    return NULL;
   }
   Node* cmpzm = bolzm->in(1);
   if (cmpzm == NULL || !cmpzm->is_Cmp()) {
-    return false;
+    return NULL;
   }
-  // compares can get conditionally flipped
+
+  uint input = is_main_loop() ? 2 : 1;
+  if (input >= cmpzm->req() || cmpzm->in(input) == NULL) {
+    return NULL;
+  }
+  bool res = cmpzm->in(input)->Opcode() == Op_Opaque1;
+#ifdef ASSERT
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
@@ -4957,10 +4957,9 @@ bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
       break;
     }
   }
-  if (!found_opaque) {
-    return false;
-  }
-  return true;
+  assert(found_opaque == res, "wrong pattern");
+#endif
+  return res ? cmpzm->in(input) : NULL;
 }
 
 //------------------------------get_late_ctrl----------------------------------
@@ -4976,78 +4975,89 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   }
 #endif
 
-  // if this is a load, check for anti-dependent stores
-  // We use a conservative algorithm to identify potential interfering
-  // instructions and for rescheduling the load.  The users of the memory
-  // input of this load are examined.  Any use which is not a load and is
-  // dominated by early is considered a potentially interfering store.
-  // This can produce false positives.
   if (n->is_Load() && LCA != early) {
-    int load_alias_idx = C->get_alias_index(n->adr_type());
-    if (C->alias_type(load_alias_idx)->is_rewritable()) {
-      Unique_Node_List worklist;
+    LCA = get_late_ctrl_with_anti_dep(n->as_Load(), early, LCA);
+  }
 
-      Node* mem = n->in(MemNode::Memory);
-      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-        Node* s = mem->fast_out(i);
-        worklist.push(s);
-      }
-      for (uint i = 0; i < worklist.size() && LCA != early; i++) {
-        Node* s = worklist.at(i);
-        if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
-            s->is_Phi()) {
-          continue;
-        } else if (s->is_MergeMem()) {
-          for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-            Node* s1 = s->fast_out(i);
-            worklist.push(s1);
-          }
-        } else {
-          Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-          assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
-          if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
-            const TypePtr* adr_type = s->adr_type();
-            if (s->is_ArrayCopy()) {
-              // Copy to known instance needs destination type to test for aliasing
-              const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
-              if (dest_type != TypeOopPtr::BOTTOM) {
-                adr_type = dest_type;
-              }
+  assert(LCA == find_non_split_ctrl(LCA), "unexpected late control");
+  return LCA;
+}
+
+// if this is a load, check for anti-dependent stores
+// We use a conservative algorithm to identify potential interfering
+// instructions and for rescheduling the load.  The users of the memory
+// input of this load are examined.  Any use which is not a load and is
+// dominated by early is considered a potentially interfering store.
+// This can produce false positives.
+Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
+  int load_alias_idx = C->get_alias_index(n->adr_type());
+  if (C->alias_type(load_alias_idx)->is_rewritable()) {
+    Unique_Node_List worklist;
+
+    Node* mem = n->in(MemNode::Memory);
+    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+      Node* s = mem->fast_out(i);
+      worklist.push(s);
+    }
+    for (uint i = 0; i < worklist.size() && LCA != early; i++) {
+      Node* s = worklist.at(i);
+      if (s->is_Load() || s->Opcode() == Op_SafePoint ||
+          (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
+          s->is_Phi()) {
+        continue;
+      } else if (s->is_MergeMem()) {
+        for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+          Node* s1 = s->fast_out(i);
+          worklist.push(s1);
+        }
+      } else {
+        Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+        assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
+        if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
+          const TypePtr* adr_type = s->adr_type();
+          if (s->is_ArrayCopy()) {
+            // Copy to known instance needs destination type to test for aliasing
+            const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
+            if (dest_type != TypeOopPtr::BOTTOM) {
+              adr_type = dest_type;
             }
-            if (C->can_alias(adr_type, load_alias_idx)) {
-              LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
-            } else if (s->is_CFG()) {
-              for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-                Node* s1 = s->fast_out(i);
-                if (_igvn.type(s1) == Type::MEMORY) {
-                  worklist.push(s1);
+          }
+          if (C->can_alias(adr_type, load_alias_idx)) {
+            LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+          } else if (s->is_CFG() && s->is_Multi()) {
+            // Look for the memory use of s (that is the use of its memory projection)
+            for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+              Node* s1 = s->fast_out(i);
+              assert(s1->is_Proj(), "projection expected");
+              if (_igvn.type(s1) == Type::MEMORY) {
+                for (DUIterator_Fast jmax, j = s1->fast_outs(jmax); j < jmax; j++) {
+                  Node* s2 = s1->fast_out(j);
+                  worklist.push(s2);
                 }
               }
             }
           }
         }
       }
-      // For Phis only consider Region's inputs that were reached by following the memory edges
-      if (LCA != early) {
-        for (uint i = 0; i < worklist.size(); i++) {
-          Node* s = worklist.at(i);
-          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
-            Node* r = s->in(0);
-            for (uint j = 1; j < s->req(); j++) {
-              Node* in = s->in(j);
-              Node* r_in = r->in(j);
-              if ((worklist.member(in) || in == mem) && is_dominator(early, r_in)) {
-                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
-              }
+    }
+    // For Phis only consider Region's inputs that were reached by following the memory edges
+    if (LCA != early) {
+      for (uint i = 0; i < worklist.size(); i++) {
+        Node* s = worklist.at(i);
+        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+          Node* r = s->in(0);
+          for (uint j = 1; j < s->req(); j++) {
+            Node* in = s->in(j);
+            Node* r_in = r->in(j);
+            // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+            if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
             }
           }
         }
       }
     }
   }
-
-  assert(LCA == find_non_split_ctrl(LCA), "unexpected late control");
   return LCA;
 }
 
@@ -5075,23 +5085,24 @@ bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
 // does not need to be cleared between calls to get_late_ctrl().
 // Algorithm trades a larger constant factor for better asymptotic behavior
 //
-Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, Node *tag ) {
+Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node *n1, Node *n2, Node *tag_node) {
   uint d1 = dom_depth(n1);
   uint d2 = dom_depth(n2);
+  jlong tag = tag_node->_idx | (((jlong)_dom_lca_tags_round) << 32);
 
   do {
     if (d1 > d2) {
       // current lca is deeper than n2
-      _dom_lca_tags.map(n1->_idx, tag);
+      _dom_lca_tags.at_put_grow(n1->_idx, tag);
       n1 =      idom(n1);
       d1 = dom_depth(n1);
     } else if (d1 < d2) {
       // n2 is deeper than current lca
-      Node *memo = _dom_lca_tags[n2->_idx];
-      if( memo == tag ) {
+      jlong memo = _dom_lca_tags.at_grow(n2->_idx, 0);
+      if (memo == tag) {
         return n1;    // Return the current LCA
       }
-      _dom_lca_tags.map(n2->_idx, tag);
+      _dom_lca_tags.at_put_grow(n2->_idx, tag);
       n2 =      idom(n2);
       d2 = dom_depth(n2);
     } else {
@@ -5100,19 +5111,19 @@ Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, No
       // to be searched more carefully.
 
       // Scan up all the n1's with equal depth, looking for n2.
-      _dom_lca_tags.map(n1->_idx, tag);
+      _dom_lca_tags.at_put_grow(n1->_idx, tag);
       Node *t1 = idom(n1);
       while (dom_depth(t1) == d1) {
         if (t1 == n2)  return n2;
-        _dom_lca_tags.map(t1->_idx, tag);
+        _dom_lca_tags.at_put_grow(t1->_idx, tag);
         t1 = idom(t1);
       }
       // Scan up all the n2's with equal depth, looking for n1.
-      _dom_lca_tags.map(n2->_idx, tag);
+      _dom_lca_tags.at_put_grow(n2->_idx, tag);
       Node *t2 = idom(n2);
       while (dom_depth(t2) == d2) {
         if (t2 == n1)  return n1;
-        _dom_lca_tags.map(t2->_idx, tag);
+        _dom_lca_tags.at_put_grow(t2->_idx, tag);
         t2 = idom(t2);
       }
       // Move up to a new dominator-depth value as well as up the dom-tree.
@@ -5131,25 +5142,11 @@ Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, No
 // be of fixed size.
 void PhaseIdealLoop::init_dom_lca_tags() {
   uint limit = C->unique() + 1;
-  _dom_lca_tags.map( limit, NULL );
+  _dom_lca_tags.at_grow(limit, 0);
+  _dom_lca_tags_round = 0;
 #ifdef ASSERT
-  for( uint i = 0; i < limit; ++i ) {
-    assert(_dom_lca_tags[i] == NULL, "Must be distinct from each node pointer");
-  }
-#endif // ASSERT
-}
-
-//------------------------------clear_dom_lca_tags------------------------------
-// Tag could be a node's integer index, 32bits instead of 64bits in some cases
-// Intended use does not involve any growth for the array, so it could
-// be of fixed size.
-void PhaseIdealLoop::clear_dom_lca_tags() {
-  uint limit = C->unique() + 1;
-  _dom_lca_tags.map( limit, NULL );
-  _dom_lca_tags.clear();
-#ifdef ASSERT
-  for( uint i = 0; i < limit; ++i ) {
-    assert(_dom_lca_tags[i] == NULL, "Must be distinct from each node pointer");
+  for (uint i = 0; i < limit; ++i) {
+    assert(_dom_lca_tags.at(i) == 0, "Must be distinct from each node pointer");
   }
 #endif // ASSERT
 }

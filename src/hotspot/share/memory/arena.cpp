@@ -30,7 +30,16 @@
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
+// Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
+STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
@@ -171,13 +180,30 @@ class ChunkPoolCleaner : public PeriodicTask {
 //--------------------------------------------------------------------------------------
 // Chunk implementation
 
-void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, size_t length) throw() {
-  // requested_size is equal to sizeof(Chunk) but in order for the arena
-  // allocations to come out aligned as expected the size must be aligned
-  // to expected arena alignment.
-  // expect requested_size but if sizeof(Chunk) doesn't match isn't proper size we must align it.
-  assert(ARENA_ALIGN(requested_size) == aligned_overhead_size(), "Bad alignment");
-  size_t bytes = ARENA_ALIGN(requested_size) + length;
+void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, size_t length) throw() {
+
+  // - requested_size = sizeof(Chunk)
+  // - length = payload size
+  // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
+  //
+  // +-----------+--+--------------------------------------------+
+  // |           |g |                                            |
+  // | Chunk     |a |               Payload                      |
+  // |           |p |                                            |
+  // +-----------+--+--------------------------------------------+
+  // A           B  C                                            D
+  //
+  // - The Chunk is allocated from C-heap, therefore its start address (A) should be
+  //   64-bit aligned on all our platforms, including 32-bit.
+  // - sizeof(Chunk) (B) may not be aligned to 64-bit, and we have to take that into
+  //   account when calculating the Payload bottom (C) (see Chunk::bottom())
+  // - the payload size (length) must be aligned to 64-bit, which takes care of 64-bit
+  //   aligning (D)
+
+  assert(sizeofChunk == sizeof(Chunk), "weird request size");
+  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
+         SIZE_FORMAT ".", length);
+  size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
   switch (length) {
    case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
    case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
@@ -188,6 +214,8 @@ void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, 
      if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
        vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
      }
+     // We rely on arena alignment <= malloc alignment.
+     assert(is_aligned(p, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
      return p;
    }
   }
@@ -239,8 +267,7 @@ void Chunk::start_chunk_pool_cleaner_task() {
 //------------------------------Arena------------------------------------------
 
 Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
-  size_t round_size = (sizeof (char *)) - 1;
-  init_size = (init_size+round_size) & ~round_size;
+  init_size = ARENA_ALIGN(init_size);
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
@@ -310,7 +337,9 @@ void Arena::destruct_contents() {
   // reset size before chop to avoid a rare racing condition
   // that can have total arena memory exceed total chunk memory
   set_size_in_bytes(0);
-  _first->chop();
+  if (_first != NULL) {
+    _first->chop();
+  }
   reset();
 }
 
@@ -335,14 +364,11 @@ size_t Arena::used() const {
   return sum;                   // Return total consumed space.
 }
 
-void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
-  vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "%s", whence);
-}
-
 // Grow a new Chunk
 void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
-  size_t len = MAX2(x, (size_t) Chunk::size);
+  // (Note: all chunk sizes have to be 64-bit aligned)
+  size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
   Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (alloc_failmode, len) Chunk(len);
@@ -365,7 +391,14 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
 
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
-  if (new_size == 0) return NULL;
+  if (new_size == 0) {
+    Afree(old_ptr, old_size); // like realloc(3)
+    return NULL;
+  }
+  if (old_ptr == NULL) {
+    assert(old_size == 0, "sanity");
+    return Amalloc(new_size, alloc_failmode); // as with realloc(3), a NULL old ptr is equivalent to malloc(3)
+  }
 #ifdef ASSERT
   if (UseMallocOnly) {
     // always allocate a new object  (otherwise we'll free this one twice)
@@ -444,21 +477,8 @@ bool Arena::contains( const void *ptr ) const {
 void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
-  char** save = (char**)internal_malloc_4(sizeof(char*));
+  char** save = (char**)internal_amalloc(sizeof(char*));
   return (*save = (char*)os::malloc(size, mtChunk));
-}
-
-// for debugging with UseMallocOnly
-void* Arena::internal_malloc_4(size_t x) {
-  assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-  check_for_overflow(x, "Arena::internal_malloc_4");
-  if (_hwm + x > _max) {
-    return grow(x);
-  } else {
-    char *old = _hwm;
-    _hwm += x;
-    return old;
-  }
 }
 #endif
 

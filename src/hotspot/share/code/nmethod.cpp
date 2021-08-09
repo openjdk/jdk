@@ -38,6 +38,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
@@ -438,7 +439,6 @@ void nmethod::init_defaults() {
   _stack_traversal_mark       = 0;
   _load_reported              = false; // jvmti state
   _unload_reported            = false;
-  _is_far_code                = false; // nmethods are located in CodeCache
 
 #ifdef ASSERT
   _oops_are_stale             = false;
@@ -936,6 +936,8 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
+
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -1024,9 +1026,9 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   if (handle == NULL ||
       // As a special case, IC oops are initialized to 1 or -1.
       handle == (jobject) Universe::non_oop_word()) {
-    (*dest) = (oop) handle;
+    *(void**)dest = handle;
   } else {
-    (*dest) = JNIHandles::resolve_non_null(handle);
+    *dest = JNIHandles::resolve_non_null(handle);
   }
 }
 
@@ -1167,7 +1169,7 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(int new_state_int) {
   signed char new_state = new_state_int;
-#ifdef DEBUG
+#ifdef ASSERT
   if (new_state != unloaded) {
     assert_lock_strong(CompiledMethod_lock);
   }
@@ -1594,8 +1596,20 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 
   // Don't post this nmethod load event if it is already dying
   // because the sweeper might already be deleting this nmethod.
-  if (is_not_entrant() && can_convert_to_zombie()) {
-    return;
+  {
+    MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+    // When the nmethod is acquired from the CodeCache iterator, it can racingly become zombie
+    // before this code is called. Filter them out here under the CompiledMethod_lock.
+    if (!is_alive()) {
+      return;
+    }
+    // As for is_alive() nmethods, we also don't want them to racingly become zombie once we
+    // release this lock, so we check that this is not going to be the case.
+    if (is_not_entrant() && can_convert_to_zombie()) {
+      return;
+    }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
+    mark_as_seen_on_stack();
   }
 
   // This is a bad time for a safepoint.  We don't want
@@ -1755,10 +1769,10 @@ public:
 bool nmethod::is_unloading() {
   uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
-  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   if (state_is_unloading) {
     return true;
   }
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   uint8_t current_cycle = CodeCache::unloading_cycle();
   if (state_unloading_cycle == current_cycle) {
     return false;
@@ -2213,8 +2227,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                            &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
 
   DepTable* table = new DepTable();
 
@@ -2306,7 +2322,6 @@ nmethodLocker::nmethodLocker(address pc) {
 // should pass zombie_ok == true.
 void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
   if (cm == NULL)  return;
-  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::inc(&nm->_lock_count);
   assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
@@ -2314,7 +2329,6 @@ void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
 
 void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
   if (cm == NULL)  return;
-  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::dec(&nm->_lock_count);
   assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
@@ -2462,11 +2476,11 @@ void nmethod::verify_scopes() {
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::opt_virtual_call_type:
-        stub = iter.opt_virtual_call_reloc()->static_stub(false);
+        stub = iter.opt_virtual_call_reloc()->static_stub();
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::static_call_type:
-        stub = iter.static_call_reloc()->static_stub(false);
+        stub = iter.static_call_reloc()->static_stub();
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
@@ -2614,7 +2628,7 @@ void nmethod::print_oops(outputStream* st) {
     for (oop* p = oops_begin(); p < oops_end(); p++) {
       Disassembler::print_location((unsigned char*)p, (unsigned char*)oops_begin(), (unsigned char*)oops_end(), st, true, false);
       st->print(PTR_FORMAT " ", *((uintptr_t*)p));
-      if (*p == Universe::non_oop_word()) {
+      if (Universe::contains_non_oop_word(p)) {
         st->print_cr("NON_OOP");
         continue;  // skip non-oops
       }
@@ -2710,6 +2724,36 @@ void nmethod::print_nul_chk_table() {
   ImplicitExceptionTable(this).print(code_begin());
 }
 
+void nmethod::print_recorded_oop(int log_n, int i) {
+  void* value;
+
+  if (i == 0) {
+    value = NULL;
+  } else {
+    // Be careful around non-oop words. Don't create an oop
+    // with that value, or it will assert in verification code.
+    if (Universe::contains_non_oop_word(oop_addr_at(i))) {
+      value = Universe::non_oop_word();
+    } else {
+      value = oop_at(i);
+    }
+  }
+
+  tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(value));
+
+  if (value == Universe::non_oop_word()) {
+    tty->print("non-oop word");
+  } else {
+    if (value == 0) {
+      tty->print("NULL-oop");
+    } else {
+      oop_at(i)->print_value_on(tty);
+    }
+  }
+
+  tty->cr();
+}
+
 void nmethod::print_recorded_oops() {
   const int n = oops_count();
   const int log_n = (n<10) ? 1 : (n<100) ? 2 : (n<1000) ? 3 : (n<10000) ? 4 : 6;
@@ -2717,16 +2761,7 @@ void nmethod::print_recorded_oops() {
   if (n > 0) {
     tty->cr();
     for (int i = 0; i < n; i++) {
-      oop o = oop_at(i);
-      tty->print("#%*d: " INTPTR_FORMAT " ", log_n, i, p2i(o));
-      if (o == (oop)Universe::non_oop_word()) {
-        tty->print("non-oop word");
-      } else if (o == NULL) {
-        tty->print("NULL-oop");
-      } else {
-        o->print_value_on(tty);
-      }
-      tty->cr();
+      print_recorded_oop(log_n, i);
     }
   } else {
     tty->print_cr(" <list empty>");
@@ -3385,28 +3420,11 @@ public:
   }
 
   virtual void set_destination_mt_safe(address dest) {
-#if INCLUDE_AOT
-    if (UseAOT) {
-      CodeBlob* callee = CodeCache::find_blob(dest);
-      CompiledMethod* cm = callee->as_compiled_method_or_null();
-      if (cm != NULL && cm->is_far_code()) {
-        // Temporary fix, see JDK-8143106
-        CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-        csc->set_to_far(methodHandle(Thread::current(), cm->method()), dest);
-        return;
-      }
-    }
-#endif
     _call->set_destination_mt_safe(dest);
   }
 
   virtual void set_to_interpreted(const methodHandle& method, CompiledICInfo& info) {
     CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-#if INCLUDE_AOT
-    if (info.to_aot()) {
-      csc->set_to_far(method, info.entry());
-    } else
-#endif
     {
       csc->set_to_interpreted(method, info.entry());
     }

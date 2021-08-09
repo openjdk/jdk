@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,6 +536,7 @@ class DatagramChannelImpl
             try {
                 SocketAddress remote = beginRead(blocking, false);
                 boolean connected = (remote != null);
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (connected || (sm == null)) {
                     // connected or no security manager
@@ -571,6 +572,7 @@ class DatagramChannelImpl
      * manager.
      */
     private SocketAddress untrustedReceive(ByteBuffer dst) throws IOException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         assert readLock.isHeldByCurrentThread()
                 && sm != null && remoteAddress == null;
@@ -622,6 +624,7 @@ class DatagramChannelImpl
             ensureOpen();
             if (!isBlocking())
                 throw new IllegalBlockingModeException();
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             boolean connected = isConnected();
             SocketAddress sender;
@@ -801,6 +804,7 @@ class DatagramChannelImpl
                     completed = (n > 0);
                 } else {
                     // not connected
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     InetAddress ia = isa.getAddress();
                     if (sm != null) {
@@ -1182,6 +1186,7 @@ class DatagramChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkListen(isa.getPort());
@@ -1210,6 +1215,7 @@ class DatagramChannelImpl
      */
     DatagramChannel connect(SocketAddress sa, boolean check) throws IOException {
         InetSocketAddress isa = Net.checkAddress(sa, family);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             InetAddress ia = isa.getAddress();
@@ -1425,6 +1431,7 @@ class DatagramChannelImpl
     /**
      * Defines static methods to access AbstractSelectableChannel non-public members.
      */
+    @SuppressWarnings("removal")
     private static class AbstractSelectableChannels {
         private static final Method FOREACH;
         static {
@@ -1481,6 +1488,7 @@ class DatagramChannelImpl
                 throw new IllegalArgumentException("Source address is different type to group");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkMulticast(group);

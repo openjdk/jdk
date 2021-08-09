@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,12 +169,12 @@ class LIR_Assembler: public CompilationResourceObj {
   void reg2reg    (LIR_Opr src, LIR_Opr dest);
   void reg2mem    (LIR_Opr src, LIR_Opr dest, BasicType type,
                    LIR_PatchCode patch_code, CodeEmitInfo* info,
-                   bool pop_fpu_stack, bool wide, bool unaligned);
+                   bool pop_fpu_stack, bool wide);
   void stack2reg  (LIR_Opr src, LIR_Opr dest, BasicType type);
   void stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type);
   void mem2reg    (LIR_Opr src, LIR_Opr dest, BasicType type,
                    LIR_PatchCode patch_code,
-                   CodeEmitInfo* info, bool wide, bool unaligned);
+                   CodeEmitInfo* info, bool wide);
 
   void shift_op(LIR_Code code, LIR_Opr left, LIR_Opr count, LIR_Opr dest, LIR_Opr tmp);
   void shift_op(LIR_Code code, LIR_Opr left, jint  count, LIR_Opr dest);
@@ -214,7 +214,7 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack);
   void move_op(LIR_Opr src, LIR_Opr result, BasicType type,
-               LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned, bool wide);
+               LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide);
   void volatile_move_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);
   void comp_mem_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);  // info set for null exceptions
   void comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr result, LIR_Op2* op);
@@ -259,11 +259,7 @@ class LIR_Assembler: public CompilationResourceObj {
  public:
 
   static int call_stub_size() {
-    if (UseAOT) {
-      return _call_stub_size + _call_aot_stub_size;
-    } else {
-      return _call_stub_size;
-    }
+    return _call_stub_size;
   }
 
   static int exception_handler_size() {

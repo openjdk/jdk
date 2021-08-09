@@ -31,6 +31,7 @@ import javax.crypto.spec.DESKeySpec;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -63,17 +64,20 @@ public final class DESKeyFactory extends SecretKeyFactorySpi {
         throws InvalidKeySpecException {
 
         try {
+            byte[] encoded;
             if (keySpec instanceof DESKeySpec) {
-                return new DESKey(((DESKeySpec)keySpec).getKey());
+                encoded = ((DESKeySpec)keySpec).getKey();
+            } else if (keySpec instanceof SecretKeySpec) {
+                encoded = ((SecretKeySpec)keySpec).getEncoded();
+            } else {
+                throw new InvalidKeySpecException(
+                        "Inappropriate key specification");
             }
-
-            if (keySpec instanceof SecretKeySpec) {
-                return new DESKey(((SecretKeySpec)keySpec).getEncoded());
+            try {
+                return new DESKey(encoded);
+            } finally {
+                Arrays.fill(encoded, (byte)0);
             }
-
-            throw new InvalidKeySpecException(
-                    "Inappropriate key specification");
-
         } catch (InvalidKeyException e) {
             throw new InvalidKeySpecException(e.getMessage());
         }
@@ -106,9 +110,15 @@ public final class DESKeyFactory extends SecretKeyFactorySpi {
 
                 // Check if requested key spec is amongst the valid ones
                 if ((keySpec != null) &&
-                    keySpec.isAssignableFrom(DESKeySpec.class)) {
-                    return new DESKeySpec(key.getEncoded());
-
+                        keySpec.isAssignableFrom(DESKeySpec.class)) {
+                    byte[] encoded = key.getEncoded();
+                    try {
+                        return new DESKeySpec(encoded);
+                    } finally {
+                        if (encoded != null) {
+                            Arrays.fill(encoded, (byte) 0);
+                        }
+                    }
                 } else {
                     throw new InvalidKeySpecException
                         ("Inappropriate key specification");

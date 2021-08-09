@@ -318,7 +318,7 @@ public class TimestampCheck {
                 sign("tsdisabled", "-digestalg", "MD5",
                                 "-sigalg", "MD5withRSA", "-tsadigestalg", "MD5")
                         .shouldHaveExitValue(68)
-                        .shouldContain("The timestamp is invalid. Without a valid timestamp")
+                        .shouldContain("TSA certificate chain is invalid")
                         .shouldMatch("MD5.*-digestalg.*is disabled")
                         .shouldMatch("MD5.*-tsadigestalg.*is disabled")
                         .shouldMatch("MD5withRSA.*-sigalg.*is disabled");
@@ -326,7 +326,6 @@ public class TimestampCheck {
 
                 signVerbose("tsdisabled", "unsigned.jar", "tsdisabled2.jar", "signer")
                         .shouldHaveExitValue(64)
-                        .shouldContain("The timestamp is invalid. Without a valid timestamp")
                         .shouldContain("TSA certificate chain is invalid");
 
                 // Disabled timestamp is an error and jar treated unsigned
@@ -658,7 +657,7 @@ public class TimestampCheck {
                 .shouldMatch("Timestamp signature algorithm: .*key.*(disabled)");
         verify(file, "-J-Djava.security.debug=jar")
                 .shouldHaveExitValue(16)
-                .shouldMatch("SignatureException:.*disabled");
+                .shouldMatch("SignatureException:.*keysize");
 
         // For 8171319: keytool should print out warnings when reading or
         //              generating cert/cert req using disabled algorithms.

@@ -118,8 +118,8 @@ public final class LdapClient implements PooledConnection {
     final Connection conn;  // Connection to server; has reader thread
                       // used by LdapCtx for StartTLS
 
-    final private PoolCallback pcb;
-    final private boolean pooled;
+    private final PoolCallback pcb;
+    private final boolean pooled;
     private boolean authenticateCalled = false;
 
     ////////////////////////////////////////////////////////////////////////////

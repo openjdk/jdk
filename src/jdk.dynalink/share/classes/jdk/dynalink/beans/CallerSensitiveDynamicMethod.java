@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ import jdk.dynalink.linker.support.Lookup;
  * every request.
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_LOOKUP_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
                     SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
@@ -126,6 +127,7 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
 
     @Override
     MethodHandle getTarget(final CallSiteDescriptor desc) {
+        @SuppressWarnings("removal")
         final MethodHandles.Lookup lookup = AccessController.doPrivileged(
                 (PrivilegedAction<MethodHandles.Lookup>)desc::getLookup,
                 GET_LOOKUP_CONTEXT);

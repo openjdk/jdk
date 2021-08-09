@@ -206,18 +206,18 @@ class MethodHandleNatives {
     }
     static String refKindName(byte refKind) {
         assert(refKindIsValid(refKind));
-        switch (refKind) {
-        case REF_getField:          return "getField";
-        case REF_getStatic:         return "getStatic";
-        case REF_putField:          return "putField";
-        case REF_putStatic:         return "putStatic";
-        case REF_invokeVirtual:     return "invokeVirtual";
-        case REF_invokeStatic:      return "invokeStatic";
-        case REF_invokeSpecial:     return "invokeSpecial";
-        case REF_newInvokeSpecial:  return "newInvokeSpecial";
-        case REF_invokeInterface:   return "invokeInterface";
-        default:                    return "REF_???";
-        }
+        return switch (refKind) {
+            case REF_getField         -> "getField";
+            case REF_getStatic        -> "getStatic";
+            case REF_putField         -> "putField";
+            case REF_putStatic        -> "putStatic";
+            case REF_invokeVirtual    -> "invokeVirtual";
+            case REF_invokeStatic     -> "invokeStatic";
+            case REF_invokeSpecial    -> "invokeSpecial";
+            case REF_newInvokeSpecial -> "newInvokeSpecial";
+            case REF_invokeInterface  -> "invokeInterface";
+            default -> "REF_???";
+        };
     }
 
     private static native int getNamedCon(int which, Object[] name);
@@ -667,11 +667,8 @@ class MethodHandleNatives {
 
     static boolean canBeCalledVirtual(MemberName mem) {
         assert(mem.isInvocable());
-        switch (mem.getName()) {
-        case "getContextClassLoader":
-            return canBeCalledVirtual(mem, java.lang.Thread.class);
-        }
-        return false;
+        return mem.getName().equals("getContextClassLoader") &&
+            canBeCalledVirtual(mem, java.lang.Thread.class);
     }
 
     static boolean canBeCalledVirtual(MemberName symbolicRef, Class<?> definingClass) {

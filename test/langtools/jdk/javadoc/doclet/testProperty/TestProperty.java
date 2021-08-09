@@ -59,8 +59,12 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is a single Object.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getGood()"><code>getGood()</code></a>,\s
-                    <a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getGood()"><code>getGood()</code></a></li>
+                    <li><a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
 
                 """
@@ -71,15 +75,19 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is an array.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getBad()"><code>getBad()</code></a>,\s
-                    <a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getBad()"><code>getBad()</code></a></li>
+                    <li><a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
 
                 // no tab classes should be used in the property table
                 """
-                    <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
-                    s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
-                    /a>[]&gt;</code></div>
+                    <div class="col-first even-row-color"><code>final <a href="ObjectProperty.html" \
+                    title="class in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in \
+                    pkg">MyObj</a>[]&gt;</code></div>
                     <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
                     r-name-link">bad</a></code></div>
                     <div class="col-last even-row-color">""",
@@ -87,9 +95,9 @@ public class TestProperty extends JavadocTester {
                 // tab classes should be used in the method table
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><a href="ObjectProperty.html" title="class in pk\
-                    g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
-                    t;</code></div>
+                    ab2 method-summary-table-tab4"><code>final <a href="ObjectProperty.html" title="\
+                    class in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">My\
+                    Obj</a>[]&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#badProperty()" class="member-nam\
                     e-link">badProperty</a>()</code></div>"""
@@ -105,8 +113,12 @@ public class TestProperty extends JavadocTester {
                     <div class="block">This is an Object property where the Object is a single <code>List&lt;T&gt;</code>.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="#getList()"><code>getList()</code></a>,\s
-                    <a href="#setList(java.util.List)"><code>setList(List)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getList()"><code>getList()</code></a></li>
+                    <li><a href="#setList(java.util.List)"><code>setList(List)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>"""
         );
     }

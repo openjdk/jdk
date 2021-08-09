@@ -28,9 +28,7 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "utilities/ticks.hpp"
 
@@ -42,7 +40,6 @@ class G1FullGCAdjustTask : public G1FullGCTask {
   WeakProcessor::Task      _weak_proc_task;
   HeapRegionClaimer        _hrclaimer;
   G1AdjustClosure          _adjust;
-  StringDedupCleaningTask  _string_dedup_cleaning_task;
 
 public:
   G1FullGCAdjustTask(G1FullCollector* collector);

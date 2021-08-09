@@ -54,7 +54,7 @@ public class WinExeBundler extends AbstractBundler {
                     },
                     (s, p) -> null);
 
-    private final static String EXE_WRAPPER_NAME = "msiwrapper.exe";
+    private static final String EXE_WRAPPER_NAME = "msiwrapper.exe";
 
     @Override
     public String getName() {

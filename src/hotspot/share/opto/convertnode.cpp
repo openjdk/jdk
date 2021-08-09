@@ -500,7 +500,7 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( andl_op == Op_AndL ) {
     // Blow off prior masking to int
     if( phase->type(andl->in(2)) == TypeLong::make( 0xFFFFFFFF ) ) {
-      set_req(1,andl->in(1));
+      set_req_X(1,andl->in(1), phase);
       return this;
     }
   }

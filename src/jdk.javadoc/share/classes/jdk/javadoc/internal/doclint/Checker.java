@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree tree, Void ignore) {
-        super.visitDocComment(tree, ignore);
+        scan(tree.getFirstSentence(), ignore);
+        scan(tree.getBody(), ignore);
+        checkTagStack();
+
+        for (DocTree blockTag : tree.getBlockTags()) {
+            tagStack.clear();
+            scan(blockTag, ignore);
+            checkTagStack();
+        }
+
+        return null;
+    }
+
+    private void checkTagStack() {
         for (TagStackItem tsi: tagStack) {
             warnIfEmpty(tsi, null);
             if (tsi.tree.getKind() == DocTree.Kind.START_ELEMENT
@@ -278,7 +291,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 env.messages.error(HTML, t, "dc.tag.not.closed", t.getName());
             }
         }
-        return null;
     }
     // </editor-fold>
 
@@ -371,11 +383,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                 }
             }
-        }
 
-        // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
-            env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            // check for self closing tags, such as <a id="name"/>
+            if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
+                env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            }
         }
 
         try {
@@ -548,6 +560,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     done = true;
                     break;
                 } else if (top.tag == null || top.tag.endKind != HtmlTag.EndKind.REQUIRED) {
+                    warnIfEmpty(top, null);
                     tagStack.pop();
                 } else {
                     boolean found = false;
@@ -578,14 +591,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
-        if (tsi.tag != null && tsi.tree instanceof StartElementTree) {
+        if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
             if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
                     && !(tsi.tag.elemKind == ElemKind.HTML4)) {
-                DocTree tree = (endTree != null) ? endTree : tsi.tree;
-                Name treeName = ((StartElementTree) tsi.tree).getName();
+                DocTree tree = (endTree != null) ? endTree : startTree;
+                Name treeName = startTree.getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
             }
         }

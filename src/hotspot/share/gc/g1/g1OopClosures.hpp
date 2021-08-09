@@ -141,7 +141,6 @@ protected:
   inline void mark_object(oop obj);
 
   G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* par_scan_state);
-  ~G1ParCopyHelper() { }
 
  public:
   void set_scanned_cld(ClassLoaderData* cld) { _scanned_cld = cld; }

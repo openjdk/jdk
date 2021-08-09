@@ -1,10 +1,10 @@
-## Apache Santuario v2.1.4
+## Apache Santuario v2.2.1
 
 ### Apache Santuario Notice
 <pre>
 
   Apache Santuario - XML Security for Java
-  Copyright 1999-2019 The Apache Software Foundation
+  Copyright 1999-2021 The Apache Software Foundation
 
   This product includes software developed at
   The Apache Software Foundation (http://www.apache.org/).

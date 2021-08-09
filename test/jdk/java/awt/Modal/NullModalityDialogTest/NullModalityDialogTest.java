@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,8 @@ public class NullModalityDialogTest {
     NullModalityDialogTest() throws Exception {
 
         robot = new ExtendedRobot();
-        EventQueue.invokeLater(this::createGUI);
+        robot.setAutoDelay(100);
+        EventQueue.invokeAndWait(this::createGUI);
     }
 
     private void createGUI() {
@@ -134,7 +135,9 @@ public class NullModalityDialogTest {
 
         dialog.openGained.reset();
 
-        robot.type(KeyEvent.VK_TAB);
+        robot.keyPress(KeyEvent.VK_TAB);
+        robot.keyRelease(KeyEvent.VK_TAB);
+        robot.waitForIdle();
 
         dialog.openGained.waitForFlagTriggered();
         assertTrue(dialog.openGained.flag(),

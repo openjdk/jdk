@@ -41,7 +41,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbDumpheap
+ * @run main/othervm/timeout=240 ClhsdbDumpheap
  */
 
 public class ClhsdbDumpheap {
@@ -53,8 +53,8 @@ public class ClhsdbDumpheap {
         try {
             System.out.println("HprofReader.getStack() output:");
             String output = HprofReader.getStack(file, 0);
-            if (!output.contains("LingeredApp.main")) {
-                throw new RuntimeException("'LingeredApp.main' missing from stdout/stderr");
+            if (!output.contains("LingeredApp.steadyState")) {
+                throw new RuntimeException("'LingeredApp.steadyState' missing from stdout/stderr");
             }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);

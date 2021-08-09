@@ -44,6 +44,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -146,8 +147,8 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   if (waiting_monitor == NULL) {
     pending_monitor = thread()->current_pending_monitor();
   }
-  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : (oop) NULL);
-  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : (oop) NULL);
+  oop pending_obj = (pending_monitor != NULL ? pending_monitor->object() : (oop) NULL);
+  oop waiting_obj = (waiting_monitor != NULL ? waiting_monitor->object() : (oop) NULL);
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
@@ -179,9 +180,9 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
 }
 
 void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
+  HandleMark hm(current);
 
   // If this is the first frame and it is java.lang.Object.wait(...)
   // then print out the receiver. Locals are not always available,
@@ -234,9 +235,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
         if (monitor->owner_is_scalar_replaced()) {
           Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-          st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
+          st->print_cr("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
-          Handle obj(THREAD, monitor->owner());
+          Handle obj(current, monitor->owner());
           if (obj() != NULL) {
             print_locked_object_class_name(st, obj, "eliminated");
           }
@@ -265,7 +266,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
             lock_state = "waiting to lock";
           }
         }
-        print_locked_object_class_name(st, Handle(THREAD, monitor->owner()), lock_state);
+        print_locked_object_class_name(st, Handle(current, monitor->owner()), lock_state);
 
         found_first_monitor = true;
       }
@@ -573,31 +574,37 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 javaVFrame* vframeStreamCommon::asJavaVFrame() {
   javaVFrame* result = NULL;
   if (_mode == compiled_mode) {
-    guarantee(_frame.is_compiled_frame(), "expected compiled Java frame");
+    compiledVFrame* cvf;
+    if (_frame.is_native_frame()) {
+      cvf = compiledVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
+      assert(cvf->cb() == cb(), "wrong code blob");
+    } else {
+      assert(_frame.is_compiled_frame(), "expected compiled Java frame");
 
-    // lazy update to register map
-    bool update_map = true;
-    RegisterMap map(_thread, update_map);
-    frame f = _prev_frame.sender(&map);
+      // lazy update to register map
+      bool update_map = true;
+      RegisterMap map(_thread, update_map);
+      frame f = _prev_frame.sender(&map);
 
-    guarantee(f.is_compiled_frame(), "expected compiled Java frame");
+      assert(f.is_compiled_frame(), "expected compiled Java frame");
 
-    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
+      cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
 
-    guarantee(cvf->cb() == cb(), "wrong code blob");
+      assert(cvf->cb() == cb(), "wrong code blob");
 
-    // get the same scope as this stream
-    cvf = cvf->at_scope(_decode_offset, _vframe_id);
+      // get the same scope as this stream
+      cvf = cvf->at_scope(_decode_offset, _vframe_id);
 
-    guarantee(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
-    guarantee(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
-    guarantee(cvf->vframe_id() == _vframe_id, "wrong vframe");
+      assert(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
+      assert(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
+    }
+    assert(cvf->vframe_id() == _vframe_id, "wrong vframe");
 
     result = cvf;
   } else {
     result = javaVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
   }
-  guarantee(result->method() == method(), "wrong method");
+  assert(result->method() == method(), "wrong method");
   return result;
 }
 

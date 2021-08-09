@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,6 +58,7 @@ import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.InputSource;
@@ -90,7 +91,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Apr 2019
+ * @LastModified: May 2021
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -178,10 +179,10 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** access external dtd: file protocol */
-    static final String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
+    static final String EXTERNAL_ACCESS_DEFAULT = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     // recognized features and properties
 
@@ -220,7 +221,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 JdkXmlUtils.CATALOG_FILES,
                 JdkXmlUtils.CATALOG_PREFER,
                 JdkXmlUtils.CATALOG_RESOLVE,
-                JdkXmlUtils.CDATA_CHUNK_SIZE
+                JdkConstants.CDATA_CHUNK_SIZE
     };
 
     /** Property defaults. */
@@ -236,7 +237,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 null,
                 null,
                 null,
-                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT
+                JdkConstants.CDATA_CHUNK_SIZE_DEFAULT
     };
 
     private static final String XMLEntity = "[xml]".intern();
@@ -1313,7 +1314,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             if (!fISCreatedByResolver) {
                 //let the not-LoadExternalDTD or not-SupportDTD process to handle the situation
                 if (fLoadExternalDTD) {
-                    String accessError = SecuritySupport.checkAccess(expandedSystemId, fAccessExternalDTD, Constants.ACCESS_EXTERNAL_ALL);
+                    String accessError = SecuritySupport.checkAccess(expandedSystemId, fAccessExternalDTD, JdkConstants.ACCESS_EXTERNAL_ALL);
                     if (accessError != null) {
                         fErrorReporter.reportError(this.getEntityScanner(),XMLMessageFormatter.XML_DOMAIN,
                                 "AccessExternalEntity",
@@ -1630,7 +1631,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fStaxEntityResolver = (StaxEntityResolverWrapper)componentManager.getProperty(STAX_ENTITY_RESOLVER, null);
         fValidationManager = (ValidationManager)componentManager.getProperty(VALIDATION_MANAGER, null);
         fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER, null);
-        entityExpansionIndex = fSecurityManager.getIndex(Constants.JDK_ENTITY_EXPANSION_LIMIT);
+        entityExpansionIndex = fSecurityManager.getIndex(JdkConstants.SP_ENTITY_EXPANSION_LIMIT);
 
         //StAX Property
         fSupportDTD = true;

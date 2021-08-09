@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,11 +303,12 @@ static void init_node_notes(Compile* C, int idx, Node_Notes* nn) {
 inline int Node::Init(int req) {
   Compile* C = Compile::current();
   int idx = C->next_unique();
+  NOT_PRODUCT(_igv_idx = C->next_igv_idx());
 
   // Allocate memory for the necessary number of edges.
   if (req > 0) {
     // Allocate space for _in array to have double alignment.
-    _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
+    _in = (Node **) ((char *) (C->node_arena()->AmallocWords(req * sizeof(void*))));
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
@@ -498,7 +499,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 Node *Node::clone() const {
   Compile* C = Compile::current();
   uint s = size_of();           // Size of inherited Node
-  Node *n = (Node*)C->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
+  Node *n = (Node*)C->node_arena()->AmallocWords(size_of() + _max*sizeof(Node*));
   Copy::conjoint_words_to_lower((HeapWord*)this, (HeapWord*)n, s);
   // Set the new input pointer array
   n->_in = (Node**)(((char*)n)+s);
@@ -527,10 +528,15 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (n->is_reduction()) {
+    // Do not copy reduction information. This must be explicitly set by the calling code.
+    n->remove_flag(Node::Flag_is_reduction);
+  }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
   n->set_idx(C->next_unique()); // Get new unique index as well
+  NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   debug_only( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
@@ -556,16 +562,21 @@ Node *Node::clone() const {
     }
   }
   if (n->is_Call()) {
-    // cloning CallNode may need to clone JVMState
-    n->as_Call()->clone_jvms(C);
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
     if (cg != NULL) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
+
+      C->print_inlining_assert_ready();
+      C->print_inlining_move_to(cg);
+      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {
+    // Scalar replacement and macro expansion might modify the JVMState.
+    // Clone it to make sure it's not shared between SafePointNodes.
+    n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
   return n;                     // Return the clone
@@ -868,14 +879,19 @@ int Node::find_edge(Node* n) {
 }
 
 //----------------------------replace_edge-------------------------------------
-int Node::replace_edge(Node* old, Node* neww) {
+int Node::replace_edge(Node* old, Node* neww, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (uint i = 0; i < len(); i++) {
     if (in(i) == old) {
       if (i < req()) {
-        set_req(i, neww);
+        if (gvn != NULL) {
+          set_req_X(i, neww, gvn);
+        } else {
+          set_req(i, neww);
+        }
       } else {
+        assert(gvn == NULL || gvn->is_IterGVN() == NULL, "no support for igvn here");
         assert(find_prec_edge(neww) == -1, "spec violation: duplicated prec edge (node %d -> %d)", _idx, neww->_idx);
         set_prec(i, neww);
       }
@@ -888,12 +904,12 @@ int Node::replace_edge(Node* old, Node* neww) {
 /**
  * Replace input edges in the range pointing to 'old' node.
  */
-int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
+int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn) {
   if (old == neww)  return 0;  // nothing to do
   uint nrep = 0;
   for (int i = start; i < end; i++) {
     if (in(i) == old) {
-      set_req(i, neww);
+      set_req_X(i, neww, gvn);
       nrep++;
     }
   }
@@ -1648,7 +1664,7 @@ Node* Node::find(const int idx, bool only_ctrl) {
 }
 
 bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
-  if (NotANode(n)) {
+  if (not_a_node(n)) {
     return false; // Gracefully handle NULL, -1, 0xabababab, etc.
   }
 
@@ -1676,14 +1692,14 @@ static bool is_disconnected(const Node* n) {
 void Node::dump_orig(outputStream *st, bool print_key) const {
   Compile* C = Compile::current();
   Node* orig = _debug_orig;
-  if (NotANode(orig)) orig = NULL;
+  if (not_a_node(orig)) orig = NULL;
   if (orig != NULL && !C->node_arena()->contains(orig)) orig = NULL;
   if (orig == NULL) return;
   if (print_key) {
     st->print(" !orig=");
   }
   Node* fast = orig->debug_orig(); // tortoise & hare algorithm to detect loops
-  if (NotANode(fast)) fast = NULL;
+  if (not_a_node(fast)) fast = NULL;
   while (orig != NULL) {
     bool discon = is_disconnected(orig);  // if discon, print [123] else 123
     if (discon) st->print("[");
@@ -1692,16 +1708,16 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
     st->print("%d", orig->_idx);
     if (discon) st->print("]");
     orig = orig->debug_orig();
-    if (NotANode(orig)) orig = NULL;
+    if (not_a_node(orig)) orig = NULL;
     if (orig != NULL && !C->node_arena()->contains(orig)) orig = NULL;
     if (orig != NULL) st->print(",");
     if (fast != NULL) {
       // Step fast twice for each single step of orig:
       fast = fast->debug_orig();
-      if (NotANode(fast)) fast = NULL;
+      if (not_a_node(fast)) fast = NULL;
       if (fast != NULL && fast != orig) {
         fast = fast->debug_orig();
-        if (NotANode(fast)) fast = NULL;
+        if (not_a_node(fast)) fast = NULL;
       }
       if (fast == orig) {
         st->print("...");
@@ -1714,7 +1730,7 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
 void Node::set_debug_orig(Node* orig) {
   _debug_orig = orig;
   if (BreakAtNode == 0)  return;
-  if (NotANode(orig))  orig = NULL;
+  if (not_a_node(orig))  orig = NULL;
   int trip = 10;
   while (orig != NULL) {
     if (orig->debug_idx() == BreakAtNode || (int)orig->_idx == BreakAtNode) {
@@ -1723,7 +1739,7 @@ void Node::set_debug_orig(Node* orig) {
       BREAKPOINT;
     }
     orig = orig->debug_orig();
-    if (NotANode(orig))  orig = NULL;
+    if (not_a_node(orig))  orig = NULL;
     if (trip-- <= 0)  break;
   }
 }
@@ -1819,8 +1835,8 @@ void Node::dump_req(outputStream *st) const {
     Node* d = in(i);
     if (d == NULL) {
       st->print("_ ");
-    } else if (NotANode(d)) {
-      st->print("NotANode ");  // uninitialized, sentinel, garbage, etc.
+    } else if (not_a_node(d)) {
+      st->print("not_a_node ");  // uninitialized, sentinel, garbage, etc.
     } else {
       st->print("%c%d ", Compile::current()->node_arena()->contains(d) ? ' ' : 'o', d->_idx);
     }
@@ -1836,7 +1852,7 @@ void Node::dump_prec(outputStream *st) const {
     Node* p = in(i);
     if (p != NULL) {
       if (!any_prec++) st->print(" |");
-      if (NotANode(p)) { st->print("NotANode "); continue; }
+      if (not_a_node(p)) { st->print("not_a_node "); continue; }
       st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
     }
   }
@@ -1851,8 +1867,8 @@ void Node::dump_out(outputStream *st) const {
     Node* u = _out[i];
     if (u == NULL) {
       st->print("_ ");
-    } else if (NotANode(u)) {
-      st->print("NotANode ");
+    } else if (not_a_node(u)) {
+      st->print("not_a_node ");
     } else {
       st->print("%c%d ", Compile::current()->node_arena()->contains(u) ? ' ' : 'o', u->_idx);
     }
@@ -1889,7 +1905,7 @@ static void collect_nodes_i(GrowableArray<Node*>* queue, const Node* start, int 
       for(uint k = 0; k < limit; k++) {
         Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
 
-        if (NotANode(n))  continue;
+        if (not_a_node(n))  continue;
         // do not recurse through top or the root (would reach unrelated stuff)
         if (n->is_Root() || n->is_top()) continue;
         if (only_ctrl && !n->is_CFG()) continue;
@@ -1910,7 +1926,7 @@ static void collect_nodes_i(GrowableArray<Node*>* queue, const Node* start, int 
 
 //------------------------------dump_nodes-------------------------------------
 static void dump_nodes(const Node* start, int d, bool only_ctrl) {
-  if (NotANode(start)) return;
+  if (not_a_node(start)) return;
 
   GrowableArray <Node *> queue(Compile::current()->live_nodes());
   collect_nodes_i(&queue, start, d, (uint) ABS(d), true, only_ctrl, false);
@@ -2078,7 +2094,7 @@ static void collect_nodes_in(Node* start, GrowableArray<Node*> *ns, bool primary
       Node* current = nodes.at(n_idx++);
       for (uint i = 0; i < current->len(); i++) {
         Node* n = current->in(i);
-        if (NotANode(n)) {
+        if (not_a_node(n)) {
           continue;
         }
         if ((primary_is_data && n->is_CFG()) || (!primary_is_data && !n->is_CFG())) {
@@ -2140,7 +2156,7 @@ void Node::collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const {
   nodes.push((Node*) this);
   while (nodes.length() > 0) {
     Node* current = nodes.pop();
-    if (NotANode(current)) {
+    if (not_a_node(current)) {
       continue;
     }
     ns->append_if_missing(current);
@@ -2200,22 +2216,16 @@ void Node::verify_edges(Unique_Node_List &visited) {
 }
 
 // Verify all nodes if verify_depth is negative
-void Node::verify(Node* n, int verify_depth) {
+void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
-  ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  worklist.push(n);
   Compile* C = Compile::current();
-  uint last_index_on_current_depth = 0;
+  uint last_index_on_current_depth = worklist.size() - 1;
   verify_depth--; // Visiting the first node on depth 1
   // Only add nodes to worklist if verify_depth is negative (visit all nodes) or greater than 0
   bool add_to_worklist = verify_depth != 0;
 
-
   for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    n = worklist[list_index];
+    Node* n = worklist[list_index];
 
     if (n->is_Con() && n->bottom_type() == Type::TOP) {
       if (C->cached_top_node() == NULL) {
@@ -2224,17 +2234,28 @@ void Node::verify(Node* n, int verify_depth) {
       assert(C->cached_top_node() == n, "TOP node must be unique");
     }
 
-    for (uint i = 0; i < n->len(); i++) {
-      Node* x = n->in(i);
+    uint in_len = n->len();
+    for (uint i = 0; i < in_len; i++) {
+      Node* x = n->_in[i];
       if (!x || x->is_top()) {
         continue;
       }
 
       // Verify my input has a def-use edge to me
       // Count use-def edges from n to x
-      int cnt = 0;
-      for (uint j = 0; j < n->len(); j++) {
-        if (n->in(j) == x) {
+      int cnt = 1;
+      for (uint j = 0; j < i; j++) {
+        if (n->_in[j] == x) {
+          cnt++;
+          break;
+        }
+      }
+      if (cnt == 2) {
+        // x is already checked as n's previous input, skip its duplicated def-use count checking
+        continue;
+      }
+      for (uint j = i + 1; j < in_len; j++) {
+        if (n->_in[j] == x) {
           cnt++;
         }
       }
@@ -2248,11 +2269,7 @@ void Node::verify(Node* n, int verify_depth) {
       }
       assert(cnt == 0, "mismatched def-use edge counts");
 
-      // Contained in new_space or old_space?
-      VectorSet* v = C->node_arena()->contains(x) ? &new_space : &old_space;
-      // Check for visited in the proper space. Numberings are not unique
-      // across spaces so we need a separate VectorSet for each space.
-      if (add_to_worklist && !v->test_set(x->_idx)) {
+      if (add_to_worklist && !visited.test_set(x->_idx)) {
         worklist.push(x);
       }
     }

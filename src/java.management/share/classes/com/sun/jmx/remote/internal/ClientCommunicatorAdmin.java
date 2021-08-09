@@ -243,10 +243,10 @@ public abstract class ClientCommunicatorAdmin {
     private long period;
 
     // state
-    private final static int CONNECTED = 0;
-    private final static int RE_CONNECTING = 1;
-    private final static int FAILED = 2;
-    private final static int TERMINATED = 3;
+    private static final int CONNECTED = 0;
+    private static final int RE_CONNECTING = 1;
+    private static final int FAILED = 2;
+    private static final int TERMINATED = 3;
 
     private int state = CONNECTED;
 

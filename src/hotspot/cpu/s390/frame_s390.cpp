@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -207,6 +208,16 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return fr;
 }
 
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers sender_sp as unextended_sp.
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));
@@ -297,7 +308,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch (type) {
       case T_OBJECT:
       case T_ARRAY: {
-        *oop_result = (oop) (void*) ijava_state()->oop_tmp;
+        *oop_result = cast_to_oop((void*) ijava_state()->oop_tmp);
         break;
       }
       // We use std/stfd to store the values.

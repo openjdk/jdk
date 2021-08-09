@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,21 +68,25 @@ import sun.rmi.server.Util;
 final class DGCImpl implements DGC {
 
     /* dgc system log */
+    @SuppressWarnings("removal")
     static final Log dgcLog = Log.getLog("sun.rmi.dgc", "dgc",
         LogStream.parseLevel(AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.dgc.logLevel"))));
 
     /** lease duration to grant to clients */
+    @SuppressWarnings("removal")
     private static final long leaseValue =              // default 10 minutes
         AccessController.doPrivileged(
             (PrivilegedAction<Long>) () -> Long.getLong("java.rmi.dgc.leaseValue", 600000));
 
     /** lease check interval; default is half of lease grant duration */
+    @SuppressWarnings("removal")
     private static final long leaseCheckInterval =
         AccessController.doPrivileged(
             (PrivilegedAction<Long>) () -> Long.getLong("sun.rmi.dgc.checkInterval", leaseValue / 2));
 
     /** thread pool for scheduling delayed tasks */
+    @SuppressWarnings("removal")
     private static final ScheduledExecutorService scheduler =
         AccessController.doPrivileged(
             new RuntimeUtil.GetInstanceAction()).getScheduler();
@@ -120,6 +124,7 @@ final class DGCImpl implements DGC {
      * The dgcFilter created from the value of the {@code  "sun.rmi.transport.dgcFilter"}
      * property.
      */
+    @SuppressWarnings("removal")
     private static final ObjectInputFilter dgcFilter =
             AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)DGCImpl::initDgcFilter);
 
@@ -315,6 +320,11 @@ final class DGCImpl implements DGC {
     }
 
     static {
+        exportSingleton();
+    }
+
+    @SuppressWarnings("removal")
+    private static void exportSingleton() {
         /*
          * "Export" the singleton DGCImpl in a context isolated from
          * the arbitrary current thread context.

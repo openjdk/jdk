@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -75,13 +74,4 @@ const ClassFileStream* ClassFileStream::clone() const {
                              clone_source(),
                              need_verify(),
                              from_boot_loader_modules_image());
-}
-
-uint64_t ClassFileStream::compute_fingerprint() const {
-  int classfile_size = length();
-  int classfile_crc = ClassLoader::crc32(0, (const char*)buffer(), length());
-  uint64_t fingerprint = (uint64_t(classfile_size) << 32) | uint64_t(uint32_t(classfile_crc));
-  assert(fingerprint != 0, "must not be zero");
-
-  return fingerprint;
 }

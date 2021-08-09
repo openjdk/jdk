@@ -340,14 +340,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
   if (edges) {
 
-    // Output edge
-    node_idx_t dest_id = n->_idx;
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
         Node *source = n->in(i);
         begin_elem(EDGE_ELEMENT);
-        print_attr(FROM_PROPERTY, source->_idx);
-        print_attr(TO_PROPERTY, dest_id);
+        print_attr(FROM_PROPERTY, source->_igv_idx);
+        print_attr(TO_PROPERTY, n->_igv_idx);
         print_attr(INDEX_PROPERTY, i);
         end_elem();
       }
@@ -357,7 +355,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     // Output node
     begin_head(NODE_ELEMENT);
-    print_attr(NODE_ID_PROPERTY, n->_idx);
+    print_attr(NODE_ID_PROPERTY, n->_igv_idx);
     end_head();
 
     head(PROPERTIES_ELEMENT);
@@ -452,13 +450,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       } else {
         print_prop("is_dontcare", "false");
       }
-
-#ifdef ASSERT
       Node* old = C->matcher()->find_old_node(node);
       if (old != NULL) {
         print_prop("old_node_idx", old->_idx);
       }
-#endif
     }
 
     if (node->is_Proj()) {
@@ -715,7 +710,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
       head(NODES_ELEMENT);
       for (uint s = 0; s < block->number_of_nodes(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_idx);
+        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_igv_idx);
         end_elem();
       }
       tail(NODES_ELEMENT);

@@ -56,7 +56,14 @@ class CompilerThread : public JavaThread {
 
  public:
 
-  static CompilerThread* current();
+  static CompilerThread* current() {
+    return CompilerThread::cast(JavaThread::current());
+  }
+
+  static CompilerThread* cast(Thread* t) {
+    assert(t->is_Compiler_thread(), "incorrect cast to CompilerThread");
+    return static_cast<CompilerThread*>(t);
+  }
 
   CompilerThread(CompileQueue* queue, CompilerCounters* counters);
   ~CompilerThread();
@@ -108,15 +115,6 @@ class CompilerThread : public JavaThread {
 
   static void thread_entry(JavaThread* thread, TRAPS);
 };
-
-inline CompilerThread* JavaThread::as_CompilerThread() {
-  assert(is_Compiler_thread(), "just checking");
-  return (CompilerThread*)this;
-}
-
-inline CompilerThread* CompilerThread::current() {
-  return JavaThread::current()->as_CompilerThread();
-}
 
 // Dedicated thread to sweep the code cache
 class CodeCacheSweeperThread : public JavaThread {

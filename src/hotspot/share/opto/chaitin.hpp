@@ -163,11 +163,11 @@ public:
   bool is_scalable() {
 #ifdef ASSERT
     if (_is_scalable) {
-      // Should only be a vector for now, but it could also be a RegVMask in future.
+      // Should only be a vector for now, but it could also be a RegVectMask in future.
       assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA), "unexpected scalable reg");
     }
 #endif
-    return _is_scalable;
+    return Matcher::implements_scalable_vector && _is_scalable;
   }
 
 private:

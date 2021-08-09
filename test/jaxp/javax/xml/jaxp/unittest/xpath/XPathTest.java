@@ -40,7 +40,7 @@ import org.w3c.dom.Node;
  * @test
  * @bug 6376058
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.XPathTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.XPathTest
  * @run testng/othervm xpath.XPathTest
  * @summary Test XPath functions. See details for each test.
  */

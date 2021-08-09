@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -56,15 +56,12 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
-#include "memory/filemap.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -173,7 +170,7 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
          SIZE_FORMAT, total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
-  size_t used_page_size = ReservedSpace::actual_reserved_page_size(heap_rs);
+  size_t used_page_size = heap_rs.page_size();
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
@@ -255,28 +252,9 @@ size_t GenCollectedHeap::max_capacity() const {
 // Update the _full_collections_completed counter
 // at the end of a stop-world full GC.
 unsigned int GenCollectedHeap::update_full_collections_completed() {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_collections_completed <= _total_full_collections,
          "Can't complete more collections than were started");
   _full_collections_completed = _total_full_collections;
-  ml.notify_all();
-  return _full_collections_completed;
-}
-
-// Update the _full_collections_completed counter, as appropriate,
-// at the end of a concurrent GC cycle. Note the conditional update
-// below to allow this method to be called by a concurrent collector
-// without synchronizing in any manner with the VM thread (which
-// may already have initiated a STW full collection "concurrently").
-unsigned int GenCollectedHeap::update_full_collections_completed(unsigned int count) {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
-  assert((_full_collections_completed <= _total_full_collections) &&
-         (count <= _total_full_collections),
-         "Can't complete more collections than were started");
-  if (count > _full_collections_completed) {
-    _full_collections_completed = count;
-    ml.notify_all();
-  }
   return _full_collections_completed;
 }
 
@@ -460,8 +438,7 @@ bool GenCollectedHeap::must_clear_all_soft_refs() {
 }
 
 void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t size,
-                                          bool is_tlab, bool run_verification, bool clear_soft_refs,
-                                          bool restore_marks_for_biased_locking) {
+                                          bool is_tlab, bool run_verification, bool clear_soft_refs) {
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
@@ -482,14 +459,6 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   }
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
-  if (restore_marks_for_biased_locking) {
-    // We perform this mark word preservation work lazily
-    // because it's only at this point that we know whether we
-    // absolutely have to do it; we want to avoid doing it for
-    // scavenge-only collections where it's unnecessary
-    BiasedLocking::preserve_marks();
-  }
-
   // Do collection work
   {
     // Note on ref discovery: For what appear to be historical reasons,
@@ -509,21 +478,11 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
     // enqueue_discovered_references if the generation returns
     // without doing any work.
     ReferenceProcessor* rp = gen->ref_processor();
-    // If the discovery of ("weak") refs in this generation is
-    // atomic wrt other collectors in this configuration, we
-    // are guaranteed to have empty discovered ref lists.
-    if (rp->discovery_is_atomic()) {
-      rp->enable_discovery();
-      rp->setup_policy(clear_soft_refs);
-    } else {
-      // collect() below will enable discovery as appropriate
-    }
+    rp->start_discovery(clear_soft_refs);
+
     gen->collect(full, clear_soft_refs, size, is_tlab);
-    if (!rp->enqueuing_is_done()) {
-      rp->disable_discovery();
-    } else {
-      rp->set_enqueuing_is_done(false);
-    }
+
+    rp->disable_discovery();
     rp->verify_no_references_recorded();
   }
 
@@ -593,8 +552,7 @@ void GenCollectedHeap::do_collection(bool           full,
                        size,
                        is_tlab,
                        run_verification && VerifyGCLevel <= 0,
-                       do_clear_all_soft_refs,
-                       false);
+                       do_clear_all_soft_refs);
 
     if (size > 0 && (!is_tlab || _young_gen->supports_tlab_allocation()) &&
         size * HeapWordSize <= _young_gen->unsafe_max_alloc_nogc()) {
@@ -653,8 +611,7 @@ void GenCollectedHeap::do_collection(bool           full,
                        size,
                        is_tlab,
                        run_verification && VerifyGCLevel <= 1,
-                       do_clear_all_soft_refs,
-                       true);
+                       do_clear_all_soft_refs);
 
     // Adjust generation sizes.
     _old_gen->compute_new_size();
@@ -675,8 +632,6 @@ void GenCollectedHeap::do_collection(bool           full,
     // Need to tell the epilogue code we are done with Full GC, regardless what was
     // the initial value for "complete" flag.
     gc_epilogue(true);
-
-    BiasedLocking::restore_marks();
 
     print_heap_after_gc();
   }
@@ -809,11 +764,6 @@ void GenCollectedHeap::process_roots(ScanningOption so,
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
-#if INCLUDE_AOT
-  if (UseAOT) {
-    AOTLoader::oops_do(strong_roots);
-  }
-#endif
   OopStorageSet::strong_oops_do(strong_roots);
 
   if (so & SO_ScavengeCodeCache) {
@@ -1253,7 +1203,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   generation_iterate(&blk, false);  // not old-to-young.
 
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 };
 
 #ifndef PRODUCT
@@ -1298,5 +1247,5 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
   if (result != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   }
-  return oop(result);
+  return cast_to_oop(result);
 }

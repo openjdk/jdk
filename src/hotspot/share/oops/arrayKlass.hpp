@@ -113,7 +113,7 @@ class ArrayKlass: public Klass {
 
 
   // jvm support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
   // JVMTI support
   jint jvmti_class_status() const;

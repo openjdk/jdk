@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ public final class SecurityProviderConstants {
     public static final int DEF_DH_KEY_SIZE;
     public static final int DEF_EC_KEY_SIZE;
     public static final int DEF_ED_KEY_SIZE;
+    public static final int DEF_XEC_KEY_SIZE;
 
     private static final String KEY_LENGTH_PROP =
         "jdk.security.defaultKeySize";
@@ -124,6 +125,7 @@ public final class SecurityProviderConstants {
         int dhKeySize = 2048;
         int ecKeySize = 256;
         int edKeySize = 255;
+        int xecKeySize = 255;
 
         if (keyLengthStr != null) {
             try {
@@ -162,6 +164,8 @@ public final class SecurityProviderConstants {
                         ecKeySize = value;
                     } else if (algoName.equalsIgnoreCase("EdDSA")) {
                         edKeySize = value;
+                    } else if (algoName.equals("XDH")) {
+                        xecKeySize = value;
                     } else {
                         if (debug != null) {
                             debug.println("Ignoring unsupported algo in " +
@@ -189,6 +193,7 @@ public final class SecurityProviderConstants {
         DEF_DH_KEY_SIZE = dhKeySize;
         DEF_EC_KEY_SIZE = ecKeySize;
         DEF_ED_KEY_SIZE = edKeySize;
+        DEF_XEC_KEY_SIZE = xecKeySize;
 
         // Set up aliases with default mappings
         // This is needed when the mapping contains non-oid
@@ -212,8 +217,6 @@ public final class SecurityProviderConstants {
 
         store("DiffieHellman", KnownOIDs.DiffieHellman);
 
-        store("AES", KnownOIDs.AES, "Rijndael");
-
         store("EC", KnownOIDs.EC, "EllipticCurve");
 
         store("X.509", null, "X509");
@@ -223,5 +226,8 @@ public final class SecurityProviderConstants {
         // For backward compatility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory
         store("PKCS1", KnownOIDs.PKCS1, KnownOIDs.RSA.value());
+
+        store("AES/KW/NoPadding", null, "AESWrap");
+        store("AES/KWP/NoPadding", null, "AESWrapPad");
     }
 }

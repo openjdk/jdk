@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,11 @@ public class ScannerFactory {
     }
 
     public Scanner newScanner(CharSequence input, boolean keepDocComments) {
-        if (input instanceof CharBuffer) {
-            CharBuffer buf = (CharBuffer) input;
+        if (input instanceof CharBuffer charBuffer) {
             if (keepDocComments)
-                return new Scanner(this, new JavadocTokenizer(this, buf));
+                return new Scanner(this, new JavadocTokenizer(this, charBuffer));
             else
-                return new Scanner(this, buf);
+                return new Scanner(this, charBuffer);
         } else {
             char[] array = input.toString().toCharArray();
             return newScanner(array, array.length, keepDocComments);

@@ -70,13 +70,13 @@ public class EUC_JP
     static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        final static SingleByte.Decoder DEC0201 =
+        static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        final static DoubleByte.Decoder DEC0208 =
+        static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        final static DoubleByte.Decoder DEC0212 =
+        static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
         private final SingleByte.Decoder dec0201;
@@ -225,13 +225,13 @@ public class EUC_JP
 
     static class Encoder extends CharsetEncoder {
 
-        final static SingleByte.Encoder ENC0201 =
+        static final SingleByte.Encoder ENC0201 =
             (SingleByte.Encoder)new JIS_X_0201().newEncoder();
 
-        final static DoubleByte.Encoder ENC0208 =
+        static final DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
-        final static DoubleByte.Encoder ENC0212 =
+        static final DoubleByte.Encoder ENC0212 =
             (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();

@@ -49,7 +49,7 @@ public class ArrayElementValueGen extends ElementValueGen
     {
         super(type, cpool);
         if (type != ARRAY) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Only element values of type array can be built with this ctor - type specified: " + type);
         }
         this.evalues = new ArrayList<>();

@@ -245,7 +245,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
       HeapWord* start_block = boundary_block; // Until proven otherwise.
       if (boundary_block < boundary) {
         if (s->block_is_obj(boundary_block) && s->obj_is_alive(boundary_block)) {
-          oop boundary_obj = oop(boundary_block);
+          oop boundary_obj = cast_to_oop(boundary_block);
           if (!boundary_obj->is_objArray() &&
               !boundary_obj->is_typeArray()) {
             guarantee(cur_entry > byte_for(used.start()),
@@ -263,7 +263,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
         VerifyCleanCardClosure verify_blk(gen_boundary, begin, end);
         for (HeapWord* cur = start_block; cur < end; cur += s->block_size(cur)) {
           if (s->block_is_obj(cur) && s->obj_is_alive(cur)) {
-            oop(cur)->oop_iterate(&verify_blk, mr);
+            cast_to_oop(cur)->oop_iterate(&verify_blk, mr);
           }
         }
       }

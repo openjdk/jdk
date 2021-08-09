@@ -93,14 +93,14 @@ public abstract class Ber {
 
     public static final int ASN_ENUMERATED      = 0x0a;
 
-    final static class EncodeException extends IOException {
+    static final class EncodeException extends IOException {
         private static final long serialVersionUID = -5247359637775781768L;
         EncodeException(String msg) {
             super(msg);
         }
     }
 
-    final static class DecodeException extends IOException {
+    static final class DecodeException extends IOException {
         private static final long serialVersionUID = 8735036969244425583L;
         DecodeException(String msg) {
             super(msg);

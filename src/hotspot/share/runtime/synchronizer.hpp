@@ -29,7 +29,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/os.hpp"
+#include "utilities/growableArray.hpp"
 
 class LogStream;
 class ObjectMonitor;

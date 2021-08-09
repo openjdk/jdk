@@ -42,6 +42,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.XECPublicKeySpec;
 import java.security.spec.XECPrivateKeySpec;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class XDHKeyFactory extends KeyFactorySpi {
@@ -87,9 +88,14 @@ public class XDHKeyFactory extends KeyFactorySpi {
             return result;
         } else if (key instanceof PrivateKey &&
                    key.getFormat().equals("PKCS#8")) {
-            XDHPrivateKeyImpl result =  new XDHPrivateKeyImpl(key.getEncoded());
-            checkLockedParams(InvalidKeyException::new, result.getParams());
-            return result;
+            byte[] encoded = key.getEncoded();
+            try {
+                XDHPrivateKeyImpl result = new XDHPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeyException::new, result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte)0);
+            }
         } else {
             throw new InvalidKeyException("Unsupported key type or format");
         }
@@ -165,17 +171,26 @@ public class XDHKeyFactory extends KeyFactorySpi {
 
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec) keySpec;
-            XDHPrivateKeyImpl result =
-                new XDHPrivateKeyImpl(pkcsSpec.getEncoded());
-            checkLockedParams(InvalidKeySpecException::new,
-                result.getParams());
-            return result;
+            byte[] encoded = pkcsSpec.getEncoded();
+            try {
+                XDHPrivateKeyImpl result = new XDHPrivateKeyImpl(encoded);
+                checkLockedParams(InvalidKeySpecException::new,
+                        result.getParams());
+                return result;
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
+            }
         } else if (keySpec instanceof XECPrivateKeySpec) {
             XECPrivateKeySpec privateKeySpec = (XECPrivateKeySpec) keySpec;
             XECParameters params = XECParameters.get(
                 InvalidKeySpecException::new, privateKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
-            return new XDHPrivateKeyImpl(params, privateKeySpec.getScalar());
+            byte[] scalar = privateKeySpec.getScalar();
+            try {
+                return new XDHPrivateKeyImpl(params, scalar);
+            } finally {
+                Arrays.fill(scalar, (byte)0);
+            }
         } else {
             throw new InvalidKeySpecException(
                 "Only PKCS8EncodedKeySpec and XECPrivateKeySpec supported");
@@ -210,14 +225,23 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 if (!key.getFormat().equals("PKCS#8")) {
                     throw new InvalidKeySpecException("Format is not PKCS#8");
                 }
-                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+                byte[] encoded = key.getEncoded();
+                try {
+                    return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                } finally {
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else if (keySpec.isAssignableFrom(XECPrivateKeySpec.class)) {
                 XECPrivateKey xecKey = (XECPrivateKey) key;
                 byte[] scalar = xecKey.getScalar().orElseThrow(
                     () -> new InvalidKeySpecException("No private key value")
                 );
-                return keySpec.cast(
-                    new XECPrivateKeySpec(xecKey.getParams(), scalar));
+                try {
+                    return keySpec.cast(
+                            new XECPrivateKeySpec(xecKey.getParams(), scalar));
+                } finally {
+                    Arrays.fill(scalar, (byte)0);
+                }
             } else {
                 throw new InvalidKeySpecException
                 ("KeySpec must be PKCS8EncodedKeySpec or XECPrivateKeySpec");

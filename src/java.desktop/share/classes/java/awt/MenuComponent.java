@@ -114,12 +114,14 @@ public abstract class MenuComponent implements java.io.Serializable {
     /*
      * The menu's AccessControlContext.
      */
+    @SuppressWarnings("removal")
     private transient volatile AccessControlContext acc =
             AccessController.getContext();
 
     /*
      * Returns the acc this menu component was constructed with.
      */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException(
@@ -449,6 +451,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("removal")
     @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException

@@ -50,8 +50,8 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _director(new ZDirector()),
     _driver(new ZDriver()),
+    _director(new ZDirector(_driver)),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -227,11 +227,16 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
-  return GrowableArray<GCMemoryManager*>(1, 1, _heap.serviceability_memory_manager());
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(_heap.serviceability_cycle_memory_manager());
+  memory_managers.append(_heap.serviceability_pause_memory_manager());
+  return memory_managers;
 }
 
 GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
-  return GrowableArray<MemoryPool*>(1, 1, _heap.serviceability_memory_pool());
+  GrowableArray<MemoryPool*> memory_pools(1);
+  memory_pools.append(_heap.serviceability_memory_pool());
+  return memory_pools;
 }
 
 void ZCollectedHeap::object_iterate(ObjectClosure* cl) {

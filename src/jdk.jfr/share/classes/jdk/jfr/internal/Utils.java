@@ -48,7 +48,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +56,7 @@ import java.util.Objects;
 
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
@@ -76,7 +76,7 @@ public final class Utils {
     public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
     public static final String REGISTER_EVENT = "registerEvent";
     public static final String ACCESS_FLIGHT_RECORDER = "accessFlightRecorder";
-    private final static String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
+    private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     private static Boolean SAVE_GENERATED;
 
@@ -91,8 +91,14 @@ public final class Utils {
     private static final int BASE = 10;
     private static long THROTTLE_OFF = -2;
 
+    /*
+     * This field will be lazily initialized and the access is not synchronized.
+     * The possible data race is benign and is worth of not introducing any contention here.
+     */
+    private static Metrics[] metrics;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(ACCESS_FLIGHT_RECORDER));
@@ -100,6 +106,7 @@ public final class Utils {
     }
 
     public static void checkRegisterPermission() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(REGISTER_EVENT));
@@ -207,22 +214,20 @@ public final class Utils {
     }
 
     enum ThrottleUnit {
-        NANOSECONDS("ns", TimeUnit.NANOSECONDS, TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toMillis(1)),
-        MICROSECONDS("us", TimeUnit.MICROSECONDS, TimeUnit.SECONDS.toNanos(1) / 1000, TimeUnit.SECONDS.toMillis(1)),
-        MILLISECONDS("ms", TimeUnit.MILLISECONDS, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1)),
-        SECONDS("s", TimeUnit.SECONDS, 1, TimeUnit.SECONDS.toMillis(1)),
-        MINUTES("m", TimeUnit.MINUTES, 1, TimeUnit.MINUTES.toMillis(1)),
-        HOUR("h", TimeUnit.HOURS, 1, TimeUnit.HOURS.toMillis(1)),
-        DAY("d", TimeUnit.DAYS, 1, TimeUnit.DAYS.toMillis(1));
+        NANOSECONDS("ns", TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toMillis(1)),
+        MICROSECONDS("us", TimeUnit.SECONDS.toNanos(1) / 1000, TimeUnit.SECONDS.toMillis(1)),
+        MILLISECONDS("ms", TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1)),
+        SECONDS("s", 1, TimeUnit.SECONDS.toMillis(1)),
+        MINUTES("m", 1, TimeUnit.MINUTES.toMillis(1)),
+        HOUR("h", 1, TimeUnit.HOURS.toMillis(1)),
+        DAY("d", 1, TimeUnit.DAYS.toMillis(1));
 
         private final String text;
-        private final TimeUnit timeUnit;
         private final long factor;
         private final long millis;
 
-        ThrottleUnit(String t, TimeUnit u, long factor, long millis) {
+        ThrottleUnit(String t, long factor, long millis) {
             this.text = t;
-            this.timeUnit = u;
             this.factor = factor;
             this.millis = millis;
         }
@@ -365,9 +370,7 @@ public final class Utils {
                 }
             }
         }
-        List<Annotation> annos = new ArrayList<>();
-        annos.add(a);
-        return annos;
+        return List.of(a);
     }
 
     static boolean isAfter(RecordingState stateToTest, RecordingState b) {
@@ -442,23 +445,17 @@ public final class Utils {
 
     public static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
-        try {
-            Field f = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
-            SecuritySupport.setAccessible(f);
-            return (EventHandler) f.get(null);
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-            throw new InternalError("Could not access event handler");
+        Object handler = JVM.getJVM().getHandler(eventClass);
+        if (handler == null || handler instanceof EventHandler) {
+            return (EventHandler) handler;
         }
+        throw new InternalError("Could not access event handler");
     }
 
     static synchronized void setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler) {
         Utils.ensureValidEventSubclass(eventClass);
-        try {
-            Field field = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
-            SecuritySupport.setAccessible(field);
-            field.set(null, handler);
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-            throw new InternalError("Could not access event handler");
+        if (!JVM.getJVM().setHandler(eventClass, handler)) {
+            throw new InternalError("Could not set event handler");
         }
     }
 
@@ -649,16 +646,6 @@ public final class Utils {
         return knownType;
     }
 
-    public static <T> List<T> smallUnmodifiable(List<T> list) {
-        if (list.isEmpty()) {
-            return Collections.emptyList();
-        }
-        if (list.size() == 1) {
-            return Collections.singletonList(list.get(0));
-        }
-        return Collections.unmodifiableList(list);
-    }
-
     public static String upgradeLegacyJDKEvent(String eventName) {
         if (eventName.length() <= LEGACY_EVENT_NAME_PREFIX.length()) {
             return eventName;
@@ -676,15 +663,16 @@ public final class Utils {
         Class<?> cMirror = Objects.requireNonNull(mirror);
         Class<?> cReal = Objects.requireNonNull(real);
 
-        while (cReal != null) {
-            Map<String, Field> mirrorFields = new HashMap<>();
-            if (cMirror != null) {
-                for (Field f : cMirror.getDeclaredFields()) {
-                    if (isSupportedType(f.getType())) {
-                        mirrorFields.put(f.getName(), f);
-                    }
+        Map<String, Field> mirrorFields = new HashMap<>();
+        while (cMirror != null) {
+            for (Field f : cMirror.getDeclaredFields()) {
+                if (isSupportedType(f.getType())) {
+                    mirrorFields.put(f.getName(), f);
                 }
             }
+            cMirror = cMirror.getSuperclass();
+        }
+        while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
                 if (isSupportedType(realField.getType())) {
                     String fieldName = realField.getName();
@@ -692,20 +680,20 @@ public final class Utils {
                     if (mirrorField == null) {
                         throw new InternalError("Missing mirror field for " + cReal.getName() + "#" + fieldName);
                     }
+                    if (realField.getType() != mirrorField.getType()) {
+                        throw new InternalError("Incorrect type for mirror field " + fieldName);
+                    }
                     if (realField.getModifiers() != mirrorField.getModifiers()) {
-                        throw new InternalError("Incorrect modifier for mirror field "+ cMirror.getName() + "#" + fieldName);
+                        throw new InternalError("Incorrect modifier for mirror field " + fieldName);
                     }
                     mirrorFields.remove(fieldName);
                 }
             }
-            if (!mirrorFields.isEmpty()) {
-                throw new InternalError(
-                        "Found additional fields in mirror class " + cMirror.getName() + " " + mirrorFields.keySet());
-            }
-            if (cMirror != null) {
-                cMirror = cMirror.getSuperclass();
-            }
             cReal = cReal.getSuperclass();
+        }
+
+        if (!mirrorFields.isEmpty()) {
+            throw new InternalError("Found additional fields in mirror class " + mirrorFields.keySet());
         }
     }
 
@@ -732,6 +720,20 @@ public final class Utils {
         } else {
             return formatPositiveDuration(roundedDuration);
         }
+    }
+
+    public static boolean shouldSkipBytecode(String eventName, Class<?> superClass) {
+        if (superClass.getClassLoader() != null || !superClass.getName().equals("jdk.jfr.events.AbstractJDKEvent")) {
+            return false;
+        }
+        return eventName.startsWith("jdk.Container") && getMetrics() == null;
+    }
+
+    private static Metrics getMetrics() {
+        if (metrics == null) {
+            metrics = new Metrics[]{Metrics.systemMetrics()};
+        }
+        return metrics[0];
     }
 
     private static String formatPositiveDuration(Duration d){
@@ -833,9 +835,7 @@ public final class Utils {
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {
-        long epochSeconds = epochNanos / 1_000_000_000L;
-        long nanoAdjustment = epochNanos - 1_000_000_000L * epochSeconds;
-        return Instant.ofEpochSecond(epochSeconds, nanoAdjustment);
+        return Instant.ofEpochSecond(0, epochNanos);
     }
 
     public static long timeToNanos(Instant timestamp) {

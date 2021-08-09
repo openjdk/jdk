@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 
+#include "gc/g1/g1OopClosures.hpp"
+
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -233,7 +234,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
     oop forwardee;
     markWord m = obj->mark();
     if (m.is_marked()) {
-      forwardee = (oop) m.decode_pointer();
+      forwardee = cast_to_oop(m.decode_pointer());
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }

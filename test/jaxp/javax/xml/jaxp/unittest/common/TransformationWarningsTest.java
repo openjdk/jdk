@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @bug 8144593
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile -XDignore.symbol.file TestSAXDriver.java
- * @run testng/othervm -DrunSecMngr=true common.TransformationWarningsTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.TransformationWarningsTest
  * @run testng/othervm common.TransformationWarningsTest
  * @summary Check that warnings about unsupported properties from parsers
  * are suppressed during the transformation process.
