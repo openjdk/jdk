@@ -752,7 +752,13 @@ final class CertificateRequest {
             }
 
             // Put the CR key type into a more friendly format for searching
-            List<String> crKeyTypes = Arrays.asList(crm.getKeyTypes());
+            List<String> crKeyTypes = new ArrayList<>(
+                    Arrays.asList(crm.getKeyTypes()));
+            // For TLS 1.2 only if RSA is a requested key type then we
+            // should also allow RSASSA-PSS.
+            if (crKeyTypes.contains("RSA")) {
+                crKeyTypes.add("RSASSA-PSS");
+            }
 
             Collection<String> checkedKeyTypes = new HashSet<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
