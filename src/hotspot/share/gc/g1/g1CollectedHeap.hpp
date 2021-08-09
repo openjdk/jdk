@@ -53,7 +53,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/memRegion.hpp"
@@ -93,7 +92,6 @@ class G1ConcurrentRefine;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
-class EvacuationFailedInfo;
 class nmethod;
 class WorkGang;
 class G1Allocator;
@@ -150,8 +148,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1YoungGCVerifierMark;
 
   // Closures used in implementation.
-  friend class G1ParScanThreadState;
-  friend class G1ParScanThreadStateSet;
   friend class G1EvacuateRegionsTask;
   friend class G1PLABAllocator;
 
@@ -842,7 +838,6 @@ private:
 public:
   void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
-                                    G1RedirtyCardsQueueSet* rdcqs,
                                     G1ParScanThreadStateSet* pss);
 
   void expand_heap_after_young_collection();
@@ -857,12 +852,9 @@ public:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
-  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
-                               G1RedirtyCardsQueueSet* rdcqs);
-  void post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks,
-                               G1RedirtyCardsQueueSet* rdcqs,
-                               G1EvacuationInfo* evacuation_info,
-                               const size_t* surviving_young_words);
+  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states);
+  void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
+                               G1EvacuationInfo* evacuation_info);
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -886,14 +878,6 @@ public:
   volatile uint _num_regions_failed_evacuation;
   // Records for every region on the heap whether evacuation failed for it.
   CHeapBitMap _regions_failed_evacuation;
-
-  EvacuationFailedInfo* _evacuation_failed_info_array;
-
-  PreservedMarksSet _preserved_marks_set;
-
-  // Preserve the mark of "obj", if necessary, in preparation for its mark
-  // word being overwritten with a self-forwarding-pointer.
-  void preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m);
 
 #ifndef PRODUCT
   // Support for forcing evacuation failures. Analogous to
