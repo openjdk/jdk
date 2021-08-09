@@ -58,8 +58,8 @@ class ChunkPool {
  public:
   ChunkPool(size_t size) : _first(NULL), _num_chunks(0), _size(size) {}
 
-  // Remove a chunk from the pool and return it; NULL if pool is empty.
-  Chunk* remove_chunk() {
+  // Allocate a chunk from the pool; returns NULL if pool is empty.
+  Chunk* allocate() {
     ThreadCritical tc;
     Chunk* c = _first;
     if (_first) {
@@ -70,7 +70,7 @@ class ChunkPool {
   }
 
   // Return a chunk to the pool
-  void return_chunk(Chunk* chunk) {
+  void free(Chunk* chunk) {
     assert(chunk->length() == _size, "wrong pool for this chunk");
     ThreadCritical tc;
     chunk->set_next(_first);
@@ -83,30 +83,28 @@ class ChunkPool {
     static const int blocksToKeep = 5;
     Chunk* cur = NULL;
     Chunk* next;
-    {
-      // if we have more than n chunks, free all of them
-      ThreadCritical tc;
-      if (_num_chunks > blocksToKeep) {
-        // free chunks at end of queue, for better locality
-        cur = _first;
-        for (size_t i = 0; i < (blocksToKeep - 1) && cur != NULL; i++) {
-          cur = cur->next();
-        }
+    // if we have more than n chunks, free all of them
+    ThreadCritical tc;
+    if (_num_chunks > blocksToKeep) {
+      // free chunks at end of queue, for better locality
+      cur = _first;
+      for (size_t i = 0; i < (blocksToKeep - 1); i++) {
+        assert(cur != NULL, "counter out of sync?");
+        cur = cur->next();
+      }
+      assert(cur != NULL, "counter out of sync?");
 
-        if (cur != NULL) {
-          next = cur->next();
-          cur->set_next(NULL);
-          cur = next;
+      next = cur->next();
+      cur->set_next(NULL);
+      cur = next;
 
-          // Free all remaining chunks while in ThreadCritical lock
-          // so NMT adjustment is stable.
-          while(cur != NULL) {
-            next = cur->next();
-            os::free(cur);
-            _num_chunks--;
-            cur = next;
-          }
-        }
+      // Free all remaining chunks while in ThreadCritical lock
+      // so NMT adjustment is stable.
+      while(cur != NULL) {
+        next = cur->next();
+        os::free(cur);
+        _num_chunks--;
+        cur = next;
       }
     }
   }
@@ -173,7 +171,7 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   // Try to reuse a cached chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   if (pool != NULL) {
-    Chunk* c = pool->remove_chunk();
+    Chunk* c = pool->allocate();
     if (c != NULL) {
       assert(c->length() == length, "wrong length?");
       return c;
@@ -195,7 +193,7 @@ void Chunk::operator delete(void* p) {
   Chunk* c = (Chunk*)p;
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != NULL) {
-    pool->return_chunk(c);
+    pool->free(c);
   } else {
     ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
     os::free(c);
