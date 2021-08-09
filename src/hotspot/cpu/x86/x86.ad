@@ -5827,7 +5827,6 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
 
 #ifdef _LP64
 instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
-  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
   match(Set dst (CopySignF dst src));
   effect(TEMP tmp1, TEMP tmp2);
   format %{ "CopySignF $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
@@ -5840,7 +5839,6 @@ instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
 %}
 
 instruct copySignD_reg(regD dst, regD src, regD tmp1, rRegL tmp2, regD zero) %{
-  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(125);
   effect(TEMP tmp1, TEMP tmp2);
@@ -5854,7 +5852,6 @@ instruct copySignD_reg(regD dst, regD src, regD tmp1, rRegL tmp2, regD zero) %{
 %}
 
 instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
-  predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(100);
   effect(TEMP tmp1, TEMP tmp2);
