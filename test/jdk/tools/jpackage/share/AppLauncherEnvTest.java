@@ -25,7 +25,6 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
@@ -92,7 +91,7 @@ public class AppLauncherEnvTest {
 
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(
-                Set.of(javaLibraryPath.split(File.pathSeparator)).contains(
+                List.of(javaLibraryPath.split(File.pathSeparator)).contains(
                         appDir), String.format(
                         "Check java.library.path system property [%s] contains app dir [%s]",
                         javaLibraryPath, appDir));
