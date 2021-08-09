@@ -46,6 +46,13 @@ public class TestNimbusBGColor {
     static Robot robot;
 
     public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            } catch (Exception checkedExceptionsPleaseDie) {
+                throw new RuntimeException(checkedExceptionsPleaseDie);
+            }
+        });
         robot = new Robot();
         testTextPane();
         testEditorPane();
@@ -54,11 +61,6 @@ public class TestNimbusBGColor {
     private static void testTextPane() throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
-                try {
-                    UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-                } catch (Exception checkedExceptionsPleaseDie) {
-                    throw new RuntimeException(checkedExceptionsPleaseDie);
-                }
                 JTextPane tp = new JTextPane();
                 tp.setForeground(Color.WHITE);
                 tp.setBackground(Color.BLACK);
@@ -94,11 +96,6 @@ public class TestNimbusBGColor {
     private static void testEditorPane() throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
-                try {
-                    UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-                } catch (Exception checkedExceptionsPleaseDie) {
-                    throw new RuntimeException(checkedExceptionsPleaseDie);
-                }
                 JEditorPane editorPane = new JEditorPane();
                 editorPane.setContentType("text/plain");
                 editorPane.setEditable(false);
