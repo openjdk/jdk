@@ -21,7 +21,7 @@
  * questions.
  */
 
-package sun.hotspot.cpuinfo;
+package jdk.test.whitebox.cpuinfo;
 
 import java.util.List;
 import java.util.Arrays;
@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * Information about CPU on test box.
@@ -39,7 +39,6 @@ import sun.hotspot.WhiteBox;
  * and option -XX:+WhiteBoxAPI should be explicitly
  * specified on command line.
  */
-@Deprecated
 public class CPUInfo {
 
     private static final List<String> features;
