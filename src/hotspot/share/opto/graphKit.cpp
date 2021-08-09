@@ -529,13 +529,6 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   bool must_throw = true;
 
-  if (env()->jvmti_can_post_on_exceptions()) {
-    // check if we must post exception events, take uncommon trap if so
-    uncommon_trap_if_should_post_on_exceptions(reason, must_throw);
-    // here if should_post_on_exceptions is false
-    // continue on with the normal codegen
-  }
-
   // If this particular condition has not yet happened at this
   // bytecode, then use the uncommon trap mechanism, and allow for
   // a future recompilation if several traps occur here.
@@ -598,6 +591,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
     }
     if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != NULL) {
+      if (env()->jvmti_can_post_on_exceptions()) {
+        // check if we must post exception events, take uncommon trap if so
+        uncommon_trap_if_should_post_on_exceptions(reason, must_throw);
+        // here if should_post_on_exceptions is false
+        // continue on with the normal codegen
+      }
+
       // Cheat with a preallocated exception object.
       if (C->log() != NULL)
         C->log()->elem("hot_throw preallocated='1' reason='%s'",

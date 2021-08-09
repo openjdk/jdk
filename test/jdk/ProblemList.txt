@@ -749,6 +749,7 @@ javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 javax/swing/JFileChooser/FileSystemView/SystemIconTest.java 8268280 windows-x64
 
 javax/swing/plaf/basic/BasicHTML/4251579/bug4251579.java 8137101 linux-x64
+javax/swing/JComponent/7154030/bug7154030.java 8268284 macosx-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
@@ -830,7 +831,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java        8263461 linux-x64
+jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java        8263461 linux-all,windows-x64
 jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
 
 ############################################################################

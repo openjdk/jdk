@@ -2151,6 +2151,9 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 
 void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
   ResourceMark rm;
+  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(wbclass));
+  const char* klass_name = klass->external_name();
+
   ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
 
   //  one by one registration natives for exception catching
@@ -2166,13 +2169,13 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
         if (env->IsInstanceOf(throwable_obj, no_such_method_error_klass)) {
           // NoSuchMethodError is thrown when a method can't be found or a method is not native.
           // Ignoring the exception since it is not preventing use of other WhiteBox methods.
-          tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s",
-              method_array[i].name, method_array[i].signature);
+          tty->print_cr("Warning: 'NoSuchMethodError' on register of %s::%s%s",
+              klass_name, method_array[i].name, method_array[i].signature);
         }
       } else {
         // Registration failed unexpectedly.
-        tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered",
-            method_array[i].name, method_array[i].signature);
+        tty->print_cr("Warning: unexpected error on register of %s::%s%s. All methods will be unregistered",
+            klass_name, method_array[i].name, method_array[i].signature);
         env->UnregisterNatives(wbclass);
         break;
       }
@@ -2387,7 +2390,7 @@ static JNINativeMethod methods[] = {
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
-      CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
+      CC"(Ljava/lang/String;C[Ljdk/test/whitebox/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
   {CC"addToBootstrapClassLoaderSearch0", CC"(Ljava/lang/String;)V",

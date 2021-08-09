@@ -3362,6 +3362,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       phase->do_peeling(this, old_new);
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
+      return false; // need to recalculate idom data
     }
     return true;
   }
@@ -3380,7 +3381,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   if (cl->is_normal_loop()) {
     if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
-      return true;
+      return false; // need to recalculate idom data
     }
     if (policy_maximally_unroll(phase)) {
       // Here we did some unrolling and peeling.  Eventually we will
@@ -3493,6 +3494,7 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
       AutoNodeBudget node_budget(phase);
       if (policy_unswitching(phase)) {
         phase->do_unswitching(this, old_new);
+        return false; // need to recalculate idom data
       }
     }
   }

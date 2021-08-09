@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,30 @@
  */
 
 /*
- * @test SizeTTest
- * @bug 8054823
+ * @test id=without-inner-class
+ * @summary verify that sun.hotspot.WhiteBox class still can be used
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions SizeTTest
- * @summary testing of WB::set/getSizeTVMFlag()
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI OldWhiteBox
  */
-import jdk.test.lib.Platform;
 
-public class SizeTTest {
-    private static final String FLAG_NAME = "ArrayAllocatorMallocLimit";
-    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
-        (1L << 32L) - 1L, 1L << 32L};
-    private static final Long[] EXPECTED_64 = TESTS;
-    private static final Long[] EXPECTED_32 = {0L, 100L,
-        (long) Integer.MAX_VALUE, (1L << 32L) - 1L, 0L};
+/*
+ * @test id=with-inner-class
+ * @summary verify that sun.hotspot.WhiteBox class still can be used
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI OldWhiteBox
+ */
 
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            Platform.is64bit() ? EXPECTED_64 : EXPECTED_32,
-            VmFlagTest.WHITE_BOX::setSizeTVMFlag,
-            VmFlagTest.WHITE_BOX::getSizeTVMFlag);
+import sun.hotspot.WhiteBox;
+
+public class OldWhiteBox {
+    public static void main(String[] args) {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        if (wb.getHeapOopSize() < 0) {
+            throw new Error("wb.getHeapOopSize() < 0");
+        }
     }
 }
