@@ -622,8 +622,6 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
-java/nio/channels/FileChannel/Transfer2GPlus.java               8272047 linux-aarch64
-
 ############################################################################
 
 # jdk_rmi
