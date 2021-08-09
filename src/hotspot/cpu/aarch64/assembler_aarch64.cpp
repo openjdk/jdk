@@ -67,13 +67,13 @@ Assembler::SIMD_RegVariant Assembler::_esize2regvariant[9] = {
 };
 
 Assembler::SIMD_Arrangement Assembler::esize2arrangement(unsigned esize, bool isQ) {
-  assert(esize < ARRAY_SIZE(_esize2arrangement_table) &&
+  guarantee(esize < ARRAY_SIZE(_esize2arrangement_table) &&
          _esize2arrangement_table[esize][isQ] != INVALID_ARRANGEMENT, "unsupported element size");
   return _esize2arrangement_table[esize][isQ];
 }
 
 Assembler::SIMD_RegVariant Assembler::elemBytes_to_regVariant(unsigned esize) {
-  assert(esize < ARRAY_SIZE(_esize2regvariant) && _esize2regvariant[esize] != INVALID,
+  guarantee(esize < ARRAY_SIZE(_esize2regvariant) && _esize2regvariant[esize] != INVALID,
          "unsupported element size");
   return _esize2regvariant[esize];
 }

@@ -954,9 +954,9 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
   switch (cond) {
     case BoolTest::eq: condition = Assembler::EQ; break;
     case BoolTest::ne: condition = Assembler::NE; break;
-    case BoolTest::le: z1 = zm; z2 = zn;  // Swap the two inputs
+    case BoolTest::le: z1 = zm; z2 = zn; condition = Assembler::GE; break;
     case BoolTest::ge: condition = Assembler::GE; break;
-    case BoolTest::lt: z1 = zm; z2 = zn;  // Swap the two inputs
+    case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
     case BoolTest::gt: condition = Assembler::GT; break;
     default:
       assert(false, "unsupported compare condition");
