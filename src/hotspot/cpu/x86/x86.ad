@@ -1560,6 +1560,15 @@ const bool Matcher::match_rule_supported(int opcode) {
          return false;
       }
       break;
+    case Op_CopySignD:
+    case Op_CopySignF:
+      if (UseAVX < 3)  {
+        return false;
+      }
+      if (!VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
 #ifndef _LP64
     case Op_AddReductionVF:
     case Op_AddReductionVD:
@@ -1678,15 +1687,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_CallLeafVector:
       if (size_in_bits == 512 && !VM_Version::supports_avx512vlbwdq()) {
-        return false;
-      }
-      break;
-    case Op_CopySignD:
-    case Op_CopySignF:
-      if (UseAVX < 3)  {
-        return false;
-      }
-      if (!VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
@@ -5782,7 +5782,7 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
   ins_pipe( pipe_slow );
 %}
 
-// --------------------------------- Signum ---------------------------
+// --------------------------------- Signum/CopySign ---------------------------
 
 instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr) %{
   match(Set dst (SignumF dst (Binary zero one)));
@@ -5806,12 +5806,31 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_pipe( pipe_slow );
 %}
 
+// ---------------------------------------
+// For copySign use 0xE4 as writemask for vpternlog
+// Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
+// Wherever xmm2 is 0, we want to pick from B (sign)
+// Wherever xmm2 is 1, we want to pick from A (src)
+//
+// A B C Result
+// 0 0 0 0
+// 0 0 1 0
+// 0 1 0 1
+// 0 1 1 0
+// 1 0 0 0
+// 1 0 1 1
+// 1 1 0 1
+// 1 1 1 1
+//
+// Result going from high bit to low bit is 0x11100100 = 0xe4
+// ---------------------------------------
+
 #ifdef _LP64
-instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegL tmp2) %{
+instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
   predicate(UseAVX >= 3 && VM_Version::supports_avx512vl());
   match(Set dst (CopySignF dst src));
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignF $dst, $src" %}
+  format %{ "CopySignF $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
   ins_encode %{
     __ movl($tmp2$$Register, 0x7FFFFFFF);
     __ vmovd($tmp1$$XMMRegister, $tmp2$$Register);
@@ -5825,7 +5844,7 @@ instruct copySignD_reg(regD dst, regD src, regD tmp1, rRegL tmp2, regD zero) %{
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(125);
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignD $dst, $src" %}
+  format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
   ins_encode %{
     __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
     __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
@@ -5839,7 +5858,7 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(100);
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignD $dst, $src" %}
+  format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
   ins_encode %{
     __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
     __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
