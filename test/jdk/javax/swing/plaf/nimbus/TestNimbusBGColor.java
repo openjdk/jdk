@@ -130,6 +130,6 @@ public class TestNimbusBGColor {
                     frame.dispose();
                 }
             });
-        } 
+        }
     }
 }
