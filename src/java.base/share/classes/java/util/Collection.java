@@ -27,7 +27,9 @@ package java.util;
 
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.stream.ParallelStreamable;
 import java.util.stream.Stream;
+import java.util.stream.Streamable;
 import java.util.stream.StreamSupport;
 
 /**
@@ -250,7 +252,7 @@ import java.util.stream.StreamSupport;
  * @since 1.2
  */
 
-public interface Collection<E> extends Iterable<E> {
+public interface Collection<E> extends Iterable<E>, Streamable<E>, ParallelStreamable<E> {
     // Query Operations
 
     /**
@@ -739,13 +741,14 @@ public interface Collection<E> extends Iterable<E> {
      * @return a sequential {@code Stream} over the elements in this collection
      * @since 1.8
      */
+    @Override
     default Stream<E> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
 
     /**
      * Returns a possibly parallel {@code Stream} with this collection as its
-     * source.  It is allowable for this method to return a sequential stream.
+     * source. It is allowable for this method to return a sequential stream.
      *
      * <p>This method should be overridden when the {@link #spliterator()}
      * method cannot return a spliterator that is {@code IMMUTABLE},
@@ -760,6 +763,7 @@ public interface Collection<E> extends Iterable<E> {
      * collection
      * @since 1.8
      */
+    @Override
     default Stream<E> parallelStream() {
         return StreamSupport.stream(spliterator(), true);
     }

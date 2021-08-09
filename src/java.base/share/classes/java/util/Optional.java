@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.Streamable;
 
 /**
  * A container object which may or may not contain a non-{@code null} value.
@@ -59,7 +60,7 @@ import java.util.stream.Stream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class Optional<T> {
+public final class Optional<T> implements Streamable<T> {
     /**
      * Common instance for {@code empty()}.
      */
@@ -330,6 +331,7 @@ public final class Optional<T> {
      * @return the optional value as a {@code Stream}
      * @since 9
      */
+    @Override
     public Stream<T> stream() {
         if (!isPresent()) {
             return Stream.empty();
