@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -65,6 +66,22 @@ extern "C" {
 static get_cpu_info_stub_t get_cpu_info_stub = NULL;
 static detect_virt_stub_t detect_virt_stub = NULL;
 
+#ifdef _LP64
+
+bool VM_Version::supports_clflush() {
+  // clflush should always be available on x86_64
+  // if not we are in real trouble because we rely on it
+  // to flush the code cache.
+  // Unfortunately, Assembler::clflush is currently called as part
+  // of generation of the code cache flush routine. This happens
+  // under Universe::init before the processor features are set
+  // up. Assembler::flush calls this routine to check that clflush
+  // is allowed. So, we give the caller a free pass if Universe init
+  // is still in progress.
+  assert ((!Universe::is_fully_initialized() || (_features & CPU_FLUSH) != 0), "clflush should be available");
+  return true;
+}
+#endif
 
 class VM_Version_StubGenerator: public StubCodeGenerator {
  public:

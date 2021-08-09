@@ -60,8 +60,8 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("VM operation took too long: " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
-            delay, AbortVMOnVMOperationTimeoutDelay);
+      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: " INTX_FORMAT " ms)",
+            _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
 }
@@ -70,13 +70,27 @@ bool VMOperationTimeoutTask::is_armed() {
   return Atomic::load_acquire(&_armed) != 0;
 }
 
-void VMOperationTimeoutTask::arm() {
+void VMOperationTimeoutTask::arm(const char* vm_op_name) {
+  _vm_op_name = vm_op_name;
   _arm_time = os::javaTimeNanos();
   Atomic::release_store_fence(&_armed, 1);
 }
 
 void VMOperationTimeoutTask::disarm() {
   Atomic::release_store_fence(&_armed, 0);
+
+  // The two stores to `_armed` are counted in VM-op, but they should be
+  // insignificant compared to the actual VM-op duration.
+  jlong vm_op_duration = nanos_to_millis(os::javaTimeNanos() - _arm_time);
+
+  // Repeat the timeout-check logic on the VM thread, because
+  // VMOperationTimeoutTask might miss the arm-disarm window depending on
+  // the scheduling.
+  if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
+    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+          _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
+  }
+  _vm_op_name = nullptr;
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -403,11 +417,12 @@ void VMThread::inner_execute(VM_Operation* op) {
                       _cur_vm_operation->name());
 
   bool end_safepoint = false;
+  bool has_timeout_task = (_timeout_task != nullptr);
   if (_cur_vm_operation->evaluate_at_safepoint() &&
       !SafepointSynchronize::is_at_safepoint()) {
     SafepointSynchronize::begin();
-    if (_timeout_task != NULL) {
-      _timeout_task->arm();
+    if (has_timeout_task) {
+      _timeout_task->arm(_cur_vm_operation->name());
     }
     end_safepoint = true;
   }
@@ -415,7 +430,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   evaluate_operation(_cur_vm_operation);
 
   if (end_safepoint) {
-    if (_timeout_task != NULL) {
+    if (has_timeout_task) {
       _timeout_task->disarm();
     }
     SafepointSynchronize::end();

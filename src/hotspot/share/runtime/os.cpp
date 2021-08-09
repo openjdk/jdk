@@ -64,6 +64,7 @@
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -646,6 +647,15 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
+#if INCLUDE_NMT
+  {
+    void* rc = NULL;
+    if (NMTPreInit::handle_malloc(&rc, size)) {
+      return rc;
+    }
+  }
+#endif
+
   // Since os::malloc can be called when the libjvm.{dll,so} is
   // first loaded and we don't have a thread yet we must accept NULL also here.
   assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
@@ -705,6 +715,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
+#if INCLUDE_NMT
+  {
+    void* rc = NULL;
+    if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
+      return rc;
+    }
+  }
+#endif
+
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
@@ -755,6 +774,13 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
 // handles NULL pointers
 void  os::free(void *memblock) {
+
+#if INCLUDE_NMT
+  if (NMTPreInit::handle_free(memblock)) {
+    return;
+  }
+#endif
+
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
@@ -989,7 +1015,9 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       if (envvar != NULL) {
         st->print("%s", env_list[i]);
         st->print("=");
-        st->print_cr("%s", envvar);
+        st->print("%s", envvar);
+        // Use separate cr() printing to avoid unnecessary buffer operations that might cause truncation.
+        st->cr();
       }
     }
   }
