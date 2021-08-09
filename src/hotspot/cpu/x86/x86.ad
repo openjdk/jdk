@@ -1562,7 +1562,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CopySignD:
     case Op_CopySignF:
-      if (UseAVX < 3)  {
+      if (UseAVX < 3 || !is_LP64)  {
         return false;
       }
       if (!VM_Version::supports_avx512vl()) {
