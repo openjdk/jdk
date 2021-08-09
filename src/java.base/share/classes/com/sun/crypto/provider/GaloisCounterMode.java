@@ -1425,8 +1425,9 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         * Use any data from ibuffer and 'in' to first verify the auth tag. If
-         * the tag is valid, decrypt the data.
+         * Use available data from ibuffer and 'in' to verify and decrypt the
+         * data.  If the verification fails, the 'out' left to it's original
+         * values if crypto was in-place; otherwise 'out' is zeroed
          */
         @Override
         public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
@@ -1434,14 +1435,16 @@ abstract class GaloisCounterMode extends CipherSpi {
             ShortBufferException {
 
             int len = inLen + getBufferedLength();
+            if (len < tagLenBytes) {
+                throw new AEADBadTagException("Input data too short to " +
+                    "contain an expected tag length of " + tagLenBytes +
+                    "bytes");
+            }
+
             try {
                 ArrayUtil.nullAndBoundsCheck(out, outOfs, len - tagLenBytes);
             } catch (ArrayIndexOutOfBoundsException e) {
                 throw new ShortBufferException("Output buffer invalid");
-            }
-
-            if (len < tagLenBytes) {
-                throw new AEADBadTagException("Input too short - need tag");
             }
 
             if (len - tagLenBytes > out.length - outOfs) {
@@ -1471,7 +1474,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 Arrays.fill(out, outOfs, outOfs + len, (byte) 0);
-                throw new AEADBadTagException("Tag mismatch!");
+                throw new AEADBadTagException("Tag mismatch");
             }
 
             restoreOut(out, len);
@@ -1479,8 +1482,9 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         * Use any data from ibuffer and 'src' to first verify the auth tag. If
-         * the tag is valid, decrypt the data.
+         * Use available data from ibuffer and 'src' to verify and decrypt the
+         * data.  If the verification fails, the 'dst' left to it's original
+         * values if crypto was in-place; otherwise 'dst' is zeroed
          */
         @Override
         public int doFinal(ByteBuffer src, ByteBuffer dst)
@@ -1504,8 +1508,8 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // Verify dst is large enough
             if (len > dst.remaining()) {
-                throw new ShortBufferException("Output buffer too small, must" +
-                    "be at least " + (len - tagLenBytes) + " bytes long");
+                throw new ShortBufferException("Output buffer too small, " +
+                    "must be at least " + len + " bytes long");
             }
 
             // Create buffer 'tag' that contains only the auth tag
@@ -1528,7 +1532,9 @@ abstract class GaloisCounterMode extends CipherSpi {
                 tag.put(ct);
                 tag.flip();
             } else {
-                throw new AEADBadTagException("Input too short - need tag");
+                throw new AEADBadTagException("Input data too short to " +
+                    "contain an expected tag length of " + tagLenBytes +
+                    "bytes");
             }
 
             dst = overlapDetection(src, dst);
@@ -1558,7 +1564,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
                         len + dst.position(), (byte)0);
                 }
-                throw new AEADBadTagException("Tag mismatch!");
+                throw new AEADBadTagException("Tag mismatch");
             }
 
             src.position(src.limit());
@@ -1605,7 +1611,8 @@ abstract class GaloisCounterMode extends CipherSpi {
 
                 int bufRemainder = bLen - len;
                 if (bufRemainder >= blockSize) {
-                    resultLen = op.update(buffer, len, bufRemainder, out, outOfs);
+                    resultLen = op.update(buffer, len, bufRemainder, out,
+                        outOfs);
                     len += resultLen;
                     outOfs += resultLen;
                     bufRemainder -= resultLen;
@@ -1644,8 +1651,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len += resultLen;
             }
 
-            ghash.doFinal(in, inOfs, inLen);
-            return len + gctr.doFinal(in, inOfs, inLen, out, outOfs);
+            return len + op.doFinal(in, inOfs, inLen, out, outOfs);
         }
     }
 
@@ -1718,7 +1724,8 @@ abstract class GaloisCounterMode extends CipherSpi {
             int len = 0;
 
             if (inLen >= PARALLEL_LEN) {
-                len = implGCMCrypt(in, inOfs, inLen, out, outOfs, out, outOfs, gctr, ghash);
+                len = implGCMCrypt(in, inOfs, inLen, out, outOfs, out, outOfs,
+                    gctr, ghash);
                 inLen -= len;
                 outOfs += len;
             }
