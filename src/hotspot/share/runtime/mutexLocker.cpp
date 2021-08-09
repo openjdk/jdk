@@ -229,7 +229,7 @@ void mutex_init() {
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
 
-    def(MonitoringSupport_lock     , PaddedMutex  , native   ,   true,  _safepoint_check_never);      // used for serviceability monitoring support
+    def(MonitoringSupport_lock     , PaddedMutex  , service-1,   true,  _safepoint_check_never);      // used for serviceability monitoring support
   }
   def(StringDedup_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);
   def(StringDedupIntern_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_never);
@@ -245,10 +245,10 @@ void mutex_init() {
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
   def(MonitorDeflation_lock        , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for monitor deflation thread operations
-  def(Service_lock                 , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for service thread operations
+  def(Service_lock                 , PaddedMonitor, service,     true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {
-    def(Notification_lock            , PaddedMonitor, special,     true,  _safepoint_check_never);  // used for notification thread operations
+    def(Notification_lock          , PaddedMonitor, service,     true,  _safepoint_check_never);  // used for notification thread operations
   } else {
     Notification_lock = Service_lock;
   }
@@ -335,7 +335,7 @@ void mutex_init() {
   def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);
-  def(SharedDecoder_lock           , PaddedMutex  , native,      true,  _safepoint_check_never);
+  def(SharedDecoder_lock           , PaddedMutex  , tty-1,       true,  _safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);
