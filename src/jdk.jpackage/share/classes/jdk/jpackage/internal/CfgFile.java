@@ -88,16 +88,19 @@ final class CfgFile {
             content.add(Map.entry("app.classpath",
                     appCfgLayout.appDirectory().resolve(value).toString()));
         }
-        if (splitRuntime.getName() != null) {
+        String name = splitRuntime.getName();
+        if (name != null) {
             content.add(Map.entry("runtime.version",
                     splitRuntime.getVersionSpec()));
             content.add(Map.entry("runtime.release",
                     "$APPDIR" + File.separator + RELEASE_FILE_NAME));
 
             String sp = splitRuntime.getSearchPath();
+            String ins = splitRuntime.getInstallDir();
 
-            String searchPath = splitRuntime.getInstallDir() + ","
-                    + ((sp == null) ? "" : sp + ",") + getDefaultSearchPath();
+            String searchPath = ((ins == null) ? "" : ins + ",")
+                    + ((sp == null) ? "" : sp + ",") 
+                    + getDefaultSearchPath((ins == null) ? name : null);
 
             content.add(Map.entry("runtime.searchpath", searchPath));
         }
@@ -156,12 +159,14 @@ final class CfgFile {
         return appCfgLayout;
     }
 
-    private String getDefaultSearchPath() {
+    private String getDefaultSearchPath(String name) {
         if (Platform.isWindows()) {
             Path pf = ("x86".equals(System.getProperty("os.arch")) ?
                    getWinSystemDir("ProgramFiles(x86)","\\Program Files (x86)") :
                    getWinSystemDir("ProgramFiles", "\\Program Files"));
-            return pf.resolve("Java").toString();
+
+            return pf.resolve("Java").toString() +
+                    ((name == null) ? "" : ("," + pf.resolve(name).toString()));
         } else if (Platform.isMac()) {
             return "/Library/Internet Plug-ins/JavaAppletPlugin.plugin" + ","
                     + "/Library/Java/JavaVirtualMachines";
