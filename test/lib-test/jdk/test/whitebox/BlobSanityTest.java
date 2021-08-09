@@ -27,14 +27,14 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BlobSanityTest
  * @summary sanity testing of allocateCodeBlob, freeCodeBlob and getCodeBlob
  */
 
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.function.Consumer;
 import jdk.test.lib.Utils;

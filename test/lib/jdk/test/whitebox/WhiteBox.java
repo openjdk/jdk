@@ -21,7 +21,7 @@
  * questions.
  */
 
-package sun.hotspot;
+package jdk.test.whitebox;
 
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.Executable;
@@ -34,7 +34,6 @@ import java.util.Objects;
 
 import jdk.test.whitebox.parser.DiagnosticCommand;
 
-@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -59,7 +58,7 @@ public class WhiteBox {
     @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
+      sm.checkPermission(new WhiteBoxPermission("getInstance"));
     }
     return instance;
   }
@@ -416,7 +415,7 @@ public class WhiteBox {
   public native long maxMetaspaceAllocationSize();
 
   // Don't use these methods directly
-  // Use sun.hotspot.gc.GC class instead.
+  // Use jdk.test.whitebox.gc.GC class instead.
   public native boolean isGCSupported(int name);
   public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
