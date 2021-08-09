@@ -76,7 +76,7 @@ public class AppLauncherEnvTest {
                 .addArguments("--print-sys-prop=" + "java.library.path")
                 .executeAndRepeatUntilExitCode(0, attempts,
                         waitBetweenAttemptsSeconds).getOutput();
-        
+
         BiFunction<Integer, String, String> getValue = (idx, name) -> {
             return  output.get(idx).substring((name + "=").length());
         };
@@ -89,7 +89,7 @@ public class AppLauncherEnvTest {
 
         TKit.assertEquals(expectedEnvVarValue, actualEnvVarValue, String.format(
                 "Check value of %s env variable", envVarName));
-        
+
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(
                 Set.of(javaLibraryPath.split(File.pathSeparator)).contains(

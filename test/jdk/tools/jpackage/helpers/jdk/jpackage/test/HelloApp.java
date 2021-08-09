@@ -57,7 +57,7 @@ public final class HelloApp {
 
     private JarBuilder prepareSources(Path srcDir) throws IOException {
         final String srcClassName = appDesc.srcClassName();
-                
+
         final String qualifiedClassName = appDesc.className();
 
         final String className = qualifiedClassName.substring(

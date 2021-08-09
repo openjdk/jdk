@@ -63,7 +63,7 @@ public final class JavaAppDesc {
     public Path srcJavaPath() {
         return srcJavaPath;
     }
-    
+
     public String srcClassName() {
         String fname = srcJavaPath().getFileName().toString();
         return fname.substring(0, fname.lastIndexOf('.'));
