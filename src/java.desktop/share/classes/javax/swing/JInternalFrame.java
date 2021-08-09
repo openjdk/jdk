@@ -1157,10 +1157,9 @@ public class JInternalFrame extends JComponent implements
       */
     public void moveToFront() {
         if (isIcon()) {
-            JDesktopIcon icon = getDesktopIcon();
-            if (icon.getParent() instanceof JLayeredPane) {
-                ((JLayeredPane)icon.getParent()).
-                    moveToFront(icon);
+            if (getDesktopIcon().getParent() instanceof JLayeredPane) {
+                ((JLayeredPane)getDesktopIcon().getParent()).
+                        moveToFront(getDesktopIcon());
             }
         }
         else if (getParent() instanceof JLayeredPane) {
@@ -1174,10 +1173,9 @@ public class JInternalFrame extends JComponent implements
       */
     public void moveToBack() {
         if (isIcon()) {
-            JDesktopIcon icon = getDesktopIcon();
-            if (icon.getParent() instanceof JLayeredPane) {
-                ((JLayeredPane)icon.getParent()).
-                    moveToBack(icon);
+            if (getDesktopIcon().getParent() instanceof JLayeredPane) {
+                ((JLayeredPane)getDesktopIcon().getParent()).
+                        moveToBack(getDesktopIcon());
             }
         }
         else if (getParent() instanceof JLayeredPane) {
@@ -1296,10 +1294,7 @@ public class JInternalFrame extends JComponent implements
 
         if(p == null) {
            // search its icon parent for desktop
-           JInternalFrame.JDesktopIcon icon = getDesktopIcon();
-           if (icon != null) {
-               p = icon.getParent();
-           }
+           p = getDesktopIcon().getParent();
            while(p != null && !(p instanceof JDesktopPane))
                 p = p.getParent();
         }
@@ -1310,6 +1305,7 @@ public class JInternalFrame extends JComponent implements
     /**
      * Sets the <code>JDesktopIcon</code> associated with this
      * <code>JInternalFrame</code>.
+     * Setting <code>null</code> icon is unsupported and may throw NPE if used.
      *
      * @param d the <code>JDesktopIcon</code> to display on the desktop
      * @see #getDesktopIcon
@@ -1735,10 +1731,7 @@ public class JInternalFrame extends JComponent implements
 
         /* icon default visibility is false; set it to true so that it shows
            up when user iconifies frame */
-        JInternalFrame.JDesktopIcon icon = getDesktopIcon();
-        if (icon != null) {
-            icon.setVisible(true);
-        }
+        getDesktopIcon().setVisible(true);
 
         toFront();
         super.show();
@@ -1757,10 +1750,7 @@ public class JInternalFrame extends JComponent implements
     @SuppressWarnings("deprecation")
     public void hide() {
         if (isIcon()) {
-            JInternalFrame.JDesktopIcon icon = getDesktopIcon();
-            if (icon != null) {
-                icon.setVisible(false);
-            }
+            getDesktopIcon().setVisible(false);
         }
         super.hide();
     }
