@@ -99,7 +99,7 @@ final class CfgFile {
             String ins = splitRuntime.getInstallDir();
 
             String searchPath = ((ins == null) ? "" : ins + ",")
-                    + ((sp == null) ? "" : sp + ",") 
+                    + ((sp == null) ? "" : sp + ",")
                     + getDefaultSearchPath((ins == null) ? name : null);
 
             content.add(Map.entry("runtime.searchpath", searchPath));
