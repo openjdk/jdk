@@ -2682,9 +2682,9 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   Handle stack_trace(THREAD, result.get_oop());
   assert(stack_trace->is_objArray(), "Should be an array");
 
-  // If the original exception was in java.base, then use that otherwise use
-  // ExceptionInInitializerError as the cause with this stack trace, which might be a
-  // little wierd but still helpful.
+  // If the original exception was in the bootstrap class loader, then use that
+  // otherwise use ExceptionInInitializerError as the cause with this stack trace,
+  // which might be a little wierd but still helpful.
   Klass* tk = throwable->klass();
   bool null_classloader = tk->class_loader() == nullptr;
 
