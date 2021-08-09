@@ -70,7 +70,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _generation->heuristics()->record_cycle_end();
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
-  _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());
+  _tracer->report_gc_reference_stats(_generation->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
   _heap->set_gc_cause(GCCause::_no_gc);

@@ -86,7 +86,7 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-    ShenandoahReferenceProcessor* rp = heap->ref_processor();
+    ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
     assert(rp != NULL, "need reference processor");
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
                    true, // cancellable
@@ -136,7 +136,7 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahReferenceProcessor* rp = heap->ref_processor();
+    ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
 
     // First drain remaining SATB buffers.
     {
@@ -214,7 +214,7 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
   WorkGang* workers = heap->workers();
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   _generation->reserve_task_queues(workers->active_workers());
   switch (_generation->generation_mode()) {
     case YOUNG: {

@@ -404,7 +404,6 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   }
 }
 
-
 inline bool ShenandoahHeap::is_old(oop obj) const {
   return is_gc_generation_young() && is_in_old(obj);
 }

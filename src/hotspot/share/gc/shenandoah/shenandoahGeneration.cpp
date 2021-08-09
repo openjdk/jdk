@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -259,19 +260,22 @@ void ShenandoahGeneration::cancel_marking() {
   }
   set_mark_incomplete();
   _task_queues->clear();
+
+  ref_processor()->abandon_partial_discovery();
 }
 
 ShenandoahGeneration::ShenandoahGeneration(GenerationMode generation_mode,
-                                           uint max_queues,
+                                           uint max_workers,
                                            size_t max_capacity,
                                            size_t soft_max_capacity) :
   _generation_mode(generation_mode),
-  _task_queues(new ShenandoahObjToScanQueueSet(max_queues)),
+  _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
+  _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _used(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity) {
   _is_marking_complete.set();
-  assert(max_queues > 0, "At least one queue");
-  for (uint i = 0; i < max_queues; ++i) {
+  assert(max_workers > 0, "At least one queue");
+  for (uint i = 0; i < max_workers; ++i) {
     ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
     task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
@@ -302,7 +306,7 @@ void ShenandoahGeneration::scan_remembered_set() {
   reserve_task_queues(nworkers);
 
   ShenandoahConcurrentPhase gc_phase("Concurrent remembered set scanning", ShenandoahPhaseTimings::init_scan_rset);
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionIterator regions;
   ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &regions);
   heap->workers()->run_task(&task);

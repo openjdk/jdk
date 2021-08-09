@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 enum GenerationMode {
   YOUNG,
@@ -39,7 +40,8 @@ enum ShenandoahRegionAffiliation {
   OLD_GENERATION
 };
 
-const char *affiliation_name(ShenandoahRegionAffiliation type);
+const char* affiliation_name(oop ptr);
+const char* affiliation_name(ShenandoahRegionAffiliation type);
 
 class ShenandoahGenerationalMode : public ShenandoahMode {
 public:

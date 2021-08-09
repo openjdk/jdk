@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "utilities/events.hpp"
 
 class ShenandoahConcurrentCoalesceAndFillTask : public AbstractGangTask {
@@ -72,7 +73,6 @@ ShenandoahOldGC::ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSha
 void ShenandoahOldGC::entry_old_evacuations() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
-  entry_coalesce_and_fill();
   old_heuristics->start_old_evacuations();
 }
 
@@ -94,9 +94,8 @@ void ShenandoahOldGC::op_final_mark() {
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 
-    // Believe notifying JVMTI that the tagmap table will need cleaning is not relevant following old-gen mark
-    // so commenting out for now:
-    //   JvmtiTagMap::set_needs_cleaning();
+    // We need to do this because weak root cleaning reports the number of dead handles
+    JvmtiTagMap::set_needs_cleaning();
 
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
@@ -104,6 +103,9 @@ void ShenandoahOldGC::op_final_mark() {
       // Old-gen choose_collection_set() does not directly manipulate heap->collection_set() so no need to clear it.
       _generation->heuristics()->choose_collection_set(nullptr, nullptr);
     }
+
+    heap->set_unload_classes(false);
+    heap->prepare_concurrent_roots();
 
     // Believe verification following old-gen concurrent mark needs to be different than verification following
     // young-gen concurrent mark, so am commenting this out for now:
@@ -129,21 +131,15 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // Complete marking under STW
   vmop_entry_final_mark();
 
-  entry_old_evacuations();
-
   // We aren't dealing with old generation evacuation yet. Our heuristic
   // should not have built a cset in final mark.
   assert(!heap->is_evacuation_in_progress(), "Old gen evacuations are not supported");
-
-  // Concurrent stack processing
-  if (heap->is_evacuation_in_progress()) {
-    entry_thread_roots();
-  }
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {
     entry_weak_refs();
     entry_weak_roots();
+    heap->set_concurrent_weak_root_in_progress(false);
   }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
@@ -161,12 +157,18 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
     entry_class_unloading();
   }
 
-  // Processing strong roots
-  // This may be skipped if there is nothing to update/evacuate.
-  // If so, strong_root_in_progress would be unset.
-  if (heap->is_concurrent_strong_root_in_progress()) {
-    entry_strong_roots();
-  }
+  // Coalesce and fill objects _after_ weak root processing and class unloading.
+  // Weak root and reference processing makes assertions about unmarked referents
+  // that will fail if they've been overwritten with filler objects. There is also
+  // a case in the LRB that permits access to from-space objects for the purpose
+  // of class unloading that is unlikely to function correctly if the object has
+  // been filled.
+  entry_coalesce_and_fill();
+
+  // Prepare for old evacuations (actual evacuations will happen on subsequent young collects).
+  entry_old_evacuations();
+
+  assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
   entry_rendezvous_roots();
   return true;

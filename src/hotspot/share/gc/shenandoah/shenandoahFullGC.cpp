@@ -184,7 +184,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     assert(!heap->global_generation()->is_mark_complete(), "sanity");
 
     // e. Abandon reference discovery and clear all discovered references.
-    ShenandoahReferenceProcessor* rp = heap->ref_processor();
+    ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
     rp->abandon_partial_discovery();
 
     // f. Set back forwarded objects bit back, in case some steps above dropped it.
@@ -299,7 +299,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
 
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 

@@ -34,14 +34,17 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
  public:
   ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity);
 
-  const char* name() const;
+  const char* name() const override;
 
-  bool contains(ShenandoahHeapRegion* region) const;
-  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+  bool contains(ShenandoahHeapRegion* region) const override;
 
-  void heap_region_iterate(ShenandoahHeapRegionClosure* cl);
+  bool contains(oop obj) const override;
 
-  void set_concurrent_mark_in_progress(bool in_progress);
+  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+
+  void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+
+  void set_concurrent_mark_in_progress(bool in_progress) override;
 
   // We leave the SATB barrier on for the entirety of the old generation
   // marking phase. In some cases, this can cause a write to a perfectly
@@ -63,7 +66,7 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
   // the performance impact would be too severe.
   void purge_satb_buffers(bool abandon);
  protected:
-  bool is_concurrent_mark_in_progress();
+  bool is_concurrent_mark_in_progress() override;
 };
 
 

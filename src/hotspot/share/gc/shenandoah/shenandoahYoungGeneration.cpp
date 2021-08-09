@@ -127,3 +127,7 @@ void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
     _old_gen_task_queues->reserve(workers);
   }
 }
+
+bool ShenandoahYoungGeneration::contains(oop obj) const {
+  return ShenandoahHeap::heap()->is_in_young(obj);
+}

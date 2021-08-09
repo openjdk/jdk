@@ -48,6 +48,8 @@ public:
 
   bool contains(ShenandoahHeapRegion* region) const;
 
+  bool contains(oop obj) const override { return true; }
+
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl);
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl);

@@ -140,6 +140,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahSafepoint;
   // Supported GC
   friend class ShenandoahConcurrentGC;
+  friend class ShenandoahOldGC;
   friend class ShenandoahDegenGC;
   friend class ShenandoahFullGC;
 
@@ -156,7 +157,7 @@ public:
     return &_lock;
   }
 
-  ShenandoahGeneration* active_generation() {
+  ShenandoahGeneration* active_generation() const {
     // last or latest generation might be a better name here.
     return _gc_generation;
   }
@@ -482,14 +483,6 @@ public:
   GCTracer* tracer();
   ConcurrentGCTimer* gc_timer() const;
 
-// ---------- Reference processing
-//
-private:
-  ShenandoahReferenceProcessor* const _ref_processor;
-
-public:
-  ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
-
 // ---------- Class Unloading
 //
 private:
@@ -524,6 +517,7 @@ public:
 
   bool is_in(const void* p) const;
 
+  bool is_in_active_generation(oop obj) const;
   bool is_in_young(const void* p) const;
   bool is_in_old(const void* p) const;
   inline bool is_old(oop pobj) const;

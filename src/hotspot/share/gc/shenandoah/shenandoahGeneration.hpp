@@ -33,6 +33,7 @@
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
+class ShenandoahReferenceProcessor;
 
 class ShenandoahGeneration : public CHeapObj<mtGC> {
 private:
@@ -43,6 +44,8 @@ private:
   ShenandoahObjToScanQueueSet* _task_queues;
   ShenandoahSharedFlag _is_marking_complete;
 
+  ShenandoahReferenceProcessor* const _ref_processor;
+
 protected:
   // Usage
   size_t _affiliated_region_count;
@@ -51,12 +54,14 @@ protected:
   size_t _soft_max_capacity;
 
 public:
-  ShenandoahGeneration(GenerationMode generation_mode, uint max_queues, size_t max_capacity, size_t soft_max_capacity);
+  ShenandoahGeneration(GenerationMode generation_mode, uint max_workers, size_t max_capacity, size_t soft_max_capacity);
   ~ShenandoahGeneration();
 
   inline GenerationMode generation_mode() const { return _generation_mode; }
 
   inline ShenandoahHeuristics* heuristics() const { return _heuristics; }
+
+  ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual const char* name() const = 0;
 
@@ -95,6 +100,9 @@ public:
 
   // Return true if this region is affiliated with this generation.
   virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+
+  // Return true if this object is affiliated with this generation.
+  virtual bool contains(oop obj) const = 0;
 
   // Apply closure to all regions affiliated with this generation.
   virtual void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) = 0;

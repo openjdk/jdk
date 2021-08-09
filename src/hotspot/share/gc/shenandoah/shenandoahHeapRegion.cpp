@@ -610,6 +610,8 @@ void ShenandoahHeapRegion::recycle() {
   make_empty();
   set_affiliation(FREE);
 
+  heap->clear_cards_for(this);
+
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }

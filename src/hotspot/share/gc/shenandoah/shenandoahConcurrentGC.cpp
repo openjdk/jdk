@@ -507,7 +507,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   // Weak reference processing
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   rp->reset_thread_locals();
   rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
 
@@ -644,7 +644,7 @@ void ShenandoahConcurrentGC::op_weak_refs() {
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   // Concurrent weak refs processing
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs);
-  heap->ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs, heap->workers(), true /* concurrent */);
+  _generation->ref_processor()->process_references(ShenandoahPhaseTimings::conc_weak_refs, heap->workers(), true /* concurrent */);
 }
 
 class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {
@@ -671,8 +671,15 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
-      shenandoah_assert_correct(p, obj);
-      Atomic::cmpxchg(p, obj, oop(NULL));
+      if (_heap->is_in_active_generation(obj)) {
+        // TODO: This worries me. Here we are asserting that an unmarked from-space object is 'correct'.
+        // Normally, I would call this a bogus assert, but there seems to be a legitimate use-case for
+        // accessing from-space objects during class unloading. However, the from-space object may have
+        // been "filled". We've made no effort to prevent old generation classes being unloaded by young
+        // gen (and vice-versa).
+        shenandoah_assert_correct(p, obj);
+        Atomic::cmpxchg(p, obj, oop(NULL));
+      }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {

@@ -59,7 +59,15 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_UNSET(ClassUnloading);
 }
 
-const char *affiliation_name(ShenandoahRegionAffiliation type) {
+const char* affiliation_name(oop ptr) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->is_in(ptr), "Oop must be in the heap.");
+  ShenandoahHeapRegion* region = heap->heap_region_containing(ptr);
+  return affiliation_name(region->affiliation());
+}
+
+
+const char* affiliation_name(ShenandoahRegionAffiliation type) {
   switch (type) {
     case ShenandoahRegionAffiliation::FREE:
       return "FREE";
@@ -68,6 +76,7 @@ const char *affiliation_name(ShenandoahRegionAffiliation type) {
     case ShenandoahRegionAffiliation::OLD_GENERATION:
       return "OLD";
     default:
-      return "UnrecognizedAffiliation";
+      ShouldNotReachHere();
+      return nullptr;
   }
 }
