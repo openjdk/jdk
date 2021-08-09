@@ -86,7 +86,6 @@ void VMOperationTimeoutTask::disarm() {
   // Repeat the timeout-check logic on the VM thread, because
   // VMOperationTimeoutTask might miss the arm-disarm window depending on
   // the scheduling.
-  assert(Thread::current()->is_VM_thread(), "Check timeout on VM thread");
   if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
     fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
           _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
