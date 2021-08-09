@@ -399,8 +399,4 @@ bool oopDesc::mark_must_be_preserved(markWord m) const {
   return m.must_be_preserved(this);
 }
 
-bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(this);
-}
-
 #endif // SHARE_OOPS_OOP_INLINE_HPP
