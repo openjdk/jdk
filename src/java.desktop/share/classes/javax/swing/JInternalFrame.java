@@ -1159,7 +1159,7 @@ public class JInternalFrame extends JComponent implements
         if (isIcon()) {
             if (getDesktopIcon().getParent() instanceof JLayeredPane) {
                 ((JLayeredPane)getDesktopIcon().getParent()).
-                        moveToFront(getDesktopIcon());
+                    moveToFront(getDesktopIcon());
             }
         }
         else if (getParent() instanceof JLayeredPane) {
@@ -1175,7 +1175,7 @@ public class JInternalFrame extends JComponent implements
         if (isIcon()) {
             if (getDesktopIcon().getParent() instanceof JLayeredPane) {
                 ((JLayeredPane)getDesktopIcon().getParent()).
-                        moveToBack(getDesktopIcon());
+                    moveToBack(getDesktopIcon());
             }
         }
         else if (getParent() instanceof JLayeredPane) {
