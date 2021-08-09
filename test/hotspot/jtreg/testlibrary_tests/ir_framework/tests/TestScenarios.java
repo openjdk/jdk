@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test scenarios with the framework.
- * @library /test/lib /
+ * @library /test/lib /testlibrary_tests /
  * @run driver ir_framework.tests.TestScenarios
  */
 
@@ -44,13 +44,14 @@ public class TestScenarios {
         Scenario s3dup = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         try {
             new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
-            Asserts.fail("Should not reach");
+            Utils.shouldHaveCaughtException(sDefault, s1, s2, s3);
         } catch (TestRunException e) {
             Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #3"), e.getMessage());
         }
         try {
             new TestFramework().addScenarios(s1, s2, s3).start();
-            Asserts.fail("Should not reach");
+            Utils.shouldHaveCaughtException(s1, s2, s3);
+
         } catch (TestRunException e) {
             Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #1, #3"), e.getMessage());
         }
