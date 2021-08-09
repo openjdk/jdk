@@ -478,7 +478,7 @@ inline void ZBarrier::store_barrier_on_heap_oop_field(volatile zpointer* p, bool
   const zpointer prev = load_atomic(p);
 
   auto slow_path = [=](zaddress addr) -> zaddress {
-    return ZBarrier::keep_alive_and_remember_slow_path(p, addr, prev, heal);
+    return ZBarrier::heap_store_slow_path(p, addr, prev, heal);
   };
 
   barrier(is_store_good_fast_path, slow_path, color_store_good, (heal ? p : NULL), prev);
@@ -487,7 +487,7 @@ inline void ZBarrier::store_barrier_on_heap_oop_field(volatile zpointer* p, bool
 inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bool heal) {
   zpointer prev = load_atomic(p);
 
-  barrier(is_store_good_fast_path, keep_alive_slow_path, color_store_good, (heal ? p : NULL), prev);
+  barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, (heal ? p : NULL), prev);
 }
 
 #endif // SHARE_GC_Z_ZBARRIER_INLINE_HPP

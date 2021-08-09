@@ -285,7 +285,6 @@ const size_t      ZMarkPartialArrayMinSize      = (size_t)1 << ZMarkPartialArray
 
 // Max number of proactive/terminate flush attempts
 const size_t      ZMarkProactiveFlushMax        = 10;
-const size_t      ZMarkTerminateFlushMax        = 3;
 
 // Try complete mark timeout
 const uint64_t    ZMarkCompleteTimeout          = 200; // us

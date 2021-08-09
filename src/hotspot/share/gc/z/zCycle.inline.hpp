@@ -76,9 +76,9 @@ inline const ZForwardingTable* ZCycle::forwarding_table() const {
   return &_forwarding_table;
 }
 
-template <bool gc_thread, bool follow, bool finalizable, bool publish>
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
 inline void ZCycle::mark_object(zaddress addr) {
-  _mark.mark_object<gc_thread, follow, finalizable, publish>(addr);
+  _mark.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
 }
 
 inline void ZCycle::mark_follow_invisible_root(zaddress addr, size_t size) {

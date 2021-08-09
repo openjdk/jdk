@@ -302,17 +302,17 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   return page->is_object_strongly_live(addr);
 }
 
-template <bool gc_thread, bool follow, bool finalizable, bool publish>
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
 inline void ZHeap::mark_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_old(addr)) {
     if (_major_cycle.phase() == ZPhase::Mark) {
-      _major_cycle.mark_object<gc_thread, follow, finalizable, publish>(addr);
+      _major_cycle.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
     }
   } else {
     if (_minor_cycle.phase() == ZPhase::Mark) {
-      _minor_cycle.mark_object<gc_thread, follow, ZMark::Strong, publish>(addr);
+      _minor_cycle.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
     }
   }
 }
@@ -323,7 +323,7 @@ inline void ZHeap::mark_minor_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_young(addr)) {
-    _minor_cycle.mark_object<ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
+    _minor_cycle.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
   }
 }
 

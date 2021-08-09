@@ -633,6 +633,14 @@ void ZDriverMajor::concurrent_mark() {
   ZBreakpoint::at_after_marking_started();
   ZHeap::heap()->major_cycle()->mark_roots();
   ZHeap::heap()->major_cycle()->mark_follow();
+  // The roots into the old generation are produced by the minor GC.
+  // Therefore, we might run out of work before the minor GC has terminated.
+  // To ensure we get all roots, we await the completion of the minor GC.
+  minor_await();
+  // After waiting for the initial minor collection to have finished,
+  // it is not unlikely that more work has been produced. So we call
+  // mark_follow again to make sure we have terminated marking properly.
+  ZHeap::heap()->major_cycle()->mark_follow();
   ZBreakpoint::at_before_marking_completed();
 }
 
@@ -662,14 +670,25 @@ void ZDriverMajor::concurrent_reset_relocation_set() {
 }
 
 void ZDriverMajor::pause_verify() {
+  // Note that we block out concurrent minor cycles when performing the
+  // verification. The verification checks that store good oops in the
+  // old generation have a corresponding remembered set entry, or is in
+  // a store barrier buffer (hence asynchronously creating such entries).
+  // That lookup would otherwise race with installation of base pointers
+  // into the store barrier buffer. We dodge that race by blocking out
+  // minor cycles during this verification.
   if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
     // Full verification
+    minor_block();
     VM_Verify op;
     VMThread::execute(&op);
+    minor_unblock();
   } else if (ZVerifyRoots || ZVerifyObjects) {
     // Limited verification
+    minor_block();
     VM_ZMajorVerify op;
     VMThread::execute(&op);
+    minor_unblock();
   }
 }
 
@@ -807,8 +826,6 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 
   // Phase 2: Concurrent Mark
   concurrent(mark);
-
-  minor_await();
 
   // FIXME: Is this still needed now that purge dead remset is gone?
   minor_block();

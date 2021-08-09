@@ -29,6 +29,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCycle.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
+#include "gc/z/zMarkTerminate.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -44,7 +45,7 @@
 // root processing has called ClassLoaderDataGraph::clear_claimed_marks(),
 // since it otherwise would interact badly with claiming of CLDs.
 
-template <bool gc_thread, bool follow, bool finalizable, bool publish>
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
 inline void ZMark::mark_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr)), "Should be oop");
 
@@ -69,6 +70,10 @@ inline void ZMark::mark_object(zaddress addr) {
       // Already marked
       return;
     }
+  }
+
+  if (resurrect) {
+    _terminate.set_resurrected(true);
   }
 
   // Push

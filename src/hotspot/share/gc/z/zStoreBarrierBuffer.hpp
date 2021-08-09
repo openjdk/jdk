@@ -75,6 +75,9 @@ public:
 
   void flush();
   void add(volatile zpointer* p, zpointer prev);
+
+  // Check if p is contained in any store barrier buffer entry in the system
+  static bool is_in(volatile zpointer* p);
 };
 
 #endif // SHARE_GC_Z_ZSTOREBARRIERBUFFER_HPP

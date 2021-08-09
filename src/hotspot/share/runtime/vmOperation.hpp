@@ -60,6 +60,7 @@
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \
   template(G1TryInitiateConcMark)                 \
+  template(ZMarkFlushOperation)                   \
   template(ZMinorMarkStart)                       \
   template(ZMinorMarkEnd)                         \
   template(ZMinorRelocateStart)                   \

@@ -30,25 +30,19 @@
 
 class ZMarkTerminate {
 private:
-  uint                         _nworkers;
-  ZCACHE_ALIGNED volatile uint _nworking_stage0;
-  volatile uint                _nworking_stage1;
-
-  bool enter_stage(volatile uint* nworking_stage);
-  void exit_stage(volatile uint* nworking_stage);
-  bool try_exit_stage(volatile uint* nworking_stage);
+  uint          _nworkers;
+  volatile uint _nworking;
+  volatile bool _resurrected;
 
 public:
   ZMarkTerminate();
 
   void reset(uint nworkers);
 
-  bool enter_stage0();
-  void exit_stage0();
-  bool try_exit_stage0();
-
-  bool enter_stage1();
-  bool try_exit_stage1();
+  bool enter();
+  bool try_exit();
+  void set_resurrected(bool value);
+  bool resurrected();
 };
 
 #endif // SHARE_GC_Z_ZMARKTERMINATE_HPP

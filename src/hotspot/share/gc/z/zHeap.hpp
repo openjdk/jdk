@@ -99,7 +99,7 @@ public:
   ZPage* page(zaddress addr) const;
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
-  template <bool gc_thread, bool follow, bool finalizable, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   void mark_object(zaddress addr);
   template <bool follow, bool publish>
   void mark_minor_object(zaddress addr);

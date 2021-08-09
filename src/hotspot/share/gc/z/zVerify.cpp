@@ -66,7 +66,7 @@ static void z_verify_old_oop(zpointer* p) {
     } else {
       zaddress addr = ZPointer::uncolor(o);
       if (ZHeap::heap()->is_young(addr)) {
-        assert(ZHeap::heap()->is_remembered(p), "Must be remembered");
+        assert(ZHeap::heap()->is_remembered(p) || ZStoreBarrierBuffer::is_in(p), "Must be remembered");
       } else {
         assert(ZPointer::is_store_good(o) || (uintptr_t(o) & ZAddressRememberedMask) == ZAddressRememberedMask, "Must be remembered");
       }

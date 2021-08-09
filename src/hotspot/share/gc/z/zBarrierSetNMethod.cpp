@@ -68,7 +68,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_patch_barriers(nm);
 
   // Heal oops
-  ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
+  ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
   ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
   uintptr_t prev_color = ZNMethod::color(nm);

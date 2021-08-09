@@ -42,24 +42,26 @@ class ZMark {
   friend class ZMarkTask;
 
 public:
-  static const bool GCThread    = true;
-  static const bool AnyThread   = false;
+  static const bool Resurrect     = true;
+  static const bool DontResurrect = false;
 
-  static const bool Follow      = true;
-  static const bool DontFollow  = false;
+  static const bool GCThread      = true;
+  static const bool AnyThread     = false;
 
-  static const bool Strong      = false;
-  static const bool Finalizable = true;
+  static const bool Follow        = true;
+  static const bool DontFollow    = false;
 
-  static const bool Publish     = true;
-  static const bool Overflow    = false;
+  static const bool Strong        = false;
+  static const bool Finalizable   = true;
+
+  static const bool Publish       = true;
+  static const bool Overflow      = false;
 
 private:
   ZCycle* const       _cycle;
   ZPageTable* const   _page_table;
   ZMarkStripeSet      _stripes;
   ZMarkTerminate      _terminate;
-  volatile bool       _work_terminateflush;
   volatile size_t     _work_nproactiveflush;
   volatile size_t     _work_nterminateflush;
   size_t              _nproactiveflush;
@@ -82,42 +84,33 @@ private:
   void follow_object(oop obj, bool finalizable);
   void mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry);
 
-  template <typename T> bool drain(ZMarkStripe* stripe,
-                                   ZMarkThreadLocalStacks* stacks,
-                                   ZMarkCache* cache,
-                                   T* timeout);
+  bool drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCache* cache);
   bool try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   bool try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   bool try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   void idle() const;
-  bool flush(bool at_safepoint);
+  bool flush(bool gc_threads);
   bool try_proactive_flush();
-  bool try_flush(volatile size_t* nflush);
+  bool try_terminate_flush();
   bool try_terminate();
-  bool try_complete();
   bool try_end();
 
   ZWorkers* workers() const;
   void prepare_work();
   void finish_work();
 
-  void work_without_timeout(ZMarkCache* cache,
-                            ZMarkStripe* stripe,
-                            ZMarkThreadLocalStacks* stacks);
-  void work_with_timeout(ZMarkCache* cache,
-                         ZMarkStripe* stripe,
-                         ZMarkThreadLocalStacks* stacks,
-                         uint64_t timeout_in_micros);
-  void work(uint64_t timeout_in_micros);
+  void work();
 
   void verify_all_stacks_empty() const;
 
 public:
   ZMark(ZCycle* cycle, ZPageTable* page_table);
 
-  template <bool gc_thread, bool follow, bool finalizable, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   void mark_object(zaddress addr);
   void mark_follow_invisible_root(zaddress addr, size_t size);
+
+  ZCycle* cycle() { return _cycle; }
 
   void start();
   void mark_roots();

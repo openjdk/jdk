@@ -32,6 +32,7 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
+#ifdef ASSERT
 static bool during_minor_mark() {
   return ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark;
 }
@@ -40,29 +41,10 @@ static bool during_major_mark() {
   return ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
 }
 
-#ifdef ASSERT
 static bool during_any_mark() {
   return during_minor_mark() || during_major_mark();
 }
 #endif
-
-static bool matches_mark_phase(zaddress addr) {
-  if (is_null(addr)) {
-    return true;
-  }
-
-  if (ZHeap::heap()->is_young(addr)) {
-    if (during_minor_mark()) {
-      return true;
-    }
-  } else {
-    if (during_major_mark()) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle) {
   return cycle->relocate_or_remap_object(addr);
@@ -72,17 +54,15 @@ zaddress ZBarrier::remap(zaddress_unsafe addr, ZCycle* cycle) {
   return cycle->remap_object(addr);
 }
 
-template <bool gc_thread, bool follow, bool finalizable, bool publish>
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
 static void mark(zaddress addr) {
   // FIXME: Maybe rely on earlier null-filtering
   if (is_null(addr)) {
     return;
   }
 
-  assert(during_minor_mark() || during_major_mark(), "Should only be called during marking");
-
   // Mark
-  ZHeap::heap()->mark_object<gc_thread, follow, finalizable, publish>(addr);
+  ZHeap::heap()->mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
 }
 
 template <bool follow,bool publish>
@@ -96,12 +76,6 @@ static void mark_minor(zaddress addr) {
 
   // Mark
   ZHeap::heap()->mark_minor_object<follow, publish>(addr);
-}
-
-void ZBarrier::keep_alive(zaddress addr) {
-  if (matches_mark_phase(addr)) {
-    mark<ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
-  }
 }
 
 //
@@ -119,7 +93,7 @@ zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
     }
   } else {
     // Young gen objects are never blocked, need to keep alive
-    keep_alive(addr);
+    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
   }
 
 
@@ -138,7 +112,7 @@ zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
     }
   } else {
     // Young gen objects are never blocked, need to keep alive
-    keep_alive(addr);
+    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
   }
 
   // Strongly live
@@ -159,7 +133,7 @@ zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
     // Note: Should not need to keep object alive in this operation,
     //       but the barrier colors the pointer mark good, so we need
     //       to mark the object accordingly.
-    keep_alive(addr);
+    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
   }
 
   return addr;
@@ -179,7 +153,7 @@ zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
     // Note: Should not need to keep object alive in this operation,
     //       but the barrier colors the pointer mark good, so we need
     //       to mark the object accordingly.
-    keep_alive(addr);
+    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
   }
 
   return addr;
@@ -204,7 +178,7 @@ zaddress ZBarrier::mark_slow_path(zaddress addr) {
   assert(during_any_mark(), "Invalid phase");
 
   // Mark
-  mark<ZMark::GCThread, ZMark::Follow, ZMark::Strong, ZMark::Overflow>(addr);
+  mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Strong, ZMark::Overflow>(addr);
 
   return addr;
 }
@@ -222,7 +196,7 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
   assert(during_any_mark(), "Invalid phase");
 
   // Mark
-  mark<ZMark::GCThread, ZMark::Follow, ZMark::Finalizable, ZMark::Overflow>(addr);
+  mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Finalizable, ZMark::Overflow>(addr);
 
   return addr;
 }
@@ -231,26 +205,32 @@ void ZBarrier::remember(volatile zpointer* p) {
   ZHeap::heap()->remember_filtered(p);
 }
 
-void ZBarrier::keep_alive_and_remember(volatile zpointer* p, zaddress addr) {
-  keep_alive(addr);
+void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
+  mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
   remember(p);
 }
 
-zaddress ZBarrier::keep_alive_and_remember_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal) {
+zaddress ZBarrier::heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal) {
   ZStoreBarrierBuffer* buffer = ZStoreBarrierBuffer::buffer_for_store(heal);
 
   if (buffer != NULL) {
     // Buffer store barriers whenever possible
     buffer->add(p, prev);
   } else {
-    keep_alive_and_remember(p, addr);
+    mark_and_remember(p, addr);
   }
 
   return addr;
 }
 
+zaddress ZBarrier::native_store_slow_path(zaddress addr) {
+  mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+
+  return addr;
+}
+
 zaddress ZBarrier::keep_alive_slow_path(zaddress addr) {
-  keep_alive(addr);
+  mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 
   return addr;
 }

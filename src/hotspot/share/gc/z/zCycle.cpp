@@ -356,7 +356,7 @@ void ZMinorCycle::mark_follow() {
 bool ZMinorCycle::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Try end marking
+  // End marking
   if (!_mark.end()) {
     // Marking not completed, continue concurrent mark
     return false;

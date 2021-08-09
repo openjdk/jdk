@@ -27,6 +27,7 @@
 #include "gc/z/zCycle.inline.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
+#include "runtime/threadSMR.hpp"
 
 ByteSize ZStoreBarrierEntry::p_offset() {
   return byte_offset_of(ZStoreBarrierEntry, _p);
@@ -100,6 +101,17 @@ void ZStoreBarrierBuffer::install_base_pointers() {
   _last_installed_color = ZAddressStoreGoodMask;
 }
 
+static volatile zpointer* make_load_good(volatile zpointer* p, zaddress_unsafe p_base, uintptr_t color) {
+  assert(!is_null(p_base), "need base pointer");
+  // Relocating base pointer
+  uintptr_t offset = ((uintptr_t)p) - ((uintptr_t)p_base);
+  ZUncoloredRoot::process_no_keepalive(&p_base, color);
+  zaddress p_base_safe = safe(p_base);
+  assert(offset < ZUtils::object_size(p_base_safe),
+         "wrong base object; live bits are invalid");
+  return (volatile zpointer*)(((uintptr_t)p_base_safe) + offset);
+}
+
 void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
   uintptr_t last_remap_bits = _last_processed_color & ZAddressRemappedMask;
   if (last_remap_bits == ZAddressRemapped) {
@@ -113,12 +125,7 @@ void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
   zaddress_unsafe p_base = _base_pointers[i];
   if (!is_null(p_base)) {
     // Relocating base pointer
-    uintptr_t offset = ((uintptr_t)p) - ((uintptr_t)p_base);
-    ZUncoloredRoot::process_no_keepalive(&p_base, _last_processed_color);
-    zaddress p_base_safe = safe(p_base);
-    assert(offset < ZUtils::object_size(p_base_safe),
-           "wrong base object; live bits are invalid");
-    entry._p = (volatile zpointer*)(((uintptr_t)p_base_safe) + offset);
+    entry._p = make_load_good(entry._p, p_base, _last_processed_color);
   }
 }
 
@@ -194,8 +201,41 @@ void ZStoreBarrierBuffer::flush() {
   for (size_t i = current(); i < _buffer_length; ++i) {
     const ZStoreBarrierEntry& entry = _buffer[i];
     const zaddress addr = ZBarrier::make_load_good(entry._prev);
-    ZBarrier::keep_alive_and_remember(entry._p, addr);
+    ZBarrier::mark_and_remember(entry._p, addr);
   }
 
   clear();
+}
+
+bool ZStoreBarrierBuffer::is_in(volatile zpointer* p) {
+  if (!ZBufferStoreBarriers) {
+    return false;
+  }
+
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    ZStoreBarrierBuffer* buffer = ZThreadLocalData::store_barrier_buffer(jt);
+
+    uintptr_t last_remap_bits = buffer->_last_processed_color & ZAddressRemappedMask;
+    bool needs_remap = last_remap_bits != ZAddressRemapped;
+
+    for (size_t i = buffer->current(); i < _buffer_length; ++i) {
+      const ZStoreBarrierEntry& entry = buffer->_buffer[i];
+      volatile zpointer* entry_p = entry._p;
+
+      // Potentially remap p
+      if (needs_remap) {
+        zaddress_unsafe entry_p_base = buffer->_base_pointers[i];
+        if (!is_null(entry_p_base)) {
+          entry_p = make_load_good(entry_p, entry_p_base, buffer->_last_processed_color);
+        }
+      }
+
+      // Check if p matches
+      if (entry._p == p) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }

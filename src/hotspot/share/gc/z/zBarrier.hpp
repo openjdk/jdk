@@ -82,9 +82,8 @@ private:
   static zaddress make_load_good_no_relocate(zpointer ptr);
   static zaddress relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle);
   static zaddress remap(zaddress_unsafe addr, ZCycle* cycle);
-  static void keep_alive(zaddress addr);
   static void remember(volatile zpointer* p);
-  static void keep_alive_and_remember(volatile zpointer* p, zaddress addr);
+  static void mark_and_remember(volatile zpointer* p, zaddress addr);
 
   // Fast paths in increasing strength level
   static bool is_load_good_fast_path(zpointer ptr);
@@ -106,8 +105,9 @@ private:
   static zaddress mark_minor_slow_path(zaddress addr);
   static zaddress mark_finalizable_slow_path(zaddress addr);
 
-  static zaddress keep_alive_and_remember_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal);
   static zaddress keep_alive_slow_path(zaddress addr);
+  static zaddress heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal);
+  static zaddress native_store_slow_path(zaddress addr);
 
   // Helpers for non-strong oop refs barriers
   static zaddress blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o);

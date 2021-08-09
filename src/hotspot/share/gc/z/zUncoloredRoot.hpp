@@ -36,11 +36,6 @@ private:
 
   static zaddress make_load_good(zaddress_unsafe addr, uintptr_t color);
 
-  static bool matches_mark_phase(zaddress addr);
-
-  static bool during_minor_mark();
-  static bool during_major_mark();
-
   static void mark_invisible_object(zaddress addr);
 
   static void process_invisible_object(zaddress addr);
@@ -53,6 +48,7 @@ public:
   static void mark(zaddress_unsafe* p, uintptr_t color);
   static void mark_young(zaddress_unsafe* p, uintptr_t color);
   static void process(zaddress_unsafe* p, uintptr_t color);
+  static void process_weak(zaddress_unsafe* p, uintptr_t color);
   static void process_no_keepalive(zaddress_unsafe* p, uintptr_t color);
   static void process_invisible(zaddress_unsafe* p, uintptr_t color);
 
@@ -97,6 +93,16 @@ private:
 
 public:
   ZUncoloredRootProcessOopClosure(uintptr_t color);
+
+  virtual void do_root(zaddress_unsafe* p);
+};
+
+class ZUncoloredRootProcessWeakOopClosure : public ZUncoloredRootClosure {
+private:
+  const uintptr_t _color;
+
+public:
+  ZUncoloredRootProcessWeakOopClosure(uintptr_t color);
 
   virtual void do_root(zaddress_unsafe* p);
 };

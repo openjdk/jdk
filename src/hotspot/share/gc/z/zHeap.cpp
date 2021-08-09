@@ -244,7 +244,7 @@ void ZHeap::mark_flush_and_free(Thread* thread) {
 
 void ZHeap::keep_alive(oop obj) {
   zaddress addr = to_zaddress(obj);
-  ZUncoloredRoot::keep_alive_object(addr);
+  mark_object<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 void ZHeap::object_iterate(ObjectClosure* object_cl, bool visit_weaks) {

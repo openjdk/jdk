@@ -66,30 +66,8 @@ inline zaddress ZUncoloredRoot::make_load_good(zaddress_unsafe addr, uintptr_t c
   }
 }
 
-inline bool ZUncoloredRoot::matches_mark_phase(zaddress addr) {
-  if (ZHeap::heap()->is_young(addr)) {
-    if (during_minor_mark()) {
-      return true;
-    }
-  } else {
-    if (during_major_mark()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-inline bool ZUncoloredRoot::during_minor_mark() {
-  return ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark;
-}
-
-inline bool ZUncoloredRoot::during_major_mark() {
-  return ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
-}
-
 inline void ZUncoloredRoot::mark_object(zaddress addr) {
-  ZHeap::heap()->mark_object<ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZHeap::heap()->mark_object<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
@@ -97,19 +75,15 @@ inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
 }
 
 inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
-  ZHeap::heap()->mark_object<ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
+  ZHeap::heap()->mark_object<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::process_invisible_object(zaddress addr) {
-  if (matches_mark_phase(addr)) {
-    mark_invisible_object(addr);
-  }
+  mark_invisible_object(addr);
 }
 
 inline void ZUncoloredRoot::keep_alive_object(zaddress addr) {
-  if (matches_mark_phase(addr)) {
-    mark_object(addr);
-  }
+  ZHeap::heap()->mark_object<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark(zaddress_unsafe* p, uintptr_t color) {
@@ -121,6 +95,10 @@ inline void ZUncoloredRoot::mark_young(zaddress_unsafe* p, uintptr_t color) {
 }
 
 inline void ZUncoloredRoot::process(zaddress_unsafe* p, uintptr_t color) {
+  barrier(mark_object, p, color);
+}
+
+inline void ZUncoloredRoot::process_weak(zaddress_unsafe* p, uintptr_t color) {
   barrier(keep_alive_object, p, color);
 }
 
@@ -158,6 +136,13 @@ inline ZUncoloredRootProcessOopClosure::ZUncoloredRootProcessOopClosure(uintptr_
 
 inline void ZUncoloredRootProcessOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::process(p, _color);
+}
+
+inline ZUncoloredRootProcessWeakOopClosure::ZUncoloredRootProcessWeakOopClosure(uintptr_t color) :
+  _color(color) {}
+
+inline void ZUncoloredRootProcessWeakOopClosure::do_root(zaddress_unsafe* p) {
+  ZUncoloredRoot::process_weak(p, _color);
 }
 
 inline ZUncoloredRootProcessNoKeepaliveOopClosure::ZUncoloredRootProcessNoKeepaliveOopClosure(uintptr_t color) :

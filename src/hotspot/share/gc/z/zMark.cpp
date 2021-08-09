@@ -61,6 +61,7 @@
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -80,7 +81,6 @@ ZMark::ZMark(ZCycle* cycle, ZPageTable* page_table) :
     _page_table(page_table),
     _stripes(),
     _terminate(),
-    _work_terminateflush(true),
     _work_nproactiveflush(0),
     _work_nterminateflush(0),
     _nproactiveflush(0),
@@ -148,7 +148,6 @@ void ZMark::prepare_work() {
 
   // Reset flush counters
   _work_nproactiveflush = _work_nterminateflush = 0;
-  _work_terminateflush = true;
 }
 
 void ZMark::finish_work() {
@@ -381,23 +380,24 @@ void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
   }
 }
 
-template <typename T>
-bool ZMark::drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCache* cache, T* timeout) {
+bool ZMark::drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCache* cache) {
   ZMarkStackEntry entry;
+  size_t processed = 0;
 
   // Drain stripe stacks
   while (stacks->pop(allocator(), &_stripes, stripe, entry)) {
     mark_and_follow(cache, entry);
 
-    // Check timeout
-    if (timeout->has_expired()) {
-      // Timeout
-      return false;
+    if ((processed++ & 31) == 0) {
+      // Yield once per 32 oops
+      SuspendibleThreadSet::yield();
+      if (ZAbort::should_abort()) {
+        return false;
+      }
     }
   }
 
-  // Success
-  return !timeout->has_expired();
+  return true;
 }
 
 bool ZMark::try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
@@ -455,11 +455,11 @@ public:
       _flushed(false) {}
 
   void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-    }
     if (_mark->flush_and_free(thread)) {
       _flushed = true;
+      if (SafepointSynchronize::is_at_safepoint()) {
+        log_debug(gc, marking)("Thread broke mark termination %s", thread->name());
+      }
     }
   }
 
@@ -468,69 +468,79 @@ public:
   }
 };
 
-bool ZMark::flush(bool at_safepoint) {
-  ZMarkFlushAndFreeStacksClosure cl(this);
-  if (at_safepoint) {
-    Threads::threads_do(&cl);
-  } else {
-    SuspendibleThreadSetLeaver sts;
-    Handshake::execute(&cl);
+class VM_ZMarkFlushOperation : public VM_Operation {
+private:
+  ThreadClosure* _cl;
+  bool           _gc_threads;
+
+public:
+  VM_ZMarkFlushOperation(ThreadClosure* cl, bool gc_threads) :
+      _cl(cl),
+      _gc_threads(gc_threads) {}
+
+  virtual bool evaluate_at_safepoint() const {
+    return false;
   }
+
+  virtual void doit() {
+    // Flush GC threads
+    if (_gc_threads) {
+      SuspendibleThreadSet::synchronize();
+      ZHeap::heap()->minor_cycle()->workers()->threads_do(_cl);
+      ZHeap::heap()->major_cycle()->workers()->threads_do(_cl);
+      SuspendibleThreadSet::desynchronize();
+    }
+    // Flush VM thread
+    Thread* thread = Thread::current();
+    _cl->do_thread(thread);
+  }
+
+  virtual VMOp_Type type() const {
+    return VMOp_ZMarkFlushOperation;
+  }
+};
+
+bool ZMark::flush(bool gc_threads) {
+  ZMarkFlushAndFreeStacksClosure cl(this);
+  VM_ZMarkFlushOperation vm_cl(&cl, gc_threads);
+  Handshake::execute(&cl);
+  VMThread::execute(&vm_cl);
 
   // Returns true if more work is available
   return cl.flushed() || !_stripes.is_empty();
 }
 
-bool ZMark::try_flush(volatile size_t* nflush) {
-  Atomic::inc(nflush);
+bool ZMark::try_terminate_flush() {
+  Atomic::inc(&_work_nterminateflush);
 
   ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryFlush);
-  return flush(false /* at_safepoint */);
+  return flush(true /* gc_threads */) ||
+         _terminate.resurrected();
 }
 
 bool ZMark::try_proactive_flush() {
+  Atomic::inc(&_work_nproactiveflush);
+
   // Only do proactive flushes from worker 0
   if (ZThread::worker_id() != 0) {
     return false;
   }
 
-  if (Atomic::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax ||
-      Atomic::load(&_work_nterminateflush) != 0) {
+  if (Atomic::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  return try_flush(&_work_nproactiveflush);
+  ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryFlush);
+  SuspendibleThreadSetLeaver sts;
+  return flush(false /* gc_threads */);
 }
 
 bool ZMark::try_terminate() {
   ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryTerminate);
-
-  if (_terminate.enter_stage0()) {
-    // Last thread entered stage 0, flush
-    if (Atomic::load(&_work_terminateflush) &&
-        Atomic::load(&_work_nterminateflush) != ZMarkTerminateFlushMax) {
-      // Exit stage 0 to allow other threads to continue marking
-      _terminate.exit_stage0();
-
-      // Flush before termination
-      if (!try_flush(&_work_nterminateflush)) {
-        // No more work available, skip further flush attempts
-        Atomic::store(&_work_terminateflush, false);
-      }
-
-      // Don't terminate, regardless of whether we successfully
-      // flushed out more work or not. We've already exited
-      // termination stage 0, to allow other threads to continue
-      // marking, so this thread has to return false and also
-      // make another round of attempted marking.
-      return false;
-    }
-  }
-
   for (;;) {
-    if (_terminate.enter_stage1()) {
-      // Last thread entered stage 1, terminate
+    if (_terminate.enter()) {
+      // Last thread entered, terminate
       return true;
     }
 
@@ -538,40 +548,22 @@ bool ZMark::try_terminate() {
     // a chance to enter termination.
     idle();
 
-    if (!_terminate.try_exit_stage1()) {
-      // All workers in stage 1, terminate
+    if (!_terminate.try_exit()) {
+      // All workers entered, terminate
       return true;
-    }
-
-    if (_terminate.try_exit_stage0()) {
-      // More work available, don't terminate
-      return false;
     }
   }
 }
 
-class ZMarkNoTimeout : public StackObj {
-public:
-  bool has_expired() {
-    SuspendibleThreadSet::yield();
-    // No timeout, but check for signal to abort
-    return ZAbort::should_abort();
-  }
-};
-
-void ZMark::work_without_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+void ZMark::work() {
   ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
-  ZMarkNoTimeout no_timeout;
+  ZMarkCache cache(_stripes.nstripes());
+  ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
 
   for (;;) {
-    {
-      //ZStatTimer timer(_cycle->timer(), ZSubPhaseYield);
-      SuspendibleThreadSet::yield();
-    }
-
-    if (!drain(stripe, stacks, cache, &no_timeout)) {
-      // Abort
+    if (!drain(stripe, stacks, &cache)) {
       break;
     }
 
@@ -590,79 +582,6 @@ void ZMark::work_without_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkTh
       break;
     }
   }
-}
-
-class ZMarkTimeout : public StackObj {
-private:
-  const Ticks    _start;
-  const uint64_t _timeout;
-  const uint64_t _check_interval;
-  uint64_t       _check_at;
-  uint64_t       _check_count;
-  bool           _expired;
-
-public:
-  ZMarkTimeout(uint64_t timeout_in_micros) :
-      _start(Ticks::now()),
-      _timeout(_start.value() + TimeHelper::micros_to_counter(timeout_in_micros)),
-      _check_interval(200),
-      _check_at(_check_interval),
-      _check_count(0),
-      _expired(false) {}
-
-  ~ZMarkTimeout() {
-    const Tickspan duration = Ticks::now() - _start;
-    log_debug(gc, marking)("Mark With Timeout (%s): %s, " UINT64_FORMAT " oops, %.3fms",
-                           ZThread::name(), _expired ? "Expired" : "Completed",
-                           _check_count, TimeHelper::counter_to_millis(duration.value()));
-  }
-
-  bool has_expired() {
-    if (++_check_count == _check_at) {
-      _check_at += _check_interval;
-      if ((uint64_t)Ticks::now().value() >= _timeout) {
-        // Timeout
-        _expired = true;
-      }
-    }
-
-    return _expired;
-  }
-};
-
-void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_micros) {
-  ZStatTimer timer(_cycle->timer(), ZSubPhaseMarkTryComplete);
-  ZMarkTimeout timeout(timeout_in_micros);
-
-  for (;;) {
-    if (!drain(stripe, stacks, cache, &timeout)) {
-      // Timed out
-      break;
-    }
-
-    if (try_steal(stripe, stacks)) {
-      // Stole work
-      continue;
-    }
-
-    // Terminate
-    break;
-  }
-}
-
-void ZMark::work(uint64_t timeout_in_micros) {
-  ZMarkCache cache(_stripes.nstripes());
-  ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
-
-  if (timeout_in_micros == 0) {
-    work_without_timeout(&cache, stripe, stacks);
-  } else {
-    work_with_timeout(&cache, stripe, stacks, timeout_in_micros);
-  }
-
-  // Flush and publish stacks
-  stacks->flush(allocator(), &_stripes);
 
   // Free remaining stacks
   stacks->free(allocator());
@@ -920,14 +839,12 @@ public:
 
 class ZMarkTask : public ZTask {
 private:
-  ZMark* const   _mark;
-  const uint64_t _timeout_in_micros;
+  ZMark* const _mark;
 
 public:
-  ZMarkTask(ZMark* mark, uint64_t timeout_in_micros = 0) :
+  ZMarkTask(ZMark* mark) :
       ZTask("ZMarkTask"),
-      _mark(mark),
-      _timeout_in_micros(timeout_in_micros) {
+      _mark(mark) {
     _mark->prepare_work();
   }
 
@@ -936,7 +853,7 @@ public:
   }
 
   virtual void work() {
-    _mark->work(_timeout_in_micros);
+    _mark->work();
   }
 };
 
@@ -957,32 +874,30 @@ void ZMark::mark_roots() {
 }
 
 void ZMark::mark_follow() {
-  ZMarkTask task(this);
-  workers()->run(&task);
-}
-
-bool ZMark::try_complete() {
-  _ntrycomplete++;
-
-  // Use nconcurrent number of worker threads to maintain the
-  // worker/stripe distribution used during concurrent mark.
-  ZMarkTask task(this, ZMarkCompleteTimeout);
-  workers()->run(&task);
-
-  // Successful if all stripes are empty
-  return _stripes.is_empty();
+  do {
+    ZMarkTask task(this);
+    workers()->run(&task);
+    _terminate.set_resurrected(false);
+  } while (try_terminate_flush());
 }
 
 bool ZMark::try_end() {
-  // Flush all mark stacks
-  if (!flush(true /* at_safepoint */)) {
-    // Mark completed
-    return true;
+  if (_terminate.resurrected()) {
+    // An oop was resurrected after concurrent termination.
+    return false;
   }
 
-  // Try complete marking by doing a limited
-  // amount of mark work in this phase.
-  return try_complete();
+  // Try end marking
+  ZMarkFlushAndFreeStacksClosure cl(this);
+  Threads::non_java_threads_do(&cl);
+
+  // Check if non-java threads have any pending marking
+  if (cl.flushed() || !_stripes.is_empty()) {
+    return false;
+  }
+
+  // Mark completed
+  return true;
 }
 
 bool ZMark::end() {
@@ -1023,7 +938,9 @@ void ZMark::flush_and_free() {
 }
 
 bool ZMark::flush_and_free(Thread* thread) {
-  ZThreadLocalData::store_barrier_buffer(thread)->flush();
+  if (thread->is_Java_thread()) {
+    ZThreadLocalData::store_barrier_buffer(thread)->flush();
+  }
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _cycle->cycle_id());
   const bool flushed = stacks->flush(allocator(), &_stripes);
   stacks->free(allocator());
