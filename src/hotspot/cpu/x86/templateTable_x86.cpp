@@ -192,13 +192,27 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       // additional, required work.
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
-      __ get_cache_and_index_and_bytecode_at_bcp(temp_reg, bc_reg, temp_reg, byte_no, 1);
+      if (UseNewConstantPool) {
+        // Code below might not have been tested yet
+        Register fentry = temp_reg;
+        __ get_field_entry(fentry, bc_reg /*temp*/, 1);
+        int bc_offset;
+        if (byte_no == f1_byte) {
+          bc_offset = CPFieldEntry::b1_offset();
+        } else {
+          bc_offset = CPFieldEntry::b2_offset();
+        }
+        __ movb(temp_reg, Address(fentry, bc_offset));
+      } else {
+        __ get_cache_and_index_and_bytecode_at_bcp(temp_reg, bc_reg, temp_reg, byte_no, 1);
+      }
       __ movl(bc_reg, bc);
       __ cmpl(temp_reg, (int) 0);
       __ jcc(Assembler::zero, L_patch_done);  // don't patch
     }
     break;
   default:
+    // Problem in this case? wrong pre-conditions or post-conditions?
     assert(byte_no == -1, "sanity");
     // the pair bytecodes have already done the load.
     if (load_bc_into_bc_reg) {
@@ -3395,38 +3409,52 @@ void TemplateTable::jvmti_post_fast_field_mod() {
 void TemplateTable::fast_storefield(TosState state) {
   transition(state, vtos);
 
-  ByteSize base = ConstantPoolCache::base_offset();
+  Register off = rbx;
+  Register flags = rdx;
 
-  jvmti_post_fast_field_mod();
+  if (UseNewConstantPool) {
+    // Note: no JVMTI support yet
+    Register fentry = rcx;
+    __ get_field_entry(fentry, rdx /*temp*/, 1);
+    __ movl(flags, Address(fentry, CPFieldEntry::flags_offset()));
+    __ movptr(off, Address(fentry, CPFieldEntry::field_offset_offset()));
+  } else {
+    ByteSize base = ConstantPoolCache::base_offset();
+    jvmti_post_fast_field_mod();
 
-  // access constant pool cache
-  __ get_cache_and_index_at_bcp(rcx, rbx, 1);
+    // access constant pool cache
+    __ get_cache_and_index_at_bcp(rcx, rbx, 1);
 
-  // test for volatile with rdx but rdx is tos register for lputfield.
-  __ movl(rdx, Address(rcx, rbx, Address::times_ptr,
-                       in_bytes(base +
-                                ConstantPoolCacheEntry::flags_offset())));
+    // test for volatile with rdx (flags) but rdx is tos register for lputfield.
+    __ movl(flags, Address(rcx, rbx, Address::times_ptr,
+                        in_bytes(base +
+                                  ConstantPoolCacheEntry::flags_offset())));
 
-  // replace index with field offset from cache entry
-  __ movptr(rbx, Address(rcx, rbx, Address::times_ptr,
-                         in_bytes(base + ConstantPoolCacheEntry::f2_offset())));
+    // replace index with field offset from cache entry
+    __ movptr(off, Address(rcx, rbx, Address::times_ptr,
+                          in_bytes(base + ConstantPoolCacheEntry::f2_offset())));
+  }
 
   // [jk] not needed currently
   // volatile_barrier(Assembler::Membar_mask_bits(Assembler::LoadStore |
   //                                              Assembler::StoreStore));
 
   Label notVolatile, Done;
-  __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
-  __ andl(rdx, 0x1);
+  if (UseNewConstantPool) {
+    __ shrl(flags, CPFieldEntry::is_volatile_shift);
+  } else {
+    __ shrl(flags, ConstantPoolCacheEntry::is_volatile_shift);
+  }
+  __ andl(flags, 0x1);
 
   // Get object from stack
   pop_and_check_object(rcx);
 
   // field address
-  const Address field(rcx, rbx, Address::times_1);
+  const Address field(rcx, off, Address::times_1);
 
   // Check for volatile store
-  __ testl(rdx, rdx);
+  __ testl(flags, flags);
   __ jcc(Assembler::zero, notVolatile);
 
   fast_storefield_helper(field, rax);
@@ -3579,11 +3607,16 @@ void TemplateTable::fast_xaccess(TosState state) {
   // get receiver
   __ movptr(rax, aaddress(0));
   // access constant pool cache
-  __ get_cache_and_index_at_bcp(rcx, rdx, 2);
-  __ movptr(rbx,
-            Address(rcx, rdx, Address::times_ptr,
-                    in_bytes(ConstantPoolCache::base_offset() +
-                             ConstantPoolCacheEntry::f2_offset())));
+  if (UseNewConstantPool) {
+    __ get_field_entry(rcx, rdx /*temp*/, 2);
+    __ movptr(rbx, Address(rcx, CPFieldEntry::field_offset_offset()));
+  } else {
+    __ get_cache_and_index_at_bcp(rcx, rdx, 2);
+    __ movptr(rbx,
+              Address(rcx, rdx, Address::times_ptr,
+                      in_bytes(ConstantPoolCache::base_offset() +
+                              ConstantPoolCacheEntry::f2_offset())));
+  }
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)
   __ increment(rbcp);
