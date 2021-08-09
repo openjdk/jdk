@@ -585,6 +585,15 @@ public class FileChannelImpl
         if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
 
+        if (target == this) {
+            long posTarget = ((FileChannel)target).position();
+            if (posTarget + count - 1 >= position() &&
+                position() + count - 1 >= posTarget &&
+                !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
+            }
+        }
+
         // Trusted target: Use a mapped buffer
         long remaining = count;
         while (remaining > 0L) {
@@ -704,6 +713,14 @@ public class FileChannelImpl
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
 
+            if (src == this) {
+                if (pos + max - 1 >= position() &&
+                    position() + max - 1 >= pos &&
+                    !nd.canTransferToFromOverlappedMap()) {
+                    return IOStatus.UNSUPPORTED_CASE;
+                }
+            }
+
             long remaining = max;
             long p = pos;
             while (remaining > 0L) {
@@ -779,9 +796,11 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         if (position > size())
             return 0;
-        if (src instanceof FileChannelImpl)
-           return transferFromFileChannel((FileChannelImpl)src,
-                                          position, count);
+        if (src instanceof FileChannelImpl) {
+            long n = transferFromFileChannel((FileChannelImpl)src, position, count);
+            if (n > 0)
+                return n;
+        }
 
         return transferFromArbitraryChannel(src, position, count);
     }
