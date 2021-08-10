@@ -27,6 +27,7 @@
  * @bug 8149996
  * @modules java.base/jdk.internal.misc
  * @library /test/lib classes
+ * @build test.Empty
  * @run driver LoaderConstraintsTest
  */
 
