@@ -44,16 +44,28 @@ public class TestScenarios {
         Scenario s3dup = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         try {
             new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
-            Utils.shouldHaveCaughtException(sDefault, s1, s2, s3);
+            if (Utils.notAllBailedOut(sDefault, s1, s3)) {
+                // Not all scenarios had a bailout which means that at least one exception should have been thrown.
+                Asserts.fail("Should have thrown an exception");
+            }
+
         } catch (TestRunException e) {
-            Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #3"), e.getMessage());
+            if (Utils.noneBailedOut(sDefault, s1, s3)) {
+                // Only do check if there was no bailout. Otherwise, the following message is different.
+                Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #3"), e.getMessage());
+            }
         }
         try {
             new TestFramework().addScenarios(s1, s2, s3).start();
-            Utils.shouldHaveCaughtException(s1, s2, s3);
-
+            if (Utils.notAllBailedOut(s1, s3)) {
+                // Not all scenarios had a bailout which means that at least one exception should have been thrown.
+                Asserts.fail("Should have thrown an exception");
+            }
         } catch (TestRunException e) {
-            Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #1, #3"), e.getMessage());
+            if (Utils.noneBailedOut(s1, s3)) {
+                // Only do check if there was no bailout. Otherwise, the following message is different.
+                Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #1, #3"), e.getMessage());
+            }
         }
         new TestFramework(ScenarioTest.class).addScenarios(s1, s2, s3).start();
         try {

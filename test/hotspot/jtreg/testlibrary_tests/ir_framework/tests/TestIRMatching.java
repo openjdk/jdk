@@ -224,7 +224,7 @@ public class TestIRMatching {
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
-            Utils.shouldHaveCaughtException();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             try {
                 boolean failed = false;
@@ -321,7 +321,7 @@ public class TestIRMatching {
     private static void runCheck(String[] args , Constraint... constraints) {
         try {
             new TestFramework(constraints[0].getKlass()).addFlags(args).start(); // All constraints have the same class.
-            Utils.shouldHaveCaughtException();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
         } catch (Exception e) {
@@ -332,7 +332,7 @@ public class TestIRMatching {
     private static void runCheck(Constraint... constraints) {
         try {
             TestFramework.run(constraints[0].getKlass()); // All constraints have the same class.
-            Utils.shouldHaveCaughtException();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
         } catch (Exception e) {
@@ -357,7 +357,7 @@ public class TestIRMatching {
     private static void runFailOnTestsArgs(Constraint constraint, String... args) {
         try {
             new TestFramework(constraint.getKlass()).addFlags(args).start(); // All constraints have the same class.
-            Utils.shouldHaveCaughtException();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             try {
                 constraint.checkConstraint(e);

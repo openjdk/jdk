@@ -26,40 +26,34 @@ package ir_framework.tests;
 import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.driver.IRMatcher;
 import compiler.lib.ir_framework.driver.TestVMProcess;
+import jdk.test.lib.Asserts;
+
+import java.util.Arrays;
 
 public class Utils {
-    public static void shouldHaveCaughtException() {
-        shouldHaveCaughtException(TestVMProcess.getLastTestVMOutput());
-    }
-
-    public static void shouldHaveCaughtException(Scenario... scenarios) {
-        boolean hitSafePointWhilePrinting = false;
-        for (Scenario s : scenarios) {
-            try {
-                shouldHaveCaughtException(s.getTestVMOutput());
-                hitSafePointWhilePrinting = true;
-            } catch (ShouldHaveCaughtException e) {
-                // No safepoint-while-printing message found
-            }
-        }
-        if (!hitSafePointWhilePrinting) {
-            throw new ShouldHaveCaughtException();
-        }
+    public static void shouldHaveThrownException() {
+        shouldHaveThrownException(TestVMProcess.getLastTestVMOutput());
     }
 
     /**
-     * Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
-     * This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
+     * Did no scenario hit a safepoint while printing (i.e. a bailout)?
      */
-    private static void shouldHaveCaughtException(String testVMOutput) {
-        if (!testVMOutput.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            throw new ShouldHaveCaughtException();
-        }
+    public static boolean noneBailedOut(Scenario... scenarios) {
+        return Arrays.stream(scenarios).noneMatch(s -> s.getTestVMOutput().contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE));
     }
-}
 
-class ShouldHaveCaughtException extends RuntimeException {
-    ShouldHaveCaughtException() {
-        super("An exception should have been caught in a test but was not.");
+    /**
+     * Is there at least one scenario which did not hit a safepoint while printing (i.e. a bailout)?
+     */
+    public static boolean notAllBailedOut(Scenario... scenarios) {
+        return !Arrays.stream(scenarios).allMatch(s -> s.getTestVMOutput().contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE));
+    }
+
+    private static void shouldHaveThrownException(String testVMOutput) {
+        // Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
+        // This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
+        if (!testVMOutput.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
+            Asserts.fail("Should have thrown exception");
+        }
     }
 }

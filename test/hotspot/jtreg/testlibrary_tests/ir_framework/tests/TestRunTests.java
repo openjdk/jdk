@@ -44,7 +44,7 @@ public class TestRunTests {
         TestFramework.run();
         try {
             TestFramework.run(BadStandalone.class);
-            Utils.shouldHaveCaughtException();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
             Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));
