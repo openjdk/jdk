@@ -322,7 +322,6 @@ class java_lang_Class : AllStatic {
 
   // Conversion
   static Klass* as_Klass(oop java_class);
-  static Klass* as_Klass_raw(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
@@ -368,10 +367,8 @@ class java_lang_Class : AllStatic {
   static void set_source_file(oop java_class, oop source_file);
 
   static int oop_size(oop java_class);
-  static int oop_size_raw(oop java_class);
   static void set_oop_size(HeapWord* java_class, int size);
   static int static_oop_field_count(oop java_class);
-  static int static_oop_field_count_raw(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
   static GrowableArray<Klass*>* fixup_mirror_list() {
@@ -1358,7 +1355,7 @@ class java_lang_ClassLoader : AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   static ClassLoaderData* loader_data_acquire(oop loader);
-  static ClassLoaderData* loader_data_raw(oop loader);
+  static ClassLoaderData* loader_data(oop loader);
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
   static oop parent(oop loader);
