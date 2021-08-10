@@ -54,16 +54,16 @@ final class ReferralsCache {
         private PrincipalName cname;
         private PrincipalName sname;
         private PrincipalName user; // S4U2Self only
-        private byte[] clientSvcTicketEnc; // S4U2Proxy only
+        private byte[] userSvcTicketEnc; // S4U2Proxy only
         ReferralCacheKey (PrincipalName cname, PrincipalName sname,
-                PrincipalName user, Ticket clientSvcTicket) {
+                PrincipalName user, Ticket userSvcTicket) {
             this.cname = cname;
             this.sname = sname;
             this.user = user;
-            if (clientSvcTicket != null && clientSvcTicket.encPart != null) {
-                byte[] clientSvcTicketEnc = clientSvcTicket.encPart.getBytes();
-                if (clientSvcTicketEnc.length > 0) {
-                    this.clientSvcTicketEnc = clientSvcTicketEnc;
+            if (userSvcTicket != null && userSvcTicket.encPart != null) {
+                byte[] userSvcTicketEnc = userSvcTicket.encPart.getBytes();
+                if (userSvcTicketEnc.length > 0) {
+                    this.userSvcTicketEnc = userSvcTicketEnc;
                 }
             }
         }
@@ -74,12 +74,12 @@ final class ReferralsCache {
             return cname.equals(that.cname) &&
                     sname.equals(that.sname) &&
                     Objects.equals(user, that.user) &&
-                    Arrays.equals(clientSvcTicketEnc, that.clientSvcTicketEnc);
+                    Arrays.equals(userSvcTicketEnc, that.userSvcTicketEnc);
         }
         public int hashCode() {
             return cname.hashCode() + sname.hashCode() +
                     Objects.hashCode(user) +
-                    Arrays.hashCode(clientSvcTicketEnc);
+                    Arrays.hashCode(userSvcTicketEnc);
         }
     }
 
@@ -111,12 +111,12 @@ final class ReferralsCache {
      * REALM-1.COM -> REALM-2.COM referral entry is removed from the cache.
      */
     static synchronized void put(PrincipalName cname, PrincipalName service,
-            PrincipalName user, Ticket[] clientSvcTickets, String fromRealm,
+            PrincipalName user, Ticket[] userSvcTickets, String fromRealm,
             String toRealm, Credentials creds) {
-        Ticket clientSvcTicket = (clientSvcTickets != null ?
-                clientSvcTickets[0] : null);
+        Ticket userSvcTicket = (userSvcTickets != null ?
+                userSvcTickets[0] : null);
         ReferralCacheKey k = new ReferralCacheKey(cname, service,
-                user, clientSvcTicket);
+                user, userSvcTicket);
         pruneExpired(k);
         if (creds.getEndTime().before(new Date())) {
             return;
@@ -151,11 +151,11 @@ final class ReferralsCache {
      */
     static synchronized ReferralCacheEntry get(PrincipalName cname,
             PrincipalName service, PrincipalName user,
-            Ticket[] clientSvcTickets, String fromRealm) {
-        Ticket clientSvcTicket = (clientSvcTickets != null ?
-                clientSvcTickets[0] : null);
+            Ticket[] userSvcTickets, String fromRealm) {
+        Ticket userSvcTicket = (userSvcTickets != null ?
+                userSvcTickets[0] : null);
         ReferralCacheKey k = new ReferralCacheKey(cname, service,
-                user, clientSvcTicket);
+                user, userSvcTicket);
         pruneExpired(k);
         Map<String, ReferralCacheEntry> entries = referralsMap.get(k);
         if (entries != null) {
