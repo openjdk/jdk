@@ -53,22 +53,22 @@ public class CredentialsUtil {
 
     /**
      * Used by a middle server to acquire credentials on behalf of a
-     * client to itself using the S4U2self extension.
-     * @param client the client to impersonate
+     * user to itself using the S4U2self extension.
+     * @param user the user to impersonate
      * @param ccreds the TGT of the middle service
-     * @return the new creds (cname=client, sname=middle)
+     * @return the new creds (cname=user, sname=middle)
      */
-    public static Credentials acquireS4U2selfCreds(PrincipalName client,
+    public static Credentials acquireS4U2selfCreds(PrincipalName user,
             Credentials ccreds) throws KrbException, IOException {
         if (!ccreds.isForwardable()) {
             throw new KrbException("S4U2self needs a FORWARDABLE ticket");
         }
         PrincipalName sname = ccreds.getClient();
-        String uRealm = client.getRealmString();
+        String uRealm = user.getRealmString();
         String localRealm = ccreds.getClient().getRealmString();
         if (!uRealm.equals(localRealm)) {
             // Referrals will be required because the middle service
-            // and the client impersonated are on different realms.
+            // and the user impersonated are on different realms.
             if (Config.DISABLE_REFERRALS) {
                 throw new KrbException("Cross-realm S4U2Self request not" +
                         " possible when referrals are disabled.");
@@ -87,10 +87,10 @@ public class CredentialsUtil {
         }
         Credentials creds = serviceCreds(
                 KDCOptions.with(KDCOptions.FORWARDABLE),
-                ccreds, ccreds.getClient(), sname, client,
+                ccreds, ccreds.getClient(), sname, user,
                 null, new PAData[] {
                         new PAData(Krb5.PA_FOR_USER,
-                                new PAForUserEnc(client,
+                                new PAForUserEnc(user,
                                         ccreds.getSessionKey()).asn1Encode()),
                         new PAData(Krb5.PA_PAC_OPTIONS,
                                 new PaPacOptions()
@@ -98,7 +98,7 @@ public class CredentialsUtil {
                                         .setClaims(true)
                                         .asn1Encode())
                         }, S4U2Type.SELF);
-        if (!creds.getClient().equals(client)) {
+        if (!creds.getClient().equals(user)) {
             throw new KrbException("S4U2self request not honored by KDC");
         }
         if (!creds.isForwardable()) {
@@ -406,7 +406,7 @@ public class CredentialsUtil {
                     }
                     additionalTickets[0] = credsInOut[1].getTicket();
                 } else if (s4u2Type == S4U2Type.SELF) {
-                    handleS4U2SelfReferral(extraPAs, user, asCreds, creds);
+                    handleS4U2SelfReferral(extraPAs, user, creds);
                 }
                 if (referrals.contains(toRealm)) {
                     // Referrals loop detected
@@ -464,7 +464,7 @@ public class CredentialsUtil {
                 Credentials.printDebug(newTgt);
             }
             if (s4u2Type == S4U2Type.SELF) {
-                handleS4U2SelfReferral(extraPAs, user, asCreds, newTgt);
+                handleS4U2SelfReferral(extraPAs, user, newTgt);
             }
             asCreds = newTgt;
             cname = asCreds.getClient();
@@ -493,7 +493,7 @@ public class CredentialsUtil {
      * different realm or when using a referral TGT.
      */
     private static void handleS4U2SelfReferral(PAData[] pas,
-            PrincipalName user, Credentials oldCeds, Credentials newCreds)
+            PrincipalName user, Credentials newCreds)
                     throws Asn1Exception, KrbException, IOException {
         if (DEBUG) {
             System.out.println(">>> Handling S4U2Self referral");
