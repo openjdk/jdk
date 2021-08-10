@@ -74,10 +74,6 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
   // Copy object
   ZUtils::object_copy_disjoint(from_addr, to_addr, size);
 
-  // Make sure object copy is finished
-  // before forwarding table installation
-  OrderAccess::release();
-
   // Insert forwarding
   const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
   if (to_addr_final != to_addr) {
@@ -306,10 +302,6 @@ private:
     } else {
       ZUtils::object_copy_disjoint(from_addr, to_addr, size);
     }
-    
-    // Make sure object copy is finished
-    // before forwarding table installation
-    OrderAccess::release();
 
     // Insert forwarding
     if (forwarding_insert(_forwarding, from_addr, to_addr, &cursor) != to_addr) {
