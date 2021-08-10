@@ -2682,32 +2682,25 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   Handle stack_trace(THREAD, result.get_oop());
   assert(stack_trace->is_objArray(), "Should be an array");
 
-  // If the original exception was in the bootstrap class loader, then use that
-  // otherwise use ExceptionInInitializerError as the cause with this stack trace,
-  // which might be a little wierd but still helpful.
-  Klass* tk = throwable->klass();
-  bool null_classloader = tk->class_loader() == nullptr;
-
-  Symbol* exception_name = null_classloader ?  tk->name() :
-                             vmSymbols::java_lang_ExceptionInInitializerError();
+  // Throw ExceptionInInitializerError as the cause with this exception in
+  // the message and stack trace.
 
   // Now create the same exception with this stacktrace and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(THREAD);
   stringStream st;
-  if (!null_classloader) {
-    st.print("Exception %s%s ", tk->name()->as_klass_external_name(),
+  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
              message == nullptr ? "" : ":");
-  }
   if (message == NULL) {
     st.print("[in thread \"%s\"]", THREAD->name());
   } else {
     st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
   }
 
+  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
   Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
 
-  // If new exception returns a different exception while creating the exception, return null.
+  // If new_exception returns a different exception while creating the exception, return null.
   if (h_cause->klass()->name() != exception_name) {
     log_info(class, init)("Exception thrown while saving initialization exception %s",
                           h_cause->klass()->external_name());

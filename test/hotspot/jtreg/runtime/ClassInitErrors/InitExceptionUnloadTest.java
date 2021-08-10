@@ -56,8 +56,16 @@ public class InitExceptionUnloadTest {
             if (true) throw new SpecialException(3, "Very Special ");
         }
     }
-    // Has to be in jasm to throw special exception in class initializer.
-    // static public class ThrowsSpecialException
+
+    static public class InitOOM {
+        static {
+            if (true) foo();
+        }
+        static private void foo() {
+            // Actually getting an OOM might be fragile but it was tested.
+            throw new OutOfMemoryError("Java heap space");
+        }
+    }
 
     private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
         ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
@@ -74,20 +82,26 @@ public class InitExceptionUnloadTest {
         "java.lang.ExceptionInInitializerError",
         "Caused by: java.lang.ArithmeticException: / by zero",
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsRuntimeException",
-        "Caused by: java.lang.ArithmeticException: / by zero",
+        "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ArithmeticException: / by zero [in thread",
         "java.lang.Error",
         null,
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsError",
-        "Caused by: java.lang.Error",
+        "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.Error [in thread",
         "java.lang.ExceptionInInitializerError",
         "Caused by: InitExceptionUnloadTest$SpecialException: Very Special 3",
         "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsSpecialException",
-        "Caused by: java.lang.ExceptionInInitializerError: Exception InitExceptionUnloadTest$SpecialException: Very Special 3" };
+        "Caused by: java.lang.ExceptionInInitializerError: Exception InitExceptionUnloadTest$SpecialException: Very Special 3",
+        "java.lang.OutOfMemoryError",
+        "Java heap space",
+        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$InitOOM",
+        "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.OutOfMemoryError: Java heap space [in thread"
+    };
 
     static String[] classNames = new String[] {
         "InitExceptionUnloadTest$ThrowsRuntimeException",
         "InitExceptionUnloadTest$ThrowsError",
-        "InitExceptionUnloadTest$ThrowsSpecialException" };
+        "InitExceptionUnloadTest$ThrowsSpecialException",
+        "InitExceptionUnloadTest$InitOOM" };
 
     public static WhiteBox wb = WhiteBox.getWhiteBox();
 
