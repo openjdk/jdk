@@ -351,6 +351,8 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
 }
 
 G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age) {
+  assert(region_attr.is_young() || region_attr.is_old(), "must be either Young or Old");
+
   if (region_attr.is_young()) {
     age = !m.has_displaced_mark_helper() ? m.age()
                                          : m.displaced_mark_helper().age();
@@ -358,7 +360,6 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
       return region_attr;
     }
   }
-  assert(region_attr.is_young() || region_attr.is_old(), "must be either Young or Old");
   // young-to-old (promotion) or old-to-old; destination is old in both cases.
   return G1HeapRegionAttr::Old;
 }
