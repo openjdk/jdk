@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
-#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
