@@ -542,6 +542,7 @@ class os: AllStatic {
   static void die();
 
   // File i/o operations
+  static bool file_exists(const char* file);
   static int open(const char *path, int oflag, int mode);
   static FILE* open(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);

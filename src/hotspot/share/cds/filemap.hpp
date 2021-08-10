@@ -450,6 +450,7 @@ public:
   static void assert_mark(bool check);
 
   // File manipulation.
+  bool  validate_archive() NOT_CDS_RETURN_(false);
   bool  initialize() NOT_CDS_RETURN_(false);
   bool  open_for_read();
   void  open_for_write(const char* path = NULL);

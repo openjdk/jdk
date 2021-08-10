@@ -1827,6 +1827,9 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, RecordDynamicDumpInfo, false,                               \
           "Record class info for jcmd VM.cds dynamic_dump")                 \
                                                                             \
+  product(bool, AutoCreateSharedArchive, false,                             \
+          "Create shared archive at exit if cds mapping failed")            \
+                                                                            \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \

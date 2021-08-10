@@ -1334,6 +1334,14 @@ char* os::format_boot_path(const char* format_string,
     return formatted_path;
 }
 
+bool os::file_exists(const char* filename) {
+  struct stat statbuf;
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return os::stat(filename, &statbuf) == 0;
+}
+
 // This function is a proxy to fopen, it tries to add a non standard flag ('e' or 'N')
 // that ensures automatic closing of the file on exec. If it can not find support in
 // the underlying c library, it will make an extra system call (fcntl) to ensure automatic

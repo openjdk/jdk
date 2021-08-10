@@ -367,11 +367,14 @@ void DynamicArchive::prepare_for_dynamic_dumping() {
 }
 
 void DynamicArchive::dump(const char* archive_name, TRAPS) {
-  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
+  assert((UseSharedSpaces && RecordDynamicDumpInfo) || AutoCreateSharedArchive, "already checked in arguments.cpp?");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
   ArchiveClassesAtExit = archive_name;
   if (Arguments::init_shared_archive_paths()) {
-    prepare_for_dynamic_dumping();
+    if (!AutoCreateSharedArchive) {
+      // When dump at exit, prepare_for_dynamic_dumping already called.
+      prepare_for_dynamic_dumping();
+    }
     if (DynamicDumpSharedSpaces) {
       dump(CHECK);
     }

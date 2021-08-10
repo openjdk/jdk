@@ -3125,6 +3125,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ERR;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_info(cds)("-XX:+AutoCreateSharedArchive must work with a valid SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_info(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
     FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
   } else {
@@ -3506,12 +3517,12 @@ bool Arguments::init_shared_archive_paths() {
     SharedArchivePath = get_default_shared_archive_path();
   } else {
     int archives = num_archives(SharedArchiveFile);
-    if (is_dumping_archive()) {
+    if (is_dumping_archive() && !AutoCreateSharedArchive) {
       if (archives > 1) {
         vm_exit_during_initialization(
           "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
       }
-      if (DynamicDumpSharedSpaces) {
+      if (DynamicDumpSharedSpaces && !AutoCreateSharedArchive) {
         if (os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
           vm_exit_during_initialization(
             "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
@@ -3539,7 +3550,17 @@ bool Arguments::init_shared_archive_paths() {
                                       &SharedArchivePath, &SharedDynamicArchivePath);
       }
     } else { // CDS dumping
-      SharedArchivePath = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+      if (!AutoCreateSharedArchive) {
+        SharedArchivePath = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+      } else {
+        // -XX:+AutoCreateSharedArchive, if failed to get base archive, set it to default shared archive
+        int name_size;
+        bool success =
+          FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &name_size, &SharedArchivePath);
+        if (!success) {
+          SharedArchivePath = get_default_shared_archive_path();
+        }
+      }
     }
   }
   return (SharedArchivePath != NULL);
