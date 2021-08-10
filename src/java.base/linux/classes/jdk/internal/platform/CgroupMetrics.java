@@ -150,6 +150,11 @@ public class CgroupMetrics implements Metrics {
     }
 
     @Override
+    public long getPidsMax() {
+        return subsystem.getPidsMax();
+    }
+
+    @Override
     public long getBlkIOServiceCount() {
         return subsystem.getBlkIOServiceCount();
     }
