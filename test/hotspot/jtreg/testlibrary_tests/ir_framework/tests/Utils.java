@@ -38,12 +38,12 @@ public class Utils {
             try {
                 shouldHaveCaughtException(s.getTestVMOutput());
                 hitSafePointWhilePrinting = true;
-            } catch (RuntimeException e) {
+            } catch (ShouldHaveCaughtException e) {
                 // No safepoint-while-printing message found
             }
         }
         if (!hitSafePointWhilePrinting) {
-            throw new RuntimeException("should not reach");
+            throw new ShouldHaveCaughtException();
         }
     }
 
