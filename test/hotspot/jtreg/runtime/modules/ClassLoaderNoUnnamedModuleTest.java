@@ -42,6 +42,7 @@ public class ClassLoaderNoUnnamedModuleTest {
                                "-XX:-CreateCoredumpOnCrash",
                                "ClassLoaderNoUnnamedModule");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldNotHaveExitValue(0);
         oa.shouldContain("Internal Error");
         oa.shouldContain("unnamed module");
         oa.shouldContain("null or not an instance of java.lang.Module");
