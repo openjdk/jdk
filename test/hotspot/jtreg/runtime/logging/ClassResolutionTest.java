@@ -66,7 +66,6 @@ public class ClassResolutionTest {
         o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
         o.shouldContain("[class,resolve] resolve JVM_CONSTANT_MethodHandle");
 
-
         // (2) class+resolve should turn off.
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
                                                    "-Xlog:class+resolve=off",
