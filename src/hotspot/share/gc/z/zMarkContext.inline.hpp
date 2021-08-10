@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZMARKCONTEXT_INLINE_HPP
 #define SHARE_GC_Z_ZMARKCONTEXT_INLINE_HPP
 
+#include "gc/z/zMarkContext.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
-#include "gc/z/zMarkContext.hpp"
 
 inline ZMarkContext::ZMarkContext(size_t nstripes,
                                   ZMarkStripe* stripe,
