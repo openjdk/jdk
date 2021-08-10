@@ -93,7 +93,9 @@ inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint sta
 
 inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
   uint num_elems = num_cards_in(_value);
-  assert(num_elems > 0, "Precondition!");
+  if(num_elems == 0) {
+    return false;
+  }
   uint cur_idx = find(card_idx, bits_per_card, 0, num_elems);
   return cur_idx < num_elems;
 }
