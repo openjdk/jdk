@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,3 +252,12 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 #endif
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
+{
+#if defined(LINUX)
+    return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
+#else
+    return java_lang_Integer_MAX_VALUE;
+#endif
+}

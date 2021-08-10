@@ -760,8 +760,10 @@ ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
     _verbose(verbose) {}
 
 void ZStatCriticalPhase::register_start(const Ticks& start) const {
-  LogTarget(Debug, gc, start) log;
-  log_start(log, true /* thread */);
+  // This is called from sensitive contexts, for example before an allocation stall
+  // has been resolved. This means we must not access any oops in here since that
+  // could lead to infinite recursion. Without access to the thread name we can't
+  // really log anything useful here.
 }
 
 void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
