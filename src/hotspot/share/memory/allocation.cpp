@@ -110,12 +110,6 @@ void* ResourceObj::operator new(size_t size, Arena *arena) throw() {
   return res;
 }
 
-void* ResourceObj::operator new [](size_t size, Arena *arena) throw() {
-  address res = (address)arena->Amalloc(size);
-  DEBUG_ONLY(set_allocation_type(res, ARENA);)
-  return res;
-}
-
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) throw() {
   address res = NULL;
   switch (type) {
@@ -157,10 +151,6 @@ void ResourceObj::operator delete(void* p) {
          "delete only allowed for C_HEAP objects");
   DEBUG_ONLY(((ResourceObj *)p)->_allocation_t[0] = (uintptr_t)badHeapOopVal;)
   FreeHeap(p);
-}
-
-void ResourceObj::operator delete [](void* p) {
-  operator delete(p);
 }
 
 #ifdef ASSERT
