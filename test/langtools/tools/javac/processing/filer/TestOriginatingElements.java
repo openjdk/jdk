@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 9999999
- * @summary XXX
+ * @bug 8272234
+ * @summary Verify proper handling of originating elements in javac's Filer.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -50,14 +50,21 @@ import javax.tools.ToolProvider;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Iterator;
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
+import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
+import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;
 import toolbox.ToolBox;
@@ -78,24 +85,62 @@ public class TestOriginatingElements extends TestRunner {
 
     @Test
     public void testOriginatingElements(Path outerBase) throws Exception {
+        Path libSrc = outerBase.resolve("lib-src");
+        tb.writeJavaFiles(libSrc,
+                          """
+                          module lib { exports lib1; exports lib2; }
+                          """,
+                          """
+                          package lib1;
+                          public @interface A {
+                          }
+                          """,
+                          """
+                          package lib2;
+                          public class Lib {
+                          }
+                          """);
+        tb.writeFile(libSrc.resolve("lib1/package-info.java"), "@A package lib1;");
+        Path libClasses = outerBase.resolve("lib-classes");
+        Path libClassesModule = libClasses.resolve("lib");
+        Files.createDirectories(libClassesModule);
+
+        new JavacTask(tb)
+                .files(tb.findJavaFiles(libSrc))
+                .outdir(libClassesModule)
+                .run();
+
         Path src = outerBase.resolve("src");
         tb.writeJavaFiles(src,
-                          "package t;\n" +
-                          "public class T1 {\n" +
-                          "}",
-                          "package t;\n" +
-                          "public class T2 {\n" +
-                          "}",
-                          "package t;\n" +
-                          "public class T3 {\n" +
-                          "}");
+                          """
+                          module m {}
+                          """,
+                          """
+                          package t;
+                          public class T1 {
+                          }
+                          """,
+                          """
+                          package t;
+                          public class T2 {
+                          }
+                          """,
+                          """
+                          package t;
+                          public class T3 {
+                          }
+                          """);
+        tb.writeFile(src.resolve("p/package-info.java"), "package p;");
         Path classes = outerBase.resolve("classes");
         Files.createDirectories(classes);
         try (StandardJavaFileManager sjfm = compiler.getStandardFileManager(null, null, null)) {
             List<String> testOutput = new ArrayList<>();
             JavaFileManager fm = new ForwardingJavaFileManager<JavaFileManager>(sjfm) {
                 @Override
-                public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location, String className, JavaFileObject.Kind kind, FileObject... originatingFiles) throws IOException {
+                public JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
+                                                                              String className,
+                                                                              JavaFileObject.Kind kind,
+                                                                              FileObject... originatingFiles) throws IOException {
                     List.of(originatingFiles)
                         .stream()
                         .map(fo -> getInfo(fo))
@@ -103,7 +148,10 @@ public class TestOriginatingElements extends TestRunner {
                     return super.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
                 }
                 @Override
-                public FileObject getFileForOutputForOriginatingFiles(Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
+                public FileObject getFileForOutputForOriginatingFiles(Location location,
+                                                                      String packageName,
+                                                                      String relativeName,
+                                                                      FileObject... originatingFiles) throws IOException {
                     List.of(originatingFiles)
                         .stream()
                         .map(fo -> getInfo(fo))
@@ -111,15 +159,23 @@ public class TestOriginatingElements extends TestRunner {
                     return super.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
                 }
                 private String getInfo(FileObject fo) {
-                    JavaFileObject jfo = (JavaFileObject) fo; //the test only expects JavaFileObjects here:
-                    String binaryName = inferBinaryName(StandardLocation.SOURCE_PATH, jfo);
-                    return binaryName + "(" + jfo.getKind() + ")";
+                    try {
+                        JavaFileObject jfo = (JavaFileObject) fo; //the test only expects JavaFileObjects here:
+                        JavaFileManager.Location location = jfo.getKind() == JavaFileObject.Kind.SOURCE
+                                ? StandardLocation.SOURCE_PATH
+                                : sjfm.getLocationForModule(StandardLocation.SYSTEM_MODULES, "java.base");
+                        String binaryName = inferBinaryName(location, jfo);
+                        return binaryName + "(" + jfo.getKind() + ")";
+                    } catch (IOException ex) {
+                        throw new AssertionError(ex);
+                    }
                 }
             };
             try {
                 String generatedData;
                 try (MemoryFileManager mfm = new MemoryFileManager(sjfm)) {
-                    compiler.getTask(null, mfm, null, null, null, List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
+                    compiler.getTask(null, mfm, null, null, null,
+                                     List.of(new ToolBox.JavaSource("package test; public class Generated2 {}")))
                             .call();
                     generatedData =
                             Base64.getEncoder().encodeToString(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "test.Generated2"));
@@ -127,6 +183,8 @@ public class TestOriginatingElements extends TestRunner {
                 List<String> options = List.of("-sourcepath", src.toString(),
                                                "-processor", "TestOriginatingElements$P",
                                                "-processorpath", System.getProperty("test.classes"),
+                                               "--module-path", libClasses.toString(),
+                                               "--add-modules", "lib",
                                                "-d", classes.toString(),
                                                "-AgeneratedData=" + generatedData);
                 ToolProvider.getSystemJavaCompiler()
@@ -134,13 +192,23 @@ public class TestOriginatingElements extends TestRunner {
                             .call();
                 List<String> expectedOriginatingFiles = List.of("t.T1(SOURCE)",
                                                                 "java.lang.String(CLASS)",
+                                                                "p.package-info(SOURCE)",
+                                                                "lib1.package-info(CLASS)",
+                                                                "module-info(SOURCE)",
+                                                                "module-info(CLASS)",
                                                                 "t.T2(SOURCE)",
                                                                 "java.lang.CharSequence(CLASS)",
+                                                                "p.package-info(SOURCE)",
+                                                                "lib1.package-info(CLASS)",
+                                                                "module-info(SOURCE)",
+                                                                "module-info(CLASS)",
                                                                 "t.T3(SOURCE)",
-                                                                "java.lang.Exception(CLASS)");
-                if (!expectedOriginatingFiles.equals(testOutput)) {
-                    throw new AssertionError("Unexpected originatingElements: " + testOutput);
-                }
+                                                                "java.lang.Exception(CLASS)",
+                                                                "p.package-info(SOURCE)",
+                                                                "lib1.package-info(CLASS)",
+                                                                "module-info(SOURCE)",
+                                                                "module-info(CLASS)");
+                assertEquals(expectedOriginatingFiles, testOutput);
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
@@ -154,12 +222,41 @@ public class TestOriginatingElements extends TestRunner {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             if (round++ == 0) {
+                ModuleElement mdl = processingEnv.getElementUtils().getModuleElement("m");
+                ModuleElement java_base = processingEnv.getElementUtils().getModuleElement("java.base");
+                PackageElement pack = processingEnv.getElementUtils().getPackageElement("p");
+                PackageElement lib1Pack = processingEnv.getElementUtils().getPackageElement("lib1");
+                PackageElement lib2Pack = processingEnv.getElementUtils().getPackageElement("lib2");
+                Filer filer = processingEnv.getFiler();
                 try {
-                    processingEnv.getFiler().createSourceFile("test.Generated1", originatingElements("t.T1", "java.lang.String")).openOutputStream().close();
-                    try (OutputStream out = processingEnv.getFiler().createClassFile("test.Generated2", originatingElements("t.T2", "java.lang.CharSequence")).openOutputStream()) {
+                    filer.createSourceFile("test.Generated1",
+                                           element("t.T1"),
+                                           element("java.lang.String"),
+                                           pack,
+                                           lib1Pack,
+                                           lib2Pack,
+                                           mdl,
+                                           java_base).openOutputStream().close();
+                    try (OutputStream out = filer.createClassFile("test.Generated2",
+                                                                  element("t.T2"),
+                                                                  element("java.lang.CharSequence"),
+                                                                  pack,
+                                                                  lib1Pack,
+                                                                  lib2Pack,
+                                                                  mdl,
+                                                                  java_base).openOutputStream()) {
                         out.write(Base64.getDecoder().decode(processingEnv.getOptions().get("generatedData")));
                     }
-                    processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "test", "Generated3.txt", originatingElements("t.T3", "java.lang.Exception")).openOutputStream().close();
+                    filer.createResource(StandardLocation.CLASS_OUTPUT,
+                                         "test",
+                                         "Generated3.txt",
+                                         element("t.T3"),
+                                         element("java.lang.Exception"),
+                                         pack,
+                                         lib1Pack,
+                                         lib2Pack,
+                                         mdl,
+                                         java_base).openOutputStream().close();
                 } catch (IOException ex) {
                     throw new AssertionError(ex);
                 }
@@ -167,19 +264,109 @@ public class TestOriginatingElements extends TestRunner {
             return false;
         }
 
-        private Element[] originatingElements(String... types) {
-            List<Element> originating = new ArrayList<>();
-
-            for (String t : types) {
-                originating.add(processingEnv.getElementUtils().getTypeElement(t));
-            }
-
-            return originating.toArray(s -> new Element[s]);
+        private Element element(String type) {
+            return processingEnv.getElementUtils().getTypeElement(type);
         }
 
         @Override
         public SourceVersion getSupportedSourceVersion() {
             return SourceVersion.latest();
+        }
+    }
+
+    @Test
+    public void testVacuousElements(Path outerBase) throws Exception {
+        List<String> log = new ArrayList<>();
+        JavaFileObject expectedOut = new SimpleJavaFileObject(new URI("Out.java"), JavaFileObject.Kind.SOURCE) {};
+        JavaFileManager fm = new JavaFileManager() {
+            @Override
+            public ClassLoader getClassLoader(JavaFileManager.Location location) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public Iterable<JavaFileObject> list(JavaFileManager.Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public String inferBinaryName(JavaFileManager.Location location, JavaFileObject file) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public boolean isSameFile(FileObject a, FileObject b) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public boolean handleOption(String current, Iterator<String> remaining) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public boolean hasLocation(JavaFileManager.Location location) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public JavaFileObject getJavaFileForInput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+                log.add("getJavaFileForOutput(" + location + ", " + className + ", " + kind + ", " + sibling);
+                return expectedOut;
+            }
+            @Override
+            public FileObject getFileForInput(JavaFileManager.Location location, String packageName, String relativeName) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
+                log.add("getFileForOutput(" + location + ", " + packageName + ", " + relativeName  + ", " + sibling);
+                return expectedOut;
+            }
+            @Override
+            public void flush() throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public void close() throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+            @Override
+            public int isSupportedOption(String option) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        };
+
+        FileObject fo1 = new SimpleJavaFileObject(new URI("Test1.java"), JavaFileObject.Kind.SOURCE) {
+            @Override
+            public String toString() {
+                return "Test1 - FO";
+            }
+        };
+        FileObject fo2 = new SimpleJavaFileObject(new URI("Test2.java"), JavaFileObject.Kind.SOURCE) {
+            @Override
+            public String toString() {
+                return "Test2 - FO";
+            }
+        };
+
+        assertEquals(expectedOut,
+                     fm.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE, fo1, fo2));
+        assertEquals(List.of("getJavaFileForOutput(CLASS_OUTPUT, test.Test, SOURCE, Test1 - FO"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     fm.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE));
+        assertEquals(List.of("getJavaFileForOutput(CLASS_OUTPUT, test.Test, SOURCE, null"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     fm.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java", fo1, fo2));
+        assertEquals(List.of("getFileForOutput(CLASS_OUTPUT, test, Test.java, Test1 - FO"), log); log.clear();
+        assertEquals(expectedOut,
+                     fm.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java"));
+        assertEquals(List.of("getFileForOutput(CLASS_OUTPUT, test, Test.java, null"), log); log.clear();
+    }
+
+    private void assertEquals(Object expected, Object actual) throws AssertionError {
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Unexpected  output: " + actual + ", expected: " + expected);
         }
     }
 

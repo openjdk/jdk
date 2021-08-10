@@ -530,11 +530,22 @@ public class JavacFiler implements Filer, Closeable {
         JavaFileObject[] originatingFiles = Arrays.asList(originatingElements)
                 .stream()
                 .filter(el -> el instanceof Symbol)
-                .map(el -> {
-                    ClassSymbol outermostClass = ((Symbol) el).outermostClass();
-                    return outermostClass.classfile != null ? outermostClass.classfile
-                            : outermostClass.sourcefile;
+                .map(el -> (Symbol) el)
+                .map(sym -> switch (sym.kind) {
+                    case PCK -> {
+                        if (((PackageSymbol) sym).package_info == null) {
+                            yield null;
+                        }
+                        yield ((PackageSymbol) sym).package_info.classfile;
+                    }
+                    case MDL -> {
+                        ModuleSymbol msym = (ModuleSymbol) sym;
+                        yield msym.module_info.classfile != null ? msym.module_info.classfile
+                                                                 : msym.module_info.sourcefile;
+                    }
+                    default -> sym.outermostClass().classfile;
                 })
+                .filter(fo -> fo != null)
                 .toArray(s -> new JavaFileObject[s]);
         return originatingFiles;
     }
