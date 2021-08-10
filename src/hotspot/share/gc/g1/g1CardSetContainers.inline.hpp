@@ -77,7 +77,7 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
 }
 
 inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint end_at) {
-  assert(start_at < end_at, "Precondition! %d < %d", start_at, end_at);
+  assert(start_at < end_at, "Precondition!");
 
   uintptr_t const card_mask = (1 << bits_per_card) - 1;
   uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
