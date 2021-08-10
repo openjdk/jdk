@@ -3718,14 +3718,16 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
                                       num_workers,
                                       has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
-    // Closing the inner scope will execute the destructor for the G1RootProcessor object.
-    // To extract its code root fixup time we measure total time of this scope and
-    // subtract from the time the WorkGang task took.
+    // Closing the inner scope will execute the destructor for the
+    // G1RootProcessor object. By subtracting the WorkGang task from the total
+    // time of this scope, we get the "NMethod List Cleanup" time. Such list is
+    // constructed during "STW two-phase nmethod root processing", see more in
+    // nmethod.hpp
   }
   Tickspan total_processing = Ticks::now() - start_processing;
 
   p->record_initial_evac_time(task_time.seconds() * 1000.0);
-  p->record_or_add_code_root_fixup_time((total_processing - task_time).seconds() * 1000.0);
+  p->record_or_add_nmethod_list_cleanup_time((total_processing - task_time).seconds() * 1000.0);
 
   rem_set()->complete_evac_phase(has_optional_evacuation_work);
 }
@@ -3750,6 +3752,7 @@ public:
 };
 
 void G1CollectedHeap::evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states) {
+  // To access the protected constructor/destructor
   class G1MarkScope : public MarkScope { };
 
   Tickspan task_time;
@@ -3759,12 +3762,12 @@ void G1CollectedHeap::evacuate_next_optional_regions(G1ParScanThreadStateSet* pe
     G1MarkScope code_mark_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, _task_queues, workers()->active_workers());
     task_time = run_task_timed(&task);
-    // See comment in evacuate_collection_set() for the reason of the scope.
+    // See comment in evacuate_initial_collection_set() for the reason of the scope.
   }
   Tickspan total_processing = Ticks::now() - start_processing;
 
   G1GCPhaseTimes* p = phase_times();
-  p->record_or_add_code_root_fixup_time((total_processing - task_time).seconds() * 1000.0);
+  p->record_or_add_nmethod_list_cleanup_time((total_processing - task_time).seconds() * 1000.0);
 }
 
 void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
