@@ -3720,7 +3720,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the
     // G1RootProcessor object. By subtracting the WorkGang task from the total
-    // time of this scope, we get the "NMethod List Cleanup" time. Such list is
+    // time of this scope, we get the "NMethod List Cleanup" time. This list is
     // constructed during "STW two-phase nmethod root processing", see more in
     // nmethod.hpp
   }
