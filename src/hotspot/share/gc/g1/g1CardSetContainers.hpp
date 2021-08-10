@@ -66,9 +66,13 @@ class G1CardSetInlinePtr : public StackObj {
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
 
-  G1CardSetInlinePtr(CardSetPtr value) : _value_addr(nullptr), _value(value) { }
+  G1CardSetInlinePtr(CardSetPtr value) : _value_addr(nullptr), _value(value) {
+    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+  }
 
-  G1CardSetInlinePtr(CardSetPtr volatile* value_addr, CardSetPtr value) : _value_addr(value_addr), _value(value) { }
+  G1CardSetInlinePtr(CardSetPtr volatile* value_addr, CardSetPtr value) : _value_addr(value_addr), _value(value) {
+    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+  }
 
   G1AddCardResult add(uint const card_idx, uint const bits_per_card, uint const max_cards_in_inline_ptr);
 
