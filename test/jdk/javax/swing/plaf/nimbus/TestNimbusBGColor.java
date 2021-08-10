@@ -22,9 +22,9 @@
  */
 /*
  * @test
- * @bug 8058704
+ * @bug 8058704 6789980
  * @key headful
- * @summary  Verifies if Nimbus honor JTextPane background color
+ * @summary  Verifies if Nimbus honor JTextPane and JEditorPane background color
  * @run main TestNimbusBGColor
  */
 import java.awt.Color;
@@ -37,6 +37,7 @@ import javax.swing.JTextPane;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.text.JTextComponent;
 
 public class TestNimbusBGColor {
 
@@ -46,66 +47,45 @@ public class TestNimbusBGColor {
     static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            } catch (Exception checkedExceptionsPleaseDie) {
-                throw new RuntimeException(checkedExceptionsPleaseDie);
-            }
-        });
         robot = new Robot();
         testTextPane();
         testEditorPane();
     }
 
-    private static void testTextPane() throws Exception {
-        try {
-            SwingUtilities.invokeAndWait(() -> {
-                JTextPane tp = new JTextPane();
-                tp.setForeground(Color.WHITE);
-                tp.setBackground(Color.BLACK);
-                tp.setText("This text should be white on black");
+    private interface ComponentCreator<T extends JTextComponent> {
+        T createComponent();
+    }
 
-                frame = new JFrame();
-                frame.setDefaultCloseOperation(frame.DISPOSE_ON_CLOSE);
-                frame.add(tp);
-                frame.setSize(new Dimension(480, 360));
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            });
-            robot.waitForIdle();
-            robot.delay(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                pt = frame.getLocationOnScreen();
-                bounds = frame.getBounds();
-            });
-            if (!(robot.getPixelColor(pt.x + bounds.width/2,
-                                      pt.y + bounds.height/2)
-                                .equals(Color.BLACK))) {
-                throw new RuntimeException("JTextPane Color not same as the color being set");
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
+    private static void testTextPane() throws Exception {
+        testComponent(JTextPane::new);
     }
 
     private static void testEditorPane() throws Exception {
+        testComponent(() -> {
+            JEditorPane ep = new JEditorPane();
+            ep.setContentType("text/plain");
+            return ep;
+        });
+    }
+
+    private static void testComponent(ComponentCreator<? extends JTextComponent> creator)
+            throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
-                JEditorPane editorPane = new JEditorPane();
-                editorPane.setContentType("text/plain");
-                editorPane.setEditable(false);
-                editorPane.setForeground(Color.GREEN);
-                editorPane.setBackground(Color.RED);
-                editorPane.setText("This text should be green on red");
+                try {
+                    UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+                } catch (Exception checkedExceptionsPleaseDie) {
+                    throw new RuntimeException(checkedExceptionsPleaseDie);
+                }
+                JTextComponent tc = creator.createComponent();
+                tc.setEditable(false);
+                tc.setForeground(Color.GREEN);
+                tc.setBackground(Color.RED);
+                tc.setText("This text should be green on red");
 
-                frame = new JFrame();
+                frame = new JFrame(tc.getClass().getName());
                 frame.setDefaultCloseOperation(frame.DISPOSE_ON_CLOSE);
-                frame.add(editorPane);
+                frame.add(tc);
                 frame.setSize(new Dimension(480, 360));
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
@@ -119,7 +99,7 @@ public class TestNimbusBGColor {
             if (!(robot.getPixelColor(pt.x + bounds.width/2,
                                       pt.y + bounds.height/2)
                                 .equals(Color.RED))) {
-                throw new RuntimeException("JEditorPane bg Color not same as the color being set");
+                throw new RuntimeException("bg Color not same as the color being set");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
