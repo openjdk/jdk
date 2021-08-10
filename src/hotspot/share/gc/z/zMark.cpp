@@ -24,14 +24,17 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkContext.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
@@ -279,6 +282,26 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
+static void try_deduplicate(ZMarkContext* context, oop obj) {
+  if (!StringDedup::is_enabled()) {
+    // Not enabled
+    return;
+  }
+
+  if (!java_lang_String::is_instance_inlined(obj)) {
+    // Not a String object
+    return;
+  }
+
+  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
+    // Already requested deduplication
+    return;
+  }
+
+  // Request deduplication
+  context->string_dedup_requests()->add(obj);
+}
+
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -311,7 +334,7 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
     // and alignment paddings can never be reclaimed.
     const size_t size = ZUtils::object_size(addr);
     const size_t aligned_size = align_up(size, page->object_alignment());
-    context->inc_live(page, aligned_size);
+    context->cache()->inc_live(page, aligned_size);
   }
 
   // Follow
@@ -323,7 +346,7 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
       follow_object(obj, finalizable);
 
       // Try deduplicate
-      context->try_deduplicate(obj);
+      try_deduplicate(context, obj);
     }
   }
 }

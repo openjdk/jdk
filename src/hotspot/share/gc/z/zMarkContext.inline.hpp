@@ -26,9 +26,6 @@
 
 #include "gc/z/zMarkContext.hpp"
 
-#include "classfile/javaClasses.inline.hpp"
-#include "gc/z/zMarkCache.inline.hpp"
-
 inline ZMarkContext::ZMarkContext(size_t nstripes,
                                   ZMarkStripe* stripe,
                                   ZMarkThreadLocalStacks* stacks) :
@@ -36,6 +33,10 @@ inline ZMarkContext::ZMarkContext(size_t nstripes,
     _stripe(stripe),
     _stacks(stacks),
     _string_dedup_requests() {}
+
+inline ZMarkCache* ZMarkContext::cache() {
+  return &_cache;
+}
 
 inline ZMarkStripe* ZMarkContext::stripe() {
   return _stripe;
@@ -45,28 +46,8 @@ inline ZMarkThreadLocalStacks* ZMarkContext::stacks() {
   return _stacks;
 }
 
-inline void ZMarkContext::inc_live(ZPage* page, size_t bytes) {
-  _cache.inc_live(page, bytes);
-}
-
-inline void ZMarkContext::try_deduplicate(oop obj) {
-  if (!StringDedup::is_enabled()) {
-    // Not enabled
-    return;
-  }
-
-  if (!java_lang_String::is_instance_inlined(obj)) {
-    // Not a String object
-    return;
-  }
-
-  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
-    // Already deduplicated
-    return;
-  }
-
-  // Request deduplication
-  _string_dedup_requests.add(obj);
+inline StringDedup::Requests* ZMarkContext::string_dedup_requests() {
+  return &_string_dedup_requests;
 }
 
 #endif // SHARE_GC_Z_ZMARKCACHE_INLINE_HPP

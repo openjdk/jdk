@@ -43,13 +43,10 @@ public:
                ZMarkStripe* stripe,
                ZMarkThreadLocalStacks* stacks);
 
+  ZMarkCache* cache();
   ZMarkStripe* stripe();
-
   ZMarkThreadLocalStacks* stacks();
-
-  void inc_live(ZPage* page, size_t bytes);
-
-  void try_deduplicate(oop obj);
+  StringDedup::Requests* string_dedup_requests();
 };
 
 #endif // SHARE_GC_Z_ZMARKCONTEXT_HPP
