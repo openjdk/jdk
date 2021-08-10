@@ -48,11 +48,10 @@ public class TestScenarios {
                 // Not all scenarios had a bailout which means that at least one exception should have been thrown.
                 Asserts.fail("Should have thrown an exception");
             }
-
         } catch (TestRunException e) {
-            if (Utils.noneBailedOut(sDefault, s1, s3)) {
-                // Only do check if there was no bailout. Otherwise, the following message is different.
-                Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #3"), e.getMessage());
+            if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #3")) {
+                // Was there a bailout in a scenario? If not fail.
+                Asserts.assertTrue(Utils.anyBailedOut(sDefault, s1, s3), e.getMessage());
             }
         }
         try {
@@ -62,9 +61,9 @@ public class TestScenarios {
                 Asserts.fail("Should have thrown an exception");
             }
         } catch (TestRunException e) {
-            if (Utils.noneBailedOut(s1, s3)) {
-                // Only do check if there was no bailout. Otherwise, the following message is different.
-                Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #1, #3"), e.getMessage());
+            if (!e.getMessage().contains("The following scenarios have failed: #1, #3")) {
+                // Was there a bailout in a scenario? If not fail.
+                Asserts.assertTrue(Utils.anyBailedOut(sDefault, s1, s3), e.getMessage());
             }
         }
         new TestFramework(ScenarioTest.class).addScenarios(s1, s2, s3).start();
@@ -84,7 +83,6 @@ public class TestScenarios {
         } catch (Exception e) {
             Asserts.fail("Should not catch other exceptions");
         }
-
     }
 
     @Test
