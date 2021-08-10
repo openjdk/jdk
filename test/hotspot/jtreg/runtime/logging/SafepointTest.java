@@ -25,6 +25,7 @@
  * @test
  * @bug 8140348
  * @summary safepoint=trace should have output from each log statement in the code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

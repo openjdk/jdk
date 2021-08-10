@@ -27,6 +27,7 @@
  * @summary itables=trace should have logging from each of the statements
  *          in the code
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @compile ClassB.java
  *          ItablesVtableTest.java

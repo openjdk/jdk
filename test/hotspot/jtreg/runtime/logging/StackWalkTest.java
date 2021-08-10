@@ -26,6 +26,7 @@
  * @test StackWalkTest
  * @bug 8160064
  * @summary -Xlog:stackwalk should produce logging from the source code
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver StackWalkTest
  */

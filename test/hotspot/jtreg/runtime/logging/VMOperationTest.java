@@ -25,6 +25,7 @@
  * @test
  * @bug 8143157
  * @summary vmoperation=debug should have logging output
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -25,6 +25,7 @@
  * @test
  * @bug 8141211 8147477
  * @summary exceptions=info output should have an exception message for interpreter methods
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

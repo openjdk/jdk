@@ -25,6 +25,7 @@
  * @test
  * @bug 8149991
  * @summary safepoint+cleanup=info should have output from the code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

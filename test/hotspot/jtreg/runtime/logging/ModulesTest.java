@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary -Xlog:module should emit logging output
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

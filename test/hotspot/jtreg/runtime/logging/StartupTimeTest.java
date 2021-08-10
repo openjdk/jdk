@@ -25,6 +25,7 @@
  * @test
  * @bug 8148630
  * @summary -Xlog:startuptime should produce logging from the source code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

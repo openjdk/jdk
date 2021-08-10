@@ -25,6 +25,7 @@
  * @test
  * @bug 8139564 8203960
  * @summary defaultmethods=debug should have logging from each of the statements in the code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

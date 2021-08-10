@@ -25,6 +25,7 @@
  * @test
  * @bug 8150083 8234656
  * @summary test enabling and disabling verification logging and verification log levels
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

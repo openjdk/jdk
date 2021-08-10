@@ -25,6 +25,7 @@
  * @test
  * @bug 8133885
  * @summary monitorinflation=trace should have logging from each of the statements in the code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -25,6 +25,7 @@
  * @test
  * @bug 8151939
  * @summary os+cpu output should contain some os,cpu information
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

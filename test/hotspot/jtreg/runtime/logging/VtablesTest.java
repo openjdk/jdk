@@ -27,6 +27,7 @@
  * @summary vtables=trace should have logging from each of the statements in the code
  * @library /test/lib
  * @requires vm.debug
+ * @requires vm.flagless
  * @compile ClassB.java
  *          p1/A.java
  *          p2/B.jcod
