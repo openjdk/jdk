@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ public class bug4959409 {
 
     public final static int TIMEOUT = 30;
     public final static int DELAY = 300;
+    private static JFrame frame;
+    private static JTextField jTextField;
+    private static JLabel jLabel;
 
     public JFrame createUIAndTest() throws Exception {
-        final JFrame frame = new JFrame("Test bug4959409");
-        final JTextField jTextField = new JTextField();
-        final JLabel jLabel = new JLabel();
         final CountDownLatch frameVisibleLatch = new CountDownLatch(1);
         final CountDownLatch componentVisibleLatch = new CountDownLatch(1);
         final CountDownLatch keyPressedEventLatch = new CountDownLatch(1);
@@ -62,6 +62,9 @@ public class bug4959409 {
         final Rectangle rect[] = new Rectangle[1];
 
         SwingUtilities.invokeAndWait(() -> {
+            frame = new JFrame("Test bug4959409");
+            jTextField = new JTextField();
+            jLabel = new JLabel();
             frame.setLayout(new BorderLayout());
             frame.addComponentListener(new ComponentAdapter() {
                 @Override
@@ -192,3 +195,4 @@ public class bug4959409 {
         }
     }
 }
+
