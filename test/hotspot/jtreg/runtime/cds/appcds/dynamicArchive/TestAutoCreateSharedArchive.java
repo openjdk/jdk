@@ -83,7 +83,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 });
-        checkFileExists(ARCHIVE_NAME); 
+        checkFileExists(ARCHIVE_NAME);
 
         // 2. run with the created dynamic archive should pass
         System.out.println("2. run with the created dynamic archive should pass");
