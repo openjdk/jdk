@@ -277,7 +277,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   }
 
   // Same reason to use dest_attr.is_young() here as for the successfully evacuated
-  // regular object case. Is_survivor() may not have been set, but to_array must
+  // regular object case. G1HeapRegionAttr::is_new_survivor() may not have been set, but to_array must
   // be in a Survivor region (if dest_attr.is_young()) or Old here.
   // Assert this here as it is not immediately obvious.
   assert(!dest_attr.is_young() || _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
