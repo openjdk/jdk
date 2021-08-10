@@ -587,8 +587,8 @@ public class FileChannelImpl
 
         if (target == this) {
             long posTarget = ((FileChannel)target).position();
-            if (posTarget + count - 1 >= position() &&
-                position() + count - 1 >= posTarget &&
+            if (position() - count + 1 <= posTarget &&
+                posTarget - count + 1 <= position() &&
                 !nd.canTransferToFromOverlappedMap()) {
                 return IOStatus.UNSUPPORTED_CASE;
             }
@@ -714,8 +714,8 @@ public class FileChannelImpl
             long max = Math.min(count, src.size() - pos);
 
             if (src == this) {
-                if (pos + max - 1 >= position() &&
-                    position() + max - 1 >= pos &&
+                if (position() - max + 1 <= pos &&
+                    pos - max + 1 <= position() &&
                     !nd.canTransferToFromOverlappedMap()) {
                     return IOStatus.UNSUPPORTED_CASE;
                 }
@@ -796,9 +796,10 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         if (position > size())
             return 0;
+
         if (src instanceof FileChannelImpl) {
             long n = transferFromFileChannel((FileChannelImpl)src, position, count);
-            if (n > 0)
+            if (n >= 0)
                 return n;
         }
 
