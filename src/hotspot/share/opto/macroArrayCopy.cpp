@@ -1098,7 +1098,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   transform_later(out_mem);
 
   // When src is negative and arraycopy is before an infinite loop,_callprojs.fallthrough_ioproj
-  // could be NULL. Not clone and update NULL fallthrough_ioproj.
+  // could be NULL. Skip clone and update NULL fallthrough_ioproj.
   if (_callprojs.fallthrough_ioproj != NULL) {
     *io = _callprojs.fallthrough_ioproj->clone();
     transform_later(*io);
