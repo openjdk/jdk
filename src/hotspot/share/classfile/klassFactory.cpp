@@ -181,8 +181,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
   int _minor_version = stream->get_u2_fast();
   int _major_version = stream->get_u2_fast();
 
-  if (UseNewCode && (_major_version < JAVA_7_VERSION)  
-    ) { //&& (strcmp(name->as_klass_external_name(),"com.sun.javatest.regtest.agent.AgentServer") != 0)
+  if ( (_major_version < JAVA_7_VERSION)  ) {
     if (0) {
       stringStream fn0;
       fn0.print("/tmp/%s_old.class", name->as_klass_external_name());
