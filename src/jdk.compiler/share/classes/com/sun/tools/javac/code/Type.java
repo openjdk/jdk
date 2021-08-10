@@ -1486,7 +1486,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type              getReturnType()     { return restype; }
         @DefinedBy(Api.LANGUAGE_MODEL)
-        public Type              getReceiverType()   { return recvtype; }
+        public Type              getReceiverType()   {
+            return (recvtype == null) ? Type.noType : recvtype;
+        }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type>        getThrownTypes()    { return thrown; }
 

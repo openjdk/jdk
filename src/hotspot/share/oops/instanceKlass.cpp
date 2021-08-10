@@ -676,9 +676,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_annotations(NULL);
 
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::handle_class_unloading(this);
-  }
+  SystemDictionaryShared::handle_class_unloading(this);
 }
 
 bool InstanceKlass::is_record() const {
@@ -2620,9 +2618,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
   // notify ClassLoadingService of class unload
   ClassLoadingService::notify_class_unloaded(ik);
 
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::handle_class_unloading(ik);
-  }
+  SystemDictionaryShared::handle_class_unloading(ik);
 
   if (log_is_enabled(Info, class, unload)) {
     ResourceMark rm;
@@ -3591,7 +3587,9 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
-  log_to_classlist();
+  if (ClassListWriter::is_enabled()) {
+    ClassListWriter::write(this, cfs);
+  }
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -4131,45 +4129,6 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
 #endif
-
-bool InstanceKlass::is_shareable() const {
-#if INCLUDE_CDS
-  ClassLoaderData* loader_data = class_loader_data();
-  if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
-    return false;
-  }
-
-  if (is_hidden()) {
-    return false;
-  }
-
-  if (module()->is_patched()) {
-    return false;
-  }
-
-  return true;
-#else
-  return false;
-#endif
-}
-
-void InstanceKlass::log_to_classlist() const {
-#if INCLUDE_CDS
-  ResourceMark rm;
-  if (ClassListWriter::is_enabled()) {
-    if (!ClassLoader::has_jrt_entry()) {
-       warning("DumpLoadedClassList and CDS are not supported in exploded build");
-       DumpLoadedClassList = NULL;
-       return;
-    }
-    if (is_shareable()) {
-      ClassListWriter w;
-      w.stream()->print_cr("%s", name()->as_C_string());
-      w.stream()->flush();
-    }
-  }
-#endif // INCLUDE_CDS
-}
 
 // Make a step iterating over the class hierarchy under the root class.
 // Skips subclasses if requested.

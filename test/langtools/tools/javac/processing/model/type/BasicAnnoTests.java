@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.IntersectionType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
@@ -326,7 +327,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             //out.println("  return: " + t.getReturnType());
             scan(t.getReturnType(), p);
             //out.println("  receiver: " + t.getReceiverTypes());
-            scan(t.getReceiverType());
+            scan(t.getReceiverType(), p);
             //out.println("  params: " + t.getParameterTypes());
             scan(t.getParameterTypes(), p);
             //out.println("  throws: " + t.getThrownTypes());
@@ -471,17 +472,17 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=1, annoType=TA.class, expect="3")
     public @TA(3) int @TB(33) [] f3;
 
-    @Test(posn=2, annoType=TA.class, expect="4")
+    @Test(posn=3, annoType=TA.class, expect="4")
     public int m1(@TA(4) float a) throws Exception { return 0; }
 
     @Test(posn=1, annoType=TA.class, expect="5")
     public @TA(5) int m2(float a) throws Exception { return 0; }
 
-    @Test(posn=3, annoType=TA.class, expect="6")
+    @Test(posn=4, annoType=TA.class, expect="6")
     public int m3(float a) throws @TA(6) Exception { return 0; }
 
     // Also tests that a decl anno on a typevar doesn't show up on the Type
-    @Test(posn=7, annoType=TA.class, expect="8")
+    @Test(posn=8, annoType=TA.class, expect="8")
     public <@TA(7) M> M m4(@TA(8) float a) throws Exception { return null; }
 
     // Also tests that a decl anno on a typevar doesn't show up on the Type
@@ -528,8 +529,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     public Set<@TA(23) ? super Object> f9;
 
     // Test type use annotations on uses of type variables
-    @Test(posn=5, annoType = TA.class, expect = "25")
-    @Test(posn=5, annoType = TB.class, expect = "26")
+    @Test(posn=6, annoType = TA.class, expect = "25")
+    @Test(posn=6, annoType = TB.class, expect = "26")
     <T> void m6(@TA(25) @TB(26) T t) { }
 
     class Inner7<T> {
@@ -539,7 +540,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     // Test type use annotations on uses of type variables
-    @Test(posn=5, annoType = TB.class, expect = "41")
+    @Test(posn=6, annoType = TB.class, expect = "41")
     <@TA(40) T> void m7(@TB(41) T t) { }
 
     class Inner8<@TA(50) T> {
@@ -548,8 +549,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     // Test type use annotations on uses of Class types
-    @Test(posn=5, annoType = TA.class, expect = "60")
-    @Test(posn=5, annoType = TB.class, expect = "61")
+    @Test(posn=6, annoType = TA.class, expect = "60")
+    @Test(posn=6, annoType = TB.class, expect = "61")
     <T> void m60(@TA(60) @TB(61) String t) { }
 
     class Inner70<T> {
@@ -559,7 +560,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     // Test type use annotations on uses of type variables
-    @Test(posn=5, annoType = TB.class, expect = "81")
+    @Test(posn=6, annoType = TB.class, expect = "81")
     <@TA(80) T> void m80(@TB(81) String t) { }
 
     class Inner90<@TA(90) T> {
