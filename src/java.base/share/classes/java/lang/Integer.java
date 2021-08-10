@@ -1443,7 +1443,7 @@ public final class Integer extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = parseInt(nm.substring(index), radix);
+            result = parseInt(nm, index, nm.length(), radix);
             result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Integer.MIN_VALUE, we'll end up here. The next line

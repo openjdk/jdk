@@ -1284,7 +1284,7 @@ public final class Long extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = parseLong(nm.substring(index), radix);
+            result = parseLong(nm, index, nm.length(), radix);
             result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Long.MIN_VALUE, we'll end up here. The next line
