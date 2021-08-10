@@ -24,7 +24,8 @@
 /**
  * @test
  * @bug 8048190
- * @summary Test that the NCDFE saves original exception during class initialization,
+ * @summary Test that the NCDFE saves the stack trace for the original exception
+ *          during class initialization with ExceptionInInitializationError,
  *          and doesn't prevent the classes in the stacktrace to be unloaded.
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
@@ -50,20 +51,16 @@ public class InitExceptionUnloadTest {
     }
     static public class ThrowsSpecialException {
         static {
-            if (true) foo();
-        }
-        static private void foo() throws SpecialException {
             if (true) throw new SpecialException(3, "Very Special ");
         }
     }
 
-    static public class InitOOM {
+    static public class ThrowsOOM {
         static {
-            if (true) foo();
-        }
-        static private void foo() {
-            // Actually getting an OOM might be fragile but it was tested.
-            throw new OutOfMemoryError("Java heap space");
+            if (true) {
+                // Actually getting an OOM might be fragile but it was tested.
+                throw new OutOfMemoryError("Java heap space");
+            }
         }
     }
 
@@ -93,7 +90,7 @@ public class InitExceptionUnloadTest {
         "Caused by: java.lang.ExceptionInInitializerError: Exception InitExceptionUnloadTest$SpecialException: Very Special 3",
         "java.lang.OutOfMemoryError",
         "Java heap space",
-        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$InitOOM",
+        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsOOM",
         "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.OutOfMemoryError: Java heap space [in thread"
     };
 
@@ -101,7 +98,7 @@ public class InitExceptionUnloadTest {
         "InitExceptionUnloadTest$ThrowsRuntimeException",
         "InitExceptionUnloadTest$ThrowsError",
         "InitExceptionUnloadTest$ThrowsSpecialException",
-        "InitExceptionUnloadTest$InitOOM" };
+        "InitExceptionUnloadTest$ThrowsOOM" };
 
     public static WhiteBox wb = WhiteBox.getWhiteBox();
 
@@ -109,7 +106,7 @@ public class InitExceptionUnloadTest {
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
         int i = 0;
         for (String className : classNames) {
-            for (int tries = 2; tries--> 0; ) {
+            for (int tries = 2; tries-- > 0; ) {
                 System.err.println("--- try to load " + className);
                 try {
                     Class<?> c = cl.loadClass(className);

@@ -2662,7 +2662,7 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   // Throw ExceptionInInitializerError as the cause with this exception in
   // the message and stack trace.
 
-  // Now create the same exception with this stacktrace and thread name.
+  // Now create the message with the original exception and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(THREAD);
   stringStream st;
