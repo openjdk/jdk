@@ -2691,7 +2691,7 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   Symbol* exception_name = null_classloader ?  tk->name() :
                              vmSymbols::java_lang_ExceptionInInitializerError();
 
-  // Now create a the same exception with this stacktrace and thread name.
+  // Now create the same exception with this stacktrace and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(THREAD);
   stringStream st;
@@ -2709,6 +2709,8 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
 
   // If new exception returns a different exception while creating the exception, return null.
   if (h_cause->klass()->name() != exception_name) {
+    log_info(class, init)("Exception thrown while saving initialization exception %s",
+                          h_cause->klass()->external_name());
     return Handle();
   }
   java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());

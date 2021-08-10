@@ -25,13 +25,12 @@
  * @test
  * @bug 8048190
  * @summary Test that the NCDFE saves original exception during class initialization,
- *          and doesn't cause the classes in the stacktrace to be unloaded.
+ *          and doesn't prevent the classes in the stacktrace to be unloaded.
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @compile ThrowsSpecialException.jasm
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI InitExceptionUnloadTest
  */
 
@@ -44,9 +43,17 @@ import jdk.test.lib.classloader.ClassUnloadCommon;
 public class InitExceptionUnloadTest {
     static public class ThrowsRuntimeException { static int x = 1/0; }
     static public class ThrowsError { static { if (true) throw new Error(); } }
-    static public class SpecialException extends Throwable {
+    static public class SpecialException extends RuntimeException {
         SpecialException(int count, String message) {
             super(message + count);
+        }
+    }
+    static public class ThrowsSpecialException {
+        static {
+            if (true) foo();
+        }
+        static private void foo() throws SpecialException {
+            if (true) throw new SpecialException(3, "Very Special ");
         }
     }
     // Has to be in jasm to throw special exception in class initializer.

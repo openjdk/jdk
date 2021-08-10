@@ -1033,6 +1033,8 @@ void InstanceKlass::add_initialization_error(Handle exception, TRAPS) {
   OopHandle elem = OopHandle(Universe::vm_global(), cause());
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
+  ResourceMark rm(THREAD);
+  log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
 oop InstanceKlass::get_initialization_error(JavaThread* current) {
