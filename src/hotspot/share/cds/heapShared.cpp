@@ -1553,7 +1553,7 @@ class PatchLoadedRegionPointers: public BitMapClosure {
       _base_1(loaded_regions[1]._dumptime_base),
       _base_2(loaded_regions[2]._dumptime_base),
       _base_3(loaded_regions[3]._dumptime_base) {
-    _top = loaded_regions[NUM_LOADED_REGIONS-1].top();     
+    _top = loaded_regions[NUM_LOADED_REGIONS-1].top();
   }
 
   bool do_bit(size_t offset) {
