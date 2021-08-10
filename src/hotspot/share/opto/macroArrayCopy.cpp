@@ -307,8 +307,8 @@ address PhaseMacroExpand::basictype2arraycopy(BasicType t,
                                               bool disjoint_bases,
                                               const char* &name,
                                               bool dest_uninitialized) {
-  const TypeInt* src_offset_inttype  = _igvn.find_int_type(src_offset);;
-  const TypeInt* dest_offset_inttype = _igvn.find_int_type(dest_offset);;
+  const TypeInt* src_offset_inttype  = _igvn.find_int_type(src_offset);
+  const TypeInt* dest_offset_inttype = _igvn.find_int_type(dest_offset);
 
   bool aligned = false;
   bool disjoint = disjoint_bases;
@@ -1223,6 +1223,8 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   }
   return false;
 }
+
+#undef XTOP
 
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   Node* ctrl = ac->in(TypeFunc::Control);

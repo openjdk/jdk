@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,9 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
     return 0;
 }
 
+// Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
+#define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
+
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFD,
@@ -156,8 +159,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     LARGE_INTEGER where;
     HANDLE src = (HANDLE)(handleval(env, srcFD));
     SOCKET dst = (SOCKET)(fdval(env, dstFD));
-    DWORD chunkSize = (count > java_lang_Integer_MAX_VALUE) ?
-        java_lang_Integer_MAX_VALUE : (DWORD)count;
+    DWORD chunkSize = (count > MAX_TRANSMIT_SIZE) ?
+        MAX_TRANSMIT_SIZE : (DWORD)count;
     BOOL result;
 
     where.QuadPart = position;
@@ -188,4 +191,11 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         return IOS_THROWN;
     }
     return chunkSize;
+}
+
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
+{
+    return MAX_TRANSMIT_SIZE;
 }

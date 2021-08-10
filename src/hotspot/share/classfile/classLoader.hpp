@@ -254,9 +254,9 @@ class ClassLoader: AllStatic {
   static int  _libzip_loaded; // used to sync loading zip.
   static void release_load_zip_library();
   static inline void load_zip_library_if_needed();
-  static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
 
  public:
+  static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,
                                                  bool is_boot_append,

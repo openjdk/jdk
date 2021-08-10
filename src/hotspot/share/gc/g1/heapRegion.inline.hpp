@@ -178,9 +178,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
-  if (addr == top()) {
-    return pointer_delta(end(), addr);
-  }
+  assert(addr < top(), "precondition");
 
   if (block_is_obj(addr)) {
     return cast_to_oop(addr)->size();
@@ -450,18 +448,6 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
-}
-
-inline bool HeapRegion::evacuation_failed() const {
-  return Atomic::load(&_evacuation_failed);
-}
-
-inline bool HeapRegion::set_evacuation_failed() {
-  return !Atomic::load(&_evacuation_failed) && !Atomic::cmpxchg(&_evacuation_failed, false, true, memory_order_relaxed);
-}
-
-inline void HeapRegion::reset_evacuation_failed() {
-  Atomic::store(&_evacuation_failed, false);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

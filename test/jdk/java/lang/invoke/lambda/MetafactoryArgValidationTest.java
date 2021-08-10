@@ -153,9 +153,8 @@ public class MetafactoryArgValidationTest {
         amfSucceed(C.lookup, "m", toI, arr(cToVoid, C.invokeVirtualMH(), cToVoid, flagSer));
         mfSucceed(C.lookup, "m", toI, toVoid, C.invokeStaticMH(), toVoid);
         amfSucceed(C.lookup, "m", toI, arr(toVoid, C.invokeStaticMH(), toVoid, flagSer));
-        // 8268192: these fail with a VerifyError, need to fix
-        //mfSucceed(C.lookup, "m", toI, cToString, C.invokeSpecialMH(), cToString);
-        //amfSucceed(C.lookup, "m", toI, arr(cToString, C.invokeSpecialMH(), cToString, flagSer));
+        mfSucceed(C.lookup, "m", toI, cToString, C.invokeSpecialMH(), cToString);
+        amfSucceed(C.lookup, "m", toI, arr(cToString, C.invokeSpecialMH(), cToString, flagSer));
         mfSucceed(C.lookup, "m", toI, toC, C.newInvokeSpecialMH(), toC);
         amfSucceed(C.lookup, "m", toI, arr(toC, C.newInvokeSpecialMH(), toC, flagSer));
         mfSucceed(C.lookup, "m", toI, cToVoid, C.invokeInterfaceMH(), cToVoid);

@@ -449,13 +449,13 @@ size_t JfrCheckpointManager::flush_type_set() {
     Thread* const thread = Thread::current();
     if (thread->is_Java_thread()) {
       // can safepoint here
-      ThreadInVMfromNative transition(thread->as_Java_thread());
+      ThreadInVMfromNative transition(JavaThread::cast(thread));
       elements = ::flush_type_set(thread);
     } else {
       elements = ::flush_type_set(thread);
     }
   }
-  if (_new_checkpoint.is_signaled()) {
+  if (_new_checkpoint.is_signaled_with_reset()) {
     WriteOperation wo(_chunkwriter);
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list
@@ -478,7 +478,7 @@ class JfrNotifyClosure : public ThreadClosure {
   void do_thread(Thread* thread) {
     assert(thread != NULL, "invariant");
     assert_locked_or_safepoint(Threads_lock);
-    JfrJavaEventWriter::notify(thread->as_Java_thread());
+    JfrJavaEventWriter::notify(JavaThread::cast(thread));
   }
 };
 

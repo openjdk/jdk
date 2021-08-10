@@ -32,8 +32,9 @@ import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
 
-import sun.hotspot.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand;
 
+@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -58,7 +59,7 @@ public class WhiteBox {
     @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
+      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
     }
     return instance;
   }
@@ -310,7 +311,7 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
@@ -605,7 +606,10 @@ public class WhiteBox {
 
   // Handshakes
   public native int handshakeWalkStack(Thread t, boolean all_threads);
+  public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
+
+  public native void lockAndBlock(boolean suspender);
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);

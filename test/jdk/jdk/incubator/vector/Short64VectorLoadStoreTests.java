@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
+ * @modules jdk.incubator.foreign jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Short64VectorLoadStoreTests
  *
  */
@@ -47,16 +47,14 @@ import java.util.List;
 import java.util.function.*;
 
 @Test
-public class Short64VectorLoadStoreTests extends AbstractVectorTest {
+public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     static final VectorSpecies<Short> SPECIES =
                 ShortVector.SPECIES_64;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
-
-    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * (64 / 8));
 
     static void assertArraysEquals(short[] r, short[] a, boolean[] mask) {
         int i = 0;
@@ -186,25 +184,6 @@ public class Short64VectorLoadStoreTests extends AbstractVectorTest {
                 flatMap(fm -> INDEX_GENERATORS.stream().map(fi -> {
                     return new Object[] {f, fi, fm};
                 })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] shortIndexMapProvider() {
-        return INDEX_GENERATORS.stream().
-                flatMap(fim -> SHORT_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fim};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] shortIndexMapMaskProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-                flatMap(fm -> INDEX_GENERATORS.stream().
-                    flatMap(fim -> SHORT_GENERATORS.stream().map(fa -> {
-                        return new Object[] {fa, fim, fm};
-                    }))).
                 toArray(Object[][]::new);
     }
 
@@ -1203,6 +1182,303 @@ public class Short64VectorLoadStoreTests extends AbstractVectorTest {
                 Assert.fail("Unexpected IndexOutOfBoundsException");
             }
         }
+    }
+
+
+
+
+    // Gather/Scatter load/store tests
+
+    static void assertGatherArraysEquals(short[] r, short[] a, int[] indexMap) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+        }
+    }
+
+    static void assertGatherArraysEquals(short[] r, short[] a, int[] indexMap, boolean[] mask) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0, "at index #" + j);
+        }
+    }
+
+    static void assertScatterArraysEquals(short[] r, short[] a, int[] indexMap, boolean[] mask) {
+        short[] expected = new short[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                if (mask[j % SPECIES.length()]) {
+                    expected[i + indexMap[j]] = a[j];
+                }
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    static void assertScatterArraysEquals(short[] r, short[] a, int[] indexMap) {
+        short[] expected = new short[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                expected[i + indexMap[j]] = a[j];
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    @DataProvider
+    public Object[][] gatherScatterProvider() {
+        return INT_INDEX_GENERATORS.stream().
+                flatMap(fs -> SHORT_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fs};
+                })).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] gatherScatterMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
+            SHORT_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fm, fs};
+            }))).
+            toArray(Object[][]::new);
+    }
+
+
+    @Test(dataProvider = "gatherScatterProvider")
+    static void gather(IntFunction<short[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        short[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        short[] r = new short[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i, b, i);
+                av.intoArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "gatherScatterMaskProvider")
+    static void gatherMask(IntFunction<short[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        short[] r = new short[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i, b, i, vmask);
+                av.intoArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b, mask);
+    }
+
+    @Test(dataProvider = "gatherScatterProvider")
+    static void scatter(IntFunction<short[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        short[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        short[] r = new short[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.intoArray(r, i, b, i);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "gatherScatterMaskProvider")
+    static void scatterMask(IntFunction<short[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        short[] r = new short[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.intoArray(r, i, b, i, vmask);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b, mask);
+    }
+
+    static void assertGatherArraysEquals(char[] r, char[] a, int[] indexMap) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+        }
+    }
+
+    static void assertGatherArraysEquals(char[] r, char[] a, int[] indexMap, boolean[] mask) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (char) 0);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (char) 0, "at index #" + j);
+        }
+    }
+
+    static void assertScatterArraysEquals(char[] r, char[] a, int[] indexMap, boolean[] mask) {
+        char[] expected = new char[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                if (mask[j % SPECIES.length()]) {
+                    expected[i + indexMap[j]] = a[j];
+                }
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    static void assertScatterArraysEquals(char[] r, char[] a, int[] indexMap) {
+        char[] expected = new char[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                expected[i + indexMap[j]] = a[j];
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    @DataProvider
+    public Object[][] charGatherScatterProvider() {
+        return INT_INDEX_GENERATORS.stream().
+                flatMap(fs -> CHAR_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fs};
+                })).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] charGatherScatterMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
+            CHAR_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fm, fs};
+            }))).
+            toArray(Object[][]::new);
+    }
+
+
+    @Test(dataProvider = "charGatherScatterProvider")
+    static void charGather(IntFunction<char[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        char[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        char[] r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i, b, i);
+                av.intoCharArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "charGatherScatterMaskProvider")
+    static void charGatherMask(IntFunction<char[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        char[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        char[] r = new char[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i, b, i, vmask);
+                av.intoCharArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b, mask);
+    }
+
+    @Test(dataProvider = "charGatherScatterProvider")
+    static void charScatter(IntFunction<char[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        char[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        char[] r = new char[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                av.intoCharArray(r, i, b, i);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "charGatherScatterMaskProvider")
+    static void charScatterMask(IntFunction<char[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        char[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        char[] r = new char[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromCharArray(SPECIES, a, i);
+                av.intoCharArray(r, i, b, i, vmask);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b, mask);
     }
 
 

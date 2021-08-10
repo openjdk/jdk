@@ -40,7 +40,7 @@ public class TestGCCauseWithG1ConcurrentMark {
         String testID = "G1ConcurrentMark";
         String[] vmFlags = {"-XX:+UseG1GC", "-XX:+ExplicitGCInvokesConcurrent"};
         String[] gcNames = {GCHelper.gcG1New, GCHelper.gcG1Old, GCHelper.gcG1Full};
-        String[] gcCauses = {"G1 Evacuation Pause", "G1 Preventive Collection", "Allocation Failure", "System.gc()"};
+        String[] gcCauses = {"G1 Evacuation Pause", "G1 Preventive Collection", "G1 Compaction Pause", "System.gc()"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }

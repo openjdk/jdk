@@ -30,9 +30,12 @@
 
 #define G1_GC_CONSTRAINTS(f)                          \
                                                       \
-  /* G1 Flag Constraints */                           \
-  f(intx,   G1RSetRegionEntriesConstraintFunc)        \
-  f(intx,   G1RSetSparseRegionEntriesConstraintFunc)  \
+  /* G1 Remembered Sets Constraints */                \
+  f(uint,   G1RemSetArrayOfCardsEntriesConstraintFunc)\
+  f(uint,   G1RemSetHowlMaxNumBucketsConstraintFunc)  \
+  f(uint,   G1RemSetHowlNumBucketsConstraintFunc)     \
+                                                      \
+  /* G1 Heap Size Constraints */                      \
   f(size_t, G1HeapRegionSizeConstraintFunc)           \
   f(uintx,  G1NewSizePercentConstraintFunc)           \
   f(uintx,  G1MaxNewSizePercentConstraintFunc)        \

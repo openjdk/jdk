@@ -229,7 +229,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \
   X86_ONLY(do_intx_flag(UseAVX))                                           \
-  do_bool_flag(UseBiasedLocking)                                           \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
@@ -287,7 +286,9 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceHashtable<jlong, JVMCIObject> longs;
-  ResourceHashtable<const char*, JVMCIObject, &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
+  ResourceHashtable<const char*, JVMCIObject,
+                    256, ResourceObj::RESOURCE_AREA, mtInternal,
+                    &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 
   jvalue prim;
   prim.z = true;  JVMCIObject boxedTrue =  JVMCIENV->create_box(T_BOOLEAN, &prim, JVMCI_CHECK_NULL);

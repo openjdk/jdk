@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ class G1BlockOffsetTablePart {
 private:
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
-  size_t    _next_offset_index;      // index corresponding to that boundary
 
   // Indicates if an object can span into this G1BlockOffsetTablePart.
   debug_only(bool _object_can_span;)
@@ -142,11 +141,7 @@ private:
   inline size_t block_size(const HeapWord* p) const;
 
   // Returns the address of a block whose start is at most "addr".
-  // If "has_max_index" is true, "assumes "max_index" is the last valid one
-  // in the array.
-  inline HeapWord* block_at_or_preceding(const void* addr,
-                                         bool has_max_index,
-                                         size_t max_index) const;
+  inline HeapWord* block_at_or_preceding(const void* addr) const;
 
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
   // next block (or the end of the space.)  Return the address of the
@@ -170,14 +165,14 @@ private:
                                                   const void* addr);
 
   // Requires that "*threshold_" be the first array entry boundary at or
-  // above "blk_start", and that "*index_" be the corresponding array
-  // index.  If the block starts at or crosses "*threshold_", records
+  // above "blk_start".  If the block starts at or crosses "*threshold_", records
   // "blk_start" as the appropriate block start for the array index
   // starting at "*threshold_", and for any other indices crossed by the
-  // block.  Updates "*threshold_" and "*index_" to correspond to the first
-  // index after the block end.
-  void alloc_block_work(HeapWord** threshold_, size_t* index_,
-                        HeapWord* blk_start, HeapWord* blk_end);
+  // block.  Updates "*threshold_" to correspond to the first index after
+  // the block end.
+  void alloc_block_work(HeapWord** threshold_,
+                        HeapWord* blk_start,
+                        HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
@@ -218,7 +213,7 @@ public:
   // never exceeds the "_next_offset_threshold".
   void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (blk_end > _next_offset_threshold) {
-      alloc_block_work(&_next_offset_threshold, &_next_offset_index, blk_start, blk_end);
+      alloc_block_work(&_next_offset_threshold, blk_start, blk_end);
     }
   }
   void alloc_block(HeapWord* blk, size_t size) {

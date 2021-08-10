@@ -86,8 +86,8 @@ class DirectMethodHandle extends MethodHandle {
         if (!member.isField()) {
             // refKind reflects the original type of lookup via findSpecial or
             // findVirtual etc.
-            switch (refKind) {
-                case REF_invokeSpecial: {
+            return switch (refKind) {
+                case REF_invokeSpecial -> {
                     member = member.asSpecial();
                     // if caller is an interface we need to adapt to get the
                     // receiver check inserted
@@ -95,20 +95,20 @@ class DirectMethodHandle extends MethodHandle {
                         throw new InternalError("callerClass must not be null for REF_invokeSpecial");
                     }
                     LambdaForm lform = preparedLambdaForm(member, callerClass.isInterface());
-                    return new Special(mtype, lform, member, true, callerClass);
+                    yield new Special(mtype, lform, member, true, callerClass);
                 }
-                case REF_invokeInterface: {
+                case REF_invokeInterface -> {
                     // for interfaces we always need the receiver typecheck,
                     // so we always pass 'true' to ensure we adapt if needed
                     // to include the REF_invokeSpecial case
                     LambdaForm lform = preparedLambdaForm(member, true);
-                    return new Interface(mtype, lform, member, true, refc);
+                    yield new Interface(mtype, lform, member, true, refc);
                 }
-                default: {
+                default -> {
                     LambdaForm lform = preparedLambdaForm(member);
-                    return new DirectMethodHandle(mtype, lform, member, true);
+                    yield new DirectMethodHandle(mtype, lform, member, true);
                 }
-            }
+            };
         } else {
             LambdaForm lform = preparedFieldLambdaForm(member);
             if (member.isStatic()) {
@@ -194,20 +194,19 @@ class DirectMethodHandle extends MethodHandle {
         assert(m.isInvocable()) : m;  // call preparedFieldLambdaForm instead
         MethodType mtype = m.getInvocationType().basicType();
         assert(!m.isMethodHandleInvoke()) : m;
-        int which;
         // MemberName.getReferenceKind represents the JVM optimized form of the call
         // as distinct from the "kind" passed to DMH.make which represents the original
         // bytecode-equivalent request. Specifically private/final methods that use a direct
         // call have getReferenceKind adapted to REF_invokeSpecial, even though the actual
         // invocation mode may be invokevirtual or invokeinterface.
-        switch (m.getReferenceKind()) {
-        case REF_invokeVirtual:    which = LF_INVVIRTUAL;    break;
-        case REF_invokeStatic:     which = LF_INVSTATIC;     break;
-        case REF_invokeSpecial:    which = LF_INVSPECIAL;    break;
-        case REF_invokeInterface:  which = LF_INVINTERFACE;  break;
-        case REF_newInvokeSpecial: which = LF_NEWINVSPECIAL; break;
-        default:  throw new InternalError(m.toString());
-        }
+        int which = switch (m.getReferenceKind()) {
+            case REF_invokeVirtual    -> LF_INVVIRTUAL;
+            case REF_invokeStatic     -> LF_INVSTATIC;
+            case REF_invokeSpecial    -> LF_INVSPECIAL;
+            case REF_invokeInterface  -> LF_INVINTERFACE;
+            case REF_newInvokeSpecial -> LF_NEWINVSPECIAL;
+            default -> throw new InternalError(m.toString());
+        };
         if (which == LF_INVSTATIC && shouldBeInitialized(m)) {
             // precompute the barrier-free version:
             preparedLambdaForm(mtype, which);
@@ -664,14 +663,13 @@ class DirectMethodHandle extends MethodHandle {
     private static LambdaForm preparedFieldLambdaForm(MemberName m) {
         Class<?> ftype = m.getFieldType();
         boolean isVolatile = m.isVolatile();
-        byte formOp;
-        switch (m.getReferenceKind()) {
-        case REF_getField:      formOp = AF_GETFIELD;    break;
-        case REF_putField:      formOp = AF_PUTFIELD;    break;
-        case REF_getStatic:     formOp = AF_GETSTATIC;   break;
-        case REF_putStatic:     formOp = AF_PUTSTATIC;   break;
-        default:  throw new InternalError(m.toString());
-        }
+        byte formOp = switch (m.getReferenceKind()) {
+            case REF_getField  -> AF_GETFIELD;
+            case REF_putField  -> AF_PUTFIELD;
+            case REF_getStatic -> AF_GETSTATIC;
+            case REF_putStatic -> AF_PUTSTATIC;
+            default -> throw new InternalError(m.toString());
+        };
         if (shouldBeInitialized(m)) {
             // precompute the barrier-free version:
             preparedFieldLambdaForm(formOp, isVolatile, ftype);

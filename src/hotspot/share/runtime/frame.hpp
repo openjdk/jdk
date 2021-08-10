@@ -261,8 +261,7 @@ class frame {
   oop retrieve_receiver(RegisterMap *reg_map);
 
   // Return the monitor owner and BasicLock for compiled synchronized
-  // native methods so that biased locking can revoke the receiver's
-  // bias if necessary.  This is also used by JVMTI's GetLocalInstance method
+  // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
   BasicLock* get_native_monitor();
   oop        get_native_receiver();
@@ -342,6 +341,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
+  bool optimized_entry_frame_is_first() const;
 
   // Safepoints
 

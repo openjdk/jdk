@@ -45,6 +45,9 @@ const char* C2Compiler::retry_no_subsuming_loads() {
 const char* C2Compiler::retry_no_escape_analysis() {
   return "retry without escape analysis";
 }
+const char* C2Compiler::retry_no_locks_coarsening() {
+  return "retry without locks coarsening";
+}
 const char* C2Compiler::retry_class_loading_during_parsing() {
   return "retry class loading during parsing";
 }
@@ -97,10 +100,11 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool eliminate_boxing = EliminateAutoBox;
+  bool do_locks_coarsening = EliminateLocks;
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, install_code, directive);
+    Compile C(env, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
@@ -117,6 +121,12 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       if (C.failure_reason_is(retry_no_escape_analysis())) {
         assert(do_escape_analysis, "must make progress");
         do_escape_analysis = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
+      if (C.failure_reason_is(retry_no_locks_coarsening())) {
+        assert(do_locks_coarsening, "must make progress");
+        do_locks_coarsening = false;
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
@@ -139,6 +149,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       }
       if (do_escape_analysis) {
         do_escape_analysis = false;
+        continue;  // retry
+      }
+      if (do_locks_coarsening) {
+        do_locks_coarsening = false;
         continue;  // retry
       }
     }
