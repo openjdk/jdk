@@ -77,10 +77,11 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
 }
 
 inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint end_at) {
-  uintptr_t const card_mask = (1 << bits_per_card) - 1;
-
-  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
   assert(start_at < end_at, "Precondition! %d < %d", start_at, end_at);
+
+  uintptr_t const card_mask = (1 << bits_per_card) - 1;
+  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
+
   // Check if the card is already stored in the pointer.
   for (uint cur_idx = start_at; cur_idx < end_at; cur_idx++) {
     if ((value & card_mask) == card_idx) {
