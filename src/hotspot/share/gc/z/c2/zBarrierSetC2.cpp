@@ -268,24 +268,16 @@ static const TypeFunc* clone_type() {
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
+  const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
 
-  if (ac->is_clone_array()) {
-    const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
-    BasicType bt;
-    if (ary_ptr == NULL) {
-      // ary_ptr can be null iff we are running with StressReflectiveCode
-      // This code will be unreachable
-      assert(StressReflectiveCode, "Guard against surprises");
-      bt = T_LONG;
+  if (ac->is_clone_array() && ary_ptr != NULL) {
+    BasicType bt = ary_ptr->elem()->array_element_basic_type();
+    if (is_reference_type(bt)) {
+      // Clone object array
+      bt = T_OBJECT;
     } else {
-      bt = ary_ptr->elem()->array_element_basic_type();
-      if (is_reference_type(bt)) {
-        // Clone object array
-        bt = T_OBJECT;
-      } else {
-        // Clone primitive array
-        bt = T_LONG;
-      }
+      // Clone primitive array
+      bt = T_LONG;
     }
 
     Node* ctrl = ac->in(TypeFunc::Control);
@@ -333,12 +325,11 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const dst        = ac->in(ArrayCopyNode::Dest);
   Node* const size       = ac->in(ArrayCopyNode::Length);
 
-  assert(ac->is_clone_inst(), "Sanity check");
   assert(size->bottom_type()->is_long(), "Should be long");
 
   // The native clone we are calling here expects the instance size in words
   // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(false) >> LogBytesPerLong);
+  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
 
   Node* const call = phase->make_leaf_call(ctrl,
