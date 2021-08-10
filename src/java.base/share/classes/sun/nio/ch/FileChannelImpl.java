@@ -586,11 +586,13 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED;
 
         if (target == this) {
-            long posTarget = ((FileChannel)target).position();
-            if (position() - count + 1 <= posTarget &&
-                posTarget - count + 1 <= position() &&
-                !nd.canTransferToFromOverlappedMap()) {
-                return IOStatus.UNSUPPORTED_CASE;
+            synchronized (positionLock) {
+                long posThis = position();
+                if (posThis - count + 1 <= position &&
+                    position - count + 1 <= posThis &&
+                    !nd.canTransferToFromOverlappedMap()) {
+                    return IOStatus.UNSUPPORTED_CASE;
+                }
             }
         }
 
@@ -686,7 +688,7 @@ public class FileChannelImpl
             return 0;
 
         if ((sz - position) < count)
-            count = (int)(sz - position);
+            count = sz - position;
 
         // Attempt a direct transfer, if the kernel supports it, limiting
         // the number of bytes according to which platform
