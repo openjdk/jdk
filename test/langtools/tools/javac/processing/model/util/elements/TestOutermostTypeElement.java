@@ -55,8 +55,8 @@ public class TestOutermostTypeElement extends JavacTestingAbstractProcessor {
 
             // Starting from the root elements, traverse over all
             // enclosed elements and type parameters. The outermost
-            // enclosing type element such equal the root
-            // element. This traversal does not hit elements
+            // enclosing type element should equal the root
+            // element. This traversal does *not* hit elements
             // corresponding to structures inside of a method.
             for (TypeElement e : ElementFilter.typesIn(roundEnv.getRootElements()) ) {
                 var outerScaner = new OuterScanner(e);
@@ -75,7 +75,6 @@ public class TestOutermostTypeElement extends JavacTestingAbstractProcessor {
 
         @Override
         public Void scan(Element e, Elements elts) {
-            // System.out.println(e.getSimpleName() + " " + e.getKind());
             checkOuter(e, expectedOuter, elts);
             super.scan(e, elts);
             return null;

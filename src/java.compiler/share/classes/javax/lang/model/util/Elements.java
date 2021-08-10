@@ -578,7 +578,7 @@ public interface Elements {
             // This implementation is susceptible to infinite loops
             // for misbehaving element implementations.
             while (true) {
-                // Conceptual instanceof TypeElment check. If the
+                // Conceptual instanceof TypeElement check. If the
                 // argument is a type element, put it into a
                 // one-element list, otherwise an empty list.
                 List<TypeElement> possibleTypeElement = ElementFilter.typesIn(List.of(enclosing));
