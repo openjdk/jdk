@@ -376,7 +376,7 @@ public abstract class Reference<T> {
     }
 
     @IntrinsicCandidate
-    private native final boolean refersTo0(Object o);
+    private native boolean refersTo0(Object o);
 
     /**
      * Clears this reference object.  Invoking this method will not cause this

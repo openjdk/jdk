@@ -74,7 +74,7 @@ public class PhantomReference<T> extends Reference<T> {
     }
 
     @IntrinsicCandidate
-    private native final boolean refersTo0(Object o);
+    private native boolean refersTo0(Object o);
 
     /**
      * Creates a new phantom reference that refers to the given object and
