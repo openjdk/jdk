@@ -94,11 +94,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  // The dest for Young is used when the objects are aged enough to
-  // need to be moved to the next space.
-  _dest[G1HeapRegionAttr::Young] = G1HeapRegionAttr::Old;
-  _dest[G1HeapRegionAttr::Old]   = G1HeapRegionAttr::Old;
-
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_num_optional_regions];
@@ -363,7 +358,9 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
       return region_attr;
     }
   }
-  return dest(region_attr);
+  assert(region_attr.is_young() || region_attr.is_old(), "must be either Young or Old");
+  // young-to-old (promotion) or old-to-old; destination is old in both cases.
+  return G1HeapRegionAttr::Old;
 }
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
