@@ -228,19 +228,20 @@ public class SimpleFileServerTest {
                 </html>
                 """;
         return new Object[][] {
-                {"index.html", "text/html",                "77", fileContent, true},
-                {"index.htm",  "text/html",                "77", fileContent, true},
-                {"index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
+                {"1", "index.html", "text/html",                "77", fileContent, true},
+                {"2", "index.htm",  "text/html",                "77", fileContent, true},
+                {"3", "index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
         };
     }
 
     @Test(dataProvider = "indexFiles")
-    public void testDirectoryWithIndexGET(String filename,
+    public void testDirectoryWithIndexGET(String id,
+                                          String filename,
                                           String contentType,
                                           String contentLength,
                                           String expectedContent,
                                           boolean serveIndexFile) throws Exception {
-        var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"));
+        var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"+id));
         var lastModified = getLastModified(root);
         if (serveIndexFile) {
             var file = Files.writeString(root.resolve(filename), expectedContent, CREATE);
@@ -542,15 +543,6 @@ public class SimpleFileServerTest {
                 }
             }
         }
-    }
-
-    static Path createDirectoryInZipFs(Path zipFile) throws Exception {
-        var fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
-        var file = fs.getPath("fileInZip");
-        if (Files.notExists(file)) {
-            Files.createDirectory(file);
-        }
-        return file;
     }
 
     @Test
