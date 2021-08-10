@@ -2999,7 +2999,8 @@ public:
 
 class G1PreservedMarksSet : public PreservedMarksSet {
 public:
-  G1PreservedMarksSet(uint num_workers) : PreservedMarksSet(false /* in_c_heap */) {
+
+  G1PreservedMarksSet(uint num_workers) : PreservedMarksSet(true /* in_c_heap */) {
     init(num_workers);
   }
 
