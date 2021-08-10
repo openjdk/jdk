@@ -114,7 +114,7 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
     } else if (region->is_regular()) {
-      if (!region->has_live() && !heap->mode()->is_generational()) {
+      if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;

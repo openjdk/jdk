@@ -1152,8 +1152,7 @@ private:
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != NULL) {
-      // Generational mode doesn't support immediate collection
-      assert(_sh->mode()->is_generational() || r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->index());
+      assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
       if (ShenandoahPacing) {
