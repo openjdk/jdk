@@ -202,7 +202,7 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
     JavaCallArguments args;
     args.push_oop(bufhandle); // Push class byte array as argument
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_Preverifier(), false, CHECK_NULL);
-   
+
     // Call Preverifier.patch()
     JavaCalls::call_static(&result,
           k,
@@ -245,12 +245,12 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
     newStream = new ClassFileStream(class_bytes, length, stream->source(), stream->need_verify());
     newStream->set_current(newStream->buffer());
 
-    #if 0
-    stringStream fn;
-    fn.print("/tmp/%s.class", name->as_klass_external_name());
-    fileStream fds(fn.as_string());
-    fds.write((const char*)newStream->buffer(), newStream->length());
-    #endif
+    if (!strcmp(name->as_klass_external_name(), "com.sun.javatest.regtest.agent.AgentServer")) {
+      stringStream fn;
+      fn.print("/tmp/%s.class", name->as_klass_external_name());
+      fileStream fds(fn.as_string());
+      fds.write((const char*)newStream->buffer(), newStream->length());
+    }
     return newStream;
   }
   stream->set_current(stream->buffer());

@@ -60,13 +60,6 @@ public class Preverifier extends ClassVisitor {
         ClassReader cr;
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
-        //ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-      //   ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
-      //   	@Override
-		    // protected String getCommonSuperClass(final String type1, final String type2) {
-		    // 	return "java/lang/Object";
-		    // }
-      //   };
 		SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
