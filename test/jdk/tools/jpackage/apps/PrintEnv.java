@@ -21,22 +21,14 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.stream.Stream;
 
 public class PrintEnv {
 
-    public static void main(String[] args) throws IOException {
-        Path outputFile = Path.of(args[0]);
-
-        List<String> lines = printArgs(Stream.of(args).skip(1).toArray(String[]::new));
-
+    public static void main(String[] args) {
+        List<String> lines = printArgs(args);
         lines.forEach(System.out::println);
-        Files.write(outputFile, lines);
     }
 
     private static List<String> printArgs(String[] args) {

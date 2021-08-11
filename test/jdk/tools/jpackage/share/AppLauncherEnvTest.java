@@ -62,14 +62,11 @@ public class AppLauncherEnvTest {
 
         final String envVarName = envVarName();
 
-        Path outputFile = TKit.workDir().resolve("output.txt");
-
         final int attempts = 3;
         final int waitBetweenAttemptsSeconds = 5;
         List<String> output = new Executor()
                 .saveOutput()
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
-                .addArguments(outputFile.toString())
                 .addArguments("--print-env-var=" + envVarName)
                 .addArguments("--print-sys-prop=" + testAddDirProp)
                 .addArguments("--print-sys-prop=" + "java.library.path")
