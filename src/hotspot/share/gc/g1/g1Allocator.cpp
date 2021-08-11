@@ -248,6 +248,9 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
                                                                               actual_word_size);
   if (result == NULL && !survivor_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
     if (!survivor_is_full()) {
       result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
                                                                               desired_word_size,
@@ -274,6 +277,9 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                                                actual_word_size);
   if (result == NULL && !old_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
     if (!old_is_full()) {
       result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
                                                                 desired_word_size,
