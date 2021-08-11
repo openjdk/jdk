@@ -14,4 +14,7 @@ public class LiteralTest {
 
     /** <code> abc {@code < & > } def </code> */
     public void bad_code_in_code() { }
+
+    /** */
+    LiteralTest() { }
 }

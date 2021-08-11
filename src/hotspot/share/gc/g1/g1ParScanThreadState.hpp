@@ -55,7 +55,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1PLABAllocator* _plab_allocator;
 
   AgeTable _age_table;
-  G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];
   // Local tenuring threshold.
   uint _tenuring_threshold;
   G1ScanEvacuatedObjClosure  _scanner;
@@ -87,14 +86,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
-
-  G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
-    assert(original.is_valid(),
-           "Original region attr invalid: %s", original.get_type_str());
-    assert(_dest[original.type()].is_valid_gen(),
-           "Dest region attr is invalid: %s", _dest[original.type()].get_type_str());
-    return _dest[original.type()];
-  }
 
   size_t _num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;

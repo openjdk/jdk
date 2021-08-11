@@ -49,6 +49,19 @@ package gc.stringdedup;
  * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Shenandoah
  */
 
+/*
+ * @test TestStringDeduplicationPrintOptions
+ * @summary Test string deduplication print options
+ * @bug 8029075
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Z
+ */
+
 public class TestStringDeduplicationPrintOptions {
     public static void main(String[] args) throws Exception {
         TestStringDeduplicationTools.selectGC(args);

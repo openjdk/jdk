@@ -49,6 +49,19 @@ package gc.stringdedup;
  * @run driver gc.stringdedup.TestStringDeduplicationFullGC Shenandoah
  */
 
+/*
+ * @test TestStringDeduplicationFullGC
+ * @summary Test string deduplication during full GC
+ * @bug 8029075
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationFullGC Z
+ */
+
 public class TestStringDeduplicationFullGC {
     public static void main(String[] args) throws Exception {
         TestStringDeduplicationTools.selectGC(args);
