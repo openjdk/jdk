@@ -691,7 +691,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         *  ByteBuffer wrapper for intrinsic implGCMCrypt.  It will operation
+         *  ByteBuffer wrapper for intrinsic implGCMCrypt.  It will operate
          *  on 768 byte blocks and let the calling method operate on smaller
          *  sizes.
          */
@@ -1641,16 +1641,6 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
             }
 
-            // Finish off the operation
-            if (inLen >= PARALLEL_LEN) {
-                resultLen = GaloisCounterMode.implGCMCrypt(in, inOfs, inLen, in,
-                    inOfs, out, outOfs, gctr, ghash);
-                inOfs += resultLen;
-                inLen -= resultLen;
-                outOfs += resultLen;
-                len += resultLen;
-            }
-
             return len + op.doFinal(in, inOfs, inLen, out, outOfs);
         }
     }
@@ -1737,10 +1727,10 @@ abstract class GaloisCounterMode extends CipherSpi {
         @Override
         public int doFinal(ByteBuffer src, ByteBuffer dst) {
             dst.mark();
-            int l = gctr.doFinal(src, dst);
+            int len = gctr.doFinal(src, dst);
             dst.reset();
-            ghash.doFinal(dst, l);
-            return l;
+            ghash.doFinal(dst, len);
+            return len;
         }
     }
 
@@ -1783,8 +1773,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                            int outOfs) {
             int len = 0;
             if (inLen >= PARALLEL_LEN) {
-                implGCMCrypt(in, inOfs, inLen, in, inOfs, out, outOfs, gctr,
-                    ghash);
+                len += implGCMCrypt(in, inOfs, inLen, in, inOfs, out, outOfs,
+                    gctr, ghash);
             }
             ghash.doFinal(in, inOfs + len, inLen - len);
             return len + gctr.doFinal(in, inOfs + len, inLen - len, out,
