@@ -186,7 +186,7 @@ class CompileBroker: AllStatic {
 
   static PerfCounter* _perf_total_bailout_count;
   static PerfCounter* _perf_total_invalidated_count;
-  static PerfCounter* _perf_total_compile_count;  
+  static PerfCounter* _perf_total_compile_count;
   static PerfCounter* _perf_total_osr_compile_count;
   static PerfCounter* _perf_total_standard_compile_count;
 
