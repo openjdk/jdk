@@ -136,13 +136,6 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  Symbol* slot_at(int which) const;
-
-  void slot_at_put(int which, Symbol* s) const {
-    assert(is_within_bounds(which), "index out of bounds");
-    assert(s != 0, "Caught something");
-    *(intptr_t*)&base()[which] = (intptr_t)s;
-  }
   intptr_t* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     return (intptr_t*) &base()[which];
@@ -327,8 +320,9 @@ class ConstantPool : public Metadata {
   }
 
   void unresolved_string_at_put(int which, Symbol* s) {
-    release_tag_at_put(which, JVM_CONSTANT_String);
-    slot_at_put(which, s);
+    assert(s->refcount() != 0, "should have nonzero refcount");
+    tag_at_put(which, JVM_CONSTANT_String);
+    *symbol_at_addr(which) = s;
   }
 
   void int_at_put(int which, jint i) {
@@ -481,8 +475,7 @@ class ConstantPool : public Metadata {
 
   Symbol* unresolved_string_at(int which) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = slot_at(which);
-    return sym;
+    return *symbol_at_addr(which);
   }
 
   // Returns an UTF8 for a CONSTANT_String entry at a given index.
