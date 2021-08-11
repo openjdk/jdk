@@ -75,7 +75,7 @@ public class CharAt {
 
             try {
                 sbufUtf16.charAt(index);
-                fail("StringBuffer.charAt index: " + i + " does not throw IOOBE as expected (UTF-16)");
+                fail("StringBuffer.charAt index: " + index + " does not throw IOOBE as expected (UTF-16)");
             } catch (IndexOutOfBoundsException ex) {
                 // OK
             }
