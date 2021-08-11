@@ -40,6 +40,19 @@ package gc.stringdedup;
  * @test TestStringDeduplicationInterned
  * @summary Test string deduplication of interned strings
  * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned Parallel
+ */
+
+/*
+ * @test TestStringDeduplicationInterned
+ * @summary Test string deduplication of interned strings
+ * @bug 8029075
  * @requires vm.gc.Z
  * @library /test/lib
  * @library /

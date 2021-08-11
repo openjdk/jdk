@@ -31,6 +31,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
@@ -108,6 +109,17 @@ inline void ParCompactionManager::mark_and_push(T* p) {
 
     if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
       push(obj);
+
+      if (StringDedup::is_enabled() && java_lang_String::is_instance_inlined(obj) &&
+          psStringDedup::is_candidate_from_mark(obj)) {
+        // Evacuation of objects to old gen may fail and part of the young space is compacted within
+        // the space itself. In this case, we can have strings with age below the threshold deduplicated
+        // without being evacuated to the old gen. We rely on test_and_set_deduplication_requested
+        // to prevent multiple deduplication of such strings.
+        if (!java_lang_String::test_and_set_deduplication_requested(obj)) {
+          _string_dedup_requests.add(obj);
+        }
+      }
     }
   }
 }

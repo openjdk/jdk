@@ -107,6 +107,12 @@ void ParCompactionManager::reset_all_bitmap_query_caches() {
   }
 }
 
+void ParCompactionManager::flush_all_string_dedup_requests() {
+  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().total_workers();
+  for (uint i=0; i<=parallel_gc_threads; i++) {
+    _manager_array[i]->flush_string_dedup_requests();
+  }
+}
 
 ParCompactionManager*
 ParCompactionManager::gc_thread_compaction_manager(uint index) {
