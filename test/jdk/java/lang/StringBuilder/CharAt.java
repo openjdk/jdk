@@ -45,19 +45,37 @@ public class CharAt {
     public void charAtIIOBE() {
         StringBuilder sb = new StringBuilder("test");
         StringBuffer sbuf = new StringBuffer("test");
+
+        StringBuilder sbUtf16 = new StringBuilder("\uFF34est"); // Fullwidth Latin Capital Letter T
+        StringBuffer sbufUtf16 = new StringBuffer("\uFF34est");
+
         List<Integer> outOfBoundsIndices = List.of(Integer.MIN_VALUE, -2, -1, 4, 5, Integer.MAX_VALUE);
 
-        for (int i : outOfBoundsIndices) {
+        for (int index : outOfBoundsIndices) {
             try {
-                sb.charAt(i);
-                fail("StringBuilder.charAt index: " + i + " does not throw IOOBE as expected");
+                sb.charAt(index);
+                fail("StringBuilder.charAt index: " + index + " does not throw IOOBE as expected");
             } catch (IndexOutOfBoundsException ex) {
                 // OK
             }
 
             try {
-                sbuf.charAt(i);
-                fail("StringBuffer.charAt index: " + i + " does not throw IOOBE as expected");
+                sbUtf16.charAt(index);
+                fail("StringBuilder.charAt index: " + index + " does not throw IOOBE as expected (UTF-16)");
+            } catch (IndexOutOfBoundsException ex) {
+                // OK
+            }
+
+            try {
+                sbuf.charAt(index);
+                fail("StringBuffer.charAt index: " + index + " does not throw IOOBE as expected");
+            } catch (IndexOutOfBoundsException ex) {
+                // OK
+            }
+
+            try {
+                sbufUtf16.charAt(index);
+                fail("StringBuilder.charAt index: " + i + " does not throw IOOBE as expected (UTF-16)");
             } catch (IndexOutOfBoundsException ex) {
                 // OK
             }
