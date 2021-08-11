@@ -138,7 +138,7 @@ public class Versions {
             String target = st.target();
             boolean dotOne = st.dotOne();
             check_source_target(dotOne, List.of(classFileVer, target, target));
-            for (int j = i; j > 0; j--) {
+            for (int j = i - 1; j >= 0; j--) {
                 String source = sourceTargets[j].target();
                 check_source_target(dotOne, List.of(classFileVer, source, target));
             }
@@ -157,7 +157,7 @@ public class Versions {
                 st.checksrc(this, List.of("-source 1." + st.target(), "-target 1." + st.target()));
             }
 
-            if (i == sourceTargets.length) {
+            if (i == sourceTargets.length - 1) {
                 // Can use -target without -source setting only for
                 // most recent target since the most recent source is
                 // the default.

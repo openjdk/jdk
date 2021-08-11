@@ -1295,7 +1295,7 @@ public:
   };
 };
 
- bool is_CAS(int opcode, bool maybe_volatile);
+  bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
 
@@ -2161,7 +2161,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
-          if (cbuf) {
+        if (is64) {
             __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
@@ -2591,6 +2591,14 @@ uint Matcher::int_pressure_limit()
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
   uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  if (!PreserveFramePointer) {
+    // When PreserveFramePointer is off, frame pointer is allocatable,
+    // but different from other SOC registers, it is excluded from
+    // fatproj's mask because its save type is No-Save. Decrease 1 to
+    // ensure high pressure at fatproj when PreserveFramePointer is off.
+    // See check_pressure_at_fatproj().
+    default_int_pressure_threshold--;
+  }
   return (INTPRESSURE == -1) ? default_int_pressure_threshold : INTPRESSURE;
 }
 
@@ -14975,12 +14983,12 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->get_long()
             < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL base);
+  effect(TEMP temp, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}

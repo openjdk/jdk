@@ -268,24 +268,16 @@ static const TypeFunc* clone_type() {
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
+  const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
 
-  if (ac->is_clone_array()) {
-    const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
-    BasicType bt;
-    if (ary_ptr == NULL) {
-      // ary_ptr can be null iff we are running with StressReflectiveCode
-      // This code will be unreachable
-      assert(StressReflectiveCode, "Guard against surprises");
-      bt = T_LONG;
+  if (ac->is_clone_array() && ary_ptr != NULL) {
+    BasicType bt = ary_ptr->elem()->array_element_basic_type();
+    if (is_reference_type(bt)) {
+      // Clone object array
+      bt = T_OBJECT;
     } else {
-      bt = ary_ptr->elem()->array_element_basic_type();
-      if (is_reference_type(bt)) {
-        // Clone object array
-        bt = T_OBJECT;
-      } else {
-        // Clone primitive array
-        bt = T_LONG;
-      }
+      // Clone primitive array
+      bt = T_LONG;
     }
 
     Node* ctrl = ac->in(TypeFunc::Control);
@@ -296,6 +288,21 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
     Node* length = ac->in(ArrayCopyNode::Length);
 
+    if (bt == T_OBJECT) {
+      // BarrierSetC2::clone sets the offsets via BarrierSetC2::arraycopy_payload_base_offset
+      // which 8-byte aligns them to allow for word size copies. Make sure the offsets point
+      // to the first element in the array when cloning object arrays. Otherwise, load
+      // barriers are applied to parts of the header. Also adjust the length accordingly.
+      assert(src_offset == dest_offset, "should be equal");
+      jlong offset = src_offset->get_long();
+      if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
+        assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
+        assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
+        length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
+        src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+        dest_offset = src_offset;
+      }
+    }
     Node* payload_src = phase->basic_plus_adr(src, src_offset);
     Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
@@ -318,12 +325,11 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const dst        = ac->in(ArrayCopyNode::Dest);
   Node* const size       = ac->in(ArrayCopyNode::Length);
 
-  assert(ac->is_clone_inst(), "Sanity check");
   assert(size->bottom_type()->is_long(), "Should be long");
 
   // The native clone we are calling here expects the instance size in words
   // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(false) >> LogBytesPerLong);
+  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
 
   Node* const call = phase->make_leaf_call(ctrl,

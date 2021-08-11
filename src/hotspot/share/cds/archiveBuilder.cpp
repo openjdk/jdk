@@ -161,9 +161,6 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _num_instance_klasses(0),
-  _num_obj_array_klasses(0),
-  _num_type_array_klasses(0),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
@@ -222,14 +219,6 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     assert(klass->is_klass(), "must be");
     if (!is_excluded(klass)) {
       _klasses->append(klass);
-      if (klass->is_instance_klass()) {
-        _num_instance_klasses ++;
-      } else if (klass->is_objArray_klass()) {
-        _num_obj_array_klasses ++;
-      } else {
-        assert(klass->is_typeArray_klass(), "sanity");
-        _num_type_array_klasses ++;
-      }
     }
     // See RunTimeClassInfo::get_for()
     _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
@@ -257,12 +246,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   }
 #endif
   doit.finish();
-
-  log_info(cds)("Number of classes %d", _num_instance_klasses + _num_obj_array_klasses + _num_type_array_klasses);
-  log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
-  log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
-  log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
-  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -731,31 +714,85 @@ void ArchiveBuilder::relocate_vm_classes() {
 }
 
 void ArchiveBuilder::make_klasses_shareable() {
+  int num_instance_klasses = 0;
+  int num_boot_klasses = 0;
+  int num_platform_klasses = 0;
+  int num_app_klasses = 0;
+  int num_hidden_klasses = 0;
+  int num_unlinked_klasses = 0;
+  int num_unregistered_klasses = 0;
+  int num_obj_array_klasses = 0;
+  int num_type_array_klasses = 0;
+
   for (int i = 0; i < klasses()->length(); i++) {
+    const char* type;
+    const char* unlinked = "";
+    const char* hidden = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
+      num_obj_array_klasses ++;
+      type = "array";
     } else if (k->is_typeArray_klass()) {
+      num_type_array_klasses ++;
+      type = "array";
       k->remove_unshareable_info();
     } else {
       assert(k->is_instance_klass(), " must be");
+      num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (DynamicDumpSharedSpaces) {
         // For static dump, class loader type are already set.
         ik->assign_class_loader_type();
       }
+      if (ik->is_shared_boot_class()) {
+        type = "boot";
+        num_boot_klasses ++;
+      } else if (ik->is_shared_platform_class()) {
+        type = "plat";
+        num_platform_klasses ++;
+      } else if (ik->is_shared_app_class()) {
+        type = "app";
+        num_app_klasses ++;
+      } else {
+        assert(ik->is_shared_unregistered_class(), "must be");
+        type = "unreg";
+        num_unregistered_klasses ++;
+      }
+
+      if (!ik->is_linked()) {
+        num_unlinked_klasses ++;
+        unlinked = " ** unlinked";
+      }
+
+      if (ik->is_hidden()) {
+        num_hidden_klasses ++;
+        hidden = " ** hidden";
+      }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
+    }
 
-      if (log_is_enabled(Debug, cds, class)) {
-        ResourceMark rm;
-        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_requested(ik)), ik->external_name());
-      }
+    if (log_is_enabled(Debug, cds, class)) {
+      ResourceMark rm;
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s", i, p2i(to_requested(k)), type, k->external_name(), hidden, unlinked);
     }
   }
+
+  log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
+  log_info(cds)("    instance classes   = %5d", num_instance_klasses);
+  log_info(cds)("      boot             = %5d", num_boot_klasses);
+  log_info(cds)("      app              = %5d", num_app_klasses);
+  log_info(cds)("      platform         = %5d", num_platform_klasses);
+  log_info(cds)("      unregistered     = %5d", num_unregistered_klasses);
+  log_info(cds)("      (hidden)         = %5d", num_hidden_klasses);
+  log_info(cds)("      (unlinked)       = %5d", num_unlinked_klasses);
+  log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
+  log_info(cds)("    type array classes = %5d", num_type_array_klasses);
+  log_info(cds)("               symbols = %5d", _symbols->length());
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
@@ -1080,16 +1117,16 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                               bitmap_size_in_bytes);
 
   if (closed_heap_regions != NULL) {
-    _total_closed_heap_region_size = mapinfo->write_archive_heap_regions(
+    _total_closed_heap_region_size = mapinfo->write_heap_regions(
                                         closed_heap_regions,
                                         closed_heap_oopmaps,
-                                        MetaspaceShared::first_closed_archive_heap_region,
-                                        MetaspaceShared::max_closed_archive_heap_region);
-    _total_open_heap_region_size = mapinfo->write_archive_heap_regions(
+                                        MetaspaceShared::first_closed_heap_region,
+                                        MetaspaceShared::max_closed_heap_region);
+    _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
                                         open_heap_oopmaps,
-                                        MetaspaceShared::first_open_archive_heap_region,
-                                        MetaspaceShared::max_open_archive_heap_region);
+                                        MetaspaceShared::first_open_heap_region,
+                                        MetaspaceShared::max_open_heap_region);
   }
 
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);
@@ -1155,12 +1192,12 @@ void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
                  size, size/double(total_size)*100.0, size);
 }
 
-void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion>* regions,
                                              const char *name, size_t total_size) {
-  int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
+  int arr_len = regions == NULL ? 0 : regions->length();
   for (int i = 0; i < arr_len; i++) {
-      char* start = (char*)heap_mem->at(i).start();
-      size_t size = heap_mem->at(i).byte_size();
+      char* start = (char*)regions->at(i).start();
+      size_t size = regions->at(i).byte_size();
       char* top = start + size;
       log_debug(cds)("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                      name, i, size, size/double(total_size)*100.0, size, p2i(start));

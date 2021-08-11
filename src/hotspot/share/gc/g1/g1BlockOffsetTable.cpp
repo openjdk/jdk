@@ -75,7 +75,6 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 
 G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
   _next_offset_threshold(NULL),
-  _next_offset_index(0),
   DEBUG_ONLY(_object_can_span(false) COMMA)
   _bot(array),
   _hr(hr)
@@ -236,7 +235,6 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
          "next_boundary is beyond the end of the covered region "
          " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
          p2i(next_boundary), p2i(_bot->_reserved.end()));
-  if (addr >= _hr->top()) return _hr->top();
   while (next_boundary < addr) {
     while (n <= next_boundary) {
       q = n;
@@ -246,7 +244,7 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
     }
     assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
     // [q, n) is the block that crosses the boundary.
-    alloc_block_work(&next_boundary, &next_index, q, n);
+    alloc_block_work(&next_boundary, q, n);
   }
   return forward_to_block_containing_addr_const(q, n, addr);
 }
@@ -261,11 +259,11 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
 //       ( ^    ]
 //         block-start
 //
-void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* index_,
-                                              HeapWord* blk_start, HeapWord* blk_end) {
+void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* blk_start,
+                                              HeapWord* blk_end) {
   // For efficiency, do copy-in/copy-out.
   HeapWord* threshold = *threshold_;
-  size_t    index = *index_;
+  size_t    index =  _bot->index_for_raw(threshold);
 
   assert(blk_start != NULL && blk_end > blk_start,
          "phantom block");
@@ -283,8 +281,8 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
   DEBUG_ONLY(size_t orig_index = index;)
 
   // Mark the card that holds the offset into the block.  Note
-  // that _next_offset_index and _next_offset_threshold are not
-  // updated until the end of this method.
+  // that _next_offset_threshold is not updated until the end
+  // of this method.
   _bot->set_offset_array(index, threshold, blk_start);
 
   // We need to now mark the subsequent cards that this blk spans.
@@ -307,9 +305,7 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
   threshold = _bot->address_for_index(end_index) + BOTConstants::N_words;
   assert(threshold >= blk_end, "Incorrect offset threshold");
 
-  // index_ and threshold_ updated here.
   *threshold_ = threshold;
-  *index_ = index;
 
 #ifdef ASSERT
   // The offset can be 0 if the block starts on a boundary.  That
@@ -341,7 +337,8 @@ void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
   // Do not verify beyond the BOT allocation threshold.
-  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), _next_offset_index - 1);
+  size_t next_offset_index = _bot->index_for_raw(_next_offset_threshold);
+  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), next_offset_index - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);
@@ -398,15 +395,13 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
                   (uint) _bot->offset_array(i));
   }
   out->print_cr("  next offset threshold: " PTR_FORMAT, p2i(_next_offset_threshold));
-  out->print_cr("  next offset index:     " SIZE_FORMAT, _next_offset_index);
 }
 #endif // !PRODUCT
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
-  _next_offset_index = _bot->index_for_raw(_hr->bottom());
-  _next_offset_index++;
+  size_t next_offset_index = _bot->index_for_raw(_hr->bottom()) + 1;
   _next_offset_threshold =
-    _bot->address_for_index_raw(_next_offset_index);
+    _bot->address_for_index_raw(next_offset_index);
   return _next_offset_threshold;
 }
 
@@ -418,10 +413,9 @@ void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
 }
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
-  _next_offset_index = _bot->index_for(_hr->bottom());
-  _next_offset_index++;
+  size_t next_offset_index = _bot->index_for(_hr->bottom()) + 1 ;
   _next_offset_threshold =
-    _bot->address_for_index(_next_offset_index);
+    _bot->address_for_index(next_offset_index);
   return _next_offset_threshold;
 }
 

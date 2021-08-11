@@ -205,9 +205,6 @@ private:
   GrowableArray<SpecialRefInfo>* _special_refs;
 
   // statistics
-  int _num_instance_klasses;
-  int _num_obj_array_klasses;
-  int _num_type_array_klasses;
   DumpAllocStats _alloc_stats;
   size_t _total_closed_heap_region_size;
   size_t _total_open_heap_region_size;
@@ -216,7 +213,7 @@ private:
                           GrowableArray<MemRegion>* closed_heap_regions,
                           GrowableArray<MemRegion>* open_heap_regions);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+  void print_heap_region_stats(GrowableArray<MemRegion>* regions,
                                const char *name, size_t total_size);
 
   // For global access.

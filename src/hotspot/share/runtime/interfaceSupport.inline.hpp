@@ -239,12 +239,14 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
 // SafepointMechanism::process_if_requested when returning to the VM. This allows us
 // to perform an "undo" action if we might block processing a safepoint/handshake operation
 // (such as thread suspension).
-template <typename PRE_PROC>
+template <typename PRE_PROC = void(JavaThread*)>
 class ThreadBlockInVMPreprocess : public ThreadStateTransition {
  private:
   PRE_PROC& _pr;
+  bool _allow_suspend;
  public:
-  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr) : ThreadStateTransition(thread), _pr(pr) {
+  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr = emptyOp, bool allow_suspend = false)
+    : ThreadStateTransition(thread), _pr(pr), _allow_suspend(allow_suspend) {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
@@ -257,40 +259,19 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     // Change to transition state and ensure it is seen by the VM thread.
     _thread->set_thread_state_fence(_thread_blocked_trans);
 
-    if (SafepointMechanism::should_process(_thread)) {
+    if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
     }
 
     _thread->set_thread_state(_thread_in_vm);
   }
+
+  static void emptyOp(JavaThread* current) {}
 };
 
-class InFlightMutexRelease {
- private:
-  Mutex** _in_flight_mutex_addr;
- public:
-  InFlightMutexRelease(Mutex** in_flight_mutex_addr) : _in_flight_mutex_addr(in_flight_mutex_addr) {}
-  void operator()(JavaThread* current) {
-    if (_in_flight_mutex_addr != NULL && *_in_flight_mutex_addr != NULL) {
-      (*_in_flight_mutex_addr)->release_for_safepoint();
-      *_in_flight_mutex_addr = NULL;
-    }
-  }
-};
+typedef ThreadBlockInVMPreprocess<> ThreadBlockInVM;
 
-// Parameter in_flight_mutex_addr is only used by class Mutex to avoid certain deadlock
-// scenarios while making transitions that might block for a safepoint or handshake.
-// It's the address of a pointer to the mutex we are trying to acquire. This will be used to
-// access and release said mutex when transitioning back from blocked to vm (destructor) in
-// case we need to stop for a safepoint or handshake.
-class ThreadBlockInVM {
-  InFlightMutexRelease _ifmr;
-  ThreadBlockInVMPreprocess<InFlightMutexRelease> _tbivmpp;
- public:
-  ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
-    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr) {}
-};
 
 // Debug class instantiated in JRT_ENTRY macro.
 // Can be used to verify properties on enter/exit of the VM.

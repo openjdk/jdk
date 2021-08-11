@@ -27,17 +27,31 @@ package gc.stringdedup;
  * @test TestStringDeduplicationInterned
  * @summary Test string deduplication of interned strings
  * @bug 8029075
- * @requires vm.gc == "null" | vm.gc == "G1"
+ * @requires vm.gc.G1
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationInterned
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned G1
+ */
+
+/*
+ * @test TestStringDeduplicationInterned
+ * @summary Test string deduplication of interned strings
+ * @bug 8029075
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned Z
  */
 
 public class TestStringDeduplicationInterned {
     public static void main(String[] args) throws Exception {
+        TestStringDeduplicationTools.selectGC(args);
         TestStringDeduplicationTools.testInterned();
     }
 }
