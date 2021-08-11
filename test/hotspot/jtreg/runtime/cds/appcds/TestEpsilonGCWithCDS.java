@@ -25,7 +25,6 @@
  * @test Loading CDS archived heap objects into EpsilonGC
  * @bug 8234679
  * @requires vm.cds
- * @requires vm.bits == 64
  * @requires vm.gc.Epsilon
  * @requires vm.gc.G1
  *

@@ -147,9 +147,9 @@ class HeapShared: AllStatic {
 public:
   // At runtime, heap regions in the CDS archive can be used in two different ways,
   // depending on the GC type:
-  // - Mapped: (G1 only) the regions are directly mapped into the heap
+  // - Mapped: (G1 only) the regions are directly mapped into the Java heap
   // - Loaded: At VM start-up, the objects in the heap regions are copied into the
-  //           heap's old generation. This is easier to implement than mapping but
+  //           Java heap. This is easier to implement than mapping but
   //           slightly less efficient, as the embedded pointers need to be relocated.
   static bool can_use() { return can_map() || can_load(); }
 
