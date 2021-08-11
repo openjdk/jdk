@@ -36,24 +36,23 @@ import java.util.Random;
 
 public class TransferOverlappedFileChannel {
 
-    private static File file;
-    private static FileChannel channel;
-
     public static void main(String[] args) throws Exception {
-        file = File.createTempFile("readingin", null);
+        File file = File.createTempFile("readingin", null);
         file.deleteOnExit();
         generateBigFile(file);
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
-        channel = raf.getChannel();
-        transferToNoOverlap();
-        transferToOverlap();
-        transferFromNoOverlap();
-        transferFromOverlap();
-        channel.close();
-        file.delete();
+        try (FileChannel channel = raf.getChannel()) {
+            transferToNoOverlap(file, channel);
+            transferToOverlap(file, channel);
+            transferFromNoOverlap(file, channel);
+            transferFromOverlap(file, channel);
+        } finally {
+            file.delete();
+        }
     }
 
-    private static void transferToNoOverlap() throws IOException {
+    private static void transferToNoOverlap(File file, FileChannel channel)
+        throws IOException {
         final long length = file.length();
 
         // position at three quarters
@@ -65,7 +64,8 @@ public class TransferOverlappedFileChannel {
         System.out.println("transferToNoOverlap: OK");
     }
 
-    private static void transferToOverlap() throws IOException {
+    private static void transferToOverlap(File file, FileChannel channel)
+        throws IOException {
         final long length = file.length();
 
         // position at half
@@ -77,7 +77,8 @@ public class TransferOverlappedFileChannel {
         System.out.println("transferToOverlap: OK");
     }
 
-    private static void transferFromNoOverlap() throws IOException {
+    private static void transferFromNoOverlap(File file, FileChannel channel)
+        throws IOException {
         final long length = file.length();
 
         // position at three quarters
@@ -89,7 +90,8 @@ public class TransferOverlappedFileChannel {
         System.out.println("transferFromNoOverlap: OK");
     }
 
-    private static void transferFromOverlap() throws IOException {
+    private static void transferFromOverlap(File file, FileChannel channel)
+        throws IOException {
         final long length = file.length();
 
         // position at half
@@ -101,16 +103,16 @@ public class TransferOverlappedFileChannel {
         System.out.println("transferFromOverlap: OK");
     }
 
-    static void generateBigFile(File file) throws Exception {
-        OutputStream out = new BufferedOutputStream(
-                new FileOutputStream(file));
-        byte[] randomBytes = new byte[1024];
-        Random rand = new Random(0);
-        rand.nextBytes(randomBytes);
-        for (int i = 0; i < 1024; i++) {
-            out.write(randomBytes);
+    private static void generateBigFile(File file) throws Exception {
+        try (OutputStream out = new BufferedOutputStream(
+                new FileOutputStream(file))) {
+            byte[] randomBytes = new byte[1024];
+            Random rand = new Random(0);
+            rand.nextBytes(randomBytes);
+            for (int i = 0; i < 1024; i++) {
+                out.write(randomBytes);
+            }
+            out.flush();
         }
-        out.flush();
-        out.close();
     }
 }
