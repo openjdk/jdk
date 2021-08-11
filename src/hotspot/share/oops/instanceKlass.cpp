@@ -1109,7 +1109,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       CLEAR_PENDING_EXCEPTION; // ignore any OOM here.
 
       stringStream ss;
-      ss.print("Cound not initialize class %s", external_name());
+      ss.print("Could not initialize class %s", external_name());
       if (cause.is_null()) {
         THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
       } else {
