@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          java.base/jdk.internal.vm
+ * @ignore
  * @compile nestedSameRetW.jasm
  * @run main/othervm -Xverify:all NestedSameRetWTest
  */

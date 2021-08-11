@@ -37,15 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TryfinallyNestedTest {
 	public static void main(String[] args) throws Throwable {
-		//TestPatch.test("tryfinallyNested", "Try!\nNested Try!\nFinally!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("TryfinallyNestedTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Try!\nNested Try!\nFinally!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("tryfinallyNested");
-        }
+		ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("tryfinallyNested");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Try!\nNested Try!\nFinally!");
+        output.shouldHaveExitValue(0);
 	}
 }

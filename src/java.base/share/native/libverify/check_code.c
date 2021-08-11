@@ -3163,8 +3163,9 @@ merge_into_one_successor(context_type *context,
             for (i = new_mask_count; --i >= 0; )
                 if (new_masks[i].entry == called_instruction)
                     break;
-            if (i < 0)
+            if (i < 0) {
                 CCerror(context, "Illegal return from subroutine");
+            }
             /* pop the masks down to the indicated one.  Remember the mask
              * we're popping off. */
             return_mask = new_masks[i].modifies;

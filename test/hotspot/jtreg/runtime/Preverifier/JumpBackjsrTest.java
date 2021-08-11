@@ -38,14 +38,18 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class JumpBackjsrTest {
 	public static void main(String[] args) throws Throwable {
 		//TestPatch.test("jumpBackjsr", "Hello world!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("JumpBackjsrTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Hello world!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("jumpBackjsr");
-        }
+        // if (args.length != 0) {
+        //     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("JumpBackjsrTest", "test");
+        //     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        //     output.shouldContain("Hello world!");
+        //     output.shouldHaveExitValue(0);
+        // }
+        // else {
+        //     Class<?> newClass = Class.forName("jumpBackjsr");
+        // }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("jumpBackjsr");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello world!");
+        output.shouldHaveExitValue(0);
 	}
 }

@@ -37,15 +37,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TryfinallyTest {
 	public static void main(String[] args) throws Throwable {
-		//TestPatch.test("tryfinally", "");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("TryfinallyTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            //output.shouldContain("Hello\nHello\nWorld!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("tryfinally");
-        }
+		ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("tryfinally");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
 	}
 }

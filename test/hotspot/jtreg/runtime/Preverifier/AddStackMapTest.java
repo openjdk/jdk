@@ -37,15 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class AddStackMapTest {
     public static void main(String[] args) throws Throwable {
-        //TestPatch.test("addStackMap", "Hello world!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("AddStackMapTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Hello world!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("addStackMap");
-        }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("addStackMap");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello world!");
+        output.shouldHaveExitValue(0);
     }
 }

@@ -60,7 +60,7 @@ public class Preverifier extends ClassVisitor {
         ClassReader cr;
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
-		SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+		SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES);// | ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
         	throw new InternalError("Classfile not parsed correctly");
@@ -103,6 +103,10 @@ public class Preverifier extends ClassVisitor {
 		}
 	}
 
+	public void checkStackSize() {
+		System.out.println("Verifying stack size");
+	}
+
 	/**
 	 * Replaces JST and RET opcodes in the class file
 	 * @param bytecode byte array containing the contents of the class file
@@ -136,7 +140,9 @@ public class Preverifier extends ClassVisitor {
 			// Map for cloning instructions
 			Map<LabelNode, LabelNode> cloneMap = cloneLabels(inList);
 			// Maps a RET instruction to the label it must return to once converted to GOTO instruction
-			HashMap<AbstractInsnNode, LabelNode> retLabelMap = new HashMap<>();				
+			HashMap<AbstractInsnNode, LabelNode> retLabelMap = new HashMap<>();
+			// Find initial stack size
+			int initMaxStack = mn.maxStack;				
 			do {
 				log("Method name: " + mn.name + " Instructions: " + inList.size(), shouldPrint); 				
 				for (int i = 0; i < inList.size(); i++) {
@@ -177,9 +183,15 @@ public class Preverifier extends ClassVisitor {
 									// Push null to stack to replicate JSR pushing address
 									newInst.add(new InsnNode(Opcodes.ACONST_NULL));
 									LabelNode nestedLb = ((JumpInsnNode)n).label;
-									for (AbstractInsnNode m = inList.get(inList.indexOf(nestedLb)+1); m.getOpcode() != Opcodes.RET; m=m.getNext()) {
-										log("Insn: " + m.getOpcode(), shouldPrint);
-										newInst.add(m.clone(cloneMap));
+									for (int j = inList.indexOf(nestedLb); j < inList.size(); j++) {
+										newInst.add(inList.get(j).clone(cloneMap));
+										if (inList.get(j).getOpcode() == Opcodes.RET) {
+											log("Found matching nested RET", shouldPrint);
+											if (retLabelMap.containsKey(inList.get(j))) {
+												log("Recursive subroutine", shouldPrint);
+												throw new ClassFormatError("Recursive JSR call");
+											}
+										}
 									}
 								}
 								else {
@@ -206,7 +218,7 @@ public class Preverifier extends ClassVisitor {
 							continueScanning = true; // Matching JSR may be above RET
 						}
 						else if (!retLabelMap.containsKey(inList.get(i)) && (timesScanned > 0)) {
-							throw new VerifyError("RET has no matching JSR");
+							throw new ClassFormatError("RET has no matching JSR");
 						}
 						else {
 							continueScanning = false; 

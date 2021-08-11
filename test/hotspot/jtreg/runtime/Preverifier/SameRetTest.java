@@ -37,15 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class SameRetTest {
 	public static void main(String[] args) throws Throwable {
-		//TestPatch.test("sameRet", "Hello\nHello\nWorld!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("SameRetTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Hello\nHello\nWorld!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("sameRet");
-        }
+		ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("sameRet");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello\nHello\nWorld!");
+        output.shouldHaveExitValue(0);
 	}
 }

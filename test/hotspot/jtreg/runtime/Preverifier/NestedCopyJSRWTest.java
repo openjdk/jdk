@@ -37,15 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class NestedCopyJSRWTest {
     public static void main(String[] args) throws Throwable {
-        //TestPatch.test("nestedCopyJSRW", "Not done yet!\nHello world!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("NestedCopyJSRWTest", "test");
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("nestedCopyJSRW");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldContain("Not done yet!\nHello world!");
             output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("nestedCopyJSRW");
-        }
     }
 }

@@ -37,15 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
             
 public class NestedJSRTest {
 	public static void main(String[] args) throws Throwable {
-		//TestPatch.test("nestedJSR", "Not done yet!\nHello world!");
-        if (args.length != 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("NestedJSRTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Not done yet!\nHello world!");
-            output.shouldHaveExitValue(0);
-        }
-        else {
-            Class<?> newClass = Class.forName("nestedJSR");
-        }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("nestedJSR");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Not done yet!\nHello world!");
+        output.shouldHaveExitValue(0);
 	}
 }
