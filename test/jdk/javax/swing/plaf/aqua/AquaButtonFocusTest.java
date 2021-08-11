@@ -24,11 +24,10 @@
 /*
  * @test
  * @requires (os.family == "mac")
- * @key headless
  * @bug 8269951
  * @summary Test checks that focus is painted on JButton even
  *          when borders turned off
- * @library ../../../regtesthelpers
+ * @library ../../regtesthelpers
  * @build Util
  * @run main AquaButtonFocusTest
  */
