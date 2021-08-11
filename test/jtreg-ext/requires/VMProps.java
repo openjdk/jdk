@@ -121,7 +121,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         vmGC(map); // vm.gc.X = true/false
-        vmGCforCDS(map);
+        vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
 
         dump(map.map);
@@ -301,6 +301,12 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGCforCDS(SafeMap map) {
+        if (!GC.isSelectedErgonomically()) {
+            // The GC has been explicitly specified on the command line, so
+            // jtreg will set the "vm.gc" property. Let's not interfere with it.
+            return;
+        }
+
         String GC_PREFIX  = "-XX:+Use";
         String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
