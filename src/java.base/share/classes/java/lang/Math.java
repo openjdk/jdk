@@ -1394,7 +1394,7 @@ public final class Math {
     public static int floorMod(int x, int y) {
         int mod = x % y;
         // if the signs are different and modulo not zero, adjust result
-        if ((mod ^ y) < 0 && mod != 0) {
+        if ((x ^ y) < 0 && mod != 0) {
             mod += y;
         }
         return mod;

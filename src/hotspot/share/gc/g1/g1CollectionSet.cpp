@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,13 +458,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 }
 
 static int compare_region_idx(const uint a, const uint b) {
-  if (a > b) {
-    return 1;
-  } else if (a == b) {
-    return 0;
-  } else {
-    return -1;
-  }
+  return static_cast<int>(a-b);
 }
 
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {

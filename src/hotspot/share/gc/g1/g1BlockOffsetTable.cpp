@@ -235,7 +235,6 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
          "next_boundary is beyond the end of the covered region "
          " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
          p2i(next_boundary), p2i(_bot->_reserved.end()));
-  if (addr >= _hr->top()) return _hr->top();
   while (next_boundary < addr) {
     while (n <= next_boundary) {
       q = n;
