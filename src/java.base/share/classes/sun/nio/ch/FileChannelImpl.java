@@ -586,13 +586,11 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED;
 
         if (target == this) {
-            synchronized (positionLock) {
-                long posThis = position();
-                if (posThis - count + 1 <= position &&
-                    position - count + 1 <= posThis &&
-                    !nd.canTransferToFromOverlappedMap()) {
-                    return IOStatus.UNSUPPORTED_CASE;
-                }
+            long posThis = position();
+            if (posThis - count + 1 <= position &&
+                position - count + 1 <= posThis &&
+                !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
             }
         }
 
@@ -799,8 +797,8 @@ public class FileChannelImpl
         if (position > size())
             return 0;
 
-        if (src instanceof FileChannelImpl) {
-            long n = transferFromFileChannel((FileChannelImpl)src, position, count);
+        if (src instanceof FileChannelImpl fci) {
+            long n = transferFromFileChannel(fci, position, count);
             if (n >= 0)
                 return n;
         }
