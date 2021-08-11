@@ -326,6 +326,14 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
+    protected void paintFocus(Graphics g, AbstractButton b,
+                              Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
+        final Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            ((AquaButtonBorder)border).paintButton(b, g, 0, 0, b.getWidth(), b.getHeight());
+        }
+    }
+
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
         // re-initialize the view rect to the selected insets
         viewRect.x = i.left;
