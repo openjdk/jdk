@@ -28,7 +28,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/quickSort.hpp"
 
 // Use AbstractRegister as shortcut
 class AbstractRegisterImpl;
@@ -64,13 +63,12 @@ const type name = ((type)value)
 template<typename R, typename... Rx>
 inline void assert_different_registers(R first_register, Rx... more_registers) {
 #ifdef ASSERT
-  R regs[] = { first_register, more_registers... };
-  // Sort regs, so any equal entries are adjacent.
-  struct Compare { ptrdiff_t operator()(R x, R y) const { return x - y; } };
-  QuickSort::sort(regs, ARRAY_SIZE(regs), Compare(), false);
+  const R regs[] = { first_register, more_registers... };
   // Verify there are no equal entries.
   for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
-    assert(regs[i] != regs[i + 1], "Multiple uses of register: %s", regs[i]->name());
+    for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
+      assert(regs[i] != regs[j], "Multiple uses of register: %s", regs[i]->name());
+    }
   }
 #endif
 }
