@@ -70,7 +70,7 @@ public class CtPropertiesTest {
         );
 
         List<String> versions = new ArrayList<>();
-        
+
         Path javaHome = FileSystems.getDefault().getPath(System.getProperty("java.home"));
         Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
 
