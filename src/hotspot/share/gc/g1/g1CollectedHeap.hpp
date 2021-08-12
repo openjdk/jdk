@@ -81,6 +81,7 @@ class Space;
 class G1BatchedGangTask;
 class G1CardTableEntryClosure;
 class G1CollectionSet;
+class G1GCCounters;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
@@ -145,6 +146,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1FullCollector;
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
+
+  friend class G1YoungGCVerifierMark;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -246,7 +249,7 @@ private:
   bool _expand_heap_after_alloc_failure;
 
   // Helper for monitoring and management support.
-  G1MonitoringSupport* _g1mm;
+  G1MonitoringSupport* _monitoring_support;
 
   // Records whether the region at the given index is (still) a
   // candidate for eager reclaim.  Only valid for humongous start
@@ -400,9 +403,6 @@ private:
   STWGCTimer* _gc_timer_stw;
 
   G1NewTracer* _gc_tracer_stw;
-
-  void gc_tracer_report_gc_start();
-  void gc_tracer_report_gc_end(bool concurrent_operation_is_full_mark, G1EvacuationInfo& evacuation_info);
 
   // The current policy object for the collector.
   G1Policy* _policy;
@@ -578,9 +578,9 @@ public:
     return _verifier;
   }
 
-  G1MonitoringSupport* g1mm() {
-    assert(_g1mm != NULL, "should have been initialized");
-    return _g1mm;
+  G1MonitoringSupport* monitoring_support() {
+    assert(_monitoring_support != nullptr, "should have been initialized");
+    return _monitoring_support;
   }
 
   void resize_heap_if_necessary();
@@ -671,7 +671,11 @@ public:
   // to only parts, or aborted before completion).
   void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
-  uint old_marking_cycles_completed() {
+  uint old_marking_cycles_started() const {
+    return _old_marking_cycles_started;
+  }
+
+  uint old_marking_cycles_completed() const {
     return _old_marking_cycles_completed;
   }
 
@@ -801,8 +805,6 @@ private:
   void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
 
   void set_young_collection_default_active_worker_threads();
-
-  bool determine_start_concurrent_mark_gc();
 
   void prepare_tlabs_for_mutator();
 
@@ -1005,6 +1007,9 @@ public:
   // specified by the policy object.
   jint initialize();
 
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
+
   virtual void stop();
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
@@ -1136,7 +1141,7 @@ public:
 
   // Perform a collection of the heap with the given cause.
   // Returns whether this collection actually executed.
-  bool try_collect(GCCause::Cause cause);
+  bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;

@@ -50,6 +50,8 @@ class TestStringDeduplicationTools {
     private static Unsafe unsafe;
     private static byte[] dummy;
 
+    private static String selectedGC = null;
+
     static {
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
@@ -61,6 +63,10 @@ class TestStringDeduplicationTools {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void selectGC(String[] args) {
+        selectedGC = args[0];
     }
 
     private static Object getValue(String string) {
@@ -226,6 +232,7 @@ class TestStringDeduplicationTools {
         };
 
         ArrayList<String> args = new ArrayList<String>();
+        args.add("-XX:+Use" + selectedGC + "GC");
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 

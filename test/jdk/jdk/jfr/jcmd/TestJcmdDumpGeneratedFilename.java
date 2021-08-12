@@ -26,7 +26,6 @@ package jdk.jfr.jcmd;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Iterator;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
@@ -60,18 +59,18 @@ public class TestJcmdDumpGeneratedFilename {
 
     private static void testDumpFilename() throws Exception {
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.dump");
-        verifyFile(readFilename(output), null);
+        verifyFile(JcmdHelper.readFilename(output), null);
     }
 
     private static void testDumpFilename(Recording r) throws Exception {
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.dump", "name=" + r.getId());
-        verifyFile(readFilename(output), r.getId());
+        verifyFile(JcmdHelper.readFilename(output), r.getId());
     }
 
     private static void testDumpDiectory() throws Exception {
         Path directory = Paths.get(".").toAbsolutePath().normalize();
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.dump", "filename=" + directory);
-        String filename = readFilename(output);
+        String filename = JcmdHelper.readFilename(output);
         verifyFile(filename, null);
         verifyDirectory(filename, directory);
     }
@@ -79,7 +78,7 @@ public class TestJcmdDumpGeneratedFilename {
     private static void testDumpDiectory(Recording r) throws Exception {
         Path directory = Paths.get(".").toAbsolutePath().normalize();
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.dump", "name=" + r.getId(), "filename=" + directory);
-        String filename = readFilename(output);
+        String filename = JcmdHelper.readFilename(output);
         verifyFile(filename, r.getId());
         verifyDirectory(filename, directory);
     }
@@ -97,17 +96,5 @@ public class TestJcmdDumpGeneratedFilename {
             throw new Exception("Expected filename to contain " + expectedName);
         }
         FileHelper.verifyRecording(new File(filename));
-    }
-
-    private static String readFilename(OutputAnalyzer output) throws Exception {
-        Iterator<String> it = output.asLines().iterator();
-        while (it.hasNext()) {
-            String line = it.next();
-            if (line.contains("written to")) {
-                line = it.next(); // blank line
-                return it.next();
-            }
-        }
-        throw new Exception("Could not find filename of dumped recording.");
     }
 }
