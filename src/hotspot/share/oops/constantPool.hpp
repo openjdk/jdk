@@ -319,10 +319,11 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
   }
 
-  // Note that release_tag_at_put is not needed here because this is called only when
-  // constructing a ConstantPool in a single thread, with no possibility of concurrent access.
   void unresolved_string_at_put(int which, Symbol* s) {
     assert(s->refcount() != 0, "should have nonzero refcount");
+    // Note that release_tag_at_put is not needed here because this is called only
+    // when constructing a ConstantPool in a single thread, with no possibility
+    // of concurrent access.
     tag_at_put(which, JVM_CONSTANT_String);
     *symbol_at_addr(which) = s;
   }

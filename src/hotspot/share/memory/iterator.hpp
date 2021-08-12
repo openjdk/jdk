@@ -341,11 +341,6 @@ public:
 class SymbolClosure : public StackObj {
  public:
   virtual void do_symbol(Symbol**) = 0;
-
-  static Symbol* load_symbol(Symbol** p) {
-    return *p;
-  }
-
 };
 
 template <typename E>
