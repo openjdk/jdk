@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Map;
 
 /**
  * This class encapsulates a HTTP request received and a
@@ -86,7 +85,7 @@ public abstract class HttpExchange implements AutoCloseable {
      * values will be a {@link java.util.List} of
      * {@linkplain java.lang.String Strings} containing each value that was
      * included in the request, in the order they were included. Header fields
-     * appearing on multiple lines are represented as multiple string values.
+     * appearing multiple times are represented as multiple string values.
      *
      * <p>The keys in {@code Headers} are case-insensitive.
      *
@@ -112,21 +111,21 @@ public abstract class HttpExchange implements AutoCloseable {
     public abstract Headers getResponseHeaders();
 
     /**
-     * Get the request {@link URI}.
+     * Returns the request {@link URI}.
      *
      * @return the request {@code URI}
      */
     public abstract URI getRequestURI();
 
     /**
-     * Get the request method.
+     * Returns the request method.
      *
      * @return the request method
      */
     public abstract String getRequestMethod();
 
     /**
-     * Get the {@link HttpContext} for this exchange.
+     * Returns the {@link HttpContext} for this exchange.
      *
      * @return the {@code HttpContext}
      */
