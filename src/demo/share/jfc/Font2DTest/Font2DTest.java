@@ -268,6 +268,7 @@ public final class Font2DTest extends JPanel
         fileMenu.add( new MenuItemV2( "Page Setup...", this ));
         fileMenu.add( new MenuItemV2( "Print...", this ));
         fileMenu.addSeparator();
+        fileMenu.add( new MenuItemV2( "Exit", this ));
         displayGridCBMI = new CheckboxMenuItemV2( "Display Grid", true, this );
         force16ColsCBMI = new CheckboxMenuItemV2( "Force 16 Columns", false, this );
         showFontInfoCBMI = new CheckboxMenuItemV2( "Display Font Info", false, this );
