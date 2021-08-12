@@ -207,13 +207,13 @@ import static java.lang.System.Logger.Level.ERROR;
  *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
  *             var filter = filterThreadLocal.get();
  *             if (filter != null) {
- *                 // Prepend a filter to reject all UNDECIDED results
+ *                 // Wrap the filter to reject UNDECIDED results
  *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
  *             }
  *             if (next != null) {
- *                 // Prepend the next filter to the thread filter, if any
+ *                 // Merge the next filter with the thread filter, if any
  *                 // Initially this is the static JVM-wide filter passed from the OIS constructor
- *                 // Append the filter to reject all UNDECIDED results
+ *                 // Wrap the filter to reject UNDECIDED results
  *                 filter = ObjectInputFilter.merge(next, filter);
  *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
  *             }
@@ -222,7 +222,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *             // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
  *             // The curr filter already incorporates the thread filter and static JVM-wide filter
  *             // and rejection of undecided classes
- *             // If there is a stream-specific filter prepend it and a filter to recheck for undecided
+ *             // If there is a stream-specific filter wrap it and a filter to recheck for undecided
  *             if (next != null) {
  *                 next = ObjectInputFilter.merge(next, curr);
  *                 next = ObjectInputFilter.rejectUndecidedClass(next);

@@ -362,8 +362,14 @@ compare_general_files() {
                 THIS_FILE=$WORK_DIR/$f.this
                 $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
                 $RM $OTHER_FILE $THIS_FILE
-                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
+                # Also filter out the "id: NNNN" in the classlists
+                if [[ "$f" = *"/lib/classlist" ]]; then
+                    $CAT $OTHER_DIR/$f | $SORT | $SED "s| id: .*||g" > $OTHER_FILE
+                    $CAT $THIS_DIR/$f  | $SORT | $SED "s| id: .*||g" > $THIS_FILE
+                else
+                    $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
+                    $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
+                fi
             else
                 OTHER_FILE=$OTHER_DIR/$f
                 THIS_FILE=$THIS_DIR/$f
