@@ -367,7 +367,9 @@ public class FileInputStream extends InputStream
 
                 // Return if transferTo() copies enough bytes, but if it does
                 // not, then use the superclass method to copy those remaining
-                if (fci.transferTo(pos, count, fco) == count) {
+                long transferred = fci.transferTo(pos, count, fco);
+                fci.position(pos + transferred);
+                if (transferred == count) {
                     return count;
                 }
             }
