@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Map;
 
 /**
  * This class encapsulates a HTTP request received and a
@@ -85,16 +84,17 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract Headers getRequestHeaders();
 
     /**
-     * Returns a mutable {@link Map} into which the HTTP response headers can be
-     * stored and which will be transmitted as part of this response. The keys in
-     * the {@code Map} will be the header names, while the values must be a
-     * {@link java.util.List} of {@linkplain java.lang.String Strings} containing
-     * each value that should be included multiple times (in the order that they
-     * should be included).
+     * Returns a mutable {@link Headers} into which the HTTP response headers
+     * can be stored and which will be transmitted as part of this response.
+     * The keys in the {@code Headers} will be the header names, while the values
+     * must be a {@link java.util.List} of {@linkplain java.lang.String Strings}
+     * containing each value that should be included multiple times
+     * (in the order that they should be included).
      *
-     * <p> The keys in {@code Map} are case-insensitive.
+     * <p> The keys in {@code Headers} are case-insensitive.
      *
-     * @return a writable {@code Map} which can be used to set response headers.
+     * @return a writable {@code Headers} which can be used to set response
+     *         headers.
      */
     public abstract Headers getResponseHeaders();
 
@@ -111,7 +111,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract String getRequestMethod();
 
     /**
-     * Get the {@link HttpContext} for this exchange.
+     * Returns the {@link HttpContext} for this exchange.
      *
      * @return the {@code HttpContext}
      */

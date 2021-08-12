@@ -38,14 +38,14 @@ import java.util.function.Predicate;
  * means to create handlers with pre-set static response state. For example, a
  * {@code jsonHandler} that always returns <i>200</i> with the same json:
  * <pre>{@code
- *   HttpHandlers.of(200,
- *                   Headers.of("Content-Type", "application/json"),
- *                   Files.readString(Path.of("some.json")));
+ *    HttpHandlers.of(200,
+ *                    Headers.of("Content-Type", "application/json"),
+ *                    Files.readString(Path.of("some.json")));
  * }</pre>
  * or a {@code notAllowedHandler} that always replies with <i>405</i> -
  * Method Not Allowed, and indicates the set of methods that are allowed:
  * <pre>{@code
- *   HttpHandlers.of(405, Headers.of("Allow", "GET"), "");
+ *    HttpHandlers.of(405, Headers.of("Allow", "GET"), "");
  * }</pre>
  *
  * <p> The functionality of a handler can be extended or enhanced through the
@@ -54,9 +54,8 @@ import java.util.function.Predicate;
  * {@code jsonHandler} with <i>notAllowedHandler</i>:
  *
  * <pre>{@code
- *   Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
- *   var handler = HttpHandlers.handleOrElse(IS_GET, jsonHandler,
- *                                           notAllowedHandler);
+ *    Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
+ *    var handler = HttpHandlers.handleOrElse(IS_GET, jsonHandler, notAllowedHandler);
  * }</pre>
  *
  * The above <i>handleOrElse</i> {@code handler} offers an if-else like construct;
@@ -79,12 +78,13 @@ public final class HttpHandlers {
      * are handled by the {@code fallbackHandler}.
      *
      * <p> Example of a nested handleOrElse handler:
-     * <pre>{@code    Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
-     *   Predicate<Request> WANTS_DIGEST =  r -> r.getRequestHeaders().containsKey("Want-Digest");
+     * <pre>{@code
+     *    Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
+     *    Predicate<Request> WANTS_DIGEST =  r -> r.getRequestHeaders().containsKey("Want-Digest");
      *
-     *   var h1 = new SomeHandler();
-     *   var h2 = HttpHandlers.handleOrElse(IS_GET, new SomeGetHandler(), h1);
-     *   var h3 = HttpHandlers.handleOrElse(WANTS_DIGEST.and(IS_GET), new SomeDigestHandler(), h2);
+     *    var h1 = new SomeHandler();
+     *    var h2 = HttpHandlers.handleOrElse(IS_GET, new SomeGetHandler(), h1);
+     *    var h3 = HttpHandlers.handleOrElse(WANTS_DIGEST.and(IS_GET), new SomeDigestHandler(), h2);
      * }</pre>
      * The {@code h3} handleOrElse handler delegates handling of the exchange to
      * {@code SomeDigestHandler} if the "Want-Digest" request header is present
@@ -121,11 +121,11 @@ public final class HttpHandlers {
      * Returns an {@code HttpHandler} that sends a response comprising the given
      * {@code statusCode}, {@code headers}, and {@code body}.
      *
-     * <p>This method creates a handler that reads and discards the request
+     * <p> This method creates a handler that reads and discards the request
      * body before it sets the response state and sends the response.
      *
-     * <p>{@code headers} are the effective headers of the response. The response
-     * <i>body bytes</i> are a {@code UTF-8} encoded byte sequence of
+     * <p> {@code headers} are the effective headers of the response. The
+     * response <i>body bytes</i> are a {@code UTF-8} encoded byte sequence of
      * {@code body}. The response {@linkplain HttpExchange#sendResponseHeaders(int, long) is sent}
      * with the given {@code statusCode} and the body bytes' length. The body
      * bytes are then sent as response body, unless they are of length zero,

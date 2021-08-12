@@ -45,12 +45,19 @@
  * <p>
  * The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
  * HTTP file server (intended for testing, development and debugging purposes
- * only). A default implementation is provided via the main entry point of the
- * {@code jdk.httpserver} module, which can be used on the command line as such:
- * <pre>
- *       {@code java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
- *                              [-o none|info|verbose] [-h to show options]}
- * </pre>
+ * only). A default implementation is provided via the <a id="entry-point"></a>
+ * main entry point of the {@code jdk.httpserver} module, which can be used on
+ * the command line as such:
+ * <pre>{@code
+ *    Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
+ *                                  [-o none|info|verbose] [-h to show options]
+ *    Options:
+ *    -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+ *    -d, --directory       - Directory to serve. Default: current directory.
+ *    -o, --output          - Output format. none|info|verbose. Default: info.
+ *    -p, --port            - Port to listen on. Default: 8000.
+ *    -h, -?, --help        - Print this help message.
+ * }</pre>
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *

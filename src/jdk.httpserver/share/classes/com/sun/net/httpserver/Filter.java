@@ -256,8 +256,9 @@ public abstract class Filter {
     }
 
     /**
-     * Returns a pre-processing {@code Filter} that inspects and possibly
-     * adapts the request state.
+     * Returns a
+     * {@linkplain Filter#beforeHandler(String, Consumer) pre-processing Filter}
+     * that inspects and possibly adapts the request state.
      *
      * The {@code Request} returned by the {@link UnaryOperator requestOperator}
      * will be the effective request state of the exchange. It is executed for
@@ -283,7 +284,7 @@ public abstract class Filter {
      * @param description the string to be returned from {@link #description()}
      * @param requestOperator the request operator
      * @return a filter that adapts the request state before the exchange is handled
-     * @throws NullPointerException if the argument is null
+     * @throws NullPointerException if any argument is null
      * @since 18
      */
     public static Filter adaptRequest(String description,

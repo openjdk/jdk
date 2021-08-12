@@ -28,17 +28,16 @@ package com.sun.net.httpserver;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
- * The immutable HTTP request state.
+ * A view of the immutable request state of an HTTP exchange.
  *
  * @since 18
  */
 public interface Request {
 
     /**
-     * Get the request {@link URI}.
+     * Returns the request {@link URI}.
      *
      * @return the request {@code URI}
      */
@@ -79,13 +78,13 @@ public interface Request {
      * as the given {@code headerName}, then its value is not replaced.
      *
      * @implSpec
-     * The default implementation; first creates a new {@code Headers}, {@code h},
+     * The default implementation first creates a new {@code Headers}, {@code h},
      * then adds all the request headers from {@code this} request to {@code h},
      * then adds the given name-values mapping if {@code headerName} is
-     * not present in {@code h}, finally an unmodifiable view, {@code h'}, of
-     * {@code h} is created. Second, a new {@code Request}, {@code r}, is
-     * created. The {@code getRequestMethod} and {@code getRequestURI} methods
-     * of {@code r} simply invoke the equivalently named method of {@code this}
+     * not present in {@code h}. Then an unmodifiable view, {@code h'}, of
+     * {@code h} and a new {@code Request}, {@code r}, are created.
+     * The {@code getRequestMethod} and {@code getRequestURI} methods of
+     * {@code r} simply invoke the equivalently named method of {@code this}
      * request. The {@code getRequestHeaders} method returns {@code h'}. Lastly,
      * {@code r} is returned.
      *
