@@ -28,7 +28,6 @@
  * printout should show transparent rings with increasing darkness toward
  * the center.
  * @run main/manual XparColor
- * @run main/manual/othervm -Dsun.java2d.metal=true XparColor
  */
 
 import java.awt.Graphics;
@@ -63,17 +62,6 @@ public class XparColor implements Printable {
     private static volatile boolean testFinished;
 
     public static void main(String[] args) {
-
-        String os = System.getProperty("os.name");
-        String metal = System.getProperty("sun.java2d.metal");
-        System.out.println("os = " + os + "   metal = " + metal);
-
-        // Metal can't be run on non mac platform
-        if ( os.toLowerCase().indexOf("mac") == -1 && metal != null) {
-            System.out.println("Metal can't be run on " + os);
-            return;
-        }
-
         SwingUtilities.invokeLater(() -> createAndShowTestDialog());
 
         try {
@@ -130,9 +118,7 @@ public class XparColor implements Printable {
     }
 
     private static void createAndShowTestDialog() {
-        String testInstruction = "This testcase will be launched twice on mac platform and once on non mac platform.\n" +
-                "On Mac once with default pipeline and once again with Metal pipeline.\n" +
-                "This test verify that the BullsEye rings are printed correctly.\n" +
+        String testInstruction = "This test verify that the BullsEye rings are printed correctly.\n" +
                 "The printout should show transparent rings with increasing darkness toward the center";
 
         final JDialog dialog = new JDialog();
