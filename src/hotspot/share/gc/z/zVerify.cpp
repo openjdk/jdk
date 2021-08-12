@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -185,6 +186,10 @@ public:
   ZVerifyOopClosure(bool verify_weaks) :
       ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
       _verify_weaks(verify_weaks) {}
+
+  ~ZVerifyOopClosure() {
+    ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
+  }
 
   virtual void do_oop(oop* p) {
     if (_verify_weaks) {
