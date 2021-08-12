@@ -177,7 +177,7 @@ public class XparColor implements Printable {
         failButton.setEnabled(false);
         failButton.addActionListener((e) -> {
             dialog.dispose();
-            fail("PrinterException thrown.");
+            fail("Transparent ring colors are not printed correctly");
         });
 
         JPanel mainPanel = new JPanel(new BorderLayout());
