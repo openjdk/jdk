@@ -3064,7 +3064,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //   100  LoadP    _  80  20   ... alias_index=4
 //
 void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
-                                         GrowableArray<ArrayCopyNode*> &arraycopy_worklist, 
+                                         GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
                                          GrowableArray<MergeMemNode*> &mergemem_worklist) {
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
