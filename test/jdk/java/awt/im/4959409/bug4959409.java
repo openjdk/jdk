@@ -190,7 +190,9 @@ public class bug4959409 {
             jFrames[0] = bug4959409.createUIAndTest();
         } finally {
             if (jFrames[0] != null) {
-                jFrames[0].dispose();
+                SwingUtilities.invokeAndWait(()-> {
+                    jFrames[0].dispose();
+                });
             }
         }
     }
