@@ -25,16 +25,14 @@
 /*
  * @test
  * @summary Test that CDS still works when the JDK is moved to a new directory
+ * @bug 8272345
  * @requires vm.cds
- * @requires os.family == "linux"
+ * @comment This test doesn't work on Windows because it depends on symlinks
+ * @requires os.family != "windows"
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run driver MoveJDKTest
  */
-
-// This test works only on Linux because it depends on symlinks and the name of the hotspot DLL (libjvm.so).
-// It probably doesn't work on Windows.
-// TODO: change libjvm.so to libjvm.dylib on MacOS, before adding "@requires os.family == mac"
 
 import java.io.File;
 import java.nio.file.Files;
@@ -134,6 +132,7 @@ public class MoveJDKTest {
                 throw new RuntimeException("Cannot create directory: " + dst);
             }
         }
+        final String jvmLib = System.mapLibraryName("jvm");
         for (String child : src.list()) {
             if (child.equals(".") || child.equals("..")) {
                 continue;
@@ -145,7 +144,7 @@ public class MoveJDKTest {
                 throw new RuntimeException("Already exists: " + child_dst);
             }
             if (child_src.isFile()) {
-                if (child.equals("libjvm.so") || child.equals("java")) {
+                if (child.equals(jvmLib) || child.equals("java")) {
                     Files.copy(child_src.toPath(), /* copy data to -> */ child_dst.toPath());
                 } else {
                     Files.createSymbolicLink(child_dst.toPath(),  /* link to -> */ child_src.toPath());
