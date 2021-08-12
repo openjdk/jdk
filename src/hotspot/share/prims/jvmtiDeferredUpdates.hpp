@@ -129,8 +129,7 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
 
   JvmtiDeferredUpdates() :
     _relock_count_after_wait(0),
-    _deferred_locals_updates((ResourceObj::set_allocation_type((address) &_deferred_locals_updates,
-                              ResourceObj::C_HEAP), 1), mtCompiler) { }
+    _deferred_locals_updates(1, mtCompiler) { }
 
 public:
   ~JvmtiDeferredUpdates();

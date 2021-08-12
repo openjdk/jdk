@@ -72,7 +72,7 @@ void GrowableArrayNestingCheck::on_stack_alloc() const {
 
 void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
   // Stack allocated arrays support all three element allocation locations
-  if (array->allocated_on_stack()) {
+  if (array->allocated_on_stack_or_embedded()) {
     return;
   }
 

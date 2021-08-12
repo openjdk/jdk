@@ -140,7 +140,7 @@ CodeBuffer::~CodeBuffer() {
 
   NOT_PRODUCT(clear_strings());
 
-  assert(_default_oop_recorder.allocated_on_stack(), "should be embedded object");
+  assert(_default_oop_recorder.allocated_on_stack_or_embedded(), "should be embedded object");
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
