@@ -369,6 +369,25 @@ public class HeadersTest {
     }
 
     @Test
+    public static void testMutableHeaders() {
+        {
+            var h = new Headers();
+            h.add("Foo", "Bar");
+            h.add("Foo", "Bazz");
+            h.get("Foo").remove(0);
+            h.remove("Foo");
+            h.clear();
+        }
+        {
+            var h = new Headers(Map.of("Foo", List.of("Bar")));
+            h.get("Foo").add("Bazz");
+            h.get("Foo").remove(0);
+            h.remove("Foo");
+            h.clear();
+        }
+    }
+
+    @Test
     public static void testOfNull() {
         assertThrows(NPE, () -> Headers.of((String[])null));
         assertThrows(NPE, () -> Headers.of(null, "Bar"));

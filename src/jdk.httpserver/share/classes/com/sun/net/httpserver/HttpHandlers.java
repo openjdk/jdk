@@ -154,7 +154,11 @@ public final class HttpHandlers {
             try (exchange) {
                 exchange.getRequestBody().readAllBytes();
                 exchange.getResponseHeaders().putAll(headersCopy);
-                if (bytes.length == 0) {
+                if (exchange.getRequestMethod().equals("HEAD")) {
+                    exchange.getResponseHeaders().set("Content-Length", Integer.toString(bytes.length));
+                    exchange.sendResponseHeaders(statusCode, -1);
+                }
+                else if (bytes.length == 0) {
                     exchange.sendResponseHeaders(statusCode, -1);
                 } else {
                     exchange.sendResponseHeaders(statusCode, bytes.length);

@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -129,6 +130,27 @@ public class HttpHandlersTest {
             assertEquals(response.headers().map().size(), 3);
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "hello world");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testOfHeadRequest() throws Exception {
+        var handler = HttpHandlers.of(200, Headers.of("content-length", "999"), "hello world");
+        var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
+        var server = HttpServer.create(LOOPBACK_ADDR, 0);
+        server.createContext("/", handler);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, ""))
+                    .method("HEAD", BodyPublishers.noBody()).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertTrue(response.headers().map().containsKey("date"));
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().map().size(), 2);
+            assertEquals(response.statusCode(), 200);
         } finally {
             server.stop(0);
         }
@@ -302,7 +324,8 @@ public class HttpHandlersTest {
     }
 
     static class ThrowingHttpExchange extends HttpExchange {
-        volatile int rCode;
+        static final String requestMethod = "GET";
+        volatile int responseCode;
         volatile long responseLength;
         volatile Headers responseHeaders;
         volatile InputStream requestBody;
@@ -315,16 +338,16 @@ public class HttpHandlersTest {
         @Override public Headers getResponseHeaders() { return responseHeaders; }
         @Override public InputStream getRequestBody() { return requestBody; }
         @Override public void sendResponseHeaders(int rCode, long responseLength) {
-            this.rCode = rCode;
+            this.responseCode = rCode;
             this.responseLength = responseLength;
         }
         @Override public OutputStream getResponseBody() {
             return OutputStream.nullOutputStream();
         }
+        @Override public String getRequestMethod() { return requestMethod; }
 
         @Override public Headers getRequestHeaders() { return null; }
         @Override public URI getRequestURI() { return null; }
-        @Override public String getRequestMethod() { return null; }
         @Override public HttpContext getHttpContext() { return null; }
         @Override public void close() { }
         @Override public InetSocketAddress getRemoteAddress() { return null; }

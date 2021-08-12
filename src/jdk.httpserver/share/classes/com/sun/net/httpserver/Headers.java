@@ -101,9 +101,10 @@ public class Headers implements Map<String,List<String>> {
     public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
         var h = headers.entrySet().stream()
-                .collect(Collectors.toUnmodifiableMap(Entry::getKey, e -> List.copyOf(e.getValue())));
+                .collect(Collectors.toUnmodifiableMap(
+                        Entry::getKey, e -> new LinkedList<>(e.getValue())));
         map = new HashMap<>(32);
-        h.forEach(this::put);
+        this.putAll(h);
     }
 
     /**
