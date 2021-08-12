@@ -27,14 +27,12 @@
  * @summary Test that CDS still works when the JDK is moved to a new directory
  * @bug 8272345
  * @requires vm.cds
- * @requires os.family == "linux" | os.family == "mac"
+ * @comment This test doesn't work on Windows because it depends on symlinks
+ * @requires os.family != "windows"
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run driver MoveJDKTest
  */
-
-// This test works only on Linux and MacOS because it depends on symlinks
-// It probably doesn't work on Windows.
 
 import java.io.File;
 import java.nio.file.Files;
