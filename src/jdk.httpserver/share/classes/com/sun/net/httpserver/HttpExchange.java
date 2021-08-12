@@ -82,10 +82,11 @@ public abstract class HttpExchange implements AutoCloseable {
      * Returns an immutable {@link Headers} containing the HTTP headers that
      * were included with this request.
      *
-     * <p>The keys in this {@code Headers} will be the header names, while the
+     * <p> The keys in this {@code Headers} will be the header names, while the
      * values will be a {@link java.util.List} of
      * {@linkplain java.lang.String Strings} containing each value that was
-     * included in the request, in the order they were included.
+     * included in the request, in the order they were included. Header fields
+     * appearing on multiple lines are represented as multiple string values.
      *
      * <p>The keys in {@code Headers} are case-insensitive.
      *
@@ -98,12 +99,12 @@ public abstract class HttpExchange implements AutoCloseable {
      * Returns a mutable {@link Headers} into which the HTTP response headers
      * can be stored and which will be transmitted as part of this response.
      *
-     * <p>The keys in the {@code Headers} will be the header names, while the
+     * <p> The keys in the {@code Headers} will be the header names, while the
      * values must be a {@link java.util.List} of {@linkplain java.lang.String Strings}
      * containing each value that should be included multiple times (in the
      * order that they should be included).
      *
-     * <p>The keys in {@code Headers} are case-insensitive.
+     * <p> The keys in {@code Headers} are case-insensitive.
      *
      * @return a writable {@code Headers} which can be used to set response
      *         headers.
