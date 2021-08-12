@@ -1018,17 +1018,21 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
 ResourceHashtable<const InstanceKlass*, OopHandle, 107, ResourceObj::C_HEAP, mtClass>
       _initialization_error_table;
 
-void InstanceKlass::add_initialization_error(Handle exception, TRAPS) {
-  bool created = false;
+void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
   // and the StackTraceElements.
   // If the initialization error is OOM, this might not work, but if GC kicks in
   // this would be still be helpful.
+  JavaThread* THREAD = current;
   Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
-  CLEAR_PENDING_EXCEPTION;
+  if (HAS_PENDING_EXCEPTION || cause.is_null()) {
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), cause());
+  bool created = false;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   ResourceMark rm(THREAD);
@@ -1106,7 +1110,6 @@ void InstanceKlass::initialize_impl(TRAPS) {
       DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
       ResourceMark rm(THREAD);
       Handle cause(THREAD, get_initialization_error(THREAD));
-      CLEAR_PENDING_EXCEPTION; // ignore any OOM here.
 
       stringStream ss;
       ss.print("Could not initialize class %s", external_name());
@@ -1145,7 +1148,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       CLEAR_PENDING_EXCEPTION;
       {
         EXCEPTION_MARK;
-        add_initialization_error(e, THREAD);
+        add_initialization_error(THREAD, e);
         // Locks object, set state, and notify all waiting threads
         set_initialization_state_and_notify(initialization_error, THREAD);
         CLEAR_PENDING_EXCEPTION;
@@ -1192,7 +1195,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     JvmtiExport::clear_detected_exception(jt);
     {
       EXCEPTION_MARK;
-      add_initialization_error(e, THREAD);
+      add_initialization_error(THREAD, e);
       set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception

@@ -78,19 +78,19 @@ public class InitExceptionUnloadTest {
     static String[] expected = new String[] {
         "java.lang.ExceptionInInitializerError",
         "Caused by: java.lang.ArithmeticException: / by zero",
-        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsRuntimeException",
+        "java.lang.NoClassDefFoundError: Could not initialize class InitExceptionUnloadTest$ThrowsRuntimeException",
         "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ArithmeticException: / by zero [in thread",
         "java.lang.Error",
         null,
-        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsError",
+        "java.lang.NoClassDefFoundError: Could not initialize class InitExceptionUnloadTest$ThrowsError",
         "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.Error [in thread",
         "java.lang.ExceptionInInitializerError",
         "Caused by: InitExceptionUnloadTest$SpecialException: Very Special 3",
-        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsSpecialException",
+        "java.lang.NoClassDefFoundError: Could not initialize class InitExceptionUnloadTest$ThrowsSpecialException",
         "Caused by: java.lang.ExceptionInInitializerError: Exception InitExceptionUnloadTest$SpecialException: Very Special 3",
         "java.lang.OutOfMemoryError",
         "Java heap space",
-        "java.lang.NoClassDefFoundError: Cound not initialize class InitExceptionUnloadTest$ThrowsOOM",
+        "java.lang.NoClassDefFoundError: Could not initialize class InitExceptionUnloadTest$ThrowsOOM",
         "Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.OutOfMemoryError: Java heap space [in thread"
     };
 
