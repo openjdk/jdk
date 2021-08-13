@@ -50,7 +50,7 @@
  * This method Returns a char* representation of that enum value.
  */
 static const char* lookup_diagnosticArgumentEnum(const char* field_name, oop object) {
-  const char* enum_sig = "Lsun/hotspot/parser/DiagnosticCommand$DiagnosticArgumentType;";
+  const char* enum_sig = "Ljdk/test/whitebox/parser/DiagnosticCommand$DiagnosticArgumentType;";
   TempNewSymbol enumSigSymbol = SymbolTable::new_symbol(enum_sig);
   int offset = WhiteBox::offset_for_field(field_name, object, enumSigSymbol);
   oop enumOop = object->obj_field(offset);

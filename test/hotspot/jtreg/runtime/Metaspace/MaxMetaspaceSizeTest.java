@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /*
  * @test MaxMetaspaceSizeTest
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
+ * @requires vm.flagless
  * @bug 8087291
  * @library /test/lib
  * @run driver MaxMetaspaceSizeTest

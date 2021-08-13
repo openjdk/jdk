@@ -26,6 +26,7 @@
 #include "jvm_io.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsProtectionDomain.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -75,6 +76,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/resourceHash.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
@@ -148,16 +150,43 @@ static bool shared_base_valid(char* shared_base) {
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
+  static const int INITIAL_TABLE_SIZE = 1987;
+  static const int MAX_TABLE_SIZE = 61333;
+
   fileStream *_stream;
+  ResizeableResourceHashtable<InstanceKlass*, bool,
+                              ResourceObj::C_HEAP, mtClassShared> _dumped_classes;
+
+  void dump(InstanceKlass* ik) {
+    bool created;
+    _dumped_classes.put_if_absent(ik, &created);
+    if (!created) {
+      return;
+    }
+    if (_dumped_classes.maybe_grow(MAX_TABLE_SIZE)) {
+      log_info(cds, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
+    }
+    if (ik->java_super()) {
+      dump(ik->java_super());
+    }
+    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+    int len = interfaces->length();
+    for (int i = 0; i < len; i++) {
+      dump(interfaces->at(i));
+    }
+    ClassListWriter::write_to_stream(ik, _stream);
+  }
+
 public:
-  DumpClassListCLDClosure(fileStream* f) : CLDClosure() { _stream = f; }
+  DumpClassListCLDClosure(fileStream* f)
+  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE) {
+    _stream = f;
+  }
+
   void do_cld(ClassLoaderData* cld) {
     for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
       if (klass->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(klass);
-        if (ik->is_shareable()) {
-          _stream->print_cr("%s", ik->name()->as_C_string());
-        }
+        dump(InstanceKlass::cast(klass));
       }
     }
   }
@@ -167,6 +196,7 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   fileStream stream(file_name, "w");
   if (stream.is_open()) {
     MutexLocker lock(ClassLoaderDataGraph_lock);
+    MutexLocker lock2(ClassListFile_lock, Mutex::_no_safepoint_check_flag);
     DumpClassListCLDClosure collect_classes(&stream);
     ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
   } else {

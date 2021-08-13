@@ -63,7 +63,7 @@ public class DocLintTest {
 
     final String code =
         /* 01 */    "/** Class comment. */\n" +
-        /* 02 */    "public class Test {\n" +
+        /* 02 */    "public class Test { /** */ Test() { }\n" +
         /* 03 */    "    /** Method comment. */\n" +
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "\n" +
@@ -85,14 +85,14 @@ public class DocLintTest {
 
     final String p1Code =
         /* 01 */    "package p1;\n" +
-        /* 02 */    "public class P1Test {\n" +
+        /* 02 */    "public class P1Test { /** */ P1Test() { }\n" +
         /* 03 */    "    /** Syntax < error. */\n" +
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "}\n";
 
     final String p2Code =
         /* 01 */    "package p2;\n" +
-        /* 02 */    "public class P2Test {\n" +
+        /* 02 */    "public class P2Test { /** */ P2Test() { }\n" +
         /* 03 */    "    /** Syntax < error. */\n" +
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "}\n";

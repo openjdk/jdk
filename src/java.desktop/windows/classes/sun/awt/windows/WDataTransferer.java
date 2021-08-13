@@ -25,19 +25,15 @@
 
 package sun.awt.windows;
 
-import java.awt.Image;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Transparency;
-
 import java.awt.color.ColorSpace;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorTable;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.awt.geom.AffineTransform;
-
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -48,18 +44,16 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.File;
-
 import java.net.URL;
-
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,13 +63,11 @@ import java.util.SortedMap;
 import sun.awt.Mutex;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
-
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
 
-import java.util.ArrayList;
-
-import java.io.ByteArrayOutputStream;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -249,7 +241,7 @@ final class WDataTransferer extends DataTransferer {
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            String st = new String(bytes, 0, bytes.length, "UTF-16LE");
+            String st = new String(bytes, 0, bytes.length, UTF_16LE);
             String[] filenames = st.split("\0");
             if( 0 == filenames.length ){
                 return null;
@@ -275,7 +267,7 @@ final class WDataTransferer extends DataTransferer {
             {
                 try {
                     charset = new String((byte[])localeTransferable.
-                        getTransferData(javaTextEncodingFlavor), "UTF-8");
+                        getTransferData(javaTextEncodingFlavor), UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
@@ -548,8 +540,6 @@ enum EHTMLReadMode {
  * on encode: static convertToHTMLFormat is responsible for HTML clipboard header creation
  */
 class HTMLCodec extends InputStream {
-    //static section
-    public static final String ENCODING = "UTF-8";
 
     public static final String VERSION = "Version:";
     public static final String START_HTML = "StartHTML:";
@@ -671,13 +661,8 @@ class HTMLCodec extends InputStream {
         //HTML
         header.append(htmlPrefix);
 
-        byte[] headerBytes = null, trailerBytes = null;
-
-        try {
-            headerBytes = header.toString().getBytes(ENCODING);
-            trailerBytes = htmlSuffix.getBytes(ENCODING);
-        } catch (UnsupportedEncodingException cannotHappen) {
-        }
+        byte[] headerBytes = header.toString().getBytes(UTF_8);
+        byte[] trailerBytes = htmlSuffix.getBytes(UTF_8);
 
         byte[] retval = new byte[headerBytes.length + bytes.length +
                 trailerBytes.length];
@@ -786,7 +771,7 @@ class HTMLCodec extends InputStream {
         BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(
                         bufferedStream,
-                        ENCODING
+                        UTF_8
                 ),
                 CHAR_BUFFER_LEN
         );

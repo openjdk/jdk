@@ -22,29 +22,76 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.java.swing.plaf.gtk;
 
-import sun.swing.SwingUtilities2;
-import com.sun.java.swing.plaf.gtk.GTKConstants.ArrowType;
-import com.sun.java.swing.plaf.gtk.GTKConstants.ShadowType;
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Composite;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RectangularShape;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageProducer;
+import java.awt.image.RGBImageFilter;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import javax.swing.plaf.synth.*;
+import javax.swing.plaf.synth.ColorType;
+import javax.swing.plaf.synth.SynthConstants;
+import javax.swing.plaf.synth.SynthContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.*;
-
-import javax.swing.*;
-
-import javax.xml.parsers.*;
+import com.sun.java.swing.plaf.gtk.GTKConstants.ArrowType;
+import com.sun.java.swing.plaf.gtk.GTKConstants.ShadowType;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.w3c.dom.*;
+import sun.swing.SwingUtilities2;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  */
@@ -536,7 +583,8 @@ class Metacity implements SynthConstants {
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
-                    Reader reader = new InputStreamReader(url.openStream(), "ISO-8859-1");
+                    Reader reader = new InputStreamReader(url.openStream(),
+                                                          ISO_8859_1);
                     char[] buf = new char[1024];
                     StringBuilder sb = new StringBuilder();
                     int n;

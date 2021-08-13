@@ -201,8 +201,7 @@ final class CipherCore {
         if (mode.length() > offset) {
             int numInt;
             try {
-                Integer num = Integer.valueOf(mode.substring(offset));
-                numInt = num.intValue();
+                numInt = Integer.parseInt(mode.substring(offset));
                 result = numInt >> 3;
             } catch (NumberFormatException e) {
                 throw new NoSuchAlgorithmException

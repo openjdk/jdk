@@ -1022,7 +1022,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
       // class_data will be restored explicitly at run time.
       guarantee(orig_obj == SystemDictionary::java_platform_loader() ||
                 orig_obj == SystemDictionary::java_system_loader() ||
-                java_lang_ClassLoader::loader_data_raw(orig_obj) == NULL, "must be");
+                java_lang_ClassLoader::loader_data(orig_obj) == NULL, "must be");
       java_lang_ClassLoader::release_set_loader_data(archived_obj, NULL);
     }
   }

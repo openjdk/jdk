@@ -874,7 +874,10 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _sleep_ticks = stat->sleep_ticks();
   _sleep_count = stat->sleep_count();
 
-  _thread_status = java_lang_Thread::get_thread_status(threadObj);
+  // If thread is still attaching then threadObj will be NULL.
+  _thread_status = threadObj == NULL ? JavaThreadStatus::NEW
+                                     : java_lang_Thread::get_thread_status(threadObj);
+
   _is_suspended = thread->is_suspended();
   _is_in_native = (thread->thread_state() == _thread_in_native);
 
