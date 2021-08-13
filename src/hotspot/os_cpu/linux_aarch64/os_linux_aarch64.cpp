@@ -382,6 +382,9 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
+    // ISB creates a small delay without consuming ALU resources.
+    // This allows it to act as x86 PAUSE.
+    __asm volatile("isb");
     return 0;
   }
 
