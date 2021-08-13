@@ -26,13 +26,12 @@
  * @test
  * @bug 8271203
  * @summary C2: assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck) failed: Check this code when new subtype is added
- * @library /test/lib
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=UnswitchingLongCountedLoop compiler.c2.UnswitchingLongCountedLoop
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=LongCountedLoopAsUnswitchIff::test compiler.c2.LongCountedLoopAsUnswitchIff
  */
 
 package compiler.c2;
 
-public class UnswitchingLongCountedLoop {
+public class LongCountedLoopAsUnswitchIff {
     static int iArrFld[] = new int[400];
 
     public static void main(String[] strArr) {
