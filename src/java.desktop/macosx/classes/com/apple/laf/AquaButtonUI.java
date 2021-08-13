@@ -328,10 +328,16 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
-        final Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            ((AquaButtonBorder)border).paintButton(b, g, 0, 0, b.getWidth(), b.getHeight());
+        if (g instanceof Graphics2D) {
+            ((Graphics2D)g).setStroke(new BasicStroke(3));
+            ((Graphics2D)g).setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
         }
+        Color ringColor = UIManager.getLookAndFeelDefaults().getColor("Focus.color");
+        g.setColor(ringColor);
+        g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
     }
 
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
