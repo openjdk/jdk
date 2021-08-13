@@ -77,10 +77,10 @@ public class TestOverview extends JavadocTester {
                     <dt>See Also:</dt>
                     <dd>
                     <ul class="see-list">
-                    <li><a href="%1$sp1/C.html" title="class in p1"><code>C</code></a></li>
+                    <li><a href="%sp1/C.html" title="class in p1"><code>C</code></a></li>
                     </ul>
                     </dd>
                     </dl>
-                    """.formatted(modulePrefix));
+                    """.formatted(modulePrefix)); // adapt expected reference URL to module context
     }
 }
