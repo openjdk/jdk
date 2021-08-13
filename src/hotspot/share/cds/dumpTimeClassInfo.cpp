@@ -30,13 +30,47 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
+DumpTimeClassInfo DumpTimeClassInfo::clone() {
+  DumpTimeClassInfo clone;
+  clone._klass = _klass;
+  clone._nest_host = _nest_host;
+  clone._failed_verification = _failed_verification;
+  clone._is_archived_lambda_proxy = _is_archived_lambda_proxy;
+  clone._has_checked_exclusion = _has_checked_exclusion;
+  clone._id = _id;
+  clone._clsfile_size = _clsfile_size;
+  clone._clsfile_crc32 = _clsfile_crc32;
+  clone._excluded = _excluded;
+  clone._is_early_klass = _is_early_klass;
+  clone._verifier_constraints = NULL;
+  clone._verifier_constraint_flags = NULL;
+  clone._loader_constraints = NULL;
+  int clone_num_verifier_constraints = num_verifier_constraints();
+  if (clone_num_verifier_constraints > 0) {
+    clone._verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(clone_num_verifier_constraints, mtClass);
+    clone._verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(clone_num_verifier_constraints, mtClass);
+    for (int i = 0; i < clone_num_verifier_constraints; i++) {
+      clone._verifier_constraints->append(_verifier_constraints->at(i));
+      clone._verifier_constraint_flags->append(_verifier_constraint_flags->at(i));
+    }
+  }
+  int clone_num_loader_constraints = num_loader_constraints();
+  if (clone_num_loader_constraints > 0) {
+    clone._loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(clone_num_loader_constraints, mtClass);
+    for (int i = 0; i < clone_num_loader_constraints; i++) {
+      clone._loader_constraints->append(_loader_constraints->at(i));
+    }
+  }
+  return clone;
+}
+
 void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == NULL) {
-    _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
+    _verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
   }
   if (_verifier_constraint_flags == NULL) {
-    _verifier_constraint_flags = new(ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, mtClass);
+    _verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, mtClass);
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {

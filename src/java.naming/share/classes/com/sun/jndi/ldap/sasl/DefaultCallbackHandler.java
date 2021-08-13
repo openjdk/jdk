@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import javax.security.auth.callback.*;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * DefaultCallbackHandler for satisfying NameCallback and
@@ -60,7 +62,7 @@ final class DefaultCallbackHandler implements CallbackHandler {
             passwd = ((char[])cred).clone();
         } else if (cred != null) {
             // assume UTF-8 encoding
-            String orig = new String((byte[])cred, "UTF8");
+            String orig = new String((byte[])cred, UTF_8);
             passwd = orig.toCharArray();
         }
     }

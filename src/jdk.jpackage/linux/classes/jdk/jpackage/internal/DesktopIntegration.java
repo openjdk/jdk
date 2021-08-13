@@ -56,6 +56,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;;
 
 /**
  * Helper to create files for desktop integration.
@@ -82,7 +83,7 @@ final class DesktopIntegration {
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitely requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || SHORTCUT_HINT.fetchFrom(params);
+        boolean withDesktopFile = !associations.isEmpty() || LINUX_SHORTCUT_HINT.fetchFrom(params);
 
         var curIconResource = LinuxAppImageBuilder.createIconResource(DEFAULT_ICON,
                 ICON_PNG, params, mainParams);
@@ -138,28 +139,34 @@ final class DesktopIntegration {
         // Read launchers information from predefine app image
         if (launchers.isEmpty() &&
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            List<String> launcherPaths = AppImageFile.getLauncherNames(
+            List<AppImageFile.LauncherInfo> launcherInfos =
+                    AppImageFile.getLaunchers(
                     PREDEFINED_APP_IMAGE.fetchFrom(params), params);
-            if (!launcherPaths.isEmpty()) {
-                launcherPaths.remove(0); // Remove main launcher
+            if (!launcherInfos.isEmpty()) {
+                launcherInfos.remove(0); // Remove main launcher
             }
-            for (var launcherPath : launcherPaths) {
+            for (var launcherInfo : launcherInfos) {
                 Map<String, ? super Object> launcherParams = new HashMap<>();
                 Arguments.putUnlessNull(launcherParams, CLIOptions.NAME.getId(),
-                        launcherPath);
-                launcherParams = AddLauncherArguments.merge(params, launcherParams,
-                    ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
-                    FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
-                nestedIntegrations.add(new DesktopIntegration(thePackage,
-                        launcherParams, params));
+                        launcherInfo.getName());
+                launcherParams = AddLauncherArguments.merge(params,
+                        launcherParams, ICON.getID(), ICON_PNG.getID(),
+                        ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID(),
+                        PREDEFINED_APP_IMAGE.getID());
+                if (launcherInfo.isShortcut()) {
+                    nestedIntegrations.add(new DesktopIntegration(thePackage,
+                            launcherParams, params));
+                }
             }
         } else {
             for (var launcherParams : launchers) {
-                launcherParams = AddLauncherArguments.merge(params, launcherParams,
-                        ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
-                        FILE_ASSOCIATIONS.getID());
-                nestedIntegrations.add(new DesktopIntegration(thePackage,
-                        launcherParams, params));
+                launcherParams = AddLauncherArguments.merge(params,
+                        launcherParams, ICON.getID(), ICON_PNG.getID(),
+                        ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID());
+                if (SHORTCUT_HINT.fetchFrom(launcherParams)) {
+                    nestedIntegrations.add(new DesktopIntegration(thePackage,
+                            launcherParams, params));
+                }
             }
         }
     }
@@ -567,7 +574,7 @@ final class DesktopIntegration {
                 (s, p) -> s
         );
 
-    private static final StandardBundlerParam<Boolean> SHORTCUT_HINT =
+    private static final StandardBundlerParam<Boolean> LINUX_SHORTCUT_HINT =
         new StandardBundlerParam<>(
                 Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
                 Boolean.class,

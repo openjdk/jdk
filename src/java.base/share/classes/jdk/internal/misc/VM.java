@@ -152,6 +152,14 @@ public class VM {
     private static final int PREVIEW_MINOR_VERSION = 65535;
 
     /**
+     * Returns the class file version of the current release.
+     * @jvms 4.1 Table 4.1-A. class file format major versions
+     */
+    public static int classFileVersion() {
+        return classFileMajorVersion;
+    }
+
+    /**
      * Tests if the given version is a supported {@code class}
      * file version.
      *
@@ -264,8 +272,8 @@ public class VM {
         s = props.get("java.class.version");
         int index = s.indexOf('.');
         try {
-            classFileMajorVersion = Integer.valueOf(s.substring(0, index));
-            classFileMinorVersion = Integer.valueOf(s.substring(index+1, s.length()));
+            classFileMajorVersion = Integer.parseInt(s.substring(0, index));
+            classFileMinorVersion = Integer.parseInt(s.substring(index + 1));
         } catch (NumberFormatException e) {
             throw new InternalError(e);
         }

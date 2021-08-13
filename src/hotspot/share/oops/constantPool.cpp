@@ -287,10 +287,10 @@ void ConstantPool::archive_resolved_references() {
       }
     }
 
-    oop archived = HeapShared::archive_heap_object(rr);
+    oop archived = HeapShared::archive_object(rr);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
-    // the return value of archive_heap_object here. At runtime, the
+    // the return value of archive_object() here. At runtime, the
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
@@ -347,7 +347,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::open_archive_heap_region_mapped() &&
+    if (HeapShared::open_regions_mapped() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -370,6 +370,12 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
+  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
+  // The _on_stack flag is used to prevent ConstantPools from deallocation during
+  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
+  // we always set _on_stack to true to avoid having to change _flags during runtime.
+  _flags |= (_on_stack | _is_shared);
+
   if (!_pool_holder->is_linked() && !_pool_holder->verified_at_dump_time()) {
     return;
   }
@@ -382,11 +388,6 @@ void ConstantPool::remove_unshareable_info() {
     resolved_references() != NULL ? resolved_references()->length() : 0);
   set_resolved_references(OopHandle());
 
-  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
-  // The _on_stack flag is used to prevent ConstantPools from deallocation during
-  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
-  // we always set _on_stack to true to avoid having to change _flags during runtime.
-  _flags |= (_on_stack | _is_shared);
   int num_klasses = 0;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
     if (tag_at(index).is_unresolved_klass_in_error()) {
@@ -2390,11 +2391,11 @@ void ConstantPool::verify_on(outputStream* st) {
     if (tag.is_klass() || tag.is_unresolved_klass()) {
       guarantee(klass_name_at(i)->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_symbol()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = symbol_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_string()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = unresolved_string_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     }
   }
   if (pool_holder() != NULL) {

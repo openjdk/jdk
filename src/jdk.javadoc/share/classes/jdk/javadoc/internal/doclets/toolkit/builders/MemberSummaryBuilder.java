@@ -486,7 +486,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                                         VariableElement field,
                                         ExecutableElement getter,
                                         ExecutableElement setter) {
-            if (field == null || builder.utils.getDocCommentTree(field) == null) {
+            if (field == null || !builder.utils.hasDocCommentTree(field)) {
                 addToPropertiesMap(propertyMethod, propertyMethod);
                 addToPropertiesMap(getter, propertyMethod);
                 addToPropertiesMap(setter, propertyMethod);

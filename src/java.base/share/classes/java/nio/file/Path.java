@@ -413,7 +413,7 @@ public interface Path
      * "{@code foo/bar}" ends with "{@code foo/bar}" and "{@code bar}". It does
      * not end with "{@code r}" or "{@code /bar}". Note that trailing separators
      * are not taken into account, and so invoking this method on the {@code
-     * Path}"{@code foo/bar}" with the {@code String} "{@code bar/}" returns
+     * Path} "{@code foo/bar}" with the {@code String} "{@code bar/}" returns
      * {@code true}.
      *
      * @implSpec

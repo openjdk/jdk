@@ -197,9 +197,6 @@
   develop(bool, CommentedAssembly, trueInDebug,                             \
           "Show extra info in PrintNMethods output")                        \
                                                                             \
-  develop(bool, LIRTracePeephole, false,                                    \
-          "Trace peephole optimizer")                                       \
-                                                                            \
   develop(bool, LIRTraceExecution, false,                                   \
           "add LIR code which logs the execution of blocks")                \
                                                                             \
