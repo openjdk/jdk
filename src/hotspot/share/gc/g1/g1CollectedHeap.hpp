@@ -240,14 +240,6 @@ private:
   // GC allocation statistics policy for tenured objects.
   G1EvacStats _old_evac_stats;
 
-  // It specifies whether we should attempt to expand the heap after a
-  // region allocation failure. If heap expansion fails we set this to
-  // false so that we don't re-attempt the heap expansion (it's likely
-  // that subsequent expansion attempts will also fail if one fails).
-  // Currently, it is only consulted during GC and it's reset at the
-  // start of each GC.
-  bool _expand_heap_after_alloc_failure;
-
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
