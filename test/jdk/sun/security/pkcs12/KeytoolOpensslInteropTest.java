@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug 8076190 8242151 8153005 8266182
  * @summary This is java keytool <-> openssl interop test. This test generates
- *          some openssl keystores, java operates on it and vice versa.
+ *          some openssl keystores on the fly, java operates on it and
+ *          vice versa.
  *
  *          Note: This test executes some openssl command, so need to set
- *          openssl root path using system property "test.openssl.path".
- *          Install OpenSSL 1.1.* version and set this variable.
+ *          openssl path using system property "test.openssl.path" or it should
+ *          be available in /usr/bin or /usr/local/bin
+ *          Required OpenSSL version : OpenSSL 1.1.*
  *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
@@ -40,15 +42,11 @@
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.artifacts.openssl.OpensslArtifactFetcher;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,17 +54,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Base64;
 import java.util.Objects;
-
-import jdk.test.lib.Platform;
-import jdk.test.lib.SecurityTools;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.artifacts.Artifact;
-import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
 
 import static jdk.test.lib.security.DerUtils.*;
 import static sun.security.util.KnownOIDs.*;
@@ -75,30 +67,62 @@ import static sun.security.pkcs.ContentInfo.*;
 public class KeytoolOpensslInteropTest {
 
     public static void main(String[] args) throws Throwable {
+        // openssl selection flow:
+        // 1. Check whether test.openssl.path is set and it's the the preferred
+        //    version(1.1.*) of openssl
+        // 2. If above property doesn't set, then look for already installed
+        //    openssl (version 1.1.*) in system path /usr/bin/openssl or
+        //    /usr/local/bin/openssl
+        // 3. if above is also not available try to download openssl from
+        //    artifactory
+        // If any of above 3 succeeds then perform all tests, otherwise skip
+        // all openssl command dependent tests.
+
         String opensslPath = System.getProperty("test.openssl.path");
         if (opensslPath == null) {
-            opensslPath = fetchOpenssl();
+            // checking the existence of already installed openssl
+            // in the test machine
+            opensslPath = getSystemOpensslPath();
         }
-        if (opensslPath != null) {
-            opensslPath = opensslPath + File.separator + "bin"
-                + File.separator + "openssl";
+        if (opensslPath == null) {
+            // trying to download from artifactory
+            opensslPath = OpensslArtifactFetcher.fetchOpenssl();
+        }
+        if (opensslPath != null && verifyOpensslVerion(opensslPath)) {
+            // if preferred version of openssl is available perform all
+            // keytool <-> openssl interop tests
             generateInitialKeystores(opensslPath);
             testWithJavaCommands();
             testWithOpensslCommands(opensslPath);
         } else {
-            throw new IllegalArgumentException("Error: Can't find openssl "
-                    + "binary on this machine, please install and set openssl "
-                    + "(version 1.1.*) path with property"
-                    + " 'test.openssl.path'");
+            // since preferred version of openssl is not available skip all
+            // openssl command dependent tests with a warning
+            System.out.println("\n\u001B[31mWarning: Can't find openssl "
+                    + "(version 1.1.*) binary on this machine, please install"
+                    + " and set openssl path with property "
+                    + "'test.openssl.path'. Now running only half portion of "
+                    + "the test, skipping all tests which depends on openssl "
+                    + "commands.\u001B[0m\n");
+            // De-BASE64 textual files in ./params to `pwd`
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                    Path.of(System.getProperty("test.src"), "params"),
+                    p -> !p.getFileName().toString().equals("README"))) {
+                stream.forEach(p -> {
+                    try (InputStream is = Files.newInputStream(p);
+                        OutputStream os = Files.newOutputStream(
+                                p.getFileName())) {
+                        Base64.getMimeDecoder().wrap(is).transferTo(os);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+            }
+            testWithJavaCommands();
         }
     }
 
     private static void generateInitialKeystores(String opensslPath)
             throws Throwable {
-        OutputAnalyzer output = ProcessTools.executeCommand(
-                opensslPath, "version")
-                .shouldHaveExitValue(0);
-
         keytool("-keystore ks -keyalg ec -genkeypair -storepass"
                 + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
 
@@ -454,9 +478,9 @@ public class KeytoolOpensslInteropTest {
     private static void testWithOpensslCommands(String opensslPath)
             throws Throwable {
 
-        OutputAnalyzer output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
-                "ksnormal", "-passin", "pass:changeit", "-info", "-nokeys",
-                "-nocerts");
+        OutputAnalyzer output1 = ProcessTools.executeCommand(opensslPath,
+                "pkcs12", "-in", "ksnormal", "-passin", "pass:changeit",
+                "-info", "-nokeys", "-nocerts");
         output1.shouldHaveExitValue(0)
             .shouldContain("MAC: sha256, Iteration 10000")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
@@ -574,60 +598,28 @@ public class KeytoolOpensslInteropTest {
         Asserts.assertEQ(expectedKey, actualKey, label + "-key");
     }
 
-    static OutputAnalyzer keytool(String s) throws Throwable {
+    private static OutputAnalyzer keytool(String s) throws Throwable {
         return SecurityTools.keytool(s);
     }
 
-    private static String fetchOpenssl() {
-        if (Platform.is64bit()) {
-            if (Platform.isLinux()) {
-                return fetchOpenssl(LINUX_X64.class);
-            } else if (Platform.isOSX()) {
-                return fetchOpenssl(MACOSX_X64.class);
-            } else if (Platform.isWindows()) {
-                return fetchOpenssl(WINDOWS_X64.class);
-            }
+    private static String getSystemOpensslPath() {
+        if(verifyOpensslVerion("/usr/bin/openssl")) {
+            return "/usr/bin/openssl";
+        } else if(verifyOpensslVerion("/usr/local/bin/openssl")) {
+            return "/usr/local/bin/openssl";
         }
         return null;
     }
 
-    private static String fetchOpenssl(Class<?> clazz) {
-        String path = null;
+    private static boolean verifyOpensslVerion(String path) {
         try {
-            path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + File.separator + "openssl";
-            System.out.println("path: " + path);
-        } catch (ArtifactResolverException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                System.out.println("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.");
-            } else {
-                throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.", e);
-            }
+            ProcessTools.executeCommand(path, "version")
+                    .shouldHaveExitValue(0)
+                    .shouldMatch("1.1.*");
+            return true;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return false;
         }
-        return path;
     }
-
-    @Artifact(
-            organization = "jpg.tests.jdk.openssl",
-            name = "openssl-linux_x64",
-            revision = "1.1.1g",
-            extension = "zip")
-    private static class LINUX_X64 { }
-
-    @Artifact(
-            organization = "jpg.tests.jdk.openssl",
-            name = "openssl-macosx_x64",
-            revision = "1.1.1g",
-            extension = "zip")
-    private static class MACOSX_X64 { }
-
-    @Artifact(
-            organization = "jpg.tests.jdk.openssl",
-            name = "openssl-windows_x64",
-            revision = "1.1.1g",
-            extension = "zip")
-    private static class WINDOWS_X64 { }
 }
