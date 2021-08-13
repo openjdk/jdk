@@ -358,23 +358,21 @@ public class FileInputStream extends InputStream
      * {@inheritDoc}
      */
     public long transferTo(OutputStream out) throws IOException {
+        long transferred = 0L;
         if (out instanceof FileOutputStream fos) {
-            FileChannel fci = getChannel();
-            long pos = fci.position();
-            long count = fci.size() - pos;
+            FileChannel fc = getChannel();
+            long pos = fc.position();
+            long count = fc.size() - pos;
             if (pos >= 0 && count >= 0) {
-                FileChannel fco = fos.getChannel();
-
-                // Return if transferTo() copies enough bytes, but if it does
-                // not, then use the superclass method to copy those remaining
-                long transferred = fci.transferTo(pos, count, fco);
-                fci.position(pos + transferred);
-                if (transferred == count) {
-                    return count;
+                transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
+                long newPos = pos + transferred;
+                fc.position(newPos);
+                if (newPos >= fc.size()) {
+                    return transferred;
                 }
             }
         }
-        return super.transferTo(out);
+        return transferred + super.transferTo(out);
     }
 
     private long length() throws IOException {
