@@ -26,7 +26,7 @@
  * @test
  * @bug 8271203
  * @summary C2: assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck) failed: Check this code when new subtype is added
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=LongCountedLoopAsUnswitchIff::test compiler.c2.LongCountedLoopAsUnswitchIff
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=compiler.c2.LongCountedLoopAsUnswitchIff::test compiler.c2.LongCountedLoopAsUnswitchIff
  */
 
 package compiler.c2;
