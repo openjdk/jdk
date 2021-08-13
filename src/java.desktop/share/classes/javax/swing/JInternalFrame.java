@@ -188,6 +188,8 @@ public class JInternalFrame extends JComponent implements
     protected String  title;
     /**
      * The icon that is displayed when this internal frame is iconified.
+     * Setting <code>null</code> <code>desktopIcon</code> is unsupported
+     * and may throw NPE if used.
      * @see #iconable
      */
     protected JDesktopIcon desktopIcon;
