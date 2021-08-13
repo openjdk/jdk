@@ -1508,9 +1508,6 @@ private:
   void movdqu(XMMRegister dst, Address src);
   void movdqu(XMMRegister dst, XMMRegister src);
 
-  void vmovd(XMMRegister dst, Register src);
-  void vmovq(XMMRegister dst, Register src);
-
   // Move Unaligned 256bit Vector
   void vmovdqu(Address dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, Address src);

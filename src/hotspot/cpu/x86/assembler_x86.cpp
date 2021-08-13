@@ -2729,21 +2729,6 @@ void Assembler::movdqu(Address dst, XMMRegister src) {
   emit_operand(src, dst);
 }
 
-void Assembler::vmovd(XMMRegister dst, Register src) {
-  assert(UseAVX > 0, "");
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
-  emit_int16(0x6E, (0xC0 | encode));
-}
-
-void Assembler::vmovq(XMMRegister dst, Register src) {
-  assert(UseAVX > 0, "");
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
-  emit_int16(0x6E, (0xC0 | encode));
-}
-
-
 // Move Unaligned 256bit Vector
 void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
   assert(UseAVX > 0, "");

@@ -5809,6 +5809,7 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
 // ---------------------------------------
 // For copySign use 0xE4 as writemask for vpternlog
 // Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
+// C (xmm2) is set to 0x7FFFFFFF
 // Wherever xmm2 is 0, we want to pick from B (sign)
 // Wherever xmm2 is 1, we want to pick from A (src)
 //
@@ -5832,21 +5833,8 @@ instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
   format %{ "CopySignF $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
   ins_encode %{
     __ movl($tmp2$$Register, 0x7FFFFFFF);
-    __ vmovd($tmp1$$XMMRegister, $tmp2$$Register);
+    __ movdl($tmp1$$XMMRegister, $tmp2$$Register);
     __ vpternlogd($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct copySignD_reg(regD dst, regD src, regD tmp1, rRegL tmp2, regD zero) %{
-  match(Set dst (CopySignD dst (Binary src zero)));
-  ins_cost(125);
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
-  ins_encode %{
-    __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
-    __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
-    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5858,7 +5846,7 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
   ins_encode %{
     __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
-    __ vmovq($tmp1$$XMMRegister, $tmp2$$Register);
+    __ movq($tmp1$$XMMRegister, $tmp2$$Register);
     __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
