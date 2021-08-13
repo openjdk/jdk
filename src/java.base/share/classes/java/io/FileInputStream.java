@@ -362,14 +362,11 @@ public class FileInputStream extends InputStream
         if (out instanceof FileOutputStream fos) {
             FileChannel fc = getChannel();
             long pos = fc.position();
-            long count = fc.size() - pos;
-            if (pos >= 0 && count >= 0) {
-                transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
-                long newPos = pos + transferred;
-                fc.position(newPos);
-                if (newPos >= fc.size()) {
-                    return transferred;
-                }
+            transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
+            long newPos = pos + transferred;
+            fc.position(newPos);
+            if (newPos >= fc.size()) {
+                return transferred;
             }
         }
         return transferred + super.transferTo(out);
