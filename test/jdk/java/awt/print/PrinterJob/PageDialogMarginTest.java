@@ -52,22 +52,19 @@ public class PageDialogMarginTest {
                     JOptionPane.INFORMATION_MESSAGE);
         });
         PrinterJob pj = PrinterJob.getPrinterJob();
-        try {
-            HashPrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-            PageFormat pf;
-            pf = pj.pageDialog(aset);
-            double left = pf.getImageableX();
-            double top = pf.getImageableY();
-            System.out.println("pageDialog - left/top from pageFormat: " + left / 72
-                    + " " + top / 72);
-            System.out.println("pageDialog - left/top from attribute set: "
-                    + getPrintableXFromASet(aset) + " "
-                    + getPrintableYFromASet(aset));
-            if (top / 72 != 2.0f || getPrintableYFromASet(aset) != 2.0f) {
-                throw new RuntimeException("Top margin value not updated");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        HashPrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        PageFormat pf;
+        pf = pj.pageDialog(aset);
+        double left = pf.getImageableX();
+        double top = pf.getImageableY();
+        System.out.println("pageDialog - left/top from pageFormat: " + left / 72
+                                   + " " + top / 72);
+        System.out.println("pageDialog - left/top from attribute set: "
+                                   + getPrintableXFromASet(aset) + " "
+                                   + getPrintableYFromASet(aset));
+        if (top / 72 != 2.0f || getPrintableYFromASet(aset) != 2.0f) {
+            throw new RuntimeException("Top margin value not updated");
         }
     }
 
