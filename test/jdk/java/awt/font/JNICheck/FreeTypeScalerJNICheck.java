@@ -29,11 +29,13 @@
  * @key headful
  * @run main FreeTypeScalerJNICheck
  */
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GraphicsEnvironment;
+import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
-import java.io.*;
+import java.awt.image.BufferedImage;
+import javax.swing.JFrame;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -56,7 +58,7 @@ public class FreeTypeScalerJNICheck {
 
         for (String ff : families)
         {
-            Font font = Font.decode(ff);
+            Font font = new Font(ff, Font.PLAIN, 12);
             Rectangle2D bounds = font.getStringBounds("test", g2d.getFontRenderContext());
             FontMetrics metrics = frame.getFontMetrics(font);
             System.out.println(bounds.getHeight() + metrics.getHeight()); // use bounds and metrics
