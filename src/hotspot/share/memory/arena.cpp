@@ -62,7 +62,7 @@ class ChunkPool {
   Chunk* allocate() {
     ThreadCritical tc;
     Chunk* c = _first;
-    if (_first) {
+    if (_first != nullptr) {
       _first = _first->next();
       _num_chunks--;
     }
@@ -168,7 +168,7 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   assert(sizeofChunk == sizeof(Chunk), "weird request size");
   assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
          SIZE_FORMAT ".", length);
-  // Try to reuse a cached chunk from the pool
+  // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   if (pool != NULL) {
     Chunk* c = pool->allocate();
