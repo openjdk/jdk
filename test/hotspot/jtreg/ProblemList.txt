@@ -69,6 +69,7 @@ compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
 compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
+compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
 
 #############################################################################
