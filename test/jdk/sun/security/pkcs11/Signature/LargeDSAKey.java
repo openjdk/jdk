@@ -49,6 +49,7 @@ public final class LargeDSAKey extends PKCS11Test {
     private static final String knownText =
             "Known text known text known text";
 
+    @Override
     public void main(Provider p) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
         AlgorithmParameterGenerator dsaParGen =
