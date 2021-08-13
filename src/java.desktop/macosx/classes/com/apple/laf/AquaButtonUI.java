@@ -335,7 +335,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
         }
-        Color ringColor = UIManager.getLookAndFeelDefaults().getColor("Focus.color");
+        Color ringColor = UIManager.getColor("Focus.color");
         g.setColor(ringColor);
         g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
     }
