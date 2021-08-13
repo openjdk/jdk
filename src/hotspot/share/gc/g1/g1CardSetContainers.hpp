@@ -67,7 +67,6 @@
 // +------+         +---------------+--------------+-----+
 // |unused|   ...   |  card_index1  | card_index0  |SSS00|
 // +------+         +---------------+--------------+-----+
-
 class G1CardSetInlinePtr : public StackObj {
   friend class G1CardSetContainersTest;
 

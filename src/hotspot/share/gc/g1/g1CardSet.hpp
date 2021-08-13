@@ -47,8 +47,10 @@ enum G1AddCardResult {
 };
 
 class G1CardSetConfiguration {
-  // #bits required to hold the max card index; log(#cards_per_region)
+  // Holds the number of bits required to cover the maximum card index for the
+  // regions covered by this card set.
   uint _inline_ptr_bits_per_card;
+
   uint _num_cards_in_array;
   uint _num_cards_in_howl_bitmap;
   uint _num_buckets_in_howl;
