@@ -652,6 +652,10 @@ final class ClientHello {
                 SSLLogger.fine("Produced ClientHello handshake message", chm);
             }
 
+            if (session != null) {
+                chc.handshakeSession = session;
+            }
+
             // Output the handshake message.
             chm.write(chc.handshakeOutput);
             chc.handshakeOutput.flush();
