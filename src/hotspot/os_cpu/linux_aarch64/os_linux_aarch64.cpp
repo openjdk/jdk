@@ -385,7 +385,7 @@ extern "C" {
     // ISB creates a small delay without consuming ALU resources.
     // This allows it to act as x86 PAUSE.
     __asm volatile("isb");
-    return 0;
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
