@@ -109,7 +109,7 @@ public class CommandLinePositiveTest {
     }
 
     @DataProvider
-    public Object[][] helpOptions() { return new Object[][] {{"-?"}, {"-h"}, {"--help"}}; }
+    public Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
 
     static final String USAGE_TEXT = """
             Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
@@ -121,8 +121,8 @@ public class CommandLinePositiveTest {
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
-            -?, -h, --help        - Print this help message.
-            To stop the server, press Crtl + C.""";
+            -h, -?, --help        - Print this help message.
+            To stop the server, press Ctrl + C.""";
 
     @Test(dataProvider = "helpOptions")
     public void testHelp(String opt) throws Throwable {

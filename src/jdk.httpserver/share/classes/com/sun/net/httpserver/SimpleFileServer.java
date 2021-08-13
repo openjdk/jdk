@@ -40,7 +40,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * A simple HTTP file server and its components (intended for testing,
  * development and debugging purposes only).
  *
- * <p> A simple file server is composed of three components:
+ * <p> A <a href="#server-impl">simple file server</a> is composed of three
+ * components:
  * <ul>
  *   <li> an {@link HttpServer HttpServer} that is bound to a given address, </li>
  *   <li> an {@link HttpHandler HttpHandler} that serves files from a given
@@ -82,14 +83,9 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *    var handler = HttpHandlers.handleOrElse(
  *        (req) -> req.getRequestMethod().equals("PUT"),
  *        (exchange) -> {
- *            // handle PUT request
+ *            // validate and handle PUT request
  *        },
- *        HttpHandlers.handleOrElse(
- *                (req) -> req.getRequestMethod().matches("GET|HEAD"),
- *                SimpleFileServer.createFileHandler(Path.of("/some/path")),
- *                // or else
- *                HttpHandlers.of(500, new Headers(), "")
- *       )
+ *        SimpleFileServer.createFileHandler(Path.of("/some/path")))
  *    );
  * }</pre>
  *
@@ -110,7 +106,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *
  * <h2>Main entry point</h2>
  *
- * <p>The simple HTTP file server is provided via the
+ * <p>A <a id="server-impl">simple HTTP file server implementation</a> is
+ * provided via the
  * <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
  * of the {@code jdk.httpserver} module.
  *

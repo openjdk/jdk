@@ -155,8 +155,10 @@ public abstract class HttpServer {
     /**
      * Creates an {@code HttpServer} instance with an initial context.
      *
-     * <p> The server is created with an <i>initial context</i>. The initial
-     * context maps the URI {@code path} to the exchange {@code handler}. The
+     * <p> The server is created with an <i>initial context</i> that maps the
+     * URI {@code path} to the exchange {@code handler}. The initial context is
+     * created as if by an invocation of
+     * {@link HttpServer#createContext(String) createContext(path)}. The
      * {@code filters}, if any, are added to the initial context, in the order
      * they are given. The returned server is not started so can be configured
      * further if required.
