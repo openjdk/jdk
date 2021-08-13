@@ -58,27 +58,28 @@ public class IgnoreModulePropertiesTest {
     // For options of the form "option=value", check that an exception gets thrown for
     // the illegal value and then check that its corresponding property is handled
     // correctly.
-    public static void testOption(boolean positive,
+    public static void testOption(boolean shouldVMFail,
                                   String option, String value,
                                   String prop, String result) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             option + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (positive) {
-            output.shouldHaveExitValue(0);
-        } else {
+        if (shouldVMFail) {
             output.shouldNotHaveExitValue(0);
+        } else {
+            output.shouldHaveExitValue(0);
         }
         output.shouldContain(result);
         testProperty(prop, value);
     }
 
     public static void main(String[] args) throws Exception {
-        testOption(false, "--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.FindException");
-        testOption(false, "--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.FindException");
-        testOption(true,  "--add-reads", "xyzz=yyzd", "jdk.module.addreads.0", "WARNING: Unknown module: xyzz");
-        testOption(true,  "--add-exports", "java.base/xyzz=yyzd", "jdk.module.addexports.0",
+        testOption(/*shouldVMFail=*/true, "--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.FindException");
+        testOption(/*shouldVMFail=*/true, "--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.FindException");
+        testOption(/*shouldVMFail=*/true, "--patch-module", "=d", "jdk.module.patch.0", "Unable to parse --patch-module");
+
+        testOption(/*shouldVMFail=*/false,  "--add-reads", "xyzz=yyzd", "jdk.module.addreads.0", "WARNING: Unknown module: xyzz");
+        testOption(/*shouldVMFail=*/false,  "--add-exports", "java.base/xyzz=yyzd", "jdk.module.addexports.0",
                    "WARNING: package xyzz not in java.base");
-        testOption(false, "--patch-module", "=d", "jdk.module.patch.0", "Unable to parse --patch-module");
     }
 }
