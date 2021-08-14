@@ -103,7 +103,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
-  clear_young_index_in_cset();
+  clear_index_in_cset();
   set_old();
   _next_marked_bytes = 0;
 }
@@ -118,8 +118,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
 
-  clear_young_index_in_cset();
-  clear_index_in_opt_cset();
+  clear_index_in_cset();
   uninstall_surv_rate_group();
   set_free();
   reset_pre_dummy_top();
@@ -239,14 +238,13 @@ HeapRegion::HeapRegion(uint hrm_index,
   _hrm_index(hrm_index),
   _type(),
   _humongous_start_region(NULL),
-  _index_in_opt_cset(InvalidCSetIndex),
+  _index_in_cset(InvalidCSetIndex),
   _next(NULL), _prev(NULL),
 #ifdef ASSERT
   _containing_set(NULL),
 #endif
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
   _prev_marked_bytes(0), _next_marked_bytes(0),
-  _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {

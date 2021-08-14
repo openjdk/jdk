@@ -287,6 +287,13 @@ inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
 
+inline void HeapRegion::clear_index_in_opt_cset() {
+  if (!has_index_in_opt_cset()) {
+    return;
+  }
+  clear_index_in_cset();
+}
+
 template <class Closure, bool is_gc_active>
 HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         Closure* cl,

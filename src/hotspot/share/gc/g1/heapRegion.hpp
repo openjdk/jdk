@@ -214,9 +214,9 @@ private:
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
-  // The index in the optional regions array, if this region
-  // is considered optional during a mixed collections.
-  uint _index_in_opt_cset;
+  // The index in a collection set: either the actual collection set for young regions or the
+  // optional regions array if this region is considered optional during a mixed collections.
+  uint _index_in_cset;
 
   // Fields used by the HeapRegionSetBase class and subclasses.
   HeapRegion* _next;
@@ -247,7 +247,6 @@ private:
   }
 
   // Data for young region survivor prediction.
-  uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
@@ -512,22 +511,40 @@ public:
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");
-    return _index_in_opt_cset;
+    return _index_in_cset;
   }
-  bool has_index_in_opt_cset() const { return _index_in_opt_cset != InvalidCSetIndex; }
-  void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
-  void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
+
+  bool has_index_in_opt_cset() const {
+    return is_old() && _index_in_cset != InvalidCSetIndex;
+  }
+
+  void set_index_in_opt_cset(uint index) {
+    assert(is_old(), "pre-condition");
+    set_index_in_cset(index);
+  }
+
+  void clear_index_in_opt_cset();
 
   void calc_gc_efficiency(void);
   double gc_efficiency() const { return _gc_efficiency;}
 
-  uint  young_index_in_cset() const { return _young_index_in_cset; }
-  void clear_young_index_in_cset() { _young_index_in_cset = 0; }
+  uint  young_index_in_cset() const {
+    return is_old() ? 0 : _index_in_cset;
+  }
+
+  void clear_index_in_cset() {
+    _index_in_cset = InvalidCSetIndex;
+  }
+
+  void set_index_in_cset(uint index) {
+    _index_in_cset = index;
+  }
+
   void set_young_index_in_cset(uint index) {
     assert(index != UINT_MAX, "just checking");
     assert(index != 0, "just checking");
     assert(is_young(), "pre-condition");
-    _young_index_in_cset = index;
+    set_index_in_cset(index);
   }
 
   int age_in_surv_rate_group() const;
