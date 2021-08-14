@@ -76,6 +76,7 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
+#define CDS_MAX_PATH (2*K)
 // Utility class to release file header memory
 // and close open file handle
 class ReleaseFileHeader {
@@ -207,10 +208,10 @@ FileMapInfo::FileMapInfo(bool is_static) {
     _full_path = Arguments::GetSharedDynamicArchivePath();
   }
   if (AutoCreateSharedArchive) {
-     if (!validate_archive ()) {
-       _full_path = Arguments::get_default_shared_archive_path();
-       DynamicDumpSharedSpaces = true;
-     }
+    if (!_is_static && !validate_archive()) {
+      // regenerate shared archive at exit
+      DynamicDumpSharedSpaces = true;
+    }
   }
 }
 
@@ -1077,16 +1078,14 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
     FileMapHeader* static_header = (FileMapHeader*)header;
     if (static_header->magic() != CDS_ARCHIVE_MAGIC) {
       log_info(cds)("The shared archive file has a bad magic number.");
-      log_info(cds)("Not a base shared archive: %s", archive_name);
-      // vm_exit_during_initialization("Not a base shared archive", archive_name);
+      log_info(cds)("Not a valid base shared archive: %s", archive_name);
       return false;
     }
   } else {
     DynamicArchiveHeader* dynamic_header = (DynamicArchiveHeader*)header;
     if (dynamic_header->magic() != CDS_DYNAMIC_ARCHIVE_MAGIC) {
       log_info(cds)("The shared archive file has a bad dynamic magic number.");
-      log_info(cds)("Not a top shared archive: %s", archive_name);
-      // vm_exit_during_initialization("Not a top shared archive", archive_name);
+      log_info(cds)("Not a valid top shared archive: %s", archive_name);
       return false;
     }
   }
@@ -1111,17 +1110,21 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     fail_continue("Unable to read the file header.");
     return false;
   }
+
   unsigned int magic = dynamic_header->magic();
   if (magic == CDS_ARCHIVE_MAGIC) {
     // this is a static archive
     // do not call fail_continue since RequireSharedSpaces will cause to exit
     log_info(cds)("This is a static archive");
     return false;
-  } else if (magic == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    // read the base archive name
+  } else {
+    if (magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+      fail_continue("The shared archive file has a bad magic number.");
+    }
     size_t name_size = dynamic_header->base_archive_name_size();
-    if (name_size == 0) {
-      fail_continue("Base archive name size is 0.");
+    // read the base archive name
+    if (name_size <=  0 || name_size > CDS_MAX_PATH) {
+      fail_continue("Base archive name size is wrong.");
       return false;
     }
     *base_archive_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
@@ -1129,15 +1132,20 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     if (n != name_size) {
       fail_continue("Unable to read the base archive name from the header.");
       FREE_C_HEAP_ARRAY(char, *base_archive_name);
+      *size = 0;
       *base_archive_name = nullptr;
       return false;
     }
-  } else {
-    // not a valid shared archive or the archive is damaged for testing purpose
-    fail_continue("The shared archive file has a bad magic number.");
-    return false;
+    sz = sizeof(FileMapHeader);
+    FileMapHeader* static_header = (FileMapHeader*) os::malloc(sz, mtInternal);
+    int fdh = os::open(*base_archive_name, O_RDONLY | O_BINARY, 0);
+    ReleaseFileHeader rl((void*)static_header, fdh);
+    if (fdh < 0) {
+      fail_continue("Unable to open base archive.");
+      return false;
+    }
+    return true;
   }
-  return true;
 }
 
 // Read the FileMapInfo information from the file.
@@ -1151,7 +1159,7 @@ bool FileMapInfo::init_from_file(int fd) {
   }
 
   if (!Arguments::has_jimage()) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+    fail_continue("The shared archive file cannot be used with an exploded module build.");
     return false;
   }
 
@@ -1159,7 +1167,7 @@ bool FileMapInfo::init_from_file(int fd) {
   if (header()->magic() != expected_magic) {
     log_info(cds)("_magic expected: 0x%08x", expected_magic);
     log_info(cds)("         actual: 0x%08x", header()->magic());
-    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
+    fail_continue("The shared archive file has a bad magic number.");
     return false;
   }
 
@@ -1173,14 +1181,14 @@ bool FileMapInfo::init_from_file(int fd) {
   if (header()->header_size() != sz) {
     log_info(cds)("_header_size expected: " SIZE_FORMAT, sz);
     log_info(cds)("               actual: " SIZE_FORMAT, header()->header_size());
-    FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
+    fail_continue("The shared archive file has an incorrect header size.");
     return false;
   }
 
   const char* actual_ident = header()->jvm_ident();
 
   if (actual_ident[JVM_IDENT_MAX-1] != 0) {
-    FileMapInfo::fail_continue("JVM version identifier is corrupted.");
+    fail_continue("JVM version identifier is corrupted.");
     return false;
   }
 
@@ -1189,7 +1197,7 @@ bool FileMapInfo::init_from_file(int fd) {
   if (strncmp(actual_ident, expected_ident, JVM_IDENT_MAX-1) != 0) {
     log_info(cds)("_jvm_ident expected: %s", expected_ident);
     log_info(cds)("             actual: %s", actual_ident);
-    FileMapInfo::fail_continue("The shared archive file was created by a different"
+    fail_continue("The shared archive file was created by a different"
                   " version or build of HotSpot");
     return false;
   }
@@ -1199,7 +1207,7 @@ bool FileMapInfo::init_from_file(int fd) {
     if (expected_crc != header()->crc()) {
       log_info(cds)("_crc expected: %d", expected_crc);
       log_info(cds)("       actual: %d", header()->crc());
-      FileMapInfo::fail_continue("Header checksum verification failed.");
+      fail_continue("Header checksum verification failed.");
       return false;
     }
   }

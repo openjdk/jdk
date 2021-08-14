@@ -3542,6 +3542,12 @@ bool Arguments::init_shared_archive_paths() {
           FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &name_size, &SharedArchivePath);
         if (!success) {
           SharedArchivePath = temp_archive_path;
+          if (!RequireSharedSpaces && AutoCreateSharedArchive) {
+              // -Xshare:auto -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=<file>
+              // Will generate dynamic archive based on default shared archive, classes.jsa
+              SharedArchivePath = get_default_shared_archive_path();
+              SharedDynamicArchivePath = temp_archive_path;
+          }
         } else {
           SharedDynamicArchivePath = temp_archive_path;
         }

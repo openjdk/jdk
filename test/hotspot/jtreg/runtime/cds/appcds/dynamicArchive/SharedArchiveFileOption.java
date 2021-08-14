@@ -105,7 +105,7 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
             "-Xlog:cds+dynamic=debug,cds=debug",
             "-cp", appJar, mainClass)
             .assertAbnormalExit(output -> {
-                    output.shouldMatch("Not a base shared archive:.*top.*.jsa");
+                    output.shouldMatch("Not a valid base shared archive:.*top.*.jsa");
                 });
 
         // a base archive specified in the top archive position
@@ -114,7 +114,7 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
             "-Xlog:cds+dynamic=debug,cds=debug",
             "-cp", appJar, mainClass)
             .assertAbnormalExit(output -> {
-                    output.shouldMatch("Not a top shared archive:.*base.*.jsa");
+                    output.shouldMatch("Not a valid top shared archive:.*base.*.jsa");
                 });
 
         // more than 2 archives specified in the -XX:ShareArchiveFile option

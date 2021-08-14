@@ -95,6 +95,19 @@ class DynamicArchiveTestBase {
     }
 
     /**
+     * Excute a JVM to dump a base archive by
+     *  -Xshare:dump -XX:SharedArchiveFile=baseArchiveName
+     */
+    public static Result dumpBaseArchive(String baseArchiveName, String... cmdLineSuffix)
+        throws Exception
+    {
+        OutputAnalyzer output = TestCommon.dumpBaseArchive(baseArchiveName, cmdLineSuffix);
+        CDSOptions opts = new CDSOptions();
+        opts.setXShareMode("dump");
+        return new Result(opts, output);
+    }
+
+    /**
      * Execute a JVM using the base archive (given by baseArchiveName) with the command line
      * (given by cmdLineSuffix). At JVM exit, dump all eligible classes into the top archive
      * (give by topArchiveName).

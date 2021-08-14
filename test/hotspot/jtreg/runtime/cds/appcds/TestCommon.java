@@ -146,7 +146,9 @@ public class TestCommon extends CDSTestUtils {
     {
         CDSOptions opts = new CDSOptions();
         opts.setArchiveName(baseArchiveName);
-        opts.addSuffix(cmdLineSuffix);
+        if (cmdLineSuffix != null) {
+            opts.addSuffix(cmdLineSuffix);
+        }
         opts.addSuffix("-Djava.class.path=");
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
         CDSTestUtils.checkBaseDump(out);
