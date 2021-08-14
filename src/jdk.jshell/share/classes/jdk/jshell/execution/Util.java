@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class Util {
                             for (int i = 0; i < len; i++) {
                                 message[i] = (byte) super.read();
                             }
-                            throw new IOException(new String(message, "UTF-8"));
+                            throw new IOException(new String(message, StandardCharsets.UTF_8));
                         case -1:
                             return -1;
                         default:
@@ -183,7 +184,7 @@ public class Util {
                             debug(ex, "$" + e.getKey() + "-input-requested.write");
                         }
                     } catch (IOException exc) {
-                        byte[] message = exc.getMessage().getBytes("UTF-8");
+                        byte[] message = exc.getMessage().getBytes(StandardCharsets.UTF_8);
                         inTarget.write(TAG_EXCEPTION);
                         inTarget.write((message.length >>  0) & 0xFF);
                         inTarget.write((message.length >>  8) & 0xFF);

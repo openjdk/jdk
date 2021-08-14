@@ -35,7 +35,7 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1309,7 +1309,7 @@ class ConsoleIOContext extends IOContext {
 
         protected ProgrammaticInTerminal(InputStream input, OutputStream output,
                                          String terminal, Size size, Size bufferSize) throws Exception {
-            super("non-system-in", terminal, output, Charset.forName("UTF-8"));
+            super("non-system-in", terminal, output, StandardCharsets.UTF_8);
             this.inputReader = NonBlocking.nonBlocking(getName(), input, encoding());
             Attributes a = new Attributes(getAttributes());
             a.setLocalFlag(LocalFlag.ECHO, false);

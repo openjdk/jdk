@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package jdk.internal.editor.external;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -120,7 +120,7 @@ public class ExternalEditor {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.dir = Files.createTempDirectory("extedit");
         this.tmpfile = Files.createTempFile(dir, null, ".java");
-        Files.write(tmpfile, initialText.getBytes(Charset.forName("UTF-8")));
+        Files.write(tmpfile, initialText.getBytes(StandardCharsets.UTF_8));
         dir.register(watcher,
                 ENTRY_CREATE,
                 ENTRY_DELETE,

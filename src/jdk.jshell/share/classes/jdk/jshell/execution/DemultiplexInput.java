@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -64,7 +65,7 @@ class DemultiplexInput extends Thread {
                 int dataLen = delegate.read();
                 byte[] data = new byte[dataLen];
                 DemultiplexInput.this.delegate.readFully(data);
-                String chan = new String(name, "UTF-8");
+                String chan = new String(name, StandardCharsets.UTF_8);
                 OutputStream out = io.get(chan);
                 if (out == null) {
                     debug("Unexpected channel name: %s", chan);
