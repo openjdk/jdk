@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,8 +95,6 @@ public final class JdpPacketReader {
 
         } catch (EOFException e) {
             throw e;
-        } catch (UnsupportedEncodingException ex) {
-            throw new JdpException("Broken JDP packet. Unable to decode entry.");
         } catch (IOException e) {
             throw new JdpException("Broken JDP packet. Unable to read entry.");
         }
