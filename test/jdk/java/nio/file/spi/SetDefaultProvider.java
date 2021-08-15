@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8272477
  * @modules jdk.jartool
  * @library /test/lib
  * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
@@ -40,8 +40,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.spi.ToolProvider;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 
@@ -51,13 +49,20 @@ import static org.testng.Assert.*;
 @Test
 public class SetDefaultProvider {
 
-    private static String SET_DEFAULT_FSP =
+    private static final String SET_DEFAULT_FSP =
         "-Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider";
+
+    private static final String TEST_SRC = System.getProperty("test.src");
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
         );
+
+    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
+            .orElseThrow(()
+                    -> new RuntimeException("javac tool not found")
+            );
 
     private static Path createTempDirectory(String prefix) throws IOException {
         Path testDir = Paths.get(System.getProperty("test.dir", "."));
@@ -84,35 +89,21 @@ public class SetDefaultProvider {
         String testClasses = System.getProperty("test.classes");
         Path jar = Path.of("testFileSystemProvider.jar");
         Files.deleteIfExists(jar);
-        createFileSystemProviderJar(jar, Path.of(testClasses));
-        String classpath = jar + File.pathSeparator + testClasses
-                + File.separator + "modules" + File.separator + "m";
+        // Compile the FileSystemProvider and add it to a jar
+        Path fspDir = createTempDirectory("fspDir");
+        compileTestClass(fspDir, "TestProvider.java");
+        createFileSystemProviderJar(jar, fspDir);
+        // Compile the test to exercise the FileSystemProvider
+        Path pDir = createTempDirectory("classes");
+        compileTestClass(pDir,  "m" + File.separator + "p"
+                + File.separator + "Main.java");
+        createFileSystemProviderJar(jar, fspDir);
+        // Build the classpath containing only the FileSystemProvider jar and
+        // test class
+        String classpath = jar + File.pathSeparator + pDir;
+        System.out.printf("%n%n%n%n**** classpath: %s%n%n%n%n%n%n", classpath);
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
         assertTrue(exitValue == 0);
-    }
-
-    /**
-     * Creates a JAR containing the FileSystemProvider used to override the
-     * default FileSystemProvider
-     */
-    private void createFileSystemProviderJar(Path jar, Path dir) throws IOException {
-
-        List<String>  args = new ArrayList<>();
-        args.add("--create");
-        args.add("--file=" + jar);
-        try (Stream<Path> stream = Files.list(dir)) {
-            List<String> paths = stream
-                    .map(path -> path.getFileName().toString())
-                    .filter(f -> f.startsWith("TestProvider"))
-                    .toList();
-            for(var p : paths) {
-                args.add("-C");
-                args.add(dir.toString());
-                args.add(p);
-            }
-        }
-        int ret = JAR_TOOL.run(System.out, System.out, args.toArray(new String[0]));
-        assertTrue(ret == 0);
     }
 
     /**
@@ -212,6 +203,33 @@ public class SetDefaultProvider {
         int ret = JAR_TOOL.run(System.out, System.out, args);
         assertTrue(ret == 0);
         return jar;
+    }
+    
+    /**
+     * Creates a JAR containing the FileSystemProvider used to override the
+     * default FileSystemProvider
+     */
+    private void createFileSystemProviderJar(Path jar, Path dir) {
+        List<String>  args = new ArrayList<>();
+        args.add("--create");
+        args.add("--file=" + jar);
+        args.add("-C");
+        args.add(dir.toString());
+        args.add(".");
+        int ret = JAR_TOOL.run(System.out, System.out, args.toArray(new String[0]));
+        assertEquals(ret, 0);
+    }
+
+    /**
+     * Compile a Test class
+     */
+    private void compileTestClass(Path dir, String srcFile) {
+        List<String>  args = new ArrayList<>();
+        args.add("-d");
+        args.add(dir.toString());
+        args.add(TEST_SRC + File.separator + srcFile);
+        int ret = JAVAC_TOOL.run(System.out, System.out, args.toArray(new String[0]));
+        assertTrue(ret == 0);
     }
 
     /**
