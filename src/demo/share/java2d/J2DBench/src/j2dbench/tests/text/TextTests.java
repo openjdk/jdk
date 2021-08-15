@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,6 +75,8 @@ import j2dbench.Option.ObjectList;
 import j2dbench.Result;
 import j2dbench.Test;
 import j2dbench.TestEnvironment;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class TextTests extends Test {
     public static boolean hasGraphics2D;
@@ -299,7 +301,7 @@ public abstract class TextTests extends Test {
                     throw new IOException("Can't load resource " + fname);
                 }
                 BufferedReader r =
-                    new BufferedReader(new InputStreamReader(is, "utf8"));
+                    new BufferedReader(new InputStreamReader(is, UTF_8));
                 StringBuffer buf = new StringBuffer(r.readLine());
                 while (null != (s = r.readLine())) {
                     buf.append("  ");

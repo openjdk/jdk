@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * JdpPacketReader responsible for reading a packet <p>This class gets a byte
@@ -90,7 +92,7 @@ public final class JdpPacketReader {
             if (pkt.read(b) != len) {
                 throw new JdpException("Broken JDP packet. Unable to read entry.");
             }
-            return new String(b, "UTF-8");
+            return new String(b, UTF_8);
 
         } catch (EOFException e) {
             throw e;

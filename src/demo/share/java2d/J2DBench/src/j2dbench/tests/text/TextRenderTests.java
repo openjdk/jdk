@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,6 +54,8 @@ import java.awt.font.TextLayout;
 import j2dbench.Group;
 import j2dbench.Result;
 import j2dbench.TestEnvironment;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public abstract class TextRenderTests extends TextTests {
     static Group renderroot;
@@ -119,7 +121,7 @@ public abstract class TextRenderTests extends TextTests {
             Graphics g = tctx.graphics;
             g.setFont(tctx.font);
             try {
-                byte[] bytes = tctx.text.getBytes("ASCII"); // only good for english
+                byte[] bytes = tctx.text.getBytes(US_ASCII); // only good for english
                 do {
                     g.drawBytes(bytes, 0, bytes.length, 40, 40);
                 } while (--numReps >= 0);

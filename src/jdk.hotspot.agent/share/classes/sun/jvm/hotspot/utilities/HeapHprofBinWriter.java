@@ -37,6 +37,8 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.gc.z.ZCollectedHeap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /*
  * This class writes Java heap in hprof binary format. This format is
  * used by Heap Analysis Tool (HAT). The class is heavily influenced
@@ -1119,7 +1121,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // If name is already written don't write it again.
         if (names.add(sym)) {
             if(sym != null) {
-              byte[] buf = sym.asString().getBytes("UTF-8");
+              byte[] buf = sym.asString().getBytes(UTF_8);
               writeHeader(HPROF_UTF8, buf.length + OBJ_ID_SIZE);
               writeSymbolID(sym);
               out.write(buf);

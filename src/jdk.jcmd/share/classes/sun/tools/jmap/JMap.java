@@ -37,6 +37,8 @@ import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /*
  * This class is the main class for the JMap utility. It parses its arguments
  * and decides if the command should be satisfied using the VM attach mechanism
@@ -137,7 +139,7 @@ public class JMap {
           do {
               n = in.read(b);
               if (n > 0) {
-                  String s = new String(b, 0, n, "UTF-8");
+                  String s = new String(b, 0, n, UTF_8);
                   System.out.print(s);
               }
           } while (n > 0);
