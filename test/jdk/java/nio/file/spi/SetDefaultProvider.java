@@ -204,7 +204,7 @@ public class SetDefaultProvider {
         assertTrue(ret == 0);
         return jar;
     }
-    
+
     /**
      * Creates a JAR containing the FileSystemProvider used to override the
      * default FileSystemProvider
