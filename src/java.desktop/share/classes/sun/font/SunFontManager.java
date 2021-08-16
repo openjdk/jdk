@@ -3352,14 +3352,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 }
             }
 
-            String[] fontNames = null;
-            if (fontMapNames.size() > 0) {
-                fontNames = new String[fontMapNames.size()];
-                Object [] keyNames = fontMapNames.keySet().toArray();
-                for (int i=0; i < keyNames.length; i++) {
-                    fontNames[i] = (String)keyNames[i];
-                }
-            }
+            String[] fontNames = fontMapNames.keySet().toArray(new String[0]);
             Font[] fonts = new Font[fontNames.length];
             for (int i=0; i < fontNames.length; i++) {
                 fonts[i] = new Font(fontNames[i], Font.PLAIN, 1);
@@ -3428,11 +3421,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         // Add any native font family names here
         addNativeFontFamilyNames(familyNames, requestedLocale);
 
-        String[] retval =  new String[familyNames.size()];
-        Object [] keyNames = familyNames.keySet().toArray();
-        for (int i=0; i < keyNames.length; i++) {
-            retval[i] = familyNames.get(keyNames[i]);
-        }
+        String[] retval = familyNames.values().toArray(new String[0]);
         if (requestedLocale.equals(Locale.getDefault())) {
             lastDefaultLocale = requestedLocale;
             allFamilies = new String[retval.length];

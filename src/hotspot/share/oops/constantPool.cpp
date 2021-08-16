@@ -2391,11 +2391,11 @@ void ConstantPool::verify_on(outputStream* st) {
     if (tag.is_klass() || tag.is_unresolved_klass()) {
       guarantee(klass_name_at(i)->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_symbol()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = symbol_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_string()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = unresolved_string_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     }
   }
   if (pool_holder() != NULL) {

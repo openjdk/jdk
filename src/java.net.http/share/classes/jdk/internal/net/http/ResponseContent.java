@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.net.http.HttpResponse;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements chunked/fixed transfer encodings of HTTP/1.1 responses.
@@ -159,7 +160,7 @@ class ResponseContent {
             printable.get(bytes, 0, bytes.length);
             String msg = "============== accepted ==================\n";
             try {
-                var str = new String(bytes, "UTF-8");
+                var str = new String(bytes, UTF_8);
                 msg += str;
             } catch (Exception x) {
                 msg += x;

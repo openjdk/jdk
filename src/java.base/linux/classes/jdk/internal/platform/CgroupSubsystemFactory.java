@@ -51,6 +51,7 @@ public class CgroupSubsystemFactory {
     private static final String CPUSET_CTRL = "cpuset";
     private static final String BLKIO_CTRL = "blkio";
     private static final String MEMORY_CTRL = "memory";
+    private static final String PIDS_CTRL = "pids";
 
     /*
      * From https://www.kernel.org/doc/Documentation/filesystems/proc.txt
@@ -149,6 +150,7 @@ public class CgroupSubsystemFactory {
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
             case MEMORY_CTRL:   infos.put(MEMORY_CTRL, info); break;
             case BLKIO_CTRL:    infos.put(BLKIO_CTRL, info); break;
+            case PIDS_CTRL:     infos.put(PIDS_CTRL, info); break;
             }
         }
 
@@ -251,6 +253,7 @@ public class CgroupSubsystemFactory {
                     case CPUACCT_CTRL:
                     case CPU_CTRL:
                     case BLKIO_CTRL:
+                    case PIDS_CTRL:
                         CgroupInfo info = infos.get(cName);
                         info.setCgroupPath(cgroupPath);
                         break;
@@ -302,6 +305,7 @@ public class CgroupSubsystemFactory {
                         case MEMORY_CTRL: // fall-through
                         case CPU_CTRL:
                         case CPUACCT_CTRL:
+                        case PIDS_CTRL:
                         case BLKIO_CTRL: {
                             CgroupInfo info = infos.get(controllerName);
                             assert info.getMountPoint() == null;
