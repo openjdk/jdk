@@ -403,10 +403,8 @@ class PacketStream {
      * characters of the string.
      */
     String readString() {
-        String ret;
         int len = readInt();
-
-        ret = new String(pkt.data, inCursor, len, UTF_8);
+        String ret = new String(pkt.data, inCursor, len, UTF_8);
         inCursor += len;
         return ret;
     }
