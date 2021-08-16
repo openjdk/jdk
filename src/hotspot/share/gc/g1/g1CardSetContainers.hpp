@@ -64,7 +64,7 @@ class G1CardSetInlinePtr : public StackObj {
     return result;
   }
 
-  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint end_at);
+  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_elems);
 
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
