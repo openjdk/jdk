@@ -328,9 +328,15 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
+        Graphics2D g2d = null;
+        Stroke oldStroke = null;
+        Object oldAntialiasingHint = null;
         if (g instanceof Graphics2D) {
-            ((Graphics2D)g).setStroke(new BasicStroke(3));
-            ((Graphics2D)g).setRenderingHint(
+            g2d = (Graphics2D)g;
+            oldStroke = g2d.getStroke();
+            oldAntialiasingHint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.setRenderingHint(
                     RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -338,6 +344,13 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         Color ringColor = UIManager.getColor("Focus.color");
         g.setColor(ringColor);
         g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
+        if (g2d != null) {
+            // Restore old state of Java2D renderer
+            g2d.setStroke(oldStroke);
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    oldAntialiasingHint);
+        }
     }
 
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
