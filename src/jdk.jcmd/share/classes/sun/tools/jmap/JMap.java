@@ -28,7 +28,6 @@ package sun.tools.jmap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
@@ -125,8 +124,7 @@ public class JMap {
     }
 
     private static void executeCommandForPid(String pid, String command, Object ... args)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
         VirtualMachine vm = VirtualMachine.attach(pid);
 
         // Cast to HotSpotVirtualMachine as this is an
@@ -167,8 +165,7 @@ public class JMap {
     }
 
     private static void histo(String pid, String options)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
         String liveopt = "-all";
         String filename = null;
         String parallel = null;
@@ -205,8 +202,7 @@ public class JMap {
     }
 
     private static void dump(String pid, String options)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
 
         String subopts[] = options.split(",");
         String filename = null;
