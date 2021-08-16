@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @requires (os.family == "linux" | os.family == "mac" |
  *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
  * @run main/othervm -Djava.security.manager=allow GetXSpace
  */
 
@@ -42,6 +44,8 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.test.lib.Platform;
+import jdk.test.lib.Platform;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
@@ -50,10 +54,6 @@ public class GetXSpace {
 
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
                                               new DenyRead() };
-
-    private static final String OS_NAME = System.getProperty("os.name");
-    private static final boolean IS_MAC = OS_NAME.startsWith("Mac");
-    private static final boolean IS_WIN = OS_NAME.startsWith("Windows");
 
     // FileSystem Total Used Available Use% MountedOn
     private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
@@ -137,6 +137,9 @@ public class GetXSpace {
             while ((s = in.readLine()) != null) {
                 // skip header
                 if (i++ == 0) continue;
+                if (Platform.isLinux() && s.indexOf("/run/user") != -1)
+                    // Exclude /run/user/$uid as it may evanesce during the test
+                    continue;
                 sb.append(s).append("\n");
             }
         }
@@ -151,7 +154,7 @@ public class GetXSpace {
                     String name = f;
                     if (name == null) {
                         // cygwin's df lists windows path as FileSystem (1st group)
-                        name = IS_WIN ? m.group(1) : m.group(4);
+                        name = Platform.isWindows() ? m.group(1) : m.group(4);
                     }
                     al.add(new Space(m.group(2), m.group(3), name));;
                 }
@@ -229,7 +232,7 @@ public class GetXSpace {
             // calculated by 'df' using integer division by 2 of the number of
             // 512 byte blocks, resulting in a size smaller than the actual
             // value when the number of blocks is odd.
-            if (!IS_MAC || blockSize != 512 || numBlocks % 2 == 0
+            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0
                 || ts - s.total() != 512) {
                 fail(s.name(), s.total(), "!=", ts);
             }
@@ -238,7 +241,7 @@ public class GetXSpace {
         }
 
         // unix df returns statvfs.f_bavail
-        long tsp = (!IS_WIN ? us : fs);
+        long tsp = (!Platform.isWindows() ? us : fs);
         if (!s.woomFree(tsp)) {
             fail(s.name(), s.free(), "??", tsp);
         } else {
