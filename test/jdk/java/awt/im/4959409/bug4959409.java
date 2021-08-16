@@ -106,8 +106,8 @@ public class bug4959409 {
             container.add(jTextField, BorderLayout.SOUTH);
             container.add(jLabel, BorderLayout.CENTER);
             frame.setSize(300, 300);
+            frame.setLocationRelativeTo(null);
             frame.setAlwaysOnTop(true);
-	     frame.setLocationRelativeTo(null);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
         });
