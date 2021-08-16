@@ -39,6 +39,7 @@ public class VMOptionWarning {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+AlwaysSafeConstructors", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
         output.shouldContain("Error: VM option 'AlwaysSafeConstructors' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.");
 
         if (Platform.isDebugBuild()) {
@@ -48,14 +49,17 @@ public class VMOptionWarning {
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintInlining", "-version");
         output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
         output.shouldContain("Error: VM option 'PrintInlining' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+VerifyStack", "-version");
         output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
         output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+CheckCompressedOops", "-version");
         output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
         output.shouldContain("Error: VM option 'CheckCompressedOops' is notproduct and is available only in debug version of VM.");
     }
 }

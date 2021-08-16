@@ -42,11 +42,13 @@ public class TestVMOptions {
         "-XX:+IgnoreUnrecognizedVMOptions",
         "-XX:+PrintFlagsInitial");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
     output.shouldContain("bool UseSerialGC");
 
     pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-PrintVMOptions", "-version");
     output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
     output.shouldMatch("(openjdk|java)\\sversion");
 
     File dir = new File(System.getProperty("test.src", "."));
@@ -54,6 +56,7 @@ public class TestVMOptions {
     String s = file.getAbsolutePath();
     pb = ProcessTools.createJavaProcessBuilder("-XX:Flags="+s);
     output = new OutputAnalyzer(pb.start());
+    output.shouldNotHaveExitValue(0);
     output.shouldContain("VM option '-IgnoreUnrecognizedVMOptions'");
   }
 }

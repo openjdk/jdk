@@ -47,6 +47,7 @@ public class TestHexArguments {
       pb = ProcessTools.createJavaProcessBuilder(
           "-XX:SharedBaseAddress=1D000000", "-version");
       output = new OutputAnalyzer(pb.start());
+      output.shouldNotHaveExitValue(0);
       output.shouldContain("Could not create the Java Virtual Machine");
   }
 }

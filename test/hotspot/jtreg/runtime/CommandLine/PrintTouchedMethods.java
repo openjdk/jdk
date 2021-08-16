@@ -48,6 +48,7 @@ public class PrintTouchedMethods {
 
       // UnlockDiagnostic turned off, should fail
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldNotHaveExitValue(0);
       output.shouldContain("Error: VM option 'LogTouchedMethods' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
       output.shouldContain("Error: Could not create the Java Virtual Machine.");
 

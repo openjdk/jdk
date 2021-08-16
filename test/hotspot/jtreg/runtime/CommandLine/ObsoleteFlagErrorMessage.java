@@ -52,6 +52,7 @@ public class ObsoleteFlagErrorMessage {
         "-XX:+" + flag, "-version");
 
     OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
+    output2.shouldHaveExitValue(0);
     output2.shouldContain("Ignoring option").shouldContain("support was removed");
     output2.shouldContain(flag);
   }
