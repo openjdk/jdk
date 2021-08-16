@@ -98,8 +98,6 @@ private:
   static zaddress blocking_keep_alive_on_phantom_slow_path(zaddress addr);
   static zaddress blocking_load_barrier_on_weak_slow_path(zaddress addr);
   static zaddress blocking_load_barrier_on_phantom_slow_path(zaddress addr);
-  static zaddress is_object_live_filter_slow_path(zaddress addr);
-  static zaddress is_old_object_live_filter_slow_path(zaddress addr);
 
   static zaddress verify_old_object_live_slow_path(zaddress addr);
 

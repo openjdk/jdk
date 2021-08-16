@@ -206,32 +206,6 @@ zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
   return addr;
 }
 
-zaddress ZBarrier::is_object_live_filter_slow_path(zaddress addr) {
-  if (is_null(addr)) {
-    return zaddress::null;
-  }
-
-  if (!ZHeap::heap()->is_object_live(addr)) {
-    return zaddress::null;
-  }
-
-  // Live
-  return addr;
-}
-
-zaddress ZBarrier::is_old_object_live_filter_slow_path(zaddress addr) {
-  if (is_null(addr)) {
-    return zaddress::null;
-  }
-
-  if (ZHeap::heap()->is_old(addr) && !ZHeap::heap()->is_object_live(addr)) {
-    return zaddress::null;
-  }
-
-  // Live
-  return addr;
-}
-
 //
 // Clean barrier
 //
