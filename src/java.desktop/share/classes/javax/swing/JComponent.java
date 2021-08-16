@@ -181,6 +181,12 @@ import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
  * need a specific value for a particular property you should
  * explicitly set it.
  * <p>
+ * Containers inherited from <code>JComponent</code> can contain any
+ * number of default components as children. This behaviour can also
+ * change according to look and feel, as some look and feels may add a
+ * default component to a container, where as other look and feels may
+ * choose not to do so.
+ * <p>
  * In release 1.4, the focus subsystem was rearchitected.
  * For more information, see
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
