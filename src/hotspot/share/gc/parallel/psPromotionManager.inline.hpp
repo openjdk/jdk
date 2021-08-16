@@ -287,7 +287,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       push_contents(new_obj);
 
       if (psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
-          _string_dedup_requests.add(o);
+        _string_dedup_requests.add(o);
       }
     }
     return new_obj;
