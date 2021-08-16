@@ -127,8 +127,8 @@ public class DockerTestUtils {
      * @param imageName name of the image to be created, including version tag
      * @throws Exception
      */
-    public static void buildJdkDockerImage(String imageName) throws Exception {
-        buildJdkDockerImage(imageName, null);
+    public static void buildJdkContainerImage(String imageName) throws Exception {
+        buildJdkContainerImage(imageName, null);
     }
 
      /**
@@ -139,7 +139,7 @@ public class DockerTestUtils {
      * @param dockerfileContent content of the Dockerfile; use null to generate default content
      * @throws Exception
      */
-    public static void buildJdkDockerImage(String imageName, String dockerfileContent) throws Exception {
+    public static void buildJdkContainerImage(String imageName, String dockerfileContent) throws Exception {
 
         // Create an image build/staging directory
         Path buildDir = Paths.get(".", "image-build");
