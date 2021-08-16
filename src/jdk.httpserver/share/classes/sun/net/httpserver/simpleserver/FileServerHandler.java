@@ -154,14 +154,34 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private static Path mapToPath(HttpExchange exchange, Path root) {
-        URI rootURI = root.toUri();
-        URI requestURI = exchange.getRequestURI();
-        String contextPath = exchange.getHttpContext().getPath();
-        String requestPath = URI.create(contextPath).relativize(requestURI).getPath();
         try {
-            return Path.of(rootURI.resolve(requestPath)).normalize();
-        } catch (IllegalArgumentException iae) {
-            return null;  // could not resolve request URI
+            var fs = root.getFileSystem();
+            String sep = fs.getSeparator();
+            String context = exchange.getHttpContext().getPath();
+            String request = exchange.getRequestURI().getPath();
+
+            // ensure context ends with separator
+            if (!context.endsWith(sep)) { context += sep; }
+
+            // ensure paths are not absolute
+            if (context.startsWith(sep)) { context = context.substring(1); }
+            if (request.startsWith(sep)) { request = request.substring(1); }
+
+            // get paths
+            var contextPath = fs.getPath(context);
+            var requestPath = fs.getPath(request);
+
+            // resolve
+            assert root.isAbsolute() && Files.isDirectory(root);  // checked during creation
+            Path path = root.resolve(contextPath.relativize(requestPath)).normalize();
+
+            // ensure path does not escape root
+            if (path.startsWith(root)) {
+                return path;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;  // could not resolve request URI path
         }
     }
 
@@ -294,7 +314,7 @@ public final class FileServerHandler implements HttpHandler {
                     handleGET(exchange, path);
                 }
             } else {
-                exchange.setAttribute("request-path", "could not resolve request URI");
+                exchange.setAttribute("request-path", "could not resolve request URI path");
                 handleNotFound(exchange);
             }
         }

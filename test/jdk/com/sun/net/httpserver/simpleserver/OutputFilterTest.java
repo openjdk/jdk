@@ -257,7 +257,7 @@ public class OutputFilterTest {
         server.start();
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile\u0000.txt")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().map().size(), 3);
@@ -266,8 +266,8 @@ public class OutputFilterTest {
             baos.flush();
             var filterOutput = baos.toString(UTF_8);
             var pattern = Pattern.compile("""
-                    127\\.0\\.0\\.1 - - \\[[\\s\\S]+] "GET /aFile%3F%23\\.txt HTTP/1\\.1" 404 -
-                    Resource requested: could not resolve request URI
+                    127\\.0\\.0\\.1 - - \\[[\\s\\S]+] "GET /aFile%00\\.txt HTTP/1\\.1" 404 -
+                    Resource requested: could not resolve request URI path
                     (>[\\s\\S]+:[\\s\\S]+)+
                     >
                     (<[\\s\\S]+:[\\s\\S]+)+
