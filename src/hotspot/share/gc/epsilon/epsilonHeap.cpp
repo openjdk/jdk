@@ -31,7 +31,6 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -105,7 +104,7 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size) {
+HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
   HeapWord* res = NULL;
@@ -151,7 +150,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   size_t used = _space->used();
 
   // Allocation successful, update counters
-  if (Metaspace::initialized()) {
+  if (verbose) {
     size_t last = _last_counter_update;
     if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
@@ -159,7 +158,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   }
 
   // ...and print the occupancy line, if needed
-  if (Metaspace::initialized()) {
+  if (verbose) {
     size_t last = _last_heap_print;
     if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
@@ -265,7 +264,8 @@ HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exc
 }
 
 HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
-  return allocate_work(size);
+  // Cannot use verbose=true because Metaspace is not initialized
+  return allocate_work(size, /*verbose=*/false);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
