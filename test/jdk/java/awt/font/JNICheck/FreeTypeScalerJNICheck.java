@@ -26,7 +26,6 @@
  * @bug 8269223
  * @summary Verifies that -Xcheck:jni issues no warnings from freetypeScaler.c
  * @library /test/lib
- * @key headful
  * @run main FreeTypeScalerJNICheck
  */
 import java.awt.Font;
@@ -52,7 +51,6 @@ public class FreeTypeScalerJNICheck {
 
     public static void runTest() {
         String families[] = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-        JFrame frame = new JFrame("test");
         BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bi.createGraphics();
 
@@ -60,7 +58,8 @@ public class FreeTypeScalerJNICheck {
         {
             Font font = new Font(ff, Font.PLAIN, 12);
             Rectangle2D bounds = font.getStringBounds("test", g2d.getFontRenderContext());
-            FontMetrics metrics = frame.getFontMetrics(font);
+            g2d.setFont(font);
+            FontMetrics metrics = g2d.getFontMetrics(font);
             System.out.println(bounds.getHeight() + metrics.getHeight()); // use bounds and metrics
         }
 
