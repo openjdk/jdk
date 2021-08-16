@@ -354,6 +354,24 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public long transferTo(OutputStream out) throws IOException {
+        long transferred = 0L;
+        if (out instanceof FileOutputStream fos) {
+            FileChannel fc = getChannel();
+            long pos = fc.position();
+            transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
+            long newPos = pos + transferred;
+            fc.position(newPos);
+            if (newPos >= fc.size()) {
+                return transferred;
+            }
+        }
+        return transferred + super.transferTo(out);
+    }
+
     private long length() throws IOException {
         return length0();
     }
