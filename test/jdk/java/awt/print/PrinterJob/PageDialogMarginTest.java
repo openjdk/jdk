@@ -28,22 +28,19 @@
  *           entry is working
  * @run      main/manual PageDialogMarginTest
  */
-import java.awt.Component;
+
 import java.awt.print.PageFormat;
 import java.awt.print.PrinterJob;
+import java.util.Locale;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import java.text.MessageFormat;
-import java.util.Locale;
 
 public class PageDialogMarginTest {
 
     public static void main(String[] args) throws Exception {
-
         Locale.setDefault(Locale.US);
         String[] instructions
                 = {
@@ -57,11 +54,10 @@ public class PageDialogMarginTest {
         PrinterJob pj = PrinterJob.getPrinterJob();
 
         HashPrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-
         PageFormat pf = pj.pageDialog(aset);
-
         double left = pf.getImageableX();
         double top = pf.getImageableY();
+
         System.out.println("pageDialog - left/top from pageFormat: " + left / 72
                                    + " " + top / 72);
         System.out.println("pageDialog - left/top from attribute set: "
