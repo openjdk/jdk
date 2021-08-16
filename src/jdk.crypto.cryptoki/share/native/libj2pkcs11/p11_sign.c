@@ -150,7 +150,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
     }
 
     free(ckpData);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
     if (bufP != BUF) { free(bufP); }
+#pragma GCC diagnostic pop
 
     TRACE0("FINISHED\n");
     return jSignature;

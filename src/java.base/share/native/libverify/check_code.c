@@ -939,6 +939,7 @@ read_all_code(context_type* context, jclass cb, int num_methods,
     int i;
 
     lengths = malloc(sizeof(int) * num_methods);
+    memset(lengths, 0, sizeof(int) * num_methods);
     check_and_push(context, lengths, VM_MALLOC_BLK);
 
     code = malloc(sizeof(unsigned char*) * num_methods);
