@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Module system initialization exception results if a module is specificed twice to --patch-module.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver PatchModuleDupModule

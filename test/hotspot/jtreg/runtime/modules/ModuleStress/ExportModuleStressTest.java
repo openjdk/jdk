@@ -25,6 +25,7 @@
  * @test
  * @bug 8156871
  * @summary package in the boot layer is repeatedly exported to unique module created in layers on top of the boot layer
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile ../CompilerUtils.java

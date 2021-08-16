@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary VM exit initialization results if java.base is specificed more than once to --patch-module.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver PatchModuleDupJavaBase

@@ -26,6 +26,7 @@
  * @bug 8136930
  * @summary Test that the VM only recognizes the last specified --list-modules
  *          options but accumulates --add-module values.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver ModuleOptionsTest

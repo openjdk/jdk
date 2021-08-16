@@ -25,6 +25,7 @@
  * @test
  * @bug 8162415
  * @summary Test warnings for ignored properties.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver ModuleOptionsWarn
