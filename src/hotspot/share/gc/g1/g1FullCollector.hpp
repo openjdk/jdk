@@ -110,6 +110,7 @@ public:
   inline bool is_skip_marking(oop obj) const;
 
   inline void set_invalid(uint region_idx);
+  inline bool is_invalid(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
 
 private:

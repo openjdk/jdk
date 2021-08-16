@@ -47,6 +47,10 @@ void G1FullCollector::set_invalid(uint region_idx) {
   _region_attr_table.set_invalid(region_idx);
 }
 
+bool G1FullCollector::is_invalid(uint region_idx) const {
+  return _region_attr_table.is_invalid(region_idx);
+}
+
 void G1FullCollector::update_from_compacting_to_skip_compacting(uint region_idx) {
   _region_attr_table.verify_is_compacting(region_idx);
   _region_attr_table.set_skip_compacting(region_idx);

@@ -72,6 +72,10 @@ public:
     return get_by_index(idx) == SkipCompacting;
   }
 
+  bool is_invalid(uint idx) const {
+    return get_by_index(idx) == Invalid;
+  }
+
   void verify_is_compacting(uint idx) { assert(get_by_index(idx) == Compacting, "invariant"); }
 
   void verify_is_invalid(uint idx) { assert(get_by_index(idx) == Invalid, "invariant"); }
