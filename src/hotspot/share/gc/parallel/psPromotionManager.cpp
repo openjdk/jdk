@@ -190,7 +190,6 @@ PSPromotionManager::PSPromotionManager() {
   _old_lab.set_start_array(old_gen()->start_array());
 
   uint queue_size;
-  claimed_stack_depth()->initialize();
   queue_size = claimed_stack_depth()->max_elems();
 
   _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
