@@ -196,7 +196,7 @@ public class CgroupSubsystemFactory {
             if (isCgroupsV2) {
                 action = (tokens -> setCgroupV2Path(infos, tokens));
             }
-            selfCgroupLines.map(line -> line.split(":"))
+            selfCgroupLines.map(line -> line.split(":", 3))
                      .filter(tokens -> (tokens.length >= 3))
                      .forEach(action);
         }

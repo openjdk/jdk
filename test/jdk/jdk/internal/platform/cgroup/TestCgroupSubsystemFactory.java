@@ -172,7 +172,7 @@ public class TestCgroupSubsystemFactory {
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpuset rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupsV1DoubleCpuset = mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
     private String mntInfoCgroupsV1DoubleCpuset2 = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
-    private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.service\n" +
+    private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.s:ervice\n" +
             "10:hugetlb:/\n" +
             "9:cpuset:/\n" +
             "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
@@ -335,7 +335,7 @@ public class TestCgroupSubsystemFactory {
         CgroupTypeResult res = result.get();
         assertFalse("hybrid hierarchy expected as cgroups v1", res.isCgroupV2());
         CgroupInfo memoryInfo = res.getInfos().get("memory");
-        assertEquals("/user.slice/user-1000.slice/user@1000.service", memoryInfo.getCgroupPath());
+        assertEquals("/user.slice/user-1000.slice/user@1000.s:ervice", memoryInfo.getCgroupPath());
         assertEquals("/", memoryInfo.getMountRoot());
         assertEquals("/sys/fs/cgroup/memory", memoryInfo.getMountPoint());
     }
