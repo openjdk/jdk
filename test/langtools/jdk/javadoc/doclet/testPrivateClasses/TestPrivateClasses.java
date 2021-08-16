@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Field inheritence from non-public superclass.
                 """
-                    <a href="#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
+                    <a href="#fieldInheritedFromParent" class="member-name-link">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
                 """
-                    <a href="#methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
+                    <a href="#methodInheritedFromParent(int)" class="member-name-link">methodInheritedFromParent</a>""",
                 // private class does not show up in tree
                 """
                     <div class="inheritance" title="Inheritance Tree">java.lang.Object
@@ -73,8 +73,8 @@ public class TestPrivateClasses extends JavadocTester {
                 // Method is documented as though it is declared in the inheriting method.
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFromParent\
-                    </span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
+                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFr\
+                    omParent</span><wbr><span class="parameters">(int&nbsp;p1)</span>
                                                    throws <span class="exceptions">java.lang.Exception</span></div>""",
                 """
                     <dl class="notes">
@@ -99,13 +99,13 @@ public class TestPrivateClasses extends JavadocTester {
                 // Should not document comments from private inherited interfaces
                 """
                     <td class="col-last"><code><span class="member-name-link"><a href="#methodInterf\
-                    ace(int)">methodInterface</a></span>&#8203;(int&nbsp;p1)</code>
+                    ace(int)">methodInterface</a></span><wbr>(int&nbsp;p1)</code>
                     <div class="block">Comment from interface.</div>
                     </td>""",
                 // and similarly one more
                 """
                     <td class="col-last"><code><span class="member-name-link"><a href="#methodInterf\
-                    ace2(int)">methodInterface2</a></span>&#8203;(int&nbsp;p1)</code>
+                    ace2(int)">methodInterface2</a></span><wbr>(int&nbsp;p1)</code>
                     <div class="block">Comment from interface.</div>
                     </td>"""
         );
@@ -113,10 +113,10 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 """
-                    <a href="#fieldInheritedFromInterface">fieldInheritedFromInterface</a>""",
+                    <a href="#fieldInheritedFromInterface" class="member-name-link">fieldInheritedFromInterface</a>""",
                 // Method inheritance from non-public superinterface.
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>""",
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>""",
                 //Make sure implemented interfaces from private superclass are inherited
                 """
                     <dl class="notes">
@@ -217,7 +217,7 @@ public class TestPrivateClasses extends JavadocTester {
 
         checkOutput("pkg/PrivateInterface.html", true,
                 """
-                    <a href="#methodInterface(int)">methodInterface</a>"""
+                    <a href="#methodInterface(int)" class="member-name-link">methodInterface</a>"""
         );
 
         checkOutput("pkg2/C.html", true,

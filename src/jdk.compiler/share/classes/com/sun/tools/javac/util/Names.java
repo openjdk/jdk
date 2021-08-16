@@ -117,6 +117,7 @@ public class Names {
     public final Name Method;
 
     // package names
+    public final Name java;
     public final Name java_lang;
 
     // module names
@@ -214,6 +215,10 @@ public class Names {
     public final Name permits;
     public final Name sealed;
 
+    // pattern switches
+    public final Name typeSwitch;
+    public final Name enumSwitch;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -291,6 +296,7 @@ public class Names {
         Method = fromString("Method");
 
         // package names
+        java = fromString("java");
         java_lang = fromString("java.lang");
 
         // module names
@@ -382,6 +388,10 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // pattern switches
+        typeSwitch = fromString("typeSwitch");
+        enumSwitch = fromString("enumSwitch");
     }
 
     protected Name.Table createTable(Options options) {

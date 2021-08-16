@@ -152,9 +152,6 @@ protected:
 
   MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
 
-  bool _is_far_code; // Code is far from CodeCache.
-                     // Have to use far call instructions to call it from code in CodeCache.
-
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -333,8 +330,6 @@ public:
   virtual int get_state() const = 0;
 
   const char* state() const;
-
-  bool is_far_code() const { return _is_far_code; }
 
   bool inlinecache_check_contains(address addr) const {
     return (addr >= code_begin() && addr < verified_entry_point());

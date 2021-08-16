@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
@@ -109,6 +109,10 @@ void G1CollectionSet::free_optional_regions() {
 void G1CollectionSet::clear_candidates() {
   delete _candidates;
   _candidates = NULL;
+}
+
+bool G1CollectionSet::has_candidates() {
+  return _candidates != NULL && !_candidates->is_empty();
 }
 
 void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {
@@ -454,13 +458,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 }
 
 static int compare_region_idx(const uint a, const uint b) {
-  if (a > b) {
-    return 1;
-  } else if (a == b) {
-    return 0;
-  } else {
-    return -1;
-  }
+  return static_cast<int>(a-b);
 }
 
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {

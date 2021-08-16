@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -63,7 +64,6 @@ void JvmtiTagMapTable::clear() {
     *p = NULL; // clear out buckets.
   }
   assert(number_of_entries() == 0, "should have removed all entries");
-  assert(new_entry_free_list() == NULL, "entry present on JvmtiTagMapTable's free list");
 }
 
 JvmtiTagMapTable::~JvmtiTagMapTable() {
@@ -73,15 +73,14 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
 
 // Entries are C_Heap allocated
 JvmtiTagMapEntry* JvmtiTagMapTable::new_entry(unsigned int hash, WeakHandle w, jlong tag) {
-  JvmtiTagMapEntry* entry = (JvmtiTagMapEntry*)Hashtable<WeakHandle, mtServiceability>::allocate_new_entry(hash, w);
+  JvmtiTagMapEntry* entry = (JvmtiTagMapEntry*)Hashtable<WeakHandle, mtServiceability>::new_entry(hash, w);
   entry->set_tag(tag);
   return entry;
 }
 
 void JvmtiTagMapTable::free_entry(JvmtiTagMapEntry* entry) {
-  unlink_entry(entry);
   entry->literal().release(JvmtiExport::weak_tag_storage()); // release to OopStorage
-  FREE_C_HEAP_ARRAY(char, entry);
+  BasicHashtable<mtServiceability>::free_entry(entry);
 }
 
 unsigned int JvmtiTagMapTable::compute_hash(oop obj) {
@@ -214,7 +213,7 @@ void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free)
 
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 
@@ -251,7 +250,7 @@ void JvmtiTagMapTable::rehash() {
         p = entry->next_addr();
       }
       // get next entry
-      entry = (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::make_ptr(*p);
+      entry = *p;
     }
   }
 

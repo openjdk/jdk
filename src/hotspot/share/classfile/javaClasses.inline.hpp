@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #define SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+
 #include "oops/access.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -39,7 +41,7 @@ void java_lang_String::set_value_raw(oop string, typeArrayOop buffer) {
 }
 
 void java_lang_String::set_value(oop string, typeArrayOop buffer) {
-  string->obj_field_put(_value_offset, (oop)buffer);
+  string->obj_field_put(_value_offset, buffer);
 }
 
 bool java_lang_String::hash_is_set(oop java_string) {
@@ -72,6 +74,32 @@ bool java_lang_String::is_latin1(oop java_string) {
   return coder == CODER_LATIN1;
 }
 
+uint8_t* java_lang_String::flags_addr(oop java_string) {
+  assert(_initialized, "Must be initialized");
+  assert(is_instance(java_string), "Must be java string");
+  return java_string->obj_field_addr<uint8_t>(_flags_offset);
+}
+
+bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
+  return (Atomic::load(flags_addr(java_string)) & flag_mask) != 0;
+}
+
+bool java_lang_String::deduplication_forbidden(oop java_string) {
+  return is_flag_set(java_string, _deduplication_forbidden_mask);
+}
+
+bool java_lang_String::deduplication_requested(oop java_string) {
+  return is_flag_set(java_string, _deduplication_requested_mask);
+}
+
+void java_lang_String::set_deduplication_forbidden(oop java_string) {
+  test_and_set_flag(java_string, _deduplication_forbidden_mask);
+}
+
+bool java_lang_String::test_and_set_deduplication_requested(oop java_string) {
+  return test_and_set_flag(java_string, _deduplication_requested_mask);
+}
+
 int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
@@ -96,7 +124,7 @@ int java_lang_String::length(oop java_string) {
 }
 
 bool java_lang_String::is_instance_inlined(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::String_klass();
+  return obj != NULL && obj->klass() == vmClasses::String_klass();
 }
 
 // Accessors
@@ -190,15 +218,15 @@ inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oo
 }
 
 inline bool java_lang_invoke_MemberName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::MemberName_klass();
+  return obj != NULL && obj->klass() == vmClasses::MemberName_klass();
 }
 
 inline bool java_lang_invoke_ResolvedMethodName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::ResolvedMethodName_klass();
+  return obj != NULL && obj->klass() == vmClasses::ResolvedMethodName_klass();
 }
 
 inline bool java_lang_invoke_MethodType::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::MethodType_klass();
+  return obj != NULL && obj->klass() == vmClasses::MethodType_klass();
 }
 
 inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
@@ -206,7 +234,7 @@ inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
 }
 
 inline bool java_lang_Class::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
+  return obj != NULL && obj->klass() == vmClasses::Class_klass();
 }
 
 inline Klass* java_lang_Class::as_Klass(oop java_class) {
@@ -233,9 +261,9 @@ inline bool java_lang_Class::is_primitive(oop java_class) {
   return is_primitive;
 }
 
-inline int java_lang_Class::oop_size_raw(oop java_class) {
+inline int java_lang_Class::oop_size(oop java_class) {
   assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field_raw(_oop_size_offset);
+  int size = java_class->int_field(_oop_size_offset);
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
   return size;
 }
@@ -245,7 +273,7 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
 }
 
 inline bool java_lang_Module::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::Module_klass();
+  return obj != NULL && obj->klass() == vmClasses::Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {

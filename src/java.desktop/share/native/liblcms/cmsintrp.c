@@ -434,12 +434,13 @@ void BilinearInterp16(CMSREGISTER const cmsUInt16Number Input[],
            const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
            int        OutChan, TotalOut;
            cmsS15Fixed16Number    fx, fy;
-  CMSREGISTER int        rx, ry;
-           int        x0, y0;
-  CMSREGISTER int        X0, X1, Y0, Y1;
-           int        d00, d01, d10, d11,
-                      dx0, dx1,
-                      dxy;
+           CMSREGISTER int        rx, ry;
+           int                    x0, y0;
+           CMSREGISTER int        X0, X1, Y0, Y1;
+
+           int                    d00, d01, d10, d11,
+                                  dx0, dx1,
+                                  dxy;
 
     TotalOut   = p -> nOutputs;
 
@@ -495,11 +496,12 @@ void TrilinearInterpFloat(const cmsFloat32Number Input[],
     int        x0, y0, z0,
                X0, Y0, Z0, X1, Y1, Z1;
     int        TotalOut, OutChan;
+
     cmsFloat32Number      fx, fy, fz,
-        d000, d001, d010, d011,
-        d100, d101, d110, d111,
-        dx00, dx01, dx10, dx11,
-        dxy0, dxy1, dxyz;
+                          d000, d001, d010, d011,
+                          d100, d101, d110, d111,
+                          dx00, dx01, dx10, dx11,
+                          dxy0, dxy1, dxyz;
 
     TotalOut   = p -> nOutputs;
 
@@ -565,13 +567,13 @@ void TrilinearInterp16(CMSREGISTER const cmsUInt16Number Input[],
            const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
            int        OutChan, TotalOut;
            cmsS15Fixed16Number    fx, fy, fz;
-  CMSREGISTER int        rx, ry, rz;
-           int        x0, y0, z0;
-  CMSREGISTER int        X0, X1, Y0, Y1, Z0, Z1;
-           int        d000, d001, d010, d011,
-                      d100, d101, d110, d111,
-                      dx00, dx01, dx10, dx11,
-                      dxy0, dxy1, dxyz;
+           CMSREGISTER int        rx, ry, rz;
+           int                    x0, y0, z0;
+           CMSREGISTER int        X0, X1, Y0, Y1, Z0, Z1;
+           int                    d000, d001, d010, d011,
+                                  d100, d101, d110, d111,
+                                  dx00, dx01, dx10, dx11,
+                                  dxy0, dxy1, dxyz;
 
     TotalOut   = p -> nOutputs;
 
@@ -639,8 +641,8 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
 {
     const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
     cmsFloat32Number     px, py, pz;
-    int        x0, y0, z0,
-               X0, Y0, Z0, X1, Y1, Z1;
+    int                  x0, y0, z0,
+                         X0, Y0, Z0, X1, Y1, Z1;
     cmsFloat32Number     rx, ry, rz;
     cmsFloat32Number     c0, c1=0, c2=0, c3=0;
     int                  OutChan, TotalOut;
@@ -730,9 +732,6 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
 
 #undef DENS
 
-
-
-
 static CMS_NO_SANITIZE
 void TetrahedralInterp16(CMSREGISTER const cmsUInt16Number Input[],
                          CMSREGISTER cmsUInt16Number Output[],
@@ -743,7 +742,7 @@ void TetrahedralInterp16(CMSREGISTER const cmsUInt16Number Input[],
     cmsS15Fixed16Number rx, ry, rz;
     int x0, y0, z0;
     cmsS15Fixed16Number c0, c1, c2, c3, Rest;
-    cmsS15Fixed16Number X0, X1, Y0, Y1, Z0, Z1;
+    cmsUInt32Number X0, X1, Y0, Y1, Z0, Z1;
     cmsUInt32Number TotalOut = p -> nOutputs;
 
     fx = _cmsToFixedDomain((int) Input[0] * p -> Domain[0]);
@@ -767,7 +766,7 @@ void TetrahedralInterp16(CMSREGISTER const cmsUInt16Number Input[],
     Z0 = p -> opta[0] * z0;
     Z1 = (Input[2] == 0xFFFFU ? 0 : p->opta[0]);
 
-    LutTable = &LutTable[X0+Y0+Z0];
+    LutTable += X0+Y0+Z0;
 
     // Output should be computed as x = ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest))
     // which expands as: x = (Rest + ((Rest+0x7fff)/0xFFFF) + 0x8000)>>16
@@ -1051,8 +1050,6 @@ void Eval4Inputs(CMSREGISTER const cmsUInt16Number Input[],
 
 // For more that 3 inputs (i.e., CMYK)
 // evaluate two 3-dimensional interpolations and then linearly interpolate between them.
-
-
 static
 void Eval4InputsFloat(const cmsFloat32Number Input[],
                       cmsFloat32Number Output[],
@@ -1095,351 +1092,102 @@ void Eval4InputsFloat(const cmsFloat32Number Input[],
        }
 }
 
-
-static CMS_NO_SANITIZE
-void Eval5Inputs(CMSREGISTER const cmsUInt16Number Input[],
-                 CMSREGISTER cmsUInt16Number Output[],
-
-                 CMSREGISTER const cmsInterpParams* p16)
-{
-       const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
-       cmsS15Fixed16Number fk;
-       cmsS15Fixed16Number k0, rk;
-       int K0, K1;
-       const cmsUInt16Number* T;
-       cmsUInt32Number i;
-       cmsUInt16Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-
-       fk = _cmsToFixedDomain((cmsS15Fixed16Number) Input[0] * p16 -> Domain[0]);
-       k0 = FIXED_TO_INT(fk);
-       rk = FIXED_REST_TO_INT(fk);
-
-       K0 = p16 -> opta[4] * k0;
-       K1 = p16 -> opta[4] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));
-
-       p1 = *p16;
-       memmove(&p1.Domain[0], &p16 ->Domain[1], 4*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval4Inputs(Input + 1, Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval4Inputs(Input + 1, Tmp2, &p1);
-
-       for (i=0; i < p16 -> nOutputs; i++) {
-
-              Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);
-       }
-
+#define EVAL_FNS(N,NM) static CMS_NO_SANITIZE \
+void Eval##N##Inputs(CMSREGISTER const cmsUInt16Number Input[], CMSREGISTER cmsUInt16Number Output[], CMSREGISTER const cmsInterpParams* p16)\
+{\
+       const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;\
+       cmsS15Fixed16Number fk;\
+       cmsS15Fixed16Number k0, rk;\
+       int K0, K1;\
+       const cmsUInt16Number* T;\
+       cmsUInt32Number i;\
+       cmsUInt16Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];\
+       cmsInterpParams p1;\
+\
+       fk = _cmsToFixedDomain((cmsS15Fixed16Number) Input[0] * p16 -> Domain[0]);\
+       k0 = FIXED_TO_INT(fk);\
+       rk = FIXED_REST_TO_INT(fk);\
+\
+       K0 = p16 -> opta[NM] * k0;\
+       K1 = p16 -> opta[NM] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));\
+\
+       p1 = *p16;\
+       memmove(&p1.Domain[0], &p16 ->Domain[1], NM*sizeof(cmsUInt32Number));\
+\
+       T = LutTable + K0;\
+       p1.Table = T;\
+\
+       Eval##NM##Inputs(Input + 1, Tmp1, &p1);\
+\
+       T = LutTable + K1;\
+       p1.Table = T;\
+\
+       Eval##NM##Inputs(Input + 1, Tmp2, &p1);\
+\
+       for (i=0; i < p16 -> nOutputs; i++) {\
+\
+              Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);\
+       }\
+}\
+\
+static void Eval##N##InputsFloat(const cmsFloat32Number Input[], \
+                                 cmsFloat32Number Output[],\
+                                 const cmsInterpParams * p)\
+{\
+       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;\
+       cmsFloat32Number rest;\
+       cmsFloat32Number pk;\
+       int k0, K0, K1;\
+       const cmsFloat32Number* T;\
+       cmsUInt32Number i;\
+       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];\
+       cmsInterpParams p1;\
+\
+       pk = fclamp(Input[0]) * p->Domain[0];\
+       k0 = _cmsQuickFloor(pk);\
+       rest = pk - (cmsFloat32Number) k0;\
+\
+       K0 = p -> opta[NM] * k0;\
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[NM]);\
+\
+       p1 = *p;\
+       memmove(&p1.Domain[0], &p ->Domain[1], NM*sizeof(cmsUInt32Number));\
+\
+       T = LutTable + K0;\
+       p1.Table = T;\
+\
+       Eval##NM##InputsFloat(Input + 1, Tmp1, &p1);\
+\
+       T = LutTable + K1;\
+       p1.Table = T;\
+\
+       Eval##NM##InputsFloat(Input + 1, Tmp2, &p1);\
+\
+       for (i=0; i < p -> nOutputs; i++) {\
+\
+              cmsFloat32Number y0 = Tmp1[i];\
+              cmsFloat32Number y1 = Tmp2[i];\
+\
+              Output[i] = y0 + (y1 - y0) * rest;\
+       }\
 }
 
 
-static
-void Eval5InputsFloat(const cmsFloat32Number Input[],
-                      cmsFloat32Number Output[],
-                      const cmsInterpParams* p)
-{
-       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
-       cmsFloat32Number rest;
-       cmsFloat32Number pk;
-       int k0, K0, K1;
-       const cmsFloat32Number* T;
-       cmsUInt32Number i;
-       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
+/**
+* Thanks to Carles Llopis for the templating idea
+*/
+EVAL_FNS(5, 4)
+EVAL_FNS(6, 5)
+EVAL_FNS(7, 6)
+EVAL_FNS(8, 7)
+EVAL_FNS(9, 8)
+EVAL_FNS(10, 9)
+EVAL_FNS(11, 10)
+EVAL_FNS(12, 11)
+EVAL_FNS(13, 12)
+EVAL_FNS(14, 13)
+EVAL_FNS(15, 14)
 
-       pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
-       rest = pk - (cmsFloat32Number) k0;
-
-       K0 = p -> opta[4] * k0;
-       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[4]);
-
-       p1 = *p;
-       memmove(&p1.Domain[0], &p ->Domain[1], 4*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval4InputsFloat(Input + 1,  Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval4InputsFloat(Input + 1,  Tmp2, &p1);
-
-       for (i=0; i < p -> nOutputs; i++) {
-
-              cmsFloat32Number y0 = Tmp1[i];
-              cmsFloat32Number y1 = Tmp2[i];
-
-              Output[i] = y0 + (y1 - y0) * rest;
-       }
-}
-
-
-
-static CMS_NO_SANITIZE
-void Eval6Inputs(CMSREGISTER const cmsUInt16Number Input[],
-                 CMSREGISTER cmsUInt16Number Output[],
-                 CMSREGISTER const cmsInterpParams* p16)
-{
-       const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
-       cmsS15Fixed16Number fk;
-       cmsS15Fixed16Number k0, rk;
-       int K0, K1;
-       const cmsUInt16Number* T;
-       cmsUInt32Number i;
-       cmsUInt16Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-       fk = _cmsToFixedDomain((cmsS15Fixed16Number) Input[0] * p16 -> Domain[0]);
-       k0 = FIXED_TO_INT(fk);
-       rk = FIXED_REST_TO_INT(fk);
-
-       K0 = p16 -> opta[5] * k0;
-       K1 = p16 -> opta[5] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));
-
-       p1 = *p16;
-       memmove(&p1.Domain[0], &p16 ->Domain[1], 5*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval5Inputs(Input + 1, Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval5Inputs(Input + 1, Tmp2, &p1);
-
-       for (i=0; i < p16 -> nOutputs; i++) {
-
-              Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);
-       }
-
-}
-
-
-static
-void Eval6InputsFloat(const cmsFloat32Number Input[],
-                      cmsFloat32Number Output[],
-                      const cmsInterpParams* p)
-{
-       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
-       cmsFloat32Number rest;
-       cmsFloat32Number pk;
-       int k0, K0, K1;
-       const cmsFloat32Number* T;
-       cmsUInt32Number i;
-       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-       pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
-       rest = pk - (cmsFloat32Number) k0;
-
-       K0 = p -> opta[5] * k0;
-       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[5]);
-
-       p1 = *p;
-       memmove(&p1.Domain[0], &p ->Domain[1], 5*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval5InputsFloat(Input + 1,  Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval5InputsFloat(Input + 1,  Tmp2, &p1);
-
-       for (i=0; i < p -> nOutputs; i++) {
-
-              cmsFloat32Number y0 = Tmp1[i];
-              cmsFloat32Number y1 = Tmp2[i];
-
-              Output[i] = y0 + (y1 - y0) * rest;
-       }
-}
-
-
-static CMS_NO_SANITIZE
-void Eval7Inputs(CMSREGISTER const cmsUInt16Number Input[],
-                 CMSREGISTER cmsUInt16Number Output[],
-                 CMSREGISTER const cmsInterpParams* p16)
-{
-       const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
-       cmsS15Fixed16Number fk;
-       cmsS15Fixed16Number k0, rk;
-       int K0, K1;
-       const cmsUInt16Number* T;
-       cmsUInt32Number i;
-       cmsUInt16Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-
-       fk = _cmsToFixedDomain((cmsS15Fixed16Number) Input[0] * p16 -> Domain[0]);
-       k0 = FIXED_TO_INT(fk);
-       rk = FIXED_REST_TO_INT(fk);
-
-       K0 = p16 -> opta[6] * k0;
-       K1 = p16 -> opta[6] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));
-
-       p1 = *p16;
-       memmove(&p1.Domain[0], &p16 ->Domain[1], 6*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval6Inputs(Input + 1, Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval6Inputs(Input + 1, Tmp2, &p1);
-
-       for (i=0; i < p16 -> nOutputs; i++) {
-              Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);
-       }
-}
-
-
-static
-void Eval7InputsFloat(const cmsFloat32Number Input[],
-                      cmsFloat32Number Output[],
-                      const cmsInterpParams* p)
-{
-       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
-       cmsFloat32Number rest;
-       cmsFloat32Number pk;
-       int k0, K0, K1;
-       const cmsFloat32Number* T;
-       cmsUInt32Number i;
-       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-       pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
-       rest = pk - (cmsFloat32Number) k0;
-
-       K0 = p -> opta[6] * k0;
-       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[6]);
-
-       p1 = *p;
-       memmove(&p1.Domain[0], &p ->Domain[1], 6*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval6InputsFloat(Input + 1,  Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval6InputsFloat(Input + 1,  Tmp2, &p1);
-
-
-       for (i=0; i < p -> nOutputs; i++) {
-
-              cmsFloat32Number y0 = Tmp1[i];
-              cmsFloat32Number y1 = Tmp2[i];
-
-              Output[i] = y0 + (y1 - y0) * rest;
-
-       }
-}
-
-static CMS_NO_SANITIZE
-void Eval8Inputs(CMSREGISTER const cmsUInt16Number Input[],
-                 CMSREGISTER cmsUInt16Number Output[],
-                 CMSREGISTER const cmsInterpParams* p16)
-{
-       const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
-       cmsS15Fixed16Number fk;
-       cmsS15Fixed16Number k0, rk;
-       int K0, K1;
-       const cmsUInt16Number* T;
-       cmsUInt32Number i;
-       cmsUInt16Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-       fk = _cmsToFixedDomain((cmsS15Fixed16Number) Input[0] * p16 -> Domain[0]);
-       k0 = FIXED_TO_INT(fk);
-       rk = FIXED_REST_TO_INT(fk);
-
-       K0 = p16 -> opta[7] * k0;
-       K1 = p16 -> opta[7] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));
-
-       p1 = *p16;
-       memmove(&p1.Domain[0], &p16 ->Domain[1], 7*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval7Inputs(Input + 1, Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-       Eval7Inputs(Input + 1, Tmp2, &p1);
-
-       for (i=0; i < p16 -> nOutputs; i++) {
-              Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);
-       }
-}
-
-
-
-static
-void Eval8InputsFloat(const cmsFloat32Number Input[],
-                      cmsFloat32Number Output[],
-                      const cmsInterpParams* p)
-{
-       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
-       cmsFloat32Number rest;
-       cmsFloat32Number pk;
-       int k0, K0, K1;
-       const cmsFloat32Number* T;
-       cmsUInt32Number i;
-       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
-
-       pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
-       rest = pk - (cmsFloat32Number) k0;
-
-       K0 = p -> opta[7] * k0;
-       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[7]);
-
-       p1 = *p;
-       memmove(&p1.Domain[0], &p ->Domain[1], 7*sizeof(cmsUInt32Number));
-
-       T = LutTable + K0;
-       p1.Table = T;
-
-       Eval7InputsFloat(Input + 1,  Tmp1, &p1);
-
-       T = LutTable + K1;
-       p1.Table = T;
-
-       Eval7InputsFloat(Input + 1,  Tmp2, &p1);
-
-
-       for (i=0; i < p -> nOutputs; i++) {
-
-              cmsFloat32Number y0 = Tmp1[i];
-              cmsFloat32Number y1 = Tmp2[i];
-
-              Output[i] = y0 + (y1 - y0) * rest;
-       }
-}
 
 // The default factory
 static
@@ -1540,6 +1288,53 @@ cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cm
                    Interpolation.Lerp16    =  Eval8Inputs;
                break;
 
+           case 9:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval9InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval9Inputs;
+               break;
+
+           case 10:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval10InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval10Inputs;
+               break;
+
+           case 11:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval11InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval11Inputs;
+               break;
+
+           case 12:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval12InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval12Inputs;
+               break;
+
+           case 13:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval13InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval13Inputs;
+               break;
+
+           case 14:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval14InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval14Inputs;
+               break;
+
+           case 15:
+               if (IsFloat)
+                   Interpolation.LerpFloat = Eval15InputsFloat;
+               else
+                   Interpolation.Lerp16 = Eval15Inputs;
                break;
 
            default:

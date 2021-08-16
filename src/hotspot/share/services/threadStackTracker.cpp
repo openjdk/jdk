@@ -33,7 +33,7 @@
 volatile size_t ThreadStackTracker::_thread_count = 0;
 SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = NULL;
 
-bool ThreadStackTracker::late_initialize(NMT_TrackingLevel level) {
+bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
   if (level == NMT_detail && !track_as_vm()) {
     _simple_thread_stacks = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
       SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>();
@@ -91,7 +91,7 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
     if (MemTracker::tracking_level() == NMT_detail) {
       ThreadCritical tc;
       assert(_simple_thread_stacks != NULL, "Must be initialized");
-      SimpleThreadStackSite site((address)base, size);
+      SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
       assert(removed, "Must exist");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,11 @@ public final class ZoneInfoFile {
                 .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
                 .toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
+        loadTZDB();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadTZDB() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 try {

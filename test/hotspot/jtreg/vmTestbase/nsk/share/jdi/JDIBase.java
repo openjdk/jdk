@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ThreadDeathEvent;
+import com.sun.jdi.event.ThreadStartEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
@@ -148,6 +150,37 @@ public class JDIBase {
         } catch (Exception e) {
             throw new JDITestRuntimeException("** EXCEPTION while waiting for event ** : " + e);
         }
+    }
+
+    // Special version of getEventSet for ThreadStartEvent/ThreadDeathEvent.
+    // When ThreadStartRequest and/or ThreadDeathRequest are enabled,
+    // we can get the events from system threads unexpected for tests.
+    // The method skips ThreadStartEvent/ThreadDeathEvent events
+    // for all threads except the expected one.
+    protected void getEventSetForThreadStartDeath(String threadName) throws JDITestRuntimeException {
+        boolean gotDesiredEvent = false;
+        while (!gotDesiredEvent) {
+            getEventSet();
+            Event event = eventIterator.nextEvent();
+            if (event instanceof ThreadStartEvent evt) {
+                if (evt.thread().name().equals(threadName)) {
+                    gotDesiredEvent = true;
+                } else {
+                    log2("Got ThreadStartEvent for wrong thread: " + event);
+                }
+            } else if (event instanceof ThreadDeathEvent evt) {
+                if (evt.thread().name().equals(threadName)) {
+                    gotDesiredEvent = true;
+                } else {
+                    log2("Got ThreadDeathEvent for wrong thread: " + event);
+                }
+            } else {
+                // not ThreadStartEvent nor ThreadDeathEvent
+                gotDesiredEvent = true;
+            }
+        }
+        // reset the iterator before return
+        eventIterator = eventSet.eventIterator();
     }
 
     protected void breakpointForCommunication() throws JDITestRuntimeException {

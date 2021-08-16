@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,34 @@ Node* AddNode::Identity(PhaseGVN* phase) {
 
 //------------------------------commute----------------------------------------
 // Commute operands to move loads and constants to the right.
-static bool commute(Node *add, bool con_left, bool con_right) {
+static bool commute(PhaseGVN* phase, Node* add) {
   Node *in1 = add->in(1);
   Node *in2 = add->in(2);
+
+  // convert "max(a,b) + min(a,b)" into "a+b".
+  if ((in1->Opcode() == add->as_Add()->max_opcode() && in2->Opcode() == add->as_Add()->min_opcode())
+      || (in1->Opcode() == add->as_Add()->min_opcode() && in2->Opcode() == add->as_Add()->max_opcode())) {
+    Node *in11 = in1->in(1);
+    Node *in12 = in1->in(2);
+
+    Node *in21 = in2->in(1);
+    Node *in22 = in2->in(2);
+
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
+      add->set_req(1, in11);
+      add->set_req(2, in12);
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      return true;
+    }
+  }
+
+  bool con_left = phase->type(in1)->singleton();
+  bool con_right = phase->type(in2)->singleton();
 
   // Convert "1+x" into "x+1".
   // Right is a constant; leave it
@@ -115,7 +140,7 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool con_right = t2->singleton();
 
   // Check for commutative operation desired
-  if (commute(this, con_left, con_right)) return this;
+  if (commute(phase, this)) return this;
 
   AddNode *progress = NULL;             // Progress flag
 
@@ -145,14 +170,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // The Add of the flattened expression
       Node *x1 = add1->in(1);
       Node *x2 = phase->makecon(add1->as_Add()->add_ring(t2, t12));
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (igvn) {
-        set_req_X(2,x2,igvn);
-        set_req_X(1,x1,igvn);
-      } else {
-        set_req(2,x2);
-        set_req(1,x1);
-      }
+      set_req_X(2, x2, phase);
+      set_req_X(1, x1, phase);
       progress = this;            // Made progress
       add1 = in(1);
       add1_op = add1->Opcode();
@@ -169,8 +188,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       add2 = add1->clone();
       add2->set_req(2, in(2));
       add2 = phase->transform(add2);
-      set_req(1, add2);
-      set_req(2, a12);
+      set_req_X(1, add2, phase);
+      set_req_X(2, a12, phase);
       progress = this;
       add2 = a12;
     }
@@ -188,14 +207,9 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       addx->set_req(1, in(1));
       addx->set_req(2, add2->in(1));
       addx = phase->transform(addx);
-      set_req(1, addx);
-      set_req(2, a22);
+      set_req_X(1, addx, phase);
+      set_req_X(2, a22, phase);
       progress = this;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (add2->outcnt() == 0 && igvn) {
-        // add disconnected.
-        igvn->_worklist.push(add2);
-      }
     }
   }
 
@@ -307,6 +321,40 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( op1 == Op_SubI && phase->type(in1->in(1)) == TypeInt::ZERO )
     return new SubINode( in2, in1->in(2) );
 
+  // Associative
+  if (op1 == Op_MulI && op2 == Op_MulI) {
+    Node* add_in1 = NULL;
+    Node* add_in2 = NULL;
+    Node* mul_in = NULL;
+
+    if (in1->in(1) == in2->in(1)) {
+      // Convert "a*b+a*c into a*(b+c)
+      add_in1 = in1->in(2);
+      add_in2 = in2->in(2);
+      mul_in = in1->in(1);
+    } else if (in1->in(2) == in2->in(1)) {
+      // Convert a*b+b*c into b*(a+c)
+      add_in1 = in1->in(1);
+      add_in2 = in2->in(2);
+      mul_in = in1->in(2);
+    } else if (in1->in(2) == in2->in(2)) {
+      // Convert a*c+b*c into (a+b)*c
+      add_in1 = in1->in(1);
+      add_in2 = in2->in(1);
+      mul_in = in1->in(2);
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b+c*a into a*(b+c)
+      add_in1 = in1->in(2);
+      add_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* add = phase->transform(new AddINode(add_in1, add_in2));
+      return new MulINode(mul_in, add);
+    }
+  }
+
   // Convert (x>>>z)+y into (x+(y<<z))>>>z for small constant z and y.
   // Helps with array allocation math constant folding
   // See 4790063:
@@ -328,6 +376,23 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if( t_in11 != Type::TOP && (t_in11->is_int()->_lo >= -(y << z)) ) {
         Node *a = phase->transform( new AddINode( in1->in(1), phase->intcon(y<<z) ) );
         return new URShiftINode( a, in1->in(2) );
+      }
+    }
+  }
+
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftI && op2 == Op_LShiftI) || (op1 == Op_LShiftI && op2 == Op_URShiftI)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftI ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftI ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x1F) == (32 - (rshift_t->get_con() & 0x1F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x1F), TypeInt::INT);
       }
     }
   }
@@ -424,7 +489,7 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c-a)" into "(c-b)"
-    if( op2 == Op_SubL && in1->in(1) == in1->in(2) ) {
+    if( op2 == Op_SubL && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
       return new SubLNode(in2->in(1), in1->in(2));
     }
@@ -435,18 +500,60 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode( in1, in2->in(2) );
 
   // Convert "(0-y)+x" into "(x-y)"
-  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeInt::ZERO )
+  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeLong::ZERO )
     return new SubLNode( in2, in1->in(2) );
 
-  // Convert "X+X+X+X+X...+X+Y" into "k*X+Y" or really convert "X+(X+Y)"
-  // into "(X<<1)+Y" and let shift-folding happen.
-  if( op2 == Op_AddL &&
-      in2->in(1) == in1 &&
-      op1 != Op_ConL &&
-      0 ) {
-    Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
-    return new AddLNode(shift,in2->in(2));
+  // Associative
+  if (op1 == Op_MulL && op2 == Op_MulL) {
+    Node* add_in1 = NULL;
+    Node* add_in2 = NULL;
+    Node* mul_in = NULL;
+
+    if (in1->in(1) == in2->in(1)) {
+      // Convert "a*b+a*c into a*(b+c)
+      add_in1 = in1->in(2);
+      add_in2 = in2->in(2);
+      mul_in = in1->in(1);
+    } else if (in1->in(2) == in2->in(1)) {
+      // Convert a*b+b*c into b*(a+c)
+      add_in1 = in1->in(1);
+      add_in2 = in2->in(2);
+      mul_in = in1->in(2);
+    } else if (in1->in(2) == in2->in(2)) {
+      // Convert a*c+b*c into (a+b)*c
+      add_in1 = in1->in(1);
+      add_in2 = in2->in(1);
+      mul_in = in1->in(2);
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b+c*a into a*(b+c)
+      add_in1 = in1->in(2);
+      add_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* add = phase->transform(new AddLNode(add_in1, add_in2));
+      return new MulLNode(mul_in, add);
+    }
   }
+
+  // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
+  if (Matcher::match_rule_supported(Op_RotateRight) &&
+      ((op1 == Op_URShiftL && op2 == Op_LShiftL) || (op1 == Op_LShiftL && op2 == Op_URShiftL)) &&
+      in1->in(1) != NULL && in1->in(1) == in2->in(1)) {
+    Node* rshift = op1 == Op_URShiftL ? in1->in(2) : in2->in(2);
+    Node* lshift = op1 == Op_URShiftL ? in2->in(2) : in1->in(2);
+    if (rshift != NULL && lshift != NULL) {
+      const TypeInt* rshift_t = phase->type(rshift)->isa_int();
+      const TypeInt* lshift_t = phase->type(lshift)->isa_int();
+      if (lshift_t != NULL && lshift_t->is_con() &&
+          rshift_t != NULL && rshift_t->is_con() &&
+          ((lshift_t->get_con() & 0x3F) == (64 - (rshift_t->get_con() & 0x3F)))) {
+        return new RotateRightNode(in1->in(1), phase->intcon(rshift_t->get_con() & 0x3F), TypeLong::LONG);
+      }
+    }
+  }
+
 
   return AddNode::Ideal(phase, can_reshape);
 }
@@ -520,14 +627,8 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Ideal------------------------------------------
 Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
-    return AddNode::Ideal(phase, can_reshape); // commutative and associative transforms
-  }
-
   // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(this,
-                 phase->type( in(1) )->singleton(),
-                 phase->type( in(2) )->singleton() ) ? this : NULL;
+  return commute(phase, this) ? this : NULL;
 }
 
 
@@ -557,14 +658,8 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Ideal------------------------------------------
 Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
-    return AddNode::Ideal(phase, can_reshape); // commutative and associative transforms
-  }
-
   // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(this,
-                 phase->type( in(1) )->singleton(),
-                 phase->type( in(2) )->singleton() ) ? this : NULL;
+  return commute(phase, this) ? this : NULL;
 }
 
 
@@ -607,14 +702,8 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if( igvn ) {
-        set_req_X(Address,address,igvn);
-        set_req_X(Offset,offset,igvn);
-      } else {
-        set_req(Address,address);
-        set_req(Offset,offset);
-      }
+      set_req_X(Address, address, phase);
+      set_req_X(Offset, offset, phase);
       return this;
     }
   }
@@ -878,6 +967,36 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //=============================================================================
+
+const Type* XorINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  // result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+  const TypeInt* t1i = t1->is_int();
+  const TypeInt* t2i = t2->is_int();
+  if ((t1i->_lo >= 0) &&
+      (t1i->_hi > 0)  &&
+      (t2i->_lo >= 0) &&
+      (t2i->_hi > 0)) {
+    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
+    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
+    return t1x->meet(t2x);
+  }
+  return AddNode::Value(phase);
+}
+
+
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
@@ -913,6 +1032,33 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( r0->get_con() ^ r1->get_con() );
 }
 
+const Type* XorLNode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+  // x ^ x ==> 0
+  if (in1->eqv_uncast(in2)) {
+    return add_id();
+  }
+  // result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+  const TypeLong* t1l = t1->is_long();
+  const TypeLong* t2l = t2->is_long();
+  if ((t1l->_lo >= 0) &&
+      (t1l->_hi > 0)  &&
+      (t2l->_lo >= 0) &&
+      (t2l->_hi > 0)) {
+    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
+    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
+    return t1x->meet(t2x);
+  }
+  return AddNode::Value(phase);
+}
 
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
@@ -1058,8 +1204,8 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( l != l->in(1), "dead loop in MinINode::Ideal" );
     r = phase->transform(new MinINode(l->in(2),r));
     l = l->in(1);
-    set_req(1, l);
-    set_req(2, r);
+    set_req_X(1, l, phase);
+    set_req_X(2, r, phase);
     return this;
   }
 

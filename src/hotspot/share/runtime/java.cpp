@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
-#include "classfile/classLoader.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -34,6 +33,8 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -42,28 +43,26 @@
 #endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -96,9 +95,11 @@
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
-  // %%% there can be 32-bit overflow here
-  return ((*b)->invocation_count() + (*b)->compiled_invocation_count())
-       - ((*a)->invocation_count() + (*a)->compiled_invocation_count());
+  // compiled_invocation_count() returns int64_t, forcing the entire expression
+  // to be evaluated as int64_t. Overflow is not an issue.
+  int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
+                - ((*a)->invocation_count() + (*a)->compiled_invocation_count()));
+  return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
 void collect_profiled_methods(Method* m) {
@@ -150,14 +151,15 @@ void print_method_profiling_data() {
 GrowableArray<Method*>* collected_invoked_methods;
 
 void collect_invoked_methods(Method* m) {
-  if (m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
+  if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
 }
 
 
-
-
+// Invocation count accumulators should be unsigned long to shift the
+// overflow border. Longer-running workloads tend to create invocation
+// counts which already overflow 32-bit counters for individual methods.
 void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
@@ -168,31 +170,45 @@ void print_method_invocation_histogram() {
   tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
-  unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,
-      synch_total = 0, nativ_total = 0, acces_total = 0;
+  uint64_t total        = 0,
+           int_total    = 0,
+           comp_total   = 0,
+           special_total= 0,
+           static_total = 0,
+           final_total  = 0,
+           synch_total  = 0,
+           native_total = 0,
+           access_total = 0;
   for (int index = 0; index < collected_invoked_methods->length(); index++) {
+    // Counter values returned from getter methods are signed int.
+    // To shift the overflow border by a factor of two, we interpret
+    // them here as unsigned long. A counter can't be negative anyway.
     Method* m = collected_invoked_methods->at(index);
-    int c = m->invocation_count() + m->compiled_invocation_count();
-    if (c >= MethodHistogramCutoff) m->print_invocation_count();
-    int_total  += m->invocation_count();
-    comp_total += m->compiled_invocation_count();
-    if (m->is_final())        final_total  += c;
-    if (m->is_static())       static_total += c;
-    if (m->is_synchronized()) synch_total  += c;
-    if (m->is_native())       nativ_total  += c;
-    if (m->is_accessor())     acces_total  += c;
+    uint64_t iic = (uint64_t)m->invocation_count();
+    uint64_t cic = (uint64_t)m->compiled_invocation_count();
+    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
+    int_total  += iic;
+    comp_total += cic;
+    if (m->is_final())        final_total  += iic + cic;
+    if (m->is_static())       static_total += iic + cic;
+    if (m->is_synchronized()) synch_total  += iic + cic;
+    if (m->is_native())       native_total += iic + cic;
+    if (m->is_accessor())     access_total += iic + cic;
   }
   tty->cr();
   total = int_total + comp_total;
-  tty->print_cr("Invocations summary:");
-  tty->print_cr("\t%9d (%4.1f%%) interpreted",  int_total,    100.0 * int_total    / total);
-  tty->print_cr("\t%9d (%4.1f%%) compiled",     comp_total,   100.0 * comp_total   / total);
-  tty->print_cr("\t%9d (100%%)  total",         total);
-  tty->print_cr("\t%9d (%4.1f%%) synchronized", synch_total,  100.0 * synch_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) final",        final_total,  100.0 * final_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) static",       static_total, 100.0 * static_total / total);
-  tty->print_cr("\t%9d (%4.1f%%) native",       nativ_total,  100.0 * nativ_total  / total);
-  tty->print_cr("\t%9d (%4.1f%%) accessor",     acces_total,  100.0 * acces_total  / total);
+  special_total = final_total + static_total +synch_total + native_total + access_total;
+  tty->print_cr("Invocations summary for %d methods:", collected_invoked_methods->length());
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (100%%)  total",           total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * int_total    / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * comp_total   / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- special methods (interpreted and compiled)",
+                                                                         special_total, 100.0 * special_total/ total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * synch_total  / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * final_total  / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * static_total / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * native_total / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * access_total / total);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
 }
@@ -206,10 +222,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -234,7 +246,7 @@ void print_statistics() {
     os::print_statistics();
   }
 
-  if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -253,10 +265,6 @@ void print_statistics() {
 #endif // COMPILER1
 #endif // INCLUDE_JVMCI
 #endif // COMPILER2
-
-  if (PrintAOTStatistics) {
-    AOTLoader::print_statistics();
-  }
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
@@ -312,6 +320,11 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 
@@ -319,13 +332,13 @@ void print_statistics() {
     Method::print_touched_methods(tty);
   }
 
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
-  }
-
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -357,17 +370,18 @@ void print_statistics() {
   }
 
 #ifdef COMPILER2
-  if (PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #endif
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
-  }
 
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
@@ -441,6 +455,11 @@ void before_exit(JavaThread* thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
+  // Shut down string deduplication if running.
+  if (StringDedup::is_enabled()) {
+    StringDedup::stop();
+  }
+
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -482,7 +501,15 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::dump();
+    ExceptionMark em(thread);
+    DynamicArchive::dump(thread);
+    if (thread->has_pending_exception()) {
+      ResourceMark rm(thread);
+      oop pending_exception = thread->pending_exception();
+      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
+      thread->clear_pending_exception();
+    }
   }
 #endif
 
@@ -526,7 +553,7 @@ void vm_exit(int code) {
       // Historically there must have been some exit path for which
       // that was not the case and so we set it explicitly - even
       // though we no longer know what that path may be.
-      thread->as_Java_thread()->set_thread_state(_thread_in_vm);
+      JavaThread::cast(thread)->set_thread_state(_thread_in_vm);
     }
 
     // Fire off a VM_Exit operation to bring VM to a safepoint and exit
@@ -574,7 +601,7 @@ void vm_perform_shutdown_actions() {
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
-      JavaThread* jt = thread->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
@@ -651,7 +678,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

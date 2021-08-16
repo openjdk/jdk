@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -53,7 +53,7 @@
 // Implementation of JavaCallWrapper
 
 JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   bool clear_pending_exception = true;
 
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
@@ -78,7 +78,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
       clear_pending_exception = false;
     }
   }
-
 
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
@@ -109,11 +108,15 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   if(clear_pending_exception) {
     _thread->clear_pending_exception();
   }
+
+  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
+
+  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();
@@ -333,17 +336,16 @@ Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* construct
 
 
 void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
-  // Check if we need to wrap a potential OS exception handler around thread
-  // This is used for e.g. Win32 structured exception handlers
-  assert(THREAD->is_Java_thread(), "only JavaThreads can make JavaCalls");
+  // Check if we need to wrap a potential OS exception handler around thread.
+  // This is used for e.g. Win32 structured exception handlers.
   // Need to wrap each and every time, since there might be native code down the
-  // stack that has installed its own exception handlers
+  // stack that has installed its own exception handlers.
   os::os_exception_wrapper(call_helper, result, method, args, THREAD);
 }
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
 
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   assert(method.not_null(), "must have a method to call");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
@@ -439,7 +441,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points
       if (oop_result_flag) {
-        thread->set_vm_result((oop) result->get_jobject());
+        thread->set_vm_result(result->get_oop());
       }
     }
   } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
@@ -450,7 +452,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Restore possible oop return
   if (oop_result_flag) {
-    result->set_jobject(cast_from_oop<jobject>(thread->vm_result()));
+    result->set_oop(thread->vm_result());
     thread->set_vm_result(NULL);
   }
 }

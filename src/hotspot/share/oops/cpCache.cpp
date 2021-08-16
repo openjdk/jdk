@@ -23,7 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -31,10 +34,8 @@
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
@@ -134,8 +135,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
-                                       bool is_volatile,
-                                       Klass* root_klass) {
+                                       bool is_volatile) {
   set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,
@@ -202,7 +202,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
         // or when invokeinterface is used explicitly.
         // In that case, the method has no itable index and must be invoked as a virtual.
         // Set a flag to keep track of this corner case.
-        assert(holder->is_interface() || holder == SystemDictionary::Object_klass(), "unexpected holder class");
+        assert(holder->is_interface() || holder == vmClasses::Object_klass(), "unexpected holder class");
         assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
         change_to_virtual = true;
 
@@ -304,7 +304,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&
               ((method->is_private() ||
-                (method->is_final() && method->method_holder() == SystemDictionary::Object_klass())))),
+                (method->is_final() && method->method_holder() == vmClasses::Object_klass())))),
              "unexpected invocation mode");
       if (invoke_code == Bytecodes::_invokeinterface &&
           (method->is_private() || method->is_final())) {
@@ -373,13 +373,14 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = JavaThread::current();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, Thread::current());
+  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -398,7 +399,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     guarantee(index >= 0, "Didn't find cpCache entry!");
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(
                           ConstantPool::encode_invokedynamic_index(index));
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
     return;
   }
@@ -475,16 +476,17 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
 
   assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
-  assert(PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass()),
+  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = THREAD;
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, THREAD);
+  ObjectLocker ol(resolved_references, current);
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
@@ -727,12 +729,12 @@ void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
   bool* f2_used = NEW_RESOURCE_ARRAY(bool, length());
   memset(f2_used, 0, sizeof(bool) * length());
 
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
 
   // Find all the slots that we need to preserve f2
   for (int i = 0; i < ik->methods()->length(); i++) {
     Method* m = ik->methods()->at(i);
-    RawBytecodeStream bcs(methodHandle(THREAD, m));
+    RawBytecodeStream bcs(methodHandle(current, m));
     while (!bcs.is_last_bytecode()) {
       Bytecodes::Code opcode = bcs.raw_next();
       switch (opcode) {

@@ -537,8 +537,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet
   // committed, expand at that index.
-  uint curr = reserved_length() - 1;
-  while (true) {
+  for (uint curr = reserved_length(); curr-- > 0;) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
@@ -547,17 +546,13 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
 
       *expanded = true;
       return curr;
-    } else {
-      if (hr->is_free()) {
-        *expanded = false;
-        return curr;
-      }
     }
-    if (curr == 0) {
-      return G1_NO_HRM_INDEX;
+    if (hr->is_free()) {
+      *expanded = false;
+      return curr;
     }
-    curr--;
   }
+  return G1_NO_HRM_INDEX;
 }
 
 bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers) {
@@ -739,7 +734,6 @@ void HeapRegionManager::verify_optional() {
 
 HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
     _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(NULL) {
-  assert(n_workers > 0, "Need at least one worker.");
   uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
   memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);
   _claims = new_claims;
@@ -750,6 +744,7 @@ HeapRegionClaimer::~HeapRegionClaimer() {
 }
 
 uint HeapRegionClaimer::offset_for_worker(uint worker_id) const {
+  assert(_n_workers > 0, "must be set");
   assert(worker_id < _n_workers, "Invalid worker_id.");
   return _n_regions * worker_id / _n_workers;
 }

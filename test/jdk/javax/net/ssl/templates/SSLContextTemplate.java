@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,7 +478,7 @@ public interface SSLContextTemplate {
     /*
      * Create an instance of KeyManager with the specified key materials.
      */
-    private KeyManager createKeyManager(
+    static KeyManager createKeyManager(
             String[] keyMaterialCerts,
             String[] keyMaterialKeys,
             String[] keyMaterialKeyAlgs,
@@ -534,7 +534,7 @@ public interface SSLContextTemplate {
     /*
      * Create an instance of TrustManager with the specified trust materials.
      */
-    private TrustManager createTrustManager(
+    static TrustManager createTrustManager(
             String[] trustedMaterials,
             ContextParameters params) throws Exception {
 

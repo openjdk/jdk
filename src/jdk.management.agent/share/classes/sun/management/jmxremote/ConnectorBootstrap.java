@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public final class ConnectorBootstrap {
      *
      * <p>Objects are exported using {@link
      * UnicastServerRef#exportObject(Remote, Object, boolean)}.  The
-     * boolean parameter is called <code>permanent</code> and means
+     * boolean parameter is called {@code permanent} and means
      * both that the object is not eligible for Distributed Garbage
      * Collection, and that its continued existence will not prevent
      * the JVM from exiting.  It is the latter semantics we want (we
@@ -275,9 +275,9 @@ public final class ConnectorBootstrap {
         private final String accessFile;
     }
 
-    // The variable below is here to support stop functionality
-    // It would be overriten if you call startRemoteCommectionServer second
-    // time. It's OK for now as logic in Agent.java forbids mutiple agents
+    // The variable below is here to support stop functionality.
+    // It would be overwritten if you call startRemoteConnectorServer second
+    // time. It's OK for now as logic in Agent.java forbids multiple agents.
     private static Registry registry = null;
 
     public static void unexportRegistry() {
@@ -288,7 +288,7 @@ public final class ConnectorBootstrap {
                 registry = null;
             }
         } catch(NoSuchObjectException ex) {
-            // This exception can appears only if we attempt
+            // This exception can appear only if we attempt
             // to unexportRegistry second time. So it's safe
             // to ignore it without additional messages.
         }
@@ -297,9 +297,9 @@ public final class ConnectorBootstrap {
      /**
       * Initializes and starts the JMX Connector Server.
       * If the com.sun.management.jmxremote.port property is not defined,
-      * simply return. Otherwise, attempts to load the config file, and
-      * then calls {@link #startRemoteConnectorServer
-      *                            (java.lang.String, java.util.Properties)}.
+      * simply returns. Otherwise, attempts to load the config file, and
+      * then calls {@link #startRemoteConnectorServer(java.lang.String,
+      * java.util.Properties)}.
       *
       * This method is used by some jtreg tests.
       **/
@@ -318,8 +318,7 @@ public final class ConnectorBootstrap {
     /**
      * This method is used by some jtreg tests.
      *
-     * @see #startRemoteConnectorServer
-     *             (String portStr, Properties props)
+     * @see #startRemoteConnectorServer(String portStr, Properties props)
      */
     public static synchronized JMXConnectorServer initialize(String portStr, Properties props)  {
          return startRemoteConnectorServer(portStr, props);
@@ -516,7 +515,7 @@ public final class ConnectorBootstrap {
      * and management.
      */
     public static JMXConnectorServer startLocalConnectorServer() {
-        // Ensure cryptographically strong random number generater used
+        // Ensure cryptographically strong random number generator used
         // to choose the object number - see java.rmi.server.ObjID
         System.setProperty("java.rmi.server.randomIDs", "true");
 

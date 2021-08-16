@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,15 +39,13 @@ define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
 define_pd_global(bool, ProfileInterpreter,           true);
-define_pd_global(bool, TieredCompilation,            trueInTiered);
+define_pd_global(bool, TieredCompilation,            COMPILER1_PRESENT(true) NOT_COMPILER1(false));
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
-define_pd_global(intx, FLOATPRESSURE,                32);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, INTPRESSURE,                  24);
 define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);
@@ -76,9 +74,6 @@ define_pd_global(intx, ProfiledCodeHeapSize,         22*M);
 define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
 define_pd_global(uintx, CodeCacheMinBlockLength,     6);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
-
-// Heap related flags
-define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

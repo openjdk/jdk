@@ -36,7 +36,6 @@ import static java.util.Locale.LanguageRange.*;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Implementation for BCP47 Locale matching
@@ -184,7 +183,7 @@ public final class LocaleMatcher {
             Collection<String> tags) {
         Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         return tags.stream().filter(x -> distinctTags.add(x))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

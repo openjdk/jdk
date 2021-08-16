@@ -4,4 +4,12 @@
   <String Id="MainFeatureTitle">主な機能</String>
   <String Id="DowngradeErrorMessage">[ProductName]のより上位のバージョンがすでにインストールされています。ダウングレードは無効です。セットアップを終了します。</String>
   <String Id="DisallowUpgradeErrorMessage">[ProductName]のより下位のバージョンがすでにインストールされています。アップグレードは無効です。セットアップを終了します。</String>
+
+  <String Id="ShortcutPromptDlg_Title">[ProductName] Setup</String>
+  <String Id="ShortcutPromptDlgTitle">{\WixUI_Font_Title}Shortcuts</String>
+  <String Id="ShortcutPromptDlgBannerBitmap">WixUI_Bmp_Banner</String>
+  <String Id="ShortcutPromptDlgDescription">Select shortcuts to create.</String>
+  <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">Create desktop shortcut(s)</String>
+  <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">Create start menu shortcut(s)</String>
+  <String Id="InstallDirNotEmptyDlg_Title">[ProductName] Setup</String>  
 </WixLocalization>

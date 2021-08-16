@@ -66,6 +66,8 @@ public final class GeneralPath extends Path2D.Float {
      * path to be defined.
      *
      * @param rule the winding rule
+     * @throws IllegalArgumentException if {@code rule} is not either
+     *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
      * @see #WIND_EVEN_ODD
      * @see #WIND_NON_ZERO
      * @since 1.2
@@ -85,6 +87,10 @@ public final class GeneralPath extends Path2D.Float {
      * @param rule the winding rule
      * @param initialCapacity the estimate for the number of path segments
      *                        in the path
+     * @throws IllegalArgumentException if {@code rule} is not either
+     *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+     * @throws NegativeArraySizeException if {@code initialCapacity} is
+     *         negative
      * @see #WIND_EVEN_ODD
      * @see #WIND_NON_ZERO
      * @since 1.2
@@ -100,6 +106,7 @@ public final class GeneralPath extends Path2D.Float {
      * taken from the specified {@code Shape} object.
      *
      * @param s the specified {@code Shape} object
+     * @throws NullPointerException if {@code s} is {@code null}
      * @since 1.2
      */
     public GeneralPath(Shape s) {

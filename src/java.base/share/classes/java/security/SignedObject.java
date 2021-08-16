@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,17 +118,23 @@ import java.io.*;
 
 public final class SignedObject implements Serializable {
 
-    @java.io.Serial
+    @Serial
     private static final long serialVersionUID = 720502720485447167L;
 
-    /*
+    /**
      * The original content is "deep copied" in its serialized format
-     * and stored in a byte array.  The signature field is also in the
-     * form of byte array.
+     * and stored in a byte array.
      */
-
     private byte[] content;
+
+    /**
+     * The signature field is stored as a byte array.
+     */
     private byte[] signature;
+
+    /**
+     * The algorithm used to sign the object.
+     */
     private String thealgorithm;
 
     /**
@@ -250,11 +256,15 @@ public final class SignedObject implements Serializable {
     /**
      * readObject is called to restore the state of the SignedObject from
      * a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-            java.io.ObjectInputStream.GetField fields = s.readFields();
+    @Serial
+    private void readObject(ObjectInputStream s)
+        throws IOException, ClassNotFoundException {
+            ObjectInputStream.GetField fields = s.readFields();
             content = ((byte[])fields.get("content", null)).clone();
             signature = ((byte[])fields.get("signature", null)).clone();
             thealgorithm = (String)fields.get("thealgorithm", null);

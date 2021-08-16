@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ public class AltTabCrashTest extends Frame {
     VolatileImage vimg = null;
     BufferStrategy bufferStrategy = null;
     volatile boolean timeToQuit = false;
-    static final Object lock = new Object();
 
     enum SpriteType {
         OVALS, VIMAGES, BIMAGES, AAOVALS, TEXT
@@ -119,21 +118,17 @@ public class AltTabCrashTest extends Frame {
             render(g);
             g.dispose();
         }
-        Thread t = new BallThread();
-        t.start();
+        Thread ballThread = new BallThread();
+        ballThread.start();
         if (autoMode) {
-            Thread tt = new AltTabberThread();
-            tt.start();
-            synchronized (lock) {
-                while (!timeToQuit) {
-                    try {
-                        lock.wait(200);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    }
-                }
+            Thread tabberThread = new AltTabberThread();
+            tabberThread.start();
+            try {
+                ballThread.join();
+                tabberThread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            t = null;
             dispose();
         }
     }
@@ -202,10 +197,7 @@ public class AltTabCrashTest extends Frame {
                 out = !out;
             }
             System.err.println("Alt+tabber finished.");
-            synchronized (lock) {
-                timeToQuit = true;
-                lock.notify();
-            }
+            timeToQuit = true;
         }
     }
 

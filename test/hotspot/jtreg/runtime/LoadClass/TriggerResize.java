@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class TriggerResize extends ClassLoader
   {
     int count = 0;
     if (args.length >= 1) {
-      Integer i = new Integer(args[0]);
+      Integer i = Integer.parseInt(args[0]);
       count = i.intValue();
     }
 

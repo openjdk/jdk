@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,9 +119,9 @@ public class ClientCodeWrapper {
     public JavaFileManager wrap(JavaFileManager fm) {
         if (isTrusted(fm))
             return fm;
-        if (fm instanceof StandardJavaFileManager)
-            return new WrappedStandardJavaFileManager((StandardJavaFileManager) fm);
-        return new WrappedJavaFileManager(fm);
+        return (fm instanceof StandardJavaFileManager standardJavaFileManager) ?
+                new WrappedStandardJavaFileManager(standardJavaFileManager) :
+                new WrappedJavaFileManager(fm);
     }
 
     public FileObject wrap(FileObject fo) {
@@ -131,10 +131,8 @@ public class ClientCodeWrapper {
     }
 
     FileObject unwrap(FileObject fo) {
-        if (fo instanceof WrappedFileObject)
-            return ((WrappedFileObject) fo).clientFileObject;
-        else
-            return fo;
+        return (fo instanceof WrappedFileObject wrappedFileObject) ?
+                wrappedFileObject.clientFileObject : fo;
     }
 
     public JavaFileObject wrap(JavaFileObject fo) {
@@ -151,10 +149,8 @@ public class ClientCodeWrapper {
     }
 
     JavaFileObject unwrap(JavaFileObject fo) {
-        if (fo instanceof WrappedJavaFileObject)
-            return ((JavaFileObject) ((WrappedJavaFileObject) fo).clientFileObject);
-        else
-            return fo;
+        return (fo instanceof WrappedJavaFileObject wrappedJavaFileObject) ?
+                ((JavaFileObject) wrappedJavaFileObject.clientFileObject) : fo;
     }
 
     public <T /*super JavaFileObject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
@@ -170,10 +166,8 @@ public class ClientCodeWrapper {
     }
 
     TaskListener unwrap(TaskListener l) {
-        if (l instanceof WrappedTaskListener)
-            return ((WrappedTaskListener) l).clientTaskListener;
-        else
-            return l;
+        return (l instanceof WrappedTaskListener wrappedTaskListener) ?
+                wrappedTaskListener.clientTaskListener : l;
     }
 
     Collection<TaskListener> unwrap(Collection<? extends TaskListener> listeners) {
@@ -185,12 +179,8 @@ public class ClientCodeWrapper {
 
     @SuppressWarnings("unchecked")
     private <T> Diagnostic<T> unwrap(final Diagnostic<T> diagnostic) {
-        if (diagnostic instanceof JCDiagnostic) {
-            JCDiagnostic d = (JCDiagnostic) diagnostic;
-            return (Diagnostic<T>) new DiagnosticSourceUnwrapper(d);
-        } else {
-            return diagnostic;
-        }
+        return (diagnostic instanceof JCDiagnostic jcDiagnostic) ?
+                (Diagnostic<T>) new DiagnosticSourceUnwrapper(jcDiagnostic) : diagnostic;
     }
 
     protected boolean isTrusted(Object o) {

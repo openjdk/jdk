@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -34,12 +35,12 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_x86.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
@@ -101,6 +102,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
       return fp_safe && is_entry_frame_valid(thread);
+    } else if (is_optimized_entry_frame()) {
+      return fp_safe;
     }
 
     intptr_t* sender_sp = NULL;
@@ -198,6 +201,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       address jcw = (address)sender.entry_frame_call_wrapper();
 
       return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
+    } else if (sender_blob->is_optimized_entry_blob()) {
+      return false;
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
@@ -345,9 +350,41 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
 
-  if (jfa->saved_rbp_address()) {
-    update_map_with_saved_link(map, jfa->saved_rbp_address());
+  return fr;
+}
+
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  assert(frame.is_optimized_entry_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<OptimizedEntryBlob::FrameData*>(
+    reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  assert(is_optimized_entry_frame(), "must be optimzed entry frame");
+  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == NULL;
+}
+
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+  assert(map != NULL, "map must be set");
+  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!optimized_entry_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  // Since we are walking the stack now this nested anchor is obviously walkable
+  // even if it wasn't when it was stacked.
+  if (!jfa->walkable()) {
+    // Capture _last_Java_pc (if needed) and mark anchor walkable.
+    jfa->capture_last_Java_pc();
   }
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  vmassert(jfa->last_Java_pc() != NULL, "not walkable");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
 
   return fr;
 }
@@ -481,8 +518,9 @@ frame frame::sender_raw(RegisterMap* map) const {
   // update it accordingly
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame())       return sender_for_entry_frame(map);
-  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+  if (is_entry_frame())        return sender_for_entry_frame(map);
+  if (is_optimized_entry_frame()) return sender_for_optimized_entry_frame(map);
+  if (is_interpreted_frame())  return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
 
   if (_cb != NULL) {
@@ -590,7 +628,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }

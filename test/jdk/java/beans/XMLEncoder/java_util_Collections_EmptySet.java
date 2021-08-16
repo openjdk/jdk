@@ -25,6 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests EmptySet encoding
+ * @run main/othervm -Djava.security.manager=allow java_util_Collections_EmptySet
  * @author Sergey Malenkov
  */
 

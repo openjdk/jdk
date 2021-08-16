@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,23 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6289149
- * @summary test config (1,0,0,0): inherited 2-arg in agent class
- * @author Daniel D. Daugherty, Sun Microsystems
+ * @bug 6289149 8165276
+ * @summary test config (1,0,0,0): 2-arg premain method in superclass of agent class must be rejected
  *
- * @run shell ../MakeJAR3.sh InheritAgent1000
- * @run main/othervm -javaagent:InheritAgent1000.jar DummyMain
+ * @library /test/lib
+ * @library /test
+ * @modules java.instrument
+ * @build jdk.java.lang.instrument.PremainClass.InheritAgent1000
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             InheritAgent1000 InheritAgent1000.jar
+ * @run main/othervm jdk.java.lang.instrument.NegativeAgentRunner InheritAgent1000 NoSuchMethodException
  */
 
-import java.lang.instrument.*;
+import java.lang.instrument.Instrumentation;
 
-class InheritAgent1000 extends InheritAgent1000Super {
+public class InheritAgent1000 extends InheritAgent1000Super {
 
     // This agent does NOT have a single argument premain() method.
 
@@ -42,13 +46,11 @@ class InheritAgent1000 extends InheritAgent1000Super {
 
 class InheritAgent1000Super {
 
-    // This agent does NOT have a single argument premain() method.
+    // This agent class does NOT have a single argument premain() method.
 
-    //
-    // This agent has a double argument premain() method which
-    // is the one that should be called.
-    //
+    // This agent class has a double argument premain() method which should NOT be called.
     public static void premain (String agentArgs, Instrumentation instArg) {
         System.out.println("Hello from Double-Arg InheritAgent1000Super!");
+        throw new Error("ERROR: THIS AGENT SHOULD NOT HAVE BEEN CALLED.");
     }
 }

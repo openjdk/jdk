@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -85,10 +86,8 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
@@ -97,7 +96,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
@@ -151,7 +149,6 @@ import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
  * Provides an implementation of Trees.
@@ -188,16 +185,16 @@ public class JavacTrees extends DocTrees {
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
-        if (!(task instanceof BasicJavacTask))
+        if (!(task instanceof BasicJavacTask basicJavacTask))
             throw new IllegalArgumentException();
-        return instance(((BasicJavacTask)task).getContext());
+        return instance(basicJavacTask.getContext());
     }
 
     // called reflectively from Trees.instance(ProcessingEnvironment env)
     public static JavacTrees instance(ProcessingEnvironment env) {
-        if (!(env instanceof JavacProcessingEnvironment))
+        if (!(env instanceof JavacProcessingEnvironment javacProcessingEnvironment))
             throw new IllegalArgumentException();
-        return instance(((JavacProcessingEnvironment)env).getContext());
+        return instance(javacProcessingEnvironment.getContext());
     }
 
     public static JavacTrees instance(Context context) {
@@ -234,8 +231,8 @@ public class JavacTrees extends DocTrees {
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
         JavacTask t = context.get(JavacTask.class);
-        if (t instanceof JavacTaskImpl)
-            javacTaskImpl = (JavacTaskImpl) t;
+        if (t instanceof JavacTaskImpl taskImpl)
+            javacTaskImpl = taskImpl;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -264,8 +261,8 @@ public class JavacTrees extends DocTrees {
                 @Override  @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
                 public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
-                    if (tree instanceof DCEndPosTree) {
-                        int endPos = ((DCEndPosTree) tree).getEndPos(dcComment);
+                    if (tree instanceof DCEndPosTree<?> dcEndPosTree) {
+                        int endPos = dcEndPosTree.getEndPos(dcComment);
 
                         if (endPos != Position.NOPOS) {
                             return endPos;
@@ -431,11 +428,11 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Element getElement(DocTreePath path) {
         DocTree tree = path.getLeaf();
-        if (tree instanceof DCReference)
-            return attributeDocReference(path.getTreePath(), ((DCReference) tree));
+        if (tree instanceof DCReference dcReference)
+            return attributeDocReference(path.getTreePath(), dcReference);
         if (tree instanceof DCIdentifier) {
-            if (path.getParentPath().getLeaf() instanceof DCParam) {
-                return attributeParamIdentifier(path.getTreePath(), (DCParam) path.getParentPath().getLeaf());
+            if (path.getParentPath().getLeaf() instanceof DCParam dcParam) {
+                return attributeParamIdentifier(path.getTreePath(), dcParam);
             }
         }
         return null;
@@ -444,14 +441,14 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getType(DocTreePath path) {
         DocTree tree = path.getLeaf();
-        if (tree instanceof DCReference) {
-            JCTree qexpr = ((DCReference)tree).qualifierExpression;
+        if (tree instanceof DCReference dcReference) {
+            JCTree qexpr = dcReference.qualifierExpression;
             if (qexpr != null) {
                 Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                         new Log.DeferredDiagnosticHandler(log);
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
-                    Type t = attr.attribType(((DCReference) tree).qualifierExpression, env);
+                    Type t = attr.attribType(dcReference.qualifierExpression, env);
                     if (t != null && !t.isErroneous()) {
                         return t;
                     }
@@ -549,8 +546,8 @@ public class JavacTrees extends DocTrees {
                 } else {
                     Type e = t;
                     // If this is an array type convert to element type
-                    while (e instanceof ArrayType)
-                        e = ((ArrayType) e).elemtype;
+                    while (e instanceof ArrayType arrayType)
+                        e = arrayType.elemtype;
                     tsym = e.tsym;
                     memberName = (Name) ref.memberName;
                 }
@@ -624,12 +621,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findField */
     private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
         return searchField(tsym, fieldName, new HashSet<>());
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#searchField */
     private VarSymbol searchField(ClassSymbol tsym, Name fieldName, Set<ClassSymbol> searched) {
         if (searched.contains(tsym)) {
             return null;
@@ -676,7 +671,6 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findConstructor */
     MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
         for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             if (sym.kind == MTH) {
@@ -688,12 +682,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findMethod */
     private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
         return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#searchMethod */
     private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
                                        List<Type> paramTypes, Set<ClassSymbol> searched) {
         //### Note that this search is not necessarily what the compiler would do!
@@ -775,7 +767,6 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl */
     private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes) {
         if (paramTypes == null)
             return true;
@@ -808,10 +799,9 @@ public class JavacTrees extends DocTrees {
     public String getDocComment(TreePath path) {
         CompilationUnitTree t = path.getCompilationUnit();
         Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit && leaf instanceof JCTree) {
-            JCCompilationUnit cu = (JCCompilationUnit) t;
-            if (cu.docComments != null) {
-                return cu.docComments.getCommentText((JCTree) leaf);
+        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
+            if (compilationUnit.docComments != null) {
+                return compilationUnit.docComments.getCommentText(tree);
             }
         }
         return null;
@@ -821,10 +811,9 @@ public class JavacTrees extends DocTrees {
     public DocCommentTree getDocCommentTree(TreePath path) {
         CompilationUnitTree t = path.getCompilationUnit();
         Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit && leaf instanceof JCTree) {
-            JCCompilationUnit cu = (JCCompilationUnit) t;
-            if (cu.docComments != null) {
-                return cu.docComments.getCommentTree((JCTree) leaf);
+        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
+            if (compilationUnit.docComments != null) {
+                return compilationUnit.docComments.getCommentTree(tree);
             }
         }
         return null;
@@ -853,22 +842,17 @@ public class JavacTrees extends DocTrees {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public boolean isAccessible(Scope scope, TypeElement type) {
-        if (scope instanceof JavacScope && type instanceof ClassSymbol) {
-            Env<AttrContext> env = ((JavacScope) scope).env;
-            return resolve.isAccessible(env, (ClassSymbol)type, true);
-        } else
-            return false;
+        return (scope instanceof JavacScope javacScope)
+                && (type instanceof ClassSymbol classSymbol)
+                && resolve.isAccessible(javacScope.env, classSymbol, true);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public boolean isAccessible(Scope scope, Element member, DeclaredType type) {
-        if (scope instanceof JavacScope
-                && member instanceof Symbol
-                && type instanceof com.sun.tools.javac.code.Type) {
-            Env<AttrContext> env = ((JavacScope) scope).env;
-            return resolve.isAccessible(env, (com.sun.tools.javac.code.Type)type, (Symbol)member, true);
-        } else
-            return false;
+        return (scope instanceof JavacScope javacScope)
+                && (member instanceof Symbol symbol)
+                && (type instanceof com.sun.tools.javac.code.Type codeType)
+                && resolve.isAccessible(javacScope.env, codeType, symbol, true);
     }
 
     private Env<AttrContext> getAttrContext(TreePath path) {
@@ -1071,10 +1055,9 @@ public class JavacTrees extends DocTrees {
     static JavaFileObject asJavaFileObject(FileObject fileObject) {
         JavaFileObject jfo = null;
 
-        if (fileObject instanceof JavaFileObject) {
-            jfo = (JavaFileObject) fileObject;
+        if (fileObject instanceof JavaFileObject javaFileObject) {
             checkHtmlKind(fileObject, Kind.HTML);
-            return jfo;
+            return javaFileObject;
         }
 
         checkHtmlKind(fileObject);
@@ -1217,17 +1200,16 @@ public class JavacTrees extends DocTrees {
      */
     @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getOriginalType(javax.lang.model.type.ErrorType errorType) {
-        if (errorType instanceof com.sun.tools.javac.code.Type.ErrorType) {
-            return ((com.sun.tools.javac.code.Type.ErrorType)errorType).getOriginalType();
+        if (errorType instanceof com.sun.tools.javac.code.Type.ErrorType targetErrorType) {
+            return targetErrorType.getOriginalType();
         }
-        if (errorType instanceof com.sun.tools.javac.code.Type.ClassType &&
+        if (errorType instanceof com.sun.tools.javac.code.Type.ClassType classType &&
             errorType.getKind() == TypeKind.ERROR) {
-            ClassType ct = (ClassType) errorType;
-            return extraType2OriginalMap.computeIfAbsent(ct, tt ->
-                    new ClassType(ct.getEnclosingType(), ct.typarams_field,
-                                  ct.tsym, ct.getMetadata()) {
+            return extraType2OriginalMap.computeIfAbsent(classType, tt ->
+                    new ClassType(classType.getEnclosingType(), classType.typarams_field,
+                            classType.tsym, classType.getMetadata()) {
                         @Override
-                        public Type baseType() { return ct; }
+                        public Type baseType() { return classType; }
                         @Override
                         public TypeKind getKind() {
                             return TypeKind.DECLARED;

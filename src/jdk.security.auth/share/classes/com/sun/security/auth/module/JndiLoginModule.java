@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,16 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  */
 public class JndiLoginModule implements LoginModule {
 
-    /** JNDI Provider */
+    /**
+     * Directory service/path where this module can access the relevent
+     * user information.
+     */
     public final String USER_PROVIDER = "user.provider.url";
+
+    /**
+     * Directory service/path where this module can access the relevent
+     * group information.
+     */
     public final String GROUP_PROVIDER = "group.provider.url";
 
     // configurable options

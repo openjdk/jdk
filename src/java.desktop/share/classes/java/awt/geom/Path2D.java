@@ -128,6 +128,9 @@ public abstract class Path2D implements Shape, Cloneable {
      * @param rule the winding rule
      * @param initialTypes the size to make the initial array to
      *                     store the path segment types
+     * @throws IllegalArgumentException if {@code rule} is not either
+     *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+     * @throws NegativeArraySizeException if {@code initialTypes} is negative
      * @since 1.6
      */
     /* private protected */
@@ -207,6 +210,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * require the interior of the path to be defined.
          *
          * @param rule the winding rule
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -226,6 +231,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * @param rule the winding rule
          * @param initialCapacity the estimate for the number of path segments
          *                        in the path
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+         * @throws NegativeArraySizeException if {@code initialCapacity} is
+         *         negative
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -242,6 +251,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * taken from the specified {@code Shape} object.
          *
          * @param s the specified {@code Shape} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Float(Shape s) {
@@ -258,6 +268,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @param s the specified {@code Shape} object
          * @param at the specified {@code AffineTransform} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Float(Shape s, AffineTransform at) {
@@ -1101,6 +1112,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * require the interior of the path to be defined.
          *
          * @param rule the winding rule
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -1120,6 +1133,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * @param rule the winding rule
          * @param initialCapacity the estimate for the number of path segments
          *                        in the path
+         * @throws IllegalArgumentException if {@code rule} is not either
+         *         {@link #WIND_EVEN_ODD} or {@link #WIND_NON_ZERO}
+         * @throws NegativeArraySizeException if {@code initialCapacity} is
+         *         negative
          * @see #WIND_EVEN_ODD
          * @see #WIND_NON_ZERO
          * @since 1.6
@@ -1136,6 +1153,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * taken from the specified {@code Shape} object.
          *
          * @param s the specified {@code Shape} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Double(Shape s) {
@@ -1152,6 +1170,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @param s the specified {@code Shape} object
          * @param at the specified {@code AffineTransform} object
+         * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
         public Double(Shape s, AffineTransform at) {

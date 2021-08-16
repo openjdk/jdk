@@ -288,7 +288,7 @@ public class Utils {
         try {
             return c.newInstance(param);
         } catch (InvocationTargetException e) {
-            Throwable t = e.getTargetException();
+            Throwable t = e.getCause();
             if (t instanceof Exception) {
                 throw (Exception) t;
             } else {

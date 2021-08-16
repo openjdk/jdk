@@ -45,7 +45,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 7157608
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug7157608Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug7157608Test
  * @run testng/othervm parsers.Bug7157608Test
  * @summary Test feature standard-uri-conformant works.
  */

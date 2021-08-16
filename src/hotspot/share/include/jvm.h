@@ -56,20 +56,6 @@ extern "C" {
  * namely the jio_xxxprintf functions, are included from jvm_io.h.
  */
 
-/*
- * Bump the version number when either of the following happens:
- *
- * 1. There is a change in JVM_* functions.
- *
- * 2. There is a change in the contract between VM and Java classes.
- *    For example, if the VM relies on a new private field in Thread
- *    class.
- */
-
-#define JVM_INTERFACE_VERSION 6
-
-JNIEXPORT jint JNICALL
-JVM_GetInterfaceVersion(void);
 
 /*************************************************************************
  PART 1: Functions for Native Libraries
@@ -184,20 +170,20 @@ JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
-                                         jstring invokedName,
-                                         jobject invokedType,
-                                         jobject methodType,
-                                         jobject implMethodMember,
-                                         jobject instantiatedMethodType,
+                                         jstring interfaceMethodName,
+                                         jobject factoryType,
+                                         jobject interfaceMethodType,
+                                         jobject implementationMember,
+                                         jobject dynamicMethodType,
                                          jclass lambdaProxyClass);
 
 JNIEXPORT jclass JNICALL
 JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
-                                      jstring invokedName,
-                                      jobject invokedType,
-                                      jobject methodType,
-                                      jobject implMethodMember,
-                                      jobject instantiatedMethodType);
+                                      jstring interfaceMethodName,
+                                      jobject factoryType,
+                                      jobject interfaceMethodType,
+                                      jobject implementationMember,
+                                      jobject dynamicMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
@@ -213,6 +199,12 @@ JVM_GetRandomSeedForDumping();
 
 JNIEXPORT void JNICALL
 JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
+
+JNIEXPORT void JNICALL
+JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
+
+JNIEXPORT void JNICALL
+JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
 /*
  * java.lang.Throwable
@@ -614,7 +606,7 @@ JVM_GetNestHost(JNIEnv *env, jclass current);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetNestMembers(JNIEnv *env, jclass current);
 
-/* Records - since JDK 14 */
+/* Records - since JDK 16 */
 
 JNIEXPORT jboolean JNICALL
 JVM_IsRecord(JNIEnv *env, jclass cls);
@@ -622,7 +614,7 @@ JVM_IsRecord(JNIEnv *env, jclass cls);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetRecordComponents(JNIEnv *env, jclass ofClass);
 
-/* Sealed types - since JDK 15 */
+/* Sealed classes - since JDK 17 */
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetPermittedSubclasses(JNIEnv *env, jclass current);
@@ -760,80 +752,6 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
-
-/*
- * com.sun.dtrace.jsdt support
- */
-
-#define JVM_TRACING_DTRACE_VERSION 1
-
-/*
- * Structure to pass one probe description to JVM
- */
-typedef struct {
-    jmethodID method;
-    jstring   function;
-    jstring   name;
-    void*            reserved[4];     // for future use
-} JVM_DTraceProbe;
-
-/**
- * Encapsulates the stability ratings for a DTrace provider field
- */
-typedef struct {
-    jint nameStability;
-    jint dataStability;
-    jint dependencyClass;
-} JVM_DTraceInterfaceAttributes;
-
-/*
- * Structure to pass one provider description to JVM
- */
-typedef struct {
-    jstring                       name;
-    JVM_DTraceProbe*              probes;
-    jint                          probe_count;
-    JVM_DTraceInterfaceAttributes providerAttributes;
-    JVM_DTraceInterfaceAttributes moduleAttributes;
-    JVM_DTraceInterfaceAttributes functionAttributes;
-    JVM_DTraceInterfaceAttributes nameAttributes;
-    JVM_DTraceInterfaceAttributes argsAttributes;
-    void*                         reserved[4]; // for future use
-} JVM_DTraceProvider;
-
-/*
- * Get the version number the JVM was built with
- */
-JNIEXPORT jint JNICALL
-JVM_DTraceGetVersion(JNIEnv* env);
-
-/*
- * Register new probe with given signature, return global handle
- *
- * The version passed in is the version that the library code was
- * built with.
- */
-JNIEXPORT jlong JNICALL
-JVM_DTraceActivate(JNIEnv* env, jint version, jstring module_name,
-  jint providers_count, JVM_DTraceProvider* providers);
-
-/*
- * Check JSDT probe
- */
-JNIEXPORT jboolean JNICALL
-JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method);
-
-/*
- * Destroy custom DOF
- */
-JNIEXPORT void JNICALL
-JVM_DTraceDispose(JNIEnv* env, jlong activation_handle);
-
-/*
- * Check to see if DTrace is supported by OS
- */
-JNIEXPORT jboolean JNICALL
-JVM_DTraceIsSupported(JNIEnv* env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker

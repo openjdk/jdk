@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8078139
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.JdkXmlDomTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.JdkXmlDomTest
  * @run testng/othervm dom.JdkXmlDomTest
  * @summary Verifies that jdk.xml.dom classes are loaded by the ext class loader.
  */

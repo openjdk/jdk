@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,7 @@ class ServerImpl implements TimeSource {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
+    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InetSocketAddress>() {
@@ -290,15 +291,19 @@ class ServerImpl implements TimeSource {
             try {
                 if (r instanceof WriteFinishedEvent) {
 
+                    logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
                     if (terminating && exchanges == 0) {
                         finished = true;
                     }
-                    responseCompleted (c);
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
                         t.close = true;
+                        if (c.getState() == State.REQUEST) {
+                            requestCompleted(c);
+                        }
                     }
+                    responseCompleted (c);
                     if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                         c.close();
                         allConnections.remove (c);
@@ -512,6 +517,7 @@ class ServerImpl implements TimeSource {
 
         public void run () {
             /* context will be null for new connections */
+            logger.log(Level.TRACE, "exchange started");
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -576,17 +582,42 @@ class ServerImpl implements TimeSource {
                 start = space+1;
                 String version = requestLine.substring (start);
                 Headers headers = req.headers();
-                String s = headers.getFirst ("Transfer-encoding");
+                /* check key for illegal characters */
+                for (var k : headers.keySet()) {
+                    if (!isValidHeaderKey(k)) {
+                        reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                "Header key contains illegal characters");
+                        return;
+                    }
+                }
+                /* checks for unsupported combinations of lengths and encodings */
+                if (headers.containsKey("Content-Length") &&
+                        (headers.containsKey("Transfer-encoding") || headers.get("Content-Length").size() > 1)) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Conflicting or malformed headers detected");
+                    return;
+                }
                 long clen = 0L;
-                if (s !=null && s.equalsIgnoreCase ("chunked")) {
-                    clen = -1L;
+                String headerValue = null;
+                List<String> teValueList = headers.get("Transfer-encoding");
+                if (teValueList != null && !teValueList.isEmpty()) {
+                    headerValue = teValueList.get(0);
+                }
+                if (headerValue != null) {
+                    if (headerValue.equalsIgnoreCase("chunked") && teValueList.size() == 1) {
+                        clen = -1L;
+                    } else {
+                        reject(Code.HTTP_NOT_IMPLEMENTED,
+                                requestLine, "Unsupported Transfer-Encoding value");
+                        return;
+                    }
                 } else {
-                    s = headers.getFirst ("Content-Length");
-                    if (s != null) {
-                        clen = Long.parseLong(s);
+                    headerValue = headers.getFirst("Content-Length");
+                    if (headerValue != null) {
+                        clen = Long.parseLong(headerValue);
                     }
                     if (clen == 0) {
-                        requestCompleted (connection);
+                        requestCompleted(connection);
                     }
                 }
                 ctx = contexts.findContext (protocol, uri.getPath());
@@ -649,11 +680,11 @@ class ServerImpl implements TimeSource {
                  * They are linked together by a LinkHandler
                  * so that they can both be invoked in one call.
                  */
-                List<Filter> sf = ctx.getSystemFilters();
-                List<Filter> uf = ctx.getFilters();
+                final List<Filter> sf = ctx.getSystemFilters();
+                final List<Filter> uf = ctx.getFilters();
 
-                Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
+                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
 
                 /* set up the two stream references */
                 tx.getRequestBody();
@@ -667,15 +698,20 @@ class ServerImpl implements TimeSource {
             } catch (IOException e1) {
                 logger.log (Level.TRACE, "ServerImpl.Exchange (1)", e1);
                 closeConnection(connection);
-            } catch (NumberFormatException e3) {
+            } catch (NumberFormatException e2) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e2);
                 reject (Code.HTTP_BAD_REQUEST,
                         requestLine, "NumberFormatException thrown");
-            } catch (URISyntaxException e) {
+            } catch (URISyntaxException e3) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange (3)", e3);
                 reject (Code.HTTP_BAD_REQUEST,
                         requestLine, "URISyntaxException thrown");
             } catch (Exception e4) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e4);
+                logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
                 closeConnection(connection);
+            } catch (Throwable t) {
+                logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
+                throw t;
             }
         }
 
@@ -895,5 +931,25 @@ class ServerImpl implements TimeSource {
         } else {
             return secs * 1000;
         }
+    }
+
+    /*
+     * Validates a RFC 7230 header-key.
+     */
+    static boolean isValidHeaderKey(String token) {
+        if (token == null) return false;
+
+        boolean isValidChar;
+        char[] chars = token.toCharArray();
+        String validSpecialChars = "!#$%&'*+-.^_`|~";
+        for (char c : chars) {
+            isValidChar = ((c >= 'a') && (c <= 'z')) ||
+                          ((c >= 'A') && (c <= 'Z')) ||
+                          ((c >= '0') && (c <= '9'));
+            if (!isValidChar && validSpecialChars.indexOf(c) == -1) {
+                return false;
+            }
+        }
+        return !token.isEmpty();
     }
 }

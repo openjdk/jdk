@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,10 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 
@@ -57,6 +59,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "jdk.jpackage.internal.resources.MacResources");
 
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_pkg.png";
+    private static final String DEFAULT_PDF = "product-def.plist";
 
     private static final String TEMPLATE_PREINSTALL_SCRIPT =
             "preinstall.template";
@@ -102,11 +105,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
-                    String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Installer: ",
-                            SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params),
-                            VERBOSE.fetchFrom(params));
+                    String user = SIGNING_KEY_USER.fetchFrom(params);
+                    String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
+                    String result = null;
+                    if (APP_STORE.fetchFrom(params)) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "3rd Party Mac Developer Installer: ",
+                            user, keychain);
+                    }
+                    // if either not signing for app store or couldn't find
+                    if (result == null) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "Developer ID Installer: ", user, keychain);
+                    }
+
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 
@@ -164,6 +176,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         return CONFIG_ROOT.fetchFrom(params).resolve("distribution.dist");
     }
 
+    private Path getConfig_PDF(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve("product-def.plist");
+    }
+
     private Path getConfig_BackgroundImage(Map<String, ? super Object> params) {
         return CONFIG_ROOT.fetchFrom(params).resolve(
                 APP_NAME.fetchFrom(params) + "-background.png");
@@ -193,10 +209,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         Map<String, String> data = new HashMap<>();
 
-        Path appLocation = Path.of(getInstallDir(params),
+        Path appLocation = Path.of(getInstallDir(params, false),
                          APP_NAME.fetchFrom(params) + ".app", "Contents", "app");
 
-        data.put("INSTALL_LOCATION", getInstallDir(params));
+        data.put("INSTALL_LOCATION", getInstallDir(params, false));
         data.put("APP_LOCATION", appLocation.toString());
 
         createResource(TEMPLATE_PREINSTALL_SCRIPT, params)
@@ -269,6 +285,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeStartElement("options");
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
+            xml.writeAttribute("hostArchitectures",
+                    Platform.isArmMac() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");
@@ -314,6 +332,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         createResource(DEFAULT_BACKGROUND_IMAGE, params)
                 .setCategory(I18N.getString("resource.pkg-background-image"))
                 .saveToFile(getConfig_BackgroundImageDarkAqua(params));
+
+        createResource(DEFAULT_PDF, params)
+                .setCategory(I18N.getString("resource.pkg-pdf"))
+                .saveToFile(getConfig_PDF(params));
 
         prepareDistributionXMLFile(params);
 
@@ -369,16 +391,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         Path rootDir = appLocation.getParent() == null ?
                 Path.of(".") : appLocation.getParent();
 
-        Path[] list = Files.list(rootDir).toArray(Path[]::new);
-        if (list != null) { // Should not happend
-            // We should only have app image and/or .DS_Store
-            if (list.length == 1) {
-                return rootDir.toString();
-            } else if (list.length == 2) {
-                // Check case with app image and .DS_Store
-                if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
-                    list[1].toString().toLowerCase().endsWith(".ds_store")) {
-                    return rootDir.toString(); // Only app image and .DS_Store
+        // Not needed for runtime installer and it might break runtime installer
+        // if parent does not have any other files
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            try (var fileList = Files.list(rootDir)) {
+                Path[] list = fileList.toArray(Path[]::new);
+                // We should only have app image and/or .DS_Store
+                if (list.length == 1) {
+                    return rootDir.toString();
+                } else if (list.length == 2) {
+                    // Check case with app image and .DS_Store
+                    if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
+                        list[1].toString().toLowerCase().endsWith(".ds_store")) {
+                        return rootDir.toString(); // Only app image and .DS_Store
+                    }
                 }
             }
         }
@@ -422,30 +448,44 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    getInstallDir(params),
+                    getInstallDir(params, false),
                     "--analyze",
                     cpl.toAbsolutePath().toString());
 
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             patchCPLFile(cpl);
 
-            preparePackageScripts(params);
-
             // build application package
-            pb = new ProcessBuilder("/usr/bin/pkgbuild",
-                    "--root",
-                    root,
-                    "--install-location",
-                    getInstallDir(params),
-                    "--component-plist",
-                    cpl.toAbsolutePath().toString(),
-                    "--scripts",
-                    SCRIPTS_DIR.fetchFrom(params).toAbsolutePath().toString(),
-                    "--identifier",
-                     MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
-                    appPKG.toAbsolutePath().toString());
-            IOUtils.exec(pb);
+            if (APP_STORE.fetchFrom(params)) {
+                pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                        "--root",
+                        root,
+                        "--install-location",
+                        getInstallDir(params, false),
+                        "--component-plist",
+                        cpl.toAbsolutePath().toString(),
+                        "--identifier",
+                         MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
+                        appPKG.toAbsolutePath().toString());
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+            } else {
+                preparePackageScripts(params);
+                pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                        "--root",
+                        root,
+                        "--install-location",
+                        getInstallDir(params, false),
+                        "--component-plist",
+                        cpl.toAbsolutePath().toString(),
+                        "--scripts",
+                        SCRIPTS_DIR.fetchFrom(params)
+                        .toAbsolutePath().toString(),
+                        "--identifier",
+                         MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
+                        appPKG.toAbsolutePath().toString());
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+            }
 
             // build final package
             Path finalPKG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
@@ -460,7 +500,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(CONFIG_ROOT.fetchFrom(params).toAbsolutePath().toString());
 
             // maybe sign
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
                 if (Platform.getMajorVersion() > 10 ||
                     (Platform.getMajorVersion() == 10 &&
@@ -483,16 +523,26 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 }
             }
 
-            commandLine.add("--distribution");
-            commandLine.add(
-                    getConfig_DistributionXMLFile(params).toAbsolutePath().toString());
-            commandLine.add("--package-path");
-            commandLine.add(PACKAGES_ROOT.fetchFrom(params).toAbsolutePath().toString());
-
+            if (APP_STORE.fetchFrom(params)) {
+                commandLine.add("--product");
+                commandLine.add(getConfig_PDF(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--component");
+                Path p = Path.of(root, APP_NAME.fetchFrom(params) + ".app");
+                commandLine.add(p.toAbsolutePath().toString());
+                commandLine.add(getInstallDir(params, false));
+            } else {
+                commandLine.add("--distribution");
+                commandLine.add(getConfig_DistributionXMLFile(params)
+                        .toAbsolutePath().toString());
+                commandLine.add("--package-path");
+                commandLine.add(PACKAGES_ROOT.fetchFrom(params)
+                        .toAbsolutePath().toString());
+            }
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             return finalPKG;
         } catch (Exception ignored) {
@@ -554,7 +604,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             }
 
             // reject explicitly set sign to true and no valid signature key
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 String signingIdentity =
                         DEVELOPER_ID_INSTALLER_SIGNING_KEY.fetchFrom(params);

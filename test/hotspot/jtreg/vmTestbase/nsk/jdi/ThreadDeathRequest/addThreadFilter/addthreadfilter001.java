@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ public class addthreadfilter001 extends JDIBase {
         vm.resume();
 
         log2("......waiting for ThreadDeathEvent");
-        getEventSet();
+        getEventSetForThreadStartDeath(testThread.name());
         EventSet eventSet1 = eventSet;
         if ( !(eventIterator.nextEvent() instanceof ThreadDeathEvent) ) {
             testExitCode = FAILED;

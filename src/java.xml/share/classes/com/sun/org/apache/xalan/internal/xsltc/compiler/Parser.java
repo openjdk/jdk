@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.java_cup.internal.runtime.Symbol;
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -43,6 +42,7 @@ import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.ErrorHandlerProxy;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
@@ -62,7 +62,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
- * @LastModified: July 2019
+ * @LastModified: May 2021
  */
 public class Parser implements Constants, ContentHandler {
 
@@ -502,22 +502,22 @@ public class Parser implements Constants, ContentHandler {
             String lastProperty = "";
             try {
                 XMLSecurityManager securityManager =
-                        (XMLSecurityManager)_xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
+                        (XMLSecurityManager)_xsltc.getProperty(JdkConstants.SECURITY_MANAGER);
                 for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
                     lastProperty = limit.apiProperty();
                     reader.setProperty(lastProperty, securityManager.getLimitValueAsString(limit));
                 }
                 if (securityManager.printEntityCountInfo()) {
-                    lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                    reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                    lastProperty = JdkConstants.JDK_DEBUG_LIMIT;
+                    reader.setProperty(lastProperty, JdkConstants.JDK_YES);
                 }
             } catch (SAXException se) {
                 XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
             }
 
             // try setting other JDK-impl properties, ignore if not supported
-            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
-                _xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
+            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+                _xsltc.getProperty(JdkConstants.CDATA_CHUNK_SIZE), false);
 
             return(parse(reader, input));
         }
@@ -591,7 +591,7 @@ public class Parser implements Constants, ContentHandler {
                 path = SystemIDResolver.getAbsoluteURI(path);
                 String accessError = SecuritySupport.checkAccess(path,
                         (String)_xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
-                        XalanConstants.ACCESS_EXTERNAL_ALL);
+                        JdkConstants.ACCESS_EXTERNAL_ALL);
                 if (accessError != null) {
                     ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
                             SecuritySupport.sanitizePath(_target), accessError,

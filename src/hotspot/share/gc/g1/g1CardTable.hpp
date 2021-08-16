@@ -79,7 +79,7 @@ public:
   STATIC_ASSERT(BitsPerByte == 8);
   static const size_t WordAlreadyScanned = (SIZE_MAX / 255) * g1_card_already_scanned;
 
-  G1CardTable(MemRegion whole_heap): CardTable(whole_heap, /* scanned concurrently */ true), _listener() {
+  G1CardTable(MemRegion whole_heap): CardTable(whole_heap), _listener() {
     _listener.set_card_table(this);
   }
 
@@ -93,16 +93,16 @@ public:
     return pointer_delta(p, _byte_map, sizeof(CardValue));
   }
 
-  // Mark the given card as Dirty if it is Clean. Returns the number of dirtied
-  // cards that were not yet dirty. This result may be inaccurate as it does not
+  // Mark the given card as Dirty if it is Clean. Returns whether the card was
+  // Clean before this operation. This result may be inaccurate as it does not
   // perform the dirtying atomically.
-  inline size_t mark_clean_as_dirty(size_t card_index);
+  inline bool mark_clean_as_dirty(CardValue* card);
 
   // Change Clean cards in a (large) area on the card table as Dirty, preserving
   // already scanned cards. Assumes that most cards in that area are Clean.
   // Returns the number of dirtied cards that were not yet dirty. This result may
   // be inaccurate as it does not perform the dirtying atomically.
-  inline size_t mark_region_dirty(size_t start_card_index, size_t num_cards);
+  inline size_t mark_range_dirty(size_t start_card_index, size_t num_cards);
 
   // Change the given range of dirty cards to "which". All of these cards must be Dirty.
   inline void change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which);

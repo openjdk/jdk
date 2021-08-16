@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@
 //
 // Also, this is a C header file. Do not use C++ here.
 
-#define NUM_CDS_REGIONS 8 // this must be the same as MetaspaceShared::n_regions
+#define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 10
+#define CURRENT_CDS_ARCHIVE_VERSION 11
 #define INVALID_CDS_ARCHIVE_VERSION -1
 
 struct CDSFileMapRegion {
@@ -44,7 +44,7 @@ struct CDSFileMapRegion {
   int     _read_only;         // read only region?
   int     _allow_exec;        // executable code in this region?
   int     _is_heap_region;    // Used by SA and debug build.
-  int     _is_bitmap_region;  // Relocation bitmap for RO/RW/MC/MD regions (used by SA and debug build).
+  int     _is_bitmap_region;  // Relocation bitmap for RO/RW regions (used by SA and debug build).
   int     _mapped_from_file;  // Is this region mapped from a file?
                               // If false, this region was initialized using os::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.

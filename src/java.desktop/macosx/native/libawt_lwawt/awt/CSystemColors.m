@@ -28,7 +28,6 @@
 #import "java_awt_SystemColor.h"
 #import "sun_lwawt_macosx_LWCToolkit.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"

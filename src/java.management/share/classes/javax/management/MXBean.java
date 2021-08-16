@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.RecordComponent;
 
 // remaining imports are for Javadoc
 import java.io.InvalidObjectException;
@@ -532,6 +533,13 @@ public class MemoryPool
             (see below)</td>
         </tr>
         <tr>
+          <th scope="row">{@linkplain Record Record classes}</th>
+          <td>{@link CompositeType}, if possible<br>
+            (see below)</td>
+          <td>{@link CompositeData}<br>
+            (see below)</td>
+        </tr>
+        <tr>
           <th scope="row">An MXBean interface</th>
           <td>{@code SimpleType.OBJECTNAME}<br>
             (see below)</td>
@@ -543,7 +551,8 @@ public class MemoryPool
           <td>{@link CompositeType},
             if possible<br>
             (see below)</td>
-          <td>{@link CompositeData}</td>
+          <td>{@link CompositeData}<br>
+            (see below)</td>
       </tbody>
     </table>
 
@@ -656,6 +665,60 @@ TabularType tabularType =
       TabularData} that serializes as {@code TabularDataSupport}.</p>
 
 
+    <h3 id="records">Mappings for Records</h3>
+
+    <p>A {@linkplain Record record} class <em>J</em> can be converted
+      to a {@link CompositeType} if and only if all its
+      {@linkplain Class#getRecordComponents() components} are
+      convertible to open types. Otherwise, it is not convertible.
+      A record that has no components is not convertible.</p>
+
+    <h4 id="record-type-map">Mapping a record class to
+      {@code CompositeType}</h4>
+
+    <p>A record whose components are all convertible to open
+      types, is itself convertible to a {@link CompositeType}.
+      The record class is converted to a {@code CompositeType}
+      as follows.</p>
+
+    <ul>
+      <li>The type name of the {@code CompositeType} is the name
+        of the record class.</li>
+
+      <li>The record getters are the accessors for the
+        {@linkplain RecordComponent record components}.</li>
+
+      <li>For each record component of type <em>T</em>, the item in
+        the {@code CompositeType} has the same name as the record
+        component and its type is <em>opentype(T)</em>, as
+        defined by the <a href="#mapping-rules">type mapping rules</a>
+        above.</li>
+    </ul>
+
+    <h4 id="record-data-map">Mapping an instance of a record class to
+      {@code CompositeData}</h4>
+
+    <p>The mapping from an instance of a record class to a
+      {@link CompositeData} corresponding to the {@code CompositeType}
+      is the same as specified for
+      <a href="#composite-data-map">other types</a>.</p>
+
+    <h4 id="reconstructing-record">Reconstructing an instance of a record class
+      from a {@code CompositeData}</h4>
+
+    <p>A record is reconstructed using its canonical constructor.
+      The canonical constructor doesn't require the presence of
+      {@link ConstructorParameters &#64;javax.management.ConstructorParameters}
+      or {@code @java.beans.ConstructorProperties} annotations. If these
+      annotations are present on the canonical constructor they
+      will be ignored.</p>
+
+    <p>How an instance of a record class <em>J</em> is reconstructed
+      from a {@link CompositeData} is detailed in
+      <a href="#reconstructing">Reconstructing an instance
+      of Java type or record class <em>J</em> from a {@code CompositeData}</a>
+      below.</p>
+
     <h3 id="mxbean-map">Mappings for MXBean interfaces</h3>
 
     <p>An MXBean interface, or a type referenced within an MXBean
@@ -753,6 +816,9 @@ public interface ModuleMXBean {
       {@code CompositeType} is determined by the <a href="#type-names">
       type name rules</a> below.</p>
 
+    <h4 id="composite-type-map">Mapping a Java type <em>J</em>
+      to {@link CompositeType}</h4>
+
     <p>The class is examined for getters using the conventions
       <a href="#naming-conv">above</a>.  (Getters must be public
       instance methods.)  If there are no getters, or if
@@ -796,6 +862,9 @@ public interface ModuleMXBean {
       getOwner} and {@code isOwner}, or {@code getOwner} and {@code
       getowner}) then the type is not convertible.</p>
 
+    <h4 id="composite-data-map" >Mapping from an instance of Java
+      type or record class <em>J</em> to {@code CompositeData}</h4>
+
     <p>When the Open Type is {@code CompositeType}, the corresponding
       mapped Java type (<em>opendata(J)</em>) is {@link
       CompositeData}.  The mapping from an instance of <em>J</em> to a
@@ -809,7 +878,7 @@ public interface ModuleMXBean {
       Open Data type.  Thus, a getter such as</p>
 
     <blockquote>
-      {@code List<String> getNames()}
+      {@code List<String> getNames()} (or {@code List<String> names()} for a record)
     </blockquote>
 
     <p>will have been mapped to an item with name "{@code names}" and
@@ -825,8 +894,8 @@ public interface ModuleMXBean {
       CompositeDataSupport}.</p>
 
 
-    <h4>Reconstructing an instance of Java type <em>J</em> from
-      a {@code CompositeData}</h4>
+    <h4 id="reconstructing">Reconstructing an instance of Java type
+      or record class <em>J</em> from a {@code CompositeData}</h4>
 
     <p>If <em>opendata(J)</em> is {@code CompositeData} for a Java type
       <em>J</em>, then either an instance of <em>J</em> can be
@@ -845,6 +914,17 @@ public interface ModuleMXBean {
         {@code public static }<em>J </em>{@code from(CompositeData cd)}<br>
         then that method is called to reconstruct an instance of
         <em>J</em>.</p></li>
+
+      <li><p>Otherwise, if <em>J</em> is a {@link Record} class,
+        and the record canonical constructor is applicable,
+        an instance of <em>J</em> is reconstructed by calling
+        the record canonical constructor.
+        The canonical constructor, if applicable, is called
+        with the appropriate reconstructed items from the
+        {@code CompositeData}. The canonical constructor
+        is <em>applicable</em> if all the properties named
+        by the record components are present in the
+        {@code CompositeData}.</p></li>
 
       <li><p>Otherwise, if <em>J</em> has at least one public
         constructor with either {@link javax.management.ConstructorParameters
@@ -958,6 +1038,15 @@ public class NamedNumber {
     private final int number;
     private final String name;
 }
+          </pre>
+        </blockquote>
+      </li>
+
+      <li>Record:
+
+        <blockquote>
+          <pre>
+ public record NamedNumber(int number, String name) {}
           </pre>
         </blockquote>
       </li>

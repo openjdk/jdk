@@ -30,8 +30,6 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,8 +188,8 @@ public final class Configuration {
      */
     public static List<Configuration> getConfigurations() {
         if (JVMSupport.isNotAvailable()) {
-            return new ArrayList<>();
+            return List.of();
         }
-        return Collections.unmodifiableList(JFC.getConfigurations());
+        return List.copyOf(JFC.getConfigurations());
     }
 }

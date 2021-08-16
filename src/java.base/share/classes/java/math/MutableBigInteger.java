@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,14 @@ class MutableBigInteger {
      * supposed to modify the returned array.
      */
     private int[] getMagnitudeArray() {
-        if (offset > 0 || value.length != intLen)
-            return Arrays.copyOfRange(value, offset, offset + intLen);
+        if (offset > 0 || value.length != intLen) {
+            // Shrink value to be the total magnitude
+            int[] tmp = Arrays.copyOfRange(value, offset, offset + intLen);
+            Arrays.fill(value, 0);
+            offset = 0;
+            intLen = tmp.length;
+            value = tmp;
+        }
         return value;
     }
 
@@ -1166,7 +1172,7 @@ class MutableBigInteger {
      * Calculates the quotient of this div b and places the quotient in the
      * provided MutableBigInteger objects and the remainder object is returned.
      *
-     * Uses Algorithm D in Knuth section 4.3.1.
+     * Uses Algorithm D from Knuth TAOCP Vol. 2, 3rd edition, section 4.3.1.
      * Many optimizations to that algorithm have been adapted from the Colin
      * Plumb C library.
      * It special cases one word divisors for speed. The content of b is not
@@ -1980,7 +1986,7 @@ class MutableBigInteger {
      * Assumes that this and v are not zero.
      */
     private MutableBigInteger binaryGCD(MutableBigInteger v) {
-        // Algorithm B from Knuth section 4.5.2
+        // Algorithm B from Knuth TAOCP Vol. 2, 3rd edition, section 4.5.2
         MutableBigInteger u = this;
         MutableBigInteger r = new MutableBigInteger();
 
@@ -2100,6 +2106,7 @@ class MutableBigInteger {
 
         oddPart.leftShift(powersOf2);
         oddPart.multiply(y1, result);
+        oddPart.clear();
 
         evenPart.multiply(oddMod, temp1);
         temp1.multiply(y2, temp2);

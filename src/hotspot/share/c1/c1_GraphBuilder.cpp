@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,8 +984,10 @@ void GraphBuilder::load_indexed(BasicType type) {
   Value array = apop();
   Value length = NULL;
   if (CSEArrayLength ||
+      (array->as_Constant() != NULL) ||
       (array->as_AccessField() && array->as_AccessField()->field()->is_constant()) ||
-      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
+      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant()) ||
+      (array->as_NewMultiArray() && array->as_NewMultiArray()->dims()->at(0)->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
   push(as_ValueType(type), append(new LoadIndexed(array, index, length, type, state_before)));
@@ -1001,8 +1003,10 @@ void GraphBuilder::store_indexed(BasicType type) {
   Value array = apop();
   Value length = NULL;
   if (CSEArrayLength ||
+      (array->as_Constant() != NULL) ||
       (array->as_AccessField() && array->as_AccessField()->field()->is_constant()) ||
-      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
+      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant()) ||
+      (array->as_NewMultiArray() && array->as_NewMultiArray()->dims()->at(0)->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
   ciType* array_type = array->declared_type();
@@ -1119,14 +1123,10 @@ void GraphBuilder::stack_op(Bytecodes::Code code) {
 void GraphBuilder::arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before) {
   Value y = pop(type);
   Value x = pop(type);
-  // NOTE: strictfp can be queried from current method since we don't
-  // inline methods with differing strictfp bits
-  Value res = new ArithmeticOp(code, x, y, method()->is_strict(), state_before);
+  Value res = new ArithmeticOp(code, x, y, state_before);
   // Note: currently single-precision floating-point rounding on Intel is handled at the LIRGenerator level
   res = append(res);
-  if (method()->is_strict()) {
-    res = round_fp(res);
-  }
+  res = round_fp(res);
   push(type, res);
 }
 
@@ -1867,9 +1867,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // invoke-special-super
   if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
-    ciInstanceKlass* sender_klass =
-          calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
-                                                 calling_klass;
+    ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       Value receiver = state()->stack_at(index);
@@ -1986,8 +1984,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // no point in inlining.
       ciInstanceKlass* declared_interface = callee_holder;
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
-      if (singleton != NULL &&
-          (!target->is_default_method() || target->is_overpass()) /* CHA doesn't support default methods yet. */ ) {
+      if (singleton != NULL) {
         assert(singleton != declared_interface, "not a unique implementor");
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
@@ -2022,23 +2019,22 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target);
+      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target, callee_holder, target);
     }
     code = Bytecodes::_invokespecial;
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() &&
-      (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
     // callee is known => check if we have static binding
-    if (code == Bytecodes::_invokestatic  ||
+    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
-      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
-      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), false, code, better_receiver);
+      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
+      bool holder_known = (cha_monomorphic_target != NULL) || (exact_target != NULL);
+      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -2081,7 +2077,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver() + patching_appendix_arg);
   Value recv = has_receiver ? apop() : NULL;
-  int vtable_index = Method::invalid_vtable_index;
 
   // A null check is required here (when there is a receiver) for any of the following cases
   // - invokespecial, always need a null check.
@@ -2121,16 +2116,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     }
   }
 
-  Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target, state_before);
+  Invoke* result = new Invoke(code, result_type, recv, args, target, state_before);
   // push result
   append_split(result);
 
   if (result_type != voidType) {
-    if (method()->is_strict()) {
-      push(result_type, round_fp(result));
-    } else {
-      push(result_type, result);
-    }
+    push(result_type, round_fp(result));
   }
   if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
@@ -3056,9 +3047,11 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necesary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the interpreter_invocation_count.
+  // can increment the the counters.
+  // In addition, with range check elimination, we may need a valid block
+  // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
-  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges()) {
+  if (std_entry->number_of_preds() > 0 || is_profiling() || RangeCheckElimination) {
     new_header_block = header_block(std_entry, BlockBegin::std_entry_flag, state);
   } else {
     new_header_block = std_entry;
@@ -3145,10 +3138,11 @@ void GraphBuilder::setup_osr_entry_block() {
       // doesn't so pretend that the interpreter passed in null.
       get = append(new Constant(objectNull));
     } else {
-      get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
-                                    append(new Constant(new IntConstant(offset))),
-                                    0,
-                                    true /*unaligned*/, true /*wide*/));
+      Value off_val = append(new Constant(new IntConstant(offset)));
+      get = append(new UnsafeGet(as_BasicType(local->type()), e,
+                                 off_val,
+                                 false/*is_volatile*/,
+                                 true/*is_raw*/));
     }
     _state->store_local(index, get);
   }
@@ -3416,7 +3410,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
 
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none &&
-      (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
+      callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
@@ -3458,7 +3452,6 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
   // Certain methods cannot be parsed at all:
   if ( callee->is_native())            return "native method";
   if ( callee->is_abstract())          return "abstract method";
-  if (!callee->can_be_compiled())      return "not compilable (disabled)";
   if (!callee->can_be_parsed())        return "cannot be parsed";
   return NULL;
 }
@@ -3476,60 +3469,60 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   // Some intrinsics need special IR nodes.
   switch(id) {
-  case vmIntrinsics::_getReference       : append_unsafe_get_obj(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_getBoolean         : append_unsafe_get_obj(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_getByte            : append_unsafe_get_obj(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_getShort           : append_unsafe_get_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getChar            : append_unsafe_get_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getInt             : append_unsafe_get_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLong            : append_unsafe_get_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getFloat           : append_unsafe_get_obj(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_getDouble          : append_unsafe_get_obj(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_putReference       : append_unsafe_put_obj(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_putBoolean         : append_unsafe_put_obj(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_putByte            : append_unsafe_put_obj(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_putShort           : append_unsafe_put_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putChar            : append_unsafe_put_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putInt             : append_unsafe_put_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLong            : append_unsafe_put_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putFloat           : append_unsafe_put_obj(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_putDouble          : append_unsafe_put_obj(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_getShortUnaligned  : append_unsafe_get_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getCharUnaligned   : append_unsafe_get_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getIntUnaligned    : append_unsafe_get_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLongUnaligned   : append_unsafe_get_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putShortUnaligned  : append_unsafe_put_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putCharUnaligned   : append_unsafe_put_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putIntUnaligned    : append_unsafe_put_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLongUnaligned   : append_unsafe_put_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getReferenceVolatile  : append_unsafe_get_obj(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_getBooleanVolatile : append_unsafe_get_obj(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_getByteVolatile    : append_unsafe_get_obj(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_getShortVolatile   : append_unsafe_get_obj(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_getCharVolatile    : append_unsafe_get_obj(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_getIntVolatile     : append_unsafe_get_obj(callee, T_INT,     true); return;
-  case vmIntrinsics::_getLongVolatile    : append_unsafe_get_obj(callee, T_LONG,    true); return;
-  case vmIntrinsics::_getFloatVolatile   : append_unsafe_get_obj(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_getDoubleVolatile  : append_unsafe_get_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_putReferenceVolatile : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_putBooleanVolatile : append_unsafe_put_obj(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_putByteVolatile    : append_unsafe_put_obj(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_putShortVolatile   : append_unsafe_put_obj(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_putCharVolatile    : append_unsafe_put_obj(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_putIntVolatile     : append_unsafe_put_obj(callee, T_INT,     true); return;
-  case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
-  case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_getShort               : append_unsafe_get(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getChar                : append_unsafe_get(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getInt                 : append_unsafe_get(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLong                : append_unsafe_get(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getFloat               : append_unsafe_get(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_getDouble              : append_unsafe_get(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_putReference           : append_unsafe_put(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_putBoolean             : append_unsafe_put(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_putByte                : append_unsafe_put(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_putShort               : append_unsafe_put(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putChar                : append_unsafe_put(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putInt                 : append_unsafe_put(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLong                : append_unsafe_put(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putFloat               : append_unsafe_put(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_putDouble              : append_unsafe_put(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_getShortUnaligned      : append_unsafe_get(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getCharUnaligned       : append_unsafe_get(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getIntUnaligned        : append_unsafe_get(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLongUnaligned       : append_unsafe_get(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putShortUnaligned      : append_unsafe_put(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putCharUnaligned       : append_unsafe_put(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putIntUnaligned        : append_unsafe_put(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLongUnaligned       : append_unsafe_put(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getReferenceVolatile   : append_unsafe_get(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_getBooleanVolatile     : append_unsafe_get(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_getByteVolatile        : append_unsafe_get(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_getShortVolatile       : append_unsafe_get(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_getCharVolatile        : append_unsafe_get(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_getIntVolatile         : append_unsafe_get(callee, T_INT,     true); return;
+  case vmIntrinsics::_getLongVolatile        : append_unsafe_get(callee, T_LONG,    true); return;
+  case vmIntrinsics::_getFloatVolatile       : append_unsafe_get(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_getDoubleVolatile      : append_unsafe_get(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_putReferenceVolatile   : append_unsafe_put(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_putBooleanVolatile     : append_unsafe_put(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_putByteVolatile        : append_unsafe_put(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_putShortVolatile       : append_unsafe_put(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_putCharVolatile        : append_unsafe_put(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_putIntVolatile         : append_unsafe_put(callee, T_INT,     true); return;
+  case vmIntrinsics::_putLongVolatile        : append_unsafe_put(callee, T_LONG,    true); return;
+  case vmIntrinsics::_putFloatVolatile       : append_unsafe_put(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_putDoubleVolatile      : append_unsafe_put(callee, T_DOUBLE,  true); return;
   case vmIntrinsics::_compareAndSetLong:
   case vmIntrinsics::_compareAndSetInt:
   case vmIntrinsics::_compareAndSetReference : append_unsafe_CAS(callee); return;
   case vmIntrinsics::_getAndAddInt:
-  case vmIntrinsics::_getAndAddLong      : append_unsafe_get_and_set_obj(callee, true); return;
-  case vmIntrinsics::_getAndSetInt       :
-  case vmIntrinsics::_getAndSetLong      :
-  case vmIntrinsics::_getAndSetReference : append_unsafe_get_and_set_obj(callee, false); return;
-  case vmIntrinsics::_getCharStringU     : append_char_access(callee, false); return;
-  case vmIntrinsics::_putCharStringU     : append_char_access(callee, true); return;
+  case vmIntrinsics::_getAndAddLong          : append_unsafe_get_and_set(callee, true); return;
+  case vmIntrinsics::_getAndSetInt           :
+  case vmIntrinsics::_getAndSetLong          :
+  case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
+  case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
+  case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
   default:
     break;
   }
@@ -3750,7 +3743,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
-  if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
+  if (CompilationPolicy::should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
   }
   // first perform tests of things it's not possible to inline
@@ -3758,24 +3751,13 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineMethodsWithExceptionHandlers) INLINE_BAILOUT("callee has exception handlers");
   if (callee->is_synchronized() &&
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
-  if (!callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
+  if (bc == Bytecodes::_invokestatic &&
+      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.
   if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
-
-  if (strict_fp_requires_explicit_rounding &&
-      method()->is_strict() != callee->is_strict()) {
-#ifdef IA32
-    // If explicit rounding is required, do not inline strict code into non-strict code (or the reverse).
-    // When SSE2 is present, no special handling is needed.
-    if (UseSSE < 2) {
-      INLINE_BAILOUT("caller and callee have different strict fp requirements");
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
 
   if (is_profiling() && !callee->ensure_method_data()) {
     INLINE_BAILOUT("mdo allocation failed");
@@ -3839,6 +3821,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // printing
     print_inlining(callee, "inline", /*success*/ true);
   }
+
+  assert(bc != Bytecodes::_invokestatic || callee->holder()->is_initialized(), "required");
 
   // NOTE: Bailouts from this point on, which occur at the
   // GraphBuilder level, do not cause bailout just of the inlining but
@@ -4216,20 +4200,20 @@ void GraphBuilder::pop_scope_for_jsr() {
   _scope_data = scope_data()->parent();
 }
 
-void GraphBuilder::append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
   Instruction* offset = args->at(2);
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafeGetObject(t, args->at(1), offset, is_volatile));
+  Instruction* op = append(new UnsafeGet(t, args->at(1), offset, is_volatile));
   push(op->type(), op);
   compilation()->set_has_unsafe_access(true);
 }
 
 
-void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
   Instruction* offset = args->at(2);
@@ -4241,28 +4225,10 @@ void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_
     Value mask = append(new Constant(new IntConstant(1)));
     val = append(new LogicOp(Bytecodes::_iand, val, mask));
   }
-  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, val, is_volatile));
+  Instruction* op = append(new UnsafePut(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
-
-
-void GraphBuilder::append_unsafe_get_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafeGetRaw(t, args->at(1), false));
-  push(op->type(), op);
-  compilation()->set_has_unsafe_access(true);
-}
-
-
-void GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
-  compilation()->set_has_unsafe_access(true);
-}
-
 
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
   ValueStack* state_before = copy_state_for_exception();
@@ -4351,7 +4317,7 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 }
 
-void GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
+void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
   Values* args = state()->pop_arguments(callee->arg_size());
   BasicType t = callee->return_type()->basic_type();
   null_check(args->at(0));
@@ -4359,7 +4325,7 @@ void GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) 
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
+  Instruction* op = append(new UnsafeGetAndSet(t, args->at(1), offset, args->at(3), is_add));
   compilation()->set_has_unsafe_access(true);
   kill_all();
   push(op->type(), op);

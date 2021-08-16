@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "assembler_arm.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -415,10 +413,6 @@ void os::setup_fpu() {
 #endif
 }
 
-bool os::is_allocatable(size_t bytes) {
-  return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
@@ -474,9 +468,8 @@ void os::print_register_info(outputStream *st, const void *context) {
   st->print_cr("Register to memory mapping:");
   st->cr();
   for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
-    st->print_cr("  %-3s = " INTPTR_FORMAT, as_Register(r)->name(), reg_area[r]);
+    st->print("  %-3s = ", as_Register(r)->name());
     print_location(st, reg_area[r]);
-    st->cr();
   }
   st->cr();
 }

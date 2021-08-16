@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,8 @@ public class SharedSymbolTableBucketSize {
         int bucket_size = 8;
 
         OutputAnalyzer output =
-            CDSTestUtils.createArchive("-XX:SharedSymbolTableBucketSize="
-                                       + Integer.valueOf(bucket_size));
-        CDSTestUtils.checkDump(output);
+            CDSTestUtils.createArchiveAndCheck("-XX:SharedSymbolTableBucketSize="
+                                               + Integer.valueOf(bucket_size));
         CDSTestUtils.checkMappingFailure(output);
 
         String s = output.firstMatch("Average bucket size     : .*");

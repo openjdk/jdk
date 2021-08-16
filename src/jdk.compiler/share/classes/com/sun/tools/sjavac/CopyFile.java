@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,10 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -107,13 +104,8 @@ public class CopyFile implements Transformer {
 
                 Log.info("Copying "+pkgNameF+File.separator+src.getName());
 
-                try (InputStream fin = new FileInputStream(src);
-                     OutputStream fout = new FileOutputStream(dest)) {
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = fin.read(buf)) > 0){
-                        fout.write(buf, 0, len);
-                    }
+                try {
+                    Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
                 catch(IOException e){
                     Log.error("Could not copy the file "+src.getPath()+" to "+dest.getPath());

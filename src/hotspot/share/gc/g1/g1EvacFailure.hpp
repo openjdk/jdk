@@ -41,10 +41,14 @@ protected:
   G1RedirtyCardsQueueSet* _rdcqs;
   HeapRegionClaimer _hrclaimer;
 
+  uint volatile _num_failed_regions;
+
 public:
   G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
 
   void work(uint worker_id);
+
+  uint num_failed_regions() const;
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

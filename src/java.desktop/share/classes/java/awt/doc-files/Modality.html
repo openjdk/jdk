@@ -5,7 +5,6 @@
   <title>The AWT Modality</title>
   <style>
     td {text-align: center;}
-    tr {text-align: center;}
   </style>
 </head>
 <!--
@@ -207,16 +206,16 @@
       Showing the toolkit-modal dialog: "M"<br>
       M remains unblocked.
 
-          <table border="1">
+          <table class="striped">
 	        <caption>The Standard Blocking Matrix</caption>
-            <tbody><tr>
+            <thead><tr>
               <th scope="col">current/shown</th>
               <th scope="col">frame &amp; modeless</th>
               <th scope="col">document</th>
               <th scope="col">application</th>
               <th scope="col">toolkit</th>
-            </tr>
-            <tr>
+            </tr></thead>
+            <tbody><tr>
               <th scope="row">-</th>
               <td>-</td>
               <td>-</td>

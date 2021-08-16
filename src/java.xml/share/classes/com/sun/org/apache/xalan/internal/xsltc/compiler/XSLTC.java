@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
@@ -46,6 +45,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
@@ -58,7 +58,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
- * @LastModified: July 2019
+ * @LastModified: May 2021
  */
 public final class XSLTC {
 
@@ -140,11 +140,11 @@ public final class XSLTC {
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
      */
-    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
-    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalDTD = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     private XMLSecurityManager _xmlSecurityManager;
 
@@ -218,13 +218,13 @@ public final class XSLTC {
         }
         else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
             return _accessExternalDTD;
-        } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
+        } else if (name.equals(JdkConstants.SECURITY_MANAGER)) {
             return _xmlSecurityManager;
-        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+        } else if (name.equals(JdkConstants.JDK_EXT_CLASSLOADER)) {
             return _extensionClassLoader;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             return _catalogFeatures;
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (JdkConstants.CDATA_CHUNK_SIZE.equals(name)) {
             return _cdataChunkSize;
         }
         return null;
@@ -241,16 +241,16 @@ public final class XSLTC {
         }
         else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
             _accessExternalDTD = (String)value;
-        } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
+        } else if (name.equals(JdkConstants.SECURITY_MANAGER)) {
             _xmlSecurityManager = (XMLSecurityManager)value;
-        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+        } else if (name.equals(JdkConstants.JDK_EXT_CLASSLOADER)) {
             _extensionClassLoader = (ClassLoader) value;
             /* Clear the external extension functions HashMap if extension class
                loader was changed */
             _externalExtensionFunctions.clear();
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             _catalogFeatures = (CatalogFeatures)value;
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (JdkConstants.CDATA_CHUNK_SIZE.equals(name)) {
             _cdataChunkSize = Integer.parseInt((String)value);
         }
     }

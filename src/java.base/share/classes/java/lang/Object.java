@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,16 @@ public class Object {
      *     used in {@code equals} comparisons on the object is modified.
      *     This integer need not remain consistent from one execution of an
      *     application to another execution of the same application.
-     * <li>If two objects are equal according to the {@code equals(Object)}
-     *     method, then calling the {@code hashCode} method on each of
-     *     the two objects must produce the same integer result.
+     * <li>If two objects are equal according to the {@link
+     *     equals(Object) equals} method, then calling the {@code
+     *     hashCode} method on each of the two objects must produce the
+     *     same integer result.
      * <li>It is <em>not</em> required that if two objects are unequal
-     *     according to the {@link java.lang.Object#equals(java.lang.Object)}
-     *     method, then calling the {@code hashCode} method on each of the
-     *     two objects must produce distinct integer results.  However, the
-     *     programmer should be aware that producing distinct integer results
-     *     for unequal objects may improve the performance of hash tables.
+     *     according to the {@link equals(Object) equals} method, then
+     *     calling the {@code hashCode} method on each of the two objects
+     *     must produce distinct integer results.  However, the programmer
+     *     should be aware that producing distinct integer results for
+     *     unequal objects may improve the performance of hash tables.
      * </ul>
      *
      * @implSpec
@@ -127,15 +128,27 @@ public class Object {
      * <li>For any non-null reference value {@code x},
      *     {@code x.equals(null)} should return {@code false}.
      * </ul>
+     *
      * <p>
+     * An equivalence relation partitions the elements it operates on
+     * into <i>equivalence classes</i>; all the members of an
+     * equivalence class are equal to each other. Members of an
+     * equivalence class are substitutable for each other, at least
+     * for some purposes.
+     *
+     * @implSpec
      * The {@code equals} method for class {@code Object} implements
      * the most discriminating possible equivalence relation on objects;
      * that is, for any non-null reference values {@code x} and
      * {@code y}, this method returns {@code true} if and only
      * if {@code x} and {@code y} refer to the same object
      * ({@code x == y} has the value {@code true}).
-     * <p>
-     * Note that it is generally necessary to override the {@code hashCode}
+     *
+     * In other words, under the reference equality equivalence
+     * relation, each equivalence class only has a single element.
+     *
+     * @apiNote
+     * It is generally necessary to override the {@link hashCode hashCode}
      * method whenever this method is overridden, so as to maintain the
      * general contract for the {@code hashCode} method, which states
      * that equal objects must have equal hash codes.
@@ -183,7 +196,8 @@ public class Object {
      * primitive fields or references to immutable objects, then it is usually
      * the case that no fields in the object returned by {@code super.clone}
      * need to be modified.
-     * <p>
+     *
+     * @implSpec
      * The method {@code clone} for class {@code Object} performs a
      * specific cloning operation. First, if the class of this object does
      * not implement the interface {@code Cloneable}, then a
@@ -214,13 +228,17 @@ public class Object {
     protected native Object clone() throws CloneNotSupportedException;
 
     /**
-     * Returns a string representation of the object. In general, the
+     * Returns a string representation of the object.
+     * @apiNote
+     * In general, the
      * {@code toString} method returns a string that
      * "textually represents" this object. The result should
      * be a concise but informative representation that is easy for a
      * person to read.
      * It is recommended that all subclasses override this method.
-     * <p>
+     * The string output is not necessarily stable over time or across
+     * JVM invocations.
+     * @implSpec
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the
      * object is an instance, the at-sign character `{@code @}', and

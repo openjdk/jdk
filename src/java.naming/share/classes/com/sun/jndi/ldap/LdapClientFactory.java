@@ -42,12 +42,12 @@ import com.sun.jndi.ldap.pool.PooledConnectionFactory;
  * @author Rosanna Lee
  */
 final class LdapClientFactory implements PooledConnectionFactory {
-    final private String host;
-    final private int port;
-    final private String socketFactory;
-    final private int connTimeout;
-    final private int readTimeout;
-    final private OutputStream trace;
+    private final String host;
+    private final int port;
+    private final String socketFactory;
+    private final int connTimeout;
+    private final int readTimeout;
+    private final OutputStream trace;
 
     LdapClientFactory(String host, int port, String socketFactory,
         int connTimeout, int readTimeout, OutputStream trace) {

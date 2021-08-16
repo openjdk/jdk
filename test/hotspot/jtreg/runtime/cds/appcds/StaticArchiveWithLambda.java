@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class StaticArchiveWithLambda {
     public static void main(String[] args) throws Exception {
@@ -45,11 +44,7 @@ public class StaticArchiveWithLambda {
         String archiveName = "StaticArchiveWithLambda.jsa";
 
         // dump class list
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "-cp", appJar,
-            appClass);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dumpClassList");
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, appClass);
 
         // create archive with the class list
         CDSOptions opts = (new CDSOptions())
@@ -65,7 +60,7 @@ public class StaticArchiveWithLambda {
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(appClass);
-       output = CDSTestUtils.runWithArchive(runOpts);
+       OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
        output.shouldContain("LambHello source: shared objects file")
              .shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file")
              .shouldHaveExitValue(0);

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -33,6 +32,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -59,7 +59,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
-    _rdcq(&_rdc_local_qset),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -77,17 +76,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(n_workers),
-    _string_klass_or_null(G1StringDedup::is_enabled()
-                          ? SystemDictionary::String_klass()
-                          : nullptr),
+    _string_dedup_requests(),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL)
 {
-  // Verify klass comparison with _string_klass_or_null is sufficient
-  // to determine whether dedup is enabled and the object is a String.
-  assert(SystemDictionary::String_klass()->is_final(), "precondition");
-
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
@@ -101,11 +94,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  // The dest for Young is used when the objects are aged enough to
-  // need to be moved to the next space.
-  _dest[G1HeapRegionAttr::Young] = G1HeapRegionAttr::Old;
-  _dest[G1HeapRegionAttr::Old]   = G1HeapRegionAttr::Old;
-
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_num_optional_regions];
@@ -114,7 +102,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 }
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
-  _rdc_local_qset.flush_queue(_rdcq);
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
@@ -205,7 +192,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
   markWord m = obj->mark();
   if (m.is_marked()) {
-    obj = (oop) m.decode_pointer();
+    obj = cast_to_oop(m.decode_pointer());
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -364,6 +351,8 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
 }
 
 G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age) {
+  assert(region_attr.is_young() || region_attr.is_old(), "must be either Young or Old");
+
   if (region_attr.is_young()) {
     age = !m.has_displaced_mark_helper() ? m.age()
                                          : m.displaced_mark_helper().age();
@@ -371,7 +360,8 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
       return region_attr;
     }
   }
-  return dest(region_attr);
+  // young-to-old (promotion) or old-to-old; destination is old in both cases.
+  return G1HeapRegionAttr::Old;
 }
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
@@ -475,7 +465,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
 
-  const oop obj = oop(obj_ptr);
+  const oop obj = cast_to_oop(obj_ptr);
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
@@ -519,20 +509,14 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
-    // StringDedup::is_enabled() and java_lang_String::is_instance_inline
-    // test of the obj, combined into a single comparison, using the klass
-    // already in hand and avoiding the null check in is_instance.
-    if (klass == _string_klass_or_null) {
-      const bool is_from_young = region_attr.is_young();
-      const bool is_to_young = dest_attr.is_young();
-      assert(is_from_young == from_region->is_young(),
-             "sanity");
-      assert(is_to_young == _g1h->heap_region_containing(obj)->is_young(),
-             "sanity");
-      G1StringDedup::enqueue_from_evacuation(is_from_young,
-                                             is_to_young,
-                                             _worker_id,
-                                             obj);
+    // Check for deduplicating young Strings.
+    if (G1StringDedup::is_candidate_from_evacuation(klass,
+                                                    region_attr,
+                                                    dest_attr,
+                                                    age)) {
+      // Record old; request adds a new weak reference, which reference
+      // processing expects to refer to a from-space object.
+      _string_dedup_requests.add(old);
     }
 
     G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
@@ -619,9 +603,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (!r->evacuation_failed()) {
-      r->set_evacuation_failed(true);
-     _g1h->hr_printer()->evac_failure(r);
+    if (_g1h->notify_region_failed_evacuation(r->hrm_index())) {
+      _g1h->hr_printer()->evac_failure(r);
     }
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_stack_overflow_check(void);
   void generate_stack_overflow_check(Register Rframe_size, Register Rscratch);
 
-  void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
+  void generate_counter_incr(Label* overflow);
   void generate_counter_overflow(Label& continue_entry);
 
   void generate_fixed_frame(bool native_call);
@@ -113,6 +113,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #ifdef AARCH64
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
 #endif // AARCH64
+
+#ifdef ARM32
+  void generate_math_runtime_call(AbstractInterpreter::MethodKind kind);
+#endif // ARM32
 
 #ifdef PPC
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);

@@ -39,7 +39,6 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -247,13 +246,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
-
-  // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkScope {
-   public:
-    ParStrongRootsScope();
-    ~ParStrongRootsScope();
-  };
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }

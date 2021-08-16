@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8012929 8243074
+ * @bug 8012929 8243074 8266281
  * @summary Trees.getElement should work not only for declaration trees, but also for use-trees
  * @modules jdk.compiler
  * @build TestGetElementReference
@@ -70,9 +70,7 @@ public class TestGetElementReference {
                 }
             }
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            List<String> options = List.of("-Xjcov",
-                                           "--enable-preview",
-                                           "-source", JDK_VERSION);
+            List<String> options = List.of("-Xjcov");
             JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, options, null, files);
             Trees trees = Trees.instance(ct);
             CompilationUnitTree cut = ct.parse().iterator().next();

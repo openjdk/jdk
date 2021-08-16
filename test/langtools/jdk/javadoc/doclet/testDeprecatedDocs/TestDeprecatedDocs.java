@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
- *           8169819 8074407 8191030 8182765 8184205 8243533
+ *           8169819 8074407 8191030 8182765 8184205 8243533 8261976
  * @summary  test generated docs for deprecated items
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -172,22 +172,22 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test5 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test6 passes.</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b6 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
+                    2 method-summary-table-tab4 method-summary-table-tab6">
                     <div class="block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">class_test7 passes.</div>
                     </div>
@@ -267,27 +267,27 @@ public class TestDeprecatedDocs extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <ul>
-                    <li><a href="#forRemoval">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum.class">Enum Classes</a></li>
+                    <li><a href="#enum-class">Enum Classes</a></li>
                     <li><a href="#exception">Exceptions</a></li>
                     <li><a href="#error">Errors</a></li>
-                    <li><a href="#annotation.interface">Annotation Interfaces</a></li>
+                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
                     <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum.constant">Enum Constants</a></li>
-                    <li><a href="#annotation.interface.member">Annotation Interface Elements</a></li>
+                    <li><a href="#enum-constant">Enum Constants</a></li>
+                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
-                    <div id="forRemoval">
-                    <div class="caption"><span>For Removal</span></div>
+                    <div id="for-removal">
+                    <div class="caption"><span>Terminally Deprecated Elements</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <div id="enum.class">
-                    <div class="caption"><span>Enum Classes</span></div>
+                    <div id="enum-class">
+                    <div class="caption"><span>Deprecated Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>
@@ -297,7 +297,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="exception">
-                    <div class="caption"><span>Exceptions</span></div>
+                    <div class="caption"><span>Deprecated Exceptions</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Exceptions</div>
                     <div class="table-header col-last">Description</div>
@@ -307,7 +307,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="field">
-                    <div class="caption"><span>Fields</span></div>
+                    <div class="caption"><span>Deprecated Fields</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Field</div>
                     <div class="table-header col-last">Description</div>
@@ -337,7 +337,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
@@ -355,17 +355,17 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test5 passes. This is the second sentence of deprecated description for a method.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod<wbr>(int)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test7 passes. Overloaded method 2.</div>
                     </div>
-                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test6 passes. Overloaded method 1.</div>
                     </div>""",
                 """
                     <div id="constructor">
-                    <div class="caption"><span>Constructors</span></div>
+                    <div class="caption"><span>Deprecated Constructors</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Constructor</div>
                     <div class="table-header col-last">Description</div>
@@ -375,7 +375,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass<wbr>(String)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test4 passes. Overloaded constructor.</div>
                     </div>""");

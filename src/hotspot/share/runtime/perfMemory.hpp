@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class PerfMemory : AllStatic {
     // memory segment of another JVM process on the same system.
     static void attach(const char* user, int vmid, PerfMemoryMode mode,
                        char** addrp, size_t* size, TRAPS);
-    static void detach(char* addr, size_t bytes, TRAPS);
+    static void detach(char* addr, size_t bytes);
 
     static void initialize();
     static void destroy();

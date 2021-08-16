@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_LIBFFI
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
-  LIB_TESTS_SETUP_GRAALUNIT
   LIB_TESTS_SETUP_GTEST
 
   BASIC_JDKLIB_LIBS=""
@@ -122,6 +121,15 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   # Threading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
+  fi
+
+  # librt for legacy clock_gettime
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    # Hotspot needs to link librt to get the clock_* functions.
+    # But once our supported minimum build and runtime platform
+    # has glibc 2.17, this can be removed as the functions are
+    # in libc.
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lrt"
   fi
 
   # Atomic library

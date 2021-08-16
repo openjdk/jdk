@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
  *  deletion without notice.</b>
  */
 public class UnsharedNameTable extends Name.Table {
-    static public Name.Table create(Names names) {
+    public static Name.Table create(Names names) {
         return new UnsharedNameTable(names);
     }
 
@@ -96,10 +96,6 @@ public class UnsharedNameTable extends Name.Table {
         HashEntry firstTableEntry = element;
 
         while (element != null) {
-            if (element == null) {
-                break;
-            }
-
             n = element.get();
 
             if (n == null) {

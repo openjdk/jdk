@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,33 @@ public final class SecurityUtils {
                       .filter(s -> !algs.contains(s))
                       .collect(Collectors.joining(","));
         Security.setProperty(prop, value);
+    }
+
+    /**
+     * Removes the specified algorithms from the
+     * jdk.xml.dsig.secureValidationPolicy security property. Matches any
+     * part of the algorithm URI.
+     */
+    public static void removeAlgsFromDSigPolicy(String... algs) {
+        removeFromDSigPolicy("disallowAlg", List.<String>of(algs));
+    }
+
+    private static void removeFromDSigPolicy(String rule, List<String> algs) {
+        String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
+        value = Arrays.stream(value.split(","))
+                      .filter(v -> !v.contains(rule) ||
+                              !anyMatch(v, algs))
+                      .collect(Collectors.joining(","));
+        Security.setProperty("jdk.xml.dsig.secureValidationPolicy", value);
+    }
+
+    private static boolean anyMatch(String value, List<String> algs) {
+        for (String alg : algs) {
+           if (value.contains(alg)) {
+               return true;
+           }
+        }
+        return false;
     }
 
     private SecurityUtils() {}

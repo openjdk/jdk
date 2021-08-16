@@ -104,7 +104,7 @@ bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) 
   assert(is_aligned(reservation_size_request_bytes, os::vm_allocation_granularity()), "invariant");
   _rs = ReservedSpace(reservation_size_request_bytes,
                       os::vm_allocation_granularity(),
-                      UseLargePages && os::can_commit_large_page_memory());
+                      os::vm_page_size());
   if (!_rs.is_reserved()) {
     return false;
   }
@@ -213,6 +213,7 @@ class JfrVirtualMemoryManager : public JfrCHeapObj {
     return reserved_high() == committed_high();
   }
 
+  u1* top() const { return reinterpret_cast<u1*>(_current_segment->top()); }
   const u1* committed_low() const { return _current_segment->committed_low(); }
   const u1* committed_high() const { return _current_segment->committed_high(); }
   const u1* reserved_low() const { return _current_segment->reserved_low(); }
@@ -443,11 +444,10 @@ void* JfrVirtualMemory::initialize(size_t reservation_size_request_bytes,
   }
   _reserved_low = (const u1*)_vmm->reserved_low();
   _reserved_high = (const u1*)_vmm->reserved_high();
+  assert(static_cast<size_t>(_reserved_high - _reserved_low) == reservation_size_request_bytes, "invariant");
   // reservation complete
-  _top = (u1*)_vmm->committed_high();
-  _commit_point = _top;
+  _top = _vmm->top();
   assert(_reserved_low == _top, "invariant"); // initial empty state
-  assert((size_t)(_reserved_high - _reserved_low) == reservation_size_request_bytes, "invariant");
   // initial commit
   commit_memory_block();
   return _top;
@@ -470,8 +470,6 @@ bool JfrVirtualMemory::is_empty() const {
 bool JfrVirtualMemory::commit_memory_block() {
   assert(_vmm != NULL, "invariant");
   assert(!is_full(), "invariant");
-  assert(_top == _commit_point, "invariant");
-
   void* const block = _vmm->commit(_physical_commit_size_request_words);
   if (block != NULL) {
     _commit_point = _vmm->committed_high();

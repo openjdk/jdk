@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1497,8 +1497,7 @@ public class JavacParserTest extends TestCase {
     void testStartAndEndPositionForClassesInPermitsClause() throws IOException {
         String code = "package t; sealed class Test permits Sub1, Sub2 {} final class Sub1 extends Test {} final class Sub2 extends Test {}";
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
-                List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())),
-                null, Arrays.asList(new MyFileObject(code)));
+                null, null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
         List<? extends Tree> permitsList = clazz.getPermitsClause();
@@ -1691,6 +1690,136 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test //JDK-8259050
+    void testBrokenUnicodeEscape() throws IOException {
+        String code = "package t;\n" +
+                      "class Test {\n" +
+                      "    private String s1 = \"\\" + "uaaa\";\n" +
+                      "    private String s2 = \\" + "uaaa;\n" +
+                      "}\n";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        String ast = cut.toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+
+                          class Test {
+                              private String s1 = "";
+                              private String s2 = (ERROR);
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testBrokenUnicodeEscape: " + codes,
+                Arrays.<String>asList("compiler.err.illegal.unicode.esc",
+                                      "compiler.err.illegal.unicode.esc"),
+                codes);
+    }
+
+    @Test //JDK-8259050
+    void testUsupportedTextBlock() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private String s = \"""
+                                             \""";
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--release", "14"),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        String ast = cut.toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+
+                          class Test {
+                              private String s = "";
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testUsupportedTextBlock: " + codes,
+                Arrays.<String>asList("compiler.err.feature.not.supported.in.source.plural"),
+                codes);
+    }
+
+    @Test //JDK-8266436
+    void testSyntheticConstructorReturnType() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ct.analyze();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        assertEquals("expected null as constructor return type", constr.getReturnType(), null);
+    }
+
+    @Test //JDK-8267221
+    void testVarArgArrayParameter() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           private void test(int[]... p) {}
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree param = constr.getParameters().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int typeStart = (int) sp.getStartPosition(cut, param.getType());
+        int typeEnd   = (int) sp.getEndPosition(cut, param.getType());
+        assertEquals("correct parameter type span", code.substring(typeStart, typeEnd), "int[]...");
+    }
+
+    @Test //JDK-8271928
+    void testX() throws IOException {
+        String code = """
+                      package test;
+                          public static void test() {
+                              return test;
+                          }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree tree, Void p) {
+                int pos = (int) sp.getStartPosition(cut, tree);
+                if (pos == (-1)) {
+                    fail("Invalid source position for an ErroneousTree");
+                }
+                return scan(tree.getErrorTrees(), p);
+            }
+        }.scan(cut, null);
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)
@@ -1749,10 +1878,7 @@ abstract class TestCase {
     }
 
     void assertEquals(String message, Object o1, Object o2) {
-        if (o1 != null && o2 != null && !o1.equals(o2)) {
-            fail(message);
-        }
-        if (o1 == null && o2 != null) {
+        if (!Objects.equals(o1, o2)) {
             fail(message);
         }
     }

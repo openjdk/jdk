@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ public final class Main {
             System.out.println(" jfr summary recording.jfr");
             System.out.println();
             System.out.println(" jfr metadata recording.jfr");
+            System.out.println();
+            System.out.println(" jfr metadata --categories GC,Detailed");
             System.out.println();
             System.out.println("For more information about available commands, use 'jfr help'");
             System.exit(EXIT_OK);

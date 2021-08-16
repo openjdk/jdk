@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public final class PhantomHelper {
                 PRHelper prh = (PRHelper) rq.remove(1000);
 
                 if (prh != null) {
-                    Integer ik = new Integer(prh.getReferentHashCode());
+                    Integer ik = Integer.valueOf(prh.getReferentHashCode());
                     PhantomHelper ph = (PhantomHelper) hmHelper.get(ik);
 
                     if (ph != null) {
@@ -110,7 +110,7 @@ public final class PhantomHelper {
                             ph.decreaseHashCounter();
                             if (ph.getHashCounter() == 0) {
                                 hmHelper.remove(
-                                        new Integer(prh.getReferentHashCode()));
+                                        Integer.valueOf(prh.getReferentHashCode()));
                             } else {
                                 hmHelper.put(ik, ph);
                             }

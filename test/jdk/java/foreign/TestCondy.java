@@ -69,12 +69,12 @@ public class TestCondy {
 
         testValues.addAll(Arrays.asList(constants));
 
-        testValues.add(MemoryLayout.ofStruct(constants));
-        testValues.add(MemoryLayout.ofUnion(constants));
+        testValues.add(MemoryLayout.structLayout(constants));
+        testValues.add(MemoryLayout.unionLayout(constants));
 
         for (MemoryLayout ml : constants) {
-            testValues.add(MemoryLayout.ofSequence(ml));
-            testValues.add(MemoryLayout.ofSequence(10, ml));
+            testValues.add(MemoryLayout.sequenceLayout(ml));
+            testValues.add(MemoryLayout.sequenceLayout(10, ml));
         }
 
         testValues.add(FunctionDescriptor.ofVoid(constants));

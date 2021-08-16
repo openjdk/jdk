@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -42,21 +43,18 @@ class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
 class HeapRegion;
-class Klass;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
   G1PLABAllocator* _plab_allocator;
 
   AgeTable _age_table;
-  G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];
   // Local tenuring threshold.
   uint _tenuring_threshold;
   G1ScanEvacuatedObjClosure  _scanner;
@@ -85,18 +83,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Size (in elements) of a partial objArray task chunk.
   int _partial_objarray_chunk_size;
   PartialArrayTaskStepper _partial_array_stepper;
-  // Used to check whether string dedup should be applied to an object.
-  Klass* _string_klass_or_null;
+  StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
-
-  G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
-    assert(original.is_valid(),
-           "Original region attr invalid: %s", original.get_type_str());
-    assert(_dest[original.type()].is_valid_gen(),
-           "Dest region attr is invalid: %s", _dest[original.type()].get_type_str());
-    return _dest[original.type()];
-  }
 
   size_t _num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;
@@ -148,7 +137,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (_last_enqueued_card != card_index) {
-      _rdc_local_qset.enqueue(_rdcq, ct()->byte_for_index(card_index));
+      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }

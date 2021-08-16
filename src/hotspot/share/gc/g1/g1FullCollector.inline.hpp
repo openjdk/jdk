@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,30 @@
 #define SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
 
 #include "gc/g1/g1FullCollector.hpp"
+
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-bool G1FullCollector::is_in_pinned_or_closed(oop obj) const {
-  return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj));
+
+bool G1FullCollector::is_compacting(oop obj) const {
+  return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));
 }
 
-bool G1FullCollector::is_in_pinned(oop obj) const {
-  return _region_attr_table.is_pinned(cast_from_oop<HeapWord*>(obj));
+bool G1FullCollector::is_skip_compacting(uint region_index) const {
+  return _region_attr_table.is_skip_compacting(region_index);
 }
 
-bool G1FullCollector::is_in_closed(oop obj) const {
-  return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj));
+bool G1FullCollector::is_skip_marking(oop obj) const {
+  return _region_attr_table.is_skip_marking(cast_from_oop<HeapWord*>(obj));
+}
+
+void G1FullCollector::set_invalid(uint region_idx) {
+  _region_attr_table.set_invalid(region_idx);
+}
+
+void G1FullCollector::update_from_compacting_to_skip_compacting(uint region_idx) {
+  _region_attr_table.verify_is_compacting(region_idx);
+  _region_attr_table.set_skip_compacting(region_idx);
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP

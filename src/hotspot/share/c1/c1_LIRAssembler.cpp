@@ -31,6 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -468,9 +469,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   case lir_icvirtual_call:
     ic_call(op);
     break;
-  case lir_virtual_call:
-    vtable_call(op);
-    break;
   default:
     fatal("unexpected op code: %s", op->name());
     break;
@@ -482,9 +480,9 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     compilation()->set_has_method_handle_invokes(true);
   }
 
-#if defined(IA32) && defined(TIERED)
+#if defined(IA32) && defined(COMPILER2)
   // C2 leave fpu stack dirty clean it
-  if (UseSSE < 2) {
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
     int i;
     for ( i = 1; i <= 7 ; i++ ) {
       ffree(i);
@@ -493,7 +491,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
       ffree(0);
     }
   }
-#endif // X86 && TIERED
+#endif // IA32 && COMPILER2
 }
 
 
@@ -511,7 +509,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       } else {
         move_op(op->in_opr(), op->result_opr(), op->type(),
                 op->patch_code(), op->info(), op->pop_fpu_stack(),
-                op->move_kind() == lir_move_unaligned,
                 op->move_kind() == lir_move_wide);
       }
       break;
@@ -709,9 +706,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
     case lir_add:
     case lir_sub:
     case lir_mul:
-    case lir_mul_strictfp:
     case lir_div:
-    case lir_div_strictfp:
     case lir_rem:
       assert(op->fpu_pop_count() < 2, "");
       arith_op(
@@ -775,7 +770,7 @@ void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_
 }
 
 
-void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned, bool wide) {
+void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
   if (src->is_register()) {
     if (dest->is_register()) {
       assert(patch_code == lir_patch_none && info == NULL, "no patching and info allowed here");
@@ -784,7 +779,7 @@ void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       assert(patch_code == lir_patch_none && info == NULL, "no patching and info allowed here");
       reg2stack(src, dest, type, pop_fpu_stack);
     } else if (dest->is_address()) {
-      reg2mem(src, dest, type, patch_code, info, pop_fpu_stack, wide, unaligned);
+      reg2mem(src, dest, type, patch_code, info, pop_fpu_stack, wide);
     } else {
       ShouldNotReachHere();
     }
@@ -813,8 +808,7 @@ void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 
   } else if (src->is_address()) {
-    mem2reg(src, dest, type, patch_code, info, wide, unaligned);
-
+    mem2reg(src, dest, type, patch_code, info, wide);
   } else {
     ShouldNotReachHere();
   }

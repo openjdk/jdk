@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -75,7 +74,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
   }
 
   // CodeCache is already processed in java roots
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_CodeCache_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do);
 }
 
 // Adaptor to pass the closures to the strong roots in the VM.
@@ -106,9 +105,8 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
 
   // CodeCache is already processed in java roots
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(),
-                                            G1RP_PS_CodeCache_oops_do,
-                                            G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_CodeCache_oops_do,
+                                          G1RP_PS_refProcessor_oops_do);
 }
 
 // Adaptor to pass the closures to all the roots in the VM.
@@ -144,28 +142,41 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
   process_code_cache_roots(blobs, NULL, 0);
 
   // refProcessor is not needed since we are inside a safe point
-  _process_strong_tasks.all_tasks_completed(n_workers(), G1RP_PS_refProcessor_oops_do);
+  _process_strong_tasks.all_tasks_claimed(G1RP_PS_refProcessor_oops_do);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
                                          G1GCPhaseTimes* phase_times,
                                          uint worker_id) {
-  // We need to make make sure that the "strong" nmethods are processed first
-  // using the strong closure. Only after that we process the weakly reachable
-  // nmethods.
-  // We need to strictly separate the strong and weak nmethod processing because
-  // any processing claims that nmethod, i.e. will not be iterated again.
-  // Which means if an nmethod is processed first and claimed, the strong processing
-  // will not happen, and the oops reachable by that nmethod will not be marked
-  // properly.
+  // In the concurrent start pause, when class unloading is enabled, G1
+  // processes nmethods in two ways, as "strong" and "weak" nmethods.
   //
-  // That is why we process strong nmethods first, synchronize all threads via a
-  // barrier, and only then allow weak processing. To minimize the wait time at
-  // that barrier we do the strong nmethod processing first, and immediately after-
-  // wards indicate that that thread is done. Hopefully other root processing after
-  // nmethod processing is enough so there is no need to wait.
+  // 1) Strong nmethods are reachable from the thread stack frames. G1 applies
+  // the G1RootClosures::strong_codeblobs() closure on them. The closure
+  // iterates over all oops embedded inside each nmethod, and performs 3
+  // operations:
+  //   a) evacuates; relocate objects outside of collection set
+  //   b) fixes up; remap oops to reflect new addresses
+  //   c) mark; mark object alive
+  // This keeps these oops alive wrt. to the upcoming marking phase, and their
+  // classes will not be unloaded.
   //
-  // This is only required in the concurrent start pause with class unloading enabled.
+  // 2) Weak nmethods are reachable only from the code root remembered set (see
+  // G1CodeRootSet). G1 applies the G1RootClosures::weak_codeblobs() closure on
+  // them. The closure iterates over all oops embedded inside each nmethod, and
+  // performs 2 operations: a) and b).
+  // Since these oops are *not* marked, their classes can potentially be
+  // unloaded.
+  //
+  // G1 doesn't segregate strong/weak nmethods processing (finish processing
+  // all strong nmethods before starting with any weak nmethods, or vice
+  // versa), as that could lead to poor CPU utilization (a single slow thread
+  // prevents all other thread from crossing the synchronization barrier).
+  // Instead, G1 interleaves strong and weak nmethods processing via
+  // per-nmethod synchronization. A nmethod is either *strongly* or *weakly*
+  // claimed before processing. A weakly claimed nmethod could be strongly
+  // claimed again for performing marking (the c) operation above); see
+  // oops_do_process_weak and oops_do_process_strong in nmethod.hpp
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_id);
     bool is_par = n_workers() > 1;
@@ -186,15 +197,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
                                        G1GCPhaseTimes* phase_times,
                                        uint worker_id) {
   OopClosure* strong_roots = closures->strong_oops();
-
-#if INCLUDE_AOT
-  if (_process_strong_tasks.try_claim_task(G1RP_PS_aot_oops_do)) {
-    if (UseAOT) {
-      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_id);
-      AOTLoader::oops_do(strong_roots);
-    }
-  }
-#endif
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     G1GCPhaseTimes::GCParPhases phase = G1GCPhaseTimes::strong_oopstorage_phase(id);

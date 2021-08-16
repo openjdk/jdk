@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * square root, and trigonometric functions.
  *
  * <p>Unlike some of the numeric methods of class
- * {@code StrictMath}, all implementations of the equivalent
+ * {@link java.lang.StrictMath StrictMath}, all implementations of the equivalent
  * functions of class {@code Math} are not defined to return the
  * bit-for-bit same results.  This relaxation permits
  * better-performing implementations where strict reproducibility is
@@ -91,13 +91,30 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * will not overflow the range of values of the computation.
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
- * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
- * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
- * throw an {@code ArithmeticException} when the results overflow.
- * For the arithmetic operations divide and absolute value, overflow
- * occurs only with a specific minimum or maximum value and
- * should be checked against the minimum or maximum as appropriate.
+ * overflow errors need to be detected, the methods whose names end with
+ * {@code Exact} throw an {@code ArithmeticException} when the results overflow.
+ *
+ * <h2><a id=Ieee754RecommendedOps>IEEE 754 Recommended
+ * Operations</a></h2>
+ *
+ * The 2019 revision of the IEEE 754 floating-point standard includes
+ * a section of recommended operations and the semantics of those
+ * operations if they are included in a programming environment. The
+ * recommended operations present in this class include {@link sin
+ * sin}, {@link cos cos}, {@link tan tan}, {@link asin asin}, {@link
+ * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
+ * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
+ * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link
+ * hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
+ * operation is a required part of IEEE 754 from a different section
+ * of the standard.) The special case behavior of the recommended
+ * operations generally follows the guidance of the IEEE 754
+ * standard. However, the {@code pow} method defines different
+ * behavior for some arguments, as noted in its {@linkplain pow
+ * specification}. The IEEE 754 standard defines its operations to be
+ * correctly rounded, which is a more stringent quality of
+ * implementation condition than required for most of the methods in
+ * question that are also included in this class.
  *
  * @author  Joseph D. Darcy
  * @since   1.0
@@ -156,7 +173,9 @@ public final class Math {
     /**
      * Returns the trigonometric cosine of an angle. Special cases:
      * <ul><li>If the argument is NaN or an infinity, then the
-     * result is NaN.</ul>
+     * result is NaN.
+     * <li>If the argument is zero, then the result is {@code 1.0}.
+     *</ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -209,7 +228,9 @@ public final class Math {
      * Returns the arc cosine of a value; the returned angle is in the
      * range 0.0 through <i>pi</i>.  Special case:
      * <ul><li>If the argument is NaN or its absolute value is greater
-     * than 1, then the result is NaN.</ul>
+     * than 1, then the result is NaN.
+     * <li>If the argument is {@code 1.0}, the result is positive zero.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -226,7 +247,11 @@ public final class Math {
      * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
-     * same sign as the argument.</ul>
+     * same sign as the argument.
+     * <li>If the argument is {@linkplain Double#isInfinite infinite},
+     * then the result is the closest value to <i>pi</i>/2 with the
+     * same sign as the input.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -275,7 +300,9 @@ public final class Math {
      * <li>If the argument is positive infinity, then the result is
      * positive infinity.
      * <li>If the argument is negative infinity, then the result is
-     * positive zero.</ul>
+     * positive zero.
+     * <li>If the argument is zero, then the result is {@code 1.0}.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -297,7 +324,10 @@ public final class Math {
      * <li>If the argument is positive infinity, then the result is
      * positive infinity.
      * <li>If the argument is positive zero or negative zero, then the
-     * result is negative infinity.</ul>
+     * result is negative infinity.
+     * <li>If the argument is {@code 1.0}, then the result is positive
+     * zero.
+     * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
@@ -321,8 +351,10 @@ public final class Math {
      * positive infinity.
      * <li>If the argument is positive zero or negative zero, then the
      * result is negative infinity.
-     * <li> If the argument is equal to 10<sup><i>n</i></sup> for
-     * integer <i>n</i>, then the result is <i>n</i>.
+     * <li>If the argument is equal to 10<sup><i>n</i></sup> for
+     * integer <i>n</i>, then the result is <i>n</i>. In particular,
+     * if the argument is {@code 1.0} (10<sup>0</sup>), then the
+     * result is positive zero.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact result.
@@ -529,6 +561,15 @@ public final class Math {
      * <p>The computed result must be within 2 ulps of the exact result.
      * Results must be semi-monotonic.
      *
+     * @apiNote
+     * For <i>y</i> with a positive sign and finite nonzero
+     * <i>x</i>, the exact mathematical value of {@code atan2} is
+     * equal to:
+     * <ul>
+     * <li>If <i>x</i> {@literal >} 0, atan(abs(<i>y</i>/<i>x</i>))
+     * <li>If <i>x</i> {@literal <} 0, &pi; - atan(abs(<i>y</i>/<i>x</i>))
+     * </ul>
+     *
      * @param   y   the ordinate coordinate
      * @param   x   the abscissa coordinate
      * @return  the <i>theta</i> component of the point
@@ -659,6 +700,16 @@ public final class Math {
      *
      * <p>The computed result must be within 1 ulp of the exact result.
      * Results must be semi-monotonic.
+     *
+     * @apiNote
+     * The special cases definitions of this method differ from the
+     * special case definitions of the IEEE 754 recommended {@code
+     * pow} operation for &plusmn;{@code 1.0} raised to an infinite
+     * power. This method treats such cases as indeterminate and
+     * specifies a NaN is returned. The IEEE 754 specification treats
+     * the infinite power as a large integer (large-magnitude
+     * floating-point numbers are numerically integers, specifically
+     * even integers) and therefore specifies {@code 1.0} be returned.
      *
      * @param   a   the base.
      * @param   b   the exponent.
@@ -952,6 +1003,60 @@ public final class Math {
     }
 
     /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows an {@code int}.  Such overflow occurs in this method if
+     * {@code x} is {@link Integer#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Integer.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Integer.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows an int
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static int divideExact(int x, int y) {
+        int q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("integer overflow");
+    }
+
+    /**
+     * Returns the quotient of the arguments, throwing an exception if the
+     * result overflows a {@code long}.  Such overflow occurs in this method if
+     * {@code x} is {@link Long#MIN_VALUE} and {@code y} is {@code -1}.
+     * In contrast, if {@code Long.MIN_VALUE / -1} were evaluated directly,
+     * the result would be {@code Long.MIN_VALUE} and no exception would be
+     * thrown.
+     * <p>
+     * If {@code y} is zero, an {@code ArithmeticException} is thrown
+     * (JLS {@jls 15.17.2}).
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the quotient {@code x / y}
+     * @throws ArithmeticException if {@code y} is zero or the quotient
+     * overflows a long
+     * @jls 15.17.2 Division Operator /
+     * @since 18
+     */
+    public static long divideExact(long x, long y) {
+        long q = x / y;
+        if ((x & y & q) >= 0) {
+            return q;
+        }
+        throw new ArithmeticException("long overflow");
+    }
+
+    /**
      * Returns the argument incremented by one, throwing an exception if the
      * result overflows an {@code int}.
      * The overflow only occurs for {@linkplain Integer#MAX_VALUE the maximum value}.
@@ -1100,41 +1205,49 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @see #unsignedMultiplyHigh
      * @since 9
      */
     @IntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
-        if (x < 0 || y < 0) {
-            // Use technique from section 8-2 of Henry S. Warren, Jr.,
-            // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
-            long x1 = x >> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y1 = y >> 32;
-            long y2 = y & 0xFFFFFFFFL;
-            long z2 = x2 * y2;
-            long t = x1 * y2 + (z2 >>> 32);
-            long z1 = t & 0xFFFFFFFFL;
-            long z0 = t >> 32;
-            z1 += x2 * y1;
-            return x1 * y1 + z0 + (z1 >> 32);
-        } else {
-            // Use Karatsuba technique with two base 2^32 digits.
-            long x1 = x >>> 32;
-            long y1 = y >>> 32;
-            long x2 = x & 0xFFFFFFFFL;
-            long y2 = y & 0xFFFFFFFFL;
-            long A = x1 * y1;
-            long B = x2 * y2;
-            long C = (x1 + x2) * (y1 + y2);
-            long K = C - A - B;
-            return (((B >>> 32) + K) >>> 32) + A;
-        }
+        // Use technique from section 8-2 of Henry S. Warren, Jr.,
+        // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+        long x1 = x >> 32;
+        long x2 = x & 0xFFFFFFFFL;
+        long y1 = y >> 32;
+        long y2 = y & 0xFFFFFFFFL;
+
+        long z2 = x2 * y2;
+        long t = x1 * y2 + (z2 >>> 32);
+        long z1 = t & 0xFFFFFFFFL;
+        long z0 = t >> 32;
+        z1 += x2 * y1;
+
+        return x1 * y1 + z0 + (z1 >> 32);
+    }
+
+    /**
+     * Returns as a {@code long} the most significant 64 bits of the unsigned
+     * 128-bit product of two unsigned 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see #multiplyHigh
+     * @since 18
+     */
+    public static long unsignedMultiplyHigh(long x, long y) {
+        // Compute via multiplyHigh() to leverage the intrinsic
+        long result = Math.multiplyHigh(x, y);
+        result += (y & (x >> 63)); // equivalent to `if (x < 0) result += y;`
+        result += (x & (y >> 63)); // equivalent to `if (y < 0) result += x;`
+        return result;
     }
 
     /**
      * Returns the largest (closest to positive infinity)
      * {@code int} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Integer.MIN_VALUE}.
@@ -1143,14 +1256,16 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact quotient is not an integer and is negative.
      * <ul>
      *   <li>If the signs of the arguments are the same, the results of
      *       {@code floorDiv} and the {@code /} operator are the same.  <br>
      *       For example, {@code floorDiv(4, 3) == 1} and {@code (4 / 3) == 1}.</li>
-     *   <li>If the signs of the arguments are different,  the quotient is negative and
-     *       {@code floorDiv} returns the integer less than or equal to the quotient
-     *       and the {@code /} operator returns the integer closest to zero.<br>
+     *   <li>If the signs of the arguments are different, {@code floorDiv}
+     *       returns the largest integer less than or equal to the quotient
+     *       while the {@code /} operator returns the smallest integer greater
+     *       than or equal to the quotient.
+     *       They differ if and only if the quotient is not an integer.<br>
      *       For example, {@code floorDiv(-4, 3) == -2},
      *       whereas {@code (-4 / 3) == -1}.
      *   </li>
@@ -1177,7 +1292,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1186,7 +1301,7 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact result is not an integer and is negative.
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
      *
@@ -1206,7 +1321,7 @@ public final class Math {
     /**
      * Returns the largest (closest to positive infinity)
      * {@code long} value that is less than or equal to the algebraic quotient.
-     * There is one special case, if the dividend is the
+     * There is one special case: if the dividend is
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
      * the result is equal to {@code Long.MIN_VALUE}.
@@ -1215,7 +1330,7 @@ public final class Math {
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
      * The floor rounding mode gives different results from truncation
-     * when the exact result is negative.
+     * when the exact result is not an integer and is negative.
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
      *
@@ -1240,40 +1355,34 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
-     * The difference in values between {@code floorMod} and
-     * the {@code %} operator is due to the difference between
-     * {@code floorDiv} that returns the integer less than or equal to the quotient
-     * and the {@code /} operator that returns the integer closest to zero.
+     * The difference in values between {@code floorMod} and the {@code %} operator
+     * is due to the difference between {@code floorDiv} and the {@code /}
+     * operator, as detailed in {@linkplain #floorDiv(int, int)}.
      * <p>
      * Examples:
      * <ul>
-     *   <li>If the signs of the arguments are the same, the results
-     *       of {@code floorMod} and the {@code %} operator are the same.<br>
+     *   <li>Regardless of the signs of the arguments, {@code floorMod}(x, y)
+     *       is zero exactly when {@code x % y} is zero as well.</li>
+     *   <li>If neither of {@code floorMod}(x, y) or {@code x % y} is zero,
+     *       their results differ exactly when the signs of the arguments differ.<br>
      *       <ul>
      *       <li>{@code floorMod(+4, +3) == +1}; &nbsp; and {@code (+4 % +3) == +1}</li>
      *       <li>{@code floorMod(-4, -3) == -1}; &nbsp; and {@code (-4 % -3) == -1}</li>
-     *       </ul>
-     *   <li>If the signs of the arguments are different, the results
-     *       differ from the {@code %} operator.<br>
-     *       <ul>
      *       <li>{@code floorMod(+4, -3) == -2}; &nbsp; and {@code (+4 % -3) == +1}</li>
      *       <li>{@code floorMod(-4, +3) == +2}; &nbsp; and {@code (-4 % +3) == -1}</li>
      *       </ul>
      *   </li>
      * </ul>
-     * <p>
-     * If the signs of arguments are unknown and a positive modulus
-     * is needed it can be computed as {@code (floorMod(x, y) + abs(y)) % abs(y)}.
      *
      * @param x the dividend
      * @param y the divisor
@@ -1285,7 +1394,7 @@ public final class Math {
     public static int floorMod(int x, int y) {
         int mod = x % y;
         // if the signs are different and modulo not zero, adjust result
-        if ((mod ^ y) < 0 && mod != 0) {
+        if ((x ^ y) < 0 && mod != 0) {
             mod += y;
         }
         return mod;
@@ -1294,14 +1403,14 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * For examples, see {@link #floorMod(int, int)}.
@@ -1321,14 +1430,14 @@ public final class Math {
     /**
      * Returns the floor modulus of the {@code long} arguments.
      * <p>
-     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y}, and
+     * The floor modulus is {@code r = x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
      * The relationship between {@code floorDiv} and {@code floorMod} is such that:
      * <ul>
-     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}</li>
      * </ul>
      * <p>
      * For examples, see {@link #floorMod(int, int)}.
@@ -1463,7 +1572,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float abs(float a) {
-        return (a <= 0.0F) ? 0.0F - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Float.intBitsToFloat(Float.floatToRawIntBits(a) & FloatConsts.MAG_BIT_MASK);
     }
 
     /**
@@ -1488,7 +1598,9 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double abs(double a) {
-        return (a <= 0.0D) ? 0.0D - a : a;
+        // Convert to bit field form, zero the sign bit, and convert back
+        return Double.longBitsToDouble(Double.doubleToRawLongBits(a) & DoubleConsts.MAG_BIT_MASK);
+
     }
 
     /**
@@ -1738,9 +1850,6 @@ public final class Math {
                     infiniteB && a == 0.0 ) {
                     return Double.NaN;
                 }
-                // Store product in a double field to cause an
-                // overflow even if non-strictfp evaluation is being
-                // used.
                 double product = a * b;
                 if (Double.isInfinite(product) && !infiniteA && !infiniteB) {
                     // Intermediate overflow; might cause a
@@ -1830,32 +1939,21 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
-        /*
-         *  Since the double format has more than twice the precision
-         *  of the float format, the multiply of a * b is exact in
-         *  double. The add of c to the product then incurs one
-         *  rounding error. Since the double format moreover has more
-         *  than (2p + 2) precision bits compared to the p bits of the
-         *  float format, the two roundings of (a * b + c), first to
-         *  the double format and then secondarily to the float format,
-         *  are equivalent to rounding the intermediate result directly
-         *  to the float format.
-         *
-         * In terms of strictfp vs default-fp concerns related to
-         * overflow and underflow, since
-         *
-         * (Float.MAX_VALUE * Float.MAX_VALUE) << Double.MAX_VALUE
-         * (Float.MIN_VALUE * Float.MIN_VALUE) >> Double.MIN_VALUE
-         *
-         * neither the multiply nor add will overflow or underflow in
-         * double. Therefore, it is not necessary for this method to
-         * be declared strictfp to have reproducible
-         * behavior. However, it is necessary to explicitly store down
-         * to a float variable to avoid returning a value in the float
-         * extended value set.
-         */
-        float result = (float)(((double) a * (double) b ) + (double) c);
-        return result;
+        if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
+            if (a == 0.0 || b == 0.0) {
+                return a * b + c; // Handled signed zero cases
+            } else {
+                return (new BigDecimal((double)a * (double)b) // Exact multiply
+                        .add(new BigDecimal((double)c)))      // Exact sum
+                    .floatValue();                            // One rounding
+                                                              // to a float value
+            }
+        } else {
+            // At least one of a,b, and c is non-finite. The result
+            // will be non-finite as well and will be the same
+            // non-finite value under double as float arithmetic.
+            return (float)fma((double)a, (double)b, (double)c);
+        }
     }
 
     /**
@@ -1884,29 +1982,25 @@ public final class Math {
     public static double ulp(double d) {
         int exp = getExponent(d);
 
-        switch(exp) {
-        case Double.MAX_EXPONENT + 1:       // NaN or infinity
-            return Math.abs(d);
+        return switch(exp) {
+            case Double.MAX_EXPONENT + 1 -> Math.abs(d);      // NaN or infinity
+            case Double.MIN_EXPONENT - 1 -> Double.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
 
-        case Double.MIN_EXPONENT - 1:       // zero or subnormal
-            return Double.MIN_VALUE;
-
-        default:
-            assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Double.MIN_EXPONENT) {
-                return powerOfTwoD(exp);
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Double.MIN_EXPONENT) {
+                    yield powerOfTwoD(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of Double.MIN_VALUE appropriate
+                    // number of positions
+                    yield Double.longBitsToDouble(1L <<
+                            (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of Double.MIN_VALUE appropriate
-                // number of positions
-                return Double.longBitsToDouble(1L <<
-                (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        };
     }
 
     /**
@@ -1935,28 +2029,25 @@ public final class Math {
     public static float ulp(float f) {
         int exp = getExponent(f);
 
-        switch(exp) {
-        case Float.MAX_EXPONENT+1:        // NaN or infinity
-            return Math.abs(f);
+        return switch(exp) {
+            case Float.MAX_EXPONENT + 1 -> Math.abs(f);     // NaN or infinity
+            case Float.MIN_EXPONENT - 1 -> Float.MIN_VALUE; // zero or subnormal
+            default -> {
+                assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
 
-        case Float.MIN_EXPONENT-1:        // zero or subnormal
-            return Float.MIN_VALUE;
-
-        default:
-            assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= Float.MIN_EXPONENT) {
-                return powerOfTwoF(exp);
-            } else {
-                // return a subnormal result; left shift integer
-                // representation of FloatConsts.MIN_VALUE appropriate
-                // number of positions
-                return Float.intBitsToFloat(1 <<
-                (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
+                // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
+                exp = exp - (FloatConsts.SIGNIFICAND_WIDTH - 1);
+                if (exp >= Float.MIN_EXPONENT) {
+                    yield powerOfTwoF(exp);
+                } else {
+                    // return a subnormal result; left shift integer
+                    // representation of FloatConsts.MIN_VALUE appropriate
+                    // number of positions
+                    yield Float.intBitsToFloat(1 <<
+                            (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH - 1))));
+                }
             }
-        }
+        };
     }
 
     /**
@@ -2113,6 +2204,7 @@ public final class Math {
      * <li> If either argument is NaN and neither argument is infinite,
      * then the result is NaN.
      *
+     * <li> If both arguments are zero, the result is positive zero.
      * </ul>
      *
      * <p>The computed result must be within 1 ulp of the exact
@@ -2616,20 +2708,17 @@ public final class Math {
     }
 
     /**
-     * Returns {@code d} &times;
-     * 2<sup>{@code scaleFactor}</sup> rounded as if performed
-     * by a single correctly rounded floating-point multiply to a
-     * member of the double value set.  See the Java
-     * Language Specification for a discussion of floating-point
-     * value sets.  If the exponent of the result is between {@link
-     * Double#MIN_EXPONENT} and {@link Double#MAX_EXPONENT}, the
-     * answer is calculated exactly.  If the exponent of the result
-     * would be larger than {@code Double.MAX_EXPONENT}, an
-     * infinity is returned.  Note that if the result is subnormal,
-     * precision may be lost; that is, when {@code scalb(x, n)}
-     * is subnormal, {@code scalb(scalb(x, n), -n)} may not equal
-     * <i>x</i>.  When the result is non-NaN, the result has the same
-     * sign as {@code d}.
+     * Returns {@code d} &times; 2<sup>{@code scaleFactor}</sup>
+     * rounded as if performed by a single correctly rounded
+     * floating-point multiply.  If the exponent of the result is
+     * between {@link Double#MIN_EXPONENT} and {@link
+     * Double#MAX_EXPONENT}, the answer is calculated exactly.  If the
+     * exponent of the result would be larger than {@code
+     * Double.MAX_EXPONENT}, an infinity is returned.  Note that if
+     * the result is subnormal, precision may be lost; that is, when
+     * {@code scalb(x, n)} is subnormal, {@code scalb(scalb(x, n),
+     * -n)} may not equal <i>x</i>.  When the result is non-NaN, the
+     * result has the same sign as {@code d}.
      *
      * <p>Special cases:
      * <ul>
@@ -2647,9 +2736,7 @@ public final class Math {
      */
     public static double scalb(double d, int scaleFactor) {
         /*
-         * This method does not need to be declared strictfp to
-         * compute the same correct result on all platforms.  When
-         * scaling up, it does not matter what order the
+         * When scaling up, it does not matter what order the
          * multiply-store operations are done; the result will be
          * finite or overflow regardless of the operation ordering.
          * However, to get the correct result when scaling down, a
@@ -2663,25 +2750,7 @@ public final class Math {
          * by 2 ^ (scaleFactor % n) and then multiplying several
          * times by 2^n as needed where n is the exponent of number
          * that is a convenient power of two.  In this way, at most one
-         * real rounding error occurs.  If the double value set is
-         * being used exclusively, the rounding will occur on a
-         * multiply.  If the double-extended-exponent value set is
-         * being used, the products will (perhaps) be exact but the
-         * stores to d are guaranteed to round to the double value
-         * set.
-         *
-         * It is _not_ a valid implementation to first multiply d by
-         * 2^MIN_EXPONENT and then by 2 ^ (scaleFactor %
-         * MIN_EXPONENT) since even in a strictfp program double
-         * rounding on underflow could occur; e.g. if the scaleFactor
-         * argument was (MIN_EXPONENT - n) and the exponent of d was a
-         * little less than -(MIN_EXPONENT - n), meaning the final
-         * result would be subnormal.
-         *
-         * Since exact reproducibility of this method can be achieved
-         * without any undue performance burden, there is no
-         * compelling reason to allow double rounding on underflow in
-         * scalb.
+         * real rounding error occurs.
          */
 
         // magnitude of a power of two so large that scaling a finite
@@ -2723,20 +2792,17 @@ public final class Math {
     }
 
     /**
-     * Returns {@code f} &times;
-     * 2<sup>{@code scaleFactor}</sup> rounded as if performed
-     * by a single correctly rounded floating-point multiply to a
-     * member of the float value set.  See the Java
-     * Language Specification for a discussion of floating-point
-     * value sets.  If the exponent of the result is between {@link
-     * Float#MIN_EXPONENT} and {@link Float#MAX_EXPONENT}, the
-     * answer is calculated exactly.  If the exponent of the result
-     * would be larger than {@code Float.MAX_EXPONENT}, an
-     * infinity is returned.  Note that if the result is subnormal,
-     * precision may be lost; that is, when {@code scalb(x, n)}
-     * is subnormal, {@code scalb(scalb(x, n), -n)} may not equal
-     * <i>x</i>.  When the result is non-NaN, the result has the same
-     * sign as {@code f}.
+     * Returns {@code f} &times; 2<sup>{@code scaleFactor}</sup>
+     * rounded as if performed by a single correctly rounded
+     * floating-point multiply.  If the exponent of the result is
+     * between {@link Float#MIN_EXPONENT} and {@link
+     * Float#MAX_EXPONENT}, the answer is calculated exactly.  If the
+     * exponent of the result would be larger than {@code
+     * Float.MAX_EXPONENT}, an infinity is returned.  Note that if the
+     * result is subnormal, precision may be lost; that is, when
+     * {@code scalb(x, n)} is subnormal, {@code scalb(scalb(x, n),
+     * -n)} may not equal <i>x</i>.  When the result is non-NaN, the
+     * result has the same sign as {@code f}.
      *
      * <p>Special cases:
      * <ul>
@@ -2768,9 +2834,7 @@ public final class Math {
          * exponent range and + float -> double conversion is exact
          * the multiplication below will be exact. Therefore, the
          * rounding that occurs when the double product is cast to
-         * float will be the correctly rounded float result.  Since
-         * all operations other than the final multiply will be exact,
-         * it is not necessary to declare this method strictfp.
+         * float will be the correctly rounded float result.
          */
         return (float)((double)f*powerOfTwoD(scaleFactor));
     }

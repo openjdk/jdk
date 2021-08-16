@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,34 @@
 #ifndef SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 
+// No psClosure.hpp
+
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class PSAdjustWeakRootsClosure final: public OopClosure {
+public:
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+
+  virtual void do_oop(oop* p)       {
+    if (PSScavenge::should_scavenge(p)) {
+      oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+      assert(o->is_forwarded(), "Objects are already forwarded before weak processing");
+      oop new_obj = o->forwardee();
+      if (log_develop_is_enabled(Trace, gc, scavenge)) {
+        ResourceMark rm; // required by internal_name()
+        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+                                        "forwarding",
+                                        new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
+      }
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    }
+  }
+};
 
 template <bool promote_immediately>
 class PSRootsClosure: public OopClosure {
@@ -68,13 +90,8 @@ public:
     if (PSScavenge::should_scavenge(p)) {
       assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
 
-      oop o = *p;
-      oop new_obj;
-      if (o->is_forwarded()) {
-        new_obj = o->forwardee();
-      } else {
-        new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
-      }
+      oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+      oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {

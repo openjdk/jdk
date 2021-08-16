@@ -32,7 +32,7 @@ import sun.net.www.protocol.http.HttpCallerInfo;
  * info about what triggers the JGSS calls.
  */
 public class HttpCaller extends GSSCaller {
-    final private HttpCallerInfo hci;
+    private final HttpCallerInfo hci;
 
     public HttpCaller(HttpCallerInfo hci) {
         super("HTTP_CLIENT");

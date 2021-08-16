@@ -26,22 +26,13 @@
 
 package jdk.jfr.internal.settings;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.util.concurrent.TimeUnit;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
-import jdk.jfr.Timespan;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
@@ -51,8 +42,8 @@ import jdk.jfr.internal.Utils;
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
 public final class ThrottleSetting extends JDKSettingControl {
-    private final static long typeId = Type.getTypeId(ThrottleSetting.class);
-    private final static long OFF = -2;
+    private static final long typeId = Type.getTypeId(ThrottleSetting.class);
+    private static final long OFF = -2;
     private String value = "0/s";
     private final PlatformEventType eventType;
 

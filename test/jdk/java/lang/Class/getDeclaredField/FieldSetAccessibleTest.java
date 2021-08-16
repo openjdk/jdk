@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import jdk.internal.module.Modules;
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
  * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest SECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM -Djava.security.manager=allow FieldSetAccessibleTest SECURE
  *
  * @author danielfuchs
  */
@@ -288,8 +288,8 @@ public class FieldSetAccessibleTest {
         static Set<String> systemModules() {
             Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
                 // All JVMCI packages other than jdk.vm.ci.services are dynamically
-                // exported to jdk.internal.vm.compiler and jdk.aot
-                "jdk.internal.vm.compiler", "jdk.aot"
+                // exported to jdk.internal.vm.compiler
+                "jdk.internal.vm.compiler"
             );
             return ModuleFinder.ofSystem().findAll().stream()
                                .map(mref -> mref.descriptor().name())

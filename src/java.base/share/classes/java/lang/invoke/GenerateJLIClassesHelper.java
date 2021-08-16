@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
@@ -39,10 +38,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static java.lang.invoke.LambdaForm.basicTypeSignature;
-import static java.lang.invoke.LambdaForm.shortenSignature;
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.TRACE_RESOLVE;
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 
@@ -51,29 +48,6 @@ import static java.lang.invoke.LambdaForm.Kind.*;
  * generate classes ahead of time.
  */
 class GenerateJLIClassesHelper {
-    private static final String LF_RESOLVE = "[LF_RESOLVE]";
-    private static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
-
-    static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
-        if (TRACE_RESOLVE) {
-            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
-                    shortenSignature(basicTypeSignature(type)) +
-                    (resolvedMember != null ? " (success)" : " (fail)"));
-        }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
-        }
-    }
-
-    static void traceSpeciesType(String cn, Class<?> salvage) {
-        if (TRACE_RESOLVE) {
-            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
-        }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
-        }
-    }
-
     // Map from DirectMethodHandle method type name to index to LambdForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
@@ -323,7 +297,7 @@ class GenerateJLIClassesHelper {
         traces.map(line -> line.split(" "))
                 .forEach(parts -> {
                     switch (parts[0]) {
-                        case SPECIES_RESOLVE:
+                        case "[SPECIES_RESOLVE]":
                             // Allow for new types of species data classes being resolved here
                             assert parts.length >= 2;
                             if (parts[1].startsWith(BMH_SPECIES_PREFIX)) {
@@ -333,7 +307,7 @@ class GenerateJLIClassesHelper {
                                 }
                             }
                             break;
-                        case LF_RESOLVE:
+                        case "[LF_RESOLVE]":
                             assert parts.length > 3;
                             String methodType = parts[3];
                             if (parts[1].equals(INVOKERS_HOLDER_CLASS_NAME)) {
@@ -531,7 +505,7 @@ class GenerateJLIClassesHelper {
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
+        cw.visit(CLASSFILE_VERSION, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
                 className, null, InvokerBytecodeGenerator.INVOKER_SUPER_NAME, null);
         cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
 

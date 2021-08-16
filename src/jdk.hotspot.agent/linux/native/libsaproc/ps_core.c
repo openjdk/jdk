@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,13 +455,15 @@ static bool read_interp_segments(struct ps_prochandle* ph) {
 }
 
 // process segments of a a.out
-static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
+// returns base address of executable.
+static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
   int i = 0;
   ELF_PHDR* phbuf = NULL;
   ELF_PHDR* exec_php = NULL;
+  uintptr_t result = 0L;
 
   if ((phbuf = read_program_header_table(ph->core->exec_fd, exec_ehdr)) == NULL) {
-    return false;
+    return 0L;
   }
 
   for (exec_php = phbuf, i = 0; i < exec_ehdr->e_phnum; i++) {
@@ -502,10 +504,14 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
     // from PT_DYNAMIC we want to read address of first link_map addr
     case PT_DYNAMIC: {
       if (exec_ehdr->e_type == ET_EXEC) {
+        result = exec_php->p_vaddr;
         ph->core->dynamic_addr = exec_php->p_vaddr;
       } else { // ET_DYN
+        // Base address of executable is based on entry point (AT_ENTRY).
+        result = ph->core->dynamic_addr - exec_ehdr->e_entry;
+
         // dynamic_addr has entry point of executable.
-        // Thus we should substract it.
+        // Thus we should subtract it.
         ph->core->dynamic_addr += exec_php->p_vaddr - exec_ehdr->e_entry;
       }
       print_debug("address of _DYNAMIC is 0x%lx\n", ph->core->dynamic_addr);
@@ -517,10 +523,10 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
   } // for
 
   free(phbuf);
-  return true;
+  return result;
  err:
   free(phbuf);
-  return false;
+  return 0L;
 }
 
 
@@ -772,14 +778,12 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   }
 
   // process exec file segments
-  if (read_exec_segments(ph, &exec_ehdr) != true) {
+  uintptr_t exec_base_addr = read_exec_segments(ph, &exec_ehdr);
+  if (exec_base_addr == 0L) {
     goto err;
   }
-
-  // exec file is also treated like a shared object for symbol search
-  // FIXME: This is broken and ends up with a base address of 0. See JDK-8248876.
-  if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd,
-                      (uintptr_t)0 + find_base_address(ph->core->exec_fd, &exec_ehdr)) == NULL) {
+  print_debug("exec_base_addr = 0x%lx\n", exec_base_addr);
+  if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd, exec_base_addr) == NULL) {
     goto err;
   }
 

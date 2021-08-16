@@ -194,7 +194,7 @@ public class TypeNameTest extends KullaTesting {
         assertEval("<Z> Z choose(Z z1, Z z2) { return z1; }");
         assertType("choose(1, 1L);",
                   "Number&Comparable<? extends Number&Comparable<?>&java.lang.constant.Constable&java.lang.constant.ConstantDesc>&java.lang.constant.Constable&java.lang.constant.ConstantDesc",
-                "Object");
+                "Number");
     }
 
     public void testVariableTypeName() {
@@ -249,7 +249,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("test1.get()", "CharSequence");
         assertEval("class Test2<X extends Number & CharSequence> { public X get() { return null; } }");
         assertEval("Test2<?> test2 = new Test2<>();");
-        assertType("test2.get()", "Number&CharSequence", "Object");
+        assertType("test2.get()", "Number&CharSequence", "Number");
         assertEval("class Test3<T> { T[][] get() { return null; } }");
         assertEval("Test3<? extends String> test3 = new Test3<>();");
         assertType("test3.get()", "String[][]");

@@ -24,7 +24,6 @@
  */
 
 #import "CMenuComponent.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "ThreadUtilities.h"
 

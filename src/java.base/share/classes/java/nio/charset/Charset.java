@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,14 +174,14 @@ import java.util.TreeMap;
  * href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279</i></a>; the
  * transformation format upon which it is based is specified in
  * Amendment&nbsp;2 of ISO&nbsp;10646-1 and is also described in the <a
- * href="http://www.unicode.org/unicode/standard/standard.html"><i>Unicode
+ * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
  * <p> The {@code UTF-16} charsets are specified by <a
  * href="http://www.ietf.org/rfc/rfc2781.txt"><i>RFC&nbsp;2781</i></a>; the
  * transformation formats upon which they are based are specified in
  * Amendment&nbsp;1 of ISO&nbsp;10646-1 and are also described in the <a
- * href="http://www.unicode.org/unicode/standard/standard.html"><i>Unicode
+ * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
  * <p> The {@code UTF-16} charsets use sixteen-bit quantities and are
@@ -375,6 +375,7 @@ public abstract class Charset
     private static ThreadLocal<ThreadLocal<?>> gate =
             new ThreadLocal<ThreadLocal<?>>();
 
+    @SuppressWarnings("removal")
     private static Charset lookupViaProviders(final String charsetName) {
 
         // The runtime startup sequence looks up standard charsets as a
@@ -417,6 +418,7 @@ public abstract class Charset
     private static class ExtendedProviderHolder {
         static final CharsetProvider[] extendedProviders = extendedProviders();
         // returns ExtendedProvider, if installed
+        @SuppressWarnings("removal")
         private static CharsetProvider[] extendedProviders() {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                     public CharsetProvider[] run() {
@@ -563,6 +565,7 @@ public abstract class Charset
      * @return An immutable, case-insensitive map from canonical charset names
      *         to charset objects
      */
+    @SuppressWarnings("removal")
     public static SortedMap<String,Charset> availableCharsets() {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_TYPEARRAYKLASS_HPP
 #define SHARE_OOPS_TYPEARRAYKLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
+
+class ClassLoaderData;
 
 // A TypeArrayKlass is the klass of a typeArray
 // It contains the type and size of the elements
@@ -92,14 +93,15 @@ class TypeArrayKlass : public ArrayKlass {
   template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
- protected:
+ public:
   // Find n'th dimensional array
-  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
+  virtual Klass* array_klass(int n, TRAPS);
+  virtual Klass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
+  virtual Klass* array_klass(TRAPS);
+  virtual Klass* array_klass_or_null();
 
- public:
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }

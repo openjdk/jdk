@@ -60,10 +60,6 @@ public:
   bool is_active() const { return _active; }
   void set_active(bool value) { _active = value; }
 
-  // Apply cl to the active part of the buffer.
-  // Prerequisite: Must be at a safepoint.
-  void apply_closure_and_empty(SATBBufferClosure* cl);
-
 #ifndef PRODUCT
   // Helpful for debugging
   void print(const char* name);
@@ -115,7 +111,7 @@ protected:
 
   // Return true if the queue's buffer should be enqueued, even if not full.
   // The default method uses the buffer enqueue threshold.
-  virtual bool should_enqueue_buffer(SATBMarkQueue& queue);
+  bool should_enqueue_buffer(SATBMarkQueue& queue);
 
   template<typename Filter>
   void apply_filter(Filter filter, SATBMarkQueue& queue);

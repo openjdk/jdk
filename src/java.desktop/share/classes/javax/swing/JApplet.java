@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,10 @@ import javax.accessibility.AccessibleContext;
  *
  * @deprecated The Applet API is deprecated, no replacement.
  */
-@Deprecated(since = "9")
+@Deprecated(since = "9", forRemoval = true)
 @JavaBean(defaultProperty = "JMenuBar", description = "Swing's Applet subclass.")
 @SwingContainer(delegate = "getContentPane")
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"serial", "removal"}) // Same-version serialization only
 public class JApplet extends Applet implements Accessible,
                                                RootPaneContainer,
                                TransferHandler.HasGetTransferHandler

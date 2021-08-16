@@ -152,7 +152,7 @@ public class Node extends VMObject {
         for(int k = 0; k < limit; k++) {
           Node n = d > 0 ? tp.in(k) : tp.rawOut(k);
 
-          // if (NotANode(n))  continue;
+          // if (not_a_node(n))  continue;
           if (n == null) continue;
           // do not recurse through top or the root (would reach unrelated stuff)
           // if (n.isRoot() || n.isTop())  continue;
@@ -254,8 +254,8 @@ public class Node extends VMObject {
       Node u = rawOut(i);
       if (u == null) {
         out.print("_ ");
-      // } else if (NotANode(u)) {
-      //   out.print("NotANode ");
+      // } else if (not_a_node(u)) {
+      //   out.print("not_a_node ");
       } else {
         // out.print("%c%d ", Compile::current()->nodeArena()->contains(u) ? ' ' : 'o', u->_idx);
         out.print(' ');

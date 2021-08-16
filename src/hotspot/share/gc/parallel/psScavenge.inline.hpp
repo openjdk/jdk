@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_PARALLEL_PSSCAVENGE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSSCAVENGE_INLINE_HPP
 
-#include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psScavenge.hpp"
+
+#include "gc/parallel/parallelScavengeHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"

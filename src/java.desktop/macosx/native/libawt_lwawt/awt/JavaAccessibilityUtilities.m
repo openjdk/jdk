@@ -27,8 +27,7 @@
 #import "JNIUtilities.h"
 
 #import <AppKit/AppKit.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
+#import "ThreadUtilities.h"
 
 static BOOL JavaAccessibilityIsSupportedAttribute(id element, NSString *attribute);
 static void JavaAccessibilityLogError(NSString *message);
@@ -58,7 +57,7 @@ NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
     DECLARE_STATIC_METHOD_RETURN(jm_getSize, sjc_CAccessibility, "getSize",
            "(Ljavax/accessibility/AccessibleComponent;Ljava/awt/Component;)Ljava/awt/Dimension;", NSZeroSize);
 
-    jobject dimension = (*env)->CallStaticObjectMethod(env, jc_Dimension, jm_getSize, axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
+    jobject dimension = (*env)->CallStaticObjectMethod(env, jc_Dimension, jm_getSize, axComponent, component);
     CHECK_EXCEPTION();
 
     if (dimension == NULL) return NSZeroSize;
@@ -71,11 +70,11 @@ NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
     DECLARE_STATIC_METHOD_RETURN(sjm_getAccessibleRole, sjc_CAccessibility, "getAccessibleRole",
                            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
     jobject axRole = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, sjm_getAccessibleRole,
-                      axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                      axComponent, component);
     CHECK_EXCEPTION();
     if (axRole == NULL) return @"unknown";
 
-    NSString* str = JNFJavaToNSString(env, axRole);
+    NSString* str = JavaStringToNSString(env, axRole);
     (*env)->DeleteLocalRef(env, axRole);
     return str;
 }
@@ -86,7 +85,7 @@ jobject getAxSelection(JNIEnv *env, jobject axContext, jobject component)
     DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleSelection, sjc_CAccessibility, "getAccessibleSelection",
             "(Ljavax/accessibility/AccessibleContext;Ljava/awt/Component;)Ljavax/accessibility/AccessibleSelection;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleSelection,
-                      axContext, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                      axContext, component);
     CHECK_EXCEPTION();
     return o;
 }
@@ -97,7 +96,7 @@ jobject getAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobjec
     DECLARE_STATIC_METHOD_RETURN(jm_ax_getAccessibleSelection, sjc_CAccessibility, "ax_getAccessibleSelection",
                   "(Ljavax/accessibility/AccessibleContext;ILjava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
     return (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_ax_getAccessibleSelection,
-                    axContext, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                    axContext, index, component);
     CHECK_EXCEPTION();
 }
 
@@ -107,7 +106,7 @@ void setAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobject c
     DECLARE_STATIC_METHOD(jm_addAccessibleSelection, sjc_CAccessibility, "addAccessibleSelection",
                    "(Ljavax/accessibility/AccessibleContext;ILjava/awt/Component;)V");
     (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_addAccessibleSelection,
-                    axContext, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                    axContext, index, component);
     CHECK_EXCEPTION();
 }
 
@@ -117,7 +116,7 @@ jobject getAxContext(JNIEnv *env, jobject accessible, jobject component)
     DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleContext, sjc_CAccessibility, "getAccessibleContext",
                "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleContext;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleContext,
-                    accessible, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                    accessible, component);
     CHECK_EXCEPTION();
     return o;
 }
@@ -128,7 +127,7 @@ BOOL isChildSelected(JNIEnv *env, jobject accessible, jint index, jobject compon
     DECLARE_STATIC_METHOD_RETURN(jm_isAccessibleChildSelected, sjc_CAccessibility, "isAccessibleChildSelected",
                 "(Ljavax/accessibility/Accessible;ILjava/awt/Component;)Z", NO);
     jboolean b = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_isAccessibleChildSelected,
-                    accessible, index, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                    accessible, index, component);
     CHECK_EXCEPTION();
     return b;
 }
@@ -139,7 +138,7 @@ jobject getAxStateSet(JNIEnv *env, jobject axContext, jobject component)
     DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleStateSet, sjc_CAccessibility, "getAccessibleStateSet",
                "(Ljavax/accessibility/AccessibleContext;Ljava/awt/Component;)Ljavax/accessibility/AccessibleStateSet;", nil);
     jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleStateSet,
-                    axContext, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                    axContext, component);
     CHECK_EXCEPTION();
     return o;
 }
@@ -149,7 +148,7 @@ BOOL containsAxState(JNIEnv *env, jobject axContext, jobject axState, jobject co
     GET_CACCESSIBILITY_CLASS_RETURN(NO);
     DECLARE_STATIC_METHOD_RETURN(jm_contains, sjc_CAccessibility, "contains",
                "(Ljavax/accessibility/AccessibleContext;Ljavax/accessibility/AccessibleState;Ljava/awt/Component;)Z", NO);
-    jboolean b = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_contains, axContext, axState, component); // AWT_THREADING Safe (AWTRunLoopMode)
+    jboolean b = (*env)->CallStaticBooleanMethod(env, sjc_CAccessibility, jm_contains, axContext, axState, component);
     CHECK_EXCEPTION();
     return b;
 }
@@ -201,6 +200,20 @@ BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component)
     return selectable;
 }
 
+BOOL isExpanded(JNIEnv *env, jobject axContext, jobject component)
+{
+    GET_ACCESSIBLESTATE_CLASS_RETURN(NO);
+    DECLARE_STATIC_FIELD_RETURN(jm_EXPANDED,
+                                    sjc_AccessibleState,
+                                    "EXPANDED",
+                                    "Ljavax/accessibility/AccessibleState;", NO );
+    jobject axExpandedState = (*env)->GetStaticObjectField(env, sjc_AccessibleState, jm_EXPANDED);
+    CHECK_EXCEPTION_NULL_RETURN(axExpandedState, NO);
+    BOOL expanded = containsAxState(env, axContext, axExpandedState, component);
+    (*env)->DeleteLocalRef(env, axExpandedState);
+    return expanded;
+}
+
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(NSZeroPoint);
@@ -210,7 +223,7 @@ NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject
     DECLARE_FIELD_RETURN(sjf_X, sjc_Point, "x", "I", NSZeroPoint);
     DECLARE_FIELD_RETURN(sjf_Y, sjc_Point, "y", "I", NSZeroPoint);
     jobject jpoint = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getLocationOnScreen,
-                      axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
+                      axComponent, component);
     CHECK_EXCEPTION();
     if (jpoint == NULL) return NSZeroPoint;
     return NSMakePoint((*env)->GetIntField(env, jpoint, sjf_X), (*env)->GetIntField(env, jpoint, sjf_Y));
@@ -221,7 +234,7 @@ jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component)
     GET_CACCESSIBILITY_CLASS_RETURN(0);
     DECLARE_STATIC_METHOD_RETURN(jm_getCharCount, sjc_CAccessibility, "getCharCount",
                   "(Ljavax/accessibility/AccessibleText;Ljava/awt/Component;)I", 0);
-    int i = (*env)->CallStaticIntMethod(env, sjc_CAccessibility, jm_getCharCount, axText, component); // AWT_THREADING Safe (AWTRunLoopMode)
+    int i = (*env)->CallStaticIntMethod(env, sjc_CAccessibility, jm_getCharCount, axText, component);
     CHECK_EXCEPTION();
     return i;
 }
@@ -350,6 +363,75 @@ static void JavaAccessibilityLogError(NSString *message)
     NSLog(@"!!! %@", message);
 }
 
+/*
+ * Returns Object.equals for the two items
+ * This may use LWCToolkit.invokeAndWait(); don't call while holding fLock
+ * and try to pass a component so the event happens on the correct thread.
+ */
+BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component)
+{
+    DECLARE_CLASS_RETURN(sjc_Object, "java/lang/Object", NO);
+    DECLARE_METHOD_RETURN(jm_equals, sjc_Object, "equals", "(Ljava/lang/Object;)Z", NO);
+
+    if ((a == NULL) && (b == NULL)) return YES;
+    if ((a == NULL) || (b == NULL)) return NO;
+
+    if (pthread_main_np() != 0) {
+        // If we are on the AppKit thread
+        DECLARE_CLASS_RETURN(sjc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit", NO);
+        DECLARE_STATIC_METHOD_RETURN(jm_doEquals, sjc_LWCToolkit, "doEquals",
+                                     "(Ljava/lang/Object;Ljava/lang/Object;Ljava/awt/Component;)Z", NO);
+        return (*env)->CallStaticBooleanMethod(env, sjc_LWCToolkit, jm_doEquals, a, b, component);
+        CHECK_EXCEPTION();
+    }
+
+    jboolean jb = (*env)->CallBooleanMethod(env, a, jm_equals, b);
+    CHECK_EXCEPTION();
+    return jb;
+}
+
+/*
+ * The java/lang/Number concrete class could be for any of the Java primitive
+ * numerical types or some other subclass.
+ * All existing A11Y code uses Integer so that is what we look for first
+ * But all must be able to return a double and NSNumber accepts a double,
+ * so that's the fall back.
+ */
+NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
+    if (jnumber == NULL) {
+        return nil;
+    }
+    DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
+    DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()I", nil);
+    DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
+    if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
+        jint i = (*env)->CallIntMethod(env, jnumber, jm_intValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithInteger:i];
+    } else {
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber, jm_doubleValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithDouble:d];
+    }
+}
+
+/*
+ * Converts an int array to an NSRange wrapped inside an NSValue
+ * takes [start, end] values and returns [start, end - start]
+ */
+NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
+    jint *values = (*env)->GetIntArrayElements(env, array, 0);
+    if (values == NULL) {
+        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
+        NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
+        return nil;
+    };
+    NSValue *value = [NSValue valueWithRange:NSMakeRange(values[0], values[1] - values[0])];
+    (*env)->ReleaseIntArrayElements(env, array, values, 0);
+    return value;
+}
+
 // end appKit copies
 
 /*
@@ -419,13 +501,13 @@ void initializeRoles()
     [sRoles setObject:NSAccessibilitySplitGroupRole forKey:@"splitpane"];
     [sRoles setObject:NSAccessibilityValueIndicatorRole forKey:@"statusbar"];
     [sRoles setObject:NSAccessibilityGroupRole forKey:@"swingcomponent"];
-    [sRoles setObject:NSAccessibilityGridRole forKey:@"table"];
+    [sRoles setObject:NSAccessibilityTableRole forKey:@"table"];
     [sRoles setObject:NSAccessibilityTextFieldRole forKey:@"text"];
     [sRoles setObject:NSAccessibilityTextAreaRole forKey:@"textarea"]; // supports top/bottom of document notifications: CAccessability.getAccessibleRole()
     [sRoles setObject:NSAccessibilityCheckBoxRole forKey:@"togglebutton"];
     [sRoles setObject:NSAccessibilityToolbarRole forKey:@"toolbar"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"tooltip"];
-    [sRoles setObject:NSAccessibilityBrowserRole forKey:@"tree"];
+    [sRoles setObject:NSAccessibilityOutlineRole forKey:@"tree"];
     [sRoles setObject:NSAccessibilityUnknownRole forKey:@"unknown"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"viewport"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"window"];

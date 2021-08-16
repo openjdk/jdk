@@ -39,7 +39,6 @@ class OldObjectRoot : public AllStatic {
     _strong_oop_storage_set_last = _strong_oop_storage_set_first + EnumRange<OopStorageSet::StrongId>().size() - 1,
     _class_loader_data,
     _code_cache,
-    _aot,
     JVMCI_ONLY(_jvmci COMMA)
     _number_of_systems
   };

@@ -53,6 +53,7 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
 
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
+  char buf[LogDecorations::max_decoration_size + 1];
 
   for (uint i = 0; i < LogDecorators::Count; i++) {
     LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);
@@ -62,7 +63,7 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
 
     int written = jio_fprintf(_stream, "[%-*s]",
                               _decorator_padding[decorator],
-                              decorations.decoration(decorator));
+                              decorations.decoration(decorator, buf, sizeof(buf)));
     if (written <= 0) {
       return -1;
     } else if (static_cast<size_t>(written - 2) > _decorator_padding[decorator]) {

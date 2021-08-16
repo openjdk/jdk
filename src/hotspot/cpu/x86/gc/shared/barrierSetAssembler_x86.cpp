@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -192,27 +193,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     break;
   default: Unimplemented();
   }
-}
-
-#ifndef _LP64
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Address obj1, jobject obj2) {
-  __ cmpoop_raw(obj1, obj2);
-}
-
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, jobject obj2) {
-  __ cmpoop_raw(obj1, obj2);
-}
-#endif
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Address obj2) {
-  __ cmpptr(obj1, obj2);
-}
-
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Register obj2) {
-  __ cmpptr(obj1, obj2);
 }
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,

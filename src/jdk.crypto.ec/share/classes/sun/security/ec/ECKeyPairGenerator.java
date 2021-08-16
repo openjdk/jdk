@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
@@ -200,6 +201,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         AffinePoint affPub = pub.asAffine();
 
         PrivateKey privateKey = new ECPrivateKeyImpl(privArr, ecParams);
+        Arrays.fill(privArr, (byte)0);
 
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
             affPub.getY().asBigInteger());

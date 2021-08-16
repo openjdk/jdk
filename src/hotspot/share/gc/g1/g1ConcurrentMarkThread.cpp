@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ void G1ConcurrentMarkThread::run_service() {
     assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    GCTraceConcTime(Info, gc) tt(FormatBuffer<128>("Concurrent %s Cycle",
-                                                   _state == FullMark ? "Mark" : "Undo"));
+    FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
+    GCTraceConcTime(Info, gc) tt(title);
 
     concurrent_cycle_start();
 

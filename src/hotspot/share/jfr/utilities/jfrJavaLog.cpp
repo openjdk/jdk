@@ -28,7 +28,9 @@
 #include "jfr/utilities/jfrLogTagSets.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define JFR_LOG_TAGS_CONCATED(T0, T1, T2, T3, T4, T5, ...)  \
@@ -98,7 +100,7 @@ static void log_config_change_internal(bool init, TRAPS) {
 }
 
 static void log_config_change() {
-  Thread* t = Thread::current();
+  JavaThread* t = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   log_config_change_internal(false, t);
 }
@@ -116,6 +118,38 @@ void JfrJavaLog::subscribe_log_level(jobject log_tag, jint id, TRAPS) {
     subscribed_updates = false;
   } else {
     log_config_change_internal(false, THREAD);
+  }
+}
+
+void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  if (lines == NULL) {
+    return;
+  }
+  if (level < (jint)LogLevel::First || level > (jint)LogLevel::Last) {
+    JfrJavaSupport::throw_illegal_argument_exception("LogLevel passed is outside valid range", THREAD);
+    return;
+  }
+
+  objArrayOop the_lines = objArrayOop(JfrJavaSupport::resolve_non_null(lines));
+  assert(the_lines != NULL, "invariant");
+  assert(the_lines->is_array(), "must be array");
+  const int length = the_lines->length();
+
+  ResourceMark rm(THREAD);
+  LogMessage(jfr, event) jfr_event;
+  LogMessage(jfr, system, event) jfr_event_system;
+  for (int i = 0; i < length; ++i) {
+    const char* text = JfrJavaSupport::c_str(the_lines->obj_at(i), THREAD);
+    if (text == NULL) {
+      // An oome has been thrown and is pending.
+      return;
+    }
+    if (system) {
+      jfr_event_system.write((LogLevelType)level, "%s", text);
+    } else {
+      jfr_event.write((LogLevelType)level, "%s", text);
+    }
   }
 }
 

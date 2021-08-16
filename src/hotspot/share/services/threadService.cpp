@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.hpp"
@@ -32,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -103,7 +105,8 @@ void ThreadService::init() {
   _thread_allocated_memory_enabled = true; // Always on, so enable it
 
   // Initialize OopStorage for thread stack sampling walking
-  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage");
+  _thread_service_storage = OopStorageSet::create_strong("ThreadService OopStorage",
+                                                         mtServiceability);
 }
 
 void ThreadService::reset_peak_thread_count() {
@@ -424,7 +427,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         Thread* owner = waitingToLockRawMonitor->owner();
         if (owner != NULL && // the raw monitor could be released at any time
             owner->is_Java_thread()) {
-          currentThread = owner->as_Java_thread();
+          currentThread = JavaThread::cast(owner);
         }
       } else if (waitingToLockMonitor != NULL) {
         address currentOwner = (address)waitingToLockMonitor->owner();
@@ -437,8 +440,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
             // if it is not findable, then the previous currentThread is
             // blocked permanently. We record this as a deadlock.
             num_deadlocks++;
-
-            cycle->set_deadlock(true);
 
             // add this cycle to the deadlocks list
             if (deadlocks == NULL) {
@@ -453,7 +454,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         }
       } else {
         if (concurrent_locks) {
-          if (waitingToLockBlocker->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+          if (waitingToLockBlocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
             oop threadObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
             // This JavaThread (if there is one) is protected by the
             // ThreadsListSetter in VM_FindDeadlocks::doit().
@@ -480,8 +481,6 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else {
         // We have a (new) cycle
         num_deadlocks++;
-
-        cycle->set_deadlock(true);
 
         // add this cycle to the deadlocks list
         if (deadlocks == NULL) {
@@ -717,7 +716,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  InstanceKlass* ik = SystemDictionary::StackTraceElement_klass();
+  InstanceKlass* ik = vmClasses::StackTraceElement_klass();
   assert(ik != NULL, "must be loaded in 1.4+");
 
   // Allocate an array of java/lang/StackTraceElement object
@@ -765,7 +764,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
 
   // Find all instances of AbstractOwnableSynchronizer
-  HeapInspection::find_instances_at_safepoint(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
+  HeapInspection::find_instances_at_safepoint(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
                                               aos_objects);
   // Build a map of thread to its owned AQS locks
   build_map(aos_objects);
@@ -875,8 +874,11 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _sleep_ticks = stat->sleep_ticks();
   _sleep_count = stat->sleep_count();
 
-  _thread_status = java_lang_Thread::get_thread_status(threadObj);
-  _is_ext_suspended = thread->is_being_ext_suspended();
+  // If thread is still attaching then threadObj will be NULL.
+  _thread_status = threadObj == NULL ? JavaThreadStatus::NEW
+                                     : java_lang_Thread::get_thread_status(threadObj);
+
+  _is_suspended = thread->is_suspended();
   _is_in_native = (thread->thread_state() == _thread_in_native);
 
   Handle obj = ThreadService::get_current_contended_monitor(thread);
@@ -913,7 +915,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   // Support for JSR-166 locks
   if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
-    if (blocker_object != NULL && blocker_object->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+    if (blocker_object != NULL && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);
     }
   }
@@ -952,7 +954,6 @@ void ThreadSnapshot::metadata_do(void f(Metadata*)) {
 
 
 DeadlockCycle::DeadlockCycle() {
-  _is_deadlock = false;
   _threads = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _next = NULL;
 }
@@ -977,7 +978,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
     waitingToLockRawMonitor = currentThread->current_pending_raw_monitor();
     waitingToLockBlocker = currentThread->current_park_blocker();
     st->cr();
-    st->print_cr("\"%s\":", currentThread->get_thread_name());
+    st->print_cr("\"%s\":", currentThread->name());
     const char* owner_desc = ",\n  which is held by";
 
     // Note: As the JVM TI "monitor contended enter" event callback is executed after ObjectMonitor
@@ -988,8 +989,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       // Could be NULL as the raw monitor could be released at any time if held by non-JavaThread
       if (owner != NULL) {
         if (owner->is_Java_thread()) {
-          currentThread = owner->as_Java_thread();
-          st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
+          currentThread = JavaThread::cast(owner);
+          st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
         } else {
           st->print_cr(",\n  which has now been released");
         }
@@ -1022,13 +1023,13 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 p2i(waitingToLockBlocker),
                 waitingToLockBlocker->klass()->external_name());
-      assert(waitingToLockBlocker->is_a(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass()),
+      assert(waitingToLockBlocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass()),
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);
       assert(currentThread != NULL, "AbstractOwnableSynchronizer owning thread is unexpectedly NULL");
     }
-    st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
+    st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
   }
 
   st->cr();
@@ -1040,7 +1041,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
   st->print_cr("===================================================");
   for (int j = 0; j < len; j++) {
     currentThread = _threads->at(j);
-    st->print_cr("\"%s\":", currentThread->get_thread_name());
+    st->print_cr("\"%s\":", currentThread->name());
     currentThread->print_stack_on(st);
   }
   JavaMonitorsInStackTrace = oldJavaMonitorsInStackTrace;

@@ -279,6 +279,10 @@ final class SignatureAlgorithmsExtension {
                             shc.sslConfig,
                             shc.algorithmConstraints, shc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             shc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then
@@ -330,7 +334,7 @@ final class SignatureAlgorithmsExtension {
             if (shc.negotiatedProtocol.useTLS13PlusSpec()) {
                 throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
                     "No mandatory signature_algorithms extension in the " +
-                    "received CertificateRequest handshake message");
+                    "received ClientHello handshake message");
             }
         }
     }
@@ -503,6 +507,10 @@ final class SignatureAlgorithmsExtension {
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             chc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then

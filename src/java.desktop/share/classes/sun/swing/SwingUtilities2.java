@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.print.PrinterGraphics;
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
@@ -1487,6 +1486,7 @@ public class SwingUtilities2 {
    public static boolean canAccessSystemClipboard() {
        boolean canAccess = false;
        if (!GraphicsEnvironment.isHeadless()) {
+           @SuppressWarnings("removal")
            SecurityManager sm = System.getSecurityManager();
            if (sm == null) {
                canAccess = true;
@@ -1592,6 +1592,7 @@ public class SwingUtilities2 {
      *
      * @param modifiers a set of modifiers
      */
+    @SuppressWarnings("removal")
     public static void checkAccess(int modifiers) {
         if (System.getSecurityManager() != null
                 && !Modifier.isPublic(modifiers)) {
@@ -1617,6 +1618,7 @@ public class SwingUtilities2 {
      * details
      *
      */
+    @SuppressWarnings("removal")
     private static boolean isTrustedContext() {
         return (System.getSecurityManager() == null)
             || (AppContext.getAppContext().
@@ -1712,6 +1714,7 @@ public class SwingUtilities2 {
                                   final String imageFile,
                                   final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
+            @SuppressWarnings("removal")
             byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
                     (PrivilegedAction<byte[]>) ()
                     -> getIconBytes(baseClass, rootClass, imageFile))
@@ -1754,18 +1757,9 @@ public class SwingUtilities2 {
                     continue;
                             }
 
-                try (BufferedInputStream in
-                        = new BufferedInputStream(resource);
-                        ByteArrayOutputStream out
-                        = new ByteArrayOutputStream(1024)) {
-                            byte[] buffer = new byte[1024];
-                            int n;
-                            while ((n = in.read(buffer)) > 0) {
-                                out.write(buffer, 0, n);
+                            try (BufferedInputStream in = new BufferedInputStream(resource)) {
+                                return in.readAllBytes();
                             }
-                            out.flush();
-                            return out.toByteArray();
-                }
                         } catch (IOException ioe) {
                             System.err.println(ioe.toString());
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
-#include "oops/markWord.inline.hpp"
+#include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -79,12 +80,10 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = oop(obj->mark().decode_pointer());
+    oop new_obj = cast_to_oop(obj->mark().decode_pointer());
 
     assert(new_obj != NULL ||                      // is forwarding ptr?
-           obj->mark() == markWord::prototype() || // not gc marked?
-           (UseBiasedLocking && obj->mark().has_bias_pattern()),
-           // not gc marked?
+           obj->mark() == markWord::prototype(), // not gc marked?
            "should be forwarded");
 
     if (new_obj != NULL) {

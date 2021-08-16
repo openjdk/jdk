@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteOrder;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
@@ -149,7 +148,7 @@ public final class ImagePluginStack {
                     Comparator.reverseOrder())).filter((e) -> {
                         return e.getValue() > 1;
                     }).map(java.util.Map.Entry::getKey).
-                    collect(Collectors.toList());
+                    toList();
             return result;
         }
 

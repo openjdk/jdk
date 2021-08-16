@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,6 @@ public class EventNames {
     public final static String NativeMethodSample = PREFIX + "NativeMethodSample";
     public final static String ThreadDump = PREFIX + "ThreadDump";
     public final static String OldObjectSample = PREFIX + "OldObjectSample";
-    public final static String BiasedLockRevocation = PREFIX + "BiasedLockRevocation";
-    public final static String BiasedLockSelfRevocation = PREFIX + "BiasedLockSelfRevocation";
-    public final static String BiasedLockClassRevocation = PREFIX + "BiasedLockClassRevocation";
     public final static String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
     public final static String StringTableStatistics = PREFIX + "StringTableStatistics";
     public final static String PlaceholderTableStatistics = PREFIX + "PlaceholderTableStatistics";
@@ -149,6 +146,8 @@ public class EventNames {
     public final static String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public final static String ZUncommit = PREFIX + "ZUncommit";
     public final static String ZUnmap = PREFIX + "ZUnmap";
+    public final static String GCLocker = PREFIX + "GCLocker";
+    public static final String SystemGC = PREFIX + "SystemGC";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";
@@ -198,6 +197,14 @@ public class EventNames {
     public final static String X509Validation = PREFIX + "X509Validation";
     public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
+    public final static String Deserialization = PREFIX + "Deserialization";
+
+    // Containers
+    public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";
+    public static final String ContainerCPUUsage = PREFIX + "ContainerCPUUsage";
+    public static final String ContainerCPUThrottling = PREFIX + "ContainerCPUThrottling";
+    public static final String ContainerMemoryUsage = PREFIX + "ContainerMemoryUsage";
+    public static final String ContainerIOUsage = PREFIX + "ContainerIOUsage";
 
     // Flight Recorder
     public final static String DumpReason = PREFIX + "DumpReason";

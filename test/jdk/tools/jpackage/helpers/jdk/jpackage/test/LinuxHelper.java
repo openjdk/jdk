@@ -282,8 +282,8 @@ public class LinuxHelper {
                     actualCriticalRuntimePaths);
         } else {
             // AppImagePackageTest.testEmpty() will have no dependencies,
-            // but will have more then 0 and less than 1K content size.
-            checkPrerequisites = packageSize > 1;
+            // but will have more then 0 and less than 5K content size when --icon is used.
+            checkPrerequisites = packageSize > 5;
         }
 
         List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);

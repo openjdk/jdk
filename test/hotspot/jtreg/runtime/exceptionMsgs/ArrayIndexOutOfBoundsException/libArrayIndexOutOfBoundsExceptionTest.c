@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +47,7 @@ JNIEXPORT void JNICALL \
 JNIEXPORT void JNICALL \
   Java_ArrayIndexOutOfBoundsExceptionTest_doNative##NameType##ArrayRegionStore(JNIEnv *env, jclass klass, \
                                                                       ElementType##Array array, jint start, jint len) { \
-  ElementType content[100]; \
+  ElementType content[100] = {0}; \
   (*env)->Set##NameType##ArrayRegion(env, array, start, len, content); \
 }
 

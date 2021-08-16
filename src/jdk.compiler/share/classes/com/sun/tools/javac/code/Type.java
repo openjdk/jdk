@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.lang.model.type.*;
 
@@ -375,7 +376,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return accept(stripMetadata, null);
     }
     //where
-        private final static TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
+        private static final TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
                 return super.visitClassType((ClassType)t.typeNoMetadata(), aVoid);
@@ -467,7 +468,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         if (tsym == null || tsym.name == null) {
             sb.append("<none>");
         } else {
-            sb.append(tsym.name);
+            sb.append(tsym.name.toString());
         }
         if (moreInfo && hasTag(TYPEVAR)) {
             sb.append(hashCode());
@@ -644,10 +645,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return false;
     }
 
-    public static List<Type> filter(List<Type> ts, Filter<Type> tf) {
+    public static List<Type> filter(List<Type> ts, Predicate<Type> tf) {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : ts) {
-            if (tf.accepts(t)) {
+            if (tf.test(t)) {
                 buf.append(t);
             }
         }
@@ -1358,13 +1359,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object obj) {
-            if (obj instanceof ArrayType) {
-                ArrayType that = (ArrayType)obj;
-                return this == that ||
-                        elemtype.equals(that.elemtype);
-            }
-
-            return false;
+            return (obj instanceof ArrayType arrayType)
+                    && (this == arrayType || elemtype.equals(arrayType.elemtype));
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1490,7 +1486,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type              getReturnType()     { return restype; }
         @DefinedBy(Api.LANGUAGE_MODEL)
-        public Type              getReceiverType()   { return recvtype; }
+        public Type              getReceiverType()   {
+            return (recvtype == null) ? Type.noType : recvtype;
+        }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type>        getThrownTypes()    { return thrown; }
 

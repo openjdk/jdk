@@ -35,7 +35,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @test
  * @bug 4969695
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969695
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969695
  * @run testng/othervm validation.Bug4969695
  * @summary Test SchemaFactory.get/setProperty() throw NullPointerException
  * instead of SAXNotRecognizedException in case the "property name" parameter is null.

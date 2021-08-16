@@ -31,7 +31,7 @@ ifeq ($(call isTargetOs, linux), true)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
 else ifeq ($(call isTargetOs, macosx), true)
-  SA_CFLAGS := -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
+  SA_CFLAGS := -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
   LIBSA_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
 else ifeq ($(call isTargetOs, windows), true)
@@ -69,7 +69,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     LIBS := $(LIBCXX), \
     LIBS_unix := -ljava, \
     LIBS_linux := $(LIBDL), \
-    LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
+    LIBS_macosx := -framework Foundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
     LIBS_windows := dbgeng.lib $(WIN_JAVA_LIB), \
 ))

@@ -26,6 +26,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 

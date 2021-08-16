@@ -65,7 +65,7 @@ abstract class EventPrintWriter extends StructuredWriter {
         super(p);
     }
 
-    abstract protected void print(List<RecordedEvent> events);
+    protected abstract void print(List<RecordedEvent> events);
 
     void print(Path source) throws FileNotFoundException, IOException {
         List<RecordedEvent> events = new ArrayList<>(500_000);

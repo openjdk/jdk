@@ -112,10 +112,10 @@ cmsBool  BlackPointAsDarkerColorant(cmsHPROFILE    hInput,
         return FALSE;
     }
 
-    // Create a formatter which has n channels and floating point
+    // Create a formatter which has n channels and no floating point
     dwFormat = cmsFormatterForColorspaceOfProfile(hInput, 2, FALSE);
 
-   // Try to get black by using black colorant
+    // Try to get black by using black colorant
     Space = cmsGetColorSpace(hInput);
 
     // This function returns darker colorant in 16 bits for several spaces

@@ -26,6 +26,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -68,7 +69,6 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
 void CodeInstaller::pd_patch_OopConstant(int pc_offset, JVMCIObject constant, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
   Handle obj = jvmci_env()->asConstant(constant, JVMCI_CHECK);
-  Thread* THREAD = Thread::current();
   jobject value = JNIHandles::make_local(obj());
   if (jvmci_env()->get_HotSpotObjectConstantImpl_compressed(constant)) {
 #ifdef _LP64

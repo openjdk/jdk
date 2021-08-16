@@ -180,6 +180,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         }
     }
 
+    @SuppressWarnings("removal")
     private static RevocationProperties getRevocationProperties() {
         return AccessController.doPrivileged(
             new PrivilegedAction<RevocationProperties>() {
@@ -585,7 +586,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                     approvedCRLs.addAll(DistributionPointFetcher.getCRLs(
                                         sel, signFlag, prevKey, prevCert,
                                         params.sigProvider(), certStores,
-                                        reasonsMask, anchors, null, params.variant()));
+                                        reasonsMask, anchors, null,
+                                        params.variant(), anchor));
                 }
             } catch (CertStoreException e) {
                 if (e instanceof CertStoreTypeException) {
@@ -815,11 +817,10 @@ class RevocationChecker extends PKIXRevocationChecker {
      * Removes any non-hexadecimal characters from a string.
      */
     private static String stripOutSeparators(String value) {
-        HexFormat hex = HexFormat.of();
         char[] chars = value.toCharArray();
         StringBuilder hexNumber = new StringBuilder();
         for (int i = 0; i < chars.length; i++) {
-            if (hex.isHexDigit(chars[i])) {
+            if (HexFormat.isHexDigit(chars[i])) {
                 hexNumber.append(chars[i]);
             }
         }
@@ -894,7 +895,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                     if (DistributionPointFetcher.verifyCRL(
                             certImpl, point, crl, reasonsMask, signFlag,
                             prevKey, null, params.sigProvider(), anchors,
-                            certStores, params.date(), params.variant()))
+                            certStores, params.date(), params.variant(), anchor))
                     {
                         results.add(crl);
                     }

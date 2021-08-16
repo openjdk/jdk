@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -103,9 +104,10 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             byte[] privBytes = s.clone();
             ArrayUtil.reverse(privBytes);
             out.putOctetString(privBytes);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            Arrays.fill(privBytes, (byte)0);
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);
@@ -124,13 +126,15 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             int outPos = Math.max(sOctets.length - sArr.length, 0);
             int length = Math.min(sArr.length, sOctets.length);
             System.arraycopy(sArr, inPos, sOctets, outPos, length);
+            Arrays.fill(sArr, (byte)0);
 
             DerOutputStream out = new DerOutputStream();
             out.putInteger(1); // version 1
             out.putOctetString(sOctets);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            Arrays.fill(sOctets, (byte)0);
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             throw new AssertionError("Should not happen", exc);
         }
@@ -147,6 +151,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             byte[] arrCopy = arrayS.clone();
             ArrayUtil.reverse(arrCopy);
             s = new BigInteger(1, arrCopy);
+            Arrays.fill(arrCopy, (byte)0);
         }
         return s;
     }

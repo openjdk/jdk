@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 
+#include "gc/parallel/psParallelCompact.hpp"
+
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -112,11 +113,10 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = (oop)summary_data().calc_new_pointer(obj, cm);
-    assert(new_obj != NULL,                    // is forwarding ptr?
-           "should be forwarded");
-    // Just always do the update unconditionally?
-    if (new_obj != NULL) {
+    oop new_obj = cast_to_oop(summary_data().calc_new_pointer(obj, cm));
+    assert(new_obj != NULL, "non-null address for live objects");
+    // Is it actually relocated at all?
+    if (new_obj != obj) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
@@ -127,7 +127,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
 class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
   PCAdjustPointerClosure(ParCompactionManager* cm) {
-    assert(cm != NULL, "associate ParCompactionManage should not be NULL");
+    verify_cm(cm);
     _cm = cm;
   }
   template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
@@ -137,6 +137,8 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
   ParCompactionManager* _cm;
+
+  static void verify_cm(ParCompactionManager* cm) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP

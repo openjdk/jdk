@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,7 @@ private:
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
-                          bool run_verification, bool clear_soft_refs,
-                          bool restore_marks_for_biased_locking);
+                          bool run_verification, bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
@@ -102,20 +101,6 @@ private:
   PreGenGCValues get_pre_gc_values() const;
 
 protected:
-
-  // The set of potentially parallel tasks in root scanning.
-  enum GCH_strong_roots_tasks {
-    GCH_PS_OopStorageSet_oops_do,
-    GCH_PS_ClassLoaderDataGraph_oops_do,
-    GCH_PS_CodeCache_oops_do,
-    AOT_ONLY(GCH_PS_aot_oops_do COMMA)
-    // Leave this one last.
-    GCH_PS_NumElements
-  };
-
-  // Data structure for claiming the (potentially) parallel tasks in
-  // (gen-specific) roots processing.
-  SubTasksDone* _process_strong_tasks;
 
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
@@ -295,8 +280,6 @@ public:
 
   // Update above counter, as appropriate, at the end of a stop-world GC cycle
   unsigned int update_full_collections_completed();
-  // Update above counter, as appropriate, at the end of a concurrent GC cycle
-  unsigned int update_full_collections_completed(unsigned int count);
 
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {
@@ -357,8 +340,7 @@ public:
   };
 
  protected:
-  void process_roots(StrongRootsScope* scope,
-                     ScanningOption so,
+  void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
@@ -368,8 +350,7 @@ public:
   virtual void gc_epilogue(bool full);
 
  public:
-  void full_process_roots(StrongRootsScope* scope,
-                          bool is_adjust_phase,
+  void full_process_roots(bool is_adjust_phase,
                           ScanningOption so,
                           bool only_strong_roots,
                           OopClosure* root_closure,

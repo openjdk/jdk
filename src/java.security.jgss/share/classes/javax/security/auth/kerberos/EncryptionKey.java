@@ -56,7 +56,7 @@ public final class EncryptionKey implements SecretKey {
     *
     * @serial
     */
-    final private KeyImpl key;
+    private final KeyImpl key;
 
     private transient boolean destroyed = false;
 

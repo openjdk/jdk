@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLim
 }
 
 VirtualSpaceList::~VirtualSpaceList() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   // Note: normally, there is no reason ever to delete a vslist since they are
   // global objects, but for gtests it makes sense to allow this.
   VirtualSpaceNode* vsn = _first_node;
@@ -90,7 +90,7 @@ VirtualSpaceList::~VirtualSpaceList() {
 // List must be expandable for this to work.
 void VirtualSpaceList::create_new_node() {
   assert(_can_expand, "List is not expandable");
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   VirtualSpaceNode* vsn = VirtualSpaceNode::create_node(Settings::virtual_space_node_default_word_size(),
                                                         _commit_limiter,
@@ -105,7 +105,7 @@ void VirtualSpaceList::create_new_node() {
 // Hence, before using this chunk, it must be committed.
 // Also, no limits are checked, since no committing takes place.
 Metachunk*  VirtualSpaceList::allocate_root_chunk() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   if (_first_node == NULL ||
       _first_node->free_words() < chunklevel::MAX_CHUNK_WORD_SIZE) {
@@ -138,7 +138,7 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
 // The free chunks are removed from the freelists before the nodes are deleted.
 // Return number of purged nodes.
 int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   UL(debug, "purging.");
 
   VirtualSpaceNode* vsn = _first_node;
@@ -173,7 +173,7 @@ int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
 
 // Print all nodes in this space list.
 void VirtualSpaceList::print_on(outputStream* st) const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
   st->print_cr("vsl %s:", _name);
   const VirtualSpaceNode* vsn = _first_node;
@@ -190,7 +190,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
 
 #ifdef ASSERT
 void VirtualSpaceList::verify_locked() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(_name != NULL, "Sanity");
 
   int n = 0;
@@ -216,7 +216,7 @@ void VirtualSpaceList::verify_locked() const {
 }
 
 void VirtualSpaceList::verify() const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   verify_locked();
 }
 #endif

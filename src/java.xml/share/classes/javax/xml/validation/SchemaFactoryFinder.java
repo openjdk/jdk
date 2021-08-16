@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,7 @@ class SchemaFactoryFinder  {
      * @param className Name of class to create.
      * @return Created class or <code>null</code>.
      */
+    @SuppressWarnings("removal")
     private Class<?> createClass(String className) {
         Class<?> clazz;
         // make sure we have access to restricted packages
@@ -308,6 +309,7 @@ class SchemaFactoryFinder  {
     }
 
     // Call isSchemaLanguageSupported with initial context.
+    @SuppressWarnings("removal")
     private boolean isSchemaLanguageSupportedBy(final SchemaFactory factory,
             final String schemaLanguage,
             AccessControlContext acc) {
@@ -327,6 +329,7 @@ class SchemaFactoryFinder  {
      *         if none is found.
      * @throws SchemaFactoryConfigurationError if a configuration error is found.
      */
+    @SuppressWarnings("removal")
     private SchemaFactory findServiceProvider(final String schemaLanguage) {
         assert schemaLanguage != null;
         // store current context.

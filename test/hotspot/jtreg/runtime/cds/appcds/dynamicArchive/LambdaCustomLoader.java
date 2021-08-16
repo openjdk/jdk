@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,12 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build CustomLoaderApp LambHello sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar custom_loader_app.jar CustomLoaderApp LambHello
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom_loader_app.jar CustomLoaderApp LambHello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaCustomLoader
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class LambdaCustomLoader extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
@@ -44,9 +46,10 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
         String appJar = ClassFileInstaller.getJarPath("custom_loader_app.jar");
         String mainClass = "CustomLoaderApp";
 
+        // 1. Host class loaded by a custom loader is initialized during dump time.
         dump(topArchiveName,
             "-Xlog:class+load,cds=debug,cds+dynamic",
-            "-cp", appJar, mainClass, appJar)
+            "-cp", appJar, mainClass, appJar, "init")
             .assertNormalExit(output -> {
                 output.shouldMatch("Skipping.LambHello[$][$]Lambda[$].*0x.*:.Hidden.class")
                       .shouldHaveExitValue(0);
@@ -54,9 +57,26 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
 
         run(topArchiveName,
             "-Xlog:class+load,class+unload",
-            "-cp", appJar, mainClass, appJar)
+            "-cp", appJar, mainClass, appJar, "init")
             .assertNormalExit(output -> {
                 output.shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.LambHello")
+                      .shouldContain("LambHello source: shared objects file (top)")
+                      .shouldHaveExitValue(0);
+            });
+
+        // 2. Host class loaded by a custom loader is NOT initialized during dump time.
+        dump(topArchiveName,
+            "-Xlog:class+load,cds=debug,cds+dynamic",
+            "-cp", appJar, mainClass, appJar)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0);
+            });
+
+        run(topArchiveName,
+            "-Xlog:class+load,class+unload",
+            "-cp", appJar, mainClass, appJar)
+            .assertNormalExit(output -> {
+                output.shouldContain("LambHello source: shared objects file (top)")
                       .shouldHaveExitValue(0);
             });
     }

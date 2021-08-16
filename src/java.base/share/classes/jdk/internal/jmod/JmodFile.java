@@ -25,7 +25,6 @@
 
 package jdk.internal.jmod;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,11 +51,12 @@ public class JmodFile implements AutoCloseable {
     };
 
     public static void checkMagic(Path file) throws IOException {
-        try (InputStream in = Files.newInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(in)) {
+        try (InputStream in = Files.newInputStream(file)) {
             // validate the header
-            byte[] magic = new byte[4];
-            bis.read(magic);
+            byte[] magic = in.readNBytes(4);
+            if (magic.length != 4) {
+                throw new IOException("Invalid JMOD file: " + file);
+            }
             if (magic[0] != JMOD_MAGIC_NUMBER[0] ||
                 magic[1] != JMOD_MAGIC_NUMBER[1]) {
                 throw new IOException("Invalid JMOD file: " + file.toString());

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -73,6 +71,13 @@ public class TestLookForUntestedEvents {
             "GCPhasePauseLevel4")
     );
 
+    // Container events are tested in hotspot/jtreg/containers/docker/TestJFREvents.java
+    private static final Set<String> coveredContainerEvents = new HashSet<>(
+        Arrays.asList(
+            "ContainerConfiguration", "ContainerCPUUsage", "ContainerCPUThrottling",
+            "ContainerMemoryUsage", "ContainerIOUsage")
+    );
+
     // This is a "known failure list" for this test.
     // NOTE: if the event is not covered, a bug should be open, and bug number
     // noted in the comments for this set.
@@ -117,6 +122,7 @@ public class TestLookForUntestedEvents {
         // Account for hard-to-test, experimental and GC tested events
         eventsNotCoveredByTest.removeAll(hardToTestEvents);
         eventsNotCoveredByTest.removeAll(coveredGcEvents);
+        eventsNotCoveredByTest.removeAll(coveredContainerEvents);
         eventsNotCoveredByTest.removeAll(knownNotCoveredEvents);
 
         if (!eventsNotCoveredByTest.isEmpty()) {

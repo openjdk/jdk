@@ -43,16 +43,11 @@ address PcDesc::real_pc(const CompiledMethod* code) const {
 void PcDesc::print_on(outputStream* st, CompiledMethod* code) {
 #ifndef PRODUCT
   ResourceMark rm;
-  st->print("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
+  st->print_cr("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
 
   if (scope_decode_offset() == DebugInformationRecorder::serialized_null) {
-    st->cr();
     return;
   }
-
-  int tab = 8;
-  int pos = st->position() + 2; // current column plus two spaces
-  pos = ((pos+tab-1)/tab)*tab;
 
   for (ScopeDesc* sd = code->scope_desc_at(real_pc(code));
        sd != NULL;

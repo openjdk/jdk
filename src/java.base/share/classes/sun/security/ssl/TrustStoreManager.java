@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ final class TrustStoreManager {
          * Create an instance of TrustStoreDescriptor for the default
          * trusted KeyStore.
          */
-        @SuppressWarnings("Convert2Lambda")
+        @SuppressWarnings({"removal","Convert2Lambda"})
         static TrustStoreDescriptor createInstance() {
              return AccessController.doPrivileged(
                     new PrivilegedAction<TrustStoreDescriptor>() {
@@ -161,7 +161,7 @@ final class TrustStoreManager {
                                     SSLLogger.isOn("trustmanager")) {
                                 SSLLogger.fine(
                                         "Inaccessible trust store: " +
-                                        storePropName);
+                                        fileName);
                             }
                         }
                     } else {
@@ -385,7 +385,7 @@ final class TrustStoreManager {
             }
 
             if (!"NONE".equals(descriptor.storeName)) {
-                try (FileInputStream fis = AccessController.doPrivileged(
+                try (@SuppressWarnings("removal") FileInputStream fis = AccessController.doPrivileged(
                         new OpenFileInputStreamAction(descriptor.storeFile))) {
                     ks.load(fis, password);
                 } catch (FileNotFoundException fnfe) {

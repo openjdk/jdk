@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,11 @@ class isfinal001aClassToCheck {
     transient Long LT0, LT1[]={LT0}, LT2[][]={LT1};
     volatile  Long LV0, LV1[]={LV0}, LV2[][]={LV1};
 
-    final static    Long LS0F = new Long(1), LS1F[]={LS0F}, LS2F[][]={LS1F};
-    final private   Long LP0F = new Long(1), LP1F[]={LP0F}, LP2F[][]={LP1F};
-    final public    Long LU0F = new Long(1), LU1F[]={LU0F}, LU2F[][]={LU1F};
-    final protected Long LR0F = new Long(1), LR1F[]={LR0F}, LR2F[][]={LR1F};
-    final transient Long LT0F = new Long(1), LT1F[]={LT0F}, LT2F[][]={LT1F};
+    final static    Long LS0F = Long.valueOf(1), LS1F[]={LS0F}, LS2F[][]={LS1F};
+    final private   Long LP0F = Long.valueOf(1), LP1F[]={LP0F}, LP2F[][]={LP1F};
+    final public    Long LU0F = Long.valueOf(1), LU1F[]={LU0F}, LU2F[][]={LU1F};
+    final protected Long LR0F = Long.valueOf(1), LR1F[]={LR0F}, LR2F[][]={LR1F};
+    final transient Long LT0F = Long.valueOf(1), LT1F[]={LT0F}, LT2F[][]={LT1F};
 
     isfinal001aInter E0, E1[]={E0}, E2[][]={E1};
     final isfinal001aInter E0F = null, E1F[]={E0F}, E2F[][]={E1F};

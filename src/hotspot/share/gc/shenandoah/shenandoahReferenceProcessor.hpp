@@ -27,6 +27,8 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
+#include "gc/shared/referencePolicy.hpp"
+#include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
 
@@ -80,12 +82,10 @@ private:
   Counters _encountered_count;
   Counters _discovered_count;
   Counters _enqueued_count;
+  NONCOPYABLE(ShenandoahRefProcThreadLocal);
 
 public:
   ShenandoahRefProcThreadLocal();
-
-  ShenandoahRefProcThreadLocal(const ShenandoahRefProcThreadLocal&) = delete; // non construction-copyable
-  ShenandoahRefProcThreadLocal& operator=(const ShenandoahRefProcThreadLocal&) = delete; // non copyable
 
   void reset();
 
@@ -136,6 +136,8 @@ private:
 
   volatile uint _iterate_discovered_list_id;
 
+  ReferenceProcessorStats _stats;
+
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
@@ -178,6 +180,8 @@ public:
   bool discover_reference(oop obj, ReferenceType type) override;
 
   void process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent);
+
+  const ReferenceProcessorStats& reference_process_stats() { return _stats; }
 
   void work();
 

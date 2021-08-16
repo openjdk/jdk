@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "jvm_io.h"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -35,6 +35,8 @@
 #include "code/pcDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -195,12 +197,12 @@ void CodeCache::initialize_heaps() {
   size_t code_buffers_size = 0;
 #ifdef COMPILER1
   // C1 temporary code buffers (see Compiler::init_buffer_blob())
-  const int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
+  const int c1_count = CompilationPolicy::c1_count();
   code_buffers_size += c1_count * Compiler::code_buffer_size();
 #endif
 #ifdef COMPILER2
   // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
-  const int c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
+  const int c2_count = CompilationPolicy::c2_count();
   // Initial size of constant table (this may be increased if a compiled method needs more space)
   code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
 #endif
@@ -334,7 +336,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   const size_t rs_ps = page_size();
   const size_t rs_align = MAX2(rs_ps, (size_t) os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps > (size_t) os::vm_page_size());
+  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));
@@ -354,7 +356,7 @@ bool CodeCache::heap_available(int code_blob_type) {
   } else if (Arguments::is_interpreter_only()) {
     // Interpreter only: we don't need any method code heaps
     return (code_blob_type == CodeBlobType::NonNMethod);
-  } else if (TieredCompilation && (TieredStopAtLevel > CompLevel_simple)) {
+  } else if (CompilerConfig::is_c1_profiling()) {
     // Tiered compilation: use all code heaps
     return (code_blob_type < CodeBlobType::All);
   } else {
@@ -680,7 +682,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
-  AOTLoader::metadata_do(f);
 }
 
 int CodeCache::alignment_unit() {
@@ -967,8 +968,6 @@ void CodeCache::initialize() {
 
 void codeCache_init() {
   CodeCache::initialize();
-  // Load AOT libraries and add AOT code heaps.
-  AOTLoader::initialize();
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1032,15 +1031,6 @@ CompiledMethod* CodeCache::find_compiled(void* start) {
   return (CompiledMethod*)cb;
 }
 
-bool CodeCache::is_far_target(address target) {
-#if INCLUDE_AOT
-  return NativeCall::is_far_call(_low_bound,  target) ||
-         NativeCall::is_far_call(_high_bound, target);
-#else
-  return false;
-#endif
-}
-
 #if INCLUDE_JVMTI
 // RedefineClasses support for unloading nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
@@ -1086,17 +1076,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   }
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
 }
-
-// Just marks the methods in this class as needing deoptimization
-void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-
-  // Mark dependent AOT nmethods, which are only found via the class redefined.
-  // TODO: add dependencies to aotCompiledMethod's metadata section so this isn't
-  // needed.
-  AOTLoader::mark_evol_dependent_methods(dependee);
-}
-
 
 // Walk compiled methods and mark dependent methods for deoptimization.
 int CodeCache::mark_dependents_for_evol_deoptimization() {
@@ -1199,10 +1178,18 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
-  KlassDepChange changes(dependee);
+  int marked = 0;
+  if (dependee->is_linked()) {
+    // Class initialization state change.
+    KlassInitDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  } else {
+    // New class is loaded.
+    NewKlassDepChange changes(dependee);
+    marked = mark_for_deoptimization(changes);
+  }
 
-  // Compute the dependent nmethods
-  if (mark_for_deoptimization(changes) > 0) {
+  if (marked > 0) {
     // At least one nmethod has been marked for deoptimization
     Deoptimization::deoptimize_all_marked();
   }

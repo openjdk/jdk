@@ -50,11 +50,12 @@ public class VectorTest extends JSR166TestCase {
         class Implementation implements CollectionImplementation {
             public Class<?> klazz() { return Vector.class; }
             public List emptyCollection() { return new Vector(); }
-            public Object makeElement(int i) { return i; }
+            public Object makeElement(int i) { return JSR166TestCase.itemFor(i); }
             public boolean isConcurrent() { return false; }
             public boolean permitsNulls() { return true; }
         }
         class SubListImplementation extends Implementation {
+            @SuppressWarnings("unchecked")
             public List emptyCollection() {
                 List list = super.emptyCollection();
                 ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -70,13 +71,13 @@ public class VectorTest extends JSR166TestCase {
                 CollectionTest.testSuite(new SubListImplementation()));
     }
 
-    static Vector<Integer> populatedList(int n) {
-        Vector<Integer> list = new Vector<>();
+    static Vector<Item> populatedList(int n) {
+        Vector<Item> list = new Vector<>();
         assertTrue(list.isEmpty());
         for (int i = 0; i < n; i++)
-            list.add(i);
-        assertEquals(n <= 0, list.isEmpty());
-        assertEquals(n, list.size());
+            mustAdd(list, i);
+        mustEqual(n <= 0, list.isEmpty());
+        mustEqual(n, list.size());
         return list;
     }
 
@@ -84,29 +85,30 @@ public class VectorTest extends JSR166TestCase {
      * addAll adds each element from the given collection, including duplicates
      */
     public void testAddAll() {
-        List list = populatedList(3);
+        List<Item> list = populatedList(3);
         assertTrue(list.addAll(Arrays.asList(three, four, five)));
-        assertEquals(6, list.size());
+        mustEqual(6, list.size());
         assertTrue(list.addAll(Arrays.asList(three, four, five)));
-        assertEquals(9, list.size());
+        mustEqual(9, list.size());
     }
 
     /**
      * clear removes all elements from the list
      */
     public void testClear() {
-        List list = populatedList(SIZE);
+        List<Item> list = populatedList(SIZE);
         list.clear();
-        assertEquals(0, list.size());
+        mustEqual(0, list.size());
     }
 
     /**
      * Cloned list is equal
      */
     public void testClone() {
-        Vector l1 = populatedList(SIZE);
-        Vector l2 = (Vector)(l1.clone());
-        assertEquals(l1, l2);
+        Vector<Item> l1 = populatedList(SIZE);
+        @SuppressWarnings("unchecked")
+        Vector<Item> l2 = (Vector<Item>)(l1.clone());
+        mustEqual(l1, l2);
         l1.clear();
         assertFalse(l1.equals(l2));
     }
@@ -115,49 +117,49 @@ public class VectorTest extends JSR166TestCase {
      * contains is true for added elements
      */
     public void testContains() {
-        List list = populatedList(3);
-        assertTrue(list.contains(one));
-        assertFalse(list.contains(five));
+        List<Item> list = populatedList(3);
+        mustContain(list, one);
+        mustNotContain(list, five);
     }
 
     /**
      * adding at an index places it in the indicated index
      */
     public void testAddIndex() {
-        List list = populatedList(3);
-        list.add(0, m1);
-        assertEquals(4, list.size());
-        assertEquals(m1, list.get(0));
-        assertEquals(zero, list.get(1));
+        List<Item> list = populatedList(3);
+        list.add(0, minusOne);
+        mustEqual(4, list.size());
+        mustEqual(minusOne, list.get(0));
+        mustEqual(zero, list.get(1));
 
-        list.add(2, m2);
-        assertEquals(5, list.size());
-        assertEquals(m2, list.get(2));
-        assertEquals(two, list.get(4));
+        list.add(2, minusTwo);
+        mustEqual(5, list.size());
+        mustEqual(minusTwo, list.get(2));
+        mustEqual(two, list.get(4));
     }
 
     /**
      * lists with same elements are equal and have same hashCode
      */
     public void testEquals() {
-        List a = populatedList(3);
-        List b = populatedList(3);
+        List<Item> a = populatedList(3);
+        List<Item> b = populatedList(3);
         assertTrue(a.equals(b));
         assertTrue(b.equals(a));
         assertTrue(a.containsAll(b));
         assertTrue(b.containsAll(a));
-        assertEquals(a.hashCode(), b.hashCode());
-        a.add(m1);
+        mustEqual(a.hashCode(), b.hashCode());
+        a.add(minusOne);
         assertFalse(a.equals(b));
         assertFalse(b.equals(a));
         assertTrue(a.containsAll(b));
         assertFalse(b.containsAll(a));
-        b.add(m1);
+        b.add(minusOne);
         assertTrue(a.equals(b));
         assertTrue(b.equals(a));
         assertTrue(a.containsAll(b));
         assertTrue(b.containsAll(a));
-        assertEquals(a.hashCode(), b.hashCode());
+        mustEqual(a.hashCode(), b.hashCode());
 
         assertFalse(a.equals(null));
     }
@@ -166,7 +168,7 @@ public class VectorTest extends JSR166TestCase {
      * containsAll returns true for collections with subset of elements
      */
     public void testContainsAll() {
-        List list = populatedList(3);
+        List<Item> list = populatedList(3);
         assertTrue(list.containsAll(Arrays.asList()));
         assertTrue(list.containsAll(Arrays.asList(one)));
         assertTrue(list.containsAll(Arrays.asList(one, two)));
@@ -183,8 +185,8 @@ public class VectorTest extends JSR166TestCase {
      * get returns the value at the given index
      */
     public void testGet() {
-        List list = populatedList(3);
-        assertEquals(0, list.get(0));
+        List<Item> list = populatedList(3);
+        mustEqual(0, list.get(0));
     }
 
     /**
@@ -193,25 +195,26 @@ public class VectorTest extends JSR166TestCase {
      * contain the element
      */
     public void testIndexOf() {
-        List list = populatedList(3);
-        assertEquals(-1, list.indexOf(-42));
+        List<Item> list = populatedList(3);
+        mustEqual(-1, list.indexOf(minusTen));
         int size = list.size();
         for (int i = 0; i < size; i++) {
-            assertEquals(i, list.indexOf(i));
-            assertEquals(i, list.subList(0, size).indexOf(i));
-            assertEquals(i, list.subList(0, i + 1).indexOf(i));
-            assertEquals(-1, list.subList(0, i).indexOf(i));
-            assertEquals(0, list.subList(i, size).indexOf(i));
-            assertEquals(-1, list.subList(i + 1, size).indexOf(i));
+            Item I = itemFor(i);
+            mustEqual(i, list.indexOf(I));
+            mustEqual(i, list.subList(0, size).indexOf(I));
+            mustEqual(i, list.subList(0, i + 1).indexOf(I));
+            mustEqual(-1, list.subList(0, i).indexOf(I));
+            mustEqual(0, list.subList(i, size).indexOf(I));
+            mustEqual(-1, list.subList(i + 1, size).indexOf(I));
         }
 
-        list.add(1);
-        assertEquals(1, list.indexOf(1));
-        assertEquals(1, list.subList(0, size + 1).indexOf(1));
-        assertEquals(0, list.subList(1, size + 1).indexOf(1));
-        assertEquals(size - 2, list.subList(2, size + 1).indexOf(1));
-        assertEquals(0, list.subList(size, size + 1).indexOf(1));
-        assertEquals(-1, list.subList(size + 1, size + 1).indexOf(1));
+        list.add(one);
+        mustEqual(1, list.indexOf(one));
+        mustEqual(1, list.subList(0, size + 1).indexOf(one));
+        mustEqual(0, list.subList(1, size + 1).indexOf(one));
+        mustEqual(size - 2, list.subList(2, size + 1).indexOf(one));
+        mustEqual(0, list.subList(size, size + 1).indexOf(one));
+        mustEqual(-1, list.subList(size + 1, size + 1).indexOf(one));
     }
 
     /**
@@ -220,41 +223,42 @@ public class VectorTest extends JSR166TestCase {
      * or returns -1 if the element is not found
      */
     public void testIndexOf2() {
-        Vector list = populatedList(3);
+        Vector<Item> list = populatedList(3);
         int size = list.size();
-        assertEquals(-1, list.indexOf(-42, 0));
+        mustEqual(-1, list.indexOf(minusTen, 0));
 
         // we might expect IOOBE, but spec says otherwise
-        assertEquals(-1, list.indexOf(0, size));
-        assertEquals(-1, list.indexOf(0, Integer.MAX_VALUE));
+        mustEqual(-1, list.indexOf(zero, size));
+        mustEqual(-1, list.indexOf(zero, Integer.MAX_VALUE));
 
         assertThrows(
             IndexOutOfBoundsException.class,
-            () -> list.indexOf(0, -1),
-            () -> list.indexOf(0, Integer.MIN_VALUE));
+            () -> list.indexOf(zero, -1),
+            () -> list.indexOf(zero, Integer.MIN_VALUE));
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i, list.indexOf(i, 0));
-            assertEquals(i, list.indexOf(i, i));
-            assertEquals(-1, list.indexOf(i, i + 1));
+            Item I = itemFor(i);
+            mustEqual(i, list.indexOf(I, 0));
+            mustEqual(i, list.indexOf(I, i));
+            mustEqual(-1, list.indexOf(I, i + 1));
         }
 
-        list.add(1);
-        assertEquals(1, list.indexOf(1, 0));
-        assertEquals(1, list.indexOf(1, 1));
-        assertEquals(size, list.indexOf(1, 2));
-        assertEquals(size, list.indexOf(1, size));
+        list.add(one);
+        mustEqual(1, list.indexOf(one, 0));
+        mustEqual(1, list.indexOf(one, 1));
+        mustEqual(size, list.indexOf(one, 2));
+        mustEqual(size, list.indexOf(one, size));
     }
 
     /**
      * isEmpty returns true when empty, else false
      */
     public void testIsEmpty() {
-        List empty = new Vector();
+        List<Item> empty = new Vector<>();
         assertTrue(empty.isEmpty());
         assertTrue(empty.subList(0, 0).isEmpty());
 
-        List full = populatedList(SIZE);
+        List<Item> full = populatedList(SIZE);
         assertFalse(full.isEmpty());
         assertTrue(full.subList(0, 0).isEmpty());
         assertTrue(full.subList(SIZE, SIZE).isEmpty());
@@ -264,7 +268,7 @@ public class VectorTest extends JSR166TestCase {
      * iterator of empty collection has no elements
      */
     public void testEmptyIterator() {
-        Collection c = new Vector();
+        Collection<Item> c = new Vector<>();
         assertIteratorExhausted(c.iterator());
     }
 
@@ -274,24 +278,25 @@ public class VectorTest extends JSR166TestCase {
      * contain the element
      */
     public void testLastIndexOf1() {
-        List list = populatedList(3);
-        assertEquals(-1, list.lastIndexOf(-42));
+        List<Item> list = populatedList(3);
+        mustEqual(-1, list.lastIndexOf(minusTen));
         int size = list.size();
         for (int i = 0; i < size; i++) {
-            assertEquals(i, list.lastIndexOf(i));
-            assertEquals(i, list.subList(0, size).lastIndexOf(i));
-            assertEquals(i, list.subList(0, i + 1).lastIndexOf(i));
-            assertEquals(-1, list.subList(0, i).lastIndexOf(i));
-            assertEquals(0, list.subList(i, size).lastIndexOf(i));
-            assertEquals(-1, list.subList(i + 1, size).lastIndexOf(i));
+            Item I = itemFor(i);
+            mustEqual(i, list.lastIndexOf(I));
+            mustEqual(i, list.subList(0, size).lastIndexOf(I));
+            mustEqual(i, list.subList(0, i + 1).lastIndexOf(I));
+            mustEqual(-1, list.subList(0, i).lastIndexOf(I));
+            mustEqual(0, list.subList(i, size).lastIndexOf(I));
+            mustEqual(-1, list.subList(i + 1, size).lastIndexOf(I));
         }
 
-        list.add(1);
-        assertEquals(size, list.lastIndexOf(1));
-        assertEquals(size, list.subList(0, size + 1).lastIndexOf(1));
-        assertEquals(1, list.subList(0, size).lastIndexOf(1));
-        assertEquals(0, list.subList(1, 2).lastIndexOf(1));
-        assertEquals(-1, list.subList(0, 1).indexOf(1));
+        list.add(one);
+        mustEqual(size, list.lastIndexOf(one));
+        mustEqual(size, list.subList(0, size + 1).lastIndexOf(one));
+        mustEqual(1, list.subList(0, size).lastIndexOf(one));
+        mustEqual(0, list.subList(1, 2).lastIndexOf(one));
+        mustEqual(-1, list.subList(0, 1).indexOf(one));
     }
 
     /**
@@ -300,89 +305,92 @@ public class VectorTest extends JSR166TestCase {
      * returns -1 if the element is not found
      */
     public void testLastIndexOf2() {
-        Vector list = populatedList(3);
+        Vector<Item> list = populatedList(3);
 
         // we might expect IOOBE, but spec says otherwise
-        assertEquals(-1, list.lastIndexOf(0, -1));
+        mustEqual(-1, list.lastIndexOf(zero, -1));
 
         int size = list.size();
         assertThrows(
             IndexOutOfBoundsException.class,
-            () -> list.lastIndexOf(0, size),
-            () -> list.lastIndexOf(0, Integer.MAX_VALUE));
+            () -> list.lastIndexOf(zero, size),
+            () -> list.lastIndexOf(zero, Integer.MAX_VALUE));
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i, list.lastIndexOf(i, i));
-            assertEquals(list.indexOf(i), list.lastIndexOf(i, i));
+            Item I = itemFor(i);
+            mustEqual(i, list.lastIndexOf(I, i));
+            mustEqual(list.indexOf(I), list.lastIndexOf(I, i));
             if (i > 0)
-                assertEquals(-1, list.lastIndexOf(i, i - 1));
+                mustEqual(-1, list.lastIndexOf(I, i - 1));
         }
         list.add(one);
         list.add(three);
-        assertEquals(1, list.lastIndexOf(one, 1));
-        assertEquals(1, list.lastIndexOf(one, 2));
-        assertEquals(3, list.lastIndexOf(one, 3));
-        assertEquals(3, list.lastIndexOf(one, 4));
-        assertEquals(-1, list.lastIndexOf(three, 3));
+        mustEqual(1, list.lastIndexOf(one, 1));
+        mustEqual(1, list.lastIndexOf(one, 2));
+        mustEqual(3, list.lastIndexOf(one, 3));
+        mustEqual(3, list.lastIndexOf(one, 4));
+        mustEqual(-1, list.lastIndexOf(three, 3));
     }
 
     /**
      * size returns the number of elements
      */
     public void testSize() {
-        List empty = new Vector();
-        assertEquals(0, empty.size());
-        assertEquals(0, empty.subList(0, 0).size());
+        List<Item> empty = new Vector<>();
+        mustEqual(0, empty.size());
+        mustEqual(0, empty.subList(0, 0).size());
 
-        List full = populatedList(SIZE);
-        assertEquals(SIZE, full.size());
-        assertEquals(0, full.subList(0, 0).size());
-        assertEquals(0, full.subList(SIZE, SIZE).size());
+        List<Item> full = populatedList(SIZE);
+        mustEqual(SIZE, full.size());
+        mustEqual(0, full.subList(0, 0).size());
+        mustEqual(0, full.subList(SIZE, SIZE).size());
     }
 
     /**
      * sublists contains elements at indexes offset from their base
      */
     public void testSubList() {
-        List a = populatedList(10);
+        List<Item> a = populatedList(10);
         assertTrue(a.subList(1,1).isEmpty());
         for (int j = 0; j < 9; ++j) {
             for (int i = j ; i < 10; ++i) {
-                List b = a.subList(j,i);
+                List<Item> b = a.subList(j,i);
                 for (int k = j; k < i; ++k) {
-                    assertEquals(new Integer(k), b.get(k-j));
+                    mustEqual(k, b.get(k-j));
                 }
             }
         }
 
-        List s = a.subList(2, 5);
-        assertEquals(3, s.size());
-        s.set(2, m1);
-        assertEquals(a.get(4), m1);
+        List<Item> s = a.subList(2, 5);
+        mustEqual(3, s.size());
+        s.set(2, minusOne);
+        mustEqual(a.get(4), minusOne);
         s.clear();
-        assertEquals(7, a.size());
+        mustEqual(7, a.size());
 
         assertThrows(
             IndexOutOfBoundsException.class,
             () -> s.get(0),
-            () -> s.set(0, 42));
+            () -> s.set(0, fortytwo));
     }
 
     /**
      * toArray throws an ArrayStoreException when the given array
      * can not store the objects inside the list
      */
+    @SuppressWarnings("CollectionToArraySafeParameter")
     public void testToArray_ArrayStoreException() {
-        List list = new Vector();
-        // Integers are not auto-converted to Longs
-        list.add(86);
-        list.add(99);
+        List<Item> list = new Vector<>();
+        // Items are not auto-converted to Longs
+        list.add(eightysix);
+        list.add(ninetynine);
         assertThrows(
             ArrayStoreException.class,
             () -> list.toArray(new Long[0]),
             () -> list.toArray(new Long[5]));
     }
 
+    @SuppressWarnings("unchecked")
     void testIndexOutOfBoundsException(List list) {
         int size = list.size();
         assertThrows(
@@ -422,7 +430,7 @@ public class VectorTest extends JSR166TestCase {
      */
     public void testIndexOutOfBoundsException() {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        List x = populatedList(rnd.nextInt(5));
+        List<Item> x = populatedList(rnd.nextInt(5));
         testIndexOutOfBoundsException(x);
 
         int start = rnd.nextInt(x.size() + 1);
@@ -433,7 +441,7 @@ public class VectorTest extends JSR166TestCase {
             IllegalArgumentException.class,
             () -> x.subList(start, start - 1));
 
-        List subList = x.subList(start, end);
+        List<Item> subList = x.subList(start, end);
         testIndexOutOfBoundsException(x);
     }
 
@@ -441,18 +449,18 @@ public class VectorTest extends JSR166TestCase {
      * a deserialized/reserialized list equals original
      */
     public void testSerialization() throws Exception {
-        List x = populatedList(SIZE);
-        List y = serialClone(x);
+        List<Item> x = populatedList(SIZE);
+        List<Item> y = serialClone(x);
 
         assertNotSame(x, y);
-        assertEquals(x.size(), y.size());
-        assertEquals(x.toString(), y.toString());
+        mustEqual(x.size(), y.size());
+        mustEqual(x.toString(), y.toString());
         assertTrue(Arrays.equals(x.toArray(), y.toArray()));
-        assertEquals(x, y);
-        assertEquals(y, x);
+        mustEqual(x, y);
+        mustEqual(y, x);
         while (!x.isEmpty()) {
             assertFalse(y.isEmpty());
-            assertEquals(x.remove(0), y.remove(0));
+            mustEqual(x.remove(0), y.remove(0));
         }
         assertTrue(y.isEmpty());
     }
@@ -461,15 +469,15 @@ public class VectorTest extends JSR166TestCase {
      * tests for setSize()
      */
     public void testSetSize() {
-        final Vector v = new Vector();
+        final Vector<Item> v = new Vector<>();
         for (int n : new int[] { 100, 5, 50 }) {
             v.setSize(n);
-            assertEquals(n, v.size());
+            mustEqual(n, v.size());
             assertNull(v.get(0));
             assertNull(v.get(n - 1));
             assertThrows(ArrayIndexOutOfBoundsException.class,
                 () -> v.setSize(-1));
-            assertEquals(n, v.size());
+            mustEqual(n, v.size());
             assertNull(v.get(0));
             assertNull(v.get(n - 1));
         }

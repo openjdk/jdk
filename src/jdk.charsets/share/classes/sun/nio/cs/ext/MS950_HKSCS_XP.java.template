@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class MS950_HKSCS_XP extends Charset
          * MS HKSCS mappings which maps 0x8BC2 --> U+5C22
          * a character defined with the Unified CJK block
          */
-        private static char[][] b2cBmp = new char[0x100][];
+        private static final char[][] b2cBmp = new char[0x100][];
         static {
             initb2c(b2cBmp, HKSCS_XPMapping.b2cBmpStr);
         }
@@ -88,7 +88,7 @@ public class MS950_HKSCS_XP extends Charset
          * Published MS HKSCS mappings show
          * U+5C22 <--> 0x8BC2
          */
-        static char[][] c2bBmp = new char[0x100][];
+        static final char[][] c2bBmp = new char[0x100][];
         static {
             initc2b(c2bBmp, HKSCS_XPMapping.b2cBmpStr, null);
         }

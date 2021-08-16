@@ -227,7 +227,7 @@ class TreeDissector {
     public static String printType(AnalyzeTask at, JShell state, TypeMirror type) {
         Type typeImpl = (Type) type;
         try {
-            TypePrinter tp = new TypePrinter(at.messages(),
+            TypePrinter tp = new TypePrinter(at.messages(), at.types(),
                     state.maps::fullClassNameAndPackageToClass, true, AnonymousTypeKind.DISPLAY);
             return tp.toString(typeImpl);
         } catch (Exception ex) {

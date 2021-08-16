@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ import java.util.stream.Stream;
 class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
     private static final String JAVABASEJMOD = "java.base.jmod";
-    private final static String DEFAULT_VERSION = "1.0";
-    private final static String DEFAULT_RELEASE = "1";
-    private final static String[] DEFAULT_JLINK_OPTIONS = {
+    private static final String DEFAULT_VERSION = "1.0";
+    private static final String DEFAULT_RELEASE = "1";
+    private static final String[] DEFAULT_JLINK_OPTIONS = {
             "--strip-native-commands",
             "--strip-debug",
             "--no-man-pages",
@@ -193,6 +193,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> Path.of(s)
             );
 
+    static final StandardBundlerParam<String> ABOUT_URL =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.ABOUT_URL.getId(),
+                    String.class,
+                    params -> null,
+                    (s, p) -> s
+            );
+
     static final StandardBundlerParam<String> VENDOR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.VENDOR.getId(),
@@ -303,6 +311,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             true : Boolean.valueOf(s)
             );
 
+    static final StandardBundlerParam<Boolean> SHORTCUT_HINT  =
+            new StandardBundlerParam<>(
+                    "shortcut-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
+    static final StandardBundlerParam<Boolean> MENU_HINT  =
+            new StandardBundlerParam<>(
+                    "menu-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
     static final StandardBundlerParam<Path> RESOURCE_DIR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.RESOURCE_DIR.getId(),
@@ -387,7 +413,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> {
                         List<Path> modulePath = Stream.of(s.split(File.pathSeparator))
                                 .map(Path::of)
-                                .collect(Collectors.toList());
+                                .toList();
                         Path javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
 
                         // Add the default JDK module path to the module path.
@@ -395,7 +421,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             List<Path> jdkModulePath = getDefaultModulePath();
 
                             if (jdkModulePath != null) {
-                                modulePath.addAll(jdkModulePath);
+                                modulePath = Stream.concat(modulePath.stream(),
+                                        jdkModulePath.stream()).toList();
                                 javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
                             }
                         }
@@ -457,6 +484,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     p -> new LinkedHashSet<String>(),
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
+
+    static final StandardBundlerParam<Boolean> SIGN_BUNDLE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_SIGN.getId(),
+                    Boolean.class,
+                    params -> false,
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
 
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||

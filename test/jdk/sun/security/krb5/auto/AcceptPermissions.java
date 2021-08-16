@@ -28,8 +28,8 @@
  * @library /test/lib
  * @compile -XDignore.symbol.file AcceptPermissions.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptPermissions two
- * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptPermissions unbound
+ * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=TestHosts AcceptPermissions two
+ * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=TestHosts AcceptPermissions unbound
  */
 
 import java.nio.file.Files;

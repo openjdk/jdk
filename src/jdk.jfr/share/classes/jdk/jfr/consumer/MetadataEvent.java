@@ -112,7 +112,7 @@ public final class MetadataEvent {
                 added.add(eventType);
             }
         }
-        this.removed = Collections.unmodifiableList(new ArrayList<>(previousSet.values()));
-        this.added = Collections.unmodifiableList(added);
+        this.removed = List.copyOf(previousSet.values());
+        this.added = List.copyOf(added);
     }
 }

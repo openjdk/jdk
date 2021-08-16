@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
@@ -169,10 +170,10 @@ void ciMethodData::load_remaining_extra_data() {
   }
 }
 
-void ciMethodData::load_data() {
+bool ciMethodData::load_data() {
   MethodData* mdo = get_MethodData();
   if (mdo == NULL) {
-    return;
+    return false;
   }
 
   // To do: don't copy the data if it is not "ripe" -- require a minimum #
@@ -262,8 +263,12 @@ void ciMethodData::load_data() {
 #ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
+    if (is_empty()) {
+      return false;
+    }
   }
 #endif
+  return true;
 }
 
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {

@@ -26,8 +26,6 @@
 
 #import "PrintModel.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "PrinterView.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
@@ -53,7 +51,7 @@
 - (BOOL)runPageSetup {
     __block BOOL fResult = NO;
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         NSPageLayout* pageLayout = [NSPageLayout pageLayout];
         fResult = ([pageLayout runModalWithPrintInfo:fPrintInfo] == NSOKButton);
     }];
@@ -64,7 +62,7 @@
 - (BOOL)runJobSetup {
     __block BOOL fResult = NO;
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         NSPrintPanel* printPanel = [NSPrintPanel printPanel];
         fResult = ([printPanel runModalWithPrintInfo:fPrintInfo] == NSOKButton);
     }];

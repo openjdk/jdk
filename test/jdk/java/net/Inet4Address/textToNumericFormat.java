@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4749938 8087190
  * @summary Bug in the parsing IPv4 literal addresses
- * @run main/othervm  textToNumericFormat
+ * @run main/othervm -Djdk.net.hosts.file=HostFileDoesNotExist textToNumericFormat
 */
 
 /**
@@ -66,11 +66,10 @@ public class textToNumericFormat {
                            "1..1.1",
                            "1.1.1.",
                            "..." };
-        String hostsFileName = System.getProperty("test.src", ".") + "/TestToNumericFormatHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {
+                // Value is an IP Address literal, Name Service will not be called
                 InetAddress ia = InetAddress.getByName(goodAddrs[i]);
             } catch (UnknownHostException e) {
                 // shouldn't have come here
@@ -81,6 +80,7 @@ public class textToNumericFormat {
 
         for (int i=0; i<badAddrs.length; i++) {
             try {
+                // Value is not an IP Address literal, Name Service will be called
                 InetAddress ia = InetAddress.getByName(badAddrs[i]);
                 // shouldn't have come here
                 badList.add(badAddrs[i]);

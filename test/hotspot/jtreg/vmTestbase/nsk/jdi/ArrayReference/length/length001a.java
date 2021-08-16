@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,12 +87,12 @@ class ClassToCheck {
     static Object O1[]={new Object(), new Object()};
     static Object O2[][]={};
 
-    static final     Long LF1[]={new Long(1), new Long(-2), new Long(3)};
-    static private   Long LP1[][]={{new Long(1)}, {new Long(2)}, {new Long(3)}};
-    static public    Long LU1[][][]={{{new Long(1)}}, {{new Long(-2)}}};
-    static protected Long LR1[][][][]={{{{new Long(1)}}}, {{{new Long(-2)}}}};
-    static transient Long LT1[][][][][]={{{{{new Long(1)}}}}};
-    static volatile  Long LV1[][][][][][]={{{{{{new Long(1)}}}}}};
+    static final     Long LF1[]={Long.valueOf(1), Long.valueOf(-2), Long.valueOf(3)};
+    static private   Long LP1[][]={{Long.valueOf(1)}, {Long.valueOf(2)}, {Long.valueOf(3)}};
+    static public    Long LU1[][][]={{{Long.valueOf(1)}}, {{Long.valueOf(-2)}}};
+    static protected Long LR1[][][][]={{{{Long.valueOf(1)}}}, {{{Long.valueOf(-2)}}}};
+    static transient Long LT1[][][][][]={{{{{Long.valueOf(1)}}}}};
+    static volatile  Long LV1[][][][][][]={{{{{{Long.valueOf(1)}}}}}};
 
     static final     Inter EF1[]={};
     static private   Inter EP1[][]={{}};

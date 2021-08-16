@@ -266,6 +266,6 @@ class Bytes: AllStatic {
 #endif // VM_LITTLE_ENDIAN
 };
 
-#include OS_CPU_HEADER_INLINE(bytes)
+#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_PPC_BYTES_PPC_HPP

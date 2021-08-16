@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compilerThread.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
@@ -33,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
@@ -44,6 +46,9 @@ char* JVMCI::_shared_library_path = NULL;
 volatile bool JVMCI::_in_shutdown = false;
 StringEventLog* JVMCI::_events = NULL;
 StringEventLog* JVMCI::_verbose_events = NULL;
+volatile intx JVMCI::_fatal_log_init_thread = -1;
+volatile int JVMCI::_fatal_log_fd = -1;
+const char* JVMCI::_fatal_log_filename = NULL;
 
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
@@ -155,7 +160,7 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
 
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
-    CompileTask *task = thread->as_CompilerThread()->task();
+    CompileTask *task = CompilerThread::cast(thread)->task();
     if (task != NULL) {
       JVMCICompileState *state = task->blocking_jvmci_compile_state();
       if (state != NULL) {
@@ -210,12 +215,53 @@ bool JVMCI::in_shutdown() {
   return _in_shutdown;
 }
 
+void JVMCI::fatal_log(const char* buf, size_t count) {
+  intx current_thread_id = os::current_thread_id();
+  intx invalid_id = -1;
+  int log_fd;
+  if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
+    if (ErrorFileToStdout) {
+      log_fd = 1;
+    } else if (ErrorFileToStderr) {
+      log_fd = 2;
+    } else {
+      static char name_buffer[O_BUFLEN];
+      log_fd = VMError::prepare_log_file(JVMCINativeLibraryErrorFile, LIBJVMCI_ERR_FILE, true, name_buffer, sizeof(name_buffer));
+      if (log_fd != -1) {
+        _fatal_log_filename = name_buffer;
+      } else {
+        int e = errno;
+        tty->print("Can't open JVMCI shared library error report file. Error: ");
+        tty->print_raw_cr(os::strerror(e));
+        tty->print_cr("JVMCI shared library error report will be written to console.");
+
+        // See notes in VMError::report_and_die about hard coding tty to 1
+        log_fd = 1;
+      }
+    }
+    _fatal_log_fd = log_fd;
+  } else {
+    // Another thread won the race to initialize the stream. Give it time
+    // to complete initialization. VM locks cannot be used as the current
+    // thread might not be attached to the VM (e.g. a native thread started
+    // within libjvmci).
+    while (_fatal_log_fd == -1) {
+      os::naked_short_sleep(50);
+    }
+  }
+  fdStream log(_fatal_log_fd);
+  log.write(buf, count);
+  log.flush();
+}
+
 void JVMCI::vlog(int level, const char* format, va_list ap) {
   if (LogEvents && JVMCIEventLogLevel >= level) {
     StringEventLog* events = level == 1 ? _events : _verbose_events;
     guarantee(events != NULL, "JVMCI event log not yet initialized");
     Thread* thread = Thread::current_or_null_safe();
-    events->logv(thread, format, ap);
+    if (thread != NULL) {
+      events->logv(thread, format, ap);
+    }
   }
 }
 

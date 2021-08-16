@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.jimage;
 
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -52,6 +53,11 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     @Override
+    public int match(int offset, String string, int stringOffset) {
+        return reader.match(offset, string, stringOffset);
+    }
+
+    @Override
     public int add(final String string) {
         throw new InternalError("Can not add strings at runtime");
     }
@@ -69,9 +75,9 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     public static int hashCode(String module, String name, int seed) {
-        seed = unmaskedHashCode("/", seed);
+        seed = (seed * HASH_MULTIPLIER) ^ ('/');
         seed = unmaskedHashCode(module, seed);
-        seed = unmaskedHashCode("/", seed);
+        seed = (seed * HASH_MULTIPLIER) ^ ('/');
         seed = unmaskedHashCode(name, seed);
         return seed & POSITIVE_MASK;
     }
@@ -81,8 +87,7 @@ public class ImageStringsReader implements ImageStrings {
         byte[] buffer = null;
 
         for (int i = 0; i < slen; i++) {
-            char ch = s.charAt(i);
-            int uch = ch & 0xFFFF;
+            int uch = s.charAt(i);
 
             if ((uch & ~0x7F) != 0) {
                 if (buffer == null) {
@@ -183,29 +188,38 @@ public class ImageStringsReader implements ImageStrings {
         return stringFromMUTF8(bytes, 0, bytes.length);
     }
 
-    static int charsFromByteBufferLength(ByteBuffer buffer) {
+    /**
+     * Calculates the number of characters in the String present at the
+     * specified offset. As an optimization, the length returned will
+     * be positive if the characters are all ASCII, and negative otherwise.
+     */
+    private static int charsFromByteBufferLength(ByteBuffer buffer, int offset) {
         int length = 0;
 
-        while(buffer.hasRemaining()) {
-            byte ch = buffer.get();
+        int limit = buffer.limit();
+        boolean asciiOnly = true;
+        while (offset < limit) {
+            byte ch = buffer.get(offset++);
 
-            if (ch == 0) {
-                return length;
+            if (ch < 0) {
+                asciiOnly = false;
+            } else if (ch == 0) {
+                return asciiOnly ? length : -length;
             }
 
             if ((ch & 0xC0) != 0x80) {
                 length++;
             }
         }
-
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
-    static void charsFromByteBuffer(char[] chars, ByteBuffer buffer) {
+    private static void charsFromByteBuffer(char[] chars, ByteBuffer buffer, int offset) {
         int j = 0;
 
-        while(buffer.hasRemaining()) {
-            byte ch = buffer.get();
+        int limit = buffer.limit();
+        while (offset < limit) {
+            byte ch = buffer.get(offset++);
 
             if (ch == 0) {
                 return;
@@ -218,7 +232,7 @@ public class ImageStringsReader implements ImageStrings {
                 int mask = 0x40;
 
                 while ((uch & mask) != 0) {
-                    ch = buffer.get();
+                    ch = buffer.get(offset++);
 
                     if ((ch & 0xC0) != 0x80) {
                         throw new InternalError("Bad continuation in " +
@@ -242,12 +256,60 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     public static String stringFromByteBuffer(ByteBuffer buffer) {
-        int length = charsFromByteBufferLength(buffer);
-        buffer.rewind();
-        char[] chars = new char[length];
-        charsFromByteBuffer(chars, buffer);
+        return stringFromByteBuffer(buffer, 0);
+    }
 
+    /* package-private */
+    static String stringFromByteBuffer(ByteBuffer buffer, int offset) {
+        int length = charsFromByteBufferLength(buffer, offset);
+        if (length > 0) {
+            byte[] asciiBytes = new byte[length];
+            // Ideally we could use buffer.get(offset, asciiBytes, 0, length)
+            // here, but that was introduced in JDK 13
+            for (int i = 0; i < length; i++) {
+                asciiBytes[i] = buffer.get(offset++);
+            }
+            return new String(asciiBytes, StandardCharsets.US_ASCII);
+        }
+        char[] chars = new char[-length];
+        charsFromByteBuffer(chars, buffer, offset);
         return new String(chars);
+    }
+
+    /* package-private */
+    static int stringFromByteBufferMatches(ByteBuffer buffer, int offset, String string, int stringOffset) {
+        // ASCII fast-path
+        int limit = buffer.limit();
+        int current = offset;
+        int slen = string.length();
+        while (current < limit) {
+            byte ch = buffer.get(current);
+            if (ch <= 0) {
+                if (ch == 0) {
+                    // Match
+                    return current - offset;
+                }
+                // non-ASCII byte, run slow-path from current offset
+                break;
+            }
+            if (slen <= stringOffset || string.charAt(stringOffset) != (char)ch) {
+                // No match
+                return -1;
+            }
+            stringOffset++;
+            current++;
+        }
+        // invariant: remainder of the string starting at current is non-ASCII,
+        // so return value from charsFromByteBufferLength will be negative
+        int length = -charsFromByteBufferLength(buffer, current);
+        char[] chars = new char[length];
+        charsFromByteBuffer(chars, buffer, current);
+        for (int i = 0; i < length; i++) {
+            if (string.charAt(stringOffset++) != chars[i]) {
+                return -1;
+            }
+        }
+        return length;
     }
 
     static int mutf8FromStringLength(String s) {

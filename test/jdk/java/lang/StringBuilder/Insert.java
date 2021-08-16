@@ -27,9 +27,10 @@ import static org.testng.Assert.assertEquals;
 
 /**
  * @test
- * @run testng Insert
  * @bug 4914802 8257511
  * @summary Test StringBuilder.insert sanity tests
+ * @run testng/othervm -XX:-CompactStrings Insert
+ * @run testng/othervm -XX:+CompactStrings Insert
  */
 @Test
 public class Insert {

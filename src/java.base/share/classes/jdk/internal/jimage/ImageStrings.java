@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,17 @@ package jdk.internal.jimage;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public interface ImageStrings {
-    public String get(int offset);
+    String get(int offset);
 
-    public int add(final String string);
+    int add(final String string);
+
+    /**
+     * If there's a string at {@code offset} matching in full a substring of
+     * {@code string} starting at {@code stringOffset}, return the length
+     * of that string. Otherwise returns -1. Optional operation.
+     */
+    default int match(int offset, String string, int stringOffset) {
+        throw new UnsupportedOperationException();
+    }
+
 }

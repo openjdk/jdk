@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import sun.jvm.hotspot.types.TypeDataBase;
 class ZGlobalsForVMStructs extends VMObject {
     private static AddressField ZGlobalPhaseField;
     private static AddressField ZGlobalSeqNumField;
+    private static AddressField ZAddressOffsetMaskField;
+    private static AddressField ZAddressMetadataMaskField;
+    private static AddressField ZAddressMetadataFinalizableField;
     private static AddressField ZAddressGoodMaskField;
     private static AddressField ZAddressBadMaskField;
     private static AddressField ZAddressWeakBadMaskField;
@@ -49,6 +52,9 @@ class ZGlobalsForVMStructs extends VMObject {
 
         ZGlobalPhaseField = type.getAddressField("_ZGlobalPhase");
         ZGlobalSeqNumField = type.getAddressField("_ZGlobalSeqNum");
+        ZAddressOffsetMaskField = type.getAddressField("_ZAddressOffsetMask");
+        ZAddressMetadataMaskField = type.getAddressField("_ZAddressMetadataMask");
+        ZAddressMetadataFinalizableField = type.getAddressField("_ZAddressMetadataFinalizable");
         ZAddressGoodMaskField = type.getAddressField("_ZAddressGoodMask");
         ZAddressBadMaskField = type.getAddressField("_ZAddressBadMask");
         ZAddressWeakBadMaskField = type.getAddressField("_ZAddressWeakBadMask");
@@ -66,6 +72,18 @@ class ZGlobalsForVMStructs extends VMObject {
 
     int ZGlobalSeqNum() {
         return ZGlobalSeqNumField.getValue(addr).getJIntAt(0);
+    }
+
+    long ZAddressOffsetMask() {
+        return ZAddressOffsetMaskField.getValue(addr).getJLongAt(0);
+    }
+
+    long ZAddressMetadataMask() {
+        return ZAddressMetadataMaskField.getValue(addr).getJLongAt(0);
+    }
+
+    long ZAddressMetadataFinalizable() {
+        return ZAddressMetadataFinalizableField.getValue(addr).getJLongAt(0);
     }
 
     long ZAddressGoodMask() {

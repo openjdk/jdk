@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,22 @@
  * @test
  * @summary Hello World test for dynamic archive with custom loader
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes /runtime/testlibrary
- * @build HelloUnload CustomLoadee ClassUnloadCommon
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/customLoader/test-classes
+ * @build HelloUnload CustomLoadee jdk.test.lib.classloader.ClassUnloadCommon
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure
- * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
+ *                 jdk.test.lib.classloader.ClassUnloadCommon
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$1
+ *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_custom.jar CustomLoadee
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar HelloDynamicCustom
  */
 
 import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HelloDynamicCustom extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");
@@ -62,8 +66,7 @@ public class HelloDynamicCustom extends DynamicArchiveTestBase {
             "-cp", appJar,
             mainAppClass, customJarPath, "false", "false")
             .assertNormalExit(output -> {
-                output.shouldContain("Buffer-space to target-space delta")
-                      .shouldContain("Written dynamic archive 0x")
+                output.shouldContain("Written dynamic archive 0x")
                       .shouldNotContain("klasses.*=.*CustomLoadee")
                       .shouldHaveExitValue(0);
                 });

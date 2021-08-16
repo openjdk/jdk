@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -38,8 +39,10 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
@@ -129,6 +132,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
 #ifdef COMPILER2
+  int opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
   if (save_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
@@ -137,6 +141,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     if (UseAVX > 2) {
       // Save upper half of ZMM registers as well
       vect_bytes += zmm_bytes;
+      additional_frame_words += opmask_state_bytes / wordSize;
     }
     additional_frame_words += vect_bytes / wordSize;
   }
@@ -170,7 +175,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #ifdef ASSERT
     // Make sure the control word has the expected value
     Label ok;
-    __ cmpw(Address(rsp, 0), StubRoutines::fpu_cntrl_wrd_std());
+    __ cmpw(Address(rsp, 0), StubRoutines::x86::fpu_cntrl_wrd_std());
     __ jccb(Assembler::equal, ok);
     __ stop("corrupted control word detected");
     __ bind(ok);
@@ -180,14 +185,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     // since fstp_d can cause FPU stack underflow exceptions.  Write it
     // into the on stack copy and then reload that to make sure that the
     // current and future values are correct.
-    __ movw(Address(rsp, 0), StubRoutines::fpu_cntrl_wrd_std());
+    __ movw(Address(rsp, 0), StubRoutines::x86::fpu_cntrl_wrd_std());
   }
 
   __ frstor(Address(rsp, 0));
   if (!verify_fpu) {
     // Set the control word so that exceptions are masked for the
     // following code.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   int off = st0_off;
@@ -215,6 +220,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   }
 
+#ifdef COMPILER2
   if (save_vectors) {
     __ subptr(rsp, ymm_bytes);
     // Save upper half of YMM registers
@@ -227,8 +233,17 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       for (int n = 0; n < num_xmm_regs; n++) {
         __ vextractf64x4_high(Address(rsp, n*32), as_XMMRegister(n));
       }
+      __ subptr(rsp, opmask_state_bytes);
+      // Save opmask registers
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmov(Address(rsp, n*8), as_KRegister(n));
+      }
     }
   }
+#else
+  assert(!save_vectors, "vectors are generated only by C2");
+#endif
+
   __ vzeroupper();
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -249,6 +264,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // rbp, location is known implicitly, no oopMap
   map->set_callee_saved(STACK_OFFSET(rsi_off), rsi->as_VMReg());
   map->set_callee_saved(STACK_OFFSET(rdi_off), rdi->as_VMReg());
+
   // %%% This is really a waste but we'll keep things as they were for now for the upper component
   off = st0_off;
   delta = st1_off - off;
@@ -273,11 +289,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
+  int opmask_state_bytes = 0;
+  int additional_frame_bytes = 0;
   int num_xmm_regs = XMMRegisterImpl::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
   // Recover XMM & FPU state
-  int additional_frame_bytes = 0;
 #ifdef COMPILER2
   if (restore_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
@@ -287,6 +304,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     if (UseAVX > 2) {
       // Save upper half of ZMM registers as well
       additional_frame_bytes += zmm_bytes;
+      opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
+      additional_frame_bytes += opmask_state_bytes;
     }
   }
 #else
@@ -320,11 +339,14 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     for (int n = 0; n < num_xmm_regs; n++) {
       __ vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16+off));
     }
-
     if (UseAVX > 2) {
       // Restore upper half of ZMM registers.
+      off = opmask_state_bytes;
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32));
+        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32+off));
+      }
+      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+        __ kmov(as_KRegister(n), Address(rsp, n*8));
       }
     }
     __ addptr(rsp, additional_frame_bytes);
@@ -367,14 +389,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 // Note, MaxVectorSize == 0 with UseSSE < 2 and vectors are not generated.
 bool SharedRuntime::is_wide_vector(int size) {
   return size > 16;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  __ jump(RuntimeAddress(destination));
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -1028,6 +1042,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
   return stack;
+}
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
 }
 
 // A simple move of integer like type
@@ -1802,11 +1823,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (UseBiasedLocking) {
-      // Note that oop_handle_reg is trashed during this call
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, oop_handle_reg, noreg, false, lock_done, &slow_path_lock);
-    }
-
     // Load immediate 1 into swap_reg %rax,
     __ movptr(swap_reg, 1);
 
@@ -1839,11 +1855,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ jcc(Assembler::notEqual, slow_path_lock);
     // Slow path will re-enter here
     __ bind(lock_done);
-
-    if (UseBiasedLocking) {
-      // Re-fetch oop_handle_reg as we trashed it above
-      __ movptr(oop_handle_reg, Address(rsp, wordSize));
-    }
   }
 
 
@@ -1916,7 +1927,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (AlwaysRestoreFPU) {
     // Make sure the control word is correct.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   // check for safepoint operation in progress and/or pending suspend requests
@@ -1971,10 +1982,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
-
-    if (UseBiasedLocking) {
-      __ biased_locking_exit(obj_reg, rbx, done);
-    }
 
     // Simple recursive lock?
 
@@ -2395,7 +2402,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Non standard control word may be leaked out through a safepoint blob, and we can
   // deopt at a poll point with the non standard control word. However, we should make
   // sure the control word is correct after restore_result_registers.
-  __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+  __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
 
   // All of the register save area has been popped of the stack. Only the
   // return address remains.
@@ -2978,10 +2985,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+#ifdef COMPILER2
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
                                                 int shadow_space_bytes,
                                                 const GrowableArray<VMReg>& input_registers,
                                                 const GrowableArray<VMReg>& output_registers) {
   ShouldNotCallThis();
   return nullptr;
 }
+#endif

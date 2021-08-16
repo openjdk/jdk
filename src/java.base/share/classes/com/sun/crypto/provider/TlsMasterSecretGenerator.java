@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 
@@ -135,20 +136,26 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
                     sha.update(clientRandom);
                     sha.update(serverRandom);
                     sha.digest(tmp, 0, 20);
+                    sha.reset();
 
                     md5.update(premaster);
                     md5.update(tmp);
                     md5.digest(master, i << 4, 16);
+                    md5.reset();
                 }
-
             }
-
+            // master is referenced inside the TlsMasterSecretKey.
+            // Do not touch it anymore.
             return new TlsMasterSecretKey(master, premasterMajor,
                 premasterMinor);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         } catch (DigestException e) {
             throw new ProviderException(e);
+        } finally {
+            if (premaster != null) {
+                Arrays.fill(premaster, (byte)0);
+            }
         }
     }
 

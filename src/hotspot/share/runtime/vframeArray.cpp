@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         if (monitor->owner_is_scalar_replaced()) {
           dest->set_obj(NULL);
         } else {
-          assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
+          assert(monitor->owner() == NULL || !monitor->owner()->is_unlocked(), "object must be null or locked");
           dest->set_obj(monitor->owner());
           monitor->lock()->move_to(monitor->owner(), dest->lock());
         }
@@ -351,7 +351,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed expression %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {
@@ -389,7 +389,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed local %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {
@@ -568,8 +568,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   //  in the above picture.
 
   // Find the skeletal interpreter frames to unpack into
-  JavaThread* THREAD = JavaThread::current();
-  RegisterMap map(THREAD, false);
+  JavaThread* current = JavaThread::current();
+  RegisterMap map(current, false);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
@@ -588,8 +588,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     if (index == 0) {
       callee_parameters = callee_locals = 0;
     } else {
-      methodHandle caller(THREAD, elem->method());
-      methodHandle callee(THREAD, element(index - 1)->method());
+      methodHandle caller(current, elem->method());
+      methodHandle callee(current, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
       // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
       // NOTE:  Use machinery here that avoids resolving of any kind.

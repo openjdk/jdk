@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,19 +43,51 @@ public final class VersionHelper {
      */
     private static final boolean trustURLCodebase;
 
+    /**
+     * Determines whether objects may be deserialized from the content of
+     * 'javaSerializedData' attribute.
+     */
+    private static final boolean trustSerialData;
+
     static {
         // System property to control whether classes may be loaded from an
         // arbitrary URL code base
-        PrivilegedAction<String> act =
-                () -> System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase", "false");
-        String trust = AccessController.doPrivileged(act);
+        String trust = getPrivilegedProperty(
+                "com.sun.jndi.ldap.object.trustURLCodebase", "false");
         trustURLCodebase = "true".equalsIgnoreCase(trust);
+
+        // System property to control whether classes is allowed to be loaded from
+        // 'javaSerializedData' attribute
+        String trustSerialDataSp = getPrivilegedProperty(
+                "com.sun.jndi.ldap.object.trustSerialData", "true");
+        trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
     }
 
-    private VersionHelper() { }
+    @SuppressWarnings("removal")
+    private static String getPrivilegedProperty(String propertyName, String defaultVal) {
+        PrivilegedAction<String> action = () -> System.getProperty(propertyName, defaultVal);
+        if (System.getSecurityManager() == null) {
+            return action.run();
+        } else {
+            return AccessController.doPrivileged(action);
+        }
+    }
+
+    private VersionHelper() {
+    }
 
     static VersionHelper getVersionHelper() {
         return helper;
+    }
+
+    /**
+     * Returns true if deserialization of objects from 'javaSerializedData'
+     * LDAP attribute is allowed.
+     *
+     * @return true if deserialization is allowed; false - otherwise
+     */
+    public static boolean isSerialDataAllowed() {
+        return trustSerialData;
     }
 
     ClassLoader getURLClassLoader(String[] url) throws MalformedURLException {
@@ -76,6 +108,7 @@ public final class VersionHelper {
         return Class.forName(className, true, getContextClassLoader());
     }
 
+    @SuppressWarnings("removal")
     Thread createThread(Runnable r) {
         AccessControlContext acc = AccessController.getContext();
         // 4290486: doPrivileged is needed to create a thread in
@@ -85,6 +118,7 @@ public final class VersionHelper {
         return AccessController.doPrivileged(act);
     }
 
+    @SuppressWarnings("removal")
     private ClassLoader getContextClassLoader() {
         PrivilegedAction<ClassLoader> act =
                 Thread.currentThread()::getContextClassLoader;

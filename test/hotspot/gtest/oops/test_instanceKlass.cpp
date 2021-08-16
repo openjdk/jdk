@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,42 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "unittest.hpp"
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
 TEST_VM(InstanceKlass, class_loader_class) {
-  InstanceKlass* klass = SystemDictionary::ClassLoader_klass();
+  InstanceKlass* klass = vmClasses::ClassLoader_klass();
   ASSERT_TRUE(klass->is_class_loader_instance_klass());
 }
 
 TEST_VM(InstanceKlass, string_klass) {
-  InstanceKlass* klass = SystemDictionary::String_klass();
+  InstanceKlass* klass = vmClasses::String_klass();
   ASSERT_TRUE(!klass->is_class_loader_instance_klass());
+}
+
+TEST_VM(InstanceKlass, class_loader_printer) {
+  ResourceMark rm;
+  oop loader = SystemDictionary::java_platform_loader();
+  stringStream st;
+  loader->print_on(&st);
+  // See if injected loader_data field is printed in string
+  ASSERT_TRUE(strstr(st.as_string(), "internal 'loader_data'") != NULL) << "Must contain internal fields";
+  st.reset();
+  // See if mirror injected fields are printed.
+  oop mirror = vmClasses::ClassLoader_klass()->java_mirror();
+  mirror->print_on(&st);
+  ASSERT_TRUE(strstr(st.as_string(), "internal 'protection_domain'") != NULL) << "Must contain internal fields";
+  // We should test other printing functions too.
+#ifndef PRODUCT
+  st.reset();
+  // method printing is non-product
+  Method* method = vmClasses::ClassLoader_klass()->methods()->at(0);  // we know there's a method here!
+  method->print_on(&st);
+  ASSERT_TRUE(strstr(st.as_string(), "method holder:") != NULL) << "Must contain method_holder field";
+  ASSERT_TRUE(strstr(st.as_string(), "'java/lang/ClassLoader'") != NULL) << "Must be in ClassLoader";
+#endif
 }

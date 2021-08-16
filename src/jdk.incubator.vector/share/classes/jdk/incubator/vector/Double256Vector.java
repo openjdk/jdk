@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,15 +324,9 @@ final class Double256Vector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Double256Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -381,14 +375,7 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Double256Shuffle Iota = iotaShuffle();
-         VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((double)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Double256Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -409,14 +396,7 @@ final class Double256Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double256Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Double256Shuffle Iota = iotaShuffle();
-         VectorMask<Double> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((double)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Double256Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -585,31 +565,43 @@ final class Double256Vector extends DoubleVector {
             return (Double256Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Mask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    Double256Mask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public Double256Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double256Mask m = (Double256Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -650,6 +642,29 @@ final class Double256Vector extends DoubleVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, long.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Double256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Double256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Double256Mask)m).getBits()));
         }
 
         // Reductions
@@ -731,24 +746,7 @@ final class Double256Vector extends DoubleVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -776,6 +774,8 @@ final class Double256Vector extends DoubleVector {
     DoubleVector fromArray0(double[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

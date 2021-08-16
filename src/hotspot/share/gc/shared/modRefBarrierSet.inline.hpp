@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_MODREFBARRIERSET_INLINE_HPP
 #define SHARE_GC_SHARED_MODREFBARRIERSET_INLINE_HPP
 
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+
+#include "gc/shared/barrierSet.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"

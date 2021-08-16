@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,16 @@ public:
     return res;
   }
 
+  // Remove num_regions from the front of the collection set candidate list.
   void remove(uint num_regions);
+  // Remove num_remove regions from the back of the collection set candidate list.
+  void remove_from_end(uint num_remove, size_t wasted);
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);
+  // Iterate over all remaining collectin set candidate regions from the end
+  // to the beginning of the set.
+  void iterate_backwards(HeapRegionClosure* cl);
 
   // Return the number of candidate regions remaining.
   uint num_remaining() { return _num_regions - _front_idx; }

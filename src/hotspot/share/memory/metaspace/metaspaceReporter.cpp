@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {
@@ -77,7 +78,7 @@ static void print_vs(outputStream* out, size_t scale) {
     out->print(" committed, ");
     out->print(" %d nodes.", num_nodes_c);
     out->cr();
-    out->print("              Both:  ");
+    out->print("             Both:  ");
     print_scaled_words(out, reserved_c + reserved_nc, scale, 7);
     out->print(" reserved, ");
     print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);
@@ -95,9 +96,7 @@ static void print_vs(outputStream* out, size_t scale) {
 
 static void print_settings(outputStream* out, size_t scale) {
   out->print("MaxMetaspaceSize: ");
-  if (MaxMetaspaceSize >= (max_uintx) - (2 * os::vm_page_size())) {
-    // aka "very big". Default is max_uintx, but due to rounding in arg parsing the real
-    // value is smaller.
+  if (MaxMetaspaceSize == max_uintx) {
     out->print("unlimited");
   } else {
     print_human_readable_size(out, MaxMetaspaceSize, scale);
@@ -106,8 +105,18 @@ static void print_settings(outputStream* out, size_t scale) {
   if (Metaspace::using_class_space()) {
     out->print("CompressedClassSpaceSize: ");
     print_human_readable_size(out, CompressedClassSpaceSize, scale);
+  } else {
+    out->print("No class space");
   }
   out->cr();
+  out->print("Initial GC threshold: ");
+  print_human_readable_size(out, MetaspaceSize, scale);
+  out->cr();
+  out->print("Current GC threshold: ");
+  print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
+  out->cr();
+  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (DumpSharedSpaces ? "dump" : "off")));
+  out->print_cr("MetaspaceReclaimPolicy: %s", MetaspaceReclaimPolicy);
   Settings::print_on(out);
 }
 

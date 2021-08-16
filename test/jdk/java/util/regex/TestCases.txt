@@ -25,7 +25,7 @@
 // A test case consists of three lines:
 // The first line is a pattern used in the test
 // The second line is the input to search for the pattern in
-// The third line is a concatentation of the match, the number of groups,
+// The third line is a concatenation of the match, the number of groups,
 //     and the contents of the first four subexpressions.
 // Empty lines and lines beginning with comment slashes are ignored.
 //
@@ -1231,3 +1231,45 @@ true  1
 (|f){0,1}+
 foo
 true  1 
+
+//----------------------------------------------------------------
+// Unary numeral primality testing
+//----------------------------------------------------------------
+
+// Input is 7 (a prime), in unary; reluctant quantifier
+^(11+?)\1+$
+1111111
+false 1
+
+^(1{2,}?)\1+$
+1111111
+false 1
+
+// Input is 8 (a power of two), in unary; reluctant quantifier
+// group is shortest possible (2)
+^(11+?)\1+$
+11111111
+true 11111111 1 11
+
+^(1{2,}?)\1+$
+11111111
+true 11111111 1 11
+
+// Input is 7 (a prime), in unary; greedy quantifier
+^(11+)\1+$
+1111111
+false 1
+
+^(1{2,})\1+$
+1111111
+false 1
+
+// Input is 8 (a power of two), in unary; greedy quantifier
+// group is longest possible (4)
+^(11+)\1+$
+11111111
+true 11111111 1 1111
+
+^(1{2,})\1+$
+11111111
+true 11111111 1 1111

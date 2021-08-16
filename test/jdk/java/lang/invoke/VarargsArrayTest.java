@@ -76,10 +76,13 @@ public class VarargsArrayTest {
         }
     }
 
+    private static class CustomClass {}
+
     public static void testVarargsReferenceArray() throws Throwable {
         testTypedVarargsArray(Object[].class);
         testTypedVarargsArray(String[].class);
         testTypedVarargsArray(Number[].class);
+        testTypedVarargsArray(CustomClass[].class);
     }
 
     public static void testVarargsPrimitiveArray() throws Throwable {
@@ -171,6 +174,8 @@ public class VarargsArrayTest {
             if (elem == null) {
                 if (elemType == String.class)
                     arg = "#"+arg;
+                if (elemType  == CustomClass.class)
+                    arg = new CustomClass();
                 arg = elemType.cast(arg);  // just to make sure
             } else {
                 switch (elem) {

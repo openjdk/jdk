@@ -49,8 +49,6 @@ TEST_VM(PSParallelCompact, print_generic_summary_data) {
   // end region.  The end region should not be printed because it
   // corresponds to the space after the end of the heap.
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(ParallelGCThreads);
   HeapWord* begin_heap =
     (HeapWord*) heap->old_gen()->virtual_space()->low_boundary();
   HeapWord* end_heap =

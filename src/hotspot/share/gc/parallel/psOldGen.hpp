@@ -79,8 +79,8 @@ class PSOldGen : public CHeapObj<mtGC> {
     return res;
   }
 
-  HeapWord* expand_and_cas_allocate(size_t word_size);
-  void expand(size_t bytes);
+  bool expand_for_allocate(size_t word_size);
+  bool expand(size_t bytes);
   bool expand_by(size_t bytes);
   bool expand_to_reserved();
 
@@ -135,8 +135,12 @@ class PSOldGen : public CHeapObj<mtGC> {
   void resize(size_t desired_free_space);
 
   HeapWord* allocate(size_t word_size) {
-    HeapWord* res = cas_allocate_noexpand(word_size);
-    return (res == NULL) ? expand_and_cas_allocate(word_size) : res;
+    HeapWord* res;
+    do {
+      res = cas_allocate_noexpand(word_size);
+      // Retry failed allocation if expand succeeds.
+    } while ((res == nullptr) && expand_for_allocate(word_size));
+    return res;
   }
 
   // Iteration.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,11 @@ public class ModuleStressGC {
             throw new RuntimeException("Test failed to compile module jdk.translet");
         }
 
-        // Sanity check that the test, jdk.test/test/MainGC.java,
-        // correctly walks module jdk.test's reads list and package
-        // test's, defined to module jdk.translet, export list at
-        // GC safepoints.
+        // Check that jdk.test/test.MainGC walks module jdk.test's
+        // reads list and walks the exports list for package test,
+        // defined in module jdk.test, during a GC.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx128m",
             "-Xlog:module=trace",
             "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.MainGC");

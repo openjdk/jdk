@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
@@ -47,23 +48,6 @@
 // the entry in the constant pool is a klass object and not a Symbol*.
 
 class SymbolHashMap;
-
-class CPSlot {
- friend class ConstantPool;
-  intptr_t _ptr;
-  enum TagBits  {_pseudo_bit = 1};
- public:
-
-  CPSlot(intptr_t ptr): _ptr(ptr) {}
-  CPSlot(Symbol* ptr, int tag_bits = 0): _ptr((intptr_t)ptr | tag_bits) {}
-
-  intptr_t value()   { return _ptr; }
-  bool is_pseudo_string() { return (_ptr & _pseudo_bit) != 0; }
-
-  Symbol* get_symbol() {
-    return (Symbol*)(_ptr & ~_pseudo_bit);
-  }
-};
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
@@ -152,13 +136,6 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  CPSlot slot_at(int which) const;
-
-  void slot_at_put(int which, CPSlot s) const {
-    assert(is_within_bounds(which), "index out of bounds");
-    assert(s.value() != 0, "Caught something");
-    *(intptr_t*)&base()[which] = s.value();
-  }
   intptr_t* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     return (intptr_t*) &base()[which];
@@ -310,8 +287,7 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = name_index;
   }
 
-  // Unsafe anonymous class support:
-  void klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name);
+  // Hidden class support:
   void klass_at_put(int class_index, Klass* k);
 
   void unresolved_klass_at_put(int which, int name_index, int resolved_klass_index) {
@@ -344,8 +320,12 @@ class ConstantPool : public Metadata {
   }
 
   void unresolved_string_at_put(int which, Symbol* s) {
-    release_tag_at_put(which, JVM_CONSTANT_String);
-    slot_at_put(which, CPSlot(s));
+    assert(s->refcount() != 0, "should have nonzero refcount");
+    // Note that release_tag_at_put is not needed here because this is called only
+    // when constructing a ConstantPool in a single thread, with no possibility
+    // of concurrent access.
+    tag_at_put(which, JVM_CONSTANT_String);
+    *symbol_at_addr(which) = s;
   }
 
   void int_at_put(int which, jint i) {
@@ -418,13 +398,7 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, true, THREAD);
-  }
-
-  // Version of klass_at that doesn't save the resolution error, called during deopt
-  Klass* klass_at_ignore_error(int which, TRAPS) {
-    constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, false, THREAD);
+    return klass_at_impl(h_this, which, THREAD);
   }
 
   CPKlassSlot klass_slot_at(int which) const {
@@ -491,26 +465,6 @@ class ConstantPool : public Metadata {
   // Version that can be used before string oop array is created.
   oop uncached_string_at(int which, TRAPS);
 
-  // A "pseudo-string" is an non-string oop that has found its way into
-  // a String entry.
-  // This can happen if the user patches a live
-  // object into a CONSTANT_String entry of an unsafe anonymous class.
-  // Methods internally created for method handles may also
-  // use pseudo-strings to link themselves to related metaobjects.
-
-  bool is_pseudo_string_at(int which);
-
-  oop pseudo_string_at(int which, int obj_index);
-
-  oop pseudo_string_at(int which);
-
-  void pseudo_string_at_put(int which, int obj_index, oop x) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = unresolved_string_at(which);
-    slot_at_put(which, CPSlot(sym, CPSlot::_pseudo_bit));
-    string_at_put(which, obj_index, x);    // this works just fine
-  }
-
   // only called when we are sure a string entry is already resolved (via an
   // earlier string_at call.
   oop resolved_string_at(int which) {
@@ -524,8 +478,7 @@ class ConstantPool : public Metadata {
 
   Symbol* unresolved_string_at(int which) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = slot_at(which).get_symbol();
-    return sym;
+    return *symbol_at_addr(which);
   }
 
   // Returns an UTF8 for a CONSTANT_String entry at a given index.
@@ -666,10 +619,10 @@ class ConstantPool : public Metadata {
   }
   // Compare a bootstrap specifier data in the operands arrays
   bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
-                          int bsms_attribute_index2, TRAPS);
+                          int bsms_attribute_index2);
   // Find a bootstrap specifier data in the operands array
   int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len, TRAPS);
+                            int operands_cur_len);
   // Resize the operands array with delta_len and delta_size
   void resize_operands(int delta_len, int delta_size, TRAPS);
   // Extend the operands array with the length and size of the ext_cp operands
@@ -739,7 +692,7 @@ class ConstantPool : public Metadata {
   }
 
   // CDS support
-  void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
@@ -860,9 +813,6 @@ class ConstantPool : public Metadata {
   Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
 
-  // patch JSR 292 resolved references after the class is linked.
-  void patch_resolved_references(GrowableArray<Handle>* cp_patches);
-
   Symbol* impl_name_ref_at(int which, bool uncached);
   Symbol* impl_signature_ref_at(int which, bool uncached);
 
@@ -886,8 +836,7 @@ class ConstantPool : public Metadata {
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which,
-                              bool save_resolution_error, TRAPS);
+  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which, TRAPS);
   static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
   static void trace_class_resolution(const constantPoolHandle& this_cp, Klass* k);
@@ -903,7 +852,6 @@ class ConstantPool : public Metadata {
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling
-  static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
@@ -911,15 +859,15 @@ class ConstantPool : public Metadata {
   static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
 
   // Merging ConstantPool* support:
-  bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2, TRAPS);
+  bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2);
   void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     copy_cp_to_impl(h_this, start_i, end_i, to_cp, to_i, THREAD);
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
-  static void copy_entry_to(const constantPoolHandle& from_cp, int from_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
+  static void copy_entry_to(const constantPoolHandle& from_cp, int from_i, const constantPoolHandle& to_cp, int to_i);
   static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
-  int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp, TRAPS);
+  int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
   void increment_and_save_version(int version) {
@@ -967,9 +915,9 @@ class ConstantPool : public Metadata {
 
 class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
  private:
-  unsigned int        _hash;   // 32-bit hash for item
   SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
   Symbol*             _symbol; // 1-st part of the mapping: symbol => value
+  unsigned int        _hash;   // 32-bit hash for item
   u2                  _value;  // 2-nd part of the mapping: symbol => value
 
  public:
@@ -986,7 +934,7 @@ class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
   void       set_value(u2 value)          { _value = value; }
 
   SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _hash(hash), _next(NULL), _symbol(symbol), _value(value) {}
+    : _next(NULL), _symbol(symbol), _hash(hash), _value(value) {}
 
 }; // End SymbolHashMapEntry class
 

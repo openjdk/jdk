@@ -51,22 +51,22 @@ public class LinkedBlockingQueue8Test extends JSR166TestCase {
      */
     public void testSpliterator_getComparator() {
         assertThrows(IllegalStateException.class,
-                     () -> new LinkedBlockingQueue().spliterator().getComparator());
+                     () -> new LinkedBlockingQueue<Item>().spliterator().getComparator());
     }
 
     /**
      * Spliterator characteristics are as advertised
      */
     public void testSpliterator_characteristics() {
-        LinkedBlockingQueue q = new LinkedBlockingQueue();
-        Spliterator s = q.spliterator();
+        LinkedBlockingQueue<Item> q = new LinkedBlockingQueue<>();
+        Spliterator<Item> s = q.spliterator();
         int characteristics = s.characteristics();
         int required = Spliterator.CONCURRENT
             | Spliterator.NONNULL
             | Spliterator.ORDERED;
-        assertEquals(required, characteristics & required);
+        mustEqual(required, characteristics & required);
         assertTrue(s.hasCharacteristics(required));
-        assertEquals(0, characteristics
+        mustEqual(0, characteristics
                      & (Spliterator.DISTINCT
                         | Spliterator.IMMUTABLE
                         | Spliterator.SORTED));

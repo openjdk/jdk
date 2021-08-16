@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ namespace metaspace {
 
 // Return a single chunk to the freelist and adjust accounting. No merge is attempted.
 void ChunkManager::return_chunk_simple_locked(Metachunk* c) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   DEBUG_ONLY(c->verify());
   _chunks.add(c);
   c->reset_used_words();
@@ -75,7 +75,7 @@ ChunkManager::ChunkManager(const char* name, VirtualSpaceList* space_list) :
 // The committed areas within the original chunk carry over to the resulting
 //  chunks.
 void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(c->is_free(), "chunk to be split must be free.");
   assert(c->level() < target_level, "Target level must be higher than current level.");
   assert(c->prev() == NULL && c->next() == NULL, "Chunk must be outside of any list.");
@@ -121,7 +121,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   assert(preferred_level <= max_level, "Sanity");
   assert(chunklevel::level_fitting_word_size(min_committed_words) >= max_level, "Sanity");
 
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
   DEBUG_ONLY(verify_locked();)
   DEBUG_ONLY(chunklevel::check_valid_level(max_level);)
@@ -232,13 +232,13 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
 // !! Note: this may invalidate the chunk. Do not access the chunk after
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return_chunk_locked(c);
 }
 
 // See return_chunk().
 void ChunkManager::return_chunk_locked(Metachunk* c) {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   UL2(debug, ": returning chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
   DEBUG_ONLY(c->verify();)
   assert(contains_chunk(c) == false, "A chunk to be added to the freelist must not be in the freelist already.");
@@ -286,7 +286,7 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
 //
 // On success, true is returned, false otherwise.
 bool ChunkManager::attempt_enlarge_chunk(Metachunk* c) {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
 }
 
@@ -311,7 +311,7 @@ static void print_word_size_delta(outputStream* st, size_t word_size_1, size_t w
 }
 
 void ChunkManager::purge() {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   UL(info, ": reclaiming memory...");
 
   const size_t reserved_before = _vslist->reserved_words();
@@ -384,18 +384,18 @@ ChunkManager* ChunkManager::chunkmanager_nonclass() {
 
 // Calculates the total number of committed words over all chunks. Walks chunks.
 size_t ChunkManager::calc_committed_word_size() const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return calc_committed_word_size_locked();
 }
 
 size_t ChunkManager::calc_committed_word_size_locked() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   return _chunks.calc_committed_word_size();
 }
 
 // Update statistics.
 void ChunkManager::add_to_statistics(ChunkManagerStats* out) const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   for (chunklevel_t l = chunklevel::ROOT_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
     out->_num_chunks[l] += _chunks.num_chunks_at_level(l);
     out->_committed_word_size[l] += _chunks.calc_committed_word_size_at_level(l);
@@ -406,12 +406,12 @@ void ChunkManager::add_to_statistics(ChunkManagerStats* out) const {
 #ifdef ASSERT
 
 void ChunkManager::verify() const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   verify_locked();
 }
 
 void ChunkManager::verify_locked() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(_vslist != NULL, "No vslist");
   _chunks.verify();
 }
@@ -423,12 +423,12 @@ bool ChunkManager::contains_chunk(Metachunk* c) const {
 #endif // ASSERT
 
 void ChunkManager::print_on(outputStream* st) const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   print_on_locked(st);
 }
 
 void ChunkManager::print_on_locked(outputStream* st) const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   st->print_cr("cm %s: %d chunks, total word size: " SIZE_FORMAT ".", _name,
                total_num_chunks(), total_word_size());
   _chunks.print_on(st);

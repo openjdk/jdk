@@ -1,7 +1,0 @@
-grant {
-    permission java.lang.RuntimePermission "selectorProvider";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
-    permission java.util.PropertyPermission "test.java.rmi.testlibrary.RMIDSelectorProvider.port", "read";
-    permission java.util.PropertyPermission "test.java.rmi.testlibrary.RMIDSelectorProvider.timeout", "read";
-    permission java.net.SocketPermission "*:1024-", "listen,resolve,connect,accept";
-};

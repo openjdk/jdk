@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,31 +39,42 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * P11 AEAD Cipher implementation class. This class currently supports
- * AES with GCM mode.
+ * AES cipher in GCM mode and CHACHA20-POLY1305 cipher.
  *
  * Note that AEAD modes do not use padding, so this class does not have
- * its own padding impl. In addition, NSS CKM_AES_GCM only supports single-part
- * encryption/decryption, thus the current impl uses PKCS#11 C_Encrypt/C_Decrypt
- * calls and buffers data until doFinal is called.
- *
- * Note that PKCS#11 standard currently only supports GCM and CCM AEAD modes.
- * There are no provisions for other AEAD modes yet.
+ * its own padding impl. In addition, some vendors such as NSS may not support
+ * multi-part encryption/decryption for AEAD cipher algorithms, thus the
+ * current impl uses PKCS#11 C_Encrypt/C_Decrypt calls and buffers data until
+ * doFinal is called.
  *
  * @since   13
  */
 final class P11AEADCipher extends CipherSpi {
 
-    // mode constant for GCM mode
-    private static final int MODE_GCM = 10;
+    // supported AEAD algorithms/transformations
+    private enum Transformation {
+        AES_GCM("AES", "GCM", "NOPADDING", 16, 16),
+        CHACHA20_POLY1305("CHACHA20", "NONE", "NOPADDING", 12, 16);
 
-    // default constants for GCM
-    private static final int GCM_DEFAULT_TAG_LEN = 16;
-    private static final int GCM_DEFAULT_IV_LEN = 16;
+        final String keyAlgo;
+        final String mode;
+        final String padding;
+        final int defIvLen; // in bytes
+        final int defTagLen; // in bytes
 
-    private static final String ALGO = "AES";
+        Transformation(String keyAlgo, String mode, String padding,
+                int defIvLen, int defTagLen) {
+            this.keyAlgo = keyAlgo;
+            this.mode = mode;
+            this.padding = padding;
+            this.defIvLen = defIvLen;
+            this.defTagLen = defTagLen;
+        }
+    }
 
     // token instance
     private final Token token;
@@ -71,10 +82,10 @@ final class P11AEADCipher extends CipherSpi {
     // mechanism id
     private final long mechanism;
 
-    // mode, one of MODE_* above
-    private final int blockMode;
+    // type of this AEAD cipher, one of Transformation enum above
+    private final Transformation type;
 
-    // acceptable key size, -1 if more than 1 key sizes are accepted
+    // acceptable key size in bytes, -1 if more than 1 key sizes are accepted
     private final int fixedKeySize;
 
     // associated session, if any
@@ -111,99 +122,129 @@ final class P11AEADCipher extends CipherSpi {
         this.mechanism = mechanism;
 
         String[] algoParts = algorithm.split("/");
-        if (algoParts.length != 3) {
-            throw new ProviderException("Unsupported Transformation format: " +
-                    algorithm);
-        }
-        if (!algoParts[0].startsWith("AES")) {
-            throw new ProviderException("Only support AES for AEAD cipher mode");
-        }
-        int index = algoParts[0].indexOf('_');
-        if (index != -1) {
-            // should be well-formed since we specify what we support
-            fixedKeySize = Integer.parseInt(algoParts[0].substring(index+1)) >> 3;
+        if (algoParts[0].startsWith("AES")) {
+            // for AES_GCM, need 3 parts
+            if (algoParts.length != 3) {
+                throw new AssertionError("Invalid Transformation format: " +
+                        algorithm);
+            }
+            int index = algoParts[0].indexOf('_');
+            if (index != -1) {
+                // should be well-formed since we specify what we support
+                fixedKeySize = Integer.parseInt(algoParts[0].substring(index+1)) >> 3;
+            } else {
+                fixedKeySize = -1;
+            }
+            this.type = Transformation.AES_GCM;
+            engineSetMode(algoParts[1]);
+            try {
+                engineSetPadding(algoParts[2]);
+            } catch (NoSuchPaddingException e) {
+                throw new NoSuchAlgorithmException();
+            }
+        } else if (algoParts[0].equals("ChaCha20-Poly1305")) {
+            fixedKeySize = 32;
+            this.type = Transformation.CHACHA20_POLY1305;
+            if (algoParts.length > 3) {
+                throw new AssertionError(
+                        "Invalid Transformation format: " + algorithm);
+            } else {
+                if (algoParts.length > 1) {
+                    engineSetMode(algoParts[1]);
+                }
+                try {
+                    if (algoParts.length > 2) {
+                        engineSetPadding(algoParts[2]);
+                    }
+                } catch (NoSuchPaddingException e) {
+                    throw new NoSuchAlgorithmException();
+                }
+            }
         } else {
-            fixedKeySize = -1;
-        }
-        this.blockMode = parseMode(algoParts[1]);
-        if (!algoParts[2].equals("NoPadding")) {
-            throw new ProviderException("Only NoPadding is supported for AEAD cipher mode");
+            throw new AssertionError("Unsupported transformation " + algorithm);
         }
     }
 
+    @Override
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        // Disallow change of mode for now since currently it's explicitly
-        // defined in transformation strings
-        throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-    }
-
-    private int parseMode(String mode) throws NoSuchAlgorithmException {
-        mode = mode.toUpperCase(Locale.ENGLISH);
-        int result;
-        if (mode.equals("GCM")) {
-            result = MODE_GCM;
-        } else {
+        if (!mode.toUpperCase(Locale.ENGLISH).equals(type.mode)) {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
-        return result;
     }
 
     // see JCE spec
+    @Override
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
-        // Disallow change of padding for now since currently it's explicitly
-        // defined in transformation strings
-        throw new NoSuchPaddingException("Unsupported padding " + padding);
+        if (!padding.toUpperCase(Locale.ENGLISH).equals(type.padding)) {
+            throw new NoSuchPaddingException("Unsupported padding " + padding);
+        }
     }
 
     // see JCE spec
+    @Override
     protected int engineGetBlockSize() {
-        return 16; // constant; only AES is supported
+        return switch (type) {
+            case AES_GCM -> 16;
+            case CHACHA20_POLY1305 -> 0;
+            default -> throw new AssertionError("Unsupported type " + type);
+        };
     }
 
     // see JCE spec
+    @Override
     protected int engineGetOutputSize(int inputLen) {
         return doFinalLength(inputLen);
     }
 
     // see JCE spec
+    @Override
     protected byte[] engineGetIV() {
         return (iv == null) ? null : iv.clone();
     }
 
     // see JCE spec
     protected AlgorithmParameters engineGetParameters() {
-        if (encrypt && iv == null && tagLen == -1) {
-            switch (blockMode) {
-                case MODE_GCM:
-                    iv = new byte[GCM_DEFAULT_IV_LEN];
-                    tagLen = GCM_DEFAULT_TAG_LEN;
-                    break;
-                default:
-                    throw new ProviderException("Unsupported mode");
-            }
-            random.nextBytes(iv);
-        }
-        try {
-            AlgorithmParameterSpec spec;
-            String apAlgo;
-            switch (blockMode) {
-                case MODE_GCM:
-                    apAlgo = "GCM";
+        String apAlgo;
+        AlgorithmParameterSpec spec = null;
+        switch (type) {
+            case AES_GCM:
+                apAlgo = "GCM";
+                if (encrypt && iv == null && tagLen == -1) {
+                    iv = new byte[type.defIvLen];
+                    tagLen = type.defTagLen;
+                    random.nextBytes(iv);
+                }
+                if (iv != null) {
                     spec = new GCMParameterSpec(tagLen << 3, iv);
-                    break;
-                default:
-                    throw new ProviderException("Unsupported mode");
-            }
-            AlgorithmParameters params =
-                AlgorithmParameters.getInstance(apAlgo);
-            params.init(spec);
-            return params;
-        } catch (GeneralSecurityException e) {
-            // NoSuchAlgorithmException, NoSuchProviderException
-            // InvalidParameterSpecException
-            throw new ProviderException("Could not encode parameters", e);
+                }
+            break;
+            case CHACHA20_POLY1305:
+                if (encrypt && iv == null) {
+                    iv = new byte[type.defIvLen];
+                    random.nextBytes(iv);
+                }
+                apAlgo = "ChaCha20-Poly1305";
+                if (iv != null) {
+                    spec = new IvParameterSpec(iv);
+                }
+            break;
+            default:
+                throw new AssertionError("Unsupported type " + type);
         }
+        if (spec != null) {
+            try {
+                AlgorithmParameters params =
+                    AlgorithmParameters.getInstance(apAlgo);
+                params.init(spec);
+                return params;
+            } catch (GeneralSecurityException e) {
+                // NoSuchAlgorithmException, NoSuchProviderException
+                // InvalidParameterSpecException
+                throw new ProviderException("Could not encode parameters", e);
+            }
+        }
+        return null;
     }
 
     // see JCE spec
@@ -231,20 +272,30 @@ final class P11AEADCipher extends CipherSpi {
         updateCalled = false;
         byte[] ivValue = null;
         int tagLen = -1;
-        if (params != null) {
-            switch (blockMode) {
-            case MODE_GCM:
-                if (!(params instanceof GCMParameterSpec)) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Only GCMParameterSpec is supported");
+        switch (type) {
+            case AES_GCM:
+                if (params != null) {
+                    if (!(params instanceof GCMParameterSpec)) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Only GCMParameterSpec is supported");
+                    }
+                    ivValue = ((GCMParameterSpec) params).getIV();
+                    tagLen = ((GCMParameterSpec) params).getTLen() >> 3;
                 }
-                ivValue = ((GCMParameterSpec) params).getIV();
-                tagLen = ((GCMParameterSpec) params).getTLen() >> 3;
+            break;
+            case CHACHA20_POLY1305:
+                if (params != null) {
+                    if (!(params instanceof IvParameterSpec)) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Only IvParameterSpec is supported");
+                    }
+                    ivValue = ((IvParameterSpec) params).getIV();
+                    tagLen = type.defTagLen;
+                }
             break;
             default:
-                throw new ProviderException("Unsupported mode");
-            }
-        }
+                throw new AssertionError("Unsupported type " + type);
+        };
         implInit(opmode, key, ivValue, tagLen, sr);
     }
 
@@ -260,13 +311,17 @@ final class P11AEADCipher extends CipherSpi {
         try {
             AlgorithmParameterSpec paramSpec = null;
             if (params != null) {
-                switch (blockMode) {
-                    case MODE_GCM:
+                switch (type) {
+                    case AES_GCM:
                         paramSpec =
                             params.getParameterSpec(GCMParameterSpec.class);
                         break;
+                    case CHACHA20_POLY1305:
+                        paramSpec =
+                            params.getParameterSpec(IvParameterSpec.class);
+                        break;
                     default:
-                        throw new ProviderException("Unsupported mode");
+                        throw new AssertionError("Unsupported type " + type);
                 }
             }
             engineInit(opmode, key, paramSpec, sr);
@@ -285,40 +340,51 @@ final class P11AEADCipher extends CipherSpi {
                             key.getEncoded().length) != fixedKeySize) {
             throw new InvalidKeyException("Key size is invalid");
         }
-        P11Key newKey = P11SecretKeyFactory.convertKey(token, key, ALGO);
+        P11Key newKey = P11SecretKeyFactory.convertKey(token, key,
+                type.keyAlgo);
         switch (opmode) {
             case Cipher.ENCRYPT_MODE:
                 encrypt = true;
                 requireReinit = Arrays.equals(iv, lastEncIv) &&
                         (newKey == lastEncKey);
                 if (requireReinit) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Cannot reuse iv for GCM encryption");
+                    throw new InvalidAlgorithmParameterException(
+                            "Cannot reuse the same key and iv pair");
                 }
                 break;
             case Cipher.DECRYPT_MODE:
                 encrypt = false;
                 requireReinit = false;
                 break;
-            default:
-                throw new InvalidAlgorithmParameterException
+            case Cipher.WRAP_MODE:
+            case Cipher.UNWRAP_MODE:
+                throw new UnsupportedOperationException
                         ("Unsupported mode: " + opmode);
+            default:
+                // should never happen; checked by Cipher.init()
+                throw new AssertionError("Unknown mode: " + opmode);
         }
 
         // decryption without parameters is checked in all engineInit() calls
         if (sr != null) {
             this.random = sr;
         }
+
         if (iv == null && tagLen == -1) {
             // generate default values
-            switch (blockMode) {
-                case MODE_GCM:
-                    iv = new byte[GCM_DEFAULT_IV_LEN];
+            switch (type) {
+                case AES_GCM:
+                    iv = new byte[type.defIvLen];
                     this.random.nextBytes(iv);
-                    tagLen = GCM_DEFAULT_TAG_LEN;
+                    tagLen = type.defTagLen;
+                    break;
+                case CHACHA20_POLY1305:
+                    iv = new byte[type.defIvLen];
+                    this.random.nextBytes(iv);
+                    tagLen = type.defTagLen;
                     break;
                 default:
-                    throw new ProviderException("Unsupported mode");
+                    throw new AssertionError("Unsupported type " + type);
             }
         }
         this.iv = iv;
@@ -350,6 +416,13 @@ final class P11AEADCipher extends CipherSpi {
                         0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (encrypt) {
                 throw new ProviderException("Cancel failed", e);
             }
@@ -375,7 +448,7 @@ final class P11AEADCipher extends CipherSpi {
         }
         if (requireReinit) {
             throw new IllegalStateException
-                ("Must use either different key or iv for GCM encryption");
+                ("Must use either different key or iv");
         }
 
         token.ensureValid();
@@ -385,13 +458,17 @@ final class P11AEADCipher extends CipherSpi {
         long p11KeyID = p11Key.getKeyID();
         try {
             CK_MECHANISM mechWithParams;
-            switch (blockMode) {
-                case MODE_GCM:
+            switch (type) {
+                case AES_GCM:
                     mechWithParams = new CK_MECHANISM(mechanism,
                         new CK_GCM_PARAMS(tagLen << 3, iv, aad));
                     break;
+                case CHACHA20_POLY1305:
+                    mechWithParams = new CK_MECHANISM(mechanism,
+                        new CK_SALSA20_CHACHA20_POLY1305_PARAMS(iv, aad));
+                    break;
                 default:
-                    throw new ProviderException("Unsupported mode: " + blockMode);
+                    throw new AssertionError("Unsupported type: " + type);
             }
             if (session == null) {
                 session = token.getOpSession();
@@ -424,10 +501,13 @@ final class P11AEADCipher extends CipherSpi {
         if (encrypt) {
             result += tagLen;
         } else {
-            // PKCS11Exception: CKR_BUFFER_TOO_SMALL
-            //result -= tagLen;
+            // In earlier NSS versions, AES_GCM would report
+            // CKR_BUFFER_TOO_SMALL error if minus tagLen
+            if (type == Transformation.CHACHA20_POLY1305) {
+                result -= tagLen;
+            }
         }
-        return result;
+        return (result > 0? result : 0);
     }
 
     // reset the states to the pre-initialized values
@@ -485,7 +565,7 @@ final class P11AEADCipher extends CipherSpi {
         }
         if (requireReinit) {
             throw new IllegalStateException
-                ("Must use either different key or iv for GCM encryption");
+                ("Must use either different key or iv for encryption");
         }
         if (p11Key == null) {
             throw new IllegalStateException("Need to initialize Cipher first");
@@ -588,6 +668,7 @@ final class P11AEADCipher extends CipherSpi {
         if (outLen < requiredOutLen) {
             throw new ShortBufferException();
         }
+
         boolean doCancel = true;
         try {
             ensureInitialized();
@@ -616,6 +697,12 @@ final class P11AEADCipher extends CipherSpi {
             }
             return k;
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are not expected here because the output length
+            // is checked in the OpenJDK side before making the PKCS#11 call.
+            // Thus, doCancel can safely be 'false'.
             doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
@@ -699,9 +786,16 @@ final class P11AEADCipher extends CipherSpi {
                         outAddr, outArray, outOfs, outLen);
                 doCancel = false;
             }
+            inBuffer.position(inBuffer.limit());
             outBuffer.position(outBuffer.position() + k);
             return k;
         } catch (PKCS11Exception e) {
+            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are not expected here because the output length
+            // is checked in the OpenJDK side before making the PKCS#11 call.
+            // Thus, doCancel can safely be 'false'.
             doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
@@ -729,8 +823,8 @@ final class P11AEADCipher extends CipherSpi {
         } else if (errorCode == CKR_ENCRYPTED_DATA_INVALID ||
                 // Solaris-specific
                 errorCode == CKR_GENERAL_ERROR) {
-            throw (BadPaddingException)
-                    (new BadPaddingException(e.toString()).initCause(e));
+            throw (AEADBadTagException)
+                    (new AEADBadTagException(e.toString()).initCause(e));
         }
     }
 
@@ -753,7 +847,7 @@ final class P11AEADCipher extends CipherSpi {
     @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         int n = P11SecretKeyFactory.convertKey
-                (token, key, ALGO).length();
+                (token, key, type.keyAlgo).length();
         return n;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,8 @@ public final class SNIHostName extends SNIServerName {
                     .onUnmappableCharacter(CodingErrorAction.REPORT);
 
             this.hostname = IDN.toASCII(
-                    decoder.decode(ByteBuffer.wrap(encoded)).toString());
+                    decoder.decode(ByteBuffer.wrap(encoded)).toString(),
+                    IDN.USE_STD3_ASCII_RULES);
         } catch (RuntimeException | CharacterCodingException e) {
             throw new IllegalArgumentException(
                         "The encoded server name value is invalid", e);

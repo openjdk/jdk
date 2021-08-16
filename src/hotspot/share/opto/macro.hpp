@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,14 +82,7 @@ public:
 
 private:
   // projections extracted from a call node
-  ProjNode *_fallthroughproj;
-  ProjNode *_fallthroughcatchproj;
-  ProjNode *_ioproj_fallthrough;
-  ProjNode *_ioproj_catchall;
-  ProjNode *_catchallcatchproj;
-  ProjNode *_memproj_fallthrough;
-  ProjNode *_memproj_catchall;
-  ProjNode *_resproj;
+  CallProjections _callprojs;
 
   // Additional data collected during macro expansion
   bool _has_locks;
@@ -199,7 +192,6 @@ private:
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,
                            Node* parm2);
-  void extract_call_projections(CallNode *call);
 
   Node* initialize_object(AllocateNode* alloc,
                           Node* control, Node* rawmem, Node* object,

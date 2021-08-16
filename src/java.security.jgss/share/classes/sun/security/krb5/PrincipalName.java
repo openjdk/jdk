@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,7 +534,6 @@ public class PrincipalName implements Cloneable {
     public byte[][] toByteArray() {
         byte[][] result = new byte[nameStrings.length][];
         for (int i = 0; i < nameStrings.length; i++) {
-            result[i] = new byte[nameStrings[i].length()];
             result[i] = nameStrings[i].getBytes();
         }
         return result;

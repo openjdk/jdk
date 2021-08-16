@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.jca;
 
 import java.security.Provider;
+import sun.security.x509.AlgorithmId;
 
 /**
  * Collection of methods to get and set provider list. Also includes
@@ -150,6 +151,17 @@ public class Providers {
         } else {
             changeThreadProviderList(newList);
         }
+        clearCachedValues();
+    }
+
+    /**
+     * Clears the cached provider-list-specific values. These values need to
+     * be re-generated whenever provider list is changed. The logic for
+     * generating them is in the respective classes.
+     */
+    private static void clearCachedValues() {
+        JCAUtil.clearDefSecureRandom();
+        AlgorithmId.clearAliasOidsTable();
     }
 
     /**

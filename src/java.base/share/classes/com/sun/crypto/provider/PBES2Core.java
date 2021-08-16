@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,18 +274,20 @@ abstract class PBES2Core extends CipherSpi {
             if (passwdBytes != null) Arrays.fill(passwdBytes, (byte)0x00);
         }
 
-        SecretKey s = null;
+        PBKDF2KeyImpl s;
 
         try {
-            s = kdf.engineGenerateSecret(pbeSpec);
-
+            s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
         } catch (InvalidKeySpecException ikse) {
             InvalidKeyException ike =
                 new InvalidKeyException("Cannot construct PBE key");
             ike.initCause(ikse);
             throw ike;
+        } finally {
+            pbeSpec.clearPassword();
         }
         byte[] derivedKey = s.getEncoded();
+        s.clearPassword();
         SecretKeySpec cipherKey = new SecretKeySpec(derivedKey, cipherAlgo);
 
         // initialize the underlying cipher

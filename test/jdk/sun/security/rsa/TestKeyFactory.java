@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4853305 8023980
+ * @bug 4853305 8023980 8254717
  * @summary Test KeyFactory of the new RSA provider
  * @author Andreas Sterbenz
  */
@@ -97,8 +97,7 @@ public class TestKeyFactory {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPriv;
+                return encodedPriv.clone();
             }
         };
         byte[] encodedPub = Base64.getDecoder().decode(PKCS1_PUB_STR);
@@ -113,8 +112,7 @@ public class TestKeyFactory {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPub;
+                return encodedPub.clone();
             }
         };
     }
@@ -206,10 +204,11 @@ public class TestKeyFactory {
         KeySpec rsaSpec2 = kf.getKeySpec(key, RSAPrivateKeySpec.class);
         PrivateKey key6 = kf.generatePrivate(rsaSpec2);
         testKey(key6, key6);
-        if (key instanceof RSAPrivateKey) {
-            KeySpec rsaSpec3 =
-                new RSAPrivateKeySpec(((RSAPrivateKey)key).getModulus(),
-                ((RSAPrivateKey)key).getPrivateExponent());
+        if (key instanceof RSAPrivateCrtKey) {
+            RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
+            KeySpec rsaSpec3 = new RSAPrivateCrtKeySpec(rsaKey.getModulus(),
+                    rsaKey.getPublicExponent(), rsaKey.getPrivateExponent(), rsaKey.getPrimeP(), rsaKey.getPrimeQ(),
+                    rsaKey.getPrimeExponentP(), rsaKey.getPrimeExponentQ(), rsaKey.getCrtCoefficient(), rsaKey.getParams());
             PrivateKey key7 = kf.generatePrivate(rsaSpec3);
             testKey(key6, key7);
         }

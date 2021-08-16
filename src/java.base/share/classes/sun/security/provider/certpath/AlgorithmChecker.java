@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.provider.certpath;
 
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
-import java.security.Timestamp;
-import java.security.cert.CertPathValidator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -53,14 +51,13 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 
-import sun.security.util.AnchorCertificates;
 import sun.security.util.ConstraintsParameters;
 import sun.security.util.Debug;
 import sun.security.util.DisabledAlgorithmConstraints;
 import sun.security.validator.Validator;
+import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CRLImpl;
-import sun.security.x509.AlgorithmId;
 
 /**
  * A {@code PKIXCertPathChecker} implementation to check whether a
@@ -78,10 +75,10 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
     private final AlgorithmConstraints constraints;
     private final PublicKey trustedPubKey;
-    private final Date pkixdate;
+    private final Date date;
     private PublicKey prevPubKey;
-    private final Timestamp jarTimestamp;
     private final String variant;
+    private TrustAnchor anchor;
 
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
@@ -94,95 +91,70 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             CryptoPrimitive.KEY_AGREEMENT));
 
     private static final DisabledAlgorithmConstraints
-        certPathDefaultConstraints = new DisabledAlgorithmConstraints(
-            DisabledAlgorithmConstraints.PROPERTY_CERTPATH_DISABLED_ALGS);
-
-    // If there is no "cacerts" keyword, then disable anchor checking
-    private static final boolean publicCALimits =
-            certPathDefaultConstraints.checkProperty("jdkCA");
-
-    // If anchor checking enabled, this will be true if the trust anchor
-    // has a match in the cacerts file
-    private boolean trustedMatch = false;
+        certPathDefaultConstraints =
+            DisabledAlgorithmConstraints.certPathConstraints();
 
     /**
-     * Create a new {@code AlgorithmChecker} with the given algorithm
-     * given {@code TrustAnchor} and {@code String} variant.
+     * Create a new {@code AlgorithmChecker} with the given
+     * {@code TrustAnchor} and {@code String} variant.
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
-     * @param variant is the Validator variants of the operation. A null value
+     * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor, String variant) {
-        this(anchor, certPathDefaultConstraints, null, null, variant);
+        this(anchor, certPathDefaultConstraints, null, variant);
     }
 
     /**
      * Create a new {@code AlgorithmChecker} with the given
-     * {@code AlgorithmConstraints}, {@code Timestamp}, and {@code String}
-     * variant.
+     * {@code AlgorithmConstraints} and {@code String} variant.
      *
      * Note that this constructor can initialize a variation of situations where
-     * the AlgorithmConstraints, Timestamp, or Variant maybe known.
+     * the AlgorithmConstraints or Variant maybe known.
      *
      * @param constraints the algorithm constraints (or null)
-     * @param jarTimestamp Timestamp passed for JAR timestamp constraint
-     *                     checking. Set to null if not applicable.
-     * @param variant is the Validator variants of the operation. A null value
+     * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
      */
-    public AlgorithmChecker(AlgorithmConstraints constraints,
-            Timestamp jarTimestamp, String variant) {
-        this(null, constraints, null, jarTimestamp, variant);
+    public AlgorithmChecker(AlgorithmConstraints constraints, String variant) {
+        this(null, constraints, null, variant);
     }
 
     /**
      * Create a new {@code AlgorithmChecker} with the
-     * given {@code TrustAnchor}, {@code AlgorithmConstraints},
-     * {@code Timestamp}, and {@code String} variant.
+     * given {@code TrustAnchor}, {@code AlgorithmConstraints}, {@code Date},
+     * and {@code String} variant.
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
      * @param constraints the algorithm constraints (or null)
-     * @param pkixdate The date specified by the PKIXParameters date.  If the
-     *                 PKIXParameters is null, the current date is used.  This
-     *                 should be null when jar files are being checked.
-     * @param jarTimestamp Timestamp passed for JAR timestamp constraint
-     *                     checking. Set to null if not applicable.
-     * @param variant is the Validator variants of the operation. A null value
+     * @param date the date specified by the PKIXParameters date, or the
+     *             JAR timestamp if jar files are being validated and the
+     *             JAR is timestamped. May be null if no timestamp or
+     *             PKIXParameter date is set.
+     * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor,
-            AlgorithmConstraints constraints, Date pkixdate,
-            Timestamp jarTimestamp, String variant) {
+            AlgorithmConstraints constraints, Date date, String variant) {
 
         if (anchor != null) {
             if (anchor.getTrustedCert() != null) {
                 this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
-                // Check for anchor certificate restrictions
-                trustedMatch = checkFingerprint(anchor.getTrustedCert());
-                if (trustedMatch && debug != null) {
-                    debug.println("trustedMatch = true");
-                }
             } else {
                 this.trustedPubKey = anchor.getCAPublicKey();
             }
+            this.anchor = anchor;
         } else {
             this.trustedPubKey = null;
-            if (debug != null) {
-                debug.println("TrustAnchor is null, trustedMatch is false.");
-            }
         }
 
         this.prevPubKey = this.trustedPubKey;
         this.constraints = (constraints == null ? certPathDefaultConstraints :
                 constraints);
-        // If we are checking jar files, set pkixdate the same as the timestamp
-        // for certificate checking
-        this.pkixdate = (jarTimestamp != null ? jarTimestamp.getTimestamp() :
-                pkixdate);
-        this.jarTimestamp = jarTimestamp;
+        this.date = date;
         this.variant = (variant == null ? Validator.VAR_GENERIC : variant);
     }
 
@@ -194,24 +166,11 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *     certificate
      * @param pkixdate Date the constraints are checked against. The value is
      *             either the PKIXParameters date or null for the current date.
-     * @param variant is the Validator variants of the operation. A null value
+     * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor, Date pkixdate, String variant) {
-        this(anchor, certPathDefaultConstraints, pkixdate, null, variant);
-    }
-
-    // Check this 'cert' for restrictions in the AnchorCertificates
-    // trusted certificates list
-    private static boolean checkFingerprint(X509Certificate cert) {
-        if (!publicCALimits) {
-            return false;
-        }
-
-        if (debug != null) {
-            debug.println("AlgorithmChecker.contains: " + cert.getSigAlgName());
-        }
-        return AnchorCertificates.contains(cert);
+        this(anchor, certPathDefaultConstraints, pkixdate, variant);
     }
 
     @Override
@@ -318,18 +277,19 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         }
 
         ConstraintsParameters cp =
-                new ConstraintsParameters((X509Certificate)cert,
-                        trustedMatch, pkixdate, jarTimestamp, variant);
+            new CertPathConstraintsParameters(x509Cert, variant,
+                    anchor, date);
 
         // Check against local constraints if it is DisabledAlgorithmConstraints
         if (constraints instanceof DisabledAlgorithmConstraints) {
-            ((DisabledAlgorithmConstraints)constraints).permits(currSigAlg, cp);
+            ((DisabledAlgorithmConstraints)constraints).permits(currSigAlg,
+                currSigAlgParams, cp);
             // DisabledAlgorithmsConstraints does not check primitives, so key
             // additional key check.
 
         } else {
             // Perform the default constraints checking anyway.
-            certPathDefaultConstraints.permits(currSigAlg, cp);
+            certPathDefaultConstraints.permits(currSigAlg, currSigAlgParams, cp);
             // Call locally set constraints to check key with primitives.
             if (!constraints.permits(primitives, currPubKey)) {
                 throw new CertPathValidatorException(
@@ -408,14 +368,10 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             // Don't bother to change the trustedPubKey.
             if (anchor.getTrustedCert() != null) {
                 prevPubKey = anchor.getTrustedCert().getPublicKey();
-                // Check for anchor certificate restrictions
-                trustedMatch = checkFingerprint(anchor.getTrustedCert());
-                if (trustedMatch && debug != null) {
-                    debug.println("trustedMatch = true");
-                }
             } else {
                 prevPubKey = anchor.getCAPublicKey();
             }
+            this.anchor = anchor;
         }
     }
 
@@ -424,11 +380,12 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *
      * @param key the public key to verify the CRL signature
      * @param crl the target CRL
-     * @param variant is the Validator variants of the operation. A null value
+     * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
+     * @param anchor the trust anchor selected to validate the CRL issuer
      */
-    static void check(PublicKey key, X509CRL crl, String variant)
-                        throws CertPathValidatorException {
+    static void check(PublicKey key, X509CRL crl, String variant,
+                      TrustAnchor anchor) throws CertPathValidatorException {
 
         X509CRLImpl x509CRLImpl = null;
         try {
@@ -438,7 +395,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         }
 
         AlgorithmId algorithmId = x509CRLImpl.getSigAlgId();
-        check(key, algorithmId, variant);
+        check(key, algorithmId, variant, anchor);
     }
 
     /**
@@ -446,16 +403,16 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *
      * @param key the public key to verify the CRL signature
      * @param algorithmId signature algorithm Algorithm ID
-     * @param variant is the Validator variants of the operation. A null value
-     *                passed will set it to Validator.GENERIC.
+     * @param variant the Validator variant of the operation. A null
+     *                value passed will set it to Validator.GENERIC.
+     * @param anchor the trust anchor selected to validate the public key
      */
-    static void check(PublicKey key, AlgorithmId algorithmId, String variant)
-                        throws CertPathValidatorException {
-        String sigAlgName = algorithmId.getName();
-        AlgorithmParameters sigAlgParams = algorithmId.getParameters();
+    static void check(PublicKey key, AlgorithmId algorithmId, String variant,
+                      TrustAnchor anchor) throws CertPathValidatorException {
 
-        certPathDefaultConstraints.permits(new ConstraintsParameters(
-                sigAlgName, sigAlgParams, key, variant));
+        certPathDefaultConstraints.permits(algorithmId.getName(),
+            algorithmId.getParameters(),
+            new CertPathConstraintsParameters(key, variant, anchor));
     }
 }
 

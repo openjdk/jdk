@@ -28,8 +28,10 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
@@ -316,7 +318,11 @@ enum reg_save_layout {
 // expensive.  The deopt blob is the only thing which needs to
 // describe FPU registers.  In all other cases it should be sufficient
 // to simply save their current value.
-
+//
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
                                 bool save_fpu_registers = true) {
 
@@ -416,6 +422,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   return map;
 }
+PRAGMA_DIAG_POP
 
 #define __ this->
 
@@ -442,7 +449,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
 
 #ifdef ASSERT
       Label ok;
-      __ cmpw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::fpu_cntrl_wrd_std());
+      __ cmpw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::x86::fpu_cntrl_wrd_std());
       __ jccb(Assembler::equal, ok);
       __ stop("corrupted control word detected");
       __ bind(ok);
@@ -452,7 +459,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
       // since fstp_d can cause FPU stack underflow exceptions.  Write it
       // into the on stack copy and then reload that to make sure that the
       // current and future values are correct.
-      __ movw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::fpu_cntrl_wrd_std());
+      __ movw(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size), StubRoutines::x86::fpu_cntrl_wrd_std());
       __ frstor(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size));
 
       // Save the FPU registers in de-opt-able form
@@ -720,12 +727,12 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   default:  ShouldNotReachHere();
   }
 
-#if !defined(_LP64) && defined(TIERED)
-  if (UseSSE < 2) {
+#if !defined(_LP64) && defined(COMPILER2)
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
     // C2 can leave the fpu stack dirty
     __ empty_FPU_stack();
   }
-#endif // !_LP64 && TIERED
+#endif // !_LP64 && COMPILER2
 
   // verify that only rax, and rdx is valid at this time
   __ invalidate_registers(false, true, true, false, true, true);

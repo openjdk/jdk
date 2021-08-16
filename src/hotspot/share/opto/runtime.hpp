@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
@@ -63,7 +62,6 @@ public:
     NoTag,
     LockCounter,
     EliminatedLockCounter,
-    BiasedLockingCounter,
     RTMLockingCounter
   };
 
@@ -100,18 +98,6 @@ private:
 
 };
 
-class BiasedLockingNamedCounter : public NamedCounter {
- private:
-  BiasedLockingCounters _counters;
-
- public:
-  BiasedLockingNamedCounter(const char *n) :
-    NamedCounter(n, BiasedLockingCounter), _counters() {}
-
-  BiasedLockingCounters* counters() { return &_counters; }
-};
-
-
 class RTMLockingNamedCounter : public NamedCounter {
  private:
  RTMLockingCounters _counters;
@@ -130,7 +116,7 @@ class OptoRuntime : public AllStatic {
 
  private:
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char *name, int is_fancy_jump, bool pass_tls, bool save_arguments, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   // References to generated stubs
   static address _new_instance_Java;
@@ -155,27 +141,23 @@ class OptoRuntime : public AllStatic {
   // =================================
 
   // Allocate storage for a Java instance.
-  static void new_instance_C(Klass* instance_klass, JavaThread *thread);
+  static void new_instance_C(Klass* instance_klass, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
-  static void new_array_C(Klass* array_klass, int len, JavaThread *thread);
-  static void new_array_nozero_C(Klass* array_klass, int len, JavaThread *thread);
+  static void new_array_C(Klass* array_klass, int len, JavaThread* current);
+  static void new_array_nozero_C(Klass* array_klass, int len, JavaThread* current);
 
   // Allocate storage for a multi-dimensional arrays
   // Note: needs to be fixed for arbitrary number of dimensions
-  static void multianewarray2_C(Klass* klass, int len1, int len2, JavaThread *thread);
-  static void multianewarray3_C(Klass* klass, int len1, int len2, int len3, JavaThread *thread);
-  static void multianewarray4_C(Klass* klass, int len1, int len2, int len3, int len4, JavaThread *thread);
-  static void multianewarray5_C(Klass* klass, int len1, int len2, int len3, int len4, int len5, JavaThread *thread);
-  static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread *thread);
+  static void multianewarray2_C(Klass* klass, int len1, int len2, JavaThread* current);
+  static void multianewarray3_C(Klass* klass, int len1, int len2, int len3, JavaThread* current);
+  static void multianewarray4_C(Klass* klass, int len1, int len2, int len3, int len4, JavaThread* current);
+  static void multianewarray5_C(Klass* klass, int len1, int len2, int len3, int len4, int len5, JavaThread* current);
+  static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
 
 public:
-  // Slow-path Locking and Unlocking
-  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-  static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
-
-  static void monitor_notify_C(oopDesc* obj, JavaThread* thread);
-  static void monitor_notifyAll_C(oopDesc* obj, JavaThread* thread);
+  static void monitor_notify_C(oopDesc* obj, JavaThread* current);
+  static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
 
 private:
 
@@ -183,8 +165,8 @@ private:
   static void throw_null_exception_C(JavaThread* thread);
 
   // Exception handling
-  static address handle_exception_C       (JavaThread* thread);
-  static address handle_exception_C_helper(JavaThread* thread, nmethod*& nm);
+  static address handle_exception_C       (JavaThread* current);
+  static address handle_exception_C_helper(JavaThread* current, nmethod*& nm);
   static address rethrow_C                (oopDesc* exception, JavaThread *thread, address return_pc );
   static void deoptimize_caller_frame     (JavaThread *thread);
   static void deoptimize_caller_frame     (JavaThread *thread, bool doit);
@@ -196,7 +178,7 @@ private:
   static ExceptionBlob*       _exception_blob;
   static void generate_exception_blob();
 
-  static void register_finalizer(oopDesc* obj, JavaThread* thread);
+  static void register_finalizer(oopDesc* obj, JavaThread* current);
 
  public:
 
@@ -256,6 +238,7 @@ private:
   static const TypeFunc* rethrow_Type();
   static const TypeFunc* Math_D_D_Type();  // sin,cos & friends
   static const TypeFunc* Math_DD_D_Type(); // mod,pow & friends
+  static const TypeFunc* Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type);
   static const TypeFunc* modf_Type();
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
@@ -302,15 +285,9 @@ private:
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* osr_end_Type();
 
-  // leaf on stack replacement interpreter accessor types
-  static const TypeFunc* fetch_int_Type();
-  static const TypeFunc* fetch_long_Type();
-  static const TypeFunc* fetch_float_Type();
-  static const TypeFunc* fetch_double_Type();
-  static const TypeFunc* fetch_oop_Type();
-  static const TypeFunc* fetch_monitor_Type();
-
   static const TypeFunc* register_finalizer_Type();
+
+  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

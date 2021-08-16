@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class JavacElements implements Elements {
         enter = Enter.instance(context);
         resolve = Resolve.instance(context);
         JavacTask t = context.get(JavacTask.class);
-        javacTaskImpl = t instanceof JavacTaskImpl ? (JavacTaskImpl) t : null;
+        javacTaskImpl = t instanceof JavacTaskImpl taskImpl ? taskImpl : null;
         log = Log.instance(context);
         Source source = Source.instance(context);
         allowModules = Feature.MODULES.allowedInSource(source);
@@ -571,6 +571,12 @@ public class JavacElements implements Elements {
             }
         }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public TypeElement getOutermostTypeElement(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        return sym.outermostClass();
+    }
+
     /**
      * Returns all annotations of an element, whether
      * inherited or directly present.
@@ -713,6 +719,12 @@ public class JavacElements implements Elements {
             TypeSymbol tsym = cast(TypeSymbol.class, element);
             return types.isFunctionalInterface(tsym);
         }
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isAutomaticModule(ModuleElement module) {
+        ModuleSymbol msym = (ModuleSymbol) module;
+        return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
     }
 
     /**

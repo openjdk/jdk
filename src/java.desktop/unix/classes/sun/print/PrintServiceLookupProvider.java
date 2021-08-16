@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
 
-
-    static String osname;
+    @SuppressWarnings("removal")
+    static String osname = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name"));
 
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
@@ -96,6 +97,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to force the printing code to poll or not poll
          * for PrintServices.
          */
+        @SuppressWarnings("removal")
         String pollStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
 
@@ -111,6 +113,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to specify minimum refresh time (in seconds)
          * for polling PrintServices.  The default is 120.
          */
+        @SuppressWarnings("removal")
         String refreshTimeStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction(
                 "sun.java2d.print.minRefreshTime"));
@@ -125,15 +128,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         }
 
-        osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
-
         /* The system property "sun.java2d.print.aix.lpstat"
          * can be used to force the usage of 'lpstat -p' to enumerate all
          * printer queues. By default we use 'lsallq', because 'lpstat -p' can
          * take lots of time if thousands of printers are attached to a server.
          */
         if (isAIX()) {
+            @SuppressWarnings("removal")
             String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
 
@@ -221,6 +222,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -559,6 +561,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -622,6 +625,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -631,6 +635,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
 
     public synchronized PrintService getDefaultPrintService() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -864,6 +869,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return printerNames.toArray(new String[printerNames.size()]);
     }
 
+    @SuppressWarnings("removal")
     static String[] execCmd(final String command) {
         ArrayList<String> results = null;
         try {

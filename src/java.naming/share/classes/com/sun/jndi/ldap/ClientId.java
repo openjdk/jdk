@@ -54,20 +54,20 @@ import javax.net.SocketFactory;
  * @author Rosanna Lee
  */
 class ClientId {
-    final private int version;
-    final private String hostname;
-    final private int port;
-    final private String protocol;
-    final private Control[] bindCtls;
-    final private OutputStream trace;
-    final private String socketFactory;
-    final private int myHash;
-    final private int ctlHash;
+    private final int version;
+    private final String hostname;
+    private final int port;
+    private final String protocol;
+    private final Control[] bindCtls;
+    private final OutputStream trace;
+    private final String socketFactory;
+    private final int myHash;
+    private final int ctlHash;
 
     private SocketFactory factory = null;
     private Method sockComparator = null;
     private boolean isDefaultSockFactory = false;
-    final public static boolean debug = false;
+    public static final boolean debug = false;
 
     ClientId(int version, String hostname, int port, String protocol,
             Control[] bindCtls, OutputStream trace, String socketFactory) {

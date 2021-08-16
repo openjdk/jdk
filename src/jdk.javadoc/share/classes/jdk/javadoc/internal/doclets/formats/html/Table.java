@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -77,9 +76,9 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 public class Table extends Content {
     private final HtmlStyle tableStyle;
     private Content caption;
-    private Map<String, Predicate<Element>> tabMap;
-    private String defaultTab;
-    private Set<String> tabs;
+    private Map<Content, Predicate<Element>> tabMap;
+    private Content defaultTab;
+    private Set<Content> tabs;
     private HtmlStyle tabListStyle = HtmlStyle.tableTabs;
     private HtmlStyle activeTabStyle = HtmlStyle.activeTableTab;
     private HtmlStyle tabStyle = HtmlStyle.tableTab;
@@ -88,6 +87,7 @@ public class Table extends Content {
     private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
     private final List<Content> bodyRows;
     private HtmlId id;
+    private boolean alwaysShowDefaultTab = false;
 
     /**
      * Creates a builder for an HTML element representing a table.
@@ -118,28 +118,38 @@ public class Table extends Content {
      * predicate for the tab, and an element associated with each row.
      * Tabs will appear left-to-right in the order they are added.
      *
-     * @param name      the name of the tab
+     * @param label     the tab label
      * @param predicate the predicate
      * @return this object
      */
-    public Table addTab(String name, Predicate<Element> predicate) {
+    public Table addTab(Content label, Predicate<Element> predicate) {
         if (tabMap == null) {
             tabMap = new LinkedHashMap<>();     // preserves order that tabs are added
             tabs = new HashSet<>();             // order not significant
         }
-        tabMap.put(name, predicate);
+        tabMap.put(label, predicate);
         return this;
     }
 
     /**
-     * Sets the name for the default tab, which displays all the rows in the table.
+     * Sets the label for the default tab, which displays all the rows in the table.
      * This tab will appear first in the left-to-right list of displayed tabs.
      *
-     * @param name the name
+     * @param label the default tab label
      * @return this object
      */
-    public Table setDefaultTab(String name) {
-        defaultTab = name;
+    public Table setDefaultTab(Content label) {
+        defaultTab = label;
+        return this;
+    }
+
+    /**
+     * Sets whether to display the default tab even if tabs are empty or only contain a single tab.
+     * @param showDefaultTab true if default tab should always be shown
+     * @return this object
+     */
+    public Table setAlwaysShowDefaultTab(boolean showDefaultTab) {
+        this.alwaysShowDefaultTab = showDefaultTab;
         return this;
     }
 
@@ -266,7 +276,7 @@ public class Table extends Content {
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #addTab(String,Predicate) added}.
+     * {@link #addTab(Content, Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row
@@ -285,7 +295,7 @@ public class Table extends Content {
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #addTab(String,Predicate) added}.
+     * {@link #addTab(Content, Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row
@@ -296,6 +306,9 @@ public class Table extends Content {
         if (tabMap != null && element == null) {
             throw new NullPointerException();
         }
+        if (contents.size() != columnStyles.size()) {
+            throw new IllegalArgumentException("row content size does not match number of columns");
+        }
 
         Content row = new ContentBuilder();
 
@@ -304,20 +317,19 @@ public class Table extends Content {
             int rowIndex = bodyRows.size();
             rowStyle = stripedStyles.get(rowIndex % 2);
         }
-        Set<String> tabClasses = new HashSet<>(); // !! would be better as a List
+        List<String> tabClasses = new ArrayList<>();
         if (tabMap != null) {
-            // Construct a series of CSS classes to add to the cells of this row,
-            // such that there is a default value and a value corresponding to each
-            // tab whose predicate matches the element. The classes correspond to
-            // the equivalent ids. The classes are used to determine the cells to
-            // make visible when a tab is selected.
+            // Construct a series of values to add to the HTML 'class' attribute for the cells of
+            // this row, such that there is a default value and a value corresponding to each tab
+            // whose predicate matches the element. The values correspond to the equivalent ids.
+            // The values are used to determine the cells to make visible when a tab is selected.
             tabClasses.add(id.name());
             int tabIndex = 1;
-            for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
-                String name = e.getKey();
+            for (Map.Entry<Content, Predicate<Element>> e : tabMap.entrySet()) {
+                Content label = e.getKey();
                 Predicate<Element> predicate = e.getValue();
                 if (predicate.test(element)) {
-                    tabs.add(name);
+                    tabs.add(label);
                     tabClasses.add(HtmlIds.forTab(id, tabIndex).name());
                 }
                 tabIndex++;
@@ -325,11 +337,9 @@ public class Table extends Content {
         }
         int colIndex = 0;
         for (Content c : contents) {
-            HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
-                    ? null
-                    : columnStyles.get(colIndex);
-            // Replace empty content with HtmlTree.EMPTY to make sure the cell isn't dropped
-            HtmlTree cell = HtmlTree.DIV(cellStyle, !c.isEmpty() ? c : HtmlTree.EMPTY);
+            HtmlStyle cellStyle = columnStyles.get(colIndex);
+            // Replace invalid content with HtmlTree.EMPTY to make sure the cell isn't dropped
+            HtmlTree cell = HtmlTree.DIV(cellStyle, c.isValid() ? c : HtmlTree.EMPTY);
             if (rowStyle != null) {
                 cell.addStyle(rowStyle);
             }
@@ -377,12 +387,11 @@ public class Table extends Content {
         };
 
         HtmlTree table = new HtmlTree(TagName.DIV).setStyle(tableStyle).addStyle(columnStyle);
-        if (tabMap == null || tabs.size() == 1) {
+        if ((tabMap == null || tabs.size() == 1) && !alwaysShowDefaultTab) {
             if (tabMap == null) {
                 main.add(caption);
             } else {
-                String tabName = tabs.iterator().next();
-                main.add(getCaption(new StringContent(tabName)));
+                main.add(getCaption(tabs.iterator().next()));
             }
             table.add(getTableBody());
             main.add(table);
@@ -394,10 +403,10 @@ public class Table extends Content {
             int tabIndex = 0;
             tablist.add(createTab(HtmlIds.forTab(id, tabIndex), activeTabStyle, true, defaultTab));
             table.put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTab(id, tabIndex).name());
-            for (String tabName : tabMap.keySet()) {
+            for (Content tabLabel : tabMap.keySet()) {
                 tabIndex++;
-                if (tabs.contains(tabName)) {
-                    HtmlTree tab = createTab(HtmlIds.forTab(id, tabIndex), tabStyle, false, tabName);
+                if (tabs.contains(tabLabel)) {
+                    HtmlTree tab = createTab(HtmlIds.forTab(id, tabIndex), tabStyle, false, tabLabel);
                     tablist.add(tab);
                 }
             }
@@ -415,7 +424,7 @@ public class Table extends Content {
         return main;
     }
 
-    private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, String tabName) {
+    private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, Content tabLabel) {
         HtmlTree tab = new HtmlTree(TagName.BUTTON)
                 .setId(tabId)
                 .put(HtmlAttr.ROLE, "tab")
@@ -426,7 +435,7 @@ public class Table extends Content {
                 .put(HtmlAttr.ONCLICK, "show('" + id.name() + "', '" + (defaultTab ? id : tabId).name()
                         + "', " + columnStyles.size() + ")")
                 .setStyle(style);
-        tab.add(tabName);
+        tab.add(tabLabel);
         return tab;
     }
 

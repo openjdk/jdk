@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #ifndef SHARE_OOPS_ACCESSBACKEND_INLINE_HPP
 #define SHARE_OOPS_ACCESSBACKEND_INLINE_HPP
 
-#include "oops/access.hpp"
 #include "oops/accessBackend.hpp"
+
+#include "oops/access.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"

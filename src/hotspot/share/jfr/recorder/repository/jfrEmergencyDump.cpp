@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -44,7 +45,7 @@ static const char vm_error_filename_fmt[] = "hs_err_pid%p.jfr";
 static const char vm_oom_filename_fmt[] = "hs_oom_pid%p.jfr";
 static const char vm_soe_filename_fmt[] = "hs_soe_pid%p.jfr";
 static const char chunk_file_jfr_ext[] = ".jfr";
-static const size_t iso8601_len = 19; // "YYYY-MM-DDTHH:MM:SS"
+static const size_t iso8601_len = 19; // "YYYY-MM-DDTHH:MM:SS" (note: we just use a subset of the full timestamp)
 static fio_fd emergency_fd = invalid_fd;
 static const int64_t chunk_file_header_size = 68;
 static const size_t chunk_file_extension_length = sizeof chunk_file_jfr_ext - 1;
@@ -368,9 +369,10 @@ static void write_emergency_dump_file(const RepositoryIterator& iterator) {
   if (copy_block == NULL) {
     log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
     log_error(jfr, system)("Unable to write jfr emergency dump file");
+  } else {
+    write_repository_files(iterator, copy_block, block_size);
+    os::free(copy_block);
   }
-  write_repository_files(iterator, copy_block, block_size);
-  os::free(copy_block);
 }
 
 void JfrEmergencyDump::on_vm_error(const char* repository_path) {
@@ -499,7 +501,7 @@ class JavaThreadInVMAndNative : public StackObj {
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? t->as_Java_thread() : NULL),
+  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : NULL),
                                        _original_state(_thread_max_state) {
     if (_jt != NULL) {
       _original_state = _jt->thread_state();

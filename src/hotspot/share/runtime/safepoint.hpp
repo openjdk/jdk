@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/waitBarrier.hpp"
 
@@ -126,6 +126,19 @@ class SafepointSynchronize : AllStatic {
                                     JavaThread *thread,
                                     uint64_t safepoint_count);
 
+  static bool is_a_block_safe_state(JavaThreadState state) {
+    // Check that we have a valid thread_state before blocking for safepoints
+    switch(state) {
+      case _thread_in_vm_trans:
+      case _thread_in_Java:        // From compiled code
+      case _thread_in_native_trans:
+      case _thread_blocked_trans:
+      case _thread_new_trans:
+        return true;
+      default:
+        return false;
+    }
+  }
   // Called when a thread voluntarily blocks
   static void block(JavaThread *thread);
 

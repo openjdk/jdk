@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Requires
+    public static final class Requires
         implements Comparable<Requires>
     {
 
@@ -310,10 +310,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Requires))
-                return false;
-            Requires that = (Requires)ob;
-            return name.equals(that.name) && mods.equals(that.mods)
+            return (ob instanceof Requires that)
+                    && name.equals(that.name) && mods.equals(that.mods)
                     && Objects.equals(compiledVersion, that.compiledVersion)
                     && Objects.equals(rawCompiledVersion, that.rawCompiledVersion);
         }
@@ -362,7 +360,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Exports
+    public static final class Exports
         implements Comparable<Exports>
     {
 
@@ -531,10 +529,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Exports))
-                return false;
-            Exports other = (Exports)ob;
-            return Objects.equals(this.mods, other.mods)
+            return (ob instanceof Exports other)
+                    && Objects.equals(this.mods, other.mods)
                     && Objects.equals(this.source, other.source)
                     && Objects.equals(this.targets, other.targets);
         }
@@ -568,7 +564,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Opens
+    public static final class Opens
         implements Comparable<Opens>
     {
         /**
@@ -736,12 +732,10 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Opens))
-                return false;
-            Opens other = (Opens)ob;
-            return Objects.equals(this.mods, other.mods)
-                    && Objects.equals(this.source, other.source)
-                    && Objects.equals(this.targets, other.targets);
+           return (ob instanceof Opens other)
+                   && Objects.equals(this.mods, other.mods)
+                   && Objects.equals(this.source, other.source)
+                   && Objects.equals(this.targets, other.targets);
         }
 
         /**
@@ -767,7 +761,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Provides
+    public static final class Provides
         implements Comparable<Provides>
     {
         private final String service;
@@ -872,11 +866,9 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Provides))
-                return false;
-            Provides other = (Provides)ob;
-            return Objects.equals(this.service, other.service) &&
-                    Objects.equals(this.providers, other.providers);
+            return (ob instanceof Provides other)
+                    && Objects.equals(this.service, other.service)
+                    && Objects.equals(this.providers, other.providers);
         }
 
         /**
@@ -940,7 +932,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Version
+    public static final class Version
         implements Comparable<Version>
     {
 
@@ -2241,10 +2233,8 @@ public class ModuleDescriptor
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof ModuleDescriptor))
-            return false;
-        ModuleDescriptor that = (ModuleDescriptor)ob;
-        return (name.equals(that.name)
+        return (ob instanceof ModuleDescriptor that)
+                && (name.equals(that.name)
                 && modifiers.equals(that.modifiers)
                 && requires.equals(that.requires)
                 && Objects.equals(packages, that.packages)
@@ -2457,7 +2447,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from an input stream as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(InputStream,Supplier) read} method with the exception that
-     * a packager finder is not used to find additional packages when the
+     * a package finder is not used to find additional packages when the
      * module descriptor read from the stream does not indicate the set of
      * packages.
      *
@@ -2526,7 +2516,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from a byte buffer as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(ByteBuffer,Supplier) read} method with the exception that a
-     * packager finder is not used to find additional packages when the module
+     * package finder is not used to find additional packages when the module
      * descriptor encoded in the buffer does not indicate the set of packages.
      *
      * @param  bb

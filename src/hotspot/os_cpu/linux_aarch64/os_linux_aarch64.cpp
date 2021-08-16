@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -304,10 +302,6 @@ int os::Linux::get_fpu_control_word(void) {
 }
 
 void os::Linux::set_fpu_control_word(int fpu_control) {
-}
-
-bool os::is_allocatable(size_t bytes) {
-  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -28,7 +28,6 @@
 #import "sun_java2d_OSXSurfaceData.h"
 
 #import <stdio.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "ImageSurfaceData.h"
 

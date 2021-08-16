@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
@@ -60,6 +61,16 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return frame(zeroframe()->next(), sender_sp());
 }
 
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
@@ -94,7 +105,7 @@ void frame::patch_pc(Thread* thread, address pc) {
     // We borrow this call to set the thread pointer in the interpreter
     // state; the hook to set up deoptimized frames isn't supplied it.
     assert(pc == NULL, "should be");
-    get_interpreterState()->set_thread(thread->as_Java_thread());
+    get_interpreterState()->set_thread(JavaThread::cast(thread));
   }
 }
 

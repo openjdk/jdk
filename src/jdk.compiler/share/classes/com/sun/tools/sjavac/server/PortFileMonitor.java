@@ -45,11 +45,11 @@ import java.util.TimerTask;
 public class PortFileMonitor {
 
     // Check if the portfile is gone, every 5 seconds.
-    private final static int CHECK_PORTFILE_INTERVAL = 5000;
+    private static final int CHECK_PORTFILE_INTERVAL = 5000;
 
-    final private Timer timer = new Timer();
-    final private PortFile portFile;
-    final private SjavacServer server;
+    private final Timer timer = new Timer();
+    private final PortFile portFile;
+    private final SjavacServer server;
 
     public PortFileMonitor(PortFile portFile,
                            SjavacServer server) {

@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -80,7 +81,7 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = Atomic::add(&_live_data, s);
+  size_t new_live_data = Atomic::add(&_live_data, s, memory_order_relaxed);
 #ifdef ASSERT
   size_t live_bytes = new_live_data * HeapWordSize;
   size_t used_bytes = used();
@@ -90,11 +91,11 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
-  Atomic::release_store_fence(&_live_data, (size_t)0);
+  Atomic::store(&_live_data, (size_t)0);
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return Atomic::load_acquire(&_live_data);
+  return Atomic::load(&_live_data);
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {

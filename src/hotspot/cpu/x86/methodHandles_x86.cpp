@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -38,6 +39,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -54,7 +56,7 @@
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg) {
   if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
   __ movptr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
@@ -71,10 +73,10 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, SystemDictionary::WKID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rdi;
   Register temp2 = noreg;
   LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass
@@ -345,7 +347,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MemberName),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(java_lang_invoke_MemberName),
                    "MemberName required for invokeVirtual etc.");
     }
 
@@ -501,7 +503,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
@@ -553,18 +555,25 @@ void trace_method_handle_stub(const char* adaptername,
       PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
-      // Current C frame
       frame cur_frame = os::current_frame();
 
       if (cur_frame.fp() != 0) {  // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        //
+        // We have to start the search from cur_frame, because trace_calling_frame may be it.
+        // It is guaranteed that trace_calling_frame is different from the top frame.
+        // But os::current_frame() does NOT return the top frame: it returns the next frame under it (caller's frame).
+        // (Due to inlining and tail call optimizations, caller's frame doesn't necessarily correspond to the immediate
+        // caller in the source code.)
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        frame trace_calling_frame = cur_frame;
         while (trace_calling_frame.fp() < saved_regs) {
+          assert(trace_calling_frame.cb() == NULL, "not a C frame");
           trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
         }
+        assert(trace_calling_frame.sp() < saved_regs, "wrong frame");
 
         // safely create a frame and call frame::describe
         intptr_t *dump_sp = trace_calling_frame.sender_sp();

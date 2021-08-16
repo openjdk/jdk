@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -167,11 +167,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
-
-      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-        # missing-method-return-type triggers in JavaNativeFoundation framework
-        DISABLED_WARNINGS="$DISABLED_WARNINGS missing-method-return-type"
-      fi
 
       ;;
 
@@ -605,25 +600,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
   fi
 
-  # Optional POSIX functionality needed by the JVM
-  #
-  # Check if clock_gettime is available and in which library. This indicates
-  # availability of CLOCK_MONOTONIC for hotspot. But we don't need to link, so
-  # don't let it update LIBS.
-  save_LIBS="$LIBS"
-  AC_SEARCH_LIBS(clock_gettime, rt, [HAS_CLOCK_GETTIME=true], [])
-  if test "x$LIBS" = "x-lrt "; then
-    CLOCK_GETTIME_IN_LIBRT=true
-  fi
-  LIBS="$save_LIBS"
-
-  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
-    OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DSUPPORTS_CLOCK_MONOTONIC"
-    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
-      OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DNEEDS_LIBRT"
-    fi
-  fi
-
   # Extra flags needed when building optional static versions of certain
   # JDK libraries.
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
@@ -761,6 +737,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_TOOLCHAIN_CFLAGS="${$1_GCC6_CFLAGS}"
 
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    NO_DELETE_NULL_POINTER_CHECKS_CFLAG="-fno-delete-null-pointer-checks"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_DELETE_NULL_POINTER_CHECKS_CFLAG],
+        PREFIX: $3,
+        IF_FALSE: [
+            NO_DELETE_NULL_POINTER_CHECKS_CFLAG=
+        ]
+    )
+    $1_TOOLCHAIN_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG}"
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then

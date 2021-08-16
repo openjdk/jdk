@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,11 @@ public final class ImageReader implements AutoCloseable {
         return reader.findLocation(mn, rn);
     }
 
+    public boolean verifyLocation(String mn, String rn) {
+        requireOpen();
+        return reader.verifyLocation(mn, rn);
+    }
+
     public ImageLocation findLocation(String name) {
         requireOpen();
         return reader.findLocation(name);
@@ -199,7 +204,7 @@ public final class ImageReader implements AutoCloseable {
         return reader.getResourceStream(loc);
     }
 
-    private final static class SharedImageReader extends BasicImageReader {
+    private static final class SharedImageReader extends BasicImageReader {
         static final int SIZE_OF_OFFSET = Integer.BYTES;
 
         static final Map<Path, SharedImageReader> OPEN_FILES = new HashMap<>();
@@ -463,6 +468,19 @@ public final class ImageReader implements AutoCloseable {
 
         Node handleResource(String name) {
             Node n = null;
+            if (!name.startsWith("/modules/")) {
+                return null;
+            }
+            // Make sure that the thing that follows "/modules/" is a module name.
+            int moduleEndIndex = name.indexOf('/', "/modules/".length());
+            if (moduleEndIndex == -1) {
+                return null;
+            }
+            ImageLocation moduleLoc = findLocation(name.substring(0, moduleEndIndex));
+            if (moduleLoc == null || moduleLoc.getModuleOffset() == 0) {
+                return null;
+            }
+
             String locationPath = name.substring("/modules".length());
             ImageLocation resourceLoc = findLocation(locationPath);
             if (resourceLoc != null) {
@@ -740,7 +758,7 @@ public final class ImageReader implements AutoCloseable {
 
         public void walk(Consumer<? super Node> consumer) {
             consumer.accept(this);
-            for ( Node child : children ) {
+            for (Node child : children) {
                 if (child.isDirectory()) {
                     ((Directory)child).walk(consumer);
                 } else {

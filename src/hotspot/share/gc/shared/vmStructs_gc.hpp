@@ -130,7 +130,6 @@
   nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _concurrent_iteration_safe_limit,              HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
@@ -278,8 +277,6 @@
   declare_constant(CardTable::card_shift)                                   \
   declare_constant(CardTable::card_size)                                    \
   declare_constant(CardTable::card_size_in_words)                           \
-                                                                            \
-  declare_constant(CardTableRS::youngergen_card)                            \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \

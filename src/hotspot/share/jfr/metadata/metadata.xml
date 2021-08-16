@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -68,25 +68,6 @@
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
-  </Event>
-
-  <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
-    stackTrace="true">
-    <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="Thread" name="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation" />
-  </Event>
-
-  <Event name="BiasedLockSelfRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Self Revocation" description="Revoked bias of object biased towards own thread"
-    thread="true" stackTrace="true">
-    <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
-  </Event>
-
-  <Event name="BiasedLockClassRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Class Revocation" description="Revoked biases for all instances of a class"
-    thread="true" stackTrace="true">
-    <Field type="Class" name="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked" />
-    <Field type="boolean" name="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed" />
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
@@ -278,6 +259,10 @@
     <Field type="Tickspan" name="longestPause" label="Longest Pause" description="Longest individual pause during the garbage collection" />
   </Event>
 
+  <Event name="SystemGC" category="Java Virtual Machine, GC, Collector" label="System GC" stackTrace="true" startTime="true" thread="true">
+    <Field type="boolean" name="invokedConcurrent" label="Invoked Concurrent" />
+  </Event>
+
   <Event name="ParallelOldGarbageCollection" category="Java Virtual Machine, GC, Collector" label="Parallel Old Garbage Collection"
     description="Extra information specific to Parallel Old Garbage Collections">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
@@ -293,9 +278,9 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
-  <Event name="G1GarbageCollection" category="Java Virtual Machine, GC, Collector" label="G1 Garbage Collection" description="Extra information specific to G1 Garbage Collections">
+  <Event name="G1GarbageCollection" category="Java Virtual Machine, GC, Collector" label="G1 Young Garbage Collection" description="Extra information specific to G1 Young Garbage Collections">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
-    <Field type="G1YCType" name="type" label="Type" />
+    <Field type="G1YCType" name="type" label="Type"/>
   </Event>
 
   <Event name="G1MMU" category="Java Virtual Machine, GC, Detailed" label="G1 MMU Information" startTime="false">
@@ -623,6 +608,7 @@
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />
+    <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" />
     <Field type="Tickspan" name="objectAge" label="Object Age" />
     <Field type="ulong" contentType="bytes" name="lastKnownHeapUsage" label="Last Known Heap Usage" />
     <Field type="OldObject" name="object" label="Object" />
@@ -1088,6 +1074,11 @@
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
     <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+  </Event>
+
+  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
+    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
+    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

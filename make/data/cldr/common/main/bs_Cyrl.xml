@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -376,7 +376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">молдавски</language>
 			<language type="rof">ромбо</language>
 			<language type="rom">романи</language>
-			<language type="root">рут</language>
 			<language type="ru">руски</language>
 			<language type="rup">ароманијски</language>
 			<language type="rw">кинјаруанда</language>
@@ -2641,9 +2640,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<gmtFormat>GMT{0}</gmtFormat>
 			<regionFormat>Време: {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Хонолулу</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Координисано универзално вријеме</standard>
@@ -2763,11 +2759,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Брокен Хил</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Курие</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Мелбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Курие</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Хобарт</exemplarCity>
@@ -3800,6 +3796,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Хонолулу</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Џонстон</exemplarCity>

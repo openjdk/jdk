@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include "kludge_c++11.h"
+
 #include <memory>
 #include "app.h"
 #include "Log.h"
@@ -56,6 +58,8 @@ public:
 
 class ResetLastErrorMsgAtEndOfScope {
 public:
+    ResetLastErrorMsgAtEndOfScope() {
+    }
     ~ResetLastErrorMsgAtEndOfScope() {
         JP_NO_THROW(theLastErrorMsg = 0);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,23 +61,24 @@ protected:
   uint _loop_flags;
   // Names for flag bitfields
   enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
-         MainHasNoPreLoop=4,
-         HasExactTripCount=8,
-         InnerLoop=16,
-         PartialPeelLoop=32,
-         PartialPeelFailed=64,
-         HasReductions=128,
-         WasSlpAnalyzed=256,
-         PassedSlpAnalysis=512,
-         DoUnrollOnly=1024,
-         VectorizedLoop=2048,
-         HasAtomicPostLoop=4096,
-         HasRangeChecks=8192,
-         IsMultiversioned=16384,
-         StripMined=32768,
-         SubwordLoop=65536,
-         ProfileTripFailed=131072,
-         TransformedLongLoop=262144};
+         MainHasNoPreLoop    = 1<<2,
+         HasExactTripCount   = 1<<3,
+         InnerLoop           = 1<<4,
+         PartialPeelLoop     = 1<<5,
+         PartialPeelFailed   = 1<<6,
+         HasReductions       = 1<<7,
+         WasSlpAnalyzed      = 1<<8,
+         PassedSlpAnalysis   = 1<<9,
+         DoUnrollOnly        = 1<<10,
+         VectorizedLoop      = 1<<11,
+         HasAtomicPostLoop   = 1<<12,
+         HasRangeChecks      = 1<<13,
+         IsMultiversioned    = 1<<14,
+         StripMined          = 1<<15,
+         SubwordLoop         = 1<<16,
+         ProfileTripFailed   = 1<<17,
+         TransformedLongInnerLoop = 1<<18,
+         TransformedLongOuterLoop = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -102,7 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_loop() const { return _loop_flags & TransformedLongLoop; }
+  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
+  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -117,7 +119,8 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_loop() { _loop_flags |= TransformedLongLoop; }
+  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
+  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -346,6 +349,8 @@ public:
   virtual BasicType bt() const {
     return T_INT;
   }
+
+  Node* is_canonical_loop_entry();
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -611,7 +616,7 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8_t _nest;                // Nesting depth
+  uint16_t _nest;               // Nesting depth
   uint8_t _irreducible:1,       // True if irreducible
           _has_call:1,          // True if has call safepoint
           _has_sfpt:1,          // True if has non-call safepoint
@@ -864,9 +869,9 @@ private:
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
-  Node_Array _dom_lca_tags;
+  GrowableArray<jlong> _dom_lca_tags;
+  uint _dom_lca_tags_round;
   void   init_dom_lca_tags();
-  void   clear_dom_lca_tags();
 
   // Helper for debugging bad dominance relationships
   bool verify_dominance(Node* n, Node* use, Node* LCA, Node* early);
@@ -914,7 +919,8 @@ private:
                                                IdealLoopTree* outer_loop, Node* input_proj);
   Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
                                       IdealLoopTree* outer_loop);
-  bool skeleton_predicate_has_opaque(IfNode* iff);
+  static bool skeleton_predicate_has_opaque(IfNode* iff);
+  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
@@ -926,8 +932,6 @@ private:
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
-
-  static bool is_canonical_loop_entry(CountedLoopNode* cl);
 
   bool has_node( Node* n ) const {
     guarantee(n != NULL, "No Node.");
@@ -1059,7 +1063,6 @@ private:
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
-    _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
     build_and_optimize(mode);
@@ -1073,7 +1076,6 @@ private:
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
-    _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     build_and_optimize(LoopOptsVerify);
   }
@@ -1341,9 +1343,10 @@ public:
 
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.
-  ProjNode* create_slow_version_of_loop(IdealLoopTree *loop,
+  // Return the inserted if.
+  IfNode* create_slow_version_of_loop(IdealLoopTree *loop,
                                         Node_List &old_new,
-                                        int opcode,
+                                        IfNode* unswitch_iff,
                                         CloneLoopMode mode);
 
   // Clone a loop and return the clone head (clone_loop_head).
@@ -1480,7 +1483,7 @@ private:
   void handle_use( Node *use, Node *def, small_cache *cache, Node *region_dom, Node *new_false, Node *new_true, Node *old_false, Node *old_true );
   bool split_up( Node *n, Node *blk1, Node *blk2 );
   void sink_use( Node *use, Node *post_loop );
-  Node *place_near_use( Node *useblock ) const;
+  Node* place_outside_loop(Node* useblock, IdealLoopTree* loop) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
@@ -1607,6 +1610,16 @@ public:
   void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+
+  Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
+
+  bool ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl);
+
+  bool ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop);
+
+  Node* compute_early_ctrl(Node* n, Node* n_ctrl);
+
+  void try_sink_out_of_loop(Node* n);
 };
 
 

@@ -34,9 +34,9 @@ import java.util.concurrent.TimeUnit;
 
 final class LdapRequest {
 
-    private final static BerDecoder EOF = new BerDecoder(new byte[]{}, -1, 0);
-    private final static String CLOSE_MSG = "LDAP connection has been closed";
-    private final static String TIMEOUT_MSG_FMT = "LDAP response read timed out, timeout used: %d ms.";
+    private static final BerDecoder EOF = new BerDecoder(new byte[]{}, -1, 0);
+    private static final String CLOSE_MSG = "LDAP connection has been closed";
+    private static final String TIMEOUT_MSG_FMT = "LDAP response read timed out, timeout used: %d ms.";
 
     LdapRequest next;   // Set/read in synchronized Connection methods
     final int msgId;          // read-only

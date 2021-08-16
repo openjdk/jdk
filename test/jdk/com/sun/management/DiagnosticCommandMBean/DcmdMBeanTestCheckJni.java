@@ -48,7 +48,8 @@ public class DcmdMBeanTestCheckJni {
         OutputAnalyzer out = ProcessTools.executeTestJvm(
             "-Xcheck:jni",
             DcmdMBeanRunner.class.getName());
-        out.shouldNotMatch("WARNING: JNI local refs: \\d+, exceeds capacity: \\d+")
+        out.shouldNotMatch("WARNING: JNI local refs: \\d+, exceeds capacity: \\d+\\s+" +
+                           "at com.sun.management.internal.DiagnosticCommandImpl.getDiagnosticCommandInfo")
            .shouldContain("DcmdMBeanRunner COMPLETE")
            .shouldHaveExitValue(0);
     }

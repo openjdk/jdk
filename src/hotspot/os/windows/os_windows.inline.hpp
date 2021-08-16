@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,10 @@
 #ifndef OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 
+// os_windows.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
-
-inline const char* os::dll_file_extension()            { return ".dll"; }
-
-inline void  os::dll_unload(void *lib) {
-  ::FreeLibrary((HMODULE)lib);
-}
-
-inline void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
-}
 
 inline bool os::uses_stack_guard_pages() {
   return true;
@@ -62,22 +54,6 @@ inline void os::map_stack_shadow_pages(address sp) {
 
 inline bool os::numa_has_static_binding()   { return true;   }
 inline bool os::numa_has_group_homing()     { return false;  }
-
-inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  return ::write(fd, buf, nBytes);
-}
-
-inline int os::close(int fd) {
-  return ::close(fd);
-}
-
-inline bool os::supports_monotonic_clock() {
-  return true;
-}
-
-inline void os::exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
-}
 
 // Platform Mutex/Monitor implementation
 

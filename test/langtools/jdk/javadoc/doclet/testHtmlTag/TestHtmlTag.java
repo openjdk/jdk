@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786682 4649116 8182765
+ * @bug 6786682 4649116 8182765 8261976
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -109,7 +109,7 @@ public class TestHtmlTag extends JavadocTester {
 
         checkOutput("pkg3/package-summary.html", true,
                 """
-                    <section class="package-description" id="package.description">
+                    <section class="package-description" id="package-description">
                     <div class="block"><p>This is the first line. Note the newlines before the &lt;p&gt; is relevant.</div>
                     </section>""");
 

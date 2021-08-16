@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1207,9 +1207,26 @@ void PhaseCFG::dump_headers() {
     }
   }
 }
+#endif // !PRODUCT
+
+#ifdef ASSERT
+void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) const {
+  if (!n->is_memory_writer()) {
+    return;
+  }
+  CFGLoop* home_or_ancestor = find_block_for_node(n->in(0))->_loop;
+  bool found = false;
+  do {
+    if (b->_loop == home_or_ancestor) {
+      found = true;
+      break;
+    }
+    home_or_ancestor = home_or_ancestor->parent();
+  } while (home_or_ancestor != NULL);
+  assert(found, "block b is not in n's home loop or an ancestor of it");
+}
 
 void PhaseCFG::verify() const {
-#ifdef ASSERT
   // Verify sane CFG
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
@@ -1221,18 +1238,25 @@ void PhaseCFG::verify() const {
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
       }
+      verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
         if (def && def != n) {
-          assert(get_block_for_node(def) || def->is_Con(), "must have block; constants for debug info ok");
-          // Verify that instructions in the block is in correct order.
+          Block* def_block = get_block_for_node(def);
+          assert(def_block || def->is_Con(), "must have block; constants for debug info ok");
+          // Verify that all definitions dominate their uses (except for virtual
+          // instructions merging multiple definitions).
+          assert(n->is_Root() || n->is_Region() || n->is_Phi() || n->is_MachMerge() ||
+                 def_block->dominates(block),
+                 "uses must be dominated by definitions");
+          // Verify that instructions in the block are in correct order.
           // Uses must follow their definition if they are at the same block.
           // Mostly done to check that MachSpillCopy nodes are placed correctly
           // when CreateEx node is moved in build_ifg_physical().
-          if (get_block_for_node(def) == block && !(block->head()->is_Loop() && n->is_Phi()) &&
+          if (def_block == block && !(block->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {
             bool is_loop = false;
@@ -1247,6 +1271,14 @@ void PhaseCFG::verify() const {
             assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
           }
         }
+      }
+      if (n->is_Proj()) {
+        assert(j >= 1, "a projection cannot be the first instruction in a block");
+        Node* pred = block->get_node(j - 1);
+        Node* parent = n->in(0);
+        assert(parent != NULL, "projections must have a parent");
+        assert(pred == parent || (pred->is_Proj() && pred->in(0) == parent),
+               "projections must follow their parents or other sibling projections");
       }
     }
 
@@ -1263,9 +1295,8 @@ void PhaseCFG::verify() const {
       assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
-#endif
 }
-#endif
+#endif // ASSERT
 
 UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_ARRAY(uint,max)) {
   Copy::zero_to_bytes( _indices, sizeof(uint)*max );

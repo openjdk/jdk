@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@ tstring getEnvVariable(const std::nothrow_t&, const tstring& name,
 
 bool isEnvVariableSet(const tstring& name) {
     return ::getenv(name.c_str()) != 0;
+}
+
+void setEnvVariable(const tstring& name, const tstring& value) {
+    ::setenv(name.c_str(), value.c_str(), 1);
 }
 
 

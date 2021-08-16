@@ -195,26 +195,25 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
 
     @Override
     default int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case INSTANT_SECONDS:
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case INSTANT_SECONDS ->
                     throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS:
-                    return getOffset().getTotalSeconds();
-            }
-            return toLocalDateTime().get(field);
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> toLocalDateTime().get(field);
+            };
         }
         return Temporal.super.get(field);
     }
 
     @Override
     default long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return toLocalDateTime().getLong(field);
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> toLocalDateTime().getLong(field);
+            };
         }
         return field.getFrom(this);
     }

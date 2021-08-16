@@ -641,8 +641,10 @@ jobject createNetworkInterface
                   return NULL;
               }
               (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
+              (*env)->DeleteLocalRef(env, ia2Obj);
               (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
               (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+              (*env)->DeleteLocalRef(env, ibObj);
             }
         } else /* AF_INET6 */ {
             int scope;
@@ -667,9 +669,11 @@ jobject createNetworkInterface
                 (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
                 (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
                 (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
+                (*env)->DeleteLocalRef(env, ibObj);
             }
         }
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
+        (*env)->DeleteLocalRef(env, iaObj);
         addrs = addrs->next;
         addr_index++;
     }
@@ -677,6 +681,10 @@ jobject createNetworkInterface
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
 
     free_netaddr(netaddrP);
+    (*env)->DeleteLocalRef(env, name);
+    (*env)->DeleteLocalRef(env, displayName);
+    (*env)->DeleteLocalRef(env, addrArr);
+    (*env)->DeleteLocalRef(env, bindsArr);
 
     /*
      * Windows doesn't have virtual interfaces, so child array
@@ -687,6 +695,7 @@ jobject createNetworkInterface
       return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_childsID, childArr);
+    (*env)->DeleteLocalRef(env, childArr);
 
     /* return the NetworkInterface */
     return netifObj;
@@ -959,6 +968,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
 
         /* put the NetworkInterface into the array */
         (*env)->SetObjectArrayElement(env, netIFArr, arr_index++, netifObj);
+        (*env)->DeleteLocalRef(env, netifObj);
 
         curr = curr->next;
     }

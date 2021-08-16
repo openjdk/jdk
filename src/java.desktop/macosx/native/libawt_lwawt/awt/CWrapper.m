@@ -25,7 +25,6 @@
 
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import "ThreadUtilities.h"
 #import "sun_lwawt_macosx_CWrapper_NSWindow.h"
 
@@ -592,7 +591,7 @@ Java_sun_lwawt_macosx_CWrapper_00024NSView_setToolTip
 JNI_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
-    NSString* s = JNFJavaToNSString(env, msg);
+    NSString* s = JavaStringToNSString(env, msg);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [view setToolTip: s];
     }];

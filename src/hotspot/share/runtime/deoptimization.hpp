@@ -89,6 +89,7 @@ class Deoptimization : AllStatic {
     Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
+    Reason_receiver_constraint,   // receiver subtype check failed
 #if INCLUDE_JVMCI
     Reason_aliasing,              // optimistic assumption about aliasing failed
     Reason_transfer_to_interpreter, // explicit transferToInterpreter()
@@ -151,21 +152,15 @@ class Deoptimization : AllStatic {
   // find all marked nmethods and they are made not_entrant.
   static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
 
- private:
-  // Revoke biased locks at deopt.
-  static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
-
-  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
-                                               RegisterMap* map, JavaThread* thread);
-
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 #endif
+
+  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 
   private:
   // Does the actual work for deoptimizing a single frame
@@ -272,7 +267,7 @@ class Deoptimization : AllStatic {
   // deoptimized frame.
   // @argument thread.     Thread where stub_frame resides.
   // @see OptoRuntime::deoptimization_fetch_unroll_info_C
-  static UnrollBlock* fetch_unroll_info(JavaThread* thread, int exec_mode);
+  static UnrollBlock* fetch_unroll_info(JavaThread* current, int exec_mode);
 
   //** Unpacks vframeArray onto execution stack
   // Called by assembly stub after execution has returned to
@@ -297,9 +292,9 @@ class Deoptimization : AllStatic {
 
   //** Performs an uncommon trap for compiled code.
   // The top most compiler frame is converted into interpreter frames
-  static UnrollBlock* uncommon_trap(JavaThread* thread, jint unloaded_class_index, jint exec_mode);
+  static UnrollBlock* uncommon_trap(JavaThread* current, jint unloaded_class_index, jint exec_mode);
   // Helper routine that enters the VM and may block
-  static void uncommon_trap_inner(JavaThread* thread, jint unloaded_class_index);
+  static void uncommon_trap_inner(JavaThread* current, jint unloaded_class_index);
 
   //** Deoptimizes the frame identified by id.
   // Only called from VMDeoptimizeFrame
@@ -464,7 +459,7 @@ class Deoptimization : AllStatic {
   // class loading support for uncommon trap
   static void load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS);
 
-  static UnrollBlock* fetch_unroll_info_helper(JavaThread* thread, int exec_mode);
+  static UnrollBlock* fetch_unroll_info_helper(JavaThread* current, int exec_mode);
 
   static DeoptAction _unloaded_action; // == Action_reinterpret;
   static const char* _trap_reason_name[];

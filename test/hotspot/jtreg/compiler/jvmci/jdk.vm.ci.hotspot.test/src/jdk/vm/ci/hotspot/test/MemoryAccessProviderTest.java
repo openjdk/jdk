@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *          java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -75,7 +75,7 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 
@@ -85,7 +85,17 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
+        }
+    }
+
+    @Test(dataProvider = "outOfBoundsObjectArray", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadObjectOutOfBoundsObjectArray(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readObjectConstant(base, offset);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 

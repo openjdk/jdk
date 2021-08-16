@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/annotations.hpp"
@@ -111,8 +110,6 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
     assert(field_holder() == ik, "must be already initialized to this class");
   }
   FieldInfo* f = ik->field(index);
-  assert(!f->is_internal(), "regular Java fields only");
-
   _access_flags = accessFlags_from(f->access_flags());
   guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
   _index = index;
@@ -126,12 +123,16 @@ void fieldDescriptor::verify() const {
     assert(_index == badInt, "constructor must be called");  // see constructor
   } else {
     assert(_index >= 0, "good index");
-    assert(_index < field_holder()->java_fields_count(), "oob");
+    assert(access_flags().is_internal() ||
+           _index < field_holder()->java_fields_count(), "oob");
   }
 }
 
+#endif /* PRODUCT */
+
 void fieldDescriptor::print_on(outputStream* st) const {
   access_flags().print_on(st);
+  if (access_flags().is_internal()) st->print("internal ");
   name()->print_value_on(st);
   st->print(" ");
   signature()->print_value_on(st);
@@ -230,4 +231,3 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   }
 }
 
-#endif /* PRODUCT */

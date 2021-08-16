@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,11 @@ import sun.util.logging.PlatformLogger;
 class WindowsPreferences extends AbstractPreferences {
 
     static {
+        loadPrefsLib();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadPrefsLib() {
         PrivilegedAction<Void> load = () -> {
             System.loadLibrary("prefs");
             return null;
@@ -432,7 +437,7 @@ class WindowsPreferences extends AbstractPreferences {
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             logger().warning("Could not create windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(parentNativeHandle) +
                     ". Windows RegCreateKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".");
             isBackingStoreAvailable = false;
@@ -458,7 +463,7 @@ class WindowsPreferences extends AbstractPreferences {
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             logger().warning("Could not open/create prefs root node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(rootNativeHandle) +
                     ". Windows RegCreateKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".");
             isBackingStoreAvailable = false;

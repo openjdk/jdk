@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"
@@ -34,6 +34,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"

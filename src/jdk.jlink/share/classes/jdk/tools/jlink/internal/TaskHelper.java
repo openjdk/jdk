@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Collections;
 import java.util.Locale;
@@ -130,7 +129,7 @@ public final class TaskHelper {
                       String shortname,
                       boolean isTerminal)
         {
-            this(hasArg, processing, false, name, shortname, "", isTerminal);
+            this(hasArg, processing, hidden, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
@@ -421,7 +420,7 @@ public final class TaskHelper {
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
-                    throw new PluginException(PluginsResourceBundle.
+                    throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
             }
@@ -566,7 +565,7 @@ public final class TaskHelper {
                         if (option.isTerminal()) {
                             return ++i < args.length
                                         ? Stream.of(Arrays.copyOfRange(args, i, args.length))
-                                                .collect(Collectors.toList())
+                                                .toList()
                                         : Collections.emptyList();
 
                         }
@@ -576,7 +575,7 @@ public final class TaskHelper {
                     }
                 } else {
                     return Stream.of(Arrays.copyOfRange(args, i, args.length))
-                                 .collect(Collectors.toList());
+                                 .toList();
                 }
             }
             return Collections.emptyList();

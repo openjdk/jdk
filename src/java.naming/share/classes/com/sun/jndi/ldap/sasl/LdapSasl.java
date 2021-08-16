@@ -51,7 +51,7 @@ import com.sun.jndi.ldap.sasl.TlsChannelBinding.TlsChannelBindingType;
   * @author Rosanna Lee
   */
 
-final public class LdapSasl {
+public final class LdapSasl {
     // SASL stuff
     private static final String SASL_CALLBACK = "java.naming.security.sasl.callback";
     private static final String SASL_AUTHZ_ID =

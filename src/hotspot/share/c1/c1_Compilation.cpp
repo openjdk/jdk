@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,7 +583,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 #endif
   compile_method();
   if (bailed_out()) {
-    _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);
+    _env->record_method_not_compilable(bailout_msg());
     if (is_profiling()) {
       // Compilation failed, create MDO, which would signal the interpreter
       // to start profiling on its own.
@@ -598,6 +598,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 }
 
 Compilation::~Compilation() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
+
   _env->set_compiler_data(NULL);
 }
 

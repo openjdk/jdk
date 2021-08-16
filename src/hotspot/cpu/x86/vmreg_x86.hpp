@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ inline XMMRegister as_XMMRegister() {
 inline KRegister as_KRegister() {
   assert(is_KRegister(), "must be");
   // Yuk
-  return ::as_KRegister((value() - ConcreteRegisterImpl::max_xmm));
+  return ::as_KRegister((value() - ConcreteRegisterImpl::max_xmm) >> 1);
 }
 
 inline   bool is_concrete() {

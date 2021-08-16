@@ -25,24 +25,32 @@
 #ifndef SHARE_OOPS_OOP_INLINE_HPP
 #define SHARE_OOPS_OOP_INLINE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
+#include "oops/oop.hpp"
+
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWord.inline.hpp"
-#include "oops/oop.hpp"
+#include "oops/markWord.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
 markWord oopDesc::mark() const {
   uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
+  return markWord(v);
+}
+
+markWord oopDesc::mark_acquire() const {
+  uintptr_t v = HeapAccess<MO_ACQUIRE>::load_at(as_oop(), mark_offset_in_bytes());
   return markWord(v);
 }
 
@@ -72,7 +80,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 void oopDesc::init_mark() {
-  set_mark(markWord::prototype_for_klass(klass()));
+  set_mark(markWord::prototype());
 }
 
 Klass* oopDesc::klass() const {
@@ -185,7 +193,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
       assert((s == klass->oop_size(this)) ||
-             (Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
+             (Universe::is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
@@ -231,7 +239,6 @@ inline jshort oopDesc::short_field(int offset) const                { return Hea
 inline void   oopDesc::short_field_put(int offset, jshort value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 inline jint oopDesc::int_field(int offset) const                    { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline jint oopDesc::int_field_raw(int offset) const                { return RawAccess<>::load_at(as_oop(), offset);   }
 inline void oopDesc::int_field_put(int offset, jint value)          { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
@@ -249,10 +256,6 @@ bool oopDesc::is_locked() const {
 
 bool oopDesc::is_unlocked() const {
   return mark().is_unlocked();
-}
-
-bool oopDesc::has_bias_pattern() const {
-  return mark().has_bias_pattern();
 }
 
 // Used only for markSweep, scavenging
@@ -291,7 +294,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   if (old_mark == compare) {
     return NULL;
   } else {
-    return (oop)old_mark.decode_pointer();
+    return cast_to_oop(old_mark.decode_pointer());
   }
 }
 
@@ -299,14 +302,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark().decode_pointer();
-}
-
-// Note that the forwardee is not the same thing as the displaced_mark.
-// The forwardee is used when copying during scavenge and mark-sweep.
-// It does need to clear the low two locking- and GC-related bits.
-oop oopDesc::forwardee_acquire() const {
-  return (oop) Atomic::load_acquire(&_mark).decode_pointer();
+  return cast_to_oop(mark().decode_pointer());
 }
 
 // The following method needs to be MT safe.
@@ -394,34 +390,16 @@ void oopDesc::set_displaced_mark(markWord m) {
   mark().set_displaced_mark_helper(m);
 }
 
-// Supports deferred calling of obj->klass().
-class DeferredObjectToKlass {
-  const oopDesc* _obj;
-
-public:
-  DeferredObjectToKlass(const oopDesc* obj) : _obj(obj) {}
-
-  // Implicitly convertible to const Klass*.
-  operator const Klass*() const {
-    return _obj->klass();
-  }
-};
-
 bool oopDesc::mark_must_be_preserved() const {
   return mark_must_be_preserved(mark());
 }
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
-  // There's a circular dependency between oop.inline.hpp and
-  // markWord.inline.hpp because markWord::must_be_preserved wants to call
-  // oopDesc::klass(). This could be solved by calling klass() here. However,
-  // not all paths inside must_be_preserved calls klass(). Defer the call until
-  // the klass is actually needed.
-  return m.must_be_preserved(DeferredObjectToKlass(this));
+  return m.must_be_preserved(this);
 }
 
 bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(DeferredObjectToKlass(this));
+  return m.must_be_preserved_for_promotion_failure(this);
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

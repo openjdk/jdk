@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,23 +721,28 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 // ciTypeFlow::StateVector::do_ldc
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   ciConstant con = str->get_constant();
-  BasicType basic_type = con.basic_type();
-  if (basic_type == T_ILLEGAL) {
-    // OutOfMemoryError in the CI while loading constant
-    push_null();
-    outer()->record_failure("ldc did not link");
-    return;
-  }
-  if (is_reference_type(basic_type)) {
-    ciObject* obj = con.as_object();
-    if (obj->is_null_object()) {
-      push_null();
+  if (con.is_valid()) {
+    BasicType basic_type = con.basic_type();
+    if (is_reference_type(basic_type)) {
+      ciObject* obj = con.as_object();
+      if (obj->is_null_object()) {
+        push_null();
+      } else {
+        assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
+        push_object(obj->klass());
+      }
     } else {
-      assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
-      push_object(obj->klass());
+      push_translate(ciType::make(basic_type));
     }
   } else {
-    push_translate(ciType::make(basic_type));
+    if (str->is_unresolved_klass_in_error()) {
+      trap(str, NULL, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none));
+    } else {
+      // OutOfMemoryError in the CI while loading constant
+      push_null();
+      outer()->record_failure("ldc did not link");
+    }
   }
 }
 
@@ -2168,6 +2173,8 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
+      return str.is_unresolved_klass_in_error();
+
     case Bytecodes::_aload_0:
       // These bytecodes can trap for rewriting.  We need to assume that
       // they do not throw exceptions to make the monitor analysis work.

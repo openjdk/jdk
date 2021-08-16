@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,14 +151,14 @@ class TestClass {
     long    ln[][][][] = {{{{0}}}};
     short   sh[][][][] = {{{{0}}}};
 
-    Boolean   blBl = new Boolean(true);
-    Byte      btBt = new Byte((byte)1);
-    Character chCh = new Character('c');
-    Double    dbDb = new Double(0);
-    Float     flFl = new Float(0.0f);
-    Integer   inIn = new Integer(0);
-    Long      lnLn = new Long(0);
-    Short     shSh = new Short((short)1);
+    Boolean   blBl = Boolean.valueOf(true);
+    Byte      btBt = Byte.valueOf((byte)1);
+    Character chCh = Character.valueOf('c');
+    Double    dbDb = Double.valueOf(0);
+    Float     flFl = Float.valueOf(0.0f);
+    Integer   inIn = Integer.valueOf(0);
+    Long      lnLn = Long.valueOf(0);
+    Short     shSh = Short.valueOf((short)1);
 }
 
 interface OuterIface {

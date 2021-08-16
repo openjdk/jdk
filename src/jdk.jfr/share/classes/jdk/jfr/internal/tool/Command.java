@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,23 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import jdk.jfr.EventType;
 
 abstract class Command {
-    public final static String title = "Tool for working with Flight Recorder files (.jfr)";
-    private final static Command HELP = new Help();
-    private final static List<Command> COMMANDS = createCommands();
+    public static final String title = "Tool for working with Flight Recorder files";
+    private static final Command HELP = new Help();
+    private static final List<Command> COMMANDS = createCommands();
 
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
+        commands.add(new Configure());
         commands.add(new Metadata());
         commands.add(new Summary());
         commands.add(new Assemble());
@@ -63,11 +70,11 @@ abstract class Command {
         displayAvailableCommands(System.out);
     }
 
-    abstract public String getName();
+    public abstract String getName();
 
-    abstract public String getDescription();
+    public abstract String getDescription();
 
-    abstract public void execute(Deque<String> argList) throws UserSyntaxException, UserDataException;
+    public abstract void execute(Deque<String> argList) throws UserSyntaxException, UserDataException;
 
     protected String getTitle() {
         return getDescription();
@@ -149,6 +156,14 @@ abstract class Command {
     public void displayOptionUsage(PrintStream stream) {
     }
 
+    protected boolean acceptSwitch(Deque<String> options, String expected) throws UserSyntaxException {
+        if (!options.isEmpty() && options.peek().equals(expected)) {
+            options.remove();
+            return true;
+        }
+        return false;
+    }
+
     protected boolean acceptOption(Deque<String> options, String expected) throws UserSyntaxException {
         if (expected.equals(options.peek())) {
             if (options.size() < 2) {
@@ -189,19 +204,19 @@ abstract class Command {
         return true;
     }
 
-    final protected void ensureMaxArgumentCount(Deque<String> options, int maxCount) throws UserSyntaxException {
+    protected final void ensureMaxArgumentCount(Deque<String> options, int maxCount) throws UserSyntaxException {
         if (options.size() > maxCount) {
             throw new UserSyntaxException("too many arguments");
         }
     }
 
-    final protected void ensureMinArgumentCount(Deque<String> options, int minCount) throws UserSyntaxException {
+    protected final void ensureMinArgumentCount(Deque<String> options, int minCount) throws UserSyntaxException {
         if (options.size() < minCount) {
             throw new UserSyntaxException("too few arguments");
         }
     }
 
-    final protected Path getDirectory(String pathText) throws UserDataException {
+    protected final Path getDirectory(String pathText) throws UserDataException {
         try {
             Path path = Paths.get(pathText).toAbsolutePath();
             if (!Files.exists((path))) {
@@ -216,7 +231,7 @@ abstract class Command {
         }
     }
 
-    final protected Path getJFRInputFile(Deque<String> options) throws UserSyntaxException, UserDataException {
+    protected final Path getJFRInputFile(Deque<String> options) throws UserSyntaxException, UserDataException {
         if (options.isEmpty()) {
             throw new UserSyntaxException("missing file");
         }
@@ -227,7 +242,7 @@ abstract class Command {
         try {
             Path path = Paths.get(file).toAbsolutePath();
             ensureAccess(path);
-            ensureJFRFile(path);
+            ensureFileExtension(path, ".jfr");
             return path;
         } catch (IOError ioe) {
             throw new UserDataException("i/o error reading file '" + file + "', " + ioe.getMessage());
@@ -236,7 +251,7 @@ abstract class Command {
         }
     }
 
-    private void ensureAccess(Path path) throws UserDataException {
+    protected final void ensureAccess(Path path) throws UserDataException {
         try (RandomAccessFile rad = new RandomAccessFile(path.toFile(), "r")) {
             if (rad.length() == 0) {
                 throw new UserDataException("file is empty '" + path + "'");
@@ -249,20 +264,20 @@ abstract class Command {
         }
     }
 
-    final protected void couldNotReadError(Path p, IOException e) throws UserDataException {
+    protected final void couldNotReadError(Path p, IOException e) throws UserDataException {
         throw new UserDataException("could not read recording at " + p.toAbsolutePath() + ". " + e.getMessage());
     }
 
-    final protected Path ensureFileDoesNotExist(Path file) throws UserDataException {
+    protected final Path ensureFileDoesNotExist(Path file) throws UserDataException {
         if (Files.exists(file)) {
             throw new UserDataException("file '" + file + "' already exists");
         }
         return file;
     }
 
-    final protected void ensureJFRFile(Path path) throws UserDataException {
-        if (!path.toString().endsWith(".jfr")) {
-            throw new UserDataException("filename must end with '.jfr'");
+    protected final void ensureFileExtension(Path path, String extension) throws UserDataException {
+        if (!path.toString().endsWith(extension)) {
+            throw new UserDataException("filename must end with '" + extension + "'");
         }
     }
 
@@ -272,19 +287,19 @@ abstract class Command {
         displayOptionUsage(stream);
     }
 
-    final protected void println() {
+    protected final void println() {
         System.out.println();
     }
 
-    final protected void print(String text) {
+    protected final void print(String text) {
         System.out.print(text);
     }
 
-    final protected void println(String text) {
+    protected final void println(String text) {
         System.out.println(text);
     }
 
-    final protected boolean matches(String command) {
+    protected final boolean matches(String command) {
         for (String s : getNames()) {
             if (s.equals(command)) {
                 return true;
@@ -302,5 +317,109 @@ abstract class Command {
         names.add(getName());
         names.addAll(getAliases());
         return names;
+    }
+
+    public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
+        if (typo.equals(options.peek())) {
+            throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");
+        }
+    }
+
+    protected static final char quoteCharacter() {
+        return File.pathSeparatorChar == ';' ? '"' : '\'';
+    }
+
+    private static <T> Predicate<T> recurseIfPossible(Predicate<T> filter) {
+        return x -> filter != null && filter.test(x);
+    }
+
+    private static String acronomify(String multipleWords) {
+        boolean newWord = true;
+        String acronym = "";
+        for (char c : multipleWords.toCharArray()) {
+            if (newWord) {
+                if (Character.isAlphabetic(c) && Character.isUpperCase(c)) {
+                    acronym += c;
+                }
+            }
+            newWord = Character.isWhitespace(c);
+        }
+        return acronym;
+    }
+
+    private static boolean match(String text, String filter) {
+        if (filter.length() == 0) {
+            // empty filter string matches if string is empty
+            return text.length() == 0;
+        }
+        if (filter.charAt(0) == '*') { // recursive check
+            filter = filter.substring(1);
+            for (int n = 0; n <= text.length(); n++) {
+                if (match(text.substring(n), filter))
+                    return true;
+            }
+        } else if (text.length() == 0) {
+            // empty string and non-empty filter does not match
+            return false;
+        } else if (filter.charAt(0) == '?') {
+            // eat any char and move on
+            return match(text.substring(1), filter.substring(1));
+        } else if (filter.charAt(0) == text.charAt(0)) {
+            // eat chars and move on
+            return match(text.substring(1), filter.substring(1));
+        }
+        return false;
+    }
+
+    private static List<String> explodeFilter(String filter) throws UserSyntaxException {
+        List<String> list = new ArrayList<>();
+        for (String s : filter.split(",")) {
+            s = s.trim();
+            if (!s.isEmpty()) {
+                list.add(s);
+            }
+        }
+        return list;
+    }
+
+    protected static final Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
+        List<String> filters = explodeFilter(filterText);
+        Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
+            for (String category : eventType.getCategoryNames()) {
+                for (String filter : filters) {
+                    if (match(category, filter)) {
+                        return true;
+                    }
+                    if (category.contains(" ") && acronomify(category).equals(filter)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        return eventFilter == null ? newFilter : eventFilter.or(newFilter);
+    }
+
+    protected static final Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
+        List<String> filters = explodeFilter(filterText);
+        Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
+            for (String filter : filters) {
+                String fullEventName = eventType.getName();
+                if (match(fullEventName, filter)) {
+                    return true;
+                }
+                String eventName = fullEventName.substring(fullEventName.lastIndexOf(".") + 1);
+                if (match(eventName, filter)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        return eventFilter == null ? newFilter : eventFilter.or(newFilter);
+    }
+
+    protected static final <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
+        Map<X, Boolean> cache = new HashMap<>();
+        return t -> cache.computeIfAbsent(cacheFunction.apply(t), x -> filter.test(t));
     }
 }

@@ -6,29 +6,19 @@
 
 	<xsd:complexType name="configurationType">
 		<xsd:sequence>
-			<xsd:element minOccurs="0" maxOccurs="unbounded" name="producer" type="producerType" />
-		</xsd:sequence>
-		<xsd:attribute use="required" name="version" type="xsd:decimal" />
-		<xsd:attribute use="required" name="name" type="xsd:string" />
-		<xsd:attribute use="optional" name="description" type="xsd:string" default="" />
-		<xsd:attribute use="optional" name="provider" type="xsd:string" default="" />
-	</xsd:complexType>
-
-	<xsd:complexType name="producerType">
-		<xsd:sequence>
-			<xsd:element minOccurs="0" maxOccurs="1" name="control" type="controlType" />
 			<xsd:element minOccurs="0" maxOccurs="unbounded" name="event" type="eventType" />
 		</xsd:sequence>
-		<xsd:attribute use="required" name="uri" type="xsd:anyURI" />
-		<xsd:attribute use="optional" name="label" type="xsd:string" default="" />
+		<xsd:attribute use="required" name="version" type="xsd:decimal" />
+		<xsd:attribute use="required" name="label" type="xsd:string" />
 		<xsd:attribute use="optional" name="description" type="xsd:string" default="" />
+		<xsd:attribute use="optional" name="provider" type="xsd:string" default="" />
 	</xsd:complexType>
 
 	<xsd:complexType name="eventType">
 		<xsd:sequence>
 			<xsd:element minOccurs="0" maxOccurs="unbounded" name="setting" type="settingType" />
 		</xsd:sequence>
-		<xsd:attribute use="required" name="path" type="xsd:string" />
+		<xsd:attribute use="required" name="name" type="xsd:string" />
 		<xsd:attribute use="optional" name="label" type="xsd:string" />
 		<xsd:attribute use="optional" name="description" type="xsd:string" />
 	</xsd:complexType>

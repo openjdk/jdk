@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ public class ClassVersionChecker {
         FOURTEEN("14", 58),
         FIFTEEN("15", 59),
         SIXTEEN("16", 60),
-        SEVENTEEN("17", 61);
+        SEVENTEEN("17", 61),
+        EIGHTEEN("18", 62);
 
         private Version(String release, int classFileVer) {
             this.release = release;

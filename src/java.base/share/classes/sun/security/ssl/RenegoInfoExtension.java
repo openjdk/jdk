@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,7 +280,7 @@ final class RenegoInfoExtension {
                             CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV.id) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.finest(
-                                "Safe renegotiation, using the SCSV signgling");
+                                "Safe renegotiation, using the SCSV signaling");
                         }
                         shc.conContext.secureRenegotiation = true;
                         return;
@@ -341,7 +341,7 @@ final class RenegoInfoExtension {
             RenegotiationInfoSpec requestedSpec = (RenegotiationInfoSpec)
                     shc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null && !shc.conContext.secureRenegotiation) {
-                // Ignore, no renegotiation_info extension or SCSV signgling
+                // Ignore, no renegotiation_info extension or SCSV signaling
                 // requested.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(

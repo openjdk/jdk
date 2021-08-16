@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8072452
+ * @bug 8072452 8163498
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
+ *          This test has been split based on lower/higher key sizes in order to
+ *          reduce individual execution times and run in parallel
+ *          (see SupportedDSAParamGenLongKey.java)
  * @run main/timeout=300 SupportedDSAParamGen 1024 160
  * @run main/timeout=300 SupportedDSAParamGen 2048 224
  * @run main/timeout=300 SupportedDSAParamGen 2048 256
- * @run main/timeout=700 SupportedDSAParamGen 3072 256
  */
 import java.security.*;
 import java.security.spec.*;

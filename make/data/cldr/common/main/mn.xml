@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -317,7 +317,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro">румын</language>
 			<language type="ro_MD">молдав</language>
 			<language type="rof">ромбо</language>
-			<language type="root">рут</language>
 			<language type="ru">орос</language>
 			<language type="rup">ароманы</language>
 			<language type="rw">киньяруанда</language>
@@ -2231,9 +2230,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Санта Изабель</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Хонолулу</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Олон улсын зохицуулалттай цаг</standard>
@@ -2353,11 +2349,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Брокен Хилл</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Кюрри</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Мельбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Кюрри</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Хобарт</exemplarCity>
@@ -3390,6 +3386,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Хонолулу</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Жонстон</exemplarCity>
@@ -5578,7 +5577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Баруун Африкийн франк</displayName>
 				<displayName count="one">Баруун Африкийн франк</displayName>
 				<displayName count="other">Баруун Африкийн франк</displayName>
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>Францын колонийн франк</displayName>
@@ -5823,7 +5822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="other">{0} карат</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>мг/дл</displayName>
 				<unitPattern count="one">{0} мг/дл</unitPattern>
 				<unitPattern count="other">{0} мг/дл</unitPattern>
@@ -6646,7 +6645,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>м{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>н{0}</unitPrefixPattern>
@@ -6828,7 +6827,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} кар</unitPattern>
 				<unitPattern count="other">{0} кар</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>мг/дл</displayName>
 				<unitPattern count="one">{0} мг/дл</unitPattern>
 				<unitPattern count="other">{0} мг/дл</unitPattern>
@@ -7133,9 +7132,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} мм</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µметр</displayName>
-				<unitPattern count="one">{0} µм</unitPattern>
-				<unitPattern count="other">{0} µм</unitPattern>
+				<displayName>μметр</displayName>
+				<unitPattern count="one">{0} μм</unitPattern>
+				<unitPattern count="other">{0} μм</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>нм</displayName>
@@ -7239,9 +7238,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} мг</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µг</displayName>
-				<unitPattern count="one">{0} µг</unitPattern>
-				<unitPattern count="other">{0} µг</unitPattern>
+				<displayName>μг</displayName>
+				<unitPattern count="one">{0} μг</unitPattern>
+				<unitPattern count="other">{0} μг</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>америк тонн</displayName>
@@ -7605,7 +7604,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>м{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>н{0}</unitPrefixPattern>

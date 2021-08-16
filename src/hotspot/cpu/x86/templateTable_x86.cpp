@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -1632,41 +1633,21 @@ void TemplateTable::dop2(Operation op) {
     case add: __ fadd_d (at_rsp());                break;
     case sub: __ fsubr_d(at_rsp());                break;
     case mul: {
-      Label L_strict;
-      Label L_join;
-      const Address access_flags      (rcx, Method::access_flags_offset());
-      __ get_method(rcx);
-      __ movl(rcx, access_flags);
-      __ testl(rcx, JVM_ACC_STRICT);
-      __ jccb(Assembler::notZero, L_strict);
-      __ fmul_d (at_rsp());
-      __ jmpb(L_join);
-      __ bind(L_strict);
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias1()));
+      // strict semantics
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
       __ fmulp();
       __ fmul_d (at_rsp());
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias2()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
       __ fmulp();
-      __ bind(L_join);
       break;
     }
     case div: {
-      Label L_strict;
-      Label L_join;
-      const Address access_flags      (rcx, Method::access_flags_offset());
-      __ get_method(rcx);
-      __ movl(rcx, access_flags);
-      __ testl(rcx, JVM_ACC_STRICT);
-      __ jccb(Assembler::notZero, L_strict);
-      __ fdivr_d(at_rsp());
-      __ jmp(L_join);
-      __ bind(L_strict);
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias1()));
+      // strict semantics
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
       __ fmul_d (at_rsp());
       __ fdivrp();
-      __ fld_x(ExternalAddress(StubRoutines::addr_fpu_subnormal_bias2()));
+      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
       __ fmulp();
-      __ bind(L_join);
       break;
     }
     case rem: __ fld_d  (at_rsp()); __ fremr(rax); break;
@@ -2187,7 +2168,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   assert(UseLoopCounter || !UseOnStackReplacement,
          "on-stack-replacement requires loop counters");
   Label backedge_counter_overflow;
-  Label profile_method;
   Label dispatch;
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
@@ -2216,75 +2196,27 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ jcc(Assembler::zero, dispatch);
     __ bind(has_counters);
 
-    if (TieredCompilation) {
-      Label no_mdo;
-      int increment = InvocationCounter::count_increment;
-      if (ProfileInterpreter) {
-        // Are we profiling?
-        __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
-        __ testptr(rbx, rbx);
-        __ jccb(Assembler::zero, no_mdo);
-        // Increment the MDO backedge counter
-        const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
-                                           in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
-                                   UseOnStackReplacement ? &backedge_counter_overflow : NULL);
-        __ jmp(dispatch);
-      }
-      __ bind(no_mdo);
-      // Increment backedge counter in MethodCounters*
-      __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
-      const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
-      __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
-                                 rax, false, Assembler::zero,
-                                 UseOnStackReplacement ? &backedge_counter_overflow : NULL);
-    } else { // not TieredCompilation
-      // increment counter
-      __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
-      __ movl(rax, Address(rcx, be_offset));        // load backedge counter
-      __ incrementl(rax, InvocationCounter::count_increment); // increment counter
-      __ movl(Address(rcx, be_offset), rax);        // store counter
-
-      __ movl(rax, Address(rcx, inv_offset));    // load invocation counter
-
-      __ andl(rax, InvocationCounter::count_mask_value); // and the status bits
-      __ addl(rax, Address(rcx, be_offset));        // add both counters
-
-      if (ProfileInterpreter) {
-        // Test to see if we should create a method data oop
-        __ cmp32(rax, Address(rcx, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
-        __ jcc(Assembler::less, dispatch);
-
-        // if no method data exists, go to profile method
-        __ test_method_data_pointer(rax, profile_method);
-
-        if (UseOnStackReplacement) {
-          // check for overflow against rbx which is the MDO taken count
-          __ cmp32(rbx, Address(rcx, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ jcc(Assembler::below, dispatch);
-
-          // When ProfileInterpreter is on, the backedge_count comes
-          // from the MethodData*, which value does not get reset on
-          // the call to frequency_counter_overflow().  To avoid
-          // excessive calls to the overflow routine while the method is
-          // being compiled, add a second test to make sure the overflow
-          // function is called only once every overflow_frequency.
-          const int overflow_frequency = 1024;
-          __ andl(rbx, overflow_frequency - 1);
-          __ jcc(Assembler::zero, backedge_counter_overflow);
-
-        }
-      } else {
-        if (UseOnStackReplacement) {
-          // check for overflow against rax, which is the sum of the
-          // counters
-          __ cmp32(rax, Address(rcx, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
-          __ jcc(Assembler::aboveEqual, backedge_counter_overflow);
-
-        }
-      }
+    Label no_mdo;
+    int increment = InvocationCounter::count_increment;
+    if (ProfileInterpreter) {
+      // Are we profiling?
+      __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
+      __ testptr(rbx, rbx);
+      __ jccb(Assembler::zero, no_mdo);
+      // Increment the MDO backedge counter
+      const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
+          in_bytes(InvocationCounter::counter_offset()));
+      const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
+      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
+          UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+      __ jmp(dispatch);
     }
+    __ bind(no_mdo);
+    // Increment backedge counter in MethodCounters*
+    __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
+    const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
+    __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
+        rax, false, Assembler::zero, UseOnStackReplacement ? &backedge_counter_overflow : NULL);
     __ bind(dispatch);
   }
 
@@ -2298,15 +2230,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   __ dispatch_only(vtos, true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter && !TieredCompilation) {
-      // Out-of-line code to allocate method data oop.
-      __ bind(profile_method);
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-      __ jmp(dispatch);
-    }
-
     if (UseOnStackReplacement) {
+      Label set_mdp;
       // invocation counter overflow
       __ bind(backedge_counter_overflow);
       __ negptr(rdx);
@@ -2660,11 +2585,11 @@ void TemplateTable::_return(TosState state) {
     Label no_safepoint;
     NOT_PRODUCT(__ block_comment("Thread-local Safepoint poll"));
 #ifdef _LP64
-    __ testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    __ testb(Address(r15_thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 #else
     const Register thread = rdi;
     __ get_thread(thread);
-    __ testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    __ testb(Address(thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 #endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);
@@ -4098,15 +4023,9 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      __ pop(rcx);   // get saved klass back in the register.
-      __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()), rbx);
-    } else {
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()),
-                (intptr_t)markWord::prototype().value()); // header
-      __ pop(rcx);   // get saved klass back in the register.
-    }
+    __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
+              (intptr_t)markWord::prototype().value()); // header
+    __ pop(rcx);   // get saved klass back in the register.
 #ifdef _LP64
     __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
     __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
@@ -4361,8 +4280,6 @@ void TemplateTable::monitorenter() {
   // check for NULL object
   __ null_check(rax);
 
-  __ resolve(IS_NOT_NULL, rax);
-
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
@@ -4459,8 +4376,6 @@ void TemplateTable::monitorexit() {
 
   // check for NULL object
   __ null_check(rax);
-
-  __ resolve(IS_NOT_NULL, rax);
 
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

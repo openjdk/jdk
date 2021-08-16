@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class LoginConfigImpl extends Configuration {
      * @param caller defined in GSSUtil as CALLER_XXX final fields
      * @param mech defined in GSSUtil as XXX_MECH_OID final fields
      */
+    @SuppressWarnings("removal")
     public LoginConfigImpl(GSSCaller caller, Oid mech) {
 
         this.caller = caller;

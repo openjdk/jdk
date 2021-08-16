@@ -41,7 +41,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6954738
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6954738_Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6954738_Test
  * @run testng/othervm validation.Bug6954738_Test
  * @summary Test Validator can process a XML document containing an element with 8000 characters.
  */

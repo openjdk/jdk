@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ModulePackages extends Attribute {
 
-    private int[] package_index_table;
+    private int[] packageIndexTable;
 
 
     /**
@@ -48,15 +48,15 @@ public final class ModulePackages extends Attribute {
 
 
     /**
-     * @param name_index Index in constant pool
+     * @param nameIndex Index in constant pool
      * @param length Content length in bytes
-     * @param package_index_table Table of indices in constant pool
-     * @param constant_pool Array of constants
+     * @param packageIndexTable Table of indices in constant pool
+     * @param constantPool Array of constants
      */
-    public ModulePackages(final int name_index, final int length, final int[] package_index_table,
-            final ConstantPool constant_pool) {
-        super(Const.ATTR_MODULE_PACKAGES, name_index, length, constant_pool);
-        this.package_index_table = package_index_table != null ? package_index_table : new int[0];
+    public ModulePackages(final int nameIndex, final int length, final int[] packageIndexTable,
+            final ConstantPool constantPool) {
+        super(Const.ATTR_MODULE_PACKAGES, nameIndex, length, constantPool);
+        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : new int[0];
     }
 
 
@@ -71,9 +71,9 @@ public final class ModulePackages extends Attribute {
     ModulePackages(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException {
         this(name_index, length, (int[]) null, constant_pool);
         final int number_of_packages = input.readUnsignedShort();
-        package_index_table = new int[number_of_packages];
+        packageIndexTable = new int[number_of_packages];
         for (int i = 0; i < number_of_packages; i++) {
-            package_index_table[i] = input.readUnsignedShort();
+            packageIndexTable[i] = input.readUnsignedShort();
         }
     }
 
@@ -100,8 +100,8 @@ public final class ModulePackages extends Attribute {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
-        file.writeShort(package_index_table.length);
-        for (final int index : package_index_table) {
+        file.writeShort(packageIndexTable.length);
+        for (final int index : packageIndexTable) {
             file.writeShort(index);
         }
     }
@@ -111,7 +111,7 @@ public final class ModulePackages extends Attribute {
      * @return array of indices into constant pool of package names.
      */
     public int[] getPackageIndexTable() {
-        return package_index_table;
+        return packageIndexTable;
     }
 
 
@@ -119,7 +119,7 @@ public final class ModulePackages extends Attribute {
      * @return Length of package table.
      */
     public int getNumberOfPackages() {
-        return package_index_table == null ? 0 : package_index_table.length;
+        return packageIndexTable == null ? 0 : packageIndexTable.length;
     }
 
 
@@ -127,9 +127,9 @@ public final class ModulePackages extends Attribute {
      * @return string array of package names
      */
     public String[] getPackageNames() {
-        final String[] names = new String[package_index_table.length];
-        for (int i = 0; i < package_index_table.length; i++) {
-            names[i] = super.getConstantPool().getConstantString(package_index_table[i],
+        final String[] names = new String[packageIndexTable.length];
+        for (int i = 0; i < packageIndexTable.length; i++) {
+            names[i] = super.getConstantPool().getConstantString(packageIndexTable[i],
                     Const.CONSTANT_Package).replace('/', '.');
         }
         return names;
@@ -137,11 +137,11 @@ public final class ModulePackages extends Attribute {
 
 
     /**
-     * @param package_index_table the list of package indexes
+     * @param packageIndexTable the list of package indexes
      * Also redefines number_of_packages according to table length.
      */
-    public void setPackageIndexTable( final int[] package_index_table ) {
-        this.package_index_table = package_index_table != null ? package_index_table : new int[0];
+    public void setPackageIndexTable( final int[] packageIndexTable ) {
+        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : new int[0];
     }
 
 
@@ -152,9 +152,9 @@ public final class ModulePackages extends Attribute {
     public String toString() {
         final StringBuilder buf = new StringBuilder();
         buf.append("ModulePackages(");
-        buf.append(package_index_table.length);
+        buf.append(packageIndexTable.length);
         buf.append("):\n");
-        for (final int index : package_index_table) {
+        for (final int index : packageIndexTable) {
             final String package_name = super.getConstantPool().getConstantString(index, Const.CONSTANT_Package);
             buf.append("  ").append(Utility.compactClassName(package_name, false)).append("\n");
         }
@@ -168,10 +168,10 @@ public final class ModulePackages extends Attribute {
     @Override
     public Attribute copy( final ConstantPool _constant_pool ) {
         final ModulePackages c = (ModulePackages) clone();
-        if (package_index_table != null) {
-            c.package_index_table = new int[package_index_table.length];
-            System.arraycopy(package_index_table, 0, c.package_index_table, 0,
-                    package_index_table.length);
+        if (packageIndexTable != null) {
+            c.packageIndexTable = new int[packageIndexTable.length];
+            System.arraycopy(packageIndexTable, 0, c.packageIndexTable, 0,
+                    packageIndexTable.length);
         }
         c.setConstantPool(_constant_pool);
         return c;

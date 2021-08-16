@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
@@ -47,6 +48,7 @@ public class SetVMFlagTest {
         setMutableFlagWithInvalidValue(executor);
         setImmutableFlag(executor);
         setNonExistingFlag(executor);
+        setStringFlag(executor);
     }
 
     @Test
@@ -145,6 +147,24 @@ public class SetVMFlagTest {
         OutputAnalyzer out = executor.execute("VM.set_flag " + unknownFlag + " 1");
         out.stderrShouldBeEmpty();
         out.stdoutShouldContain("flag " + unknownFlag + " does not exist");
+    }
+
+    private void setStringFlag(CommandExecutor executor) {
+        // Today we don't have any manageable flags of the string type in the product build,
+        // so we can only test DummyManageableStringFlag in the debug build.
+        if (!Platform.isDebugBuild()) {
+            return;
+        }
+
+        String flag = "DummyManageableStringFlag";
+        String toValue = "DummyManageableStringFlag_Is_Set_To_Hello";
+
+        System.out.println("### Setting a string flag '" + flag + "'");
+        OutputAnalyzer out = executor.execute("VM.set_flag " + flag + " " + toValue);
+        out.stderrShouldBeEmpty();
+
+        out = getAllFlags(executor);
+        out.stdoutShouldContain(toValue);
     }
 
     private OutputAnalyzer getAllFlags(CommandExecutor executor) {

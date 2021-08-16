@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
@@ -274,7 +273,7 @@ class ModuleReferences {
             // take snapshot to avoid async close
             List<String> names = jf.versionedStream()
                     .map(JarEntry::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 
@@ -340,7 +339,7 @@ class ModuleReferences {
             List<String> names = jf.stream()
                     .filter(e -> e.section() == JmodFile.Section.CLASSES)
                     .map(JmodFile.Entry::name)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 
@@ -363,6 +362,7 @@ class ModuleReferences {
 
             // when running with a security manager then check that the caller
             // has access to the directory.
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 boolean unused = Files.isDirectory(dir);
