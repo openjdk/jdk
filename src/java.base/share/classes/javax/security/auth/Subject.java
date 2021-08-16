@@ -40,6 +40,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -297,7 +298,15 @@ public final class Subject implements java.io.Serializable {
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
     public static Subject getSubject(final AccessControlContext acc) {
+        if (SUBJECT_STORAGE == SubjectStorage.ACC) {
+            return legacyGetSubject(acc);
+        } else {
+            return current();
+        }
+    }
 
+    @SuppressWarnings("removal")
+    private static Subject legacyGetSubject(final AccessControlContext acc) {
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(AuthPermissionHolder.GET_SUBJECT_PERMISSION);
@@ -320,6 +329,26 @@ public final class Subject implements java.io.Serializable {
         });
     }
 
+
+    private static enum SubjectStorage {
+        ACC, THREAD_LOCAL, SCOPE_LOCAL
+    };
+
+    private static final SubjectStorage SUBJECT_STORAGE
+            = SharedSecrets.getJavaLangAccess().systemAllowSecurityManager()
+                    ? SubjectStorage.ACC
+                    : SubjectStorage.THREAD_LOCAL;
+
+//    private static final ScopeLocal<Subject> SUBJECT_SCOPE
+//            = ScopeLocal.inheritableForType(Subject.class);
+
+    private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
+            new InheritableThreadLocal<Subject>() {
+                @Override protected Subject initialValue() {
+                    return null;
+                }
+            };
+
     /**
      * Return the current installed subject.
      * <p>
@@ -337,9 +366,11 @@ public final class Subject implements java.io.Serializable {
      * its creator's current installed subject is changed to another value.
      *
      * @implNote
-     * In this implementation, this method returns the same value as
-     * {@code getSubject(AccessController.getContext())}. Also, each of
-     * the various {@code doAs(subject, action)} and
+     * In this implementation, if a {@code SecurityManager} is allowed,
+     * this method returns the same value as
+     * {@code getSubject(AccessController.getContext())}. Otherwise, the current
+     * installed subject is stored in an inheritable {@code ThreadLocal}.
+     * Also, each of the various {@code doAs(subject, action)} and
      * {@code doAsPrivileged(subject, action, acc)} methods will
      * run {@code action} with {@code subject} as its current
      * installed subject.
@@ -353,7 +384,11 @@ public final class Subject implements java.io.Serializable {
      */
     @SuppressWarnings("removal")
     public static Subject current() {
-        return getSubject(AccessController.getContext());
+        return switch (SUBJECT_STORAGE) {
+            case ACC -> legacyGetSubject(AccessController.getContext());
+            case SCOPE_LOCAL -> null;//SUBJECT_SCOPE.orElse(null);
+            case THREAD_LOCAL -> SUBJECT_THREAD_LOCAL.get();
+        };
     }
 
     /**
@@ -361,8 +396,12 @@ public final class Subject implements java.io.Serializable {
      * current installed subject.
      *
      * @implNote
-     * In this implementation, this method is implemented based on
-     * {@link #doAs(Subject, PrivilegedExceptionAction)}.
+     * In this implementation, if a {@code SecurityManager} is allowed,
+     * this method is implemented based on
+     * {@link #doAs(Subject, PrivilegedExceptionAction)}. Otherwise, it
+     * installs {@code subject} into an inheritable {@code ThreadLocal}
+     * before running {@code action} and restore the previous value of
+     * the {@code ThreadLocal} upon return.
      *
      * @param subject the intended current installed subject for {@code action}.
      *                Can be {@code null}.
@@ -381,12 +420,40 @@ public final class Subject implements java.io.Serializable {
     public static <T> T callAs(final Subject subject,
             final Callable<T> action) throws CompletionException {
         Objects.requireNonNull(action);
-        try {
-            PrivilegedExceptionAction<T> pa = () -> action.call();
-            return doAs(subject, pa);
-        } catch (PrivilegedActionException e) {
-            throw new CompletionException(e.getException());
-        }
+        return switch (SUBJECT_STORAGE) {
+            case ACC -> {
+                try {
+                    PrivilegedExceptionAction<T> pa = () -> action.call();
+                    yield legacyDoAs(subject, pa);
+                } catch (PrivilegedActionException e) {
+                    throw new CompletionException(e.getException());
+                }
+            }
+            case SCOPE_LOCAL -> {
+                yield null;
+//                try {
+//                    yield ScopeLocal.where(SUBJECT_SCOPE, subject)
+//                            .call(action::call);
+//                } catch (RuntimeException re) {
+//                    throw re;
+//                } catch (Exception e) {
+//                    throw new CompletionException(e);
+//                }
+            }
+            case THREAD_LOCAL -> {
+                Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
+                SUBJECT_THREAD_LOCAL.set(subject);
+                try {
+                    yield action.call();
+                } catch (RuntimeException re) {
+                    throw re;
+                } catch (Exception e) {
+                    throw new CompletionException(e);
+                } finally {
+                    SUBJECT_THREAD_LOCAL.set(oldSubject);
+                }
+            }
+        };
     }
 
     /**
@@ -394,8 +461,12 @@ public final class Subject implements java.io.Serializable {
      * current installed subject.
      *
      * @implNote
-     * In this implementation, this method is implemented based on
-     * {@link #doAs(Subject, PrivilegedAction)}.
+     * In this implementation, if a {@code SecurityManager} is allowed,
+     * this method is implemented based on
+     * {@link #doAs(Subject, PrivilegedAction)}. Otherwise, it
+     * installs {@code subject} into an inheritable {@code ThreadLocal}
+     * before running {@code action} and restore the previous value of
+     * the {@code ThreadLocal} upon return.
      *
      * @param subject the intended current installed subject for {@code action}.
      *                Can be {@code null}.
@@ -411,8 +482,26 @@ public final class Subject implements java.io.Serializable {
     public static <T> T getAs(final Subject subject,
             final Supplier<T> action) {
         Objects.requireNonNull(action);
-        PrivilegedAction<T> pa = () -> action.get();
-        return doAs(subject, pa);
+        return switch (SUBJECT_STORAGE) {
+            case ACC -> {
+                PrivilegedAction<T> pa = () -> action.get();
+                yield legacyDoAs(subject, pa);
+            }
+            case SCOPE_LOCAL -> {
+                yield null;
+//                yield ScopeLocal.where(SUBJECT_SCOPE, subject)
+//                        .call(action::get);
+            }
+            case THREAD_LOCAL -> {
+                Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
+                SUBJECT_THREAD_LOCAL.set(subject);
+                try {
+                    yield action.get();
+                } finally {
+                    SUBJECT_THREAD_LOCAL.set(oldSubject);
+                }
+            }
+        };
     }
 
     /**
@@ -451,9 +540,18 @@ public final class Subject implements java.io.Serializable {
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
      */
-    @SuppressWarnings("removal")
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedAction<T> action) {
+        if (SUBJECT_STORAGE == SubjectStorage.ACC) {
+            return legacyDoAs(subject, action);
+        } else {
+            return getAs(subject, () -> action.run());
+        }
+    }
+
+    @SuppressWarnings("removal")
+    private static <T> T legacyDoAs(final Subject subject,
+            final java.security.PrivilegedAction<T> action) {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -514,11 +612,30 @@ public final class Subject implements java.io.Serializable {
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
      */
-    @SuppressWarnings("removal")
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedExceptionAction<T> action)
                         throws java.security.PrivilegedActionException {
+        if (SUBJECT_STORAGE == SubjectStorage.ACC) {
+            return legacyDoAs(subject, action);
+        } else {
+            try {
+                return callAs(subject, () -> action.run());
+            } catch (CompletionException ce) {
+                if (ce.getCause() instanceof Exception e) {
+                    throw new PrivilegedActionException(e);
+                } else {
+                    // Throwable? Not likely to happen
+                    throw new PrivilegedActionException(
+                            new RuntimeException(ce.getCause()));
+                }
+            }
+        }
+    }
 
+    @SuppressWarnings("removal")
+    private static <T> T legacyDoAs(final Subject subject,
+            final java.security.PrivilegedExceptionAction<T> action)
+            throws java.security.PrivilegedActionException {
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(AuthPermissionHolder.DO_AS_PERMISSION);

@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @test
  * @bug 8267108
  * @summary confirm current installed subject specification
+ * @run main CurrentInstalledSubject
+ * @run main/othervm -Djava.security.manager=allow CurrentInstalledSubject
  */
 public class CurrentInstalledSubject {
 

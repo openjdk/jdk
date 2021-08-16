@@ -401,4 +401,11 @@ public interface JavaLangAccess {
      * @param statusCode the status code
      */
     void exit(int statusCode);
+
+    /**
+     * When a security manager is allowed. This is true if the system
+     * property java.security.manager is set to any value other than "disabled".
+     * @return
+     */
+    boolean systemAllowSecurityManager();
 }

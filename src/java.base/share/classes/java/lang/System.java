@@ -189,7 +189,7 @@ public final class System {
     private static volatile SecurityManager security;   // read by VM
 
     // return true if a security manager is allowed
-    private static boolean allowSecurityManager() {
+    static boolean allowSecurityManager() {
         return (allowSecurityManager != NEVER);
     }
 
@@ -2446,6 +2446,10 @@ public final class System {
             @Override
             public void exit(int statusCode) {
                 Shutdown.exit(statusCode);
+            }
+
+            public boolean systemAllowSecurityManager() {
+                return System.allowSecurityManager();
             }
         });
     }
