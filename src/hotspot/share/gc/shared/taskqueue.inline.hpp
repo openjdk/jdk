@@ -49,10 +49,10 @@ inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
-inline GenericTaskQueue<E, F, N>::GenericTaskQueue() : _last_stolen_queue_id(InvalidQueueId), _seed(17 /* random number */) {
-  assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
-  _elems = ArrayAllocator<E>::allocate(N, F);
-}
+inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
+  _elems(ArrayAllocator<E>::allocate(N, F)),
+  _last_stolen_queue_id(InvalidQueueId),
+  _seed(17 /* random number */) {}
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
