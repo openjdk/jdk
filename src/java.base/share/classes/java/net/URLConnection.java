@@ -591,11 +591,11 @@ public abstract class URLConnection {
      *
      * This method is overridden by the subclasses of {@code URLConnection}.
      *
-     * @implSpec In the implementation of these methods, if a given key has multiple
+     * In the implementation of these methods, if a given key has multiple
      * corresponding values, they must be returned in the order they were added,
      * preserving the insertion-order.
      *
-     * @implNote The default implementation of this method returns an empty map always.
+     * @implSpec The default implementation of this method returns an empty map always.
      *
      * @return a Map of header fields
      * @since 1.4
@@ -1199,7 +1199,7 @@ public abstract class URLConnection {
      * added. This method must preserve the insertion order
      * of such values.
      *
-     * @implNote The default implementation of this method preserves the insertion order when
+     * The default implementation of this method preserves the insertion order when
      * multiple values are added for a given key. The values are returned in the order they
      * were added.
      *
