@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP
 #define SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP
 
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -35,13 +36,13 @@ public:
   // Candidate selection policy for young during evacuation.
   // If to is young then age should be the new (survivor's) age.
   // if to is old then age should be the age of the copied from object.
-  static bool is_candidate_from_evacuation(const Klass* klass,
-                                           uint age,
+  static bool is_candidate_from_evacuation(oop obj,
                                            bool obj_is_tenured) {
-    return StringDedup::is_enabled_string(klass) &&
+    return StringDedup::is_enabled() &&
+           java_lang_String::is_instance_inlined(obj) &&
            (obj_is_tenured ?
-            StringDedup::is_below_threshold_age(age) :
-            StringDedup::is_threshold_age(age));
+            StringDedup::is_below_threshold_age(obj->age()) :
+            StringDedup::is_threshold_age(obj->age()));
   }
 };
 #endif // SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP

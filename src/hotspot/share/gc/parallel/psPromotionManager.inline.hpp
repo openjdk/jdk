@@ -286,10 +286,8 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       // we'll just push its contents
       push_contents(new_obj);
 
-      if (psStringDedup::is_candidate_from_evacuation(o->klass(), new_obj->age(), new_obj_is_tenured)) {
-        if (!java_lang_String::test_and_set_deduplication_requested(o)) {
+      if (psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
           _string_dedup_requests.add(o);
-        }
       }
     }
     return new_obj;
