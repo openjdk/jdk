@@ -257,7 +257,7 @@ private:
   G1AddCardResult add_to_howl(CardSetPtr parent_card_set, uint card_region, uint card_in_region, bool increment_total = true);
 
   G1CardSetHashTableValue* get_or_add_card_set(uint card_region, bool* should_grow_table);
-  CardSetPtr get_card_set(uint card_region);
+  G1CardSetHashTableValue* get_card_set(uint card_region);
 
   // Iterate over cards of a card set container during transfer of the cards from
   // one container to another. Executes
