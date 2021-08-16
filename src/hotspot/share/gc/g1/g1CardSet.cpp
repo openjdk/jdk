@@ -45,7 +45,7 @@
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
-  _inline_ptr_bits_per_card(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) {
+  _inline_ptr_bits_per_card(HeapRegion::LogCardsPerRegion) {
 
   // Array of Cards card set container size calculation
   _num_cards_in_array = G1RemSetArrayOfCardsEntries;

@@ -726,6 +726,7 @@ javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
+javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java 8272481 macosx-all
 javax/swing/JPopupMenu/6580930/bug6580930.java 7124313 macosx-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all

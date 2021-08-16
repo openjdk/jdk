@@ -49,22 +49,6 @@
 
 class SymbolHashMap;
 
-class CPSlot {
- friend class ConstantPool;
-  intptr_t _ptr;
-  enum TagBits  {_pseudo_bit = 1};
- public:
-
-  CPSlot(intptr_t ptr): _ptr(ptr) {}
-  CPSlot(Symbol* ptr, int tag_bits = 0): _ptr((intptr_t)ptr | tag_bits) {}
-
-  intptr_t value()   { return _ptr; }
-
-  Symbol* get_symbol() {
-    return (Symbol*)(_ptr & ~_pseudo_bit);
-  }
-};
-
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
 class CPKlassSlot {
@@ -152,13 +136,6 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  CPSlot slot_at(int which) const;
-
-  void slot_at_put(int which, CPSlot s) const {
-    assert(is_within_bounds(which), "index out of bounds");
-    assert(s.value() != 0, "Caught something");
-    *(intptr_t*)&base()[which] = s.value();
-  }
   intptr_t* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     return (intptr_t*) &base()[which];
@@ -343,8 +320,12 @@ class ConstantPool : public Metadata {
   }
 
   void unresolved_string_at_put(int which, Symbol* s) {
-    release_tag_at_put(which, JVM_CONSTANT_String);
-    slot_at_put(which, CPSlot(s));
+    assert(s->refcount() != 0, "should have nonzero refcount");
+    // Note that release_tag_at_put is not needed here because this is called only
+    // when constructing a ConstantPool in a single thread, with no possibility
+    // of concurrent access.
+    tag_at_put(which, JVM_CONSTANT_String);
+    *symbol_at_addr(which) = s;
   }
 
   void int_at_put(int which, jint i) {
@@ -497,8 +478,7 @@ class ConstantPool : public Metadata {
 
   Symbol* unresolved_string_at(int which) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = slot_at(which).get_symbol();
-    return sym;
+    return *symbol_at_addr(which);
   }
 
   // Returns an UTF8 for a CONSTANT_String entry at a given index.

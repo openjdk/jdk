@@ -49,6 +49,19 @@ package gc.stringdedup;
  * @run driver gc.stringdedup.TestStringDeduplicationTableResize Shenandoah
  */
 
+/*
+ * @test TestStringDeduplicationTableResize
+ * @summary Test string deduplication table resize
+ * @bug 8029075
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Z
+ */
+
 public class TestStringDeduplicationTableResize {
     public static void main(String[] args) throws Exception {
         TestStringDeduplicationTools.selectGC(args);

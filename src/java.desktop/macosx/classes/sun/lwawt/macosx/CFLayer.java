@@ -70,6 +70,10 @@ public abstract class CFLayer extends CFRetainedResource {
         return !peer.isTranslucent();
     }
 
+    public void setOpaque(boolean opaque) {
+        // Default is no op (works well for OGL)
+    }
+
     public int getTransparency() {
         return isOpaque() ? Transparency.OPAQUE : Transparency.TRANSLUCENT;
     }
