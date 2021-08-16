@@ -171,9 +171,13 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     total_garbage += garbage;
 
     if (region->is_regular()) {
-      candidates[cand_idx]._region = region;
-      candidates[cand_idx]._garbage = garbage;
-      cand_idx++;
+      if (!region->has_live()) {
+        region->make_trash_immediate();
+      } else {
+        candidates[cand_idx]._region = region;
+        candidates[cand_idx]._garbage = garbage;
+        cand_idx++;
+      }
     } else if (region->is_humongous_start()) {
       if (!region->has_live()) {
         // The humongous object is dead, we can just return this region and the continuations
