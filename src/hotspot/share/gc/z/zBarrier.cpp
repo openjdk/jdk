@@ -129,32 +129,6 @@ void ZBarrier::keep_alive(zaddress addr) {
 // Weak load barrier
 //
 
-zaddress ZBarrier::is_object_strongly_live_filter_slow_path(zaddress addr) {
-  if (is_null(addr)) {
-    return zaddress::null;
-  }
-
-  if (!ZHeap::heap()->is_object_strongly_live(addr)) {
-    return zaddress::null;
-  }
-
-  // Strongly live
-  return addr;
-}
-
-zaddress ZBarrier::is_old_object_strongly_live_filter_slow_path(zaddress addr) {
-  if (is_null(addr)) {
-    return zaddress::null;
-  }
-
-  if (ZHeap::heap()->is_old(addr) && !ZHeap::heap()->is_object_strongly_live(addr)) {
-    return zaddress::null;
-  }
-
-  // Strongly live
-  return addr;
-}
-
 zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
   if (is_null(addr)) {
     return zaddress::null;

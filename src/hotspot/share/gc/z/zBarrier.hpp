@@ -94,8 +94,6 @@ private:
   static bool is_finalizable_good_fast_path(zpointer ptr);
 
   // Slow paths
-  static zaddress is_object_strongly_live_filter_slow_path(zaddress addr);
-  static zaddress is_old_object_strongly_live_filter_slow_path(zaddress addr);
   static zaddress blocking_keep_alive_on_weak_slow_path(zaddress addr);
   static zaddress blocking_keep_alive_on_phantom_slow_path(zaddress addr);
   static zaddress blocking_load_barrier_on_weak_slow_path(zaddress addr);
