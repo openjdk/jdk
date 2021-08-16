@@ -65,7 +65,7 @@ inline void ZMark::mark_object(zaddress addr) {
     }
   } else {
     // Don't push if already marked
-    if (page->is_object_marked<finalizable>(addr)) {
+    if (page->is_object_marked(addr, finalizable)) {
       // Already marked
       return;
     }

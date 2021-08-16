@@ -60,8 +60,8 @@ private:
   zoffset offset_from_bit_index(size_t index) const;
   oop object_from_bit_index(BitMap::idx_t index) const;
 
-  bool is_object_marked(zaddress addr) const;
-  bool is_object_strongly_marked(zaddress addr) const;
+  bool is_live_bit_set(zaddress addr) const;
+  bool is_strong_bit_set(zaddress addr) const;
 
   void reset_seqnum(ZGenerationId generation_id);
 
@@ -125,11 +125,13 @@ public:
   uintptr_t local_offset(zoffset offset) const;
   uintptr_t local_offset(zaddress addr) const;
 
-  bool is_marked() const;
-  template <bool finalizable>
-  bool is_object_marked(zaddress addr) const;
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
+
+  bool is_marked() const;
+  bool is_object_marked_live(zaddress addr) const;
+  bool is_object_marked_strong(zaddress addr) const;
+  bool is_object_marked(zaddress addr, bool finalizable) const;
   bool mark_object(zaddress addr, bool finalizable, bool& inc_live);
 
   void inc_live(uint32_t objects, size_t bytes);

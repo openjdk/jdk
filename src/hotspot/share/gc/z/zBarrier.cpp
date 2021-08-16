@@ -81,20 +81,6 @@ static void mark(zaddress addr) {
 
   assert(during_minor_mark() || during_major_mark(), "Should only be called during marking");
 
-  // Don't push an already marked object to the mark stack. This helps
-  // reduce mark stack usage when many oops point to the same object.
-  if (finalizable) {
-    if (ZHeap::heap()->is_object_live(addr)) {
-      // Already marked
-      return;
-    }
-  } else {
-    if (ZHeap::heap()->is_object_strongly_live(addr)) {
-      // Already marked
-      return;
-    }
-  }
-
   // Mark
   ZHeap::heap()->mark_object<gc_thread, follow, finalizable, publish>(addr);
 }
@@ -107,13 +93,6 @@ static void mark_minor(zaddress addr) {
   }
 
   assert(during_minor_mark(), "Should only be called during marking");
-
-  // Don't push an already marked object to the mark stack. This helps
-  // reduce mark stack usage when many oops point to the same object.
-  if (ZHeap::heap()->is_object_strongly_live(addr)) {
-    // Already marked
-    return;
-  }
 
   // Mark
   ZHeap::heap()->mark_minor_object<follow, publish>(addr);

@@ -236,29 +236,46 @@ inline oop ZPage::object_from_bit_index(BitMap::idx_t index) const {
   return to_oop(ZOffset::address(offset));
 }
 
-inline bool ZPage::is_object_marked(zaddress addr) const {
+inline bool ZPage::is_live_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
   const size_t index = bit_index(addr);
   return _livemap.get(_generation_id, index);
 }
 
-inline bool ZPage::is_object_strongly_marked(zaddress addr) const {
+inline bool ZPage::is_strong_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
   const size_t index = bit_index(addr);
   return _livemap.get(_generation_id, index + 1);
 }
 
-template <bool finalizable>
-inline bool ZPage::is_object_marked(zaddress addr) const {
-  return finalizable ? is_object_marked(addr) : is_object_strongly_marked(addr);
-}
-
 inline bool ZPage::is_object_live(zaddress addr) const {
-  return is_allocating() || is_object_marked(addr);
+  return is_allocating() || is_live_bit_set(addr);
 }
 
 inline bool ZPage::is_object_strongly_live(zaddress addr) const {
-  return is_allocating() || is_object_strongly_marked(addr);
+  return is_allocating() || is_strong_bit_set(addr);
+}
+
+inline bool ZPage::is_object_marked_live(zaddress addr) const {
+  // This function is only used by the marking code and therefore has stronger
+  // asserts that are not always valid to ask when checking for liveness.
+  assert(!is_old() || (ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_young() || (ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+
+  return is_object_live(addr);
+}
+
+inline bool ZPage::is_object_marked_strong(zaddress addr) const {
+  // This function is only used by the marking code and therefore has stronger
+  // asserts that are not always valid to ask when checking for liveness.
+  assert(!is_old() || (ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_young() || (ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+
+  return is_object_strongly_live(addr);
+}
+
+inline bool ZPage::is_object_marked(zaddress addr, bool finalizable) const {
+  return finalizable ? is_object_marked_live(addr) : is_object_marked_strong(addr);
 }
 
 inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) {
