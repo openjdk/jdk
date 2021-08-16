@@ -3175,14 +3175,6 @@ public:
   INSN(sve_dec, 1);
 #undef INSN
 
-  // SVE predicate count
-  void sve_cntp(Register Xd, SIMD_RegVariant T, PRegister Pg, PRegister Pn) {
-    starti;
-    assert(T != Q, "invalid size");
-    f(0b00100101, 31, 24), f(T, 23, 22), f(0b10000010, 21, 14);
-    prf(Pg, 10), f(0, 9), prf(Pn, 5), rf(Xd, 0);
-  }
-
   // SVE dup scalar
   void sve_dup(FloatRegister Zd, SIMD_RegVariant T, Register Rn) {
     starti;
@@ -3245,14 +3237,17 @@ public:
   INSN(sve_whilels, 0b111);  // While incrementing unsigned scalar lower than or the same as scalar
 #undef INSN
 
-  // Predicate scan (SVE)
-
-  // Break after the first true condition
-  void sve_brka(PRegister pd, PRegister pg, PRegister pn, bool isMerge) {
-    starti;
-    f(0b00100101, 31, 24), f(0b00, 23, 22), f(0b01000001, 21, 14),
-    prf(pg, 10), f(0b0, 9), prf(pn, 5), f(isMerge ? 1 : 0, 4), prf(pd, 0);
+// Predicate scan (SVE)
+#define INSN(NAME, b)                                                      \
+  void NAME(PRegister pd, PRegister pg, PRegister pn, bool isMerge) {      \
+    starti;                                                                \
+    f(0b00100101, 31, 24), f(b, 23), f(0b0, 22), f(0b01000001, 21, 14),    \
+    prf(pg, 10), f(0b0, 9), prf(pn, 5), f(isMerge ? 1 : 0, 4), prf(pd, 0); \
   }
+
+  INSN(sve_brka, 0);  // Break after the first true condition
+  INSN(sve_brkb, 1);  // Break before the first true condition
+#undef INSN
 
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \
@@ -3268,14 +3263,28 @@ public:
   INSN(sve_cntd, D);  // Set scalar to multiple of 64-bit predicate constraint element count
 #undef INSN
 
-  // Predicate count and increment scalar (SVE)
-
   // Set scalar to the number of Active predicate elements that are TRUE
+  void sve_cntp(Register Xd, SIMD_RegVariant T, PRegister Pg, PRegister Pn) {
+    starti;
+    assert(T != Q, "invalid size");
+    f(0b00100101, 31, 24), f(T, 23, 22), f(0b10000010, 21, 14);
+    prf(Pg, 10), f(0, 9), prf(Pn, 5), rf(Xd, 0);
+  }
+
+  // Increment scalar by the number of predicate elements that are TRUE
   void sve_incp(const Register rd, SIMD_RegVariant T, PRegister pg) {
     starti;
     assert(T != Q, "invalid size");
     f(0b00100101, 31, 24), f(T, 23, 22), f(0b1011001000100, 21, 9),
     prf(pg, 5), rf(rd, 0);
+  }
+
+  // Extract element after the Last active element to general-purpose register
+  void sve_lasta(Register Rd, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn) {
+    starti;
+    assert(T != Q, "invalid size");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b100000101, 21, 13),
+    pgrf(Pg, 10), rf(Zn, 5), rf(Rd, 0);
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
