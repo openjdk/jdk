@@ -192,8 +192,10 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   };
 
   class G1CardSetHashTableFound : public StackObj {
-    G1CardSetHashTableValue* _value = nullptr;
+    G1CardSetHashTableValue* _value;
   public:
+    G1CardSetHashTableFound() : _value(nullptr) { }
+
     void operator()(G1CardSetHashTableValue* value) {
       _value = value;
     }
@@ -610,6 +612,8 @@ void G1CardSet::transfer_cards_in_howl(CardSetPtr parent_card_set,
     Atomic::add(&howling_array->_num_entries, diff, memory_order_relaxed);
 
     G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+    assert(table_entry != nullptr, "Table entry not found for transferred cards");
+
     Atomic::add(&table_entry->_num_occupied, diff, memory_order_relaxed);
 
     Atomic::add(&_num_occupied, diff, memory_order_relaxed);
