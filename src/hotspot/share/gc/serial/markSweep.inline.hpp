@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
 #include "gc/serial/markSweep.hpp"
+#include "gc/serial/serialStringDedup.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
@@ -44,6 +45,12 @@ inline void MarkSweep::mark_object(oop obj) {
 
   if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
+  }
+
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance_inlined(obj) &&
+      SerialStringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests.add(obj);
   }
 }
 

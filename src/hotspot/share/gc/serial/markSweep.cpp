@@ -58,6 +58,8 @@ ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
 STWGCTimer*             MarkSweep::_gc_timer        = NULL;
 SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
 
+StringDedup::Requests  MarkSweep::_string_dedup_requests;
+
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
 MarkAndPushClosure MarkSweep::mark_and_push_closure;

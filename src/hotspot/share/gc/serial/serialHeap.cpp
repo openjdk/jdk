@@ -99,3 +99,15 @@ void SerialHeap::young_process_roots(OopIterateClosure* root_closure,
 
   old_gen()->younger_refs_iterate(old_gen_closure);
 }
+
+void SerialHeap::safepoint_synchronize_begin() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize();
+  }
+}
+
+void SerialHeap::safepoint_synchronize_end() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::desynchronize();
+  }
+}

@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genOopClosures.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -111,6 +112,8 @@ class MarkSweep : AllStatic {
 
   static STWGCTimer*                     _gc_timer;
   static SerialOldTracer*                _gc_tracer;
+
+  static StringDedup::Requests _string_dedup_requests;
 
   // Non public closures
   static KeepAliveClosure keep_alive;
