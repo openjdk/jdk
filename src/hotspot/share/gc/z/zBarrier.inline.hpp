@@ -103,6 +103,37 @@
 //     Remapped(N)       <- Marked(N)
 //                       <- Finalizable(N)
 
+inline void ZBarrier::assert_transition_monotonicity(zpointer old_ptr, zpointer new_ptr) {
+  const bool old_is_load_good = ZPointer::is_load_good(old_ptr);
+  const bool old_is_mark_good = ZPointer::is_mark_good(old_ptr);
+  const bool old_is_store_good = ZPointer::is_store_good(old_ptr);
+
+  const bool new_is_load_good = ZPointer::is_load_good(new_ptr);
+  const bool new_is_mark_good = ZPointer::is_mark_good(new_ptr);
+  const bool new_is_store_good = ZPointer::is_store_good(new_ptr);
+
+  assert(!old_is_load_good || new_is_load_good, "non-monotonic load good transition");
+  assert(!old_is_mark_good || new_is_mark_good, "non-monotonic mark good transition");
+  assert(!old_is_store_good || new_is_store_good, "non-monotonic store good transition");
+
+  if (is_null_any(new_ptr)) {
+    // Null is good enough at this point
+    return;
+  }
+
+  const bool old_is_marked_minor = ZPointer::is_marked_minor(old_ptr);
+  const bool old_is_marked_major = ZPointer::is_marked_major(old_ptr);
+  const bool old_is_marked_finalizable = ZPointer::is_marked_finalizable(old_ptr);
+
+  const bool new_is_marked_minor = ZPointer::is_marked_minor(new_ptr);
+  const bool new_is_marked_major = ZPointer::is_marked_major(new_ptr);
+  const bool new_is_marked_finalizable = ZPointer::is_marked_finalizable(new_ptr);
+
+  assert(!old_is_marked_minor || new_is_marked_minor, "non-monotonic marked minor transition");
+  assert(!old_is_marked_major || new_is_marked_major, "non-monotonic marked major transition");
+  assert(!old_is_marked_finalizable || new_is_marked_finalizable || new_is_marked_major, "non-monotonic marked final transition");
+}
+
 inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p, zpointer ptr, zpointer heal_ptr, bool allow_null) {
   if (!allow_null && is_null_assert_load_good(heal_ptr) && !is_null_any(ptr)) {
     // Never heal with null since it interacts badly with reference processing.
@@ -123,6 +154,8 @@ inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p
     if (ptr == zpointer::null) {
       assert(!ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(zaddress(uintptr_t(p))), "No raw null in old");
     }
+
+    assert_transition_monotonicity(ptr, heal_ptr);
 
     // Heal
     const zpointer prev_ptr = Atomic::cmpxchg(p, ptr, heal_ptr);

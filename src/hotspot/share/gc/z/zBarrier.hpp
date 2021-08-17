@@ -72,6 +72,7 @@ class ZBarrier : public AllStatic {
   friend class ZUncoloredRoot;
 
 private:
+  static void assert_transition_monotonicity(zpointer ptr, zpointer heal_ptr);
   static void self_heal(ZBarrierFastPath fast_path, volatile zpointer* p, zpointer ptr, zpointer heal_ptr, bool allow_null);
 
   template <typename ZBarrierSlowPath>
