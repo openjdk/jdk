@@ -266,7 +266,7 @@ void Dependencies::assert_common_4(DepType dept,
   GrowableArray<ciBaseObject*>* deps = _deps[dept];
 
   // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x1) && note_dep_seen(dept, x2) && note_dep_seen(dept, x3)) {
+  if (note_dep_seen(dept, x1)) {
     // look in this bucket for redundant assertions
     const int stride = 4;
     for (int i = deps->length(); (i -= stride) >= 0; ) {
