@@ -34,6 +34,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +54,12 @@ public class StringJoinerBenchmark {
     public String join(Data data) {
         String[] stringArray = data.stringArray;
         return String.join(",", stringArray);
+    }
+
+    @Benchmark
+    public String joinIterable(Data data) {
+        List<String> stringList = data.stringList;
+        return String.join(",", stringList);
     }
 
     @Benchmark
@@ -74,13 +82,17 @@ public class StringJoinerBenchmark {
 
         private String[] stringArray;
 
+        private List<String> stringList;
+
         @Setup
         public void setup() {
             stringArray = new String[count];
+            stringList = new ArrayList<>();
 
             for (int i = 0; i < count; i++) {
                 String alphabet = getAlphabet(i, mode);
                 stringArray[i] = randomString(alphabet, length);
+                stringList.add(stringArray[i]);
             }
         }
 
