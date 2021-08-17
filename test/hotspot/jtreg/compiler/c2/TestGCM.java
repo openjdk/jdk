@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Tencent, Inc. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @run main/othervm TestLCM
  */
 
-public class TestLCM {
+public class TestGCM {
     public boolean bo0;
     public boolean bo1;
     public void foo() {
@@ -43,7 +43,7 @@ public class TestLCM {
         bo1 = true;
     }
     public static void main(String[] args) {
-        TestLCM instance = new TestLCM();
+        TestGCM instance = new TestGCM();
         for (int i = 0; i < 7800; i++) {
             instance.foo();
         }
