@@ -11,7 +11,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<identity>
 		<version number="$Revision$"/>
 		<language type="be"/>
-		<variant type="tarask"/>
+		<variant type="TARASK"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>

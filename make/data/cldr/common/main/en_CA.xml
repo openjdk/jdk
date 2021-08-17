@@ -1372,6 +1372,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>U.S. Dollar</displayName>
 				<displayName count="one">U.S. dollar</displayName>
 				<displayName count="other">U.S. dollars</displayName>
+				<symbol>US$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="VES">
 				<symbol draft="contributed">VES</symbol>

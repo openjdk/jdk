@@ -4455,6 +4455,10 @@ for derived annotations.
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>item</displayName>
+				<unitPattern count="other">{0} item</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -4474,10 +4478,6 @@ for derived annotations.
 			<unit type="concentr-mole">
 				<displayName>mol</displayName>
 				<unitPattern count="other">{0} mol</unitPattern>
-			</unit>
-			<unit type="concentr-item">
-				<displayName>item</displayName>
-				<unitPattern count="other">{0} item</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>

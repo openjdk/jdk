@@ -6992,6 +6992,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} dia</pluralMinimalPairs>
+			<pluralMinimalPairs count="many">{0} de dias</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} dias</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Pegue a {0}ª à direita.</ordinalMinimalPairs>
 			<genderMinimalPairs gender="feminine">A {0} é...</genderMinimalPairs>

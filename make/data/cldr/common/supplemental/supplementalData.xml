@@ -2574,7 +2574,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kgp" populationPercent="0.024" references="R1325"/>	<!--Kaingang-->
 			<languagePopulation type="ko" populationPercent="0.021"/>	<!--Korean-->
 			<languagePopulation type="gub" populationPercent="0.0084"/>	<!--Guajajára-->
-			<languagePopulation type="yrl" populationPercent="0.0052"/>	<!--Nheengatu-->
+			<languagePopulation type="yrl" populationPercent="0.0104"/>	<!--Nheengatu-->
 			<languagePopulation type="xav" populationPercent="0.0047"/>	<!--Xavánte-->
 		</territory>
 		<territory type="BS" gdp="12060000000" literacyPercent="95.6" population="337721">	<!--Bahamas-->
@@ -2739,6 +2739,7 @@ XXX Code for transations where no currency is involved
 		<territory type="CO" gdp="711600000000" literacyPercent="93.6" population="49084800">	<!--Colombia-->
 			<languagePopulation type="es" populationPercent="93" officialStatus="official" references="R1014"/>	<!--Spanish-->
 			<languagePopulation type="guc" populationPercent="0.27"/>	<!--Wayuu-->
+			<languagePopulation type="yrl" populationPercent="0.0062"/>	<!--Nheengatu-->
 		</territory>
 		<territory type="CP" gdp="42090" literacyPercent="99" population="1">	<!--Clipperton Island-->
 			<languagePopulation type="und" populationPercent="100" references="R1062"/>	<!--Unknown language-->
@@ -4227,6 +4228,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="VE" gdp="381600000000" literacyPercent="95.5" population="28644600">	<!--Venezuela-->
 			<languagePopulation type="es" populationPercent="82" officialStatus="official"/>	<!--Spanish-->
+			<languagePopulation type="yrl" populationPercent="0.0063"/>	<!--Nheengatu-->
 		</territory>
 		<territory type="VG" gdp="500000000" literacyPercent="97.8" population="37381">	<!--British Virgin Islands-->
 			<languagePopulation type="en" populationPercent="98" officialStatus="official"/>	<!--English-->

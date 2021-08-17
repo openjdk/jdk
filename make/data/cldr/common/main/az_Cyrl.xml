@@ -481,7 +481,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG">Конго-Браззавил</territory>
 			<territory type="CG" alt="variant">Конго (Республика)</territory>
 			<territory type="CH">Исвечрә</territory>
-			<territory type="CI">Kотд’ивуар</territory>
+			<territory type="CI">Котд’ивуар</territory>
 			<territory type="CK">Кук адалары</territory>
 			<territory type="CL">Чили</territory>
 			<territory type="CM">Камерун</territory>
