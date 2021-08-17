@@ -81,7 +81,6 @@ class PSPromotionManager {
   bool                                _old_gen_is_full;
 
   PSScannerTasksQueue                 _claimed_stack_depth;
-  OverflowTaskQueue<oop, mtGC>        _claimed_stack_breadth;
 
   bool                                _totally_drain;
   uint                                _target_stack_size;
