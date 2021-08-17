@@ -171,7 +171,7 @@ public class DockerTestUtils {
 
 
     /**
-     * Build a container image based on given Dockerfile and image build directory.
+     * Build a container image based on image build directory.
      *
      * @param imageName  name of the image to be created, including version tag
      * @param buildDir   build directory; it should already contain all the content
