@@ -79,21 +79,24 @@ public class MapToPathTest {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
-        createTestDirectories(TEST_DIR);
+        createDirectories(TEST_DIR);
     }
 
-    private void createTestDirectories(Path testDir) throws IOException {
-        //      Create test directory of the following structure:
+    private void createDirectories(Path testDir) throws IOException {
+        //      Create directory tree:
         //
         //      |-- TEST_DIR
         //          |-- foo
+        //              |-- bar
+        //                  |-- baz
+        //                      |-- file.txt
         //              |-- file.txt
         //          |-- foobar
         //              |-- file.txt
         //          |-- file.txt
 
         Files.createDirectories(TEST_DIR);
-        Stream.of("foo", "foobar").forEach(s -> {
+        Stream.of("foo", "foobar", "foo/bar/baz").forEach(s -> {
             try {
                 Path p = testDir.resolve(s);
                 Files.createDirectories(p);
@@ -138,7 +141,7 @@ public class MapToPathTest {
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(7L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("file.txt")));
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/store/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
@@ -159,7 +162,7 @@ public class MapToPathTest {
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
@@ -188,11 +191,31 @@ public class MapToPathTest {
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // handler corrects context to "/foo/"
+            } finally {
+                ss.stop(0);
+            }
+        }
+        {
+            var h = SimpleFileServer.createFileHandler(TEST_DIR);
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            ss.start();
+            try {
+                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+
+                var req1 = HttpRequest.newBuilder(uri(ss, "/foo/bar/baz/c:://")).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                System.out.println(res1.body());
+                assertEquals(res1.statusCode(), 404);  // not found
+
+                var req2 = HttpRequest.newBuilder(uri(ss, "/foo/bar/\\..\\../")).build();
+                var res2 = client.send(req2, BodyHandlers.ofString());
+                System.out.println(res2.body());
+                assertEquals(res2.statusCode(), 404);  // not found
             } finally {
                 ss.stop(0);
             }

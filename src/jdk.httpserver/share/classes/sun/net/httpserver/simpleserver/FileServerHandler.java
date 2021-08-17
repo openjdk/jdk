@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -155,35 +154,31 @@ public final class FileServerHandler implements HttpHandler {
 
     private static Path mapToPath(HttpExchange exchange, Path root) {
         try {
-            var fs = root.getFileSystem();
-            String sep = fs.getSeparator();
             String context = exchange.getHttpContext().getPath();
             String request = exchange.getRequestURI().getPath();
 
-            // use file system separator
-            context = context.replaceAll("/", sep);
-            request = request.replaceAll("/", sep);
+            // check paths
+            if (!context.startsWith("/")) { context += "/"; }
+            if (!request.startsWith("/")) { request += "/"; }
+            if (!context.endsWith("/"))   { context += "/"; }
 
-            // ensure context ends with separator
-            if (!context.endsWith(sep)) { context += sep; }
+            // request must not escape context
+            if (!request.startsWith(context)) { return null; }
 
-            // ensure paths are not absolute
-            if (context.startsWith(sep)) { context = context.substring(1); }
-            if (request.startsWith(sep)) { request = request.substring(1); }
-
-            // get paths
-            var contextPath = fs.getPath(context);
-            var requestPath = fs.getPath(request);
+            String uriPath = request.substring(context.length());
+            String[] components = uriPath.split("/");
 
             // resolve
             assert root.isAbsolute() && Files.isDirectory(root);  // checked during creation
-            Path path = root.resolve(contextPath.relativize(requestPath)).normalize();
-
-            // ensure path does not escape root
-            if (path.startsWith(root)) {
-                return path;
+            Path path = root;
+            for (var c : components) {
+                path = path.resolve(c);
             }
-            return null;
+            path = path.normalize();
+
+            // path must not escape root
+            if (path.startsWith(root)) { return path; }
+            else  { return null; }
         } catch (Exception e) {
             return null;  // could not resolve request URI path
         }

@@ -106,6 +106,8 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testFileGET.zip"));
         }
     }
 
@@ -139,6 +141,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), expectedBody);
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testDirectoryGET.zip"));
         }
     }
 
@@ -163,6 +167,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testFileHEAD.zip"));
         }
     }
 
@@ -197,6 +203,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testDirectoryHEAD.zip"));
         }
     }
 
@@ -258,6 +266,8 @@ public class ZipFileSystemTest {
             if (serveIndexFile) {
                 Files.delete(root.resolve(filename));
             }
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testDirectoryWithIndexGET"+id+".zip"));
         }
     }
 
@@ -289,6 +299,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), expectedBody);
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testInvalidRequestURIGET.zip"));
         }
     }
 
@@ -317,6 +329,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), expectedBody);
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testNotFoundGET.zip"));
         }
     }
 
@@ -346,6 +360,8 @@ public class ZipFileSystemTest {
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testNotFoundHEAD.zip"));
         }
     }
 
@@ -366,6 +382,8 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("location").get(), "%s/".formatted(uri));
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testMovedPermanently.zip"));
         }
     }
 
@@ -391,6 +409,8 @@ public class ZipFileSystemTest {
             assertTrue(response.body().contains("File not found"));
         } finally {
             ss.stop(0);
+            root.getFileSystem().close();
+            Files.deleteIfExists(TEST_DIR.resolve("testXss.zip"));
         }
     }
 
