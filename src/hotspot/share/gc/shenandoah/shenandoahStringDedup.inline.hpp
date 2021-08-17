@@ -36,6 +36,10 @@ bool ShenandoahStringDedup::is_string_candidate(oop obj) {
          java_lang_String::value(obj) != nullptr;
 }
 
+bool ShenandoahStringDedup::dedup_requested(oop obj) {
+  return java_lang_String::test_and_set_deduplication_requested(obj);
+}
+
 bool ShenandoahStringDedup::is_candidate(oop obj) {
   if (!is_string_candidate(obj)) {
     return false;
@@ -51,7 +55,8 @@ bool ShenandoahStringDedup::is_candidate(oop obj) {
     // Increase string age and enqueue it when it rearches age threshold
     markWord new_mark = mark.incr_age();
     if (mark == obj->cas_set_mark(new_mark, mark)) {
-      return StringDedup::is_threshold_age(new_mark.age());
+      return StringDedup::is_threshold_age(new_mark.age()) &&
+             !dedup_requested(obj);
     }
   }
   return false;
