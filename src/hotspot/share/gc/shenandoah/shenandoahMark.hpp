@@ -56,8 +56,8 @@ public:
 
 // ---------- Marking loop and tasks
 private:
-  template <class T>
-  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
+  template <class T, StringDedupMode STRING_DEDUP>
+  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Request* const req, ShenandoahMarkTask* task);
 
   template <class T>
   inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
@@ -73,6 +73,8 @@ private:
   template <bool CANCELLABLE, StringDedupMode STRING_DEDUP>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp);
 
+  template <StringDedupMode STRING_DEDUP>
+  inline void dedup_string(Oop obj, StringDedup::Request* const req);
 protected:
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, StringDedupMode dedup_mode);

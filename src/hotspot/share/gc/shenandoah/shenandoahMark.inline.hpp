@@ -40,8 +40,16 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-template <class T>
-void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
+template <StringDedupMode STRING_DEDUP>
+void ShenandoahMark::dedup_string(Oop obj, StringDedup::Request* const req) {
+  if (STRING_DEDUP == ENQUEUE_DEDUP) {
+    if (ShenandoahStringDedup::)
+  }
+}
+
+
+template <class T, StringDedupMode STRING_DEDUP>
+void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Request* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
   shenandoah_assert_not_forwarded(NULL, obj);
@@ -54,6 +62,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
+      dedup_string<STRING_DEDUP>(obj, req);
       // Case 1: Normal oop, process as usual.
       obj->oop_iterate(cl);
     } else if (obj->is_objArray()) {
