@@ -1415,7 +1415,7 @@ public:
 
     // Merge remembered sets of current candidates.
     {
-      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, _initial_evacuation /* must_record */);
+      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id);
       G1MergeCardSetStats stats;
       {
         G1MergeCardSetClosure cl(_scan_state);

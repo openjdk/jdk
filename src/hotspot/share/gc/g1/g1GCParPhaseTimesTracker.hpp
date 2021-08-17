@@ -39,7 +39,7 @@ protected:
   bool _must_record;
 
 public:
-  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record = true);
+  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id);
   virtual ~G1GCParPhaseTimesTracker();
 };
 
