@@ -281,16 +281,7 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const Type *t_2    = phase->type( in2        );
     if( t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP )
       return new SubINode(phase->makecon( add_ring( t_sub1, t_2 ) ), in1->in(2) );
-    // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
-    if( op2 == Op_SubI ) {
-      // Check for dead cycle: d = (a-b)+(c-d)
-      assert( in1->in(2) != this && in2->in(2) != this,
-              "dead loop in AddINode::Ideal" );
-      Node *sub  = new SubINode(NULL, NULL);
-      sub->init_req(1, phase->transform(new AddINode(in1->in(1), in2->in(1) ) ));
-      sub->init_req(2, phase->transform(new AddINode(in1->in(2), in2->in(2) ) ));
-      return sub;
-    }
+
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if( op2 == Op_AddI && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddINode::Ideal");
@@ -310,6 +301,16 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( op2 == Op_SubI && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddINode::Ideal");
       return new SubINode(in2->in(1), in1->in(2));
+    }
+    // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
+    if( op2 == Op_SubI ) {
+      // Check for dead cycle: d = (a-b)+(c-d)
+      assert( in1->in(2) != this && in2->in(2) != this,
+              "dead loop in AddINode::Ideal" );
+      Node *sub  = new SubINode(NULL, NULL);
+      sub->init_req(1, phase->transform(new AddINode(in1->in(1), in2->in(1) ) ));
+      sub->init_req(2, phase->transform(new AddINode(in1->in(2), in2->in(2) ) ));
+      return sub;
     }
   }
 
@@ -461,18 +462,10 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( op1 == Op_SubL ) {
     const Type *t_sub1 = phase->type( in1->in(1) );
     const Type *t_2    = phase->type( in2        );
+
     if( t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP )
       return new SubLNode(phase->makecon( add_ring( t_sub1, t_2 ) ), in1->in(2) );
-    // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
-    if( op2 == Op_SubL ) {
-      // Check for dead cycle: d = (a-b)+(c-d)
-      assert( in1->in(2) != this && in2->in(2) != this,
-              "dead loop in AddLNode::Ideal" );
-      Node *sub  = new SubLNode(NULL, NULL);
-      sub->init_req(1, phase->transform(new AddLNode(in1->in(1), in2->in(1) ) ));
-      sub->init_req(2, phase->transform(new AddLNode(in1->in(2), in2->in(2) ) ));
-      return sub;
-    }
+
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if( op2 == Op_AddL && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddLNode::Ideal");
@@ -492,6 +485,17 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( op2 == Op_SubL && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
       return new SubLNode(in2->in(1), in1->in(2));
+    }
+
+    // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
+    if( op2 == Op_SubL ) {
+      // Check for dead cycle: d = (a-b)+(c-d)
+      assert( in1->in(2) != this && in2->in(2) != this,
+              "dead loop in AddLNode::Ideal" );
+      Node *sub  = new SubLNode(NULL, NULL);
+      sub->init_req(1, phase->transform(new AddLNode(in1->in(1), in2->in(1) ) ));
+      sub->init_req(2, phase->transform(new AddLNode(in1->in(2), in2->in(2) ) ));
+      return sub;
     }
   }
 
