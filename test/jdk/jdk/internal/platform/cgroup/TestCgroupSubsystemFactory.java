@@ -72,6 +72,7 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv1MntInfoDoubleCpusets;
     private Path cgroupv1MntInfoDoubleCpusets2;
     private Path cgroupv1SelfCgroup;
+    private Path cgroupv1SelfColons;
     private Path cgroupv2SelfCgroup;
     private Path cgroupv1SelfCgroupJoinCtrl;
     private Path cgroupv1CgroupsOnlyCPUCtrl;
@@ -172,7 +173,24 @@ public class TestCgroupSubsystemFactory {
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpuset rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupsV1DoubleCpuset = mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
     private String mntInfoCgroupsV1DoubleCpuset2 = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
-    private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.s:ervice\n" +
+    private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.service\n" +
+            "10:hugetlb:/\n" +
+            "9:cpuset:/\n" +
+            "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
+            "7:freezer:/\n" +
+            "6:blkio:/\n" +
+            "5:net_cls,net_prio:/\n" +
+            "4:devices:/user.slice\n" +
+            "3:perf_event:/\n" +
+            "2:cpu,cpuacct:/\n" +
+            "1:name=systemd:/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n" +
+            "0::/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n";
+
+    // `/proc/self/cgroup` should contain **three** colon-separated fields,
+    // `hierarchy-ID:controller-list:cgroup-path`. This cgroup-path intentionally
+    // contains a colon to ensure that the correct path is being extracted by the
+    // login in CgroupSubsystemFactory.
+    private String cgroupv1SelfColonsContent = "11:memory:/system.slice/containerd.service/kubepods-burstable-podf65e797d_d5f9_4604_9773_94f4bb9946a0.slice:cri-containerd:86ac6260f9f8a9c1276748250f330ae9c2fcefe5ae809364ad1e45f3edf7e08a\n" +
             "10:hugetlb:/\n" +
             "9:cpuset:/\n" +
             "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
@@ -223,6 +241,9 @@ public class TestCgroupSubsystemFactory {
 
             cgroupv1SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1");
             Files.writeString(cgroupv1SelfCgroup, cgroupv1SelfCgroupContent);
+
+            cgroupv1SelfColons = Paths.get(existingDirectory.toString(), "self_colons_cgv1");
+            Files.writeString(cgroupv1SelfColons, cgroupv1SelfColonsContent);
 
             cgroupv2SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv2");
             Files.writeString(cgroupv2SelfCgroup, cgroupv2SelfCgroupContent);
@@ -335,9 +356,23 @@ public class TestCgroupSubsystemFactory {
         CgroupTypeResult res = result.get();
         assertFalse("hybrid hierarchy expected as cgroups v1", res.isCgroupV2());
         CgroupInfo memoryInfo = res.getInfos().get("memory");
-        assertEquals("/user.slice/user-1000.slice/user@1000.s:ervice", memoryInfo.getCgroupPath());
+        assertEquals("/user.slice/user-1000.slice/user@1000.service", memoryInfo.getCgroupPath());
         assertEquals("/", memoryInfo.getMountRoot());
         assertEquals("/sys/fs/cgroup/memory", memoryInfo.getMountPoint());
+    }
+
+    @Test
+    public void testColonsCgroupsV1() throws IOException {
+        String cgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
+        String mountInfo = cgroupv1MntInfoNonZeroHierarchy.toString();
+        String selfCgroup = cgroupv1SelfColons.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
+
+        assertTrue("Expected non-empty cgroup result", result.isPresent());
+        CgroupTypeResult res = result.get();
+        CgroupInfo memoryInfo = res.getInfos().get("memory");
+        assertEquals(memoryInfo.getCgroupPath(), "/system.slice/containerd.service/kubepods-burstable-podf65e797d_d5f9_4604_9773_94f4bb9946a0.slice:cri-containerd:86ac6260f9f8a9c1276748250f330ae9c2fcefe5ae809364ad1e45f3edf7e08a");
+        assertEquals(memoryInfo.getMountRoot(), memoryInfo.getMountRoot());
     }
 
     @Test
