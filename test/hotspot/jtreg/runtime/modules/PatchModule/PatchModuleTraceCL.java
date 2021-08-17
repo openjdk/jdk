@@ -56,6 +56,7 @@ public class PatchModuleTraceCL {
              "-Xlog:class+load=info", "PatchModuleMain", "javax.naming.spi.NamingManager");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         // "modules" jimage case.
         output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // --patch-module case.

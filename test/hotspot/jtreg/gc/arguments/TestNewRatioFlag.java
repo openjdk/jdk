@@ -122,11 +122,12 @@ public class TestNewRatioFlag {
         public static void verifyDefNewNewRatio(int expectedRatio) {
             long initEden = HeapRegionUsageTool.getEdenUsage().getInit();
             long initSurv = HeapRegionUsageTool.getSurvivorUsage().getInit();
-            long initOld = HeapRegionUsageTool.getOldUsage().getInit();
+            long initHeap = HeapRegionUsageTool.getHeapUsage().getInit();
 
             long newSize = initEden + 2 * initSurv;
 
-            long expectedNewSize = HeapRegionUsageTool.alignDown(initOld / expectedRatio,
+            // See GenArguments::scale_by_NewRatio_aligned for calculation in the JVM.
+            long expectedNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
                     wb.getHeapSpaceAlignment());
 
             if (expectedNewSize != newSize) {
@@ -143,11 +144,12 @@ public class TestNewRatioFlag {
         public static void verifyPSNewRatio(int expectedRatio) {
             long initEden = HeapRegionUsageTool.getEdenUsage().getInit();
             long initSurv = HeapRegionUsageTool.getSurvivorUsage().getInit();
-            long initOld = HeapRegionUsageTool.getOldUsage().getInit();
+            long initHeap = HeapRegionUsageTool.getHeapUsage().getInit();
 
             long newSize = initEden + 2 * initSurv;
 
-            long alignedDownNewSize = HeapRegionUsageTool.alignDown(initOld / expectedRatio,
+            // See GenArguments::scale_by_NewRatio_aligned for calculation in the JVM.
+            long alignedDownNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
                     wb.getHeapSpaceAlignment());
             long expectedNewSize = HeapRegionUsageTool.alignUp(alignedDownNewSize,
                     wb.psVirtualSpaceAlignment());

@@ -59,6 +59,7 @@ class oopDesc {
 
  public:
   inline markWord  mark()          const;
+  inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
@@ -146,7 +147,6 @@ class oopDesc {
   void obj_field_put_volatile(int offset, oop value);
 
   Metadata* metadata_field(int offset) const;
-  Metadata* metadata_field_raw(int offset) const;
   void metadata_field_put(int offset, Metadata* value);
 
   Metadata* metadata_field_acquire(int offset) const;
@@ -164,7 +164,6 @@ class oopDesc {
   void bool_field_put_volatile(int offset, jboolean contents);
 
   jint int_field(int offset) const;
-  jint int_field_raw(int offset) const;
   void int_field_put(int offset, jint contents);
 
   jshort short_field(int offset) const;
@@ -233,7 +232,6 @@ class oopDesc {
   // locking operations
   inline bool is_locked()   const;
   inline bool is_unlocked() const;
-  inline bool has_bias_pattern() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj, bool ignore_mark_word = false);
@@ -257,7 +255,6 @@ class oopDesc {
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
-  inline oop forwardee_acquire() const;
 
   // Age of object during scavenge
   inline uint age() const;
@@ -284,8 +281,6 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  // NOTE with the introduction of UseBiasedLocking that identity_hash() might reach a
-  // safepoint if called on a biased object. Calling code must be aware of that.
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
 

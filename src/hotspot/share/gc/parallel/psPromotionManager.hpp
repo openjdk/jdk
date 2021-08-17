@@ -81,7 +81,6 @@ class PSPromotionManager {
   bool                                _old_gen_is_full;
 
   PSScannerTasksQueue                 _claimed_stack_depth;
-  OverflowTaskQueue<oop, mtGC>        _claimed_stack_breadth;
 
   bool                                _totally_drain;
   uint                                _target_stack_size;
@@ -109,6 +108,9 @@ class PSPromotionManager {
                                     const PSPromotionLAB* lab);
 
   static PSScannerTasksQueueSet* stack_array_depth() { return _stack_array_depth; }
+
+  template<bool promote_immediately>
+  oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
  public:
   // Static

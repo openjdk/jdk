@@ -2488,9 +2488,8 @@ void SuperWord::output() {
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = low_adr->in(1);
         Node* in2 = p->at(0)->in(2);
-        assert(in2->bottom_type()->isa_int(), "Shift must always be an int value");
         // If rotation count is non-constant or greater than 8bit value create a vector.
-        if (!in2->is_Con() || -0x80 > in2->get_int() || in2->get_int() >= 0x80) {
+        if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
           in2 =  vector_opd(p, 2);
         }
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
@@ -2694,7 +2693,7 @@ void SuperWord::output() {
           // if vector resources are limited, do not allow additional unrolling, also
           // do not unroll more on pure vector loops which were not reduced so that we can
           // program the post loop to single iteration execution.
-          if (FLOATPRESSURE > 8) {
+          if (Matcher::float_pressure_limit() > 8) {
             C->set_major_progress();
             cl->mark_do_unroll_only();
           }
@@ -3604,7 +3603,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   // The loop cannot be optimized if the graph shape at
   // the loop entry is inappropriate.
-  if (!PhaseIdealLoop::is_canonical_loop_entry(cl)) {
+  if (cl->is_canonical_loop_entry() == NULL) {
     return NULL;
   }
 

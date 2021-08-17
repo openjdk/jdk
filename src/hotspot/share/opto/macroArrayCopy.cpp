@@ -307,8 +307,8 @@ address PhaseMacroExpand::basictype2arraycopy(BasicType t,
                                               bool disjoint_bases,
                                               const char* &name,
                                               bool dest_uninitialized) {
-  const TypeInt* src_offset_inttype  = _igvn.find_int_type(src_offset);;
-  const TypeInt* dest_offset_inttype = _igvn.find_int_type(dest_offset);;
+  const TypeInt* src_offset_inttype  = _igvn.find_int_type(src_offset);
+  const TypeInt* dest_offset_inttype = _igvn.find_int_type(dest_offset);
 
   bool aligned = false;
   bool disjoint = disjoint_bases;
@@ -831,7 +831,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   }
 
   _igvn.replace_node(_callprojs.fallthrough_memproj, out_mem);
-  _igvn.replace_node(_callprojs.fallthrough_ioproj, *io);
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    _igvn.replace_node(_callprojs.fallthrough_ioproj, *io);
+  }
   _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
@@ -1095,8 +1097,14 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   }
   transform_later(out_mem);
 
-  *io = _callprojs.fallthrough_ioproj->clone();
-  transform_later(*io);
+  // When src is negative and arraycopy is before an infinite loop,_callprojs.fallthrough_ioproj
+  // could be NULL. Skip clone and update NULL fallthrough_ioproj.
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    *io = _callprojs.fallthrough_ioproj->clone();
+    transform_later(*io);
+  } else {
+    *io = NULL;
+  }
 
   return out_mem;
 }
@@ -1224,6 +1232,8 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   return false;
 }
 
+#undef XTOP
+
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   Node* ctrl = ac->in(TypeFunc::Control);
   Node* io = ac->in(TypeFunc::I_O);
@@ -1331,7 +1341,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     }
 
     _igvn.replace_node(_callprojs.fallthrough_memproj, merge_mem);
-    _igvn.replace_node(_callprojs.fallthrough_ioproj, io);
+    if (_callprojs.fallthrough_ioproj != NULL) {
+      _igvn.replace_node(_callprojs.fallthrough_ioproj, io);
+    }
     _igvn.replace_node(_callprojs.fallthrough_catchproj, ctrl);
     return;
   }

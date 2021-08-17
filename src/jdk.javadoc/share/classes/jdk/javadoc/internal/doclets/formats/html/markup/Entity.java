@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,17 +70,19 @@ public class Entity extends Content {
      * @return the string with all of the HTML characters escaped
      */
     static String escapeHtmlChars(CharSequence s) {
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
+        // Convert to string as CharSequence implementations can be slow - see JDK-8263321
+        String str = s.toString();
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
             switch (ch) {
                 // only start building a new string if we need to
                 case '<': case '>': case '&':
-                    StringBuilder sb = new StringBuilder(s.subSequence(0, i));
-                    escapeHtmlChars(s, i, sb);
+                    StringBuilder sb = new StringBuilder(str.substring(0, i));
+                    escapeHtmlChars(str, i, sb);
                     return sb.toString();
             }
         }
-        return s.toString();
+        return str;
     }
 
     /**
@@ -91,10 +93,10 @@ public class Entity extends Content {
      * @param sb the string builder
      */
     static void escapeHtmlChars(CharSequence s, StringBuilder sb) {
-        escapeHtmlChars(s, 0, sb);
+        escapeHtmlChars(s.toString(), 0, sb);
     }
 
-    private static void escapeHtmlChars(CharSequence s, int start, StringBuilder sb) {
+    private static void escapeHtmlChars(String s, int start, StringBuilder sb) {
         for (int i = start ; i < s.length(); i++) {
             char ch = s.charAt(i);
             switch (ch) {

@@ -40,6 +40,7 @@
 #include "code/debugInfo.hpp"
 #include "code/dependencyContext.hpp"
 #include "code/pcDesc.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -469,70 +470,9 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   return native_platform_string;
 }
 
-Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS) {
-  oop          obj    = java_string();
-  // Typical usage is to convert all '/' to '.' in string.
-  typeArrayOop value  = java_lang_String::value(obj);
-  int          length = java_lang_String::length(obj, value);
-  bool      is_latin1 = java_lang_String::is_latin1(obj);
-
-  // First check if any from_char exist
-  int index; // Declared outside, used later
-  for (index = 0; index < length; index++) {
-    jchar c = !is_latin1 ? value->char_at(index) :
-                  ((jchar) value->byte_at(index)) & 0xff;
-    if (c == from_char) {
-      break;
-    }
-  }
-  if (index == length) {
-    // No from_char, so do not copy.
-    return java_string;
-  }
-
-  // Check if result string will be latin1
-  bool to_is_latin1 = false;
-
-  // Replacement char must be latin1
-  if (CompactStrings && UNICODE::is_latin1(to_char)) {
-    if (is_latin1) {
-      // Source string is latin1 as well
-      to_is_latin1 = true;
-    } else if (!UNICODE::is_latin1(from_char)) {
-      // We are replacing an UTF16 char. Scan string to
-      // check if result can be latin1 encoded.
-      to_is_latin1 = true;
-      for (index = 0; index < length; index++) {
-        jchar c = value->char_at(index);
-        if (c != from_char && !UNICODE::is_latin1(c)) {
-          to_is_latin1 = false;
-          break;
-        }
-      }
-    }
-  }
-
-  // Create new UNICODE (or byte) buffer. Must handlize value because GC
-  // may happen during String and char array creation.
-  typeArrayHandle h_value(THREAD, value);
-  Handle string = basic_create(length, to_is_latin1, CHECK_NH);
-  typeArrayOop from_buffer = h_value();
-  typeArrayOop to_buffer = java_lang_String::value(string());
-
-  // Copy contents
-  for (index = 0; index < length; index++) {
-    jchar c = (!is_latin1) ? from_buffer->char_at(index) :
-                    ((jchar) from_buffer->byte_at(index)) & 0xff;
-    if (c == from_char) {
-      c = to_char;
-    }
-    if (!to_is_latin1) {
-      to_buffer->char_at_put(index, c);
-    } else {
-      to_buffer->byte_at_put(index, (jbyte) c);
-    }
-  }
-  return string;
+Handle java_lang_String::externalize_classname(Symbol* java_name, TRAPS) {
+  ResourceMark rm(THREAD);
+  return create_from_str(java_name->as_klass_external_name(), THREAD);
 }
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
@@ -563,7 +503,7 @@ jchar* java_lang_String::as_unicode_string_or_null(oop java_string, int& length)
   return result;
 }
 
-unsigned int java_lang_String::hash_code(oop java_string) {
+inline unsigned int java_lang_String::hash_code_impl(oop java_string, bool update) {
   // The hash and hashIsZero fields are subject to a benign data race,
   // making it crucial to ensure that any observable result of the
   // calculation in this method stays correct under any possible read of
@@ -590,13 +530,24 @@ unsigned int java_lang_String::hash_code(oop java_string) {
     }
   }
 
-  if (hash != 0) {
-    java_string->int_field_put(_hash_offset, hash);
-  } else {
-    java_string->bool_field_put(_hashIsZero_offset, true);
+  if (update) {
+    if (hash != 0) {
+      java_string->int_field_put(_hash_offset, hash);
+    } else {
+      java_string->bool_field_put(_hashIsZero_offset, true);
+    }
   }
   return hash;
 }
+
+unsigned int java_lang_String::hash_code(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/true);
+}
+
+unsigned int java_lang_String::hash_code_noupdate(oop java_string) {
+  return hash_code_impl(java_string, /*update=*/false);
+}
+
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
@@ -866,14 +817,11 @@ static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, T
 static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
   DEBUG_ONLY(assert_valid_static_string_field(fd);)
   assert(DumpSharedSpaces, "must be");
-  if (HeapShared::is_archived_object(mirror())) {
-    // Archive the String field and update the pointer.
-    oop s = mirror()->obj_field(fd->offset());
-    oop archived_s = StringTable::create_archived_string(s);
-    mirror()->obj_field_put(fd->offset(), archived_s);
-  } else {
-    guarantee(false, "Unexpected");
-  }
+  assert(HeapShared::is_archived_object_during_dumptime(mirror()), "must be");
+  // Archive the String field and update the pointer.
+  oop s = mirror()->obj_field(fd->offset());
+  oop archived_s = StringTable::create_archived_string(s);
+  mirror()->obj_field_put(fd->offset(), archived_s);
 }
 #endif
 
@@ -955,7 +903,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::open_regions_mapped()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1206,7 +1154,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
     oop m = Universe::_mirrors[t].resolve();
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_heap_object(m);
+      oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
@@ -1265,7 +1213,7 @@ oop java_lang_Class::archive_mirror(Klass* k) {
   }
 
   // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_heap_object(mirror);
+  oop archived_mirror = HeapShared::archive_object(mirror);
   if (archived_mirror == NULL) {
     return NULL;
   }
@@ -1392,7 +1340,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  assert(HeapShared::is_archived_object(m), "must be archived mirror object");
+  assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1432,14 +1380,6 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
   java_lang_Class::set_module(k->java_mirror(), module());
 }
 
-int  java_lang_Class::oop_size(oop java_class) {
-  assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field(_oop_size_offset);
-  assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  return size;
-}
-
-
 void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
@@ -1449,11 +1389,6 @@ void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
 int  java_lang_Class::static_oop_field_count(oop java_class) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   return java_class->int_field(_static_oop_field_count_offset);
-}
-
-int  java_lang_Class::static_oop_field_count_raw(oop java_class) {
-  assert(_static_oop_field_count_offset != 0, "must be set");
-  return java_class->int_field_raw(_static_oop_field_count_offset);
 }
 
 void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
@@ -1561,16 +1496,6 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
 #endif
   return java_class;
 }
-
-
-Klass* java_lang_Class::as_Klass_raw(oop java_class) {
-  //%note memory_2
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  Klass* k = ((Klass*)java_class->metadata_field_raw(_klass_offset));
-  assert(k == NULL || k->is_klass(), "type check");
-  return k;
-}
-
 
 void java_lang_Class::set_klass(oop java_class, Klass* klass) {
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
@@ -2717,6 +2642,51 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
                                          bte._bci,
                                          bte._name, CHECK);
   }
+}
+
+Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) {
+  // Call to JVM to fill in the stack trace and clear declaringClassObject to
+  // not keep classes alive in the stack trace.
+  // call this:  public StackTraceElement[] getStackTrace()
+  assert(throwable.not_null(), "shouldn't be");
+
+  JavaValue result(T_ARRAY);
+  JavaCalls::call_virtual(&result, throwable,
+                          vmClasses::Throwable_klass(),
+                          vmSymbols::getStackTrace_name(),
+                          vmSymbols::getStackTrace_signature(),
+                          CHECK_NH);
+  Handle stack_trace(THREAD, result.get_oop());
+  assert(stack_trace->is_objArray(), "Should be an array");
+
+  // Throw ExceptionInInitializerError as the cause with this exception in
+  // the message and stack trace.
+
+  // Now create the message with the original exception and thread name.
+  Symbol* message = java_lang_Throwable::detail_message(throwable());
+  ResourceMark rm(THREAD);
+  stringStream st;
+  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
+             message == nullptr ? "" : ":");
+  if (message == NULL) {
+    st.print("[in thread \"%s\"]", THREAD->name());
+  } else {
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
+  }
+
+  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
+  Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
+
+  // If new_exception returns a different exception while creating the exception, return null.
+  if (h_cause->klass()->name() != exception_name) {
+    log_info(class, init)("Exception thrown while saving initialization exception %s",
+                          h_cause->klass()->external_name());
+    return Handle();
+  }
+  java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
+  // Clear backtrace because the stacktrace should be used instead.
+  set_backtrace(h_cause(), NULL);
+  return h_cause;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
@@ -4315,10 +4285,10 @@ ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   return HeapAccess<MO_ACQUIRE>::load_at(loader, _loader_data_offset);
 }
 
-ClassLoaderData* java_lang_ClassLoader::loader_data_raw(oop loader) {
+ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return RawAccess<>::load_at(loader, _loader_data_offset);
+  return HeapAccess<>::load_at(loader, _loader_data_offset);
 }
 
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
@@ -4646,26 +4616,6 @@ void java_lang_AssertionStatusDirectives::set_packageEnabled(oop o, oop val) {
 void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
-
-
-// Support for intrinsification of java.nio.Buffer.checkIndex
-
-int java_nio_Buffer::_limit_offset;
-
-#define BUFFER_FIELDS_DO(macro) \
-  macro(_limit_offset, k, "limit", int_signature, false)
-
-void java_nio_Buffer::compute_offsets() {
-  InstanceKlass* k = vmClasses::nio_Buffer_klass();
-  assert(k != NULL, "must be loaded in 1.4+");
-  BUFFER_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_nio_Buffer::serialize_offsets(SerializeClosure* f) {
-  BUFFER_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
 
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 

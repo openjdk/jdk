@@ -45,32 +45,26 @@ import sun.font.TrueTypeFont;
 /**
  * The X11 implementation of {@link FontManager}.
  */
-@SuppressWarnings("removal")
 public final class Win32FontManager extends SunFontManager {
 
-    private static TrueTypeFont eudcFont;
-
-    static {
-
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-
-                public Object run() {
+    @SuppressWarnings("removal")
+    private static final TrueTypeFont eudcFont =
+            AccessController.doPrivileged(new PrivilegedAction<TrueTypeFont>() {
+                public TrueTypeFont run() {
                     String eudcFile = getEUDCFontFile();
                     if (eudcFile != null) {
                         try {
                             /* Must use Java rasteriser since GDI doesn't
                              * enumerate (allow direct use) of EUDC fonts.
                              */
-                            eudcFont = new TrueTypeFont(eudcFile, null, 0,
+                            return new TrueTypeFont(eudcFile, null, 0,
                                                         true, false);
                         } catch (FontFormatException e) {
                         }
                     }
                     return null;
                 }
-
             });
-    }
 
     /* Used on Windows to obtain from the windows registry the name
      * of a file containing the system EUFC font. If running in one of
@@ -84,6 +78,7 @@ public final class Win32FontManager extends SunFontManager {
         return eudcFont;
     }
 
+    @SuppressWarnings("removal")
     public Win32FontManager() {
         super();
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
@@ -218,6 +213,7 @@ public final class Win32FontManager extends SunFontManager {
         info[1] = "c:\\windows\\fonts";
         final String[] dirs = getPlatformFontDirs(true);
         if (dirs.length > 1) {
+            @SuppressWarnings("removal")
             String dir = (String)
                 AccessController.doPrivileged(new PrivilegedAction<Object>() {
                         public Object run() {
@@ -252,6 +248,7 @@ public final class Win32FontManager extends SunFontManager {
         fontsForPrinting = pathName;
     }
 
+    @SuppressWarnings("removal")
     public static void registerJREFontsForPrinting() {
         final String pathName;
         synchronized (Win32GraphicsEnvironment.class) {

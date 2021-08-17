@@ -1786,10 +1786,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::clear();
 #endif
 
-    ref_processor()->enable_discovery();
-    ref_processor()->setup_policy(maximum_heap_compaction);
-
-    bool marked_for_unloading = false;
+    ref_processor()->start_discovery(maximum_heap_compaction);
 
     marking_start.update();
     marking_phase(vmthread_cm, maximum_heap_compaction, &_gc_tracer);
@@ -2114,7 +2111,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+    WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(),
+                                is_alive_closure(),
+                                &do_nothing_cl,
+                                1);
   }
 
   {

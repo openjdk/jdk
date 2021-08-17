@@ -293,8 +293,7 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
 void EpsilonHeap::print_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
-  // Cast away constness:
-  ((VirtualSpace)_virtual_space).print_on(st);
+  _virtual_space.print_on(st);
 
   if (_space != NULL) {
     st->print_cr("Allocation space:");

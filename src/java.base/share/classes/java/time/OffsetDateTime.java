@@ -597,13 +597,12 @@ public final class OffsetDateTime
     @Override
     public int get(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS:
-                    throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS:
-                    return getOffset().getTotalSeconds();
-            }
-            return dateTime.get(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> throw new UnsupportedTemporalTypeException("Invalid field " +
+                                         "'InstantSeconds' for get() method, use getLong() instead");
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.get(field);
+            };
         }
         return Temporal.super.get(field);
     }
@@ -634,11 +633,11 @@ public final class OffsetDateTime
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return dateTime.getLong(field);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> dateTime.getLong(field);
+            };
         }
         return field.getFrom(this);
     }
@@ -968,13 +967,12 @@ public final class OffsetDateTime
     @Override
     public OffsetDateTime with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case INSTANT_SECONDS: return ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
-                case OFFSET_SECONDS: {
-                    return with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
-                }
-            }
-            return with(dateTime.with(field, newValue), offset);
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
+                case OFFSET_SECONDS ->
+                     with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
+                default -> with(dateTime.with(field, newValue), offset);
+            };
         }
         return field.adjustInto(this, newValue);
     }

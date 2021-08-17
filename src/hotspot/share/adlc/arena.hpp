@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,7 @@ public:
     }
   }
   // Further assume size is padded out to words
-  // Warning:  in LP64, Amalloc_4 is really Amalloc_8
-  void *Amalloc_4(size_t x) {
+  void *AmallocWords(size_t x) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     if (_hwm + x > _max) {
       return grow(x);

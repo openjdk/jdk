@@ -50,7 +50,6 @@ public class TestPrintReferences {
     static final String finalReference = "FinalReference";
     static final String phantomReference = "PhantomReference";
 
-    static final String phaseReconsiderSoftReferences = "Reconsider SoftReferences";
     static final String phaseNotifySoftWeakReferences = "Notify Soft/WeakReferences";
     static final String phaseNotifyKeepAliveFinalizer = "Notify and keep alive finalizable";
     static final String phaseNotifyPhantomReferences  = "Notify PhantomReferences";
@@ -137,7 +136,6 @@ public class TestPrintReferences {
 
         final boolean p = parallelRefProcEnabled;
 
-        String phase1Regex = gcLogTimeRegex + phaseRegex(phaseReconsiderSoftReferences) + balanceRegex + subphaseRegex("SoftRef", p);
         String phase2Regex = gcLogTimeRegex + phaseRegex(phaseNotifySoftWeakReferences) +
                              balanceRegex +
                              subphaseRegex("SoftRef", p) +
@@ -148,7 +146,6 @@ public class TestPrintReferences {
         String phase4Regex = gcLogTimeRegex + phaseRegex(phaseNotifyPhantomReferences) + balanceRegex + subphaseRegex("PhantomRef", p);
 
         output.shouldMatch(totalRegex +
-                           phase1Regex +
                            phase2Regex +
                            phase3Regex +
                            phase4Regex);
@@ -220,14 +217,14 @@ public class TestPrintReferences {
     private static void checkTrimmedLogValue() {
         BigDecimal refProcTime = getTimeValue(referenceProcessing, 0);
 
-        BigDecimal sumOfSubPhasesTime = getTimeValue(phaseReconsiderSoftReferences, 2);
+        BigDecimal sumOfSubPhasesTime = BigDecimal.ZERO;
         sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phaseNotifySoftWeakReferences, 2));
         sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phaseNotifyKeepAliveFinalizer, 2));
         sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phaseNotifyPhantomReferences, 2));
 
-        // If there are 4 phases, we should allow 0.2 tolerance.
-        final BigDecimal toleranceFor4SubPhases = BigDecimal.valueOf(0.2);
-        if (!greaterThanOrApproximatelyEqual(refProcTime, sumOfSubPhasesTime, toleranceFor4SubPhases)) {
+        // If there are 3 phases, we should allow 0.2 tolerance.
+        final BigDecimal toleranceFor3SubPhases = BigDecimal.valueOf(0.2);
+        if (!greaterThanOrApproximatelyEqual(refProcTime, sumOfSubPhasesTime, toleranceFor3SubPhases)) {
             throw new RuntimeException("Reference Processing time(" + refProcTime + "ms) is less than the sum("
                                        + sumOfSubPhasesTime + "ms) of each phases");
         }

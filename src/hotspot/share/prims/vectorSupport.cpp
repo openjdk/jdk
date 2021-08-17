@@ -30,6 +30,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -370,6 +371,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_INT:   return Op_URShiftI;
         case T_LONG:  return Op_URShiftL;
         default: fatal("URSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_LROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateLeft;
+        default: fatal("LROTATE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_RROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateRight;
+        default: fatal("RROTATE: %s", type2name(bt));
       }
       break;
     }

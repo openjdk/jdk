@@ -271,7 +271,7 @@ public class TestVM {
                     BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
-                       irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
+                        irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
                     }
                 } catch (TestFormatException e) {
                     // Failure logged. Continue and report later.
@@ -452,19 +452,20 @@ public class TestVM {
     private void applyForceCompileCommand(Executable ex) {
         ForceCompile forceCompileAnno = getAnnotation(ex, ForceCompile.class);
         if (forceCompileAnno != null) {
-            CompLevel complevel = forceCompileAnno.value();
-            TestFormat.check(complevel != CompLevel.SKIP && complevel != CompLevel.WAIT_FOR_COMPILATION,
+            CompLevel compLevel = forceCompileAnno.value();
+            TestFormat.check(compLevel != CompLevel.SKIP && compLevel != CompLevel.WAIT_FOR_COMPILATION,
                              "Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in @ForceCompile at " + ex);
-            complevel = restrictCompLevel(forceCompileAnno.value());
+            compLevel = restrictCompLevel(forceCompileAnno.value());
             if (FLIP_C1_C2) {
-                complevel = complevel.flipCompLevel();
+                compLevel = compLevel.flipCompLevel();
+                compLevel = restrictCompLevel(compLevel.flipCompLevel());
             }
             if (EXCLUDE_RANDOM) {
-                complevel = complevel.excludeCompilationRandomly(ex);
+                compLevel = compLevel.excludeCompilationRandomly(ex);
             }
-            if (complevel != CompLevel.SKIP) {
-                enqueueForCompilation(ex, complevel);
-                forceCompileMap.put(ex, complevel);
+            if (compLevel != CompLevel.SKIP) {
+                enqueueForCompilation(ex, compLevel);
+                forceCompileMap.put(ex, compLevel);
             }
         }
     }
@@ -494,7 +495,7 @@ public class TestVM {
                 } else {
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class), "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
-                                     "Found @Warmup annotation on non-@Test or non-@Run method " + m);
+                                            "Found @Warmup annotation on non-@Test or non-@Run method " + m);
                 }
             } catch (TestFormatException e) {
                 // Failure logged. Continue and report later.
@@ -520,6 +521,7 @@ public class TestVM {
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
         if (FLIP_C1_C2) {
             compLevel = compLevel.flipCompLevel();
+            compLevel = restrictCompLevel(compLevel.flipCompLevel());
         }
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
@@ -711,8 +713,8 @@ public class TestVM {
                          "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + m);
         Warmup warmupAnno = getAnnotation(testMethod, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null,
-                         "Cannot set @Warmup at @Test method " + testMethod + " when used with its @Run method "
-                         + m + ". Use @Warmup at @Run method instead.");
+                                "Cannot set @Warmup at @Test method " + testMethod + " when used with its @Run method "
+                                + m + ". Use @Warmup at @Run method instead.");
         Test testAnno = getAnnotation(testMethod, Test.class);
         TestFormat.checkNoThrow(runMode != RunMode.STANDALONE || testAnno.compLevel() == CompLevel.ANY,
                                 "Setting explicit compilation level for @Test method " + testMethod + " has no effect "
@@ -794,7 +796,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestFrameworkSocket.write("Run " + test.toString(), "testfilter", true);
+                TestFrameworkSocket.write("Run " + test.toString(), TestFrameworkSocket.TESTLIST_TAG, true);
             }
             try {
                 test.run();
@@ -848,7 +850,7 @@ public class TestVM {
 
     public static void compile(Method m, CompLevel compLevel) {
         TestRun.check(compLevel != CompLevel.SKIP && compLevel != CompLevel.WAIT_FOR_COMPILATION,
-                         "Invalid compilation request with level " + compLevel);
+                      "Invalid compilation request with level " + compLevel);
         enqueueForCompilation(m, compLevel);
     }
 
@@ -891,7 +893,7 @@ public class TestVM {
      */
     private static boolean notUnstableDeoptAssertion(Method m, CompLevel level) {
         return (USE_COMPILER && !XCOMP && !IGNORE_COMPILER_CONTROLS && !TEST_C1 &&
-               (!EXCLUDE_RANDOM || WHITE_BOX.isMethodCompilable(m, level.getValue(), false)));
+                (!EXCLUDE_RANDOM || WHITE_BOX.isMethodCompilable(m, level.getValue(), false)));
     }
 
     public static void assertCompiledByC1(Method m) {
@@ -946,7 +948,7 @@ public class TestVM {
                 default -> throw new TestRunException("compiledAtLevel() should not be called with " + level);
             }
         }
-        if (!USE_COMPILER || XCOMP || TEST_C1 || IGNORE_COMPILER_CONTROLS ||
+        if (!USE_COMPILER || XCOMP || TEST_C1 || IGNORE_COMPILER_CONTROLS || FLIP_C1_C2 ||
             (EXCLUDE_RANDOM && !WHITE_BOX.isMethodCompilable(m, level.getValue(), false))) {
             return TriState.Maybe;
         }

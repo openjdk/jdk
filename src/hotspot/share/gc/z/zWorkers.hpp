@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,16 @@ class ZTask;
 
 class ZWorkers {
 private:
-  bool     _boost;
   WorkGang _workers;
-
-  void run(ZTask* task, uint nworkers);
 
 public:
   ZWorkers();
 
-  uint nparallel() const;
-  uint nparallel_no_boost() const;
-  uint nconcurrent() const;
-  uint nconcurrent_no_boost() const;
-  uint nworkers() const;
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
 
-  void set_boost(bool boost);
-
-  void run_parallel(ZTask* task);
-  void run_concurrent(ZTask* task);
+  void run(ZTask* task);
+  void run_all(ZTask* task);
 
   void threads_do(ThreadClosure* tc) const;
 };

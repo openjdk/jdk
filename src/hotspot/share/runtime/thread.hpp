@@ -54,7 +54,6 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
-
 class SafeThreadsListPtr;
 class ThreadSafepointState;
 class ThreadsList;
@@ -163,9 +162,6 @@ class Thread: public ThreadShadow {
  protected:
 
   DEBUG_ONLY(static Thread* _starting_thread;)
-
-  // Support for forcing alignment of thread objects for biased locking
-  void*       _real_malloc_address;
 
   // JavaThread lifecycle support:
   friend class SafeThreadsListPtr;  // for _threads_list_ptr, cmpxchg_threads_hazard_ptr(), {dec_,inc_,}nested_threads_hazard_ptr_cnt(), {g,s}et_threads_hazard_ptr(), inc_nested_handle_cnt(), tag_hazard_ptr() access
@@ -355,11 +351,15 @@ class Thread: public ThreadShadow {
   // If so it must participate in the safepoint protocol.
   virtual bool is_active_Java_thread() const         { return false; }
 
-  // Casts
-  inline JavaThread* as_Java_thread();
-  inline const JavaThread* as_Java_thread() const;
+  // All threads are given names. For singleton subclasses we can
+  // just hard-wire the known name of the instance. JavaThreads and
+  // NamedThreads support multiple named instances, and dynamic
+  // changing of the name of an instance.
+  virtual const char* name() const { return "Unknown thread"; }
 
-  virtual char* name() const { return (char*)"Unknown thread"; }
+  // A thread's type name is also made available for debugging
+  // and logging.
+  virtual const char* type_name() const { return "Thread"; }
 
   // Returns the current thread (ASSERTS if NULL)
   static inline Thread* current();
@@ -575,6 +575,7 @@ protected:
   virtual void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
+  // Basic, non-virtual, printing support that is simple and always safe.
   void print_value_on(outputStream* st) const;
 
   // Debug-only code
@@ -1125,6 +1126,8 @@ class JavaThread: public Thread {
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
  private:
+  DEBUG_ONLY(void verify_frame_info();)
+
   // Support for thread handshake operations
   HandshakeState _handshake;
  public:
@@ -1354,6 +1357,9 @@ class JavaThread: public Thread {
  private:
   void set_entry_point(ThreadFunction entry_point) { _entry_point = entry_point; }
 
+  // factor out low-level mechanics for use in both normal and error cases
+  const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
+
  public:
 
   // Frame iteration; calls the function f for all frames on the stack
@@ -1373,7 +1379,10 @@ class JavaThread: public Thread {
   DEBUG_ONLY(void verify_states_for_handshake();)
 
   // Misc. operations
-  char* name() const { return (char*)get_thread_name(); }
+  const char* name() const;
+  const char* type_name() const { return "JavaThread"; }
+  static const char* name_for(oop thread_obj);
+
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
@@ -1381,11 +1390,7 @@ class JavaThread: public Thread {
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
-  const char* get_thread_name() const;
- protected:
-  // factor out low-level mechanics for use in both normal and error cases
-  virtual const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
- public:
+
   // Accessing frames
   frame last_frame() {
     _anchor.make_walkable(this);
@@ -1420,7 +1425,23 @@ class JavaThread: public Thread {
 
  public:
   // Returns the running thread as a JavaThread
-  static inline JavaThread* current();
+  static JavaThread* current() {
+    return JavaThread::cast(Thread::current());
+  }
+
+  // Returns the current thread as a JavaThread, or NULL if not attached
+  static inline JavaThread* current_or_null();
+
+  // Casts
+  static JavaThread* cast(Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to JavaThread");
+    return static_cast<JavaThread*>(t);
+  }
+
+  static const JavaThread* cast(const Thread* t) {
+    assert(t->is_Java_thread(), "incorrect cast to const JavaThread");
+    return static_cast<const JavaThread*>(t);
+  }
 
   // Returns the active Java thread.  Do not use this if you know you are calling
   // from a JavaThread, as it's slower than JavaThread::current.  If called from
@@ -1551,13 +1572,7 @@ class JavaThread: public Thread {
  public:
   Parker* parker() { return &_parker; }
 
-  // Biased locking support
- private:
-  GrowableArray<MonitorInfo*>* _cached_monitor_info;
  public:
-  GrowableArray<MonitorInfo*>* cached_monitor_info() { return _cached_monitor_info; }
-  void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
-
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
@@ -1584,21 +1599,26 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
+
+  // Helper function to create the java.lang.Thread object for a
+  // VM-internal thread. The thread will have the given name, be
+  // part of the System ThreadGroup and if is_visible is true will be
+  // discoverable via the system ThreadGroup.
+  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+
+  // Helper function to start a VM-internal daemon thread.
+  // E.g. ServiceThread, NotificationThread, CompilerThread etc.
+  static void start_internal_daemon(JavaThread* current, JavaThread* target,
+                                    Handle thread_oop, ThreadPriority prio);
+
+  // Helper function to do vm_exit_on_initialization for osthread
+  // resource allocation failure.
+  static void vm_exit_on_osthread_failure(JavaThread* thread);
 };
 
-// Inline implementation of JavaThread::current
-inline JavaThread* JavaThread::current() {
-  return Thread::current()->as_Java_thread();
-}
-
-inline JavaThread* Thread::as_Java_thread() {
-  assert(is_Java_thread(), "incorrect cast to JavaThread");
-  return static_cast<JavaThread*>(this);
-}
-
-inline const JavaThread* Thread::as_Java_thread() const {
-  assert(is_Java_thread(), "incorrect cast to const JavaThread");
-  return static_cast<const JavaThread*>(this);
+inline JavaThread* JavaThread::current_or_null() {
+  Thread* current = Thread::current_or_null();
+  return current != nullptr ? JavaThread::cast(current) : nullptr;
 }
 
 // The active thread queue. It also keeps track of the current used

@@ -101,9 +101,14 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Prepare Merge Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Eager Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Remembered Sets", Level.DEBUG),
-        new LogMessageWithLevel("Merged Sparse", Level.DEBUG),
-        new LogMessageWithLevel("Merged Fine", Level.DEBUG),
-        new LogMessageWithLevel("Merged Coarse", Level.DEBUG),
+        new LogMessageWithLevel("Merged Inline", Level.DEBUG),
+        new LogMessageWithLevel("Merged ArrayOfCards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl", Level.DEBUG),
+        new LogMessageWithLevel("Merged Full", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Inline", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl ArrayOfCards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl BitMap", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Full", Level.DEBUG),
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
@@ -135,6 +140,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
+        new LogMessageWithLevel("Sample Collection Set Candidates", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
@@ -150,6 +156,10 @@ public class TestGCLogMessages {
         // TLAB handling
         new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+
+        // NMethod List Cleanup
+        new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
+
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing
@@ -241,6 +251,8 @@ public class TestGCLogMessages {
                                                                   "-XX:+G1EvacuationFailureALot",
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -252,6 +264,8 @@ public class TestGCLogMessages {
                                                    "-Xmx32M",
                                                    "-Xmn16M",
                                                    "-Xms32M",
+                                                   "-XX:+UnlockDiagnosticVMOptions",
+                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 

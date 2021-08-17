@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,12 @@ public class SharedStringsWb {
         WhiteBox wb = WhiteBox.getWhiteBox();
         String s = "shared_test_string_unique_14325";
         s = s.intern();
-        if (wb.areSharedStringsIgnored() || wb.isShared(s)) {
-            System.out.println("Found shared string.");
-        } else {
-            throw new RuntimeException("String is not shared.");
+        if (wb.areSharedStringsMapped()) {
+            if (wb.isSharedInternedString(s)) {
+                System.out.println("Found shared string.");
+            } else {
+                throw new RuntimeException("String is not shared.");
+            }
         }
     }
 }

@@ -74,10 +74,6 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
-gather_template="Gather-op"
-gather_masked_template="Gather-Masked-op"
-scatter_template="Scatter-op"
-scatter_masked_template="Scatter-Masked-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
 broadcast_template="Broadcast"
@@ -103,9 +99,9 @@ function replace_variables {
   local kernel_smoke=${10}
 
   if [ "x${kernel}" != "x" ]; then
-    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '|')
+    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '`')
     sed "s/\[\[KERNEL\]\]/${kernel_escaped}/g" $filename > ${filename}.current1
-    cat ${filename}.current1 | tr '|' "\n" > ${filename}.current
+    cat ${filename}.current1 | tr '`' "\n" > ${filename}.current
     rm -f "${filename}.current1"
   else
     cp $filename ${filename}.current
@@ -160,9 +156,9 @@ function replace_variables {
   if [[ "$filename" == *"Unit"* ]] && [ "$test_func" != "" ]; then
     if [ "$masked" == "" ] || [ "$withMask" != "" ]; then
       if [ ! -z "$kernel_smoke" ]; then
-        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '|')
+        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '`')
         sed "s/\[\[KERNEL\]\]/${kernel_smoke_escaped}/g" $filename > ${filename}.scurrent1
-        cat ${filename}.scurrent1 | tr '|' "\n" > ${filename}.scurrent
+        cat ${filename}.scurrent1 | tr '`' "\n" > ${filename}.scurrent
         rm -f "${filename}.scurrent1"
       else
         cp $filename.current ${filename}.scurrent
@@ -449,6 +445,10 @@ gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
 gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
+gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
+gen_shift_cst_op  "ROR" "ROR_scalar(a,b)" "BITWISE"
+gen_shift_cst_op  "ROL" "ROL_scalar(a,b)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
@@ -557,12 +557,6 @@ gen_unary_alu_op "ABS+abs" "Math.abs((\$type\$)a)"
 gen_unary_alu_op "NOT+not" "~((\$type\$)a)" "BITWISE"
 gen_unary_alu_op "ZOMO" "(a==0?0:-1)" "BITWISE"
 gen_unary_alu_op "SQRT+sqrt" "Math.sqrt((double)a)" "FP"
-
-# Gather Scatter operations.
-gen_op_tmpl $gather_template "gather" ""
-gen_op_tmpl $gather_masked_template "gather" ""
-gen_op_tmpl $scatter_template "scatter" ""
-gen_op_tmpl $scatter_masked_template "scatter" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

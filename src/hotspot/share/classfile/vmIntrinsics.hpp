@@ -341,10 +341,6 @@ class methodHandle;
   do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
-  do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
-  do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
-   do_name(     checkIndex_name,                                 "checkIndex")                                          \
-                                                                                                                        \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
   do_intrinsic(_hasNegatives,             java_lang_StringCoding, hasNegatives_name, hasNegatives_signature,     F_S)   \
    do_name(     hasNegatives_name,                               "hasNegatives")                                        \
@@ -457,7 +453,7 @@ class methodHandle;
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
-   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \

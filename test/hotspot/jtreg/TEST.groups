@@ -71,11 +71,35 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
+hotspot_vector_1 = \
+  compiler/c2/cr6340864 \
+  compiler/codegen \
+  compiler/loopopts/superword \
+  compiler/vectorapi \
+  compiler/vectorization \
+  -compiler/codegen/aes \
+  -compiler/codegen/Test6875866.java \
+  -compiler/codegen/Test6935535.java \
+  -compiler/codegen/TestGCMStorePlacement.java \
+  -compiler/codegen/TestTrichotomyExpressions.java \
+  -compiler/loopopts/superword/Vec_MulAddS2I.java \
+  -compiler/vectorapi/VectorRebracket128Test.java
+
+hotspot_vector_2 = \
+  compiler/intrinsics \
+  compiler/codegen/aes \
+  compiler/codegen/Test6875866.java \
+  compiler/codegen/Test6935535.java \
+  compiler/loopopts/superword/Vec_MulAddS2I.java \
+  compiler/vectorapi/VectorRebracket128Test.java \
+  -compiler/intrinsics/string/TestStringLatin1IndexOfChar.java
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
   gtest/MetaspaceGtests.java \
-  gtest/LargePageGtests.java
+  gtest/LargePageGtests.java \
+  gtest/NMTGtests.java \
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -129,6 +153,7 @@ tier1_compiler_2 = \
 tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
+  compiler/locks/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
@@ -276,7 +301,6 @@ tier1_runtime = \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
- -runtime/NMT \
  -runtime/ReservedStack \
  -runtime/SelectionResolution/AbstractMethodErrorTest.java \
  -runtime/SelectionResolution/IllegalAccessErrorTest.java \
@@ -451,7 +475,8 @@ hotspot_runtime_minimalvm = \
   runtime/logging
 
 hotspot_nmt = \
-  runtime/NMT
+  runtime/NMT \
+  gtest/NMTGtests.java
 
 hotspot_rest_runtime = \
   :hotspot_runtime \
