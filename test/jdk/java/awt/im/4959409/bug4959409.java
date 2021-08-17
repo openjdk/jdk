@@ -28,10 +28,7 @@
  * @key headful
  */
 
-import javax.swing.JFrame;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
+
 import java.awt.event.KeyAdapter;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -43,8 +40,14 @@ import java.awt.Container;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 public class bug4959409 {
 
@@ -54,7 +57,7 @@ public class bug4959409 {
     private static JTextField jTextField;
     private static JLabel jLabel;
 
-    public JFrame createUIAndTest() throws Exception {
+    public static void createUIAndTest() throws Exception {
         final CountDownLatch frameVisibleLatch = new CountDownLatch(1);
         final CountDownLatch componentVisibleLatch = new CountDownLatch(1);
         final CountDownLatch keyPressedEventLatch = new CountDownLatch(1);
@@ -112,17 +115,17 @@ public class bug4959409 {
             frame.setVisible(true);
         });
 
-        boolean isFrameVisible = frameVisibleLatch.await(TIMEOUT, TimeUnit.SECONDS);
-        if (!isFrameVisible) {
-            throw new RuntimeException("Frame is not visible after " + TIMEOUT + "  seconds");
+        if (!isTopLevelVisible(frame, frameVisibleLatch)) {
+            throw new RuntimeException("Dialog is not visible after " + TIMEOUT + "  seconds");
         }
+        System.out.println("frame is visible " + frame.toString());
 
-        if (!isComponentVisible(jTextField, componentVisibleLatch)) {
+        if (!isJComponentVisible(jTextField, componentVisibleLatch)) {
             throw new RuntimeException("Component is not visible after " + TIMEOUT + "   seconds");
         }
 
         Robot robot = new Robot();
-        robot.delay(DELAY);
+        robot.setAutoDelay(DELAY);
         robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
@@ -133,67 +136,83 @@ public class bug4959409 {
         performMouseAction(robot, points[0].x + rect[0].width / 2, points[0].y + rect[0].height / 2);
 
         // Press SHIFT + 1 keys
-        robot.delay(DELAY);
+        robot.waitForIdle();
         robot.keyPress(KeyEvent.VK_SHIFT);
-        robot.delay(DELAY);
         robot.keyPress(KeyEvent.VK_1);
-        robot.delay(DELAY);
-        robot.keyRelease(KeyEvent.VK_SHIFT);
-        robot.delay(DELAY);
         robot.keyRelease(KeyEvent.VK_1);
-        robot.delay(DELAY);
+        robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.waitForIdle();
 
         if (!keyPressedEventLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
             throw new RuntimeException("Did not received KEY PRESS for Shift + 1 , test failed");
         }
-        return frame;
     }
 
     public static void performMouseAction(final Robot robot, final int X, final int Y) {
         robot.waitForIdle();
-        robot.delay(DELAY);
         robot.mouseMove(X, Y);
         robot.delay(DELAY);
         robot.waitForIdle();
 
-        robot.delay(DELAY);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(DELAY);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(DELAY);
         robot.waitForIdle();
     }
 
-    public static boolean isComponentVisible(java.awt.Component component, CountDownLatch componentVisibleLatch) throws Exception {
-        int count = 1;
-        if (!component.isVisible()) {
+    public static void checkSwingTopLevelVisible(javax.swing.JFrame jFrame, CountDownLatch topLevelVisibleLatch) throws InterruptedException, InvocationTargetException {
+        SwingUtilities.invokeAndWait(() -> {
+            if (jFrame.isVisible()) {
+                topLevelVisibleLatch.countDown();
+            }
+        });
+    }
+
+    public static boolean isTopLevelVisible(javax.swing.JFrame jFrame, CountDownLatch topLevelVisibleLatch) throws Exception {
+        checkSwingTopLevelVisible(jFrame, topLevelVisibleLatch);
+        if (topLevelVisibleLatch.getCount() != 0) {
+            int count = 1;
             while (count <= 5) {
                 TimeUnit.SECONDS.sleep(1);
-                if (component.isVisible()) {
-                    componentVisibleLatch.countDown();
-                    System.out.println("Component is visible " + component.toString());
+                checkSwingTopLevelVisible(jFrame, topLevelVisibleLatch);
+                if (topLevelVisibleLatch.getCount() == 0) {
                     break;
                 }
                 count++;
             }
-        } else {
-            componentVisibleLatch.countDown();
-            System.out.println("Component is visible " + component.toString());
+        }
+        return topLevelVisibleLatch.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    public static void checkJComponentVisible(javax.swing.JComponent jComponent, CountDownLatch componentVisibleLatch) throws InterruptedException, InvocationTargetException {
+        SwingUtilities.invokeAndWait(() -> {
+            if (jComponent.isVisible()) {
+                componentVisibleLatch.countDown();
+            }
+        });
+    }
+
+    public static boolean isJComponentVisible(javax.swing.JComponent jComponent, CountDownLatch componentVisibleLatch) throws InterruptedException, InvocationTargetException {
+        checkJComponentVisible(jComponent, componentVisibleLatch);
+        if (componentVisibleLatch.getCount() != 0) {
+            int count = 1;
+            while (count <= 5) {
+                TimeUnit.SECONDS.sleep(1);
+                checkJComponentVisible(jComponent, componentVisibleLatch);
+                if (componentVisibleLatch.getCount() == 0) {
+                    break;
+                }
+                count++;
+            }
         }
         return componentVisibleLatch.await(TIMEOUT, TimeUnit.SECONDS);
     }
 
     public static void main(String[] args) throws Exception {
-        bug4959409 bug4959409 = new bug4959409();
-        final JFrame[] jFrames = new JFrame[1];
         try {
-            jFrames[0] = bug4959409.createUIAndTest();
+            createUIAndTest();
         } finally {
-            if (jFrames[0] != null) {
-                SwingUtilities.invokeAndWait(()-> {
-                    jFrames[0].dispose();
-                });
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
             }
         }
     }
