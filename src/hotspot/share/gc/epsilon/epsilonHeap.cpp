@@ -265,7 +265,7 @@ HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exc
 
 HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
   // Cannot use verbose=true because Metaspace is not initialized
-  return allocate_work(size, /*verbose=*/false);
+  return allocate_work(size, /* verbose = */false);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
