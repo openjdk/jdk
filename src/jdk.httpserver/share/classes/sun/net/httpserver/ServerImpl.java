@@ -615,6 +615,11 @@ class ServerImpl implements TimeSource {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
                         clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
                         requestCompleted(connection);
@@ -937,7 +942,7 @@ class ServerImpl implements TimeSource {
      * Validates a RFC 7230 header-key.
      */
     static boolean isValidHeaderKey(String token) {
-        if (token == null) return false;
+        if (token == null || token.isEmpty()) return false;
 
         boolean isValidChar;
         char[] chars = token.toCharArray();
@@ -950,6 +955,6 @@ class ServerImpl implements TimeSource {
                 return false;
             }
         }
-        return !token.isEmpty();
+        return true;
     }
 }
