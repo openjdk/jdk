@@ -154,7 +154,8 @@ public:
     }
     _cm->mark_loop(worker_id, _terminator, rp,
                    false /*not cancellable*/,
-                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP, &requests);
+                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
+                   &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };
