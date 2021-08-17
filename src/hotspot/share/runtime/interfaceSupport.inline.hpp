@@ -105,6 +105,7 @@ class ThreadStateTransition : public StackObj {
   static inline void transition_from_native(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
+    assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
     transition_and_process(thread, to, to != _thread_in_Java ? false : check_asyncs);
   }
 
