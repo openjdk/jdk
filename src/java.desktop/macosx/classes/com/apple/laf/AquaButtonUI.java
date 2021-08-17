@@ -331,6 +331,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         Graphics2D g2d = null;
         Stroke oldStroke = null;
         Object oldAntialiasingHint = null;
+        Color oldColor = g.getColor();
         if (g instanceof Graphics2D) {
             g2d = (Graphics2D)g;
             oldStroke = g2d.getStroke();
@@ -351,6 +352,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
                     RenderingHints.KEY_ANTIALIASING,
                     oldAntialiasingHint);
         }
+        g.setColor(oldColor);
     }
 
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
