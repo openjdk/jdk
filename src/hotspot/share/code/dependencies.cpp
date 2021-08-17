@@ -239,7 +239,7 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    if (note_dep_seen(dept, x0)) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -339,7 +339,7 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    if (note_dep_seen(dept, x0)) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
