@@ -90,6 +90,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
 - `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
+- `-DReportStdout=true`: Print the standard output of the test VM.
 - `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
@@ -99,10 +100,11 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
-- `-TestCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a normal `@Test` annotated method.
+- `-DTestCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a normal `@Test` annotated method.
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
-- `-DIgnoreCompilerControls=false`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
-
+- `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
+- `-DExcludeRandom=true`: Randomly exclude some methods from compilation.
+- `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags set by the test scenarios.
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.
