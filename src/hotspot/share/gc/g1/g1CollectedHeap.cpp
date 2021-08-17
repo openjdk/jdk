@@ -1511,7 +1511,6 @@ G1CollectedHeap::G1CollectedHeap() :
 
   for (uint i = 0; i < n_queues; i++) {
     G1ScannerTasksQueue* q = new G1ScannerTasksQueue();
-    q->initialize();
     _task_queues->register_queue(i, q);
     ::new (&_evacuation_failed_info_array[i]) EvacuationFailedInfo();
   }
