@@ -39,6 +39,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.FileStore;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -137,9 +138,6 @@ public class GetXSpace {
             while ((s = in.readLine()) != null) {
                 // skip header
                 if (i++ == 0) continue;
-                if (Platform.isLinux() && s.indexOf("/run/user") != -1)
-                    // Exclude /run/user/$uid as it may evanesce during the test
-                    continue;
                 sb.append(s).append("\n");
             }
         }
@@ -223,6 +221,12 @@ public class GetXSpace {
                 FileStore fileStore = Files.getFileStore(f.toPath());
                 blockSize = fileStore.getBlockSize();
                 numBlocks = fileStore.getTotalSpace()/blockSize;
+            } catch (NoSuchFileException nsfe) {
+                // On Linux, ignore the NSFE if the path is one of the
+                // /run/user/$UID mounts created by pam_systemd(8) as it
+                // might be deleted during the test
+                if (!Platform.isLinux() || s.name().indexOf("/run/user") == -1)
+                    throw new RuntimeException(nsfe);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
