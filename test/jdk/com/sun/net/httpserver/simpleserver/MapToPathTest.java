@@ -109,7 +109,7 @@ public class MapToPathTest {
     public void test() throws Exception {
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h);
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
             ss.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -129,7 +129,7 @@ public class MapToPathTest {
         }
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", h);
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
             ss.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -149,7 +149,7 @@ public class MapToPathTest {
         }
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", h);
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
             ss.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -172,14 +172,13 @@ public class MapToPathTest {
                 var req4 = HttpRequest.newBuilder(uri(ss, "/foo/../..")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // cannot escape root
-
             } finally {
                 ss.stop(0);
             }
         }
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", h);
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
             ss.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

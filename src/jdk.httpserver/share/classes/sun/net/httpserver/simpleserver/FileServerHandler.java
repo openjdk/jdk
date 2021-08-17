@@ -160,6 +160,10 @@ public final class FileServerHandler implements HttpHandler {
             String context = exchange.getHttpContext().getPath();
             String request = exchange.getRequestURI().getPath();
 
+            // use file system separator
+            context = context.replaceAll("/", sep);
+            request = request.replaceAll("/", sep);
+
             // ensure context ends with separator
             if (!context.endsWith(sep)) { context += sep; }
 
@@ -306,7 +310,7 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("request-path", path.toString());  // store for OutputFilter
                 if (!Files.exists(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                } else if (!path.startsWith(root) || !Files.isReadable(path)) {
+                } else if (!Files.isReadable(path)) {
                     handleForbidden(exchange);
                 } else if (exchange.getRequestMethod().equals("HEAD")) {
                     handleHEAD(exchange, path);

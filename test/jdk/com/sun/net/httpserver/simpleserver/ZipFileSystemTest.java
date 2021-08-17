@@ -92,7 +92,7 @@ public class ZipFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -125,7 +125,7 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testDirectoryGET.zip"));
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -149,7 +149,7 @@ public class ZipFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -182,7 +182,7 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testDirectoryHEAD.zip"));
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -241,7 +241,7 @@ public class ZipFileSystemTest {
             lastModified = getLastModified(file);
         }
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -278,7 +278,7 @@ public class ZipFileSystemTest {
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testInvalidRequestURIGET.zip"));
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -306,7 +306,7 @@ public class ZipFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundGET.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -334,7 +334,7 @@ public class ZipFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundHEAD.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -354,7 +354,7 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testMovedPermanently.zip"));
         Files.createDirectory(root.resolve("aDirectory"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -380,7 +380,7 @@ public class ZipFileSystemTest {
     public void testXss() throws Exception {
         var root = createZipFs(TEST_DIR.resolve("testXss.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

@@ -140,7 +140,7 @@ public class ServerMimeTypesResolutionTest {
 
     @Test
     public static void testMimeTypeHeaders() throws Exception {
-        final var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.NONE);
+        final var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.VERBOSE);
         server.start();
         try {
             final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

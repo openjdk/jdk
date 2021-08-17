@@ -81,7 +81,7 @@ public class IdempotencyAndCommutativityTest {
         Files.writeString(root.resolve(FILE_NAME), "some text", CREATE);
 
         client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-        server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.INFO);
+        server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.VERBOSE);
         server.start();
     }
 

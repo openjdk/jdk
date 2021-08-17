@@ -103,7 +103,7 @@ public class CustomFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -137,7 +137,7 @@ public class CustomFileSystemTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -160,7 +160,7 @@ public class CustomFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -195,7 +195,7 @@ public class CustomFileSystemTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -253,7 +253,7 @@ public class CustomFileSystemTest {
             lastModified = getLastModified(file);
         }
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -281,7 +281,7 @@ public class CustomFileSystemTest {
             file.toFile().setReadable(false, false);
             assert !Files.isReadable(file);
 
-            var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+            var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
             ss.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -310,7 +310,7 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testInvalidRequestURIGET");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -338,7 +338,7 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundGET");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -366,7 +366,7 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundHEAD");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -398,7 +398,7 @@ public class CustomFileSystemTest {
         var target = Files.writeString(root.resolve("target.txt"), "some text", CREATE);
         Files.createSymbolicLink(symlink, target);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -430,7 +430,7 @@ public class CustomFileSystemTest {
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -461,7 +461,7 @@ public class CustomFileSystemTest {
         var root = createDirectoryInCustomFs("testMovedPermanently");
         Files.createDirectory(root.resolve("aDirectory"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -480,7 +480,7 @@ public class CustomFileSystemTest {
     public void testXss() throws Exception {
         var root = createDirectoryInCustomFs("testXss");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

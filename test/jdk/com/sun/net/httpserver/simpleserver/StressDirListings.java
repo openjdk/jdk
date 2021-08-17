@@ -68,7 +68,7 @@ public class StressDirListings {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        simpleFileServer = SimpleFileServer.createFileServer(LOOPBACK_ADDR, CWD, OutputLevel.NONE);
+        simpleFileServer = SimpleFileServer.createFileServer(LOOPBACK_ADDR, CWD, OutputLevel.VERBOSE);
         simpleFileServer.start();
     }
 
