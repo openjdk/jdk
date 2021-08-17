@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8012929 8243074 8266281
+ * @bug 8012929 8243074 8266281 8272564
  * @summary Trees.getElement should work not only for declaration trees, but also for use-trees
  * @modules jdk.compiler
  * @build TestGetElementReference

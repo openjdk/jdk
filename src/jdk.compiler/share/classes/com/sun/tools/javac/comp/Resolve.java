@@ -469,7 +469,7 @@ public class Resolve {
             return true;
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
-            return (s2 == null || s2 == sym || sym.owner == s2.owner ||
+            return (s2 == null || s2 == sym || sym.owner == s2.owner || (sym.owner.isInterface() && s2.owner == syms.objectType.tsym) ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
@@ -1854,7 +1854,8 @@ public class Resolve {
         List<Type>[] itypes = (List<Type>[])new List[] { List.<Type>nil(), List.<Type>nil() };
 
         InterfaceLookupPhase iphase = InterfaceLookupPhase.ABSTRACT_OK;
-        for (TypeSymbol s : superclasses(intype)) {
+        boolean isInterface = site.tsym.isInterface();
+        for (TypeSymbol s : isInterface ? List.of(intype.tsym) : superclasses(intype)) {
             bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                     s.members(), bestSoFar, allowBoxing, useVarargs, true);
             if (name == names.init) return bestSoFar;
@@ -1891,6 +1892,10 @@ public class Resolve {
                     bestSoFar = concrete;
                 }
             }
+        }
+        if (isInterface && bestSoFar.kind.isResolutionError()) {
+            bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
+                    syms.objectType.tsym.members(), bestSoFar, allowBoxing, useVarargs, true);
         }
         return bestSoFar;
     }
