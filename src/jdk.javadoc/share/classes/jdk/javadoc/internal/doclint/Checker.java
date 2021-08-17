@@ -182,9 +182,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 reportMissing("dc.missing.comment");
                 return null;
             }
-
-
-
         } else {
             if (tree == null) {
                 if (isDefaultConstructor()) {
@@ -195,6 +192,17 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+                if (tree.getBlockTags().isEmpty()) {
+                    reportMissing("dc.empty.comment");
+                    return null;
+                } else {
+                    // Don't report an empty description if the comment contains @deprecated,
+                    // because javadoc will use the content of that tag in summary tables.
+                    if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                    }
+                }
             }
         }
 

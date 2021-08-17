@@ -2122,10 +2122,10 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
     LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
-    if (type == T_LONG || type == T_DOUBLE) {
-      __ move(addr, result);
+    if (is_reference_type(type)) {
+      __ move_wide(addr, result);
     } else {
-      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+      __ move(addr, result);
     }
   }
 }
