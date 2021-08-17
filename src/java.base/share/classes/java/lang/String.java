@@ -43,6 +43,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -3315,15 +3316,21 @@ public final class String
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
         var delim = delimiter.toString();
-        var elems = new String[8];
-        int size = 0;
-        for (CharSequence cs: elements) {
-            if (size >= elems.length) {
-                elems = Arrays.copyOf(elems, elems.length << 1);
+        class Joiner implements Consumer<CharSequence> {
+            String[] elems = new String[8];
+            int size = 0;
+
+            @Override
+            public void accept(CharSequence cs) {
+                if (size >= elems.length) {
+                    elems = Arrays.copyOf(elems, elems.length << 1);
+                }
+                elems[size++] = String.valueOf(cs);
             }
-            elems[size++] = String.valueOf(cs);
         }
-        return join("", "", delim, elems, size);
+        var joiner = new Joiner();
+        elements.forEach(joiner);
+        return join("", "", delim, joiner.elems, joiner.size);
     }
 
     /**
