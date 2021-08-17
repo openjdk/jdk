@@ -445,7 +445,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* task_queue = new G1CMTaskQueue();
-    task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
 
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
