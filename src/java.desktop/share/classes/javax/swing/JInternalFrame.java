@@ -188,8 +188,8 @@ public class JInternalFrame extends JComponent implements
     protected String  title;
     /**
      * The icon that is displayed when this internal frame is iconified.
-     * Setting <code>null</code> <code>desktopIcon</code> is unsupported
-     * and may throw NPE if used.
+     * Subclassers must ensure this is set to a non-null value
+     * during construction and not set this to null.
      * @see #iconable
      */
     protected JDesktopIcon desktopIcon;
@@ -1315,9 +1315,11 @@ public class JInternalFrame extends JComponent implements
     @BeanProperty(description
             = "The icon shown when this internal frame is minimized.")
     public void setDesktopIcon(JDesktopIcon d) {
-        JDesktopIcon oldValue = getDesktopIcon();
-        desktopIcon = d;
-        firePropertyChange("desktopIcon", oldValue, d);
+        if (d != null) {
+            JDesktopIcon oldValue = getDesktopIcon();
+            desktopIcon = d;
+            firePropertyChange("desktopIcon", oldValue, d);
+        }
     }
 
     /**
