@@ -8,7 +8,10 @@
  * @run main DocLintTester -Xmsgs:missing -ref EmptyAuthorTest.out EmptyAuthorTest.java
  */
 
-/** @author */
+/**
+ * .
+ * @author
+ */
 public class EmptyAuthorTest {
-    /** */ EmptyAuthorTest() { }
+    /** . */ EmptyAuthorTest() { }
 }

@@ -24,22 +24,36 @@
 
 /*
  * @test
- * @bug 8264337
- * @summary test default cds archive when turning on VerifySharedSpaces
- * @requires vm.flagless
- * @requires vm.cds
- * @library /test/lib
- * @run driver VerifyWithDefaultArchive
+ * @bug 8271203
+ * @summary C2: assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck) failed: Check this code when new subtype is added
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=compiler.c2.LongCountedLoopAsUnswitchIff::test compiler.c2.LongCountedLoopAsUnswitchIff
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+package compiler.c2;
 
-public class VerifyWithDefaultArchive {
-    public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:cds", "-XX:+VerifySharedSpaces", "-version");
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        out.shouldNotContain("relocation bitmap CRC error");
-        out.shouldHaveExitValue(0);
+public class LongCountedLoopAsUnswitchIff {
+    static int iArrFld[] = new int[400];
+
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 10; i++) {
+            test();
+        }
+    }
+
+    static void test() {
+        int i = 56, i2 = 22257;
+
+        do {
+            do {
+                int i24 = 1;
+                while (++i24 < 2) {
+                }
+                for (long l1 = i; l1 < 2; ++l1) {
+                    iArrFld[0] += 5;
+                }
+            } while ((i2 -= 2) > 0);
+            for (long l3 = 8; l3 < 194; ++l3) {
+            }
+        } while (--i > 0);
     }
 }

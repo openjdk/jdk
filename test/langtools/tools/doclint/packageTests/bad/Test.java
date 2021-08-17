@@ -12,8 +12,8 @@
 /** Unexpected comment */
 package bad;
 
-/** */
+/** . */
 class Test {
-    /** */ Test() { }
+    /** . */ Test() { }
 }
 
