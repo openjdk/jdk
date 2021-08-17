@@ -21,28 +21,87 @@
  * questions.
  */
 
-package jdk.test.lib.artifacts.openssl;
+package jdk.test.lib.artifacts;
 
 import java.io.File;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
 
 public class OpensslArtifactFetcher {
 
-    public static String fetchOpenssl() {
-        if (Platform.is64bit()) {
-            if (Platform.isLinux()) {
-                return fetchOpenssl(LINUX_X64.class);
-            } else if (Platform.isOSX()) {
-                return fetchOpenssl(MACOSX_X64.class);
-            } else if (Platform.isWindows()) {
-                return fetchOpenssl(WINDOWS_X64.class);
+    /**
+     * Gets the openssl binary path of version 1.1.*
+     *
+     * Openssl selection flow:
+        1. Check whether property test.openssl.path is set and it's the
+           preferred version(1.1.*) of openssl, then return that path.
+        2. Else look for already installed openssl (version 1.1.*) in system
+           path /usr/bin/openssl or /usr/local/bin/openssl, then return that
+           path.
+        3. Else try to download openssl (version 1.1.*) from the artifactory
+           and return that path, if download fails then return null.
+     *
+     * @return openssl binary path of version 1.1.*
+     */
+    public static String getOpenssl1dot1dotStar() {
+        String version = "1.1.";
+        String path = getOpensslFromSystemProp(version);
+        if (path != null) {
+            return path;
+        } else {
+            path = getDefaultSystemOpensslPath(version);
+            if (path != null) {
+                return path;
+            } else if (Platform.is64bit()) {
+                if (Platform.isLinux()) {
+                    path = fetchOpenssl(LINUX_X64.class);
+                } else if (Platform.isOSX()) {
+                    path = fetchOpenssl(MACOSX_X64.class);
+                } else if (Platform.isWindows()) {
+                    path = fetchOpenssl(WINDOWS_X64.class);
+                }
+                if (verifyOpensslVersion(path, version)) {
+                    return path;
+                }
             }
         }
         return null;
+    }
+
+    private static String getOpensslFromSystemProp(String version) {
+        String path = System.getProperty("test.openssl.path");
+        System.out.println("System Property - test.openssl.path: " + path);
+        if (!verifyOpensslVersion(path, version)) {
+            path = null;
+        }
+        return path;
+    }
+
+    private static String getDefaultSystemOpensslPath(String version) {
+        if(verifyOpensslVersion("/usr/bin/openssl", version)) {
+            return "/usr/bin/openssl";
+        } else if(verifyOpensslVersion("/usr/local/bin/openssl", version)) {
+            return "/usr/local/bin/openssl";
+        }
+        return null;
+    }
+
+    private static boolean verifyOpensslVersion(String path, String version) {
+        if (path != null) {
+            try {
+                ProcessTools.executeCommand(path, "version")
+                        .shouldHaveExitValue(0)
+                        .shouldContain(version);
+                return true;
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+        return false;
     }
 
     private static String fetchOpenssl(Class<?> clazz) {

@@ -44,7 +44,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.artifacts.openssl.OpensslArtifactFetcher;
+import jdk.test.lib.artifacts.OpensslArtifactFetcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,28 +67,8 @@ import static sun.security.pkcs.ContentInfo.*;
 public class KeytoolOpensslInteropTest {
 
     public static void main(String[] args) throws Throwable {
-        // openssl selection flow:
-        // 1. Check whether test.openssl.path is set and it's the the preferred
-        //    version(1.1.*) of openssl
-        // 2. If above property doesn't set, then look for already installed
-        //    openssl (version 1.1.*) in system path /usr/bin/openssl or
-        //    /usr/local/bin/openssl
-        // 3. if above is also not available try to download openssl from
-        //    artifactory
-        // If any of above 3 succeeds then perform all tests, otherwise skip
-        // all openssl command dependent tests.
-
-        String opensslPath = System.getProperty("test.openssl.path");
-        if (opensslPath == null) {
-            // checking the existence of already installed openssl
-            // in the test machine
-            opensslPath = getSystemOpensslPath();
-        }
-        if (opensslPath == null) {
-            // trying to download from artifactory
-            opensslPath = OpensslArtifactFetcher.fetchOpenssl();
-        }
-        if (opensslPath != null && verifyOpensslVerion(opensslPath)) {
+        String opensslPath = OpensslArtifactFetcher.getOpenssl1dot1dotStar();
+        if (opensslPath != null) {
             // if preferred version of openssl is available perform all
             // keytool <-> openssl interop tests
             generateInitialKeystores(opensslPath);
@@ -600,26 +580,5 @@ public class KeytoolOpensslInteropTest {
 
     private static OutputAnalyzer keytool(String s) throws Throwable {
         return SecurityTools.keytool(s);
-    }
-
-    private static String getSystemOpensslPath() {
-        if(verifyOpensslVerion("/usr/bin/openssl")) {
-            return "/usr/bin/openssl";
-        } else if(verifyOpensslVerion("/usr/local/bin/openssl")) {
-            return "/usr/local/bin/openssl";
-        }
-        return null;
-    }
-
-    private static boolean verifyOpensslVerion(String path) {
-        try {
-            ProcessTools.executeCommand(path, "version")
-                    .shouldHaveExitValue(0)
-                    .shouldMatch("1.1.*");
-            return true;
-        } catch (Throwable t) {
-            t.printStackTrace();
-            return false;
-        }
     }
 }
