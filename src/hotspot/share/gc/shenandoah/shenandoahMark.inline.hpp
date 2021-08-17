@@ -41,15 +41,21 @@
 #include "utilities/powerOfTwo.hpp"
 
 template <StringDedupMode STRING_DEDUP>
-void ShenandoahMark::dedup_string(Oop obj, StringDedup::Request* const req) {
+void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
   if (STRING_DEDUP == ENQUEUE_DEDUP) {
-    if (ShenandoahStringDedup::)
+    if (ShenandoahStringDedup::is_candidate(obj)) {
+      req->add(obj);
+    }
+  } else if (STRING_DEDUP == ALWAYS_DEDUP) {
+    if (ShenandoahStringDedup::is_string_candidate(obj) &&
+        !ShenandoahStringDedup::dedup_requested(obj)) {
+        req->add(obj);
+    }
   }
 }
 
-
 template <class T, StringDedupMode STRING_DEDUP>
-void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Request* const req, ShenandoahMarkTask* task) {
+void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
   shenandoah_assert_not_forwarded(NULL, obj);
@@ -217,7 +223,6 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
 
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
-  StringDedup::Requests     _stringdedup_requests;
   ShenandoahObjToScanQueue* _queue;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
@@ -231,24 +236,15 @@ public:
 
   void do_buffer(void **buffer, size_t size) {
     assert(size == 0 || !_heap->has_forwarded_objects(), "Forwarded objects are not expected here");
-    if (ShenandoahStringDedup::is_enabled()) {
-      do_buffer_impl<ENQUEUE_DEDUP>(buffer, size);
-    } else {
-      do_buffer_impl<NO_DEDUP>(buffer, size);
-    }
-  }
-
-  template<StringDedupMode STRING_DEDUP>
-  void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, STRING_DEDUP>(p, _queue, _mark_context, &_stringdedup_requests, false);
+      ShenandoahMark::mark_through_ref<oop>(p, _queue, _mark_context, false);
     }
   }
 };
 
-template<class T, StringDedupMode STRING_DEDUP>
-inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, StringDedup::Requests* const req, bool weak) {
+template<class T>
+inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -266,16 +262,6 @@ inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, 
     if (marked) {
       bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
       assert(pushed, "overflow queue should always succeed pushing");
-
-      if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-        assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-        req->add(obj);
-      } else if ((STRING_DEDUP == ALWAYS_DEDUP) &&
-                 ShenandoahStringDedup::is_string_candidate(obj) &&
-                 !ShenandoahStringDedup::dedup_requested(obj)) {
-        assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-        req->add(obj);
-      }
     }
 
     shenandoah_assert_marked(p, obj);
