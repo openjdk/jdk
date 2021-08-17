@@ -46,6 +46,19 @@ public class LoadSplitThruPhi {
         }
     }
 
+    public static void getPermutations1(byte[] inputArray, byte[][] outputArray) {
+        int[] indexes = new int[]{0, 2};
+
+        for (int a = 0; a < (int)(a + 16); a++) {
+            int oneIdx = indexes[0]++;
+            for (int b = a + 1; b < inputArray.length; b++) {
+                int twoIdx = indexes[1]++;
+                outputArray[twoIdx][0] = inputArray[a];
+                outputArray[twoIdx][1] = inputArray[b];
+            }
+        }
+    }
+
     public static void main(String[] args) {
 
         final byte[] inputArray = new byte[]{0, 1};
@@ -53,6 +66,23 @@ public class LoadSplitThruPhi {
 
         for (int i = 0; i < 1000000; i++) {
             getPermutations(inputArray, outputArray);
+        }
+
+        for (int i = 0; i < 100; ++i) {
+            Thread t = new Thread(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < 1000000; i++) {
+                        getPermutations1(inputArray, outputArray);
+                    }
+                }
+            });
+            t.start();
+            try {
+                Thread.sleep(100);
+                t.stop();
+                t.join();
+            } catch (Exception e) {
+            }
         }
     }
 
