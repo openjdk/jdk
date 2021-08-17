@@ -140,9 +140,11 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static void buildJdkContainerImage(String imageName, String dockerfileContent) throws Exception {
+        // image name may contain tag, hence replace ':'
+        String imageDirName = imageName.replace(":", "-");
 
         // Create an image build/staging directory
-        Path buildDir = Paths.get(".", "image-build");
+        Path buildDir = Paths.get(imageDirName);
         if (Files.exists(buildDir)) {
             throw new RuntimeException("The docker build directory already exists: " + buildDir);
         }
@@ -176,7 +178,7 @@ public class DockerTestUtils {
      *                   needed to build the image.
      * @throws Exception
      */
-    public static void buildImage(String imageName, Path buildDir) throws Exception {
+    private static void buildImage(String imageName, Path buildDir) throws Exception {
         try {
             execute(Container.ENGINE_COMMAND, "build", "--no-cache", "--tag", imageName, buildDir.toString())
                 .shouldHaveExitValue(0);
