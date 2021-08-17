@@ -26,11 +26,12 @@
  * @test
  * @bug 8272570
  * @summary crash in PhaseCFG::global_code_motion
+ * @requires vm.compiler2.enabled
  *
- * @run main/othervm TestLCM
+ * @run main/othervm TestGCMRecalcPressureNodes
  */
 
-public class TestGCM {
+public class TestGCMRecalcPressureNodes {
     public boolean bo0;
     public boolean bo1;
     public void foo() {
@@ -43,7 +44,7 @@ public class TestGCM {
         bo1 = true;
     }
     public static void main(String[] args) {
-        TestGCM instance = new TestGCM();
+        TestGCMRecalcPressureNodes instance = new TestGCMRecalcPressureNodes();
         for (int i = 0; i < 7800; i++) {
             instance.foo();
         }
