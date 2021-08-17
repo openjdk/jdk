@@ -1307,7 +1307,6 @@ public class JInternalFrame extends JComponent implements
     /**
      * Sets the <code>JDesktopIcon</code> associated with this
      * <code>JInternalFrame</code>.
-     * Setting <code>null</code> icon is unsupported and may throw NPE if used.
      *
      * @param d the <code>JDesktopIcon</code> to display on the desktop
      * @see #getDesktopIcon
