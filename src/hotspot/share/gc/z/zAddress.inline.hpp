@@ -505,6 +505,19 @@ inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
   return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor | non_mark_prev_bits | ZAddressRememberedMask);
 }
 
+inline zpointer ZAddress::mark_major_good(zaddress addr, zpointer prev) {
+  if (is_null_any(prev)) {
+    return color_null();
+  }
+
+  const uintptr_t prev_color = untype(prev);
+
+  const uintptr_t minor_marked_mask = ZAddressMarkedMinor0 | ZAddressMarkedMinor1;
+  const uintptr_t minor_marked = prev_color & minor_marked_mask;
+
+  return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMajor | minor_marked | ZAddressRememberedMask);
+}
+
 inline zpointer ZAddress::mark_minor_good(zaddress addr, zpointer prev) {
   if (is_null_any(prev)) {
     return color_null();

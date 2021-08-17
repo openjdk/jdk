@@ -257,7 +257,12 @@ inline zpointer color_load_good(zaddress new_addr, zpointer old_ptr) {
 }
 
 inline zpointer color_finalizable_good(zaddress new_addr, zpointer old_ptr) {
-  return ZAddress::finalizable_good(new_addr, old_ptr);
+  if (ZPointer::is_marked_major(old_ptr)) {
+    // Don't down-grade pointers
+    return ZAddress::mark_major_good(new_addr, old_ptr);
+  } else {
+    return ZAddress::finalizable_good(new_addr, old_ptr);
+  }
 }
 
 inline zpointer color_mark_good(zaddress new_addr, zpointer old_ptr) {
@@ -410,6 +415,9 @@ inline void ZBarrier::mark_barrier_on_oop_field(volatile zpointer* p, bool final
     // strongly marked. The finalizable bit in the oop exists to make sure
     // that a load of a finalizable marked oop will fall into the barrier
     // slow path so that we can mark the object as strongly reachable.
+
+    // Note: that this does not color the pointer finalizable marked if it
+    // is already colored marked major good.
     barrier(is_finalizable_good_fast_path, mark_finalizable_slow_path, color_finalizable_good, p, o);
   } else {
     barrier(is_mark_good_fast_path, mark_slow_path, color_mark_good, p, o);

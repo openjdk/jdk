@@ -96,6 +96,7 @@ public:
   static zpointer load_good(zaddress addr, zpointer prev);
   static zpointer finalizable_good(zaddress addr, zpointer prev);
   static zpointer mark_good(zaddress addr, zpointer prev);
+  static zpointer mark_major_good(zaddress addr, zpointer prev);
   static zpointer mark_minor_good(zaddress addr, zpointer prev);
   static zpointer store_good(zaddress addr);
   static zpointer store_good_or_null(zaddress addr);
