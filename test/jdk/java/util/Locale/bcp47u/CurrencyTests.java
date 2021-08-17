@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8176841 8265315
+ * @bug 8176841
  * @summary Tests Currency class instantiates correctly with Unicode
  *      extensions
  * @modules jdk.localedata
@@ -81,7 +81,7 @@ public class CurrencyTests {
         return new Object[][] {
             // Currency, DisplayLocale, expected Symbol
             {USD, Locale.forLanguageTag("en-US-u-rg-jpzzzz"), "$"},
-            {USD, Locale.forLanguageTag("en-US-u-rg-cazzzz"), "$"},
+            {USD, Locale.forLanguageTag("en-US-u-rg-cazzzz"), "US$"},
             {USD, Locale.forLanguageTag("en-CA-u-rg-uszzzz"), "$"},
 
             {CAD, Locale.forLanguageTag("en-US-u-rg-jpzzzz"), "CA$"},

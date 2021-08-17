@@ -5598,7 +5598,7 @@ FormatData/lt/DatePatterns/2=y-MM-dd
 #CalendarData/sl/firstDayOfWeek=<MISSING!>
 
 # bug 6573250
-CurrencyNames/en_CA/USD=$
+CurrencyNames/en_CA/USD=US$
 
 # bug 6870908
 FormatData/et/MonthNames/0=jaanuar
