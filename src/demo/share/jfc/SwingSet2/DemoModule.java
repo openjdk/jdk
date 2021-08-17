@@ -45,7 +45,7 @@ import java.io.*;
 import java.applet.*;
 import java.net.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A generic SwingSet2 demo module

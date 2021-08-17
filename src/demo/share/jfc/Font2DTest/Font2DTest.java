@@ -72,7 +72,7 @@ import java.util.BitSet;
 import javax.swing.*;
 import javax.swing.event.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_16;
 
 /**
  * Font2DTest.java
