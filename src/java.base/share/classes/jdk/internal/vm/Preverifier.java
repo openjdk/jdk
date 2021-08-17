@@ -49,6 +49,7 @@ public class Preverifier extends ClassVisitor {
 	private static ClassNode cn;
 	private static String fileName;
 	private static boolean shouldPrint = true;
+	private static HashMap<String, Integer> methodMap;
 
 	/**
 	 * Reads class file, locates all JSR/RET instructions, and writes new class file 
@@ -58,13 +59,16 @@ public class Preverifier extends ClassVisitor {
 	 */
 	public static byte[] patch(byte [] bytecode) {
         ClassReader cr;
+        methodMap = new HashMap<String, Integer>();
 		cr = new ClassReader(bytecode);
 		cn = replaceOpcodes(cr, bytecode);
-		SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES);// | ClassWriter.COMPUTE_MAXS);
+		//https://github.com/rohanpadhye/JQF/blob/master/instrument/src/main/java/janala/instrument/SafeClassWriter.java
+		SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cn.accept(cw);
         if (cw.toByteArray().length < 1) {
         	throw new InternalError("Classfile not parsed correctly");
         }
+        checkStackSize(cw.toByteArray());
         return cw.toByteArray();
     }
 
@@ -103,8 +107,24 @@ public class Preverifier extends ClassVisitor {
 		}
 	}
 
-	public void checkStackSize() {
+	/**
+	 * Verifies that the stack size has not changed
+	 * @param bytecode Classfile as a byte array
+	 */
+	public static void checkStackSize(byte[] bytecode) {
 		System.out.println("Verifying stack size");
+		// Create classnode to verify each method's stack size
+		ClassReader cr = new ClassReader(bytecode);
+		ClassNode cn = new ClassNode();
+		cr.accept(cn, 0);
+		List<MethodNode> mns = cn.methods;
+		for (MethodNode mn : mns) {
+			if (mn.maxStack != methodMap.get(mn.name)) {
+				log("Stack sized changed", shouldPrint);
+				throw new ClassFormatError("Altered stack size");
+			}
+		}
+		log("Stack sizes are correct", shouldPrint);
 	}
 
 	/**
@@ -141,8 +161,7 @@ public class Preverifier extends ClassVisitor {
 			Map<LabelNode, LabelNode> cloneMap = cloneLabels(inList);
 			// Maps a RET instruction to the label it must return to once converted to GOTO instruction
 			HashMap<AbstractInsnNode, LabelNode> retLabelMap = new HashMap<>();
-			// Find initial stack size
-			int initMaxStack = mn.maxStack;				
+			methodMap.put(mn.name, mn.maxStack);				
 			do {
 				log("Method name: " + mn.name + " Instructions: " + inList.size(), shouldPrint); 				
 				for (int i = 0; i < inList.size(); i++) {

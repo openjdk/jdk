@@ -181,10 +181,11 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
   int _minor_version = stream->get_u2_fast();
   int _major_version = stream->get_u2_fast();
 
-  if ( UseNewCode && (_major_version < JAVA_7_VERSION)  ) {
+  if (_major_version < JAVA_7_VERSION) {
+    // Send class to tmp for debugging
     if (0) {
       stringStream fn0;
-      fn0.print("/tmp/%s_old.class", name->as_klass_external_name());
+      fn0.print("/tmp/preverifier/%s_old.class", name->as_klass_external_name());
       fileStream fds0(fn0.as_string());
       fds0.write((const char*)stream->buffer(), stream->length());
     }
@@ -215,7 +216,14 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
       CLEAR_PENDING_EXCEPTION;
 
       stringStream fn1;
-      fn1.print("/tmp/preverifier/%s_error", name->as_klass_external_name());
+      static int unknown_count = 0;
+      if (name == NULL) {
+        fn1.print("/tmp/preverifier/%s%d_error", "unknown", unknown_count);
+        unknown_count++;
+      } 
+      else {
+        fn1.print("/tmp/preverifier/%s_error", name->as_klass_external_name());
+      }
       fileStream fds1(fn1.as_string());
       fds1.print_cr("Exception thrown: %s", ex->klass()->name()->as_C_string());
       java_lang_Throwable::print_stack_trace(ex, &fds1);
@@ -244,13 +252,6 @@ ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS
     
     newStream = new ClassFileStream(class_bytes, length, stream->source(), stream->need_verify());
     newStream->set_current(newStream->buffer());
-
-    if (!strcmp(name->as_klass_external_name(), "com.sun.javatest.regtest.agent.AgentServer")) {
-      stringStream fn;
-      fn.print("/tmp/%s.class", name->as_klass_external_name());
-      fileStream fds(fn.as_string());
-      fds.write((const char*)newStream->buffer(), newStream->length());
-    }
     return newStream;
   }
   stream->set_current(stream->buffer());
