@@ -548,7 +548,8 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     ResourceMark rm;
     LogStream ls(lt);
-    VM_GC_HeapInspection inspector(&ls, false /* ! full gc */);
+    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
+    VM_GC_HeapInspection inspector(&ls, false /* ! full gc */, parallel_thread_num);
     inspector.doit();
   }
 }
