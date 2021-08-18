@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905 8263729 8265173
+ *      8067796 8224905 8263729 8265173 8272600 8231297
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -52,6 +52,7 @@ import static java.lang.ProcessBuilder.Redirect.*;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -82,10 +83,13 @@ public class Basic {
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
     static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
 
+    /* Path to native executables;  sleepmillis */
+    static final Path TEST_NATIVEPATH = Path.of(System.getProperty("test.nativepath", "."));
+
     /**
      * Returns the number of milliseconds since time given by
      * startNanoTime, which must have been previously returned from a
-     * call to {@link System.nanoTime()}.
+     * call to {@link System#nanoTime()}.
      */
     private static long millisElapsedSince(long startNanoTime) {
         return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanoTime);
@@ -2137,34 +2141,8 @@ public class Basic {
             final int cases = 4;
             for (int i = 0; i < cases; i++) {
                 final int action = i;
-                List<String> childArgs = new ArrayList<>(javaChildArgs);
+                List<String> childArgs = getSleepArgs();
                 final ProcessBuilder pb = new ProcessBuilder(childArgs);
-                {
-                    // Redirect any child VM error output away from the stream being tested
-                    // and to the log file. For background see:
-                    // 8231297: java/lang/ProcessBuilder/Basic.java test fails intermittently
-                    // Destroying the process may, depending on the timing, cause some output
-                    // from the child VM.
-                    // This test requires the thread reading from the subprocess be blocked
-                    // in the read from the subprocess; there should be no bytes to read.
-                    // Modify the argument list shared with ProcessBuilder to redirect VM output.
-                    assert (childArgs.get(1).equals("-XX:+DisplayVMOutputToStderr")) : "Expected arg 1 to be \"-XX:+DisplayVMOutputToStderr\"";
-                    switch (action & 0x1) {
-                        case 0:
-                            childArgs.set(1, "-XX:+DisplayVMOutputToStderr");
-                            childArgs.add(2, "-Xlog:all=warning:stderr");
-                            pb.redirectError(INHERIT);
-                            break;
-                        case 1:
-                            childArgs.set(1, "-XX:+DisplayVMOutputToStdout");
-                            childArgs.add(2, "-Xlog:all=warning:stdout");
-                            pb.redirectOutput(INHERIT);
-                            break;
-                        default:
-                            throw new Error();
-                    }
-                }
-                childArgs.add("sleep");
                 final byte[] bytes = new byte[10];
                 final Process p = pb.start();
                 final CountDownLatch latch = new CountDownLatch(1);
@@ -2441,8 +2419,7 @@ public class Basic {
         // Process.waitFor(0, TimeUnit.MILLISECONDS) work as expected.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             long start = System.nanoTime();
             if (!p.isAlive() || p.waitFor(0, TimeUnit.MILLISECONDS)) {
@@ -2471,8 +2448,7 @@ public class Basic {
         // works as expected.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             long start = System.nanoTime();
 
@@ -2490,8 +2466,7 @@ public class Basic {
         // interrupt works as expected, if interrupted while waiting.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
             final CountDownLatch aboutToWaitFor = new CountDownLatch(1);
@@ -2522,8 +2497,7 @@ public class Basic {
         // interrupt works as expected, if interrupted while waiting.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
             final CountDownLatch aboutToWaitFor = new CountDownLatch(1);
@@ -2554,8 +2528,7 @@ public class Basic {
         // interrupt works as expected, if interrupted before waiting.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
             final CountDownLatch threadStarted = new CountDownLatch(1);
@@ -2586,8 +2559,7 @@ public class Basic {
         // Check that Process.waitFor(timeout, null) throws NPE.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process p = new ProcessBuilder(childArgs).start();
             THROWS(NullPointerException.class,
                     () ->  p.waitFor(10L, null));
@@ -2610,8 +2582,7 @@ public class Basic {
         // Check that default implementation of Process.waitFor(timeout, null) throws NPE.
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process proc = new ProcessBuilder(childArgs).start();
             final DelegatingProcess p = new DelegatingProcess(proc);
 
@@ -2637,8 +2608,7 @@ public class Basic {
         // Process.waitFor(long, TimeUnit)
         //----------------------------------------------------------------
         try {
-            List<String> childArgs = new ArrayList<String>(javaChildArgs);
-            childArgs.add("sleep");
+            List<String> childArgs = getSleepArgs();
             final Process proc = new ProcessBuilder(childArgs).start();
             DelegatingProcess p = new DelegatingProcess(proc);
             long start = System.nanoTime();
@@ -2647,12 +2617,29 @@ public class Basic {
 
             long end = System.nanoTime();
             if ((end - start) < 500000000)
-                fail("Test failed: waitFor didn't take long enough");
+                fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
 
             p.destroy();
 
             p.waitFor(1000, TimeUnit.MILLISECONDS);
         } catch (Throwable t) { unexpected(t); }
+    }
+
+    /**
+     * Return the list of process arguments for a child to sleep 10 minutes (600000 milliseconds).
+     * @return A list of process arguments to sleep 10 minutes.
+     */
+    private static List<String> getSleepArgs() {
+        List<String> childArgs = null;
+        Path sleepExe = TEST_NATIVEPATH.resolve("sleepmillis");
+        if (sleepExe.toFile().canExecute()) {
+            childArgs = List.of(sleepExe.toString(), "600000");
+        } else {
+            // Fallback to the JavaChild sleep does a sleep for 10 minutes.
+            childArgs = new ArrayList<>(javaChildArgs);
+            childArgs.add("sleep");
+        }
+        return childArgs;
     }
 
     static void closeStreams(Process p) {
