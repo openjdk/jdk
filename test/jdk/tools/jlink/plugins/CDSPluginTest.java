@@ -78,7 +78,7 @@ public class CDSPluginTest {
            String jlinkPath = JDKToolFinder.getJDKTool("jlink");
            String[] cmd = {jlinkPath, "--add-modules", "java.base,java.logging",
                            "-J-Dos.name=windows", "--generate-cds-archive",
-                           "--output", System.getProperty("test.classes") + sep + "module" + "-tmp"}; 
+                           "--output", System.getProperty("test.classes") + sep + "module" + "-tmp"};
            StringBuilder cmdLine = new StringBuilder();
            for (String s : cmd) {
                cmdLine.append(s).append(' ');
@@ -91,5 +91,4 @@ public class CDSPluginTest {
            out.shouldHaveExitValue(1);
        }
     }
-
 }
