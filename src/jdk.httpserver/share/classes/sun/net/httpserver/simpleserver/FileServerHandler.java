@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.System.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -57,6 +58,7 @@ public final class FileServerHandler implements HttpHandler {
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
+    private final Logger logger;
 
     private FileServerHandler(Path root, UnaryOperator<String> mimeTable) {
         root = root.normalize();
@@ -70,6 +72,7 @@ public final class FileServerHandler implements HttpHandler {
             throw new IllegalArgumentException("Path is not readable: " + root);
         this.root = root;
         this.mimeTable = mimeTable;
+        this.logger = System.getLogger("com.sun.net.httpserver");
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
@@ -152,18 +155,25 @@ public final class FileServerHandler implements HttpHandler {
         return !exchange.getRequestURI().getPath().endsWith("/");
     }
 
-    private static Path mapToPath(HttpExchange exchange, Path root) {
+    private Path mapToPath(HttpExchange exchange, Path root) {
         try {
             String context = exchange.getHttpContext().getPath();
             String request = exchange.getRequestURI().getPath();
 
-            // check paths
-            if (!context.startsWith("/")) { context += "/"; }
-            if (!request.startsWith("/")) { request += "/"; }
-            if (!context.endsWith("/"))   { context += "/"; }
+            if (!context.startsWith("/")) {
+                throw new IllegalArgumentException("Context path invalid: " + context);
+            }
+            if (!request.startsWith("/")) {
+                throw new IllegalArgumentException("Request path invalid: " + request);
+            }
+
+            // correct context path
+            if (!context.endsWith("/")) { context += "/"; }
 
             // request must not escape context
-            if (!request.startsWith(context)) { return null; }
+            if (!request.startsWith(context)) {
+                throw new IllegalArgumentException("Request not in context: " + context);
+            }
 
             String uriPath = request.substring(context.length());
             String[] components = uriPath.split("/");
@@ -177,9 +187,14 @@ public final class FileServerHandler implements HttpHandler {
             path = path.normalize();
 
             // path must not escape root
-            if (path.startsWith(root)) { return path; }
-            else  { return null; }
+            if (path.startsWith(root)) {
+                return path;
+            } else  {
+                throw new IllegalArgumentException("Request not in root");
+            }
         } catch (Exception e) {
+            logger.log(System.Logger.Level.TRACE,
+                    "FileServerHandler: request URI path resolution failed", e);
             return null;  // could not resolve request URI path
         }
     }
