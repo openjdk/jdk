@@ -43,7 +43,7 @@ class G1EvacuationFailureObjsInHR {
   };
 
 private:
-  uint _region_idx;
+  const uint _region_idx;
   Node  _head;
   Node* volatile _tail;
   uint _objs_num;
@@ -55,6 +55,7 @@ private:
   void iterate_internal(ObjectClosure* closure);
   void clear_list();
   void clear_array();
+  void reset();
 
 public:
   G1EvacuationFailureObjsInHR(uint region_idx);

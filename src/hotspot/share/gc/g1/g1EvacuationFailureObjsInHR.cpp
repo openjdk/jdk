@@ -69,7 +69,7 @@ void G1EvacuationFailureObjsInHR::clear_list() {
     cur = next;
     DEBUG_ONLY(i--);
   }
-  assert(i == 0, "Must be");
+  assert(i == 0, "Must be, %u", i);
 }
 
 void G1EvacuationFailureObjsInHR::clear_array() {
@@ -78,11 +78,15 @@ void G1EvacuationFailureObjsInHR::clear_array() {
   _objs_num = 0;
 }
 
+void G1EvacuationFailureObjsInHR::reset() {
+  Atomic::store(&_tail, &_head);
+}
+
 G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx) :
   _region_idx(region_idx),
   _objs_num(0),
   _oop_array(NULL) {
-  Atomic::store(&_tail, &_head);
+  reset();
 }
 
 G1EvacuationFailureObjsInHR::~G1EvacuationFailureObjsInHR() {
@@ -113,4 +117,5 @@ void G1EvacuationFailureObjsInHR::iterate(ObjectClosure* closure) {
   compact();
   sort();
   iterate_internal(closure);
+  reset();
 }
