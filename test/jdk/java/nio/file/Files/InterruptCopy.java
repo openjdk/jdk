@@ -45,7 +45,7 @@ public class InterruptCopy {
 
     private static final long FILE_SIZE_TO_COPY = 512L * 1024L * 1024L;
     private static final int INTERRUPT_DELAY_IN_MS = 10;
-    private static final int CANCEL_DELAY_IN_MS = 500;
+    private static final int CANCEL_DELAY_IN_MS = 10;
     private static final int DURATION_MAX_IN_MS = 5000;
 
     public static void main(String[] args) throws Exception {
@@ -85,13 +85,13 @@ public class InterruptCopy {
             Executors.newSingleThreadScheduledExecutor();
         try {
             // copy source to target in main thread, interrupting it after a delay
-            final CountDownLatch latch = new CountDownLatch(2);
+            final CountDownLatch ilatch = new CountDownLatch(2);
             final Thread me = Thread.currentThread();
             Future<?> wakeup = pool.submit(new Runnable() {
                 public void run() {
-                    latch.countDown();
+                    ilatch.countDown();
                     try {
-                        latch.await();
+                        ilatch.await();
                         Thread.sleep(INTERRUPT_DELAY_IN_MS);
                     } catch (InterruptedException ignored) {
                     }
@@ -99,8 +99,8 @@ public class InterruptCopy {
                 }});
             System.out.println("Copying file...");
             try {
-                latch.countDown();
-                latch.await();
+                ilatch.countDown();
+                ilatch.await();
                 long start = System.currentTimeMillis();
                 Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE);
                 long duration = System.currentTimeMillis() - start;
@@ -119,19 +119,30 @@ public class InterruptCopy {
 
             // copy source to target via task in thread pool, interrupting it after
             // a delay using cancel(true)
+            final CountDownLatch clatch = new CountDownLatch(2);
             Future<Void> result = pool.submit(new Callable<Void>() {
                 public Void call() throws IOException {
                     System.out.println("Copying file...");
+                    clatch.countDown();
+                    try {
+                        clatch.await();
+                    } catch (InterruptedException ignored) {
+                    }
                     Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE,
                         StandardCopyOption.REPLACE_EXISTING);
                     return null;
                 }
             });
+            clatch.countDown();
+            clatch.await();
             Thread.sleep(CANCEL_DELAY_IN_MS);
             boolean cancelled = result.cancel(true);
-            if (!cancelled)
+            if (cancelled)
+                System.out.println("Copy cancelled.");
+            else {
                 result.get();
-            System.out.println("Copy cancelled.");
+                throw new RuntimeException("Copy was not cancelled");
+            }
         } finally {
             pool.shutdown();
         }
