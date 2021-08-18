@@ -38,6 +38,12 @@
 #include "utilities/stack.inline.hpp"
 
 inline void MarkSweep::mark_object(oop obj) {
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance_inlined(obj) &&
+      SerialStringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests.add(obj);
+  }
+
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markWord mark = obj->mark();
@@ -45,12 +51,6 @@ inline void MarkSweep::mark_object(oop obj) {
 
   if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
-  }
-
-  if (StringDedup::is_enabled() &&
-      java_lang_String::is_instance_inlined(obj) &&
-      SerialStringDedup::is_candidate_from_mark(obj)) {
-    _string_dedup_requests.add(obj);
   }
 }
 
