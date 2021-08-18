@@ -8128,33 +8128,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} dneh</unitPattern>
 				<perUnitPattern>{0} na dan</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender>masculine</gender>
-				<unitPattern count="one">{0} dan</unitPattern>
-				<unitPattern count="one" case="accusative">{0} dan</unitPattern>
-				<unitPattern count="one" case="dative">{0} dnevu</unitPattern>
-				<unitPattern count="one" case="genitive">{0} dneva</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} dnevom</unitPattern>
-				<unitPattern count="one" case="locative">{0} dnevu</unitPattern>
-				<unitPattern count="two">{0} dneva</unitPattern>
-				<unitPattern count="two" case="accusative">{0} dneva</unitPattern>
-				<unitPattern count="two" case="dative">{0} dnema</unitPattern>
-				<unitPattern count="two" case="genitive">{0} dni</unitPattern>
-				<unitPattern count="two" case="instrumental">{0} dnema</unitPattern>
-				<unitPattern count="two" case="locative">{0} dneh</unitPattern>
-				<unitPattern count="few">{0} dnevi</unitPattern>
-				<unitPattern count="few" case="accusative">{0} dni</unitPattern>
-				<unitPattern count="few" case="dative">{0} dnem</unitPattern>
-				<unitPattern count="few" case="genitive">{0} dni</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} dnevi</unitPattern>
-				<unitPattern count="few" case="locative">{0} dneh</unitPattern>
-				<unitPattern count="other">{0} dni</unitPattern>
-				<unitPattern count="other" case="accusative">{0} dni</unitPattern>
-				<unitPattern count="other" case="dative">{0} dnem</unitPattern>
-				<unitPattern count="other" case="genitive">{0} dni</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} dnevi</unitPattern>
-				<unitPattern count="other" case="locative">{0} dneh</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender>feminine</gender>
 				<displayName>ur</displayName>

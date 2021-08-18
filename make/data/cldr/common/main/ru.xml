@@ -9759,33 +9759,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="prepositional">{0} дня</unitPattern>
 				<perUnitPattern>{0} в день</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender>masculine</gender>
-				<unitPattern count="one">{0} сутки</unitPattern>
-				<unitPattern count="one" case="accusative">{0} сутки</unitPattern>
-				<unitPattern count="one" case="dative">{0} суткам</unitPattern>
-				<unitPattern count="one" case="genitive">{0} суток</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} сутками</unitPattern>
-				<unitPattern count="one" case="prepositional">{0} сутках</unitPattern>
-				<unitPattern count="few">{0} суток</unitPattern>
-				<unitPattern count="few" case="accusative">{0} суток</unitPattern>
-				<unitPattern count="few" case="dative">{0} суткам</unitPattern>
-				<unitPattern count="few" case="genitive">{0} суток</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} сутками</unitPattern>
-				<unitPattern count="few" case="prepositional">{0} сутках</unitPattern>
-				<unitPattern count="many">{0} суток</unitPattern>
-				<unitPattern count="many" case="accusative">{0} суток</unitPattern>
-				<unitPattern count="many" case="dative">{0} суткам</unitPattern>
-				<unitPattern count="many" case="genitive">{0} суток</unitPattern>
-				<unitPattern count="many" case="instrumental">{0} сутками</unitPattern>
-				<unitPattern count="many" case="prepositional">{0} сутках</unitPattern>
-				<unitPattern count="other">{0} суток</unitPattern>
-				<unitPattern count="other" case="accusative">{0} суток</unitPattern>
-				<unitPattern count="other" case="dative">{0} суток</unitPattern>
-				<unitPattern count="other" case="genitive">{0} суток</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} суток</unitPattern>
-				<unitPattern count="other" case="prepositional">{0} суток</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender>masculine</gender>
 				<displayName>часы</displayName>

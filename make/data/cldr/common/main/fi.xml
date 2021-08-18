@@ -8438,16 +8438,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="partitive">{0} päivää</unitPattern>
 				<perUnitPattern>{0} / päivä</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<unitPattern count="one">{0} vuorokausi</unitPattern>
-				<unitPattern count="one" case="elative">{0} vuorokaudesta</unitPattern>
-				<unitPattern count="one" case="illative">{0} vuorokauteen</unitPattern>
-				<unitPattern count="one" case="partitive">{0} vuorokautta</unitPattern>
-				<unitPattern count="other">{0} vuorokautta</unitPattern>
-				<unitPattern count="other" case="elative">{0} vuorokaudesta</unitPattern>
-				<unitPattern count="other" case="illative">{0} vuorokauteen</unitPattern>
-				<unitPattern count="other" case="partitive">{0} vuorokautta</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<displayName>tunnit</displayName>
 				<unitPattern count="one">{0} tunti</unitPattern>

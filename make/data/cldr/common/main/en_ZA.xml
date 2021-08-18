@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territory type="ZA"/>
 	</identity>
 	<characters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[á à ă â å ä ā æ ç ḓ é è ĕ ê ë ē í ì ĭ î ï ī ḽ ñ ṅ ṋ ó ò ŏ ô ö ø ō œ š ṱ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[á à ă â å ä ā æ ç ḓ é è ĕ ê ë ē í ì ĭ î ï ī ḽ ṅ ṋ ñ ó ò ŏ ô ö ø ō œ š ṱ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>

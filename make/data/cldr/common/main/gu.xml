@@ -6919,92 +6919,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>ચોરસ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="vocative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="vocative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="vocative">ચોરસ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="vocative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="vocative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="dative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="instrumental">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="locative">ચોરસ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="vocative">ચોરસ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>ક્યુબિક {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="vocative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="vocative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="vocative">ઘન {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="vocative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="vocative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="dative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="instrumental">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="locative">ઘન {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="vocative">ઘન {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
@@ -7013,19 +6933,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ગુ-બળ</displayName>
 				<unitPattern count="one">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ગુ-બળ</unitPattern>
 				<unitPattern count="other">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ગુ-બળ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ગુ-બળ</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>મીટર પ્રતિ સેકન્ડ²</displayName>
@@ -7036,91 +6944,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>પરિભ્રમણ</displayName>
 				<unitPattern count="one">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="dative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="locative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} પરિભ્રમણ</unitPattern>
 				<unitPattern count="other">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="dative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="locative">{0} પરિભ્રમણ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} પરિભ્રમણ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<gender>masculine</gender>
 				<displayName>સમત્રિજ્યાકોણ</displayName>
 				<unitPattern count="one">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="dative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="locative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} સમત્રિજ્યાકોણ</unitPattern>
 				<unitPattern count="other">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="dative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="locative">{0} સમત્રિજ્યાકોણ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} સમત્રિજ્યાકોણ</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<gender>masculine</gender>
 				<displayName>અંશ</displayName>
 				<unitPattern count="one">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="dative">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="locative">{0} અંશ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} અંશ</unitPattern>
 				<unitPattern count="other">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="dative">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="locative">{0} અંશ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} અંશ</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<gender>feminine</gender>
 				<displayName>ચાપમિનિટ</displayName>
 				<unitPattern count="one">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ચાપમિનિટ</unitPattern>
 				<unitPattern count="other">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ચાપમિનિટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ચાપમિનિટ</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<gender>feminine</gender>
 				<displayName>ચાપસેકન્ડ</displayName>
 				<unitPattern count="one">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ચાપસેકન્ડ</unitPattern>
 				<unitPattern count="other">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ચાપસેકન્ડ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ચાપસેકન્ડ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>ચોરસ કિલોમીટર</displayName>
@@ -7132,19 +6980,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>હેક્ટર</displayName>
 				<unitPattern count="one">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="accusative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="dative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="genitive">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="locative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="one" case="vocative">{0} હેક્ટર</unitPattern>
 				<unitPattern count="other">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="accusative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="dative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="genitive">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="locative">{0} હેક્ટર</unitPattern>
-				<unitPattern count="other" case="vocative">{0} હેક્ટર</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>ચોરસ મીટર</displayName>
@@ -7194,19 +7030,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>કૅરેટ</displayName>
 				<unitPattern count="one">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કૅરેટ</unitPattern>
 				<unitPattern count="other">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} કૅરેટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કૅરેટ</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>મિલિગ્રામ પ્રતિ ડેસિલિટર</displayName>
@@ -7227,91 +7051,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>કણ પ્રતિ મિલિયન</displayName>
 				<unitPattern count="one">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="dative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="locative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કણ પ્રતિ મિલિયન</unitPattern>
 				<unitPattern count="other">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="dative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="locative">{0} કણ પ્રતિ મિલિયન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કણ પ્રતિ મિલિયન</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>masculine</gender>
 				<displayName>ટકા</displayName>
 				<unitPattern count="one">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="dative">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="locative">{0} ટકા</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ટકા</unitPattern>
 				<unitPattern count="other">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="dative">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="locative">{0} ટકા</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ટકા</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>feminine</gender>
 				<displayName>પ્રતિમાઈલ</displayName>
 				<unitPattern count="one">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="dative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="locative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} પ્રતિમાઈલ</unitPattern>
 				<unitPattern count="other">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="dative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="locative">{0} પ્રતિમાઈલ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} પ્રતિમાઈલ</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>masculine</gender>
 				<displayName>પરમિરિયડ</displayName>
 				<unitPattern count="one">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="dative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="locative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} પરમિરિયડ</unitPattern>
 				<unitPattern count="other">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="dative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="locative">{0} પરમિરિયડ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} પરમિરિયડ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>masculine</gender>
 				<displayName>મોલ</displayName>
 				<unitPattern count="one">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="dative">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="locative">{0} મોલ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મોલ</unitPattern>
 				<unitPattern count="other">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="dative">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="locative">{0} મોલ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મોલ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>લીટર પ્રતિ કિલોમીટર</displayName>
@@ -7382,148 +7146,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>બાઇટ</displayName>
 				<unitPattern count="one">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} બાઇટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} બાઇટ</unitPattern>
 				<unitPattern count="other">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} બાઇટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} બાઇટ</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<gender>feminine</gender>
 				<displayName>બિટ</displayName>
 				<unitPattern count="one">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} બિટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} બિટ</unitPattern>
 				<unitPattern count="other">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} બિટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} બિટ</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<gender>feminine</gender>
 				<displayName>સદીઓ</displayName>
 				<unitPattern count="one">{0} સદી</unitPattern>
-				<unitPattern count="one" case="accusative">{0} સદી</unitPattern>
-				<unitPattern count="one" case="dative">{0} સદી</unitPattern>
-				<unitPattern count="one" case="genitive">{0} સદી</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} સદી</unitPattern>
-				<unitPattern count="one" case="locative">{0} સદી</unitPattern>
-				<unitPattern count="one" case="vocative">{0} સદી</unitPattern>
 				<unitPattern count="other">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="dative">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="locative">{0} સદીઓ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} સદીઓ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>masculine</gender>
 				<displayName>દાયકા</displayName>
 				<unitPattern count="one">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="accusative">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="dative">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="genitive">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="locative">{0} દાયકો</unitPattern>
-				<unitPattern count="one" case="vocative">{0} દાયકો</unitPattern>
 				<unitPattern count="other">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="accusative">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="dative">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="genitive">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="locative">{0} દાયકા</unitPattern>
-				<unitPattern count="other" case="vocative">{0} દાયકા</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>masculine</gender>
 				<displayName>વર્ષ</displayName>
 				<unitPattern count="one">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="dative">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="locative">{0} વર્ષ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} વર્ષ</unitPattern>
 				<unitPattern count="other">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="dative">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="locative">{0} વર્ષ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} વર્ષ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ વર્ષ</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
 				<displayName>મહિના</displayName>
 				<unitPattern count="one">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="dative">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="locative">{0} મહિનો</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મહિનો</unitPattern>
 				<unitPattern count="other">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="dative">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="locative">{0} મહિના</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મહિના</unitPattern>
 				<perUnitPattern>{0} પ્રતિ મહિનો</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>masculine</gender>
 				<displayName>અઠવાડિયા</displayName>
 				<unitPattern count="one">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="accusative">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="dative">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="genitive">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="locative">{0} અઠવાડિયું</unitPattern>
-				<unitPattern count="one" case="vocative">{0} અઠવાડિયું</unitPattern>
 				<unitPattern count="other">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="accusative">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="dative">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="genitive">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="locative">{0} અઠવાડિયા</unitPattern>
-				<unitPattern count="other" case="vocative">{0} અઠવાડિયા</unitPattern>
 				<perUnitPattern>{0} પ્રતિ અઠવાડિયું</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender>masculine</gender>
 				<displayName>દિવસ</displayName>
 				<unitPattern count="one">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="dative">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="locative">{0} દિવસ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} દિવસ</unitPattern>
 				<unitPattern count="other">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="dative">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="locative">{0} દિવસ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} દિવસ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ દિવસ</perUnitPattern>
 			</unit>
 			<unit type="duration-day-person">
@@ -7533,57 +7201,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>કલાક</displayName>
 				<unitPattern count="one">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="dative">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="locative">{0} કલાક</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કલાક</unitPattern>
 				<unitPattern count="other">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="dative">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="locative">{0} કલાક</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કલાક</unitPattern>
 				<perUnitPattern>{0} પ્રતિ કલાક</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>masculine</gender>
 				<displayName>મિનિટ</displayName>
 				<unitPattern count="one">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} મિનિટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મિનિટ</unitPattern>
 				<unitPattern count="other">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} મિનિટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મિનિટ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ મિનિટ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>masculine</gender>
 				<displayName>સેકંડ</displayName>
 				<unitPattern count="one">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="dative">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="locative">{0} સેકંડ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} સેકંડ</unitPattern>
 				<unitPattern count="other">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="dative">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="locative">{0} સેકંડ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} સેકંડ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ સેકંડ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -7605,19 +7237,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>એમ્પીયર</displayName>
 				<unitPattern count="one">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="accusative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="dative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="genitive">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="locative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="one" case="vocative">{0} એમ્પીયર</unitPattern>
 				<unitPattern count="other">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="accusative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="dative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="genitive">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="locative">{0} એમ્પીયર</unitPattern>
-				<unitPattern count="other" case="vocative">{0} એમ્પીયર</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>મિલિએમ્પીયર</displayName>
@@ -7628,37 +7248,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ઓહ્મ</displayName>
 				<unitPattern count="one">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ઓહ્મ</unitPattern>
 				<unitPattern count="other">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ઓહ્મ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ઓહ્મ</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>masculine</gender>
 				<displayName>વૉલ્ટ</displayName>
 				<unitPattern count="one">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} વૉલ્ટ</unitPattern>
 				<unitPattern count="other">{0} વૉલ્ટ્</unitPattern>
-				<unitPattern count="other" case="accusative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} વૉલ્ટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} વૉલ્ટ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>કિલોકેલરી</displayName>
@@ -7669,19 +7265,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>કેલરી</displayName>
 				<unitPattern count="one">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="dative">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="locative">{0} કેલરી</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કેલરી</unitPattern>
 				<unitPattern count="other">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="dative">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="locative">{0} કેલરી</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કેલરી</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>કેલરી</displayName>
@@ -7697,19 +7281,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>જૂલ</displayName>
 				<unitPattern count="one">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="dative">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="locative">{0} જૂલ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} જૂલ</unitPattern>
 				<unitPattern count="other">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="dative">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="locative">{0} જૂલ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} જૂલ</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>કિલોવૉટ-કલાક</displayName>
@@ -7740,19 +7312,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ન્યૂટન</displayName>
 				<unitPattern count="one">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="dative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="locative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ન્યૂટન</unitPattern>
 				<unitPattern count="other">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="dative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="locative">{0} ન્યૂટન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ન્યૂટન</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>કિલોવૉટ કલાક પ્રતિ 100 કિલોમીટર</displayName>
@@ -7778,19 +7338,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>હર્ટ્ઝ</displayName>
 				<unitPattern count="one">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="dative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="locative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} હર્ટ્ઝ</unitPattern>
 				<unitPattern count="other">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="dative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="locative">{0} હર્ટ્ઝ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} હર્ટ્ઝ</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>masculine</gender>
@@ -7800,19 +7348,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>પિક્સેલ</displayName>
 				<unitPattern count="one">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="dative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="locative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} પિક્સેલ</unitPattern>
 				<unitPattern count="other">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="dative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="locative">{0} પિક્સેલ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} પિક્સેલ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>પિક્સેલ પ્રતિ સેન્ટિમીટર</displayName>
@@ -7849,19 +7385,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>મીટર</displayName>
 				<unitPattern count="one">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="dative">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="locative">{0} મીટર</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મીટર</unitPattern>
 				<unitPattern count="other">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="dative">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="locative">{0} મીટર</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મીટર</unitPattern>
 				<perUnitPattern>{0} પ્રતિ મીટર</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -7951,19 +7475,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>માઈલ સ્કૅન્ડિનેવિઅન</displayName>
 				<unitPattern count="one">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="dative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="locative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
 				<unitPattern count="other">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="dative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="locative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} માઈલ-સ્કૅન્ડિનેવિઅન</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>પોઈન્ટ્સ</displayName>
@@ -7979,55 +7491,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>લક્સ</displayName>
 				<unitPattern count="one">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="dative">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="locative">{0} લક્સ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} લક્સ</unitPattern>
 				<unitPattern count="other">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="dative">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="locative">{0} લક્સ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} લક્સ</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<gender>masculine</gender>
 				<displayName>કેન્ડેલા</displayName>
 				<unitPattern count="one">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="dative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="locative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કેન્ડેલા</unitPattern>
 				<unitPattern count="other">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="dative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="locative">{0} કેન્ડેલા</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કેન્ડેલા</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<gender>feminine</gender>
 				<displayName>લૂમેન</displayName>
 				<unitPattern count="one">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="dative">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="locative">{0} લૂમેન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} લૂમેન</unitPattern>
 				<unitPattern count="other">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="dative">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="locative">{0} લૂમેન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} લૂમેન</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>સૌર તેજસ્વિતા</displayName>
@@ -8038,56 +7514,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>મેટ્રિક ટન</displayName>
 				<unitPattern count="one">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="dative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="locative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મેટ્રિક ટન</unitPattern>
 				<unitPattern count="other">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="dative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="locative">{0} મેટ્રિક ટન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મેટ્રિક ટન</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<gender>masculine</gender>
 				<displayName>કિલોગ્રામ</displayName>
 				<unitPattern count="one">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="dative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="locative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કિલોગ્રામ</unitPattern>
 				<unitPattern count="other">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="dative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="locative">{0} કિલોગ્રામ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કિલોગ્રામ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ કિલોગ્રામ</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<gender>masculine</gender>
 				<displayName>ગ્રામ</displayName>
 				<unitPattern count="one">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ગ્રામ</unitPattern>
 				<unitPattern count="other">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ગ્રામ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ગ્રામ</unitPattern>
 				<perUnitPattern>{0} પ્રતિ ગ્રામ</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -8130,19 +7570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>કેરેટ</displayName>
 				<unitPattern count="one">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} કેરેટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કેરેટ</unitPattern>
 				<unitPattern count="other">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} કેરેટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કેરેટ</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ડાલ્ટન</displayName>
@@ -8183,19 +7611,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>વૉટ</displayName>
 				<unitPattern count="one">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} વૉટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} વૉટ</unitPattern>
 				<unitPattern count="other">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} વૉટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} વૉટ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>મિલિવૉટ</displayName>
@@ -8226,19 +7642,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>બાર</displayName>
 				<unitPattern count="one">{0} બાર</unitPattern>
-				<unitPattern count="one" case="accusative">{0} બાર</unitPattern>
-				<unitPattern count="one" case="dative">{0} બાર</unitPattern>
-				<unitPattern count="one" case="genitive">{0} બાર</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} બાર</unitPattern>
-				<unitPattern count="one" case="locative">{0} બાર</unitPattern>
-				<unitPattern count="one" case="vocative">{0} બાર</unitPattern>
 				<unitPattern count="other">{0} બાર</unitPattern>
-				<unitPattern count="other" case="accusative">{0} બાર</unitPattern>
-				<unitPattern count="other" case="dative">{0} બાર</unitPattern>
-				<unitPattern count="other" case="genitive">{0} બાર</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} બાર</unitPattern>
-				<unitPattern count="other" case="locative">{0} બાર</unitPattern>
-				<unitPattern count="other" case="vocative">{0} બાર</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>મિલિબાર</displayName>
@@ -8249,37 +7653,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>વાતાવરણ</displayName>
 				<unitPattern count="one">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="dative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="locative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} વાતાવરણ</unitPattern>
 				<unitPattern count="other">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="dative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="locative">{0} વાતાવરણ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} વાતાવરણ</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>masculine</gender>
 				<displayName>પાસ્કલ</displayName>
 				<unitPattern count="one">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="dative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="locative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} પાસ્કલ</unitPattern>
 				<unitPattern count="other">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="dative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="locative">{0} પાસ્કલ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} પાસ્કલ</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>હેક્ટૉપાસ્કલ</displayName>
@@ -8320,37 +7700,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="one" case="accusative">{0}°</unitPattern>
-				<unitPattern count="one" case="dative">{0}°</unitPattern>
-				<unitPattern count="one" case="genitive">{0}°</unitPattern>
-				<unitPattern count="one" case="instrumental">{0}°</unitPattern>
-				<unitPattern count="one" case="locative">{0}°</unitPattern>
-				<unitPattern count="one" case="vocative">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
-				<unitPattern count="other" case="accusative">{0}°</unitPattern>
-				<unitPattern count="other" case="dative">{0}°</unitPattern>
-				<unitPattern count="other" case="genitive">{0}°</unitPattern>
-				<unitPattern count="other" case="instrumental">{0}°</unitPattern>
-				<unitPattern count="other" case="locative">{0}°</unitPattern>
-				<unitPattern count="other" case="vocative">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<gender>feminine</gender>
 				<displayName>ડિગ્રી સેલ્સિયસ</displayName>
 				<unitPattern count="one">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
 				<unitPattern count="other">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ડિગ્રી સેલ્સિયસ</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ડિગ્રી ફેરનહીટ</displayName>
@@ -8361,19 +7717,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>કેલ્વિન</displayName>
 				<unitPattern count="one">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="accusative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="dative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="genitive">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="locative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="one" case="vocative">{0} કેલ્વિન</unitPattern>
 				<unitPattern count="other">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="accusative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="dative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="genitive">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="locative">{0} કેલ્વિન</unitPattern>
-				<unitPattern count="other" case="vocative">{0} કેલ્વિન</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>પાઉન્ડ ફૂટ</displayName>
@@ -8436,19 +7780,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>લિટર</displayName>
 				<unitPattern count="one">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="accusative">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="dative">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="genitive">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="locative">{0} લિટર</unitPattern>
-				<unitPattern count="one" case="vocative">{0} લિટર</unitPattern>
 				<unitPattern count="other">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="accusative">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="dative">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="genitive">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="locative">{0} લિટર</unitPattern>
-				<unitPattern count="other" case="vocative">{0} લિટર</unitPattern>
 				<perUnitPattern>{0} પ્રતિ લિટર</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8470,37 +7802,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>મેટ્રિક પિન્ટ</displayName>
 				<unitPattern count="one">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="dative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="locative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મેટ્રિક પિન્ટ</unitPattern>
 				<unitPattern count="other">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="dative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="locative">{0} મેટ્રિક પિન્ટ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મેટ્રિક પિન્ટ</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>masculine</gender>
 				<displayName>મેટ્રિક કપ</displayName>
 				<unitPattern count="one">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="dative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="locative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} મેટ્રિક કપ</unitPattern>
 				<unitPattern count="other">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="dative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="locative">{0} મેટ્રિક કપ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} મેટ્રિક કપ</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>એકર-ફૂટ</displayName>

@@ -6874,36 +6874,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="genitive">ಚದರದ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಚದರದಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="vocative">ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" draft="contributed">ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">ಚದರವನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">ಚದರಕ್ಕೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">ಚದರದ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">ಚದರದಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="vocative" draft="contributed">ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" draft="contributed">ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">ಚದರವನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="dative">ಚದರಕ್ಕೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">ಚದರದ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="locative">ಚದರದಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="vocative" draft="contributed">ಚದರ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ಚ. {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಚದರಗಳಿಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="genitive">ಚದರಗಳ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="vocative">ಚದರಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">ಚದರಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">ಚದರಗಳಿಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">ಚದರಗಳ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="vocative">ಚದರಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine">ಚದರಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="dative">ಚದರಗಳಿಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">ಚದರಗಳ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="locative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="vocative">ಚದರಗಳು {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>ಕ್ಯೂ. {0}</compoundUnitPattern1>
@@ -6913,36 +6889,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="genitive">ಕ್ಯೂಬಿಕ್‌ನ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಕ್ಯೂಬಿಕ್‌ನಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">ಕ್ಯೂಬಿಕ್ ಅನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">ಕ್ಯೂಬಿಕ್‌ಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">ಕ್ಯೂಬಿಕ್‌ನ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">ಕ್ಯೂಬಿಕ್‌ನಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">ಕ್ಯೂಬಿಕ್ ಅನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="dative">ಕ್ಯೂಬಿಕ್‌ಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">ಕ್ಯೂಬಿಕ್‌ನ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="locative">ಕ್ಯೂಬಿಕ್‌ನಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ಕ್ಯೂ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ಕ್ಯೂಬಿಕ್‌ಗಳನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಕ್ಯೂಬಿಕ್‌ಗಳಿಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="genitive">ಕ್ಯೂಬಿಕ್‌ಗಳ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">ಕ್ಯೂಬಿಕ್‌ಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="vocative">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">ಕ್ಯೂಬಿಕ್‌ಗಳನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">ಕ್ಯೂಬಿಕ್‌ಗಳಿಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">ಕ್ಯೂಬಿಕ್‌ಗಳ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">ಕ್ಯೂಬಿಕ್‌ಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">ಕ್ಯೂಬಿಕ್‌ಗಳನ್ನು {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="dative">ಕ್ಯೂಬಿಕ್‌ಗಳಿಗೆ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">ಕ್ಯೂಬಿಕ್‌ಗಳ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="locative">ಕ್ಯೂಬಿಕ್‌ಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender draft="contributed">neuter</gender>
@@ -7418,21 +7370,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ದಿನಗಳಲ್ಲಿ</unitPattern>
 				<unitPattern count="other" case="vocative">{0} ದಿನಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ದಿನಕ್ಕೆ</perUnitPattern>
-			</unit>
-			<unit type="duration-day-person">
-				<gender draft="contributed">neuter</gender>
-				<unitPattern count="one" draft="contributed">{0} ದಿನವು</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} ದಿನವನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} ದಿನಕ್ಕೆ</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} ದಿನದ</unitPattern>
-				<unitPattern count="one" case="locative" draft="contributed">{0} ದಿನದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative" draft="contributed">{0} ದಿನ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ದಿನಗಳು</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} ದಿನಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} ದಿನಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} ದಿನಗಳ</unitPattern>
-				<unitPattern count="other" case="locative" draft="contributed">{0} ದಿನಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative" draft="contributed">{0} ದಿನಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender draft="contributed">neuter</gender>

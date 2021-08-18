@@ -7492,20 +7492,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
@@ -7513,20 +7499,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">ക്യുബിക് {0}</compoundUnitPattern1>
@@ -7536,20 +7508,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="inanimate" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
@@ -7557,20 +7515,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="inanimate" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender draft="contributed">neuter</gender>
@@ -8087,23 +8031,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ദിവസം</unitPattern>
 				<unitPattern count="other" case="sociative">{0} ദിവസം</unitPattern>
 				<perUnitPattern>{0} / ദിവസം</perUnitPattern>
-			</unit>
-			<unit type="duration-day-person">
-				<gender draft="contributed">neuter</gender>
-				<unitPattern count="one">{0} ദിവസം‌</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മണിക്കൂർ കാലയളവിനെ</unitPattern>
-				<unitPattern count="one" case="dative">{0} മണിക്കൂറിന്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മണിക്കൂറിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മണിക്കൂറിനാൽ</unitPattern>
-				<unitPattern count="one" case="locative">{0} മണിക്കൂറിൽ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മണിക്കൂർ കാലയളവിനോട്</unitPattern>
-				<unitPattern count="other">{0} മണിക്കൂർ കാലയളവ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മണിക്കൂർ കാലയളവിലെ</unitPattern>
-				<unitPattern count="other" case="dative">{0} മണിക്കൂർ കാലയളവിന്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മണിക്കൂറിന്റെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മണിക്കൂർ കാലയളവിനാൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} മണിക്കൂറിൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} കാലയളവിനോട്</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender draft="contributed">neuter</gender>

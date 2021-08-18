@@ -6532,32 +6532,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>مربع {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">مربع {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="oblique">مربع {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine">مربع {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">مربع {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">مربع {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="oblique">مربع {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">مربع {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">مربع {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>کیوبک {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">کیوبک {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="oblique">کیوبک {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine">کیوبک {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">کیوبک {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">کیوبک {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="oblique">کیوبک {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">کیوبک {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">کیوبک {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
 				<displayName>جی-فورس</displayName>
 				<unitPattern count="one">{0} جی-فورس</unitPattern>
-				<unitPattern count="one" case="oblique">{0} جی-فورس</unitPattern>
 				<unitPattern count="other">{0} جی-فورس</unitPattern>
-				<unitPattern count="other" case="oblique">{0} جی-فورس</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>میٹر فی مربع سیکنڈ</displayName>
@@ -6568,41 +6558,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>گردش</displayName>
 				<unitPattern count="one">{0} rev</unitPattern>
-				<unitPattern count="one" case="oblique">{0} گردش</unitPattern>
 				<unitPattern count="other">{0} گردش</unitPattern>
-				<unitPattern count="other" case="oblique">{0} گردش</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<gender>feminine</gender>
 				<displayName>ریڈینس</displayName>
 				<unitPattern count="one">{0} ریڈین</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ریڈین</unitPattern>
 				<unitPattern count="other">{0} ریڈینس</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ریڈینس</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<gender>masculine</gender>
 				<displayName>ڈگری</displayName>
 				<unitPattern count="one">{0} ڈگری</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ڈگری</unitPattern>
 				<unitPattern count="other">{0} ڈگری</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ڈگری</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<gender>masculine</gender>
 				<displayName>آرک منٹ</displayName>
 				<unitPattern count="one">{0} آرک منٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} آرک منٹ</unitPattern>
 				<unitPattern count="other">{0} آرک منٹ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} آرک منٹ</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<gender>masculine</gender>
 				<displayName>آرک سیکنڈ</displayName>
 				<unitPattern count="one">{0} آرک سیکنڈ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} آرک سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} آرک سیکنڈ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} آرک سیکنڈ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>مربع کلو میٹر</displayName>
@@ -6614,9 +6594,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ہیکٹر</displayName>
 				<unitPattern count="one">{0} ہیکٹر</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ہیکٹر</unitPattern>
 				<unitPattern count="other">{0} ہیکٹر</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ہیکٹر</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>مربع میٹر</displayName>
@@ -6666,9 +6644,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>قیراط</displayName>
 				<unitPattern count="one">{0} قیراط</unitPattern>
-				<unitPattern count="one" case="oblique">{0} قیراط</unitPattern>
 				<unitPattern count="other">{0} قیراط</unitPattern>
-				<unitPattern count="other" case="oblique">{0} قیراط</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ملی گرام فی ڈیسی لیٹر</displayName>
@@ -6689,41 +6665,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>فی ملین حصے</displayName>
 				<unitPattern count="one">{0} فی ملین حصے</unitPattern>
-				<unitPattern count="one" case="oblique">{0} فی ملین حصے</unitPattern>
 				<unitPattern count="other">{0} فی ملین حصے</unitPattern>
-				<unitPattern count="other" case="oblique">{0} فی ملین حصے</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>feminine</gender>
 				<displayName>فیصد</displayName>
 				<unitPattern count="one">{0} فیصد</unitPattern>
-				<unitPattern count="one" case="oblique">{0} فیصد</unitPattern>
 				<unitPattern count="other">{0} فیصد</unitPattern>
-				<unitPattern count="other" case="oblique">{0} فیصد</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>feminine</gender>
 				<displayName>فی ہزار</displayName>
 				<unitPattern count="one">{0} فی ہزار</unitPattern>
-				<unitPattern count="one" case="oblique">{0} فی ہزار</unitPattern>
 				<unitPattern count="other">{0} فی ہزار</unitPattern>
-				<unitPattern count="other" case="oblique">{0} فی ہزار</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>feminine</gender>
 				<displayName>پرمرئیڈ</displayName>
 				<unitPattern count="one">{0} پرمرئیڈ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} پرمرئیڈ</unitPattern>
 				<unitPattern count="other">{0} پرمرئیڈ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} پرمرئیڈ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>feminine</gender>
 				<displayName>مولز</displayName>
 				<unitPattern count="one">{0} مول</unitPattern>
-				<unitPattern count="one" case="oblique">{0} مول</unitPattern>
 				<unitPattern count="other">{0} مولز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} مولز</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیٹر فی کلومیٹر</displayName>
@@ -6794,68 +6760,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>بائٹ</displayName>
 				<unitPattern count="one">{0} بائٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} بائٹ</unitPattern>
 				<unitPattern count="other">{0} بائٹس</unitPattern>
-				<unitPattern count="other" case="oblique">{0} بائٹس</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<gender>feminine</gender>
 				<displayName>بٹس</displayName>
 				<unitPattern count="one">{0} بٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} بٹ</unitPattern>
 				<unitPattern count="other">{0} بٹس</unitPattern>
-				<unitPattern count="other" case="oblique">{0} بٹس</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<gender>feminine</gender>
 				<displayName>صدیاں</displayName>
 				<unitPattern count="one">{0} صدی</unitPattern>
-				<unitPattern count="one" case="oblique">{0} صدی</unitPattern>
 				<unitPattern count="other">{0} صدیاں</unitPattern>
-				<unitPattern count="other" case="oblique">{0} صدیاں</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>feminine</gender>
 				<displayName>دہائیاں</displayName>
 				<unitPattern count="one">{0} دہائی</unitPattern>
-				<unitPattern count="one" case="oblique">{0} دہائی</unitPattern>
 				<unitPattern count="other">{0} دہائیاں</unitPattern>
-				<unitPattern count="other" case="oblique">{0} دہائیاں</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>masculine</gender>
 				<displayName>سال</displayName>
 				<unitPattern count="one">{0} سال</unitPattern>
-				<unitPattern count="one" case="oblique">{0} سال</unitPattern>
 				<unitPattern count="other">{0} سال</unitPattern>
-				<unitPattern count="other" case="oblique">{0} سال</unitPattern>
 				<perUnitPattern>فی سال {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
 				<displayName>مہینے</displayName>
 				<unitPattern count="one">{0} مہینہ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} مہینہ</unitPattern>
 				<unitPattern count="other">{0} مہینے</unitPattern>
-				<unitPattern count="other" case="oblique">{0} مہینے</unitPattern>
 				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>masculine</gender>
 				<displayName>ہفتے</displayName>
 				<unitPattern count="one">{0} ہفتہ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ہفتہ</unitPattern>
 				<unitPattern count="other">{0} ہفتے</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ہفتے</unitPattern>
 				<perUnitPattern>{0} فی ہفتہ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender>masculine</gender>
 				<displayName>دن</displayName>
 				<unitPattern count="one">{0} دن</unitPattern>
-				<unitPattern count="one" case="oblique">{0} دن</unitPattern>
 				<unitPattern count="other">{0} دن</unitPattern>
-				<unitPattern count="other" case="oblique">{0} دن</unitPattern>
 				<perUnitPattern>{0} فی دن</perUnitPattern>
 			</unit>
 			<unit type="duration-day-person">
@@ -6865,27 +6815,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>گھنٹے</displayName>
 				<unitPattern count="one">{0} گھنٹہ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} گھنٹہ</unitPattern>
 				<unitPattern count="other">{0} گھنٹے</unitPattern>
-				<unitPattern count="other" case="oblique">{0} گھنٹے</unitPattern>
 				<perUnitPattern>{0} فی گھنٹہ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>masculine</gender>
 				<displayName>منٹ</displayName>
 				<unitPattern count="one">{0} منٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} منٹ</unitPattern>
 				<unitPattern count="other">{0} منٹ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} منٹ</unitPattern>
 				<perUnitPattern>{0} فی منٹ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>masculine</gender>
 				<displayName>سیکنڈ</displayName>
 				<unitPattern count="one">{0} سیکنڈ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} سیکنڈ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} سیکنڈ</unitPattern>
 				<perUnitPattern>{0} فی سیکنڈ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -6907,9 +6851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ایمپیئر</displayName>
 				<unitPattern count="one">{0} ایمپیئر</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ایمپیئر</unitPattern>
 				<unitPattern count="other">{0} ایمپیئر</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ایمپیئر</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>ملی ایمپیئر</displayName>
@@ -6920,17 +6862,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>اوہم</displayName>
 				<unitPattern count="one">{0} اوہم</unitPattern>
-				<unitPattern count="one" case="oblique">{0} اوہم</unitPattern>
 				<unitPattern count="other">{0} اوہم</unitPattern>
-				<unitPattern count="other" case="oblique">{0} اوہم</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>masculine</gender>
 				<displayName>وولٹ</displayName>
 				<unitPattern count="one">{0} وولٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} وولٹ</unitPattern>
 				<unitPattern count="other">{0} وولٹ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} وولٹ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>کلو کیلوریز</displayName>
@@ -6941,9 +6879,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>کیلوریز</displayName>
 				<unitPattern count="one">{0} کیلوری</unitPattern>
-				<unitPattern count="one" case="oblique">{0} کیلوری</unitPattern>
 				<unitPattern count="other">{0} کیلوریز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} کیلوریز</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>کیلوریز</displayName>
@@ -6959,9 +6895,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>جول</displayName>
 				<unitPattern count="one">{0} جول</unitPattern>
-				<unitPattern count="one" case="oblique">{0} جول</unitPattern>
 				<unitPattern count="other">{0} جول</unitPattern>
-				<unitPattern count="other" case="oblique">{0} جول</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>کلو واٹ آور</displayName>
@@ -6992,9 +6926,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>نیوٹنز</displayName>
 				<unitPattern count="one">{0} نیوٹن</unitPattern>
-				<unitPattern count="one" case="oblique">{0} نیوٹن</unitPattern>
 				<unitPattern count="other">{0} نیوٹنز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} نیوٹنز</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>کلو واٹ گھنٹے فی 100 کلومیٹر</displayName>
@@ -7020,25 +6952,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ہرٹز</displayName>
 				<unitPattern count="one">{0} ہرٹز</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ہرٹز</unitPattern>
 				<unitPattern count="other">{0} ہرٹز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ہرٹز</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>masculine</gender>
 				<displayName>ٹائپوگرافک em</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="one" case="oblique">{0} em</unitPattern>
 				<unitPattern count="other">{0} ems</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ems</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>masculine</gender>
 				<displayName>پکسلز</displayName>
 				<unitPattern count="one">{0} پکسل</unitPattern>
-				<unitPattern count="one" case="oblique">{0} پکسل</unitPattern>
 				<unitPattern count="other">{0} پکسلز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} پکسلز</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>میگا پکسلز</displayName>
@@ -7083,9 +7009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>میٹر</displayName>
 				<unitPattern count="one">{0} میٹر</unitPattern>
-				<unitPattern count="one" case="oblique">{0} میٹر</unitPattern>
 				<unitPattern count="other">{0} میٹر</unitPattern>
-				<unitPattern count="other" case="oblique">{0} میٹر</unitPattern>
 				<perUnitPattern>{0} فی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -7175,9 +7099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>اسکینڈی نیویائی میل</displayName>
 				<unitPattern count="one">{0} اسکینڈی نیویائی میل</unitPattern>
-				<unitPattern count="one" case="oblique">{0} اسکینڈی نیویائی میل</unitPattern>
 				<unitPattern count="other">{0} اسکینڈی نیویائی میل</unitPattern>
-				<unitPattern count="other" case="oblique">{0} اسکینڈی نیویائی میل</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>پوائنٹس</displayName>
@@ -7193,25 +7115,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
-				<unitPattern count="one" case="oblique">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
-				<unitPattern count="other" case="oblique">{0} lux</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<gender>masculine</gender>
 				<displayName>کنڈیلا</displayName>
 				<unitPattern count="one">{0} کنڈیلا</unitPattern>
-				<unitPattern count="one" case="oblique">{0} کنڈیلا</unitPattern>
 				<unitPattern count="other">{0} کنڈیلا</unitPattern>
-				<unitPattern count="other" case="oblique">{0} کنڈیلا</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<gender>feminine</gender>
 				<displayName>لیومِن</displayName>
 				<unitPattern count="one">{0} لیومِن</unitPattern>
-				<unitPattern count="one" case="oblique">{0} لیومِن</unitPattern>
 				<unitPattern count="other">{0} لیومِن</unitPattern>
-				<unitPattern count="other" case="oblique">{0} لیومِن</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>شمسی چمک</displayName>
@@ -7222,26 +7138,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>میٹرک ٹن</displayName>
 				<unitPattern count="one">{0} میٹرک ٹن</unitPattern>
-				<unitPattern count="one" case="oblique">{0} میٹرک ٹن</unitPattern>
 				<unitPattern count="other">{0} میٹرک ٹن</unitPattern>
-				<unitPattern count="other" case="oblique">{0} میٹرک ٹن</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<gender>masculine</gender>
 				<displayName>کلو گرام</displayName>
 				<unitPattern count="one">{0} کلو گرام</unitPattern>
-				<unitPattern count="one" case="oblique">{0} کلو گرام</unitPattern>
 				<unitPattern count="other">{0} کلو گرام</unitPattern>
-				<unitPattern count="other" case="oblique">{0} کلو گرام</unitPattern>
 				<perUnitPattern>{0} فی کلو گرام</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<gender>masculine</gender>
 				<displayName>گرام</displayName>
 				<unitPattern count="one">{0} گرام</unitPattern>
-				<unitPattern count="one" case="oblique">{0} گرام</unitPattern>
 				<unitPattern count="other">{0} گرام</unitPattern>
-				<unitPattern count="other" case="oblique">{0} گرام</unitPattern>
 				<perUnitPattern>{0} فی گرام</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -7285,9 +7195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>قیراط</displayName>
 				<unitPattern count="one">{0} قیراط</unitPattern>
-				<unitPattern count="one" case="oblique">{0} قیراط</unitPattern>
 				<unitPattern count="other">{0} قیراط</unitPattern>
-				<unitPattern count="other" case="oblique">{0} قیراط</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ڈالٹنز</displayName>
@@ -7328,9 +7236,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>واٹ</displayName>
 				<unitPattern count="one">{0} واٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} واٹ</unitPattern>
 				<unitPattern count="other">{0} واٹ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} واٹ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>ملی واٹ</displayName>
@@ -7361,9 +7267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>بارز</displayName>
 				<unitPattern count="one">{0} بار</unitPattern>
-				<unitPattern count="one" case="oblique">{0} بار</unitPattern>
 				<unitPattern count="other">{0} بارز</unitPattern>
-				<unitPattern count="other" case="oblique">{0} بارز</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>ملی بار</displayName>
@@ -7374,17 +7278,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ماحول</displayName>
 				<unitPattern count="one">{0} ماحول</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ماحول</unitPattern>
 				<unitPattern count="other">{0} ماحول</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ماحول</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>masculine</gender>
 				<displayName>پاسکل</displayName>
 				<unitPattern count="one">{0} پاسکل</unitPattern>
-				<unitPattern count="one" case="oblique">{0} پاسکل</unitPattern>
 				<unitPattern count="other">{0} پاسکل</unitPattern>
-				<unitPattern count="other" case="oblique">{0} پاسکل</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>ہیکٹو پاسکل</displayName>
@@ -7425,17 +7325,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="one" case="oblique">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
-				<unitPattern count="other" case="oblique">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<gender>feminine</gender>
 				<displayName>ڈگری سیلسیس</displayName>
 				<unitPattern count="one">{0} ڈگری سیلسیس</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ڈگری سیلسیس</unitPattern>
 				<unitPattern count="other">{0} ڈگری سیلسیس</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ڈگری سیلسیس</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ڈگری فارن ہائیٹ</displayName>
@@ -7446,9 +7342,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>کیلون</displayName>
 				<unitPattern count="one">{0} کیلون</unitPattern>
-				<unitPattern count="one" case="oblique">{0} کیلون</unitPattern>
 				<unitPattern count="other">{0} کیلون</unitPattern>
-				<unitPattern count="other" case="oblique">{0} کیلون</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>پاؤنڈ فٹ</displayName>
@@ -7511,9 +7405,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>لیٹر</displayName>
 				<unitPattern count="one">{0} لیٹر</unitPattern>
-				<unitPattern count="one" case="oblique">{0} لیٹر</unitPattern>
 				<unitPattern count="other">{0} لیٹر</unitPattern>
-				<unitPattern count="other" case="oblique">{0} لیٹر</unitPattern>
 				<perUnitPattern>{0} فی لیٹر</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -7535,17 +7427,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>میٹرک پائنٹ</displayName>
 				<unitPattern count="one">{0} میٹرک پائنٹ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} میٹرک پائنٹ</unitPattern>
 				<unitPattern count="other">{0} میٹرک پائنٹ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} میٹرک پائنٹ</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>masculine</gender>
 				<displayName>میٹرک کپ</displayName>
 				<unitPattern count="one">{0} میٹرک کپ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} میٹرک کپ</unitPattern>
 				<unitPattern count="other">{0} میٹرک کپ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} میٹرک کپ</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ایکڑ فٹ</displayName>

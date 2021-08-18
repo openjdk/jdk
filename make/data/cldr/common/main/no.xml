@@ -14270,9 +14270,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} døgn</unitPattern>
 				<perUnitPattern>{0} per døgn</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender draft="contributed">masculine</gender>
-			</unit>
 			<unit type="duration-hour">
 				<gender>masculine</gender>
 				<displayName>timer</displayName>

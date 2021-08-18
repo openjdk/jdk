@@ -7806,9 +7806,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>ге сила</displayName>
 				<unitPattern count="one">{0} ге сила</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ге сила</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ге сила</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ге сила</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ге силу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ге силе</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ге силом</unitPattern>
 				<unitPattern count="few">{0} ге сила</unitPattern>
 				<unitPattern count="few" case="accusative">{0} ге сила</unitPattern>
 				<unitPattern count="few" case="genitive">{0} ге сила</unitPattern>
@@ -7829,8 +7829,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>обртај</displayName>
 				<unitPattern count="one">{0} обртај</unitPattern>
 				<unitPattern count="one" case="accusative">{0} обртај</unitPattern>
-				<unitPattern count="one" case="genitive">{0} обртај</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} обртај</unitPattern>
+				<unitPattern count="one" case="genitive">{0} обртаја</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} обртајем</unitPattern>
 				<unitPattern count="few">{0} обртаја</unitPattern>
 				<unitPattern count="few" case="accusative">{0} обртаја</unitPattern>
 				<unitPattern count="few" case="genitive">{0} обртаја</unitPattern>
@@ -7845,8 +7845,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>радијани</displayName>
 				<unitPattern count="one">{0} радијан</unitPattern>
 				<unitPattern count="one" case="accusative">{0} радијан</unitPattern>
-				<unitPattern count="one" case="genitive">{0} радијан</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} радијан</unitPattern>
+				<unitPattern count="one" case="genitive">{0} радијана</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} радијаном</unitPattern>
 				<unitPattern count="few">{0} радијана</unitPattern>
 				<unitPattern count="few" case="accusative">{0} радијана</unitPattern>
 				<unitPattern count="few" case="genitive">{0} радијана</unitPattern>
@@ -7861,8 +7861,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>степени</displayName>
 				<unitPattern count="one">{0} степен</unitPattern>
 				<unitPattern count="one" case="accusative">{0} степен</unitPattern>
-				<unitPattern count="one" case="genitive">{0} степен</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} степен</unitPattern>
+				<unitPattern count="one" case="genitive">{0} степена</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} степеном</unitPattern>
 				<unitPattern count="few">{0} степена</unitPattern>
 				<unitPattern count="few" case="accusative">{0} степена</unitPattern>
 				<unitPattern count="few" case="genitive">{0} степена</unitPattern>
@@ -7877,8 +7877,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>лучни минути</displayName>
 				<unitPattern count="one">{0} лучни минут</unitPattern>
 				<unitPattern count="one" case="accusative">{0} лучни минут</unitPattern>
-				<unitPattern count="one" case="genitive">{0} лучни минут</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} лучни минут</unitPattern>
+				<unitPattern count="one" case="genitive">{0} лучног минута</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} лучним минутом</unitPattern>
 				<unitPattern count="few">{0} лучна минута</unitPattern>
 				<unitPattern count="few" case="accusative">{0} лучна минута</unitPattern>
 				<unitPattern count="few" case="genitive">{0} лучна минута</unitPattern>
@@ -7892,9 +7892,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>лучне секунде</displayName>
 				<unitPattern count="one">{0} лучна секунда</unitPattern>
-				<unitPattern count="one" case="accusative">{0} лучна секунда</unitPattern>
-				<unitPattern count="one" case="genitive">{0} лучна секунда</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} лучна секунда</unitPattern>
+				<unitPattern count="one" case="accusative">{0} лучну секунду</unitPattern>
+				<unitPattern count="one" case="genitive">{0} лучне секунде</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} лучном секундом</unitPattern>
 				<unitPattern count="few">{0} лучне секунде</unitPattern>
 				<unitPattern count="few" case="accusative">{0} лучне секунде</unitPattern>
 				<unitPattern count="few" case="genitive">{0} лучне секунде</unitPattern>
@@ -7916,8 +7916,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>хектари</displayName>
 				<unitPattern count="one">{0} хектар</unitPattern>
 				<unitPattern count="one" case="accusative">{0} хектар</unitPattern>
-				<unitPattern count="one" case="genitive">{0} хектар</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} хектар</unitPattern>
+				<unitPattern count="one" case="genitive">{0} хектара</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} хектаром</unitPattern>
 				<unitPattern count="few">{0} хектара</unitPattern>
 				<unitPattern count="few" case="accusative">{0} хектара</unitPattern>
 				<unitPattern count="few" case="genitive">{0} хектара</unitPattern>
@@ -7984,8 +7984,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>карати</displayName>
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="one" case="accusative">{0} карат</unitPattern>
-				<unitPattern count="one" case="genitive">{0} карат</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} карат</unitPattern>
+				<unitPattern count="one" case="genitive">{0} карата</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} каратом</unitPattern>
 				<unitPattern count="few">{0} карата</unitPattern>
 				<unitPattern count="few" case="accusative">{0} карата</unitPattern>
 				<unitPattern count="few" case="genitive">{0} карата</unitPattern>
@@ -8017,9 +8017,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>честица на милион</displayName>
 				<unitPattern count="one">{0} честица на милион</unitPattern>
-				<unitPattern count="one" case="accusative">{0} честица на милион</unitPattern>
-				<unitPattern count="one" case="genitive">{0} честица на милион</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} честица на милион</unitPattern>
+				<unitPattern count="one" case="accusative">{0} честицу на милион</unitPattern>
+				<unitPattern count="one" case="genitive">{0} честице на милион</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} честицом на милион</unitPattern>
 				<unitPattern count="few">{0} честице на милион</unitPattern>
 				<unitPattern count="few" case="accusative">{0} честице на милион</unitPattern>
 				<unitPattern count="few" case="genitive">{0} честице на милион</unitPattern>
@@ -8034,8 +8034,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>проценат</displayName>
 				<unitPattern count="one">{0} проценат</unitPattern>
 				<unitPattern count="one" case="accusative">{0} проценат</unitPattern>
-				<unitPattern count="one" case="genitive">{0} проценат</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} проценат</unitPattern>
+				<unitPattern count="one" case="genitive">{0} процента</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} процентом</unitPattern>
 				<unitPattern count="few">{0} процената</unitPattern>
 				<unitPattern count="few" case="accusative">{0} процената</unitPattern>
 				<unitPattern count="few" case="genitive">{0} процената</unitPattern>
@@ -8050,8 +8050,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>промил</displayName>
 				<unitPattern count="one">{0} промил</unitPattern>
 				<unitPattern count="one" case="accusative">{0} промил</unitPattern>
-				<unitPattern count="one" case="genitive">{0} промил</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} промил</unitPattern>
+				<unitPattern count="one" case="genitive">{0} промила</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} промилом</unitPattern>
 				<unitPattern count="few">{0} промила</unitPattern>
 				<unitPattern count="few" case="accusative">{0} промила</unitPattern>
 				<unitPattern count="few" case="genitive">{0} промила</unitPattern>
@@ -8063,14 +8063,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="one" case="accusative">{0}‱</unitPattern>
+				<unitPattern count="one" case="genitive">{0}‱</unitPattern>
+				<unitPattern count="one" case="instrumental">{0}‱</unitPattern>
+				<unitPattern count="few">{0}‱</unitPattern>
+				<unitPattern count="few" case="accusative">{0}‱</unitPattern>
+				<unitPattern count="few" case="genitive">{0}‱</unitPattern>
+				<unitPattern count="few" case="instrumental">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+				<unitPattern count="other" case="accusative">{0}‱</unitPattern>
+				<unitPattern count="other" case="genitive">{0}‱</unitPattern>
+				<unitPattern count="other" case="instrumental">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>inanimate</gender>
 				<displayName>моли</displayName>
 				<unitPattern count="one">{0} мол</unitPattern>
 				<unitPattern count="one" case="accusative">{0} мол</unitPattern>
-				<unitPattern count="one" case="genitive">{0} мол</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} мол</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мола</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} молом</unitPattern>
 				<unitPattern count="few">{0} мола</unitPattern>
 				<unitPattern count="few" case="accusative">{0} мола</unitPattern>
 				<unitPattern count="few" case="genitive">{0} мола</unitPattern>
@@ -8163,8 +8175,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>бајтови</displayName>
 				<unitPattern count="one">{0} бајт</unitPattern>
 				<unitPattern count="one" case="accusative">{0} бајт</unitPattern>
-				<unitPattern count="one" case="genitive">{0} бајт</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} бајт</unitPattern>
+				<unitPattern count="one" case="genitive">{0} бајта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} бајтом</unitPattern>
 				<unitPattern count="few">{0} бајта</unitPattern>
 				<unitPattern count="few" case="accusative">{0} бајта</unitPattern>
 				<unitPattern count="few" case="genitive">{0} бајта</unitPattern>
@@ -8179,8 +8191,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>битови</displayName>
 				<unitPattern count="one">{0} бит</unitPattern>
 				<unitPattern count="one" case="accusative">{0} бит</unitPattern>
-				<unitPattern count="one" case="genitive">{0} бит</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} бит</unitPattern>
+				<unitPattern count="one" case="genitive">{0} бита</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} битом</unitPattern>
 				<unitPattern count="few">{0} бита</unitPattern>
 				<unitPattern count="few" case="accusative">{0} бита</unitPattern>
 				<unitPattern count="few" case="genitive">{0} бита</unitPattern>
@@ -8195,8 +8207,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>векови</displayName>
 				<unitPattern count="one">{0} век</unitPattern>
 				<unitPattern count="one" case="accusative">{0} век</unitPattern>
-				<unitPattern count="one" case="genitive">{0} век</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} век</unitPattern>
+				<unitPattern count="one" case="genitive">{0} века</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} веком</unitPattern>
 				<unitPattern count="few">{0} века</unitPattern>
 				<unitPattern count="few" case="accusative">{0} века</unitPattern>
 				<unitPattern count="few" case="genitive">{0} века</unitPattern>
@@ -8210,9 +8222,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>деценије</displayName>
 				<unitPattern count="one">{0} деценија</unitPattern>
-				<unitPattern count="one" case="accusative">{0} деценија</unitPattern>
-				<unitPattern count="one" case="genitive">{0} деценија</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} деценија</unitPattern>
+				<unitPattern count="one" case="accusative">{0} деценију</unitPattern>
+				<unitPattern count="one" case="genitive">{0} деценије</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} деценијом</unitPattern>
 				<unitPattern count="few">{0} деценије</unitPattern>
 				<unitPattern count="few" case="accusative">{0} деценије</unitPattern>
 				<unitPattern count="few" case="genitive">{0} деценије</unitPattern>
@@ -8226,9 +8238,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>године</displayName>
 				<unitPattern count="one">{0} година</unitPattern>
-				<unitPattern count="one" case="accusative">{0} година</unitPattern>
-				<unitPattern count="one" case="genitive">{0} година</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} година</unitPattern>
+				<unitPattern count="one" case="accusative">{0} годину</unitPattern>
+				<unitPattern count="one" case="genitive">{0} године</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} годином</unitPattern>
 				<unitPattern count="few">{0} године</unitPattern>
 				<unitPattern count="few" case="accusative">{0} године</unitPattern>
 				<unitPattern count="few" case="genitive">{0} године</unitPattern>
@@ -8244,8 +8256,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>месеци</displayName>
 				<unitPattern count="one">{0} месец</unitPattern>
 				<unitPattern count="one" case="accusative">{0} месец</unitPattern>
-				<unitPattern count="one" case="genitive">{0} месец</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} месец</unitPattern>
+				<unitPattern count="one" case="genitive">{0} месеца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} месецом</unitPattern>
 				<unitPattern count="few">{0} месеца</unitPattern>
 				<unitPattern count="few" case="accusative">{0} месеца</unitPattern>
 				<unitPattern count="few" case="genitive">{0} месеца</unitPattern>
@@ -8260,9 +8272,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>недеље</displayName>
 				<unitPattern count="one">{0} недеља</unitPattern>
-				<unitPattern count="one" case="accusative">{0} недеља</unitPattern>
-				<unitPattern count="one" case="genitive">{0} недеља</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} недеља</unitPattern>
+				<unitPattern count="one" case="accusative">{0} недељу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} недеље</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} недељом</unitPattern>
 				<unitPattern count="few">{0} недеље</unitPattern>
 				<unitPattern count="few" case="accusative">{0} недеље</unitPattern>
 				<unitPattern count="few" case="genitive">{0} недеље</unitPattern>
@@ -8278,22 +8290,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>дани</displayName>
 				<unitPattern count="one">{0} дан</unitPattern>
 				<unitPattern count="one" case="accusative">{0} дан</unitPattern>
-				<unitPattern count="one" case="genitive">{0} дан</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} дан</unitPattern>
-				<unitPattern count="few">{0} дана</unitPattern>
-				<unitPattern count="few" case="accusative">{0} дана</unitPattern>
-				<unitPattern count="few" case="genitive">{0} дана</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} дана</unitPattern>
-				<unitPattern count="other">{0} дана</unitPattern>
-				<unitPattern count="other" case="accusative">{0} дана</unitPattern>
-				<unitPattern count="other" case="genitive">{0} дана</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} дана</unitPattern>
-				<perUnitPattern>{0}/дневно</perUnitPattern>
-			</unit>
-			<unit type="duration-day-person">
-				<gender>inanimate</gender>
-				<unitPattern count="one">{0} дан</unitPattern>
-				<unitPattern count="one" case="accusative">{0} дан</unitPattern>
 				<unitPattern count="one" case="genitive">{0} дана</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} даном</unitPattern>
 				<unitPattern count="few">{0} дана</unitPattern>
@@ -8304,14 +8300,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} дана</unitPattern>
 				<unitPattern count="other" case="genitive">{0} дана</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} дана</unitPattern>
+				<perUnitPattern>{0}/дневно</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>inanimate</gender>
 				<displayName>сати</displayName>
 				<unitPattern count="one">{0} сат</unitPattern>
 				<unitPattern count="one" case="accusative">{0} сат</unitPattern>
-				<unitPattern count="one" case="genitive">{0} сат</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} сат</unitPattern>
+				<unitPattern count="one" case="genitive">{0} сата</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} сатом</unitPattern>
 				<unitPattern count="few">{0} сата</unitPattern>
 				<unitPattern count="few" case="accusative">{0} сата</unitPattern>
 				<unitPattern count="few" case="genitive">{0} сата</unitPattern>
@@ -8327,8 +8324,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>минути</displayName>
 				<unitPattern count="one">{0} минут</unitPattern>
 				<unitPattern count="one" case="accusative">{0} минут</unitPattern>
-				<unitPattern count="one" case="genitive">{0} минут</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} минут</unitPattern>
+				<unitPattern count="one" case="genitive">{0} минута</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} минутом</unitPattern>
 				<unitPattern count="few">{0} минута</unitPattern>
 				<unitPattern count="few" case="accusative">{0} минута</unitPattern>
 				<unitPattern count="few" case="genitive">{0} минута</unitPattern>
@@ -8343,9 +8340,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>секунде</displayName>
 				<unitPattern count="one">{0} секунда</unitPattern>
-				<unitPattern count="one" case="accusative">{0} секунда</unitPattern>
-				<unitPattern count="one" case="genitive">{0} секунда</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} секунда</unitPattern>
+				<unitPattern count="one" case="accusative">{0} секунду</unitPattern>
+				<unitPattern count="one" case="genitive">{0} секунде</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} секундом</unitPattern>
 				<unitPattern count="few">{0} секунде</unitPattern>
 				<unitPattern count="few" case="accusative">{0} секунде</unitPattern>
 				<unitPattern count="few" case="genitive">{0} секунде</unitPattern>
@@ -8379,8 +8376,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ампери</displayName>
 				<unitPattern count="one">{0} ампер</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ампер</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ампер</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ампер</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ампера</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ампером</unitPattern>
 				<unitPattern count="few">{0} ампера</unitPattern>
 				<unitPattern count="few" case="accusative">{0} ампера</unitPattern>
 				<unitPattern count="few" case="genitive">{0} ампера</unitPattern>
@@ -8401,8 +8398,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>оми</displayName>
 				<unitPattern count="one">{0} ом</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ом</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ом</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ом</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ома</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} омом</unitPattern>
 				<unitPattern count="few">{0} ома</unitPattern>
 				<unitPattern count="few" case="accusative">{0} ома</unitPattern>
 				<unitPattern count="few" case="genitive">{0} ома</unitPattern>
@@ -8417,8 +8414,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>волти</displayName>
 				<unitPattern count="one">{0} волт</unitPattern>
 				<unitPattern count="one" case="accusative">{0} волт</unitPattern>
-				<unitPattern count="one" case="genitive">{0} волт</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} волт</unitPattern>
+				<unitPattern count="one" case="genitive">{0} волта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} волтом</unitPattern>
 				<unitPattern count="few">{0} волта</unitPattern>
 				<unitPattern count="few" case="accusative">{0} волта</unitPattern>
 				<unitPattern count="few" case="genitive">{0} волта</unitPattern>
@@ -8438,9 +8435,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>калорије</displayName>
 				<unitPattern count="one">{0} калорија</unitPattern>
-				<unitPattern count="one" case="accusative">{0} калорија</unitPattern>
-				<unitPattern count="one" case="genitive">{0} калорија</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} калорија</unitPattern>
+				<unitPattern count="one" case="accusative">{0} калорију</unitPattern>
+				<unitPattern count="one" case="genitive">{0} калорије</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} калоријом</unitPattern>
 				<unitPattern count="few">{0} калорије</unitPattern>
 				<unitPattern count="few" case="accusative">{0} калорије</unitPattern>
 				<unitPattern count="few" case="genitive">{0} калорије</unitPattern>
@@ -8467,8 +8464,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>џули</displayName>
 				<unitPattern count="one">{0} џул</unitPattern>
 				<unitPattern count="one" case="accusative">{0} џул</unitPattern>
-				<unitPattern count="one" case="genitive">{0} џул</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} џул</unitPattern>
+				<unitPattern count="one" case="genitive">{0} џула</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} џулом</unitPattern>
 				<unitPattern count="few">{0} џула</unitPattern>
 				<unitPattern count="few" case="accusative">{0} џула</unitPattern>
 				<unitPattern count="few" case="genitive">{0} џула</unitPattern>
@@ -8510,8 +8507,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>њутни</displayName>
 				<unitPattern count="one">{0} њутн</unitPattern>
 				<unitPattern count="one" case="accusative">{0} њутн</unitPattern>
-				<unitPattern count="one" case="genitive">{0} њутн</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} њутн</unitPattern>
+				<unitPattern count="one" case="genitive">{0} њутна</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} њутном</unitPattern>
 				<unitPattern count="few">{0} њутна</unitPattern>
 				<unitPattern count="few" case="accusative">{0} њутна</unitPattern>
 				<unitPattern count="few" case="genitive">{0} њутна</unitPattern>
@@ -8544,8 +8541,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>херци</displayName>
 				<unitPattern count="one">{0} херц</unitPattern>
 				<unitPattern count="one" case="accusative">{0} херц</unitPattern>
-				<unitPattern count="one" case="genitive">{0} херц</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} херц</unitPattern>
+				<unitPattern count="one" case="genitive">{0} херца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} херцом</unitPattern>
 				<unitPattern count="few">{0} херца</unitPattern>
 				<unitPattern count="few" case="accusative">{0} херца</unitPattern>
 				<unitPattern count="few" case="genitive">{0} херца</unitPattern>
@@ -8557,9 +8554,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one" case="accusative">{0} em</unitPattern>
+				<unitPattern count="one" case="genitive">{0} em</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} em</unitPattern>
+				<unitPattern count="few">{0} em</unitPattern>
+				<unitPattern count="few" case="accusative">{0} em</unitPattern>
+				<unitPattern count="few" case="genitive">{0} em</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+				<unitPattern count="other" case="accusative">{0} em</unitPattern>
+				<unitPattern count="other" case="genitive">{0} em</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="one" case="accusative">{0} px</unitPattern>
+				<unitPattern count="one" case="genitive">{0} px</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} px</unitPattern>
+				<unitPattern count="few">{0} px</unitPattern>
+				<unitPattern count="few" case="accusative">{0} px</unitPattern>
+				<unitPattern count="few" case="genitive">{0} px</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="other" case="accusative">{0} px</unitPattern>
+				<unitPattern count="other" case="genitive">{0} px</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>тачка</displayName>
@@ -8585,8 +8606,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>метри</displayName>
 				<unitPattern count="one">{0} метар</unitPattern>
 				<unitPattern count="one" case="accusative">{0} метар</unitPattern>
-				<unitPattern count="one" case="genitive">{0} метар</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} метар</unitPattern>
+				<unitPattern count="one" case="genitive">{0} метра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} метром</unitPattern>
 				<unitPattern count="few">{0} метра</unitPattern>
 				<unitPattern count="few" case="accusative">{0} метра</unitPattern>
 				<unitPattern count="few" case="genitive">{0} метра</unitPattern>
@@ -8700,9 +8721,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>скандинавска миља</displayName>
 				<unitPattern count="one">{0} скандинавска миља</unitPattern>
-				<unitPattern count="one" case="accusative">{0} скандинавска миља</unitPattern>
-				<unitPattern count="one" case="genitive">{0} скандинавска миља</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} скандинавска миља</unitPattern>
+				<unitPattern count="one" case="accusative">{0} скандинавску миљу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} скандинавске миље</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} скандинавском миљом</unitPattern>
 				<unitPattern count="few">{0} скандинавске миље</unitPattern>
 				<unitPattern count="few" case="accusative">{0} скандинавске миље</unitPattern>
 				<unitPattern count="few" case="genitive">{0} скандинавске миље</unitPattern>
@@ -8729,8 +8750,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>лукс</displayName>
 				<unitPattern count="one">{0} лукс</unitPattern>
 				<unitPattern count="one" case="accusative">{0} лукс</unitPattern>
-				<unitPattern count="one" case="genitive">{0} лукс</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} лукс</unitPattern>
+				<unitPattern count="one" case="genitive">{0} лукса</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} луксом</unitPattern>
 				<unitPattern count="few">{0} лукса</unitPattern>
 				<unitPattern count="few" case="accusative">{0} лукса</unitPattern>
 				<unitPattern count="few" case="genitive">{0} лукса</unitPattern>
@@ -8744,9 +8765,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>кандела</displayName>
 				<unitPattern count="one">{0} кандела</unitPattern>
-				<unitPattern count="one" case="accusative">{0} кандела</unitPattern>
-				<unitPattern count="one" case="genitive">{0} кандела</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} кандела</unitPattern>
+				<unitPattern count="one" case="accusative">{0} канделу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} канделе</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} канделом</unitPattern>
 				<unitPattern count="few">{0} канделе</unitPattern>
 				<unitPattern count="few" case="accusative">{0} канделе</unitPattern>
 				<unitPattern count="few" case="genitive">{0} канделе</unitPattern>
@@ -8761,8 +8782,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>лумен</displayName>
 				<unitPattern count="one">{0} лумен</unitPattern>
 				<unitPattern count="one" case="accusative">{0} лумен</unitPattern>
-				<unitPattern count="one" case="genitive">{0} лумен</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} лумен</unitPattern>
+				<unitPattern count="one" case="genitive">{0} лумена</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} луменом</unitPattern>
 				<unitPattern count="few">{0} лумена</unitPattern>
 				<unitPattern count="few" case="accusative">{0} лумена</unitPattern>
 				<unitPattern count="few" case="genitive">{0} лумена</unitPattern>
@@ -8776,9 +8797,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>метричке тоне</displayName>
 				<unitPattern count="one">{0} метричка тона</unitPattern>
-				<unitPattern count="one" case="accusative">{0} метричка тона</unitPattern>
-				<unitPattern count="one" case="genitive">{0} метричка тона</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} метричка тона</unitPattern>
+				<unitPattern count="one" case="accusative">{0} метричку тону</unitPattern>
+				<unitPattern count="one" case="genitive">{0} метричке тоне</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} метричком тоном</unitPattern>
 				<unitPattern count="few">{0} метричке тоне</unitPattern>
 				<unitPattern count="few" case="accusative">{0} метричке тоне</unitPattern>
 				<unitPattern count="few" case="genitive">{0} метричке тоне</unitPattern>
@@ -8793,8 +8814,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>килограми</displayName>
 				<unitPattern count="one">{0} килограм</unitPattern>
 				<unitPattern count="one" case="accusative">{0} килограм</unitPattern>
-				<unitPattern count="one" case="genitive">{0} килограм</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} килограм</unitPattern>
+				<unitPattern count="one" case="genitive">{0} килограма</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} килограмом</unitPattern>
 				<unitPattern count="few">{0} килограма</unitPattern>
 				<unitPattern count="few" case="accusative">{0} килограма</unitPattern>
 				<unitPattern count="few" case="genitive">{0} килограма</unitPattern>
@@ -8810,8 +8831,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>грами</displayName>
 				<unitPattern count="one">{0} грам</unitPattern>
 				<unitPattern count="one" case="accusative">{0} грам</unitPattern>
-				<unitPattern count="one" case="genitive">{0} грам</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} грам</unitPattern>
+				<unitPattern count="one" case="genitive">{0} грама</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} грамом</unitPattern>
 				<unitPattern count="few">{0} грама</unitPattern>
 				<unitPattern count="few" case="accusative">{0} грама</unitPattern>
 				<unitPattern count="few" case="genitive">{0} грама</unitPattern>
@@ -8871,8 +8892,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>карати</displayName>
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="one" case="accusative">{0} карат</unitPattern>
-				<unitPattern count="one" case="genitive">{0} карат</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} карат</unitPattern>
+				<unitPattern count="one" case="genitive">{0} карата</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} каратом</unitPattern>
 				<unitPattern count="few">{0} карата</unitPattern>
 				<unitPattern count="few" case="accusative">{0} карата</unitPattern>
 				<unitPattern count="few" case="genitive">{0} карата</unitPattern>
@@ -8929,8 +8950,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>вати</displayName>
 				<unitPattern count="one">{0} ват</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ват</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ват</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ват</unitPattern>
+				<unitPattern count="one" case="genitive">{0} вата</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ватом</unitPattern>
 				<unitPattern count="few">{0} вата</unitPattern>
 				<unitPattern count="few" case="accusative">{0} вата</unitPattern>
 				<unitPattern count="few" case="genitive">{0} вата</unitPattern>
@@ -8975,8 +8996,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>бари</displayName>
 				<unitPattern count="one">{0} бар</unitPattern>
 				<unitPattern count="one" case="accusative">{0} бар</unitPattern>
-				<unitPattern count="one" case="genitive">{0} бар</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} бар</unitPattern>
+				<unitPattern count="one" case="genitive">{0} бара</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} баром</unitPattern>
 				<unitPattern count="few">{0} бара</unitPattern>
 				<unitPattern count="few" case="accusative">{0} бара</unitPattern>
 				<unitPattern count="few" case="genitive">{0} бара</unitPattern>
@@ -8996,9 +9017,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>атмосфере</displayName>
 				<unitPattern count="one">{0} атмосфера</unitPattern>
-				<unitPattern count="one" case="accusative">{0} атмосфера</unitPattern>
-				<unitPattern count="one" case="genitive">{0} атмосфера</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} атмосфера</unitPattern>
+				<unitPattern count="one" case="accusative">{0} атмосферу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} атмосфере</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} атмосфером</unitPattern>
 				<unitPattern count="few">{0} атмосфере</unitPattern>
 				<unitPattern count="few" case="accusative">{0} атмосфере</unitPattern>
 				<unitPattern count="few" case="genitive">{0} атмосфере</unitPattern>
@@ -9013,8 +9034,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>паскали</displayName>
 				<unitPattern count="one">{0} паскал</unitPattern>
 				<unitPattern count="one" case="accusative">{0} паскал</unitPattern>
-				<unitPattern count="one" case="genitive">{0} паскал</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} паскал</unitPattern>
+				<unitPattern count="one" case="genitive">{0} паскала</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} паскалом</unitPattern>
 				<unitPattern count="few">{0} паскала</unitPattern>
 				<unitPattern count="few" case="accusative">{0} паскала</unitPattern>
 				<unitPattern count="few" case="genitive">{0} паскала</unitPattern>
@@ -9087,8 +9108,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>степени Целзијуса</displayName>
 				<unitPattern count="one">{0} степен Целзијуса</unitPattern>
 				<unitPattern count="one" case="accusative">{0} степен Целзијуса</unitPattern>
-				<unitPattern count="one" case="genitive">{0} степен Целзијуса</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} степен Целзијуса</unitPattern>
+				<unitPattern count="one" case="genitive">{0} степена Целзијуса</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} степеном Целзијуса</unitPattern>
 				<unitPattern count="few">{0} степена Целзијуса</unitPattern>
 				<unitPattern count="few" case="accusative">{0} степена Целзијуса</unitPattern>
 				<unitPattern count="few" case="genitive">{0} степена Целзијуса</unitPattern>
@@ -9109,8 +9130,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>келвин</displayName>
 				<unitPattern count="one">{0} келвин</unitPattern>
 				<unitPattern count="one" case="accusative">{0} келвин</unitPattern>
-				<unitPattern count="one" case="genitive">{0} келвин</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} келвин</unitPattern>
+				<unitPattern count="one" case="genitive">{0} келвина</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} келвином</unitPattern>
 				<unitPattern count="few">{0} келвина</unitPattern>
 				<unitPattern count="few" case="accusative">{0} келвина</unitPattern>
 				<unitPattern count="few" case="genitive">{0} келвина</unitPattern>
@@ -9193,8 +9214,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>литри</displayName>
 				<unitPattern count="one">{0} литар</unitPattern>
 				<unitPattern count="one" case="accusative">{0} литар</unitPattern>
-				<unitPattern count="one" case="genitive">{0} литар</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} литар</unitPattern>
+				<unitPattern count="one" case="genitive">{0} литра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} литром</unitPattern>
 				<unitPattern count="few">{0} литра</unitPattern>
 				<unitPattern count="few" case="accusative">{0} литра</unitPattern>
 				<unitPattern count="few" case="genitive">{0} литра</unitPattern>
@@ -9227,9 +9248,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>метричке пинте</displayName>
 				<unitPattern count="one">{0} метричка пинта</unitPattern>
-				<unitPattern count="one" case="accusative">{0} метричка пинта</unitPattern>
-				<unitPattern count="one" case="genitive">{0} метричка пинта</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} метричка пинта</unitPattern>
+				<unitPattern count="one" case="accusative">{0} метричку пинту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} метричке пинте</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} метричком пинтом</unitPattern>
 				<unitPattern count="few">{0} метричке пинте</unitPattern>
 				<unitPattern count="few" case="accusative">{0} метричке пинте</unitPattern>
 				<unitPattern count="few" case="genitive">{0} метричке пинте</unitPattern>
@@ -9243,9 +9264,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>метричка шоља</displayName>
 				<unitPattern count="one">{0} метричка шоља</unitPattern>
-				<unitPattern count="one" case="accusative">{0} метричка шоља</unitPattern>
-				<unitPattern count="one" case="genitive">{0} метричка шоља</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} метричка шоља</unitPattern>
+				<unitPattern count="one" case="accusative">{0} метричку шољу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} метричке шоље</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} метричком шољом</unitPattern>
 				<unitPattern count="few">{0} метричке шоље</unitPattern>
 				<unitPattern count="few" case="accusative">{0} метричке шоље</unitPattern>
 				<unitPattern count="few" case="genitive">{0} метричке шоље</unitPattern>

@@ -7150,13 +7150,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="oblique">{0} ਦਿਨ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਦਿਨ</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender draft="contributed">masculine</gender>
-				<unitPattern count="one">{0} ਦਿਨ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਦਿਨ</unitPattern>
-				<unitPattern count="other">{0} ਦਿਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਦਿਨਾਂ</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender draft="contributed">masculine</gender>
 				<displayName>ਘੰਟੇ</displayName>

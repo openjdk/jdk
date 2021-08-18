@@ -8044,12 +8044,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} dana</unitPattern>
 				<perUnitPattern>{0}/dnevno</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender>inanimate</gender>
-				<unitPattern count="one" case="genitive">{0} dana</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} danom</unitPattern>
-				<unitPattern count="few" case="accusative">{0} dana</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender>inanimate</gender>
 				<displayName>sati</displayName>

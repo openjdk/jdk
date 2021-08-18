@@ -7524,25 +7524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="oblique">{0} दिवस</unitPattern>
 				<perUnitPattern>{0} दर दिवशी</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender>neuter</gender>
-				<unitPattern count="one">तो {0} दिवस</unitPattern>
-				<unitPattern count="one" case="ablative">{0} दिवसापासून</unitPattern>
-				<unitPattern count="one" case="accusative">{0} दिवसाला</unitPattern>
-				<unitPattern count="one" case="dative">{0} दिवसासाठी</unitPattern>
-				<unitPattern count="one" case="ergative">{0} दिवसाने</unitPattern>
-				<unitPattern count="one" case="genitive">{0} दिवसाचा</unitPattern>
-				<unitPattern count="one" case="locative">{0} दिवशी</unitPattern>
-				<unitPattern count="one" case="oblique">तो {0} दिवस</unitPattern>
-				<unitPattern count="other">ते {0} दिवस</unitPattern>
-				<unitPattern count="other" case="ablative">{0} दिवसांपासून</unitPattern>
-				<unitPattern count="other" case="accusative">ते {0} दिवस</unitPattern>
-				<unitPattern count="other" case="dative">{0} दिवसांसाठी</unitPattern>
-				<unitPattern count="other" case="ergative">{0} दिवसांनी</unitPattern>
-				<unitPattern count="other" case="genitive">{0} दिवसांचा</unitPattern>
-				<unitPattern count="other" case="locative">{0} दिवशी</unitPattern>
-				<unitPattern count="other" case="oblique">ते {0} दिवस</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender>masculine</gender>
 				<displayName>तास</displayName>

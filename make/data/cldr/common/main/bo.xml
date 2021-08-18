@@ -276,11 +276,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u0F7E ཿ ཀ {ཀ\u0FB5} \u0F90 {\u0F90\u0FB5} ཁ \u0F91 ག {ག\u0FB7} \u0F92 {\u0F92\u0FB7} ང \u0F94 ཅ \u0F95 ཆ \u0F96 ཇ \u0F97 ཉ \u0F99 ཊ \u0F9A ཋ \u0F9B ཌ {ཌ\u0FB7} \u0F9C {\u0F9C\u0FB7} ཎ \u0F9E ཏ \u0F9F ཐ \u0FA0 ད {ད\u0FB7} \u0FA1 {\u0FA1\u0FB7} ན \u0FA3 པ \u0FA4 ཕ \u0FA5 བ {བ\u0FB7} \u0FA6 {\u0FA6\u0FB7} མ \u0FA8 ཙ \u0FA9 ཚ \u0FAA ཛ {ཛ\u0FB7} \u0FAB {\u0FAB\u0FB7} ཝ \u0FAD \u0FBA ཞ \u0FAE ཟ \u0FAF འ \u0FB0 ཡ \u0FB1 \u0FBB ར ཪ \u0FB2 \u0FBC ལ \u0FB3 ཤ \u0FB4 ཥ \u0FB5 ས \u0FB6 ཧ \u0FB7 ཨ \u0FB8 \u0F72 {\u0F71\u0F72} \u0F80 {\u0F71\u0F80} \u0F74 {\u0F71\u0F74} {\u0FB2\u0F80} \u0F77 {\u0FB3\u0F80} \u0F79 \u0F7A \u0F7B \u0F7C \u0F7D \u0F84]</exemplarCharacters>
+		<exemplarCharacters>[\u0F84 ཿ ཀ {ཀ\u0FB5} ཁ ག {ག\u0FB7} ང ཅ ཆ ཇ ཉ ཏ ཊ ཐ ཋ ད {ད\u0FB7} ཌ {ཌ\u0FB7} ན ཎ པ ཕ བ {བ\u0FB7} མ \u0F7E ཙ ཚ ཛ {ཛ\u0FB7} ཝ ཞ ཟ འ ཡ ར ཪ ལ ཤ ཥ ས ཧ ཨ \u0F72 {\u0F71\u0F72} \u0F80 {\u0F71\u0F80} \u0F74 {\u0F71\u0F74} \u0F7A \u0F7B \u0F7C \u0F7D \u0F90 {\u0F90\u0FB5} \u0F91 \u0F92 {\u0F92\u0FB7} \u0F94 \u0F95 \u0F96 \u0F97 \u0F99 \u0F9F \u0F9A \u0FA0 \u0F9B \u0FA1 {\u0FA1\u0FB7} \u0F9C {\u0F9C\u0FB7} \u0FA3 \u0F9E \u0FA4 \u0FA5 \u0FA6 {\u0FA6\u0FB7} \u0FA8 \u0FA9 \u0FAA \u0FAB {\u0FAB\u0FB7} \u0FAD \u0FBA \u0FAE \u0FAF \u0FB0 \u0FB1 \u0FBB \u0FB2 \u0FBC \u0FB3 \u0FB4 \u0FB5 \u0FB6 \u0FB7 \u0FB8 {\u0FB2\u0F80} \u0F77 {\u0FB3\u0F80} \u0F79]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ༀ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\: ་ །]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\: ། ་]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

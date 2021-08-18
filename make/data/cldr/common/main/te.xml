@@ -6932,15 +6932,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<displayName>గు-శక్తి</displayName>
 				<unitPattern count="one">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="one" case="accusative">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="one" case="dative">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="one" case="locative">{0} గు-శక్తి</unitPattern>
 				<unitPattern count="other">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="other" case="accusative">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="other" case="dative">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} గు-శక్తి</unitPattern>
-				<unitPattern count="other" case="locative">{0} గు-శక్తి</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>మీటర్లు/స్క్వేర్ సెకన్లు</displayName>
@@ -6950,67 +6942,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-revolution">
 				<displayName>భ్రమణాలు</displayName>
 				<unitPattern count="one">{0} భ్రమణం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} భ్రమణం</unitPattern>
-				<unitPattern count="one" case="dative">{0} భ్రమణం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} భ్రమణం</unitPattern>
-				<unitPattern count="one" case="locative">{0} భ్రమణం</unitPattern>
 				<unitPattern count="other">{0} భ్రమణాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} భ్రమణాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} భ్రమణాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} భ్రమణాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} భ్రమణాలు</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>రేడియన్లు</displayName>
 				<unitPattern count="one">{0} రేడియన్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} రేడియన్</unitPattern>
-				<unitPattern count="one" case="dative">{0} రేడియన్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} రేడియన్</unitPattern>
-				<unitPattern count="one" case="locative">{0} రేడియన్</unitPattern>
 				<unitPattern count="other">{0} రేడియన్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} రేడియన్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} రేడియన్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} రేడియన్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} రేడియన్లు</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>డిగ్రీలు</displayName>
 				<unitPattern count="one">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="dative">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="locative">{0} డిగ్రీ</unitPattern>
 				<unitPattern count="other">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} డిగ్రీలు</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>ఆర్క్ నిమిషాలు</displayName>
 				<unitPattern count="one">{0} ఆర్క్ నిమిషం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ఆర్క్ నిమిషం</unitPattern>
-				<unitPattern count="one" case="dative">{0} ఆర్క్ నిమిషం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ఆర్క్ నిమిషం</unitPattern>
-				<unitPattern count="one" case="locative">{0} ఆర్క్ నిమిషం</unitPattern>
 				<unitPattern count="other">{0} ఆర్క్ నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ఆర్క్ నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} ఆర్క్ నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ఆర్క్ నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} ఆర్క్ నిమిషాలు</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>ఆర్క్ సెకన్లు</displayName>
 				<unitPattern count="one">{0} ఆర్క్ సెకను</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ఆర్క్ సెకను</unitPattern>
-				<unitPattern count="one" case="dative">{0} ఆర్క్ సెకను</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ఆర్క్ సెకను</unitPattern>
-				<unitPattern count="one" case="locative">{0} ఆర్క్ సెకను</unitPattern>
 				<unitPattern count="other">{0} ఆర్క్ సెకన్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ఆర్క్ సెకన్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} ఆర్క్ సెకన్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ఆర్క్ సెకన్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} ఆర్క్ సెకన్లు</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>చదరపు కిలోమీటర్లు</displayName>
@@ -7021,15 +6973,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-hectare">
 				<displayName>హెక్టార్లు</displayName>
 				<unitPattern count="one">{0} హెక్టారు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} హెక్టారు</unitPattern>
-				<unitPattern count="one" case="dative">{0} హెక్టారు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} హెక్టారు</unitPattern>
-				<unitPattern count="one" case="locative">{0} హెక్టారు</unitPattern>
 				<unitPattern count="other">{0} హెక్టార్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} హెక్టార్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} హెక్టార్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} హెక్టార్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} హెక్టార్లు</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>చదరపు మీటర్లు</displayName>
@@ -7077,15 +7021,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>కేరట్లు</displayName>
 				<unitPattern count="one">{0} కేరట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} కేరట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} కేరట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} కేరట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} కేరట్</unitPattern>
 				<unitPattern count="other">{0} కేరట్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} కేరట్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} కేరట్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} కేరట్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} కేరట్లు</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>మిల్లీగ్రాములు/డెసిలీటర్</displayName>
@@ -7105,67 +7041,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permillion">
 				<displayName>భాగాలు/మిలియన్</displayName>
 				<unitPattern count="one">{0} భాగం/మిలియన్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} భాగం/మిలియన్</unitPattern>
-				<unitPattern count="one" case="dative">{0} భాగం/మిలియన్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} భాగం/మిలియన్</unitPattern>
-				<unitPattern count="one" case="locative">{0} భాగం/మిలియన్</unitPattern>
 				<unitPattern count="other">{0} భాగాలు/మిలియన్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} భాగాలు/మిలియన్</unitPattern>
-				<unitPattern count="other" case="dative">{0} భాగాలు/మిలియన్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} భాగాలు/మిలియన్</unitPattern>
-				<unitPattern count="other" case="locative">{0} భాగాలు/మిలియన్</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>శాతం</displayName>
 				<unitPattern count="one">{0} శాతం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} శాతం</unitPattern>
-				<unitPattern count="one" case="dative">{0} శాతం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} శాతం</unitPattern>
-				<unitPattern count="one" case="locative">{0} శాతం</unitPattern>
 				<unitPattern count="other">{0} శాతం</unitPattern>
-				<unitPattern count="other" case="accusative">{0} శాతం</unitPattern>
-				<unitPattern count="other" case="dative">{0} శాతం</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} శాతం</unitPattern>
-				<unitPattern count="other" case="locative">{0} శాతం</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>మైలుకు</displayName>
 				<unitPattern count="one">{0}/మైలుకు</unitPattern>
-				<unitPattern count="one" case="accusative">{0}/మైలుకు</unitPattern>
-				<unitPattern count="one" case="dative">{0}/మైలుకు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0}/మైలుకు</unitPattern>
-				<unitPattern count="one" case="locative">{0}/మైలుకు</unitPattern>
 				<unitPattern count="other">{0}/మైలుకు</unitPattern>
-				<unitPattern count="other" case="accusative">{0}/మైలుకు</unitPattern>
-				<unitPattern count="other" case="dative">{0}/మైలుకు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0}/మైలుకు</unitPattern>
-				<unitPattern count="other" case="locative">{0}/మైలుకు</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>పెర్మేరియాడ్</displayName>
 				<unitPattern count="one">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="one" case="dative">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="one" case="locative">{0} పెర్మేరియాడ్</unitPattern>
 				<unitPattern count="other">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="other" case="dative">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} పెర్మేరియాడ్</unitPattern>
-				<unitPattern count="other" case="locative">{0} పెర్మేరియాడ్</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>మోల్‌లు</displayName>
 				<unitPattern count="one">{0} మోల్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} మోల్</unitPattern>
-				<unitPattern count="one" case="dative">{0} మోల్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} మోల్</unitPattern>
-				<unitPattern count="one" case="locative">{0} మోల్</unitPattern>
 				<unitPattern count="other">{0} మోల్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} మోల్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} మోల్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} మోల్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} మోల్‌లు</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>లీటర్లు/కిలోమీటరు</displayName>
@@ -7235,151 +7131,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="digital-byte">
 				<displayName>బైట్‌లు</displayName>
 				<unitPattern count="one">{0} బైట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} బైట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} బైట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} బైట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} బైట్</unitPattern>
 				<unitPattern count="other">{0} బైట్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} బైట్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} బైట్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} బైట్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} బైట్‌లు</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>బిట్‌లు</displayName>
 				<unitPattern count="one">{0} బిట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} బిట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} బిట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} బిట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} బిట్</unitPattern>
 				<unitPattern count="other">{0} బిట్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} బిట్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} బిట్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} బిట్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} బిట్‌లు</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>శతాబ్దాలు</displayName>
 				<unitPattern count="one">{0} శతాబ్దం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} శతాబ్దం</unitPattern>
-				<unitPattern count="one" case="dative">{0} శతాబ్దం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} శతాబ్దం</unitPattern>
-				<unitPattern count="one" case="locative">{0} శతాబ్దం</unitPattern>
 				<unitPattern count="other">{0} శతాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} శతాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} శతాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} శతాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} శతాబ్దాలు</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>దశాబ్దాలు</displayName>
 				<unitPattern count="one">{0} దశాబ్దం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} దశాబ్దం</unitPattern>
-				<unitPattern count="one" case="dative">{0} దశాబ్దం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} దశాబ్దం</unitPattern>
-				<unitPattern count="one" case="locative">{0} దశాబ్దం</unitPattern>
 				<unitPattern count="other">{0} దశాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} దశాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} దశాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} దశాబ్దాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} దశాబ్దాలు</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>సంవత్సరాలు</displayName>
 				<unitPattern count="one">{0} సంవత్సరం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} సంవత్సరం</unitPattern>
-				<unitPattern count="one" case="dative">{0} సంవత్సరం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} సంవత్సరం</unitPattern>
-				<unitPattern count="one" case="locative">{0} సంవత్సరం</unitPattern>
 				<unitPattern count="other">{0} సంవత్సరాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} సంవత్సరాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} సంవత్సరాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} సంవత్సరాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} సంవత్సరాలు</unitPattern>
 				<perUnitPattern>సంవత్సరానికి {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>నెలలు</displayName>
 				<unitPattern count="one">{0} నెల</unitPattern>
-				<unitPattern count="one" case="accusative">{0} నెల</unitPattern>
-				<unitPattern count="one" case="dative">{0} నెల</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} నెల</unitPattern>
-				<unitPattern count="one" case="locative">{0} నెల</unitPattern>
 				<unitPattern count="other">{0} నెలలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} నెలలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} నెలలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} నెలలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} నెలలు</unitPattern>
 				<perUnitPattern>నెలకు {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>వారాలు</displayName>
 				<unitPattern count="one">{0} వారం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} వారం</unitPattern>
-				<unitPattern count="one" case="dative">{0} వారం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} వారం</unitPattern>
-				<unitPattern count="one" case="locative">{0} వారం</unitPattern>
 				<unitPattern count="other">{0} వారాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} వారాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} వారాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} వారాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} వారాలు</unitPattern>
 				<perUnitPattern>వారానికి {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>రోజులు</displayName>
 				<unitPattern count="one">{0} రోజు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} రోజు</unitPattern>
-				<unitPattern count="one" case="dative">{0} రోజు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} రోజు</unitPattern>
-				<unitPattern count="one" case="locative">{0} రోజు</unitPattern>
 				<unitPattern count="other">{0} రోజులు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} రోజులు</unitPattern>
-				<unitPattern count="other" case="dative">{0} రోజులు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} రోజులు</unitPattern>
-				<unitPattern count="other" case="locative">{0} రోజులు</unitPattern>
 				<perUnitPattern>రోజుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>గంటలు</displayName>
 				<unitPattern count="one">{0} గంట</unitPattern>
-				<unitPattern count="one" case="accusative">{0} గంట</unitPattern>
-				<unitPattern count="one" case="dative">{0} గంట</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} గంట</unitPattern>
-				<unitPattern count="one" case="locative">{0} గంట</unitPattern>
 				<unitPattern count="other">{0} గంటలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} గంటలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} గంటలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} గంటలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} గంటలు</unitPattern>
 				<perUnitPattern>{0}/గంట</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>నిమిషాలు</displayName>
 				<unitPattern count="one">{0} నిమిషం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} నిమిషం</unitPattern>
-				<unitPattern count="one" case="dative">{0} నిమిషం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} నిమిషం</unitPattern>
-				<unitPattern count="one" case="locative">{0} నిమిషం</unitPattern>
 				<unitPattern count="other">{0} నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} నిమిషాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} నిమిషాలు</unitPattern>
 				<perUnitPattern>నిమిషానికి {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>సెకన్లు</displayName>
 				<unitPattern count="one">{0} సెకను</unitPattern>
-				<unitPattern count="one" case="accusative">{0} సెకను</unitPattern>
-				<unitPattern count="one" case="dative">{0} సెకను</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} సెకను</unitPattern>
-				<unitPattern count="one" case="locative">{0} సెకను</unitPattern>
 				<unitPattern count="other">{0} సెకన్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} సెకన్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} సెకన్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} సెకన్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} సెకన్లు</unitPattern>
 				<perUnitPattern>సెకనుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -7400,15 +7208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="electric-ampere">
 				<displayName>ఆంపియర్స్</displayName>
 				<unitPattern count="one">{0} ఆంపియర్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ఆంపియర్</unitPattern>
-				<unitPattern count="one" case="dative">{0} ఆంపియర్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ఆంపియర్</unitPattern>
-				<unitPattern count="one" case="locative">{0} ఆంపియర్</unitPattern>
 				<unitPattern count="other">{0} ఆంపియర్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ఆంపియర్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} ఆంపియర్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ఆంపియర్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} ఆంపియర్స్</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>మిల్లీ ఆంపియర్స్</displayName>
@@ -7418,28 +7218,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="electric-ohm">
 				<displayName>ఓమ్స్</displayName>
 				<unitPattern count="one">{0} ఓమ్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ఓమ్</unitPattern>
-				<unitPattern count="one" case="dative">{0} ఓమ్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ఓమ్</unitPattern>
-				<unitPattern count="one" case="locative">{0} ఓమ్</unitPattern>
 				<unitPattern count="other">{0} ఓమ్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ఓమ్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} ఓమ్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ఓమ్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} ఓమ్స్</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>వోల్ట్స్</displayName>
 				<unitPattern count="one">{0} వోల్ట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} వోల్ట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} వోల్ట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} వోల్ట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} వోల్ట్</unitPattern>
 				<unitPattern count="other">{0} వోల్ట్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} వోల్ట్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} వోల్ట్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} వోల్ట్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} వోల్ట్స్</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>కిలోకేలరీలు</displayName>
@@ -7449,15 +7233,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-calorie">
 				<displayName>కేలరీలు</displayName>
 				<unitPattern count="one">{0} కేలరీ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} కేలరీ</unitPattern>
-				<unitPattern count="one" case="dative">{0} కేలరీ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} కేలరీ</unitPattern>
-				<unitPattern count="one" case="locative">{0} కేలరీ</unitPattern>
 				<unitPattern count="other">{0} కేలరీలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} కేలరీలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} కేలరీలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} కేలరీలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} కేలరీలు</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>కేలరీలు</displayName>
@@ -7472,15 +7248,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-joule">
 				<displayName>జౌల్స్</displayName>
 				<unitPattern count="one">{0} జౌల్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} జౌల్</unitPattern>
-				<unitPattern count="one" case="dative">{0} జౌల్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} జౌల్</unitPattern>
-				<unitPattern count="one" case="locative">{0} జౌల్</unitPattern>
 				<unitPattern count="other">{0} జౌల్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} జౌల్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} జౌల్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} జౌల్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} జౌల్స్</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>కిలోవాట్-గంటలు</displayName>
@@ -7510,15 +7278,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-newton">
 				<displayName>న్యూటన్‌లు</displayName>
 				<unitPattern count="one">{0} న్యూటన్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} న్యూటన్</unitPattern>
-				<unitPattern count="one" case="dative">{0} న్యూటన్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} న్యూటన్</unitPattern>
-				<unitPattern count="one" case="locative">{0} న్యూటన్</unitPattern>
 				<unitPattern count="other">{0} న్యూటన్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} న్యూటన్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} న్యూటన్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} న్యూటన్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} న్యూటన్‌లు</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName draft="contributed">100 కిలోమీటర్లకు కిలోవాట్-గంట</displayName>
@@ -7543,40 +7303,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="frequency-hertz">
 				<displayName>హెర్ట్‌జ్</displayName>
 				<unitPattern count="one">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="one" case="dative">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="one" case="locative">{0} హెర్ట్‌జ్</unitPattern>
 				<unitPattern count="other">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="other" case="dative">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} హెర్ట్‌జ్</unitPattern>
-				<unitPattern count="other" case="locative">{0} హెర్ట్‌జ్</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="one" case="accusative">{0} em</unitPattern>
-				<unitPattern count="one" case="dative">{0} em</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} em</unitPattern>
-				<unitPattern count="one" case="locative">{0} em</unitPattern>
 				<unitPattern count="other">{0} emలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} emలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} emలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} emలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} emలు</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>పిక్సెల్స్</displayName>
 				<unitPattern count="one">{0} పిక్సెల్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} పిక్సెల్</unitPattern>
-				<unitPattern count="one" case="dative">{0} పిక్సెల్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} పిక్సెల్</unitPattern>
-				<unitPattern count="one" case="locative">{0} పిక్సెల్</unitPattern>
 				<unitPattern count="other">{0} పిక్సెల్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} పిక్సెల్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} పిక్సెల్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} పిక్సెల్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} పిక్సెల్స్</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>మెగా పిక్సెల్స్</displayName>
@@ -7622,15 +7358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-meter">
 				<displayName>మీటర్లు</displayName>
 				<unitPattern count="one">{0} మీటరు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} మీటరు</unitPattern>
-				<unitPattern count="one" case="dative">{0} మీటరు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} మీటరు</unitPattern>
-				<unitPattern count="one" case="locative">{0} మీటరు</unitPattern>
 				<unitPattern count="other">{0} మీటర్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} మీటర్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} మీటర్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} మీటర్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} మీటర్లు</unitPattern>
 				<perUnitPattern>మీటరుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -7719,15 +7447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>స్కాండినేవియన్ మైలు</displayName>
 				<unitPattern count="one">{0} స్కాండినేవియన్ మైలు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} స్కాండినేవియన్ మైలు</unitPattern>
-				<unitPattern count="one" case="dative">{0} స్కాండినేవియన్ మైలు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} స్కాండినేవియన్ మైలు</unitPattern>
-				<unitPattern count="one" case="locative">{0} స్కాండినేవియన్ మైలు</unitPattern>
 				<unitPattern count="other">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>పాయింట్‌లు</displayName>
@@ -7742,41 +7462,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lux">
 				<displayName>లక్స్</displayName>
 				<unitPattern count="one">{0} లక్స్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} లక్స్</unitPattern>
-				<unitPattern count="one" case="dative">{0} లక్స్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} లక్స్</unitPattern>
-				<unitPattern count="one" case="locative">{0} లక్స్</unitPattern>
 				<unitPattern count="other">{0} లక్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} లక్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} లక్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} లక్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} లక్స్</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>క్యాడెలా</displayName>
 				<unitPattern count="one">{0} క్యాడెలా</unitPattern>
-				<unitPattern count="one" case="accusative">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="one" case="dative">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="one" case="locative">{0} క్యాండేలా</unitPattern>
 				<unitPattern count="other">{0} క్యాడెలా</unitPattern>
-				<unitPattern count="other" case="accusative">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="other" case="dative">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} క్యాండేలా</unitPattern>
-				<unitPattern count="other" case="locative">{0} క్యాండేలా</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<displayName>లుమెన్</displayName>
 				<unitPattern count="one">{0} లుమెన్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} లుమెన్</unitPattern>
-				<unitPattern count="one" case="dative">{0} లుమెన్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} లుమెన్</unitPattern>
-				<unitPattern count="one" case="locative">{0} లుమెన్</unitPattern>
 				<unitPattern count="other">{0} లుమెన్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} లుమెన్</unitPattern>
-				<unitPattern count="other" case="dative">{0} లుమెన్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} లుమెన్</unitPattern>
-				<unitPattern count="other" case="locative">{0} లుమెన్</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>సోలార్ ల్యూమినోసైటైస్</displayName>
@@ -7786,42 +7482,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-metric-ton">
 				<displayName>మెట్రిక్ టన్నులు</displayName>
 				<unitPattern count="one">{0} మెట్రిక్ టన్ను</unitPattern>
-				<unitPattern count="one" case="accusative">{0} మెట్రిక్ టన్ను</unitPattern>
-				<unitPattern count="one" case="dative">{0} మెట్రిక్ టన్ను</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} మెట్రిక్ టన్ను</unitPattern>
-				<unitPattern count="one" case="locative">{0} మెట్రిక్ టన్ను</unitPattern>
 				<unitPattern count="other">{0} మెట్రిక్ టన్నులు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} మెట్రిక్ టన్నులు</unitPattern>
-				<unitPattern count="other" case="dative">{0} మెట్రిక్ టన్నులు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} మెట్రిక్ టన్నులు</unitPattern>
-				<unitPattern count="other" case="locative">{0} మెట్రిక్ టన్నులు</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>కిలోగ్రాములు</displayName>
 				<unitPattern count="one">{0} కిలోగ్రాము</unitPattern>
-				<unitPattern count="one" case="accusative">{0} కిలోగ్రాము</unitPattern>
-				<unitPattern count="one" case="dative">{0} కిలోగ్రాము</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} కిలోగ్రాము</unitPattern>
-				<unitPattern count="one" case="locative">{0} కిలోగ్రాము</unitPattern>
 				<unitPattern count="other">{0} కిలోగ్రాములు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} కిలోగ్రాములు</unitPattern>
-				<unitPattern count="other" case="dative">{0} కిలోగ్రాములు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} కిలోగ్రాములు</unitPattern>
-				<unitPattern count="other" case="locative">{0} కిలోగ్రాములు</unitPattern>
 				<perUnitPattern>కిలోగ్రాముకు {0}</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>గ్రాములు</displayName>
 				<unitPattern count="one">{0} గ్రాము</unitPattern>
-				<unitPattern count="one" case="accusative">{0} గ్రాము</unitPattern>
-				<unitPattern count="one" case="dative">{0} గ్రాము</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} గ్రాము</unitPattern>
-				<unitPattern count="one" case="locative">{0} గ్రాము</unitPattern>
 				<unitPattern count="other">{0} గ్రాములు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} గ్రాములు</unitPattern>
-				<unitPattern count="other" case="dative">{0} గ్రాములు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} గ్రాములు</unitPattern>
-				<unitPattern count="other" case="locative">{0} గ్రాములు</unitPattern>
 				<perUnitPattern>గ్రాముకు {0}</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -7864,15 +7536,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-carat">
 				<displayName>క్యారెట్లు</displayName>
 				<unitPattern count="one">{0} క్యారెట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} క్యారెట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} క్యారెట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} క్యారెట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} క్యారెట్</unitPattern>
 				<unitPattern count="other">{0} క్యారెట్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} క్యారెట్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} క్యారెట్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} క్యారెట్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} క్యారెట్లు</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>డాల్టన్‌లు</displayName>
@@ -7912,15 +7576,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-watt">
 				<displayName>వాట్లు</displayName>
 				<unitPattern count="one">{0} వాట్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} వాట్</unitPattern>
-				<unitPattern count="one" case="dative">{0} వాట్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} వాట్</unitPattern>
-				<unitPattern count="one" case="locative">{0} వాట్</unitPattern>
 				<unitPattern count="other">{0} వాట్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} వాట్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} వాట్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} వాట్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} వాట్‌లు</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>మిల్లీవాట్లు</displayName>
@@ -7950,15 +7606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-bar">
 				<displayName>బార్</displayName>
 				<unitPattern count="one">{0} బార్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} బార్</unitPattern>
-				<unitPattern count="one" case="dative">{0} బార్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} బార్</unitPattern>
-				<unitPattern count="one" case="locative">{0} బార్</unitPattern>
 				<unitPattern count="other">{0} బార్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} బార్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} బార్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} బార్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} బార్‌లు</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>మిల్లీబార్‌లు</displayName>
@@ -7968,28 +7616,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-atmosphere">
 				<displayName>వాతావరణాలు</displayName>
 				<unitPattern count="one">{0} వాతావరణం</unitPattern>
-				<unitPattern count="one" case="accusative">{0} వాతావరణం</unitPattern>
-				<unitPattern count="one" case="dative">{0} వాతావరణం</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} వాతావరణం</unitPattern>
-				<unitPattern count="one" case="locative">{0} వాతావరణం</unitPattern>
 				<unitPattern count="other">{0} వాతావరణాలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} వాతావరణాలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} వాతావరణాలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} వాతావరణాలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} వాతావరణాలు</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>పాస్కల్‌లు</displayName>
 				<unitPattern count="one">{0} పాస్కల్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} పాస్కల్</unitPattern>
-				<unitPattern count="one" case="dative">{0} పాస్కల్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} పాస్కల్</unitPattern>
-				<unitPattern count="one" case="locative">{0} పాస్కల్</unitPattern>
 				<unitPattern count="other">{0} పాస్కల్‌లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} పాస్కల్‌లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} పాస్కల్‌లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} పాస్కల్‌లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} పాస్కల్‌లు</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>హెక్టోపాస్కల్‌లు</displayName>
@@ -8029,28 +7661,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
 				<unitPattern count="one">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="dative">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} డిగ్రీ</unitPattern>
-				<unitPattern count="one" case="locative">{0} డిగ్రీ</unitPattern>
 				<unitPattern count="other">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="dative">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} డిగ్రీలు</unitPattern>
-				<unitPattern count="other" case="locative">{0} డిగ్రీలు</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>డిగ్రీల సెల్సియస్</displayName>
 				<unitPattern count="one">{0} డిగ్రీ సెల్సియస్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} డిగ్రీ సెల్సియస్</unitPattern>
-				<unitPattern count="one" case="dative">{0} డిగ్రీ సెల్సియస్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} డిగ్రీ సెల్సియస్</unitPattern>
-				<unitPattern count="one" case="locative">{0} డిగ్రీ సెల్సియస్</unitPattern>
 				<unitPattern count="other">{0} డిగ్రీల సెల్సియస్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} డిగ్రీల సెల్సియస్</unitPattern>
-				<unitPattern count="other" case="dative">{0} డిగ్రీల సెల్సియస్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} డిగ్రీల సెల్సియస్</unitPattern>
-				<unitPattern count="other" case="locative">{0} డిగ్రీల సెల్సియస్</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>డిగ్రీల ఫారెన్‌హీట్</displayName>
@@ -8060,15 +7676,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>కెల్విన్స్</displayName>
 				<unitPattern count="one">{0} కెల్విన్</unitPattern>
-				<unitPattern count="one" case="accusative">{0} కెల్విన్</unitPattern>
-				<unitPattern count="one" case="dative">{0} కెల్విన్</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} కెల్విన్</unitPattern>
-				<unitPattern count="one" case="locative">{0} కెల్విన్</unitPattern>
 				<unitPattern count="other">{0} కెల్విన్స్</unitPattern>
-				<unitPattern count="other" case="accusative">{0} కెల్విన్స్</unitPattern>
-				<unitPattern count="other" case="dative">{0} కెల్విన్స్</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} కెల్విన్స్</unitPattern>
-				<unitPattern count="other" case="locative">{0} కెల్విన్స్</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>పౌండ్-ఫీట్</displayName>
@@ -8130,15 +7738,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-liter">
 				<displayName>లీటర్లు</displayName>
 				<unitPattern count="one">{0} లీటరు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} లీటరు</unitPattern>
-				<unitPattern count="one" case="dative">{0} లీటరు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} లీటరు</unitPattern>
-				<unitPattern count="one" case="locative">{0} లీటరు</unitPattern>
 				<unitPattern count="other">{0} లీటర్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} లీటర్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} లీటర్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} లీటర్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} లీటర్లు</unitPattern>
 				<perUnitPattern>లీటరుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8159,28 +7759,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-pint-metric">
 				<displayName>మెట్రిక్ పింట్లు</displayName>
 				<unitPattern count="one">{0} మెట్రిక్ పింటు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} మెట్రిక్ పింటు</unitPattern>
-				<unitPattern count="one" case="dative">{0} మెట్రిక్ పింటు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} మెట్రిక్ పింటు</unitPattern>
-				<unitPattern count="one" case="locative">{0} మెట్రిక్ పింటు</unitPattern>
 				<unitPattern count="other">{0} మెట్రిక్ పింట్లు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} మెట్రిక్ పింట్లు</unitPattern>
-				<unitPattern count="other" case="dative">{0} మెట్రిక్ పింట్లు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} మెట్రిక్ పింట్లు</unitPattern>
-				<unitPattern count="other" case="locative">{0} మెట్రిక్ పింట్లు</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>మెట్రిక్ కప్పులు</displayName>
 				<unitPattern count="one">{0} మెట్రిక్ కప్పు</unitPattern>
-				<unitPattern count="one" case="accusative">{0} మెట్రిక్ కప్పు</unitPattern>
-				<unitPattern count="one" case="dative">{0} మెట్రిక్ కప్పు</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} మెట్రిక్ కప్పు</unitPattern>
-				<unitPattern count="one" case="locative">{0} మెట్రిక్ కప్పు</unitPattern>
 				<unitPattern count="other">{0} మెట్రిక్ కప్పులు</unitPattern>
-				<unitPattern count="other" case="accusative">{0} మెట్రిక్ కప్పులు</unitPattern>
-				<unitPattern count="other" case="dative">{0} మెట్రిక్ కప్పులు</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} మెట్రిక్ కప్పులు</unitPattern>
-				<unitPattern count="other" case="locative">{0} మెట్రిక్ కప్పులు</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ఎకరా-అడుగులు</displayName>

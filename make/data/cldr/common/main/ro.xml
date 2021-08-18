@@ -7823,7 +7823,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">{0} de zile</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Faceți virajul nr. {0} la dreapta.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Faceți virajul al {0}-lea la dreapta.</ordinalMinimalPairs>
-			<caseMinimalPairs case="genitive">... ale {0} ...</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">... ale (celor) {0} ...</caseMinimalPairs>
 			<caseMinimalPairs case="nominative">{0} este ...</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">O {0} costă 5 €.</genderMinimalPairs>
 			<genderMinimalPairs gender="masculine">Un {0} costă 5 €, doi costă 9 €.</genderMinimalPairs>
@@ -7982,7 +7982,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<displayName>revoluție</displayName>
 				<unitPattern count="one">{0} revoluție</unitPattern>
-				<unitPattern count="one" case="genitive">{0} revoluție</unitPattern>
+				<unitPattern count="one" case="genitive">{0} revoluții</unitPattern>
 				<unitPattern count="few">{0} revoluții</unitPattern>
 				<unitPattern count="few" case="genitive">{0} revoluții</unitPattern>
 				<unitPattern count="other">{0} de revoluții</unitPattern>
@@ -8022,7 +8022,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>secunde de arc</displayName>
 				<unitPattern count="one">{0} secundă de arc</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} secundă de arc</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} secunde de arc</unitPattern>
 				<unitPattern count="few">{0} secunde de arc</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} secunde de arc</unitPattern>
 				<unitPattern count="other">{0} de secunde de arc</unitPattern>
@@ -8128,7 +8128,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>părți pe milion</displayName>
 				<unitPattern count="one">{0} parte pe milion</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} parte pe milion</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} părți pe milion</unitPattern>
 				<unitPattern count="few">{0} părți pe milion</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} părți pe milion</unitPattern>
 				<unitPattern count="other">{0} de părți pe milion</unitPattern>
@@ -8306,7 +8306,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>luni</displayName>
 				<unitPattern count="one">{0} lună</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} lună</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} luni</unitPattern>
 				<unitPattern count="few">{0} luni</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} luni</unitPattern>
 				<unitPattern count="other">{0} de luni</unitPattern>
@@ -8317,7 +8317,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>săptămâni</displayName>
 				<unitPattern count="one">{0} săptămână</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} săptămână</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} săptămâni</unitPattern>
 				<unitPattern count="few">{0} săptămâni</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} săptămâni</unitPattern>
 				<unitPattern count="other">{0} de săptămâni</unitPattern>
@@ -8328,27 +8328,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>zile</displayName>
 				<unitPattern count="one">{0} zi</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} zi</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} zile</unitPattern>
 				<unitPattern count="few">{0} zile</unitPattern>
 				<unitPattern count="few" case="genitive">{0} zile</unitPattern>
 				<unitPattern count="other">{0} de zile</unitPattern>
 				<unitPattern count="other" case="genitive" draft="contributed">{0} de zile</unitPattern>
 				<perUnitPattern>{0} pe zi</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<gender>feminine</gender>
-				<unitPattern count="one">{0} zi</unitPattern>
-				<unitPattern count="one" case="genitive">{0} zi</unitPattern>
-				<unitPattern count="few">{0} zile</unitPattern>
-				<unitPattern count="few" case="genitive">{0} zile</unitPattern>
-				<unitPattern count="other">{0} zile</unitPattern>
-				<unitPattern count="other" case="genitive">{0} zile</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<gender draft="contributed">feminine</gender>
 				<displayName>ore</displayName>
 				<unitPattern count="one">{0} oră</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} oră</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} ore</unitPattern>
 				<unitPattern count="few">{0} ore</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} ore</unitPattern>
 				<unitPattern count="other">{0} de ore</unitPattern>
@@ -8370,7 +8361,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>secunde</displayName>
 				<unitPattern count="one">{0} secundă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} secundă</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} secunde</unitPattern>
 				<unitPattern count="few">{0} secunde</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} secunde</unitPattern>
 				<unitPattern count="other">{0} de secunde</unitPattern>
@@ -8441,7 +8432,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>calorii</displayName>
 				<unitPattern count="one">{0} calorie</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} calorie</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} calorii</unitPattern>
 				<unitPattern count="few">{0} calorii</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} calorii</unitPattern>
 				<unitPattern count="other">{0} de calorii</unitPattern>
@@ -8720,7 +8711,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>milă scandinavă</displayName>
 				<unitPattern count="one">{0} milă scandinavă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} milă scandinavă</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} mile scandinave</unitPattern>
 				<unitPattern count="few">{0} mile scandinave</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} mile scandinave</unitPattern>
 				<unitPattern count="other">{0} de mile scandinave</unitPattern>
@@ -8962,7 +8953,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>atmosfere</displayName>
 				<unitPattern count="one">{0} atmosferă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} atmosferă</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} atmosfere</unitPattern>
 				<unitPattern count="few">{0} atmosfere</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} atmosfere</unitPattern>
 				<unitPattern count="other">{0} de atmosfere</unitPattern>
@@ -9157,7 +9148,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>pinte metrice</displayName>
 				<unitPattern count="one">{0} pintă metrică</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} pintă metrică</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} pinte metrice</unitPattern>
 				<unitPattern count="few">{0} pinte metrice</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} pinte metrice</unitPattern>
 				<unitPattern count="other">{0} de pinte metrice</unitPattern>
@@ -9167,7 +9158,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">feminine</gender>
 				<displayName>căni metrice</displayName>
 				<unitPattern count="one">{0} cană metrică</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} cană metrică</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} căni metrice</unitPattern>
 				<unitPattern count="few">{0} căni metrice</unitPattern>
 				<unitPattern count="few" case="genitive" draft="contributed">{0} căni metrice</unitPattern>
 				<unitPattern count="other">{0} de căni metrice</unitPattern>

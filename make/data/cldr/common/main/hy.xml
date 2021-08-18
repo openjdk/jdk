@@ -6303,18 +6303,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} օր</unitPattern>
 				<perUnitPattern>օրական {0}</perUnitPattern>
 			</unit>
-			<unit type="duration-day-person">
-				<unitPattern count="one">{0} օր</unitPattern>
-				<unitPattern count="one" case="ablative">{0} օրից</unitPattern>
-				<unitPattern count="one" case="dative">{0} օրվան</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} օրով</unitPattern>
-				<unitPattern count="one" case="locative">{0} օրում</unitPattern>
-				<unitPattern count="other">{0} օր</unitPattern>
-				<unitPattern count="other" case="ablative">{0} օրից</unitPattern>
-				<unitPattern count="other" case="dative">{0} օրվան</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} օրով</unitPattern>
-				<unitPattern count="other" case="locative">{0} օրում</unitPattern>
-			</unit>
 			<unit type="duration-hour">
 				<displayName>ժամեր</displayName>
 				<unitPattern count="one">{0} ժամ</unitPattern>

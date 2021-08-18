@@ -48,7 +48,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="te">
       <grammaticalCase values="nominative oblique accusative dative locative instrumental"/>
-      <grammaticalCase scope="units" values="nominative accusative dative locative instrumental"/>
+      <grammaticalCase scope="units"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="ta">
       <grammaticalCase values="nominative genitive accusative dative locative instrumental ablative vocative"/>
@@ -89,15 +89,20 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
       <grammaticalCase values="nominative genitive dative accusative"/>
       <grammaticalGender values="masculine feminine neuter"/>
     </grammaticalFeatures>
-    <grammaticalFeatures targets="nominal" locales="hi pa ur">
+    <grammaticalFeatures targets="nominal" locales="hi pa">
       <grammaticalCase values="nominative oblique"/>
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ur">
+      <grammaticalCase values="nominative oblique"/>
+      <grammaticalCase scope="units"/>
       <grammaticalGender values="masculine feminine"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="ml">
       <grammaticalCase values="nominative genitive dative accusative instrumental locative comitative locativecopulative sociative"/>
       <grammaticalCase scope="units" values="nominative genitive dative accusative instrumental locative sociative"/>
       <grammaticalGender values="animate inanimate feminine neuter"/>
-      <grammaticalGender scope="units" values="inanimate feminine neuter"/>
+      <grammaticalGender scope="units" values="neuter"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="mr">
       <grammaticalCase values="nominative oblique accusative dative ergative locative ablative genitive"/>
@@ -107,12 +112,15 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="gu">
       <grammaticalCase values="nominative genitive accusative dative locative instrumental vocative"/>
+      <grammaticalCase  scope="units"/>
       <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalGender scope="units"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="kn">
       <grammaticalCase values="nominative genitive accusative dative locative instrumental vocative"/>
       <grammaticalCase scope="units" values="nominative genitive accusative dative locative vocative"/>
       <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalGender scope="units" values="neuter"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="he">
       <grammaticalGender values="masculine feminine"/>
@@ -132,11 +140,13 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="bn">
       <grammaticalCase values="nominative accusative genitive locative"/>
+      <grammaticalCase scope="units"/>
       <grammaticalDefiniteness values="definite indefinite"/>
       <!-- Gender is only used for expressing human activities/professions. -->
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="si">
       <grammaticalCase values="nominative genitive ablative accusative dative"/>
+      <grammaticalCase scope="units"/>
       <grammaticalGender values="masculine feminine neuter"/>
       <grammaticalGender scope="units"/>
       <grammaticalDefiniteness values="definite indefinite"/>

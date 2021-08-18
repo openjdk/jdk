@@ -417,7 +417,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 					</availableFormats>
@@ -1579,11 +1578,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kilowatt hours</displayName>
 				<unitPattern count="one">{0} kilowatt hour</unitPattern>
 				<unitPattern count="other">{0} kilowatt hours</unitPattern>
-			</unit>
-			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>kilowatt-hour per 100 kilometres</displayName>
-				<unitPattern count="one">{0} kilowatt-hour per 100 kilometres</unitPattern>
-				<unitPattern count="other">{0} kilowatt-hours per 100 kilometres</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometre</displayName>
