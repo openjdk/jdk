@@ -715,10 +715,9 @@ part of the avoidance of the C++ Standard Library in HotSpot code.
 * An anonymous lambda expression must not be directly invoked.
 * Bind expressions are forbidden.
 
-Single-use function objects can be defined locally within a function.  This
-is an alternative to having a function or function object class defined at
-class or namespace scope.  Instead, a function class definition is placed
-directly at the point of use.
+Single-use function objects can be defined locally within a function,
+directly at the point of use.  This is an alternative to having a function
+or function object class defined at class or namespace scope.
 
 This usage was somewhat limited by C++03, which does not permit such a class
 to be used as a template parameter.  That restriction was removed by C++11
