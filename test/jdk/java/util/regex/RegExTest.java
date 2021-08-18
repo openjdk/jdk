@@ -288,7 +288,7 @@ public class RegExTest {
         assertNotSame(mr, matcher, "Matcher toMatchResult is identical object");
 
         int resultStart1 = mr.start();
-        assertEquals(matcherStart1, resultStart1, "equal matchers have equal start indices");
+        assertEquals(matcherStart1, resultStart1, "equal matchers don't have equal start indices");
         matcher.find();
 
         int matcherStart2 = matcher.start();
@@ -3949,7 +3949,7 @@ public class RegExTest {
             String matcherSubstring = hws.substring(0, i) + ng + hws.substring(i);
 
             m = Pattern.compile("\\H").matcher(matcherSubstring);
-            assertTrue(m.find() || ng.equals(m.group()));
+            assertTrue(m.find() && ng.equals(m.group()));
             m = Pattern.compile("[\\H]").matcher(matcherSubstring);
             assertTrue(m.find() && ng.equals(m.group()));
         }
