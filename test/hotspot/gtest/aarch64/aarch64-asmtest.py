@@ -1522,7 +1522,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["stxp",   "__ stxp(r4, zr, zr, r5);",                           "stxp\tw4, xzr, xzr, [x5]"],
                         ["stxpw",  "__ stxpw(r6, zr, zr, sp);",                          "stxp\tw6, wzr, wzr, [sp]"],
                         ["dup",    "__ dup(v0, __ T16B, zr);",                           "dup\tv0.16b, wzr"],
-                        ["dups",   "__ dups(v0, __ T2S, v1);",                           "mov\ts0, v1.s[0]"],
+                        ["dups",   "__ dups(v0, __ T2S, v1);",                           "dup\ts0, v1.s[0]"],
                         ["mov",    "__ mov(v1, __ T1D, 0, zr);",                         "mov\tv1.d[0], xzr"],
                         ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
                         ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
@@ -1538,7 +1538,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         ["fcvtzv", "__ fcvtzv(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
                         # SVE instructions
-                        ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
+                        ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "cpy\tz0.s, p0/m, s1"],
                         ["inc",    "__ sve_inc(r0, __ S);",                              "incw\tx0"],
                         ["dec",    "__ sve_dec(r1, __ H);",                              "dech\tx1"],
                         ["lsl",    "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
@@ -1689,7 +1689,8 @@ while i < len(bytes):
      i += 4
      if i%16 == 0:
           print
-print "\n  };"
+print
+print "  };"
 print "// END  Generated code -- do not edit"
 
 infile.close()

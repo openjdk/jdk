@@ -2425,6 +2425,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     // Special cases
     switch (opcode) {
     case Op_VectorMaskCmp:
+    // We don't have VectorReinterpret with bit_size less than 64 support for
+    // now, even for byte type. To be refined with fully VectorCast support.
+    case Op_VectorReinterpret:
       if (vlen < 2 || bit_size < 64) {
         return false;
       }
@@ -2439,6 +2442,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_VectorLoadShuffle:
     case Op_VectorRearrange:
       if (vlen < 4) {
+        return false;
+      }
+      break;
+    case Op_VectorCastS2X:
+      if (vlen < 4 || bit_size < 64) {
         return false;
       }
       break;
