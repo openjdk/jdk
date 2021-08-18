@@ -53,7 +53,7 @@ public class CtrlSpace extends Frame implements KeyListener {
         test(robot);
         robot.waitForIdle();
         Thread.sleep(2000);
-        frame.setVisible(false); 
+        frame.setVisible(false);
         frame.dispose();
         if (!testPassed) {
             throw new RuntimeException("No KeyTyped event");
