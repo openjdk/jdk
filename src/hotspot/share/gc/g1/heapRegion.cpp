@@ -108,6 +108,14 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
+void HeapRegion::record_evac_failure_obj(oop obj) {
+  _evac_failure_objs.record(obj);
+}
+
+void HeapRegion::iterate_evac_failure_objs(ObjectClosure* closure) {
+  _evac_failure_objs.iterate(closure);
+}
+
 void HeapRegion::unlink_from_list() {
   set_next(NULL);
   set_prev(NULL);
@@ -248,7 +256,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _evac_failure_objs(hrm_index)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
