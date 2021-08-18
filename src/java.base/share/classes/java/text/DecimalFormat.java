@@ -2285,7 +2285,7 @@ public class DecimalFormat extends NumberFormat {
     private final boolean subparse(String text, ParsePosition parsePosition,
                                    String positivePrefix, String negativePrefix,
                                    DigitList digits, boolean isExponent,
-                                   boolean status[]) {
+                                   boolean[] status) {
         int position = parsePosition.index;
         int oldStart = parsePosition.index;
         boolean gotPositive, gotNegative;
@@ -2377,7 +2377,7 @@ public class DecimalFormat extends NumberFormat {
      */
     int subparseNumber(String text, int position,
                        DigitList digits, boolean checkExponent,
-                       boolean isExponent, boolean status[]) {
+                       boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
         if (!isExponent && text.regionMatches(position,symbols.getInfinity(),0,
