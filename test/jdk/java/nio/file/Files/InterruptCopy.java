@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,24 @@
  * @library ..
  */
 
-import java.nio.file.*;
-import java.io.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import com.sun.nio.file.ExtendedCopyOption;
 
 public class InterruptCopy {
 
     private static final long FILE_SIZE_TO_COPY = 512L * 1024L * 1024L;
-    private static final int DELAY_IN_MS = 500;
+    private static final int INTERRUPT_DELAY_IN_MS = 10;
+    private static final int CANCEL_DELAY_IN_MS = 500;
     private static final int DURATION_MAX_IN_MS = 5000;
 
     public static void main(String[] args) throws Exception {
@@ -76,13 +85,22 @@ public class InterruptCopy {
             Executors.newSingleThreadScheduledExecutor();
         try {
             // copy source to target in main thread, interrupting it after a delay
+            final CountDownLatch latch = new CountDownLatch(2);
             final Thread me = Thread.currentThread();
-            Future<?> wakeup = pool.schedule(new Runnable() {
+            Future<?> wakeup = pool.submit(new Runnable() {
                 public void run() {
+                    latch.countDown();
+                    try {
+                        latch.await();
+                        Thread.sleep(INTERRUPT_DELAY_IN_MS);
+                    } catch (InterruptedException ignored) {
+                    }
                     me.interrupt();
-                }}, DELAY_IN_MS, TimeUnit.MILLISECONDS);
+                }});
             System.out.println("Copying file...");
             try {
+                latch.countDown();
+                latch.await();
                 long start = System.currentTimeMillis();
                 Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE);
                 long duration = System.currentTimeMillis() - start;
@@ -109,7 +127,7 @@ public class InterruptCopy {
                     return null;
                 }
             });
-            Thread.sleep(DELAY_IN_MS);
+            Thread.sleep(CANCEL_DELAY_IN_MS);
             boolean cancelled = result.cancel(true);
             if (!cancelled)
                 result.get();
