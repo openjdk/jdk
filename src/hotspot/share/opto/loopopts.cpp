@@ -233,8 +233,13 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert( iff->is_If(), "" );
-  assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
+  assert(iff->is_If(), "must be");
+  assert(iff->Opcode() == Op_If ||
+         iff->Opcode() == Op_CountedLoopEnd ||
+         iff->Opcode() == Op_LongCountedLoopEnd ||
+         iff->Opcode() == Op_RangeCheck,
+        "Check this code when new subtype is added");
+
   int pop = prevdom->Opcode();
   assert( pop == Op_IfFalse || pop == Op_IfTrue, "" );
   if (flip) {

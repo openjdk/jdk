@@ -69,7 +69,7 @@ public class TestVMProcess {
             prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup);
             start();
         }
-        processSocketOutput(socket.getOutput());
+        processSocketOutput(socket);
         checkTestVMExitCode();
     }
 
@@ -163,23 +163,42 @@ public class TestVMProcess {
      * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
      * represent the IR encoding used for IR matching later.
      */
-    private void processSocketOutput(String output) {
-        if (TestFramework.TESTLIST || TestFramework.EXCLUDELIST) {
-            StringBuilder builder = new StringBuilder();
+    private void processSocketOutput(TestFrameworkSocket socket) {
+        String output = socket.getOutput();
+        if (socket.hasStdOut()) {
+            StringBuilder testListBuilder = new StringBuilder();
+            StringBuilder messagesBuilder = new StringBuilder();
+            StringBuilder nonStdOutBuilder = new StringBuilder();
             Scanner scanner = new Scanner(output);
-            System.out.println(System.lineSeparator() + "Run flag defined test list");
-            System.out.println("--------------------------");
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 if (line.startsWith(TestFrameworkSocket.STDOUT_PREFIX)) {
-                    line = "> " + line.substring(TestFrameworkSocket.STDOUT_PREFIX.length());
-                    System.out.println(line);
+                    // Exclude [STDOUT] from message.
+                    line = line.substring(TestFrameworkSocket.STDOUT_PREFIX.length());
+                    if (line.startsWith(TestFrameworkSocket.TESTLIST_TAG)) {
+                        // Exclude [TESTLIST] from message for better formatting.
+                        line = "> " + line.substring(TestFrameworkSocket.TESTLIST_TAG.length() + 1);
+                        testListBuilder.append(line).append(System.lineSeparator());
+                    } else {
+                        messagesBuilder.append(line).append(System.lineSeparator());
+                    }
                 } else {
-                    builder.append(line).append(System.lineSeparator());
+                    nonStdOutBuilder.append(line).append(System.lineSeparator());
                 }
             }
             System.out.println();
-            irEncoding = builder.toString();
+            if (!testListBuilder.isEmpty()) {
+                System.out.println("Run flag defined test list");
+                System.out.println("--------------------------");
+                System.out.println(testListBuilder.toString());
+                System.out.println();
+            }
+            if (!messagesBuilder.isEmpty()) {
+                System.out.println("Messages from Test VM");
+                System.out.println("---------------------");
+                System.out.println(messagesBuilder.toString());
+            }
+            irEncoding = nonStdOutBuilder.toString();
         } else {
             irEncoding = output;
         }
