@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+#include "gc/g1/g1EvacuationFailureObjsInHR.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -257,6 +258,8 @@ private:
   double _gc_efficiency;
 
   uint _node_index;
+
+  G1EvacuationFailureObjsInHR _evac_failure_objs;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -554,6 +557,11 @@ public:
 
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure();
+  // Records evac failure objs during evaucation, this will help speed up iteration
+  // of these objs later in *remove self forward* phase of post evacuation.
+  void record_evac_failure_obj(oop obj);
+  // Iterates evac failure objs which are recorded during evcauation.
+  void iterate_evac_failure_objs(ObjectClosure* closure);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for
