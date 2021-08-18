@@ -37,8 +37,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-// TODO: Check how good these oops should be after write barrier migration
-
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesProcess("Concurrent References Process");
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesEnqueue("Concurrent References Enqueue");
 
