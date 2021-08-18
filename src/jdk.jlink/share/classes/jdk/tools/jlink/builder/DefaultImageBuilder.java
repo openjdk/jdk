@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         private final Path home;
         private final List<String> args;
         private final Set<String> modules;
+        private Platform platform;
 
         DefaultExecutableImage(Path home, Set<String> modules) {
             Objects.requireNonNull(home);
@@ -95,6 +96,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             this.home = home;
             this.modules = Collections.unmodifiableSet(modules);
             this.args = createArgs(home);
+            this.platform = Platform.UNKNOWN;
         }
 
         private static List<String> createArgs(Path home) {
@@ -127,13 +129,29 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 throw new UncheckedIOException(ex);
             }
         }
+
+        @Override
+        public void setTargetPlatform(Platform p) {
+            platform = p;
+        }
+
+        @Override
+        public Platform getTargetPlatform() {
+            return platform;
+        }
+
+        @Override
+        public boolean is64Bit() {
+            return (platform.arch() == Platform.Architecture.x64 ||
+                    platform.arch() == Platform.Architecture.AARCH64);
+        }
     }
 
     private final Path root;
     private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
-    private Platform targetPlatform;
+    private Platform platform;
 
     /**
      * Default image builder constructor.
@@ -149,6 +167,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     @Override
+    public Platform getTargetPlatform() {
+        return platform;
+    }
+
+    @Override
     public void storeFiles(ResourcePool files) {
         try {
             String value = files.moduleView()
@@ -158,7 +181,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (value == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
-            this.targetPlatform = Platform.toPlatform(value);
+            this.platform = Platform.parseTargetPlatform(value);
 
             checkResourcePool(files);
 
@@ -474,7 +497,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return targetPlatform == Platform.WINDOWS;
+        return platform.os() == Platform.OperatingSystem.WINDOWS;
     }
 
     /**

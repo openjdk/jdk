@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,4 +61,25 @@ public interface ExecutableImage {
      * @param args Additional arguments
      */
     public void storeLaunchArgs(List<String> args);
+
+    /**
+     * Set the Platform of the image.
+     *
+     * @param p
+     */
+    public void setTargetPlatform(Platform p);
+
+    /**
+     * The Platform of the image.
+     *
+     * @return Platform
+     */
+    public Platform getTargetPlatform();
+
+    /**
+     * Checks if the image is 64-bit.
+     *
+     * @return boolean
+     */
+    public boolean is64Bit();
 }
