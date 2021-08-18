@@ -98,7 +98,6 @@ class LIR_Assembler: public CompilationResourceObj {
   Address as_Address_lo(LIR_Address* addr);
   Address as_Address_hi(LIR_Address* addr);
 
- private:
   // debug information
   void add_call_info(int pc_offset, CodeEmitInfo* cinfo);
   void add_debug_info_for_branch(CodeEmitInfo* info);
@@ -107,6 +106,7 @@ class LIR_Assembler: public CompilationResourceObj {
   ImplicitNullCheckStub* add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo);
   ImplicitNullCheckStub* add_debug_info_for_null_check_here(CodeEmitInfo* info);
 
+ private:
   void breakpoint();
   void push(LIR_Opr opr);
   void pop(LIR_Opr opr);

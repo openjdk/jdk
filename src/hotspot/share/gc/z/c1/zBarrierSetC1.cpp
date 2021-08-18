@@ -221,21 +221,24 @@ class LIR_OpZStoreBarrier : public LIR_Op {
  friend class LIR_OpVisitState;
 
 private:
-  LIR_Opr   _addr;
-  LIR_Opr   _new_zaddress;
-  LIR_Opr   _new_zpointer;
-  CodeStub* _stub;
+  LIR_Opr       _addr;
+  LIR_Opr       _new_zaddress;
+  LIR_Opr       _new_zpointer;
+  CodeStub*     _stub;
+  CodeEmitInfo* _info;
 
 public:
   LIR_OpZStoreBarrier(LIR_Opr addr,
                       LIR_Opr new_zaddress,
                       LIR_Opr new_zpointer,
-                      CodeStub* stub) :
+                      CodeStub* stub,
+                      CodeEmitInfo* info) :
     LIR_Op(lir_none, new_zpointer, NULL /* info */),
     _addr(addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
-    _stub(stub) {}
+    _stub(stub),
+    _info(info) {}
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_new_zaddress);
@@ -247,10 +250,17 @@ public:
 
     state->do_output(_new_zpointer);
     state->do_stub(_stub);
+
+    if (_info != NULL) {
+      state->do_info(_info);
+    }
   }
 
   virtual void emit_code(LIR_Assembler* ce) {
     const ZBarrierSetAssembler* bs_asm = (const ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+    if (_info != NULL) {
+      ce->add_debug_info_for_null_check_here(_info);
+    }
     bs_asm->generate_c1_store_barrier(ce,
                                       _addr->as_address_ptr(),
                                       _new_zaddress,
@@ -293,7 +303,8 @@ LIR_Opr ZBarrierSetC1::color(LIRAccess& access, LIR_Opr new_zaddress) const {
   __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
                                     new_zaddress,
                                     new_zpointer,
-                                    NULL /* stub */));
+                                    NULL /* stub */,
+                                    NULL /* info */));
 
   return new_zpointer;
 }
@@ -329,7 +340,9 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
   __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
                                     new_zaddress_reg,
                                     new_zpointer,
-                                    stub));
+                                    stub,
+                                    access.access_emit_info()));
+  access.access_emit_info() = NULL;
 
   return new_zpointer;
 }

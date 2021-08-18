@@ -771,9 +771,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
   Register rbase = addr->base()->as_pointer_register();
 
   if (stub != NULL) {
-    Label is_null_base;
-    __ cmpptr(rbase, 0); // TODO: implicit NULL checks
-    __ jcc(Assembler::equal, is_null_base);
     store_barrier_fast(ce->masm(),
                        ce->as_Address(addr),
                        rnew_zaddress,
@@ -782,7 +779,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                        stub->is_atomic(),
                        *stub->entry(),
                        *stub->continuation());
-    __ bind(is_null_base);
   } else {
     // Only color pointer - used by CAS
     assert(rnew_zpointer == rnew_zaddress, "not supported");
