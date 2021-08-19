@@ -471,9 +471,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
     {
-      const uint young_index = from_region->young_index_in_cset();
-      assert((from_region->is_young() && young_index >  0) ||
-             (!from_region->is_young() && young_index == 0), "invariant" );
+      const uint young_index = from_region->is_young() ? from_region->index_in_cset() : 0;
       _surviving_young_words[young_index] += word_sz;
     }
 

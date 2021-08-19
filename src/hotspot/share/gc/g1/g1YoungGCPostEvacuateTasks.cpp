@@ -463,10 +463,10 @@ class FreeCSetClosure : public HeapRegionClosure {
   FreeCSetStats*   _stats;
 
   void assert_tracks_surviving_words(HeapRegion* r) {
-    assert(r->young_index_in_cset() != 0 &&
-           (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
+    assert(r->index_in_cset() != 0 &&
+           (uint)r->index_in_cset() <= _g1h->collection_set()->young_region_length(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
-           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->young_region_length());
+           r->index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->young_region_length());
   }
 
   void handle_evacuated_region(HeapRegion* r) {
@@ -521,7 +521,7 @@ public:
 
     if (r->is_young()) {
       assert_tracks_surviving_words(r);
-      r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
+      r->record_surv_words_in_group(_surviving_young_words[r->index_in_cset()]);
     }
 
     if (_g1h->evacuation_failed(r->hrm_index())) {

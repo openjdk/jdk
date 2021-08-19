@@ -146,7 +146,7 @@ void G1CollectionSet::add_optional_region(HeapRegion* hr) {
 
   _g1h->register_optional_region_with_region_attr(hr);
 
-  hr->set_index_in_opt_cset(_num_optional_regions++);
+  hr->set_index_in_cset(_num_optional_regions++);
 }
 
 void G1CollectionSet::start_incremental_building() {
@@ -327,7 +327,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // We use UINT_MAX as "invalid" marker in verification.
   assert(_collection_set_cur_length < (UINT_MAX - 1),
          "Collection set is too large with " SIZE_FORMAT " entries", _collection_set_cur_length);
-  hr->set_young_index_in_cset((uint)_collection_set_cur_length + 1);
+  hr->set_index_in_cset((uint)_collection_set_cur_length + 1);
 
   _collection_set_regions[_collection_set_cur_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
@@ -545,7 +545,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
     // is correct as we still need it later.
     _g1h->clear_region_attr(r);
     _g1h->register_region_with_region_attr(r);
-    r->clear_index_in_opt_cset();
+    r->clear_index_in_cset();
   }
   free_optional_regions();
 
@@ -569,7 +569,7 @@ public:
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
-    const uint idx = r->young_index_in_cset();
+    const uint idx = r->index_in_cset();
 
     assert(idx > 0, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
     assert(idx <= _young_length, "Young cset index %u too large for region %u", idx, r->hrm_index());

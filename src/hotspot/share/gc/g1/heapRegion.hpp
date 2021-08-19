@@ -214,8 +214,9 @@ private:
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
-  // The index in a collection set: either the actual collection set for young regions or the
-  // optional regions array if this region is considered optional during a mixed collections.
+  // The index in a collection set: either the actual collection set for young
+  // regions or the optional regions array if an old region is considered
+  // optional during a mixed collections.
   uint _index_in_cset;
 
   // Fields used by the HeapRegionSetBase class and subclasses.
@@ -509,27 +510,18 @@ public:
   // objects during evac failure handling.
   void note_self_forwarding_removal_end(size_t marked_bytes);
 
-  uint index_in_opt_cset() const {
-    assert(has_index_in_opt_cset(), "Opt cset index not set.");
-    return _index_in_cset;
-  }
-
   bool has_index_in_opt_cset() const {
     return is_old() && _index_in_cset != InvalidCSetIndex;
   }
 
-  void set_index_in_opt_cset(uint index) {
-    assert(is_old(), "pre-condition");
-    set_index_in_cset(index);
-  }
-
-  void clear_index_in_opt_cset();
-
   void calc_gc_efficiency(void);
   double gc_efficiency() const { return _gc_efficiency;}
 
-  uint  young_index_in_cset() const {
-    return is_old() ? 0 : _index_in_cset;
+  // Returns the index in a collection set: either the actual collection set for
+  // young regions or the optional regions array if an old region is considered
+  // optional during a mixed collections.
+  uint index_in_cset() const {
+    return _index_in_cset;
   }
 
   void clear_index_in_cset() {
@@ -538,13 +530,6 @@ public:
 
   void set_index_in_cset(uint index) {
     _index_in_cset = index;
-  }
-
-  void set_young_index_in_cset(uint index) {
-    assert(index != UINT_MAX, "just checking");
-    assert(index != 0, "just checking");
-    assert(is_young(), "pre-condition");
-    set_index_in_cset(index);
   }
 
   int age_in_surv_rate_group() const;

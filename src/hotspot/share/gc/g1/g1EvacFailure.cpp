@@ -235,7 +235,9 @@ public:
     assert(hr->in_collection_set(), "bad CS");
 
     if (_g1h->evacuation_failed(hr->hrm_index())) {
-      hr->clear_index_in_opt_cset();
+      if (hr->is_old()) {
+        hr->clear_index_in_cset();
+      }
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
       bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
