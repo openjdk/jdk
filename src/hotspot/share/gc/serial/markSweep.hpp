@@ -199,12 +199,6 @@ private:
 
 public:
   PreservedMark(oop obj, markWord mark) : _obj(obj), _mark(mark) {}
-
-  void init(oop obj, markWord mark) {
-    _obj = obj;
-    _mark = mark;
-  }
-
   void adjust_pointer();
   void restore();
 };

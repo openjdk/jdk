@@ -160,7 +160,7 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   // sufficient space for the marks we need to preserve but if it isn't we fall
   // back to using Stacks to keep track of the overflow.
   if (_preserved_count < _preserved_count_max) {
-    _preserved_marks[_preserved_count++].init(obj, mark);
+    _preserved_marks[_preserved_count++] = PreservedMark(obj, mark);
   } else {
     _preserved_overflow_stack.push(PreservedMark(obj, mark));
   }
