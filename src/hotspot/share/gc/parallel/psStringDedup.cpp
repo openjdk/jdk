@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 
 bool psStringDedup::is_candidate_from_mark(oop java_string) {
   // Candidate if string is being evacuated from young to old but has not
   // reached the deduplication age threshold, i.e. has not previously been a
   // candidate during its life in the young generation.
-  return PSParallelCompact::space_id(cast_from_oop<HeapWord*>(java_string)) > PSParallelCompact::old_space_id &&
+  return PSScavenge::is_obj_in_young(java_string) &&
          StringDedup::is_below_threshold_age(java_string->age());
 }
