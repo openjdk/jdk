@@ -288,7 +288,7 @@ public class MapToPathTest {
     @AfterTest
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
-            //FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
     }
 
