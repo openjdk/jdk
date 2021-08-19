@@ -1171,7 +1171,7 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
 }
 
 void MacroAssembler::align(int modulus) {
-  align(modulus, offset());
+  align(modulus, (intptr_t)pc());
 }
 
 void MacroAssembler::align(int modulus, int target) {
