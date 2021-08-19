@@ -159,12 +159,6 @@ class markWord {
     return (!is_unlocked() || !has_no_hash());
   }
 
-  // Should this header (including its age bits) be preserved in the
-  // case of a promotion failure during scavenge?
-  bool must_be_preserved_for_promotion_failure(const oopDesc* obj) const {
-    return (!is_unlocked() || !has_no_hash());
-  }
-
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
   // They must get updated if markWord layout get changed.
