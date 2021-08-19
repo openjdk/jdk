@@ -107,7 +107,7 @@ public class InvalidateSession {
         if (testIterationCount == 3 && !Objects.equals(cacheSession, sslSocket.getSession())) {
             throw new RuntimeException("Same session should have resumed");
         }
-        
+
         cacheSession = sslSocket.getSession();
 
         System.out.println("Got session: " + sslSocket.getSession());
