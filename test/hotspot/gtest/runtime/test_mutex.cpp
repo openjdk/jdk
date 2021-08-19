@@ -129,7 +129,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_access_leaf,
-                   ".* Attempting to acquire lock mutex_rank_leaf/.. out of order with lock mutex_rank_access/1 "
+                   ".* Attempting to acquire lock mutex_rank_leaf/.* out of order with lock mutex_rank_access/1 "
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
