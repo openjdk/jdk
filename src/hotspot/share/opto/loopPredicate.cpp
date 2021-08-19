@@ -662,9 +662,12 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   if (offset && !invar.is_invariant(offset)) { // offset must be invariant
     return false;
   }
-  if (offset && phase->is_dominator(predicate_proj, phase->get_ctrl(offset))) {
-    // offset must be able to float before predicte projection node
-    return false;
+  if (offset && phase->has_ctrl(offset)) {
+    Node* offset_ctrl = phase->get_ctrl(offset);
+    if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
+        phase->is_dominator(predicate_proj, offset_ctrl)) {
+      return false;
+    }
   }
   return true;
 }
