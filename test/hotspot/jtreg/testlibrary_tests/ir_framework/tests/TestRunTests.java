@@ -34,7 +34,7 @@ import java.util.Arrays;
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
- * @library /test/lib /
+ * @library /test/lib /testlibrary_tests /
  * @run driver ir_framework.tests.TestRunTests
  */
 
@@ -44,7 +44,7 @@ public class TestRunTests {
         TestFramework.run();
         try {
             TestFramework.run(BadStandalone.class);
-            throw new RuntimeException("Should not reach");
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
             Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));

@@ -556,10 +556,7 @@ void G1ParScanThreadStateSet::flush() {
 
   for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
     G1ParScanThreadState* pss = _states[worker_id];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     G1GCPhaseTimes* p = _g1h->phase_times();
 
@@ -582,10 +579,7 @@ void G1ParScanThreadStateSet::flush() {
 void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
     _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_index, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);

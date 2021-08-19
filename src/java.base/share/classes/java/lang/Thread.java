@@ -1247,7 +1247,7 @@ public class Thread implements Runnable {
      *          if {@link java.lang.ThreadGroup#checkAccess} determines that
      *          the current thread cannot access its thread group
      */
-    public static int enumerate(Thread tarray[]) {
+    public static int enumerate(Thread[] tarray) {
         return currentThread().getThreadGroup().enumerate(tarray);
     }
 

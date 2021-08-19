@@ -89,7 +89,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   _survivor_region_length = survivor_cset_region_length;
 
   assert((size_t) young_region_length() == _collection_set_cur_length,
-         "Young region length %u should match collection set length " SIZE_FORMAT, young_region_length(), _collection_set_cur_length);
+         "Young region length %u should match collection set length %u", young_region_length(), _collection_set_cur_length);
 
   _old_region_length = 0;
   free_optional_regions();
@@ -130,8 +130,8 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
 
+  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
 
   _bytes_used_before += hr->used();
   _recorded_rs_length += hr->rem_set()->occupied();
@@ -153,7 +153,7 @@ void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
 #ifdef ASSERT
-  for (size_t i = 0; i < _collection_set_max_length; i++) {
+  for (uint i = 0; i < _collection_set_max_length; i++) {
     _inc_collection_set_stats[i].reset();
   }
 #endif
@@ -334,7 +334,6 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // update to the length field.
   OrderAccess::storestore();
   _collection_set_cur_length++;
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
 }
 
 void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
