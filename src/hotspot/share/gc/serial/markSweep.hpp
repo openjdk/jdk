@@ -113,7 +113,7 @@ class MarkSweep : AllStatic {
   static STWGCTimer*                     _gc_timer;
   static SerialOldTracer*                _gc_tracer;
 
-  static StringDedup::Requests _string_dedup_requests;
+  static StringDedup::Requests* _string_dedup_requests;
 
   // Non public closures
   static KeepAliveClosure keep_alive;

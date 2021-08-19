@@ -195,7 +195,7 @@ public:
 // Each marking thread should have it's own Requests object.  When marking
 // is completed the Requests object must be flushed (either explicitly or by
 // the destructor).
-class StringDedup::Requests {
+class StringDedup::Requests : public ResourceObj {
   StorageUse* _storage_for_requests;
   oop** _buffer;
   size_t _index;

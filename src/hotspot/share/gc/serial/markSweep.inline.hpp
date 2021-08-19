@@ -41,7 +41,7 @@ inline void MarkSweep::mark_object(oop obj) {
   if (StringDedup::is_enabled() &&
       java_lang_String::is_instance_inlined(obj) &&
       SerialStringDedup::is_candidate_from_mark(obj)) {
-    _string_dedup_requests.add(obj);
+    _string_dedup_requests->add(obj);
   }
 
   // some marks may contain information we need to preserve so we store them away
