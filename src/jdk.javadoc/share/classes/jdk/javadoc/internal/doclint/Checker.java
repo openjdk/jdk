@@ -184,9 +184,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
         } else {
             if (tree == null) {
-                if (!isSynthetic() && !isOverridingMethod)
+                if (isDefaultConstructor()) {
+                    if (isNormalClass(p.getParentPath())) {
+                        reportMissing("dc.default.constructor");
+                    }
+                } else if (!isOverridingMethod) {
                     reportMissing("dc.missing.comment");
+                }
                 return null;
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+                if (tree.getBlockTags().isEmpty()) {
+                    reportMissing("dc.empty.comment");
+                    return null;
+                } else {
+                    // Don't report an empty description if the comment contains @deprecated,
+                    // because javadoc will use the content of that tag in summary tables.
+                    if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                    }
+                }
             }
         }
 
@@ -1142,7 +1158,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
     }
 
-    private boolean isSynthetic() {
+    private boolean isDefaultConstructor() {
         switch (env.currElement.getKind()) {
             case CONSTRUCTOR:
                 // A synthetic default constructor has the same pos as the
@@ -1151,6 +1167,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
+    }
+
+    private boolean isNormalClass(TreePath p) {
+        return switch (p.getLeaf().getKind()) {
+            case ENUM, RECORD -> false;
+            case CLASS -> true;
+            default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
+        };
     }
 
     void markEnclosingTag(Flag flag) {

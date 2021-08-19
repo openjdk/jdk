@@ -278,14 +278,6 @@ void oopDesc::forward_to(oop p) {
   set_mark(m);
 }
 
-// Used by parallel scavengers
-bool oopDesc::cas_forward_to(oop p, markWord compare, atomic_memory_order order) {
-  verify_forwardee(p);
-  markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
-  return cas_set_mark(m, compare, order) == compare;
-}
-
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
@@ -396,10 +388,6 @@ bool oopDesc::mark_must_be_preserved() const {
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
   return m.must_be_preserved(this);
-}
-
-bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(this);
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

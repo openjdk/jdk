@@ -947,13 +947,14 @@ public class VisibleMemberTable {
     Map<ExecutableElement, SoftReference<ImplementedMethods>> implementMethodsFinders = new HashMap<>();
 
     private ImplementedMethods getImplementedMethodsFinder(ExecutableElement method) {
-        SoftReference<ImplementedMethods> imf = implementMethodsFinders.get(method);
-        // IMF does not exist or referent was gc'ed away ?
-        if (imf == null || imf.get() == null) {
-            imf = new SoftReference<>(new ImplementedMethods(method));
-            implementMethodsFinders.put(method, imf);
+        SoftReference<ImplementedMethods> ref = implementMethodsFinders.get(method);
+        ImplementedMethods imf = ref == null ? null : ref.get();
+        // imf does not exist or was gc'ed away?
+        if (imf == null) {
+            imf = new ImplementedMethods(method);
+            implementMethodsFinders.put(method, new SoftReference<>(imf));
         }
-        return imf.get();
+        return imf;
     }
 
     public List<ExecutableElement> getImplementedMethods(ExecutableElement method) {

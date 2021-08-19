@@ -58,10 +58,6 @@ ParCompactionManager::ParCompactionManager() {
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
 
-  marking_stack()->initialize();
-  _objarray_stack.initialize();
-  _region_stack.initialize();
-
   reset_bitmap_query_cache();
 }
 

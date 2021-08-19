@@ -196,9 +196,10 @@ public class CgroupSubsystemFactory {
             if (isCgroupsV2) {
                 action = (tokens -> setCgroupV2Path(infos, tokens));
             }
-            selfCgroupLines.map(line -> line.split(":"))
-                     .filter(tokens -> (tokens.length >= 3))
-                     .forEach(action);
+            // The limit value of 3 is because /proc/self/cgroup contains three
+            // colon-separated tokens per line. The last token, cgroup path, might
+            // contain a ':'.
+            selfCgroupLines.map(line -> line.split(":", 3)).forEach(action);
         }
 
         CgroupTypeResult result = new CgroupTypeResult(isCgroupsV2,

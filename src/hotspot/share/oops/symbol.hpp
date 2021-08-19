@@ -45,8 +45,8 @@
 // saved in persistent storage.  This does not include the pointer
 // in the SymbolTable bucket (the _literal field in HashtableEntry)
 // that points to the Symbol.  All other stores of a Symbol*
-// to a field of a persistent variable (e.g., the _name filed in
-// fieldDescriptor or _ptr in a CPSlot) is reference counted.
+// to a field of a persistent variable (e.g., the _name field in
+// fieldDescriptor or symbol in a constant pool) is reference counted.
 //
 // 1) The lookup of a "name" in the SymbolTable either creates a Symbol F for
 // "name" and returns a pointer to F or finds a pre-existing Symbol F for
