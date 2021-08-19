@@ -95,6 +95,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #endif
+#if INCLUDE_MANAGEMENT
+#include "services/finalizerTable.hpp"
+#endif
 
 
 #ifdef DTRACE_ENABLED
@@ -1405,8 +1408,9 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
   JavaValue result(T_VOID);
   JavaCallArguments args(h_i);
-  methodHandle mh (THREAD, Universe::finalizer_register_method());
+  methodHandle mh(THREAD, Universe::finalizer_register_method());
   JavaCalls::call(&result, mh, &args, CHECK_NULL);
+  MANAGEMENT_ONLY(FinalizerTable::on_register(h_i, THREAD);)
   return h_i();
 }
 

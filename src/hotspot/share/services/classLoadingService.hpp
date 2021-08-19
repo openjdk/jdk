@@ -53,56 +53,19 @@ private:
   static size_t compute_class_size(InstanceKlass* k);
 
 public:
-  static void init();
-
-  static bool get_verbose() { return log_is_enabled(Info, class, load); }
-  static bool set_verbose(bool verbose);
+  static void init() NOT_MANAGEMENT_RETURN;
+  static bool set_verbose(bool verbose) NOT_MANAGEMENT_RETURN_(false);
   static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
-
-  static jlong loaded_class_count() {
-    return _classes_loaded_count->get_value() + _shared_classes_loaded_count->get_value();
-  }
-  static jlong unloaded_class_count() {
-    return _classes_unloaded_count->get_value() + _shared_classes_unloaded_count->get_value();
-  }
-  static jlong loaded_class_bytes() {
-    if (UsePerfData) {
-      return _classbytes_loaded->get_value() + _shared_classbytes_loaded->get_value();
-    } else {
-      return -1;
-    }
-  }
-  static jlong unloaded_class_bytes() {
-    if (UsePerfData) {
-      return _classbytes_unloaded->get_value() + _shared_classbytes_unloaded->get_value();
-    } else {
-      return -1;
-    }
-  }
-
-  static jlong loaded_shared_class_count() {
-    return _shared_classes_loaded_count->get_value();
-  }
-  static jlong unloaded_shared_class_count() {
-    return _shared_classes_unloaded_count->get_value();
-  }
-  static jlong loaded_shared_class_bytes() {
-    if (UsePerfData) {
-      return _shared_classbytes_loaded->get_value();
-    } else {
-      return -1;
-    }
-  }
-  static jlong unloaded_shared_class_bytes() {
-    if (UsePerfData) {
-      return _shared_classbytes_unloaded->get_value();
-    } else {
-      return -1;
-    }
-  }
-  static jlong class_method_data_size() {
-    return (UsePerfData ? _class_methods_size->get_value() : -1);
-  }
+  static jlong loaded_class_count() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong unloaded_class_count() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong loaded_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong unloaded_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong loaded_shared_class_count() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong unloaded_shared_class_count() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong loaded_shared_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong unloaded_shared_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong class_method_data_size() NOT_MANAGEMENT_RETURN_(0L);
+  static bool get_verbose() { return log_is_enabled(Info, class, load); }
 
   static void notify_class_loaded(InstanceKlass* k, bool shared_class)
       NOT_MANAGEMENT_RETURN;

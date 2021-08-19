@@ -1084,6 +1084,8 @@
   <Event name="Finalizer" category="Java Application" label="Finalizer" thread="false" startTime="false" period="endChunk">
     <Field type="Class" name="overridingClass" label="Class Overriding Finalize" />
     <Field type="Symbol" name="codeSource" label="Code Source" description="The URL from where the class was loaded" />
+    <Field type="ulong" name="registrations" label="Registrations" description="Number of objects registered for finalization" />
+    <Field type="ulong" name="invocations" label="Invocations" description="Number of objects finalized by the GC" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

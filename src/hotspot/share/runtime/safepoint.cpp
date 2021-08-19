@@ -66,6 +66,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "services/finalizerTable.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -589,6 +590,13 @@ public:
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
       OopStorage::trigger_cleanup_if_needed();
+    }
+
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_FINALIZER_TABLE_REHASH)) {
+      if (FinalizerTable::needs_rehashing()) {
+        Tracer t("rehashing finalizer table");
+        FinalizerTable::rehash_table();
+      }
     }
 
     _subtasks.all_tasks_claimed();

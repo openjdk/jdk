@@ -109,6 +109,7 @@ static bool add_to_unloaded_klass_set(traceid klass_id, bool current_epoch) {
   return true;
 }
 
+#if INCLUDE_MANAGEMENT
 static void send_finalizer_event(const Klass* k) {
   if (!k->is_instance_klass()) {
     return;
@@ -118,11 +119,12 @@ static void send_finalizer_event(const Klass* k) {
     JfrFinalizerEvent::send_unload_event(ik);
   }
 }
+#endif
 
 bool JfrKlassUnloading::on_unload(const Klass* k) {
   assert(k != NULL, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  send_finalizer_event(k);
+  MANAGEMENT_ONLY(send_finalizer_event(k);)
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }

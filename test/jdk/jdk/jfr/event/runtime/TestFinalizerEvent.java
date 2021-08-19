@@ -50,6 +50,11 @@ public final class TestFinalizerEvent {
     // Declare unloadableClassLoader as "public static"
     // to prevent the compiler to optimize away all unread writes
     public static TestClassLoader unloadableClassLoader;
+    public static Class<?> unloadOverrideClass;
+
+    public static Object overridingInstance1;
+    public static Object overridingInstance2;
+    public static Object overridingInstance3;
 
     public static void main(String[] args) throws Throwable {
         Recording recording1 = new Recording();
@@ -58,19 +63,24 @@ public final class TestFinalizerEvent {
         recording2.enable(EVENT_PATH);
         TestClassLoader cl = new TestClassLoader();
         unloadableClassLoader = new TestClassLoader();
-
         recording1.start();
-        cl.loadClass(TEST_CLASS_NAME);
+        Class<?> overrideClass = cl.loadClass(TEST_CLASS_NAME);
+        overridingInstance1 = overrideClass.newInstance();
         recording2.start(); // rotation writes an event for TEST_CLASS_NAME into recording1
-        unloadableClassLoader.loadClass(TEST_CLASS_UNLOAD_NAME);
+        overridingInstance2 = overrideClass.newInstance();
+        unloadOverrideClass = unloadableClassLoader.loadClass(TEST_CLASS_UNLOAD_NAME);
+        unloadOverrideClass = null;
         unloadableClassLoader = null;
         System.gc(); // the unloading of class TEST_CLASS_UNLOAD_NAME is intercepted and an event is written into both recording1 and recording2
 
         recording2.stop(); // rotation writes an event for TEST_CLASS_NAME into both recording1 and recording2
+        overridingInstance3 = overrideClass.newInstance();
         recording1.stop(); // rotation writes an event for TEST_CLASS_NAME into recording1 which now has 4 events reflecting this test case (3 chunks + 1 unload)
 
         try {
+            System.out.println("Verifying recording2");
             verify(recording2);
+            System.out.println("Verifying recording1");
             verify(recording1);
         }
         finally {
@@ -99,15 +109,12 @@ public final class TestFinalizerEvent {
                   break;
               }
           }
-          if (foundTestClassName && foundTestClassUnloadName) {
-              break;
-          }
         }
         Asserts.assertTrue(foundTestClassName, "The class: " + TEST_CLASS_NAME + " overriding finalize() is not found");
         Asserts.assertTrue(foundTestClassUnloadName, "The class: " + TEST_CLASS_UNLOAD_NAME + " overriding finalize() is not found");
     }
 
-    static class TestClassOverridingFinalize {
+    static public class TestClassOverridingFinalize {
         public boolean finalized = false;
 
         @Override
@@ -116,7 +123,7 @@ public final class TestFinalizerEvent {
         }
     }
 
-    static class TestClassUnloadOverridingFinalize {
+    static public class TestClassUnloadOverridingFinalize {
         public boolean finalized = false;
 
         @Override

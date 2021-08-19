@@ -85,6 +85,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_MANAGEMENT
+#include "services/finalizerTable.hpp"
+#endif
 
 ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
@@ -1600,7 +1603,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     if (unloading_occurred) {
       MutexLocker ml2(is_concurrent ? Module_lock : NULL);
       JFR_ONLY(Jfr::on_unloading_classes();)
-
+      MANAGEMENT_ONLY(FinalizerTable::purge_unloaded();)
       MutexLocker ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
       constraints()->purge_loader_constraints();

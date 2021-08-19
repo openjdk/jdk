@@ -646,5 +646,9 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 }
 
 TRACE_REQUEST_FUNC(Finalizer) {
+#if INCLUDE_MANAGEMENT
   JfrFinalizerEvent::generate_events();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event Finalizer. The required jvm feature 'management' is missing.");
+#endif
 }

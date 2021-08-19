@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,20 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
-#define SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
+#include "jmm.h"
+#include "jvm.h"
 
-#include "memory/allocation.hpp"
+#include "java_lang_ref_Finalizer.h"
 
-class InstanceKlass;
+static const JmmInterface* jmm_interface = NULL;
 
-class JfrFinalizerEvent : AllStatic {
- public:
-  static void send_unload_event(const InstanceKlass* ik) NOT_MANAGEMENT_RETURN;
-  static void generate_events() NOT_MANAGEMENT_RETURN;
-};
+JNIEXPORT void JNICALL
+Java_java_lang_ref_Finalizer_initIDs(JNIEnv* env, jclass cls) {
+  jmm_interface = (JmmInterface*)JVM_GetManagement(JMM_VERSION);
+}
 
-#endif // SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
+JNIEXPORT void JNICALL
+Java_java_lang_ref_Finalizer_reportComplete(JNIEnv* env, jclass cls, jobject finalizee) {
+  if (jmm_interface != NULL) {
+    jmm_interface->ReportFinalizationComplete(env, finalizee);
+  }
+}
+
+
