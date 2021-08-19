@@ -1221,7 +1221,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Assumes that the input array will not be modified (the returned
      * BigInteger will reference the input array if feasible).
      */
-    private static BigInteger valueOf(int val[]) {
+    private static BigInteger valueOf(int[] val) {
         return (val[0] > 0 ? new BigInteger(val, 1) : new BigInteger(val));
     }
 
@@ -4412,7 +4412,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
-    private static int[] stripLeadingZeroInts(int val[]) {
+    private static int[] stripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
@@ -4426,7 +4426,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the input array stripped of any leading zero bytes.
      * Since the source is trusted the copying may be skipped.
      */
-    private static int[] trustedStripLeadingZeroInts(int val[]) {
+    private static int[] trustedStripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
@@ -4439,7 +4439,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
-    private static int[] stripLeadingZeroBytes(byte a[], int off, int len) {
+    private static int[] stripLeadingZeroBytes(byte[] a, int off, int len) {
         int indexBound = off + len;
         int keep;
 
@@ -4465,7 +4465,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero bytes) unsigned whose value is -a.
      */
-    private static int[] makePositive(byte a[], int off, int len) {
+    private static int[] makePositive(byte[] a, int off, int len) {
         int keep, k;
         int indexBound = off + len;
 
@@ -4513,7 +4513,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero ints) unsigned whose value is -a.
      */
-    private static int[] makePositive(int a[]) {
+    private static int[] makePositive(int[] a) {
         int keep, j;
 
         // Find first non-sign (0xffffffff) int of input

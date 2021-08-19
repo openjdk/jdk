@@ -23,7 +23,7 @@
 # questions.
 #
 
-DOCLINT += -Xdoclint:all/protected,-reference \
+DOCLINT += -Xdoclint:all/protected,-reference,-missing \
     '-Xdoclint/package:java.*,javax.*'
 COPY += .gif .png .wav .txt .xml .css .pf
 CLEAN += iio-plugin.properties cursors.properties

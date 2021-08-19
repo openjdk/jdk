@@ -34,6 +34,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Map;
@@ -483,28 +485,36 @@ public final class NativeLibraries {
             new ConcurrentHashMap<>();
 
     private static void acquireNativeLibraryLock(String libraryName) {
-        nativeLibraryLockMap.compute(libraryName, (name, currentLock) -> {
-            if (currentLock == null) {
-                currentLock = new CountedLock();
+        nativeLibraryLockMap.compute(libraryName,
+            new BiFunction<>() {
+                public CountedLock apply(String name, CountedLock currentLock) {
+                    if (currentLock == null) {
+                        currentLock = new CountedLock();
+                    }
+                    // safe as compute BiFunction<> is executed atomically
+                    currentLock.increment();
+                    return currentLock;
+                }
             }
-            // safe as compute lambda is executed atomically
-            currentLock.increment();
-            return currentLock;
-        }).lock();
+        ).lock();
     }
 
     private static void releaseNativeLibraryLock(String libraryName) {
-        CountedLock lock = nativeLibraryLockMap.computeIfPresent(libraryName, (name, currentLock) -> {
-            if (currentLock.getCounter() == 1) {
-                // unlock and release the object if no other threads are queued
-                currentLock.unlock();
-                // remove the element
-                return null;
-            } else {
-                currentLock.decrement();
-                return currentLock;
+        CountedLock lock = nativeLibraryLockMap.computeIfPresent(libraryName,
+            new BiFunction<>() {
+                public CountedLock apply(String name, CountedLock currentLock) {
+                    if (currentLock.getCounter() == 1) {
+                        // unlock and release the object if no other threads are queued
+                        currentLock.unlock();
+                        // remove the element
+                        return null;
+                    } else {
+                        currentLock.decrement();
+                        return currentLock;
+                    }
+                }
             }
-        });
+        );
         if (lock != null) {
             lock.unlock();
         }
@@ -521,7 +531,11 @@ public final class NativeLibraries {
         private static Deque<NativeLibraryImpl> current() {
             return nativeLibraryThreadContext.computeIfAbsent(
                     Thread.currentThread(),
-                    t -> new ArrayDeque<>(8));
+                    new Function<>() {
+                        public Deque<NativeLibraryImpl> apply(Thread t) {
+                            return new ArrayDeque<>(8);
+                        }
+                    });
         }
 
         private static NativeLibraryImpl peek() {

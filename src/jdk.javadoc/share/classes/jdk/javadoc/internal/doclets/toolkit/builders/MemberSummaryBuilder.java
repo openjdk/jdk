@@ -270,9 +270,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                                     new DocFinder.Input(utils, member));
                     if (inheritedDoc.holder != null
                             && !utils.getFirstSentenceTrees(inheritedDoc.holder).isEmpty()) {
-                        // let the comment helper know of the overridden element
-                        CommentHelper ch = utils.getCommentHelper(member);
-                        ch.setOverrideElement(inheritedDoc.holder);
                         firstSentenceTags = utils.getFirstSentenceTrees(inheritedDoc.holder);
                     }
                 }
@@ -486,7 +483,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                                         VariableElement field,
                                         ExecutableElement getter,
                                         ExecutableElement setter) {
-            if (field == null || builder.utils.getDocCommentTree(field) == null) {
+            if (field == null || !builder.utils.hasDocCommentTree(field)) {
                 addToPropertiesMap(propertyMethod, propertyMethod);
                 addToPropertiesMap(getter, propertyMethod);
                 addToPropertiesMap(setter, propertyMethod);

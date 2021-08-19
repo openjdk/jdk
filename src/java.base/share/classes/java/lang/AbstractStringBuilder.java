@@ -353,7 +353,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (isLatin1()) {
             return (char)(value[index] & 0xff);
         }
-        return StringUTF16.charAt(value, index);
+        return StringUTF16.getChar(value, index);
     }
 
     /**

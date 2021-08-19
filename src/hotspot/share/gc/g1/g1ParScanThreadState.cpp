@@ -94,11 +94,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  // The dest for Young is used when the objects are aged enough to
-  // need to be moved to the next space.
-  _dest[G1HeapRegionAttr::Young] = G1HeapRegionAttr::Old;
-  _dest[G1HeapRegionAttr::Old]   = G1HeapRegionAttr::Old;
-
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_num_optional_regions];
@@ -356,6 +351,8 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
 }
 
 G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age) {
+  assert(region_attr.is_young() || region_attr.is_old(), "must be either Young or Old");
+
   if (region_attr.is_young()) {
     age = !m.has_displaced_mark_helper() ? m.age()
                                          : m.displaced_mark_helper().age();
@@ -363,7 +360,8 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
       return region_attr;
     }
   }
-  return dest(region_attr);
+  // young-to-old (promotion) or old-to-old; destination is old in both cases.
+  return G1HeapRegionAttr::Old;
 }
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
@@ -560,10 +558,7 @@ void G1ParScanThreadStateSet::flush() {
 
   for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
     G1ParScanThreadState* pss = _states[worker_id];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     G1GCPhaseTimes* p = _g1h->phase_times();
 
@@ -586,10 +581,7 @@ void G1ParScanThreadStateSet::flush() {
 void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
     _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_index, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);

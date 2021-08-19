@@ -190,7 +190,6 @@ PSPromotionManager::PSPromotionManager() {
   _old_lab.set_start_array(old_gen()->start_array());
 
   uint queue_size;
-  claimed_stack_depth()->initialize();
   queue_size = claimed_stack_depth()->max_elems();
 
   _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
@@ -352,7 +351,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->cas_forward_to(obj, obj_mark)) {
+  if (obj->forward_to_atomic(obj, obj_mark) == NULL) {
     // We won any races, we "own" this object.
     assert(obj == obj->forwardee(), "Sanity");
 
