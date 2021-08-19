@@ -163,7 +163,7 @@ bool ConnectionGraph::compute_escape() {
       }
     }
     // Collect some interesting nodes for futher use.
-    switch(n->Opcode()) {
+    switch (n->Opcode()) {
       case Op_MergeMem:
         // Collect all MergeMem nodes to add memory slices for
         // scalar replaceable objects in split_unique_types().
@@ -694,16 +694,14 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_LoadPLocked: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
-      assert(_igvn->type(n)->make_ptr() != NULL,
-             "constrain must match when firstly add to cg");
+      assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(MemNode::Address), NULL);
       break;
     }
     case Op_Phi: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
-      assert(n->as_Phi()->type()->make_ptr() != NULL,
-             "constrain must match when firstly add to cg");
+      assert(n->as_Phi()->type()->make_ptr() != NULL, "Unexpected node type");
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in == NULL) {
@@ -722,15 +720,14 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_Proj: {
       // we are only interested in the oop result projection from a call
       assert(n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
-             n->in(0)->as_Call()->returns_pointer(),
-             "constrain must match when firstly add to cg");
+             n->in(0)->as_Call()->returns_pointer(), "Unexpected node type");
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), NULL);
       break;
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
       assert(n->req() > TypeFunc::Parms && _igvn->type(n->in(TypeFunc::Parms))->isa_oopptr(),
-             "constrain must match when firstly add to cg");
+             "Unexpected node type");
       // Treat Return value as LocalVar with GlobalEscape escape state.
       add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(TypeFunc::Parms), NULL);
       break;
@@ -739,8 +736,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_CompareAndExchangeN:
     case Op_GetAndSetP:
     case Op_GetAndSetN:{
-      assert(_igvn->type(n)->make_ptr() != NULL,
-             "constrain must match when firstly add to cg");
+      assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(MemNode::Address), NULL);
       // fall-through
     }
@@ -873,8 +869,8 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
     return true;
   }
 #ifdef ASSERT
-    n->dump(1);
-    assert(false, "not unsafe");
+  n->dump(1);
+  assert(false, "not unsafe");
 #endif
   return false;
 }
