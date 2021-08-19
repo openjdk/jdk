@@ -147,8 +147,8 @@ class G1CollectionSet {
   // concurrent readers. This means we are good with using storestore and loadload
   // barriers on the writer and reader respectively only.
   uint* _collection_set_regions;
-  volatile size_t _collection_set_cur_length;
-  size_t _collection_set_max_length;
+  volatile uint _collection_set_cur_length;
+  uint _collection_set_max_length;
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional regions.
