@@ -95,40 +95,26 @@ dnl         $1 $2
 REINTERPRET(D, 8)
 REINTERPRET(X, 16)
 dnl
-
-instruct reinterpretD2X(vecX dst, vecD src)
+define(`REINTERPRET_DX', `
+instruct reinterpret$1`'2$2`'(vec$2 dst, vec$1 src)
 %{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 16 &&
-            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 8);
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $3 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $4);
   match(Set dst (VectorReinterpret src));
   ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src\t# D2X" %}
+  format %{ " # reinterpret $dst,$src\t# $1 to $2" %}
   ins_encode %{
-    // The upper 64 bits of 'src' are expected to have been initialized
-    // to zero.
+    // The higher 64-bits of the "dst" register must be cleared to zero.
     __ orr(as_FloatRegister($dst$$reg), __ T8B,
            as_FloatRegister($src$$reg),
            as_FloatRegister($src$$reg));
   %}
   ins_pipe(vlogical64);
-%}
-
-instruct reinterpretX2D(vecD dst, vecX src)
-%{
-  predicate(n->bottom_type()->is_vect()->length_in_bytes() == 8 &&
-            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == 16);
-  match(Set dst (VectorReinterpret src));
-  ins_cost(INSN_COST);
-  format %{ " # reinterpret $dst,$src\t# X2D" %}
-  ins_encode %{
-    // Resize the vector from 128-bits to 64-bits. The higher 64-bits of
-    // the "dst" register must be cleared to zero.
-    __ orr(as_FloatRegister($dst$$reg), __ T8B,
-           as_FloatRegister($src$$reg),
-           as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
+%}')dnl
+dnl            $1 $2 $3  $4
+REINTERPRET_DX(D, X, 16, 8)
+REINTERPRET_DX(X, D, 8,  16)
+dnl
 
 instruct reinterpretS2X(vecX dst, vecD src)
 %{
