@@ -538,14 +538,6 @@ final class ClientHello {
                 if (!session.getProtocolVersion().useTLS13PlusSpec()) {
                     sessionId = session.getSessionId();
                 }
-                if (!maxProtocolVersion.equals(sessionVersion)) {
-                    maxProtocolVersion = sessionVersion;
-
-                    // Update protocol version number in underlying socket and
-                    // handshake output stream, so that the output records
-                    // (at the record layer) have the correct version
-                    chc.setVersion(sessionVersion);
-                }
 
                 // If no new session is allowed, force use of the previous
                 // session ciphersuite, and add the renegotiation SCSV if
@@ -650,10 +642,6 @@ final class ClientHello {
 
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ClientHello handshake message", chm);
-            }
-
-            if (session != null) {
-                chc.handshakeSession = session;
             }
 
             // Output the handshake message.

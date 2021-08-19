@@ -75,22 +75,19 @@ public class InvalidateSession {
     }
 
     /**
-     * 4 test iterations
+     * 3 test iterations
      * 1) Server configured with TLSv1, client with TLSv1, v1.1, v1.2
      * - Handshake should succeed
      * - Session "A" established
      * 2) 2nd iteration, server configured with TLSv1.2 only
-     * - Session resumption should fail (Attempted to resume with TLSv1)
+     * - Connection should succeed but with a new session due to TLS protocol version change
      * - Session "A" should be invalidated
+     * - Session "B" is created
      * 3) 3rd iteration, same server/client config
-     * - Session "A" should now be invalidated and no longer attempted
-     * - Handshake should succeed
-     * = Session "B" established
-     * 4) 4th iteration, same server/client config
-     * - Session "B" should resume without issue
+     * - Session "B" should continue to be in use
      */
     private void clientTest() throws Exception {
-        for (int i = 1; i <= 4; i++) {
+        for (int i = 1; i <= 3; i++) {
             clientConnect(i);
             Thread.sleep(1000);
         }
@@ -102,28 +99,16 @@ public class InvalidateSession {
         SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket) ssf.createSocket("localhost", server.port);
         sslSocket.setEnabledProtocols(CLIENT_VERSIONS);
+        sslSocket.startHandshake();
 
-        try {
-            sslSocket.startHandshake();
-        } catch (Exception e) {
-
-            if (testIterationCount != 2) {
-                // only the 2nd handshake should fail (in which case we continue)
-                throw new RuntimeException("Unexpected exception", e);
-            }
-            return;
+        if (testIterationCount == 2 && Objects.equals(cacheSession, sslSocket.getSession())) {
+            throw new RuntimeException("Same session should not have resumed");
         }
-        if (testIterationCount == 1) {
-            // capture the session ID
-            cacheSession = sslSocket.getSession();
-        } else {
-            // should be on 3rd or 4th iteration
-            // new session ID should be in use (check in 4th iteration)
-            if (Objects.equals(cacheSession, sslSocket.getSession()) && testIterationCount != 4) {
-                throw new RuntimeException("Same session should not be resumed");
-            }
-            cacheSession = sslSocket.getSession();
+        if (testIterationCount == 3 && !Objects.equals(cacheSession, sslSocket.getSession())) {
+            throw new RuntimeException("Same session should have resumed");
         }
+        
+        cacheSession = sslSocket.getSession();
 
         System.out.println("Got session: " + sslSocket.getSession());
         try (
