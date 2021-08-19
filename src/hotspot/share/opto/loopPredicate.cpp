@@ -664,6 +664,10 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   }
   if (offset && phase->has_ctrl(offset)) {
     Node* offset_ctrl = phase->get_ctrl(offset);
+    // If the control of offset is loop predication promoted by previous pass,
+    // then it will lead to cyclic dependency.
+    // Previously promoted loop predication is in the same loop of predication
+    // point.
     if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
         phase->is_dominator(predicate_proj, offset_ctrl)) {
       return false;

@@ -35,7 +35,7 @@ public class TestLoopPredicateDep {
     public static void getPermutations(byte[] inputArray, byte[][] outputArray) {
         int[] indexes = new int[]{0, 2};
 
-        for (int a = 0; a < (int)(a + 16); a++) {
+        for (int a = 0; a < a + 16; a++) {
             int oneIdx = indexes[0]++;
             for (int b = a + 1; b < inputArray.length; b++) {
                 int twoIdx = indexes[1]++;
