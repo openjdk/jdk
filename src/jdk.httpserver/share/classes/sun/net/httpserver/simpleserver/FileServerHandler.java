@@ -155,40 +155,59 @@ public final class FileServerHandler implements HttpHandler {
         return !exchange.getRequestURI().getPath().endsWith("/");
     }
 
+    private static String contextPath(HttpExchange exchange) {
+        String context = exchange.getHttpContext().getPath();
+        if (!context.startsWith("/")) {
+            throw new IllegalArgumentException("Context path invalid: " + context);
+        }
+        return context;
+    }
+
+    private static String requestPath(HttpExchange exchange) {
+        String request = exchange.getRequestURI().getPath();
+        if (!request.startsWith("/")) {
+            throw new IllegalArgumentException("Request path invalid: " + request);
+        }
+        return request;
+    }
+
+    // Checks that the request does not escape context.
+    private static void checkRequestWithinContext(String requestPath,
+                                                  String contextPath) {
+        if (!requestPath.startsWith(contextPath)) {
+            throw new IllegalArgumentException("Request not in context: " + contextPath);
+        }
+    }
+
+    // Checks that path is, or is within, the root.
+    private static Path checkPathWithinRoot(Path path, Path root) {
+        if (!path.startsWith(root)) {
+            throw new IllegalArgumentException("Request not in root");
+        }
+        return path;
+    }
+
+    // Returns the request URI path relative to the context.
+    private static String relativeRequestPath(HttpExchange exchange) {
+        String context = contextPath(exchange);
+        String request = requestPath(exchange);
+        checkRequestWithinContext(request, context);
+        return request.substring(context.length());
+    }
+
     private Path mapToPath(HttpExchange exchange, Path root) {
         try {
-            String context = exchange.getHttpContext().getPath();
-            String request = exchange.getRequestURI().getPath();
-
-            if (!context.startsWith("/")) {
-                throw new IllegalArgumentException("Context path invalid: " + context);
-            }
-            if (!request.startsWith("/")) {
-                throw new IllegalArgumentException("Request path invalid: " + request);
-            }
-
-            // request must not escape context
-            if (!request.startsWith(context)) {
-                throw new IllegalArgumentException("Request not in context: " + context);
-            }
-
-            String uriPath = request.substring(context.length());
-            String[] components = uriPath.split("/");
-
-            // resolve
             assert root.isAbsolute() && Files.isDirectory(root);  // checked during creation
+            String uriPath = relativeRequestPath(exchange);
+            String[] pathSegment = uriPath.split("/");
+
+            // resolve each individual path segment against the root
             Path path = root;
-            for (var c : components) {
-                path = path.resolve(c);
+            for (var segment : pathSegment) {
+                path = path.resolve(segment);
             }
             path = path.normalize();
-
-            // path must not escape root
-            if (path.startsWith(root)) {
-                return path;
-            } else  {
-                throw new IllegalArgumentException("Request not in root");
-            }
+            return checkPathWithinRoot(path, root);
         } catch (Exception e) {
             logger.log(System.Logger.Level.TRACE,
                     "FileServerHandler: request URI path resolution failed", e);

@@ -42,10 +42,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import com.sun.net.httpserver.Filter;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpHandlers;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
@@ -54,6 +58,7 @@ import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.testng.Assert.assertEquals;
@@ -64,6 +69,7 @@ public class MapToPathTest {
     static final Path TEST_DIR = CWD.resolve("MapToPathTest").normalize();
 
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+    static final Filter OUTPUT_FILTER = SimpleFileServer.createOutputFilter(out, OutputLevel.VERBOSE);
 
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
@@ -110,12 +116,12 @@ public class MapToPathTest {
 
     @Test
     public void test() throws Exception {
+        var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, OUTPUT_FILTER);
             ss.start();
             try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
                 var req1 = HttpRequest.newBuilder(uri(ss, "/")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
@@ -132,13 +138,13 @@ public class MapToPathTest {
         }
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", h, OUTPUT_FILTER);
             ss.start();
             try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
                 var req1 = HttpRequest.newBuilder(uri(ss, "/browse/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "testdir");
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(7L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("file.txt")));
@@ -151,15 +157,15 @@ public class MapToPathTest {
             }
         }
         {
+            // Test "/foo/" context (with trailing slash)
             var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", h, OUTPUT_FILTER);
             ss.start();
             try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-
                 var req1 = HttpRequest.newBuilder(uri(ss, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "foo");
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
@@ -180,15 +186,15 @@ public class MapToPathTest {
             }
         }
         {
+            // Test "/foo" context (without trailing slash)
             var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", h, OUTPUT_FILTER);
             ss.start();
             try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-
                 var req1 = HttpRequest.newBuilder(uri(ss, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "foo");
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
@@ -199,25 +205,27 @@ public class MapToPathTest {
                 assertEquals(res2.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
                 assertEquals(res2.headers().firstValue("content-length").get(), Long.toString(145L));
                 assertEquals(res2.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foobar")));
+
+                var req3 = HttpRequest.newBuilder(uri(ss, "/file.txt")).build();
+                var res3 = client.send(req3, BodyHandlers.ofString());
+                assertEquals(res3.statusCode(), 404);
             } finally {
                 ss.stop(0);
             }
         }
         {
             var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE));
+            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, OUTPUT_FILTER);
             ss.start();
             try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-
                 var req1 = HttpRequest.newBuilder(uri(ss, "/foo/bar/baz/c:://")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                System.out.println(res1.body());
+                out.println(res1.body());
                 assertEquals(res1.statusCode(), 404);  // not found
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/foo/bar/\\..\\../")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                System.out.println(res2.body());
+                out.println(res2.body());
                 assertEquals(res2.statusCode(), 404);  // not found
             } finally {
                 ss.stop(0);
@@ -225,10 +233,62 @@ public class MapToPathTest {
         }
     }
 
+    // Tests with a mixture of in-memory and file handlers.
+    @Test
+    public void multipleContexts() throws Exception {
+        var rootHandler = HttpHandlers.of(200, Headers.of(), "root response body");
+        var fooHandler = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
+        var foobarHandler = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foobar"));
+        var barHandler = HttpHandlers.of(200, Headers.of(), "bar response body");
+
+        var server = HttpServer.create(LOOPBACK_ADDR, 0);
+        server.createContext("/", rootHandler);
+        server.createContext("/foo/", fooHandler);
+        server.createContext("/bar/", barHandler);
+        server.createContext("/foobar/", foobarHandler);
+        server.start();
+        var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+        try {
+            for (String uriPath : List.of("/", "/blah", "/xyz/t/z", "/txt") ) {
+                out.println("uri.Path=" + uriPath);
+                var req1 = HttpRequest.newBuilder(uri(server, uriPath)).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "root response body");
+            }
+            {
+                var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "foo");
+
+                var req2 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/file.txt")).build();
+                var res2 = client.send(req2, BodyHandlers.ofString());
+                assertEquals(res2.statusCode(), 200);
+                assertEquals(res2.body(), "foo/bar/baz");
+            }
+            {
+                var req1 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "foobar");
+            }
+            for (String uriPath : List.of("/bar/", "/bar/t", "/bar/t/z", "/bar/index.html") ) {
+                out.println("uri.Path=" + uriPath);
+                var req1 = HttpRequest.newBuilder(uri(server, uriPath)).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                assertEquals(res1.statusCode(), 200);
+                assertEquals(res1.body(), "bar response body");
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+
     @AfterTest
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
-            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+            //FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
     }
 
