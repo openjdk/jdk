@@ -58,7 +58,6 @@ public class TestIsAccessible {
         if (trees.isAccessible(s, name)) {
             for (Element member : ct.getElements().getAllMembers(name)) {
                 if (!trees.isAccessible(s, member, (DeclaredType) name.asType())) {
-                    trees.isAccessible(s, member, (DeclaredType) name.asType());
                     throw new IllegalStateException("Inaccessible Name member: " + member);
                 }
             }
