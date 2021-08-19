@@ -213,6 +213,9 @@ bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
 void*    oopDesc::field_addr(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
 
+template<typename T>
+T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+
 template <class T>
 T*       oopDesc::obj_field_addr(int offset) const { return (T*) field_addr(offset); }
 
@@ -225,30 +228,30 @@ inline oop  oopDesc::obj_field(int offset) const                    { return Hea
 
 inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
 
-inline jbyte oopDesc::byte_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::byte_field_put(int offset, jbyte value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jbyte oopDesc::byte_field(int offset) const                  { return *field_addr<jbyte>(offset);  }
+inline void  oopDesc::byte_field_put(int offset, jbyte value)       { *field_addr<jbyte>(offset) = value; }
 
-inline jchar oopDesc::char_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::char_field_put(int offset, jchar value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jchar oopDesc::char_field(int offset) const                  { return *field_addr<jchar>(offset);  }
+inline void  oopDesc::char_field_put(int offset, jchar value)       { *field_addr<jchar>(offset) = value; }
 
-inline jboolean oopDesc::bool_field(int offset) const               { return HeapAccess<>::load_at(as_oop(), offset); }
-inline void     oopDesc::bool_field_put(int offset, jboolean value) { HeapAccess<>::store_at(as_oop(), offset, jboolean(value & 1)); }
-inline jboolean oopDesc::bool_field_volatile(int offset) const      { return HeapAccess<MO_SEQ_CST>::load_at(as_oop(), offset); }
-inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { HeapAccess<MO_SEQ_CST>::store_at(as_oop(), offset, jboolean(value & 1)); }
-inline jshort oopDesc::short_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void   oopDesc::short_field_put(int offset, jshort value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jboolean oopDesc::bool_field(int offset) const               { return *field_addr<jboolean>(offset); }
+inline void     oopDesc::bool_field_put(int offset, jboolean value) { *field_addr<jboolean>(offset) = jboolean(value & 1); }
+inline jboolean oopDesc::bool_field_volatile(int offset) const      { return Atomic::load_acquire(field_addr<jboolean>(offset)); }
+inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { Atomic::release_store_fence(field_addr<jboolean>(offset), jboolean(value & 1)); }
+inline jshort oopDesc::short_field(int offset) const                { return *field_addr<jshort>(offset);   }
+inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_addr<jshort>(offset) = value;  }
 
-inline jint oopDesc::int_field(int offset) const                    { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void oopDesc::int_field_put(int offset, jint value)          { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
+inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
 
-inline jlong oopDesc::long_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void  oopDesc::long_field_put(int offset, jlong value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
+inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }
 
-inline jfloat oopDesc::float_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void   oopDesc::float_field_put(int offset, jfloat value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jfloat oopDesc::float_field(int offset) const                { return *field_addr<jfloat>(offset);   }
+inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_addr<jfloat>(offset) = value;  }
 
-inline jdouble oopDesc::double_field(int offset) const              { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline void    oopDesc::double_field_put(int offset, jdouble value) { HeapAccess<>::store_at(as_oop(), offset, value); }
+inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
+inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
 
 bool oopDesc::is_locked() const {
   return mark().is_locked();
