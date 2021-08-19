@@ -195,7 +195,10 @@ public class MapToPathTest {
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 404);  // handler corrects context to "/foo/"
+                assertEquals(res2.statusCode(), 200);
+                assertEquals(res2.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+                assertEquals(res2.headers().firstValue("content-length").get(), Long.toString(145L));
+                assertEquals(res2.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foobar")));
             } finally {
                 ss.stop(0);
             }

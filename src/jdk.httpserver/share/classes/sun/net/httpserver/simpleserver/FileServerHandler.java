@@ -167,9 +167,6 @@ public final class FileServerHandler implements HttpHandler {
                 throw new IllegalArgumentException("Request path invalid: " + request);
             }
 
-            // correct context path
-            if (!context.endsWith("/")) { context += "/"; }
-
             // request must not escape context
             if (!request.startsWith(context)) {
                 throw new IllegalArgumentException("Request not in context: " + context);
