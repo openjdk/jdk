@@ -1113,8 +1113,9 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
+  GCIdMark gc_id;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
 
   collector.prepare_collection();
   collector.collect();
@@ -3042,10 +3043,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
   bool concurrent_operation_is_full_mark = false;
 
-  // Verification may use the gang workers, so they must be set up before.
-  // Individual parallel phases may override this.
-  set_young_collection_default_active_worker_threads();
-
   {
     // Do timing/tracing/statistics/pre- and post-logging/verification work not
     // directly related to the collection. They should not be accounted for in
@@ -3055,6 +3052,9 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // determining collector state.
     G1YoungGCTraceTime tm(gc_cause());
 
+    // Create the heap printer before internal pause timing to have
+    // heap information printed as last part of detailed GC log.
+    G1HeapPrinterMark hpm(this);
     // Young GC internal pause timing
     G1YoungGCNotifyPauseMark npm;
     // JFR
@@ -3064,7 +3064,9 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
 
-    G1HeapPrinterMark hpm(this);
+    // Verification may use the gang workers, so they must be set up before.
+    // Individual parallel phases may override this.
+    set_young_collection_default_active_worker_threads();
 
     // Wait for root region scan here to make sure that it is done before any
     // use of the STW work gang to maximize cpu use (i.e. all cores are available

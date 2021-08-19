@@ -51,7 +51,6 @@ class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
   bool                    _explicit_gc;
   G1CollectedHeap*        _g1h;
-  GCIdMark                _gc_id;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
   G1FullGCTracer          _tracer;
