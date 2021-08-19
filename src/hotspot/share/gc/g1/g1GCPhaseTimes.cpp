@@ -154,7 +154,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 void G1GCPhaseTimes::reset() {
   _cur_collection_initial_evac_time_ms = 0.0;
   _cur_optional_evac_time_ms = 0.0;
-  _cur_collection_code_root_fixup_time_ms = 0.0;
+  _cur_collection_nmethod_list_cleanup_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
@@ -448,7 +448,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 }
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
-  const double sum_ms = _cur_collection_code_root_fixup_time_ms +
+  const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
@@ -461,7 +461,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
-  debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
+  debug_time("NMethod List Cleanup", _cur_collection_nmethod_list_cleanup_time_ms);
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);

@@ -585,6 +585,15 @@ public class FileChannelImpl
         if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
 
+        if (target == this) {
+            long posThis = position();
+            if (posThis - count + 1 <= position &&
+                position - count + 1 <= posThis &&
+                !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
+            }
+        }
+
         // Trusted target: Use a mapped buffer
         long remaining = count;
         while (remaining > 0L) {
@@ -677,7 +686,7 @@ public class FileChannelImpl
             return 0;
 
         if ((sz - position) < count)
-            count = (int)(sz - position);
+            count = sz - position;
 
         // Attempt a direct transfer, if the kernel supports it, limiting
         // the number of bytes according to which platform
@@ -703,6 +712,14 @@ public class FileChannelImpl
         synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
+
+            if (src == this) {
+                if (position() - max + 1 <= pos &&
+                    pos - max + 1 <= position() &&
+                    !nd.canTransferToFromOverlappedMap()) {
+                    return IOStatus.UNSUPPORTED_CASE;
+                }
+            }
 
             long remaining = max;
             long p = pos;
@@ -779,9 +796,12 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         if (position > size())
             return 0;
-        if (src instanceof FileChannelImpl)
-           return transferFromFileChannel((FileChannelImpl)src,
-                                          position, count);
+
+        if (src instanceof FileChannelImpl fci) {
+            long n = transferFromFileChannel(fci, position, count);
+            if (n >= 0)
+                return n;
+        }
 
         return transferFromArbitraryChannel(src, position, count);
     }

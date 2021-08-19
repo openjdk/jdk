@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,9 +185,13 @@ public class AddLauncherTest {
             cmd.ignoreDefaultRuntime(true); // because of --add-modules
         }
 
+        final String expectedMod = JavaAppDesc.parse(modularAppDesc.toString())
+                .setBundleFileName(null)
+                .setSrcJavaPath(null)
+                .toString();
+
         new AdditionalLauncher("ModularAppLauncher")
-        .addRawProperties(Map.entry("module", JavaAppDesc.parse(
-                modularAppDesc.toString()).setBundleFileName(null).toString()))
+        .addRawProperties(Map.entry("module", expectedMod))
         .addRawProperties(Map.entry("main-jar", ""))
         .applyTo(cmd);
 
@@ -208,8 +212,6 @@ public class AddLauncherTest {
         String moduleValue = cfg.getValue("Application", "app.mainmodule");
         String mainClass = null;
         String classpath = null;
-        String expectedMod = JavaAppDesc.parse(
-                modularAppDesc.toString()).setBundleFileName(null).toString();
         TKit.assertEquals(expectedMod, moduleValue,
                 String.format("Check value of app.mainmodule=[%s]" +
                 "in ModularAppLauncher cfg file is as expected", expectedMod));

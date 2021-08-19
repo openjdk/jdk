@@ -51,18 +51,19 @@ public interface Request {
     String getRequestMethod();
 
     /**
-     * Returns an immutable {@link Headers} containing the HTTP headers that were
-     * included with this request. The keys in this {@code Headers} will be the header
-     * names, while the values will be a {@link java.util.List} of
+     * Returns an immutable {@link Headers} containing the HTTP headers that
+     * were included with this request.
+     *
+     * <p> The keys in this {@code Headers} are the header names, while the
+     * values are a {@link java.util.List} of
      * {@linkplain java.lang.String Strings} containing each value that was
-     * included (either for a header that was listed several times, or one that
-     * accepts a comma-delimited list of values on a single line). In either of
-     * these cases, the values for the header name will be presented in the
-     * order that they were included in the request.
+     * included in the request, in the order they were included. Header fields
+     * appearing multiple times are represented as multiple string values.
      *
      * <p> The keys in {@code Headers} are case-insensitive.
      *
-     * @return a read-only {@code Headers} which can be used to access request headers
+     * @return a read-only {@code Headers} which can be used to access request
+     *         headers.
      */
     Headers getRequestHeaders();
 
