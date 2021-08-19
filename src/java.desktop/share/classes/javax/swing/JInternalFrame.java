@@ -1309,16 +1309,18 @@ public class JInternalFrame extends JComponent implements
      * <code>JInternalFrame</code>.
      *
      * @param d the <code>JDesktopIcon</code> to display on the desktop
+     * @throws NullPointerException if the {@code d} is {@code null}
      * @see #getDesktopIcon
      */
     @BeanProperty(description
             = "The icon shown when this internal frame is minimized.")
     public void setDesktopIcon(JDesktopIcon d) {
-        if (d != null) {
-            JDesktopIcon oldValue = getDesktopIcon();
-            desktopIcon = d;
-            firePropertyChange("desktopIcon", oldValue, d);
+        if (d == null) {
+            throw new NullPointerException("JDesktopIcon is null");
         }
+        JDesktopIcon oldValue = getDesktopIcon();
+        desktopIcon = d;
+        firePropertyChange("desktopIcon", oldValue, d);
     }
 
     /**
