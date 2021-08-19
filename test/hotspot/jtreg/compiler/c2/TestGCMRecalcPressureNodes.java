@@ -28,7 +28,7 @@
  * @summary crash in PhaseCFG::global_code_motion
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm TestGCMRecalcPressureNodes
+ * @run main TestGCMRecalcPressureNodes
  */
 
 public class TestGCMRecalcPressureNodes {
@@ -45,7 +45,7 @@ public class TestGCMRecalcPressureNodes {
     }
     public static void main(String[] args) {
         TestGCMRecalcPressureNodes instance = new TestGCMRecalcPressureNodes();
-        for (int i = 0; i < 7800; i++) {
+        for (int i = 0; i < 780000; i++) {
             instance.foo();
         }
     }
