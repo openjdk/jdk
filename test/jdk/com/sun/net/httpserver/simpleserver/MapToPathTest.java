@@ -132,6 +132,18 @@ public class MapToPathTest {
                 var req2 = HttpRequest.newBuilder(uri(ss, "/../")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // cannot escape root
+
+                var req3 = HttpRequest.newBuilder(uri(ss, "/foo/bar/baz/c:://")).build();
+                var res3 = client.send(req3, BodyHandlers.ofString());
+                assertEquals(res3.statusCode(), 404);  // not found
+
+                var req4 = HttpRequest.newBuilder(uri(ss, "/foo/bar/\\..\\../")).build();
+                var res4 = client.send(req4, BodyHandlers.ofString());
+                assertEquals(res4.statusCode(), 404);  // not found
+
+                var req5 = HttpRequest.newBuilder(uri(ss, "/foo")).build();
+                var res5 = client.send(req5, BodyHandlers.ofString());
+                assertEquals(res5.statusCode(), 301);  // redirect
             } finally {
                 ss.stop(0);
             }
@@ -181,6 +193,10 @@ public class MapToPathTest {
                 var req4 = HttpRequest.newBuilder(uri(ss, "/foo/../..")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // cannot escape root
+
+                var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
+                var res5 = client.send(req5, BodyHandlers.ofString());
+                assertEquals(res5.statusCode(), 301);  // redirect
             } finally {
                 ss.stop(0);
             }
@@ -201,32 +217,19 @@ public class MapToPathTest {
 
                 var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 200);
-                assertEquals(res2.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-                assertEquals(res2.headers().firstValue("content-length").get(), Long.toString(145L));
-                assertEquals(res2.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foobar")));
+                assertEquals(res2.statusCode(), 404);  // handler prevents mapping to /foo/bar
 
-                var req3 = HttpRequest.newBuilder(uri(ss, "/file.txt")).build();
+                var req3 = HttpRequest.newBuilder(uri(ss, "/foobar/file.txt")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
-                assertEquals(res3.statusCode(), 404);
-            } finally {
-                ss.stop(0);
-            }
-        }
-        {
-            var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, OUTPUT_FILTER);
-            ss.start();
-            try {
-                var req1 = HttpRequest.newBuilder(uri(ss, "/foo/bar/baz/c:://")).build();
-                var res1 = client.send(req1, BodyHandlers.ofString());
-                out.println(res1.body());
-                assertEquals(res1.statusCode(), 404);  // not found
+                assertEquals(res3.statusCode(), 404);  // handler prevents mapping to /foo/bar/file.txt
 
-                var req2 = HttpRequest.newBuilder(uri(ss, "/foo/bar/\\..\\../")).build();
-                var res2 = client.send(req2, BodyHandlers.ofString());
-                out.println(res2.body());
-                assertEquals(res2.statusCode(), 404);  // not found
+                var req4 = HttpRequest.newBuilder(uri(ss, "/file.txt")).build();
+                var res4 = client.send(req4, BodyHandlers.ofString());
+                assertEquals(res4.statusCode(), 404);
+
+                var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
+                var res5 = client.send(req5, BodyHandlers.ofString());
+                assertEquals(res5.statusCode(), 301);  // redirect
             } finally {
                 ss.stop(0);
             }
@@ -288,7 +291,7 @@ public class MapToPathTest {
     @AfterTest
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
-            //FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
     }
 

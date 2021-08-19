@@ -174,7 +174,12 @@ public final class FileServerHandler implements HttpHandler {
     // Checks that the request does not escape context.
     private static void checkRequestWithinContext(String requestPath,
                                                   String contextPath) {
-        if (!requestPath.startsWith(contextPath)) {
+        if (requestPath.equals(contextPath)) {
+            return;  // context path requested, e.g. context /foo, request /foo
+        }
+        String contextPathWithTrailingSlash = contextPath.endsWith("/")
+                ? contextPath : contextPath + "/";
+        if (!requestPath.startsWith(contextPathWithTrailingSlash)) {
             throw new IllegalArgumentException("Request not in context: " + contextPath);
         }
     }
