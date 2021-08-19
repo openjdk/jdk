@@ -326,9 +326,10 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   // We use UINT_MAX as "invalid" marker in verification.
   assert(_collection_set_cur_length < (UINT_MAX - 1),
-         "Collection set is too large with " SIZE_FORMAT " entries", _collection_set_cur_length);
-  hr->set_index_in_cset((uint)_collection_set_cur_length + 1);
+         "Collection set is too large with %u entries", _collection_set_cur_length);
+  hr->set_index_in_cset(_collection_set_cur_length + 1);
 
+  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set larger than maximum allowed.");
   _collection_set_regions[_collection_set_cur_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the length field.
