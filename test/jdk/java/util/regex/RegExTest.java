@@ -40,6 +40,7 @@
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
+ * @author Mike McCloskey
  * @run testng RegExTest
  * @key randomness
  */
@@ -118,7 +119,7 @@ public class RegExTest {
 
     private static void check(String p, String s, boolean expected) {
         Matcher matcher = Pattern.compile(p).matcher(s);
-        assertSame(matcher.find(), expected);
+        assertEquals(matcher.find(), expected);
     }
 
     private static void check(String p, char c, boolean expected) {
@@ -203,11 +204,8 @@ public class RegExTest {
         return sb.toString();
     }
 
-    // Regular expression test// Most of the tests are in a file
-    //        processFile("TestCases.txt");
-    //        //processFile("PerlCases.txt");
-    //        processFile("BMPTestCases.txt");
-    //        processFile("SupplementaryTestCases.txt");s
+    // Regular expression tests
+    //Following three tests execute from a file.
     @Test
     public static void processTestCases() throws IOException {
         processFile("TestCases.txt");
