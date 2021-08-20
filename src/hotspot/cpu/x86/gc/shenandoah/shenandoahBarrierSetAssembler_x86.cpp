@@ -121,6 +121,30 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   if (is_reference_type(type)) {
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+      bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
+      bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
+
+      // We need to squirrel away the original element count because the
+      // array copy assembly will destroy the value and we need it for the
+      // card marking barrier.
+#ifdef _LP64
+      if (!checkcast) {
+        if (!obj_int) {
+          // Save count for barrier
+          __ movptr(r11, count);
+        } else if (disjoint) {
+          // Save dst in r11 in the disjoint case
+          __ movq(r11, dst);
+        }
+      }
+#else
+if (disjoint) {
+        __ mov(rdx, dst);          // save 'to'
+      }
+#endif
+    }
 
     if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahIUBarrier || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
@@ -187,16 +211,11 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
   bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
   bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
   bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
-#ifdef _LP64
-  Register tmp = rscratch1;
-#else
   Register tmp = rax;
-#endif
 
 if (is_reference_type(type)) {
 #ifdef _LP64
-#if COMPILER2_OR_JVMCI
-    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32 && !checkcast) {
+    if (!checkcast) {
       if (!obj_int) {
         // Save count for barrier
         count = r11;
@@ -204,8 +223,9 @@ if (is_reference_type(type)) {
         // Use the saved dst in the disjoint case
         dst = r11;
       }
+    } else {
+      tmp = rscratch1;
     }
-#  endif
 #else
     if (disjoint) {
       __ mov(dst, rdx); // restore 'to'
