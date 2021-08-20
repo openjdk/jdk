@@ -169,8 +169,7 @@ void GenMarkSweep::deallocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->release_scratch();
 
-  _preserved_mark_stack.clear(true);
-  _preserved_oop_stack.clear(true);
+  _preserved_overflow_stack.clear(true);
   _marking_stack.clear();
   _objarray_stack.clear(true);
 }

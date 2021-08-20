@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test IR matcher with different default IR node regexes. Use -DPrintIREncoding.
  *          Normally, the framework should be called with driver.
- * @library /test/lib /
+ * @library /test/lib /testlibrary_tests /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=240 -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
@@ -224,7 +224,7 @@ public class TestIRMatching {
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
-            shouldNotReach();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             try {
                 boolean failed = false;
@@ -321,7 +321,7 @@ public class TestIRMatching {
     private static void runCheck(String[] args , Constraint... constraints) {
         try {
             new TestFramework(constraints[0].getKlass()).addFlags(args).start(); // All constraints have the same class.
-            shouldNotReach();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
         } catch (Exception e) {
@@ -332,7 +332,7 @@ public class TestIRMatching {
     private static void runCheck(Constraint... constraints) {
         try {
             TestFramework.run(constraints[0].getKlass()); // All constraints have the same class.
-            shouldNotReach();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
         } catch (Exception e) {
@@ -357,7 +357,7 @@ public class TestIRMatching {
     private static void runFailOnTestsArgs(Constraint constraint, String... args) {
         try {
             new TestFramework(constraint.getKlass()).addFlags(args).start(); // All constraints have the same class.
-            shouldNotReach();
+            Utils.shouldHaveThrownException();
         } catch (IRViolationException e) {
             try {
                 constraint.checkConstraint(e);
@@ -367,10 +367,6 @@ public class TestIRMatching {
         } catch (Exception e) {
             addException(e);
         }
-    }
-
-    public static void shouldNotReach() {
-        throw new ShouldNotReachException("Framework did not fail but it should have!");
     }
 
     public static void findIrIds(String output, String method, int... numbers) {
@@ -1410,12 +1406,6 @@ class MyClassEmptySub extends MyClassEmpty {}
 class MyClassSub extends MyClass {
     int iFld;
     static int iFldStatic;
-}
-
-class ShouldNotReachException extends RuntimeException {
-    ShouldNotReachException(String s) {
-        super(s);
-    }
 }
 
 

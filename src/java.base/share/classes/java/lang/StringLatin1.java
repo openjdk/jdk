@@ -79,11 +79,11 @@ final class StringLatin1 {
         return ret;
     }
 
-    public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
+    public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         inflate(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
-    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte dst[], int dstBegin) {
+    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 

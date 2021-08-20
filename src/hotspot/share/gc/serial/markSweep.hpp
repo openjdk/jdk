@@ -101,8 +101,7 @@ class MarkSweep : AllStatic {
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
 
   // Space for storing/restoring mark word
-  static Stack<markWord, mtGC>                 _preserved_mark_stack;
-  static Stack<oop, mtGC>                      _preserved_oop_stack;
+  static Stack<PreservedMark, mtGC>      _preserved_overflow_stack;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
@@ -202,11 +201,7 @@ private:
   markWord _mark;
 
 public:
-  void init(oop obj, markWord mark) {
-    _obj = obj;
-    _mark = mark;
-  }
-
+  PreservedMark(oop obj, markWord mark) : _obj(obj), _mark(mark) {}
   void adjust_pointer();
   void restore();
 };
