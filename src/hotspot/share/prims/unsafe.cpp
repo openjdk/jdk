@@ -230,13 +230,13 @@ public:
 
   T get_volatile() {
     GuardUnsafeAccess guard(_thread);
-    volatile T ret = Atomic::load_acquire(addr());
+    volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
     return normalize_for_read(ret);
   }
 
   void put_volatile(T x) {
     GuardUnsafeAccess guard(_thread);
-    Atomic::release_store_fence(addr(), normalize_for_write(x));
+    RawAccess<MO_SEQ_CST>::store(addr(), normalize_for_write(x));
   }
 };
 

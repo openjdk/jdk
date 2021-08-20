@@ -231,8 +231,8 @@ inline void  oopDesc::char_field_put(int offset, jchar value)       { *field_add
 
 inline jboolean oopDesc::bool_field(int offset) const               { return *field_addr<jboolean>(offset); }
 inline void     oopDesc::bool_field_put(int offset, jboolean value) { *field_addr<jboolean>(offset) = jboolean(value & 1); }
-inline jboolean oopDesc::bool_field_volatile(int offset) const      { return Atomic::load_acquire(field_addr<jboolean>(offset)); }
-inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { Atomic::release_store_fence(field_addr<jboolean>(offset), jboolean(value & 1)); }
+inline jboolean oopDesc::bool_field_volatile(int offset) const      { return RawAccess<MO_SEQ_CST>::load(field_addr<jboolean>(offset)); }
+inline void     oopDesc::bool_field_put_volatile(int offset, jboolean value) { RawAccess<MO_SEQ_CST>::store(field_addr<jboolean>(offset), jboolean(value & 1)); }
 inline jshort oopDesc::short_field(int offset) const                { return *field_addr<jshort>(offset);   }
 inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_addr<jshort>(offset) = value;  }
 
