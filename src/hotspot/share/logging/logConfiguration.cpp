@@ -562,7 +562,8 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("\nAvailable log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
-  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
+  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively."
+                " The filename can be a named pipe when log rotation is disabled.");
   out->print_cr("  Additional output-options for file outputs:");
   out->print_cr("   filesize=..  - Target byte size for log rotation (supports K/M/G suffix)."
                                     " If set to 0, log rotation will not trigger automatically,"
