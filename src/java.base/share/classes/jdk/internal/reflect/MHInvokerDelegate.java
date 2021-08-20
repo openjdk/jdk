@@ -32,26 +32,21 @@ import java.lang.invoke.MethodHandle;
 /**
  * Delegate the invocation directly to the target method handle.
  */
-final class MHMethodAccessorDelegate implements MHMethodAccessor {
+final class MHInvokerDelegate implements MHInvoker {
     private final MethodHandle target;
-    MHMethodAccessorDelegate(MethodHandle target) {
+    MHInvokerDelegate(MethodHandle target) {
         this.target = target;
     }
-    // non-specialized non-static and static methods
+
+    // non-specialized method handle invocation also with trailing caller class parameter
     @Hidden @Override public Object invoke(Object obj, Object[] args) throws Throwable {
         return target.invokeExact(obj, args);
-    }
-    @Hidden @Override public Object invoke(Object[] args) throws Throwable {
-        return target.invokeExact(args);
     }
     @Hidden @Override public Object invoke(Object obj, Object[] args, Class<?> caller) throws Throwable {
         return target.invokeExact(obj, args, caller);
     }
-    @Hidden @Override public Object invoke(Object[] args, Class<?> caller) throws Throwable {
-        return target.invokeExact(args, caller);
-    }
 
-    // specialized version for instance method
+    // specialized version for number of arguments <= 3
     @Hidden @Override public Object invoke(Object obj) throws Throwable {
         return target.invokeExact(obj);
     }
@@ -77,28 +72,23 @@ final class MHMethodAccessorDelegate implements MHMethodAccessor {
         return target.invokeExact(obj, arg1, arg2, arg3, caller);
     }
 
-    // specialized version for static method
+    // for Constructor::newInstance
+    @Hidden @Override public Object invoke(Object[] args) throws Throwable {
+        return target.invokeExact(args);
+    }
     @Hidden @Override public Object invoke() throws Throwable {
         return target.invokeExact();
     }
-    @Hidden @Override public Object invoke(Class<?> caller) throws Throwable {
-        return target.invokeExact(caller);
-    }
 
-    // the method of the same signature already defined
+
+//    No need to define them as they are already covered by the above methods
 //    @Hidden @Override public Object invoke(Object arg1) throws Throwable {
 //        return target.invokeExact();
 //    }
 //    @Hidden @Override public Object invoke(Object arg1, Object arg2) throws Throwable {
 //        return target.invokeExact();
 //    }
-//    @Hidden @Override public Object invoke(Object arg1, Class<?> caller) throws Throwable {
-//        return target.invokeExact(arg1, caller);
-//    }
-//    @Hidden @Override public Object invoke(Object arg1, Object arg2, Class<?> caller) throws Throwable {
-//        return target.invokeExact(arg1, arg2, caller);
-//    }
-//    @Hidden @Override public Object invoke(Object arg1, Object arg2, Object arg3, Class<?> caller) throws Throwable {
-//        return target.invokeExact(arg1, arg2, arg3, caller);
+//    @Hidden @Override public Object invoke(Object arg1, Object arg2, Object arg3) throws Throwable {
+//        return target.invokeExact(arg1, arg2, arg3);
 //    }
 }

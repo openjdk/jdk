@@ -31,20 +31,19 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 abstract class VarHandleFieldAccessorImpl extends FieldAccessorImpl {
     protected final boolean isReadOnly;
     private final VarHandle varHandle;
-    private @Stable final MHFieldAccessor accessor;
-    private @Stable MHFieldAccessor fastAccessor;
+    private @Stable final VHInvoker accessor;
+    private @Stable VHInvoker fastAccessor;
     private int numAccesses;
 
     protected VarHandleFieldAccessorImpl(Field field, VarHandle varHandle, boolean isReadOnly) {
         super(field);
         this.isReadOnly = isReadOnly;
         this.varHandle = varHandle;
-        this.accessor = new MHFieldAccessorDelegate(varHandle);
+        this.accessor = new VHInvokerDelegate(varHandle);
     }
 
     protected void ensureObj(Object o) {
@@ -56,7 +55,7 @@ abstract class VarHandleFieldAccessorImpl extends FieldAccessorImpl {
     }
 
     @ForceInline
-    final MHFieldAccessor accessor() {
+    final VHInvoker accessor() {
         var accessor = fastAccessor;
         if (accessor != null) {
             return accessor;
@@ -65,7 +64,7 @@ abstract class VarHandleFieldAccessorImpl extends FieldAccessorImpl {
     }
 
     @DontInline
-    final MHFieldAccessor slowAccessor() {
+    final VHInvoker slowAccessor() {
         var accessor = this.accessor;
         if (++numAccesses > ReflectionFactory.inflationThreshold()) {
             this.fastAccessor = accessor = MethodHandleAccessorFactory.newVarHandleAccessor(field, varHandle);

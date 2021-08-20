@@ -32,9 +32,9 @@ import java.lang.invoke.VarHandle;
 /**
  * Delegate the field access directly to the target VarHandle.
  */
-final class MHFieldAccessorDelegate implements MHFieldAccessor {
+final class VHInvokerDelegate implements VHInvoker {
     private final VarHandle varHandle;
-    MHFieldAccessorDelegate(VarHandle varHandle) {
+    VHInvokerDelegate(VarHandle varHandle) {
         this.varHandle = varHandle;
     }
 

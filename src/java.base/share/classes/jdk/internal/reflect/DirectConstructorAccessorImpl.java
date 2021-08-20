@@ -34,13 +34,20 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
+import static jdk.internal.reflect.MethodHandleAccessorFactory.newMethodHandleInvoker;
 
 class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
     static ConstructorAccessorImpl constructorAccessor(Constructor<?> ctor, MethodHandle target) {
-        return new DirectConstructorAccessorImpl(ctor, target);
+        if (ReflectionFactory.noInflation()) {
+            // fast invoker
+            var mhInvoker = newMethodHandleInvoker(ctor, target);
+            return new DirectConstructorAccessorImpl(ctor, target);
+        } else {
+            // Default is the adaptive accessor method.
+            return new AdaptiveConstructorAccessor(ctor, target);
+        }
     }
 
     static ConstructorAccessorImpl nativeAccessor(Constructor<?> ctor) {
@@ -51,16 +58,16 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
     protected final int paramCount;
 
     @Stable protected final MethodHandle target;
-    @Stable protected final MHMethodAccessor invoker;
+    @Stable protected final MHInvoker invoker;
     DirectConstructorAccessorImpl(Constructor<?> ctor, MethodHandle target) {
         this.ctor = ctor;
         this.paramCount = ctor.getParameterCount();
         this.target = target;
-        this.invoker = new MHMethodAccessorDelegate(target);
+        this.invoker = new MHInvokerDelegate(target);
     }
 
     @ForceInline
-    MHMethodAccessor mhInvoker() {
+    MHInvoker mhInvoker() {
         return invoker;
     }
 
@@ -105,15 +112,15 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
         };
     }
 
-    static class StaticAdaptiveAccessor extends DirectConstructorAccessorImpl {
-        private @Stable MHMethodAccessor fastInvoker;
+    static class AdaptiveConstructorAccessor extends DirectConstructorAccessorImpl {
+        private @Stable MHInvoker fastInvoker;
         private int numInvocations;
-        StaticAdaptiveAccessor(Constructor<?> ctor, MethodHandle target) {
+        AdaptiveConstructorAccessor(Constructor<?> ctor, MethodHandle target) {
             super(ctor, target);
         }
 
         @ForceInline
-        MHMethodAccessor mhInvoker() {
+        MHInvoker mhInvoker() {
             var invoker = fastInvoker;
             if (invoker != null) {
                 return invoker;
@@ -122,10 +129,10 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
         }
 
         @DontInline
-        private MHMethodAccessor slowInvoker() {
+        private MHInvoker slowInvoker() {
             var invoker = this.invoker;
             if (++numInvocations > ReflectionFactory.inflationThreshold()) {
-                fastInvoker = invoker = MethodHandleAccessorFactory.newMethodHandleAccessor(ctor, target);
+                fastInvoker = invoker = newMethodHandleInvoker(ctor, target);
             }
             return invoker;
         }

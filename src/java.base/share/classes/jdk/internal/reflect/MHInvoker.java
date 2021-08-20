@@ -26,30 +26,29 @@
 package jdk.internal.reflect;
 
 /**
- * Defines the invoke method for Method::invoke(Object obj, Object[] args)
- * and other variants for example taking a caller class parameter and
- * specialized for the methods whose have <= 3 formal parameters.
+ * MHInvoker::invoke is the implementation body for
+ * Method::invoke(Object obj, Object[] args) and Constructor::newInstance
+ * that invokes the MethodHandle for the reflected method and constructor.
  *
- * The static methods are also specialized to drop the receiver parameter.
+ * Methods whose have <= 3 formal parameters use the specialized version.
+ * For example, method with 3 arguments will use:
+ * MHInvoker::invoke(Object obj, Object arg1, Object arg2, Object arg3)
+ *
+ * Caller-sensitive methods with an adapter will use the invoke method
+ * taking a caller class parameter.
  *
  * See MethodHandleAccessorFactory for the specialization.
  */
-public interface MHMethodAccessor {
-    // non-specialized non-static and static methods
+public interface MHInvoker {
+    // non-specialized method handle invocation also with trailing caller class parameter
     default Object invoke(Object obj, Object[] args) throws Throwable {
-        throw new UnsupportedOperationException();
-    }
-    default Object invoke(Object[] args) throws Throwable {
         throw new UnsupportedOperationException();
     }
     default Object invoke(Object obj, Object[] args, Class<?> caller) throws Throwable {
         throw new UnsupportedOperationException();
     }
-    default Object invoke(Object[] args, Class<?> caller) throws Throwable {
-        throw new UnsupportedOperationException();
-    }
 
-    // specialized version for instance method
+    // specialized version for number of arguments <= 3
     default Object invoke(Object obj) throws Throwable {
         throw new UnsupportedOperationException();
     }
@@ -75,15 +74,15 @@ public interface MHMethodAccessor {
         throw new UnsupportedOperationException();
     }
 
-    // specialized version for static method
+    // for Constructor::newInstance
+    default Object invoke(Object[] args) throws Throwable {
+        throw new UnsupportedOperationException();
+    }
     default Object invoke() throws Throwable {
         throw new UnsupportedOperationException();
     }
-    default Object invoke(Class<?> caller) throws Throwable {
-        throw new UnsupportedOperationException();
-    }
 
-//    No need to define them as they are already covered by the instance methods
+//    No need to define them as they are already covered by the above methods
 //
 //    default Object invoke(Object arg1) throws Throwable {
 //        throw new UnsupportedOperationException();
@@ -91,13 +90,7 @@ public interface MHMethodAccessor {
 //    default Object invoke(Object arg1, Object arg2) throws Throwable {
 //        throw new UnsupportedOperationException();
 //    }
-//    default Object invoke(Object arg1, Class<?> caller) throws Throwable {
-//        throw new UnsupportedOperationException();
-//    }
-//    default Object invoke(Object arg1, Object arg2, Class<?> caller) throws Throwable {
-//        throw new UnsupportedOperationException();
-//    }
-//    default Object invoke(Object arg1, Object arg2, Object arg3, Class<?> caller) throws Throwable {
+//    default Object invoke(Object arg1, Object arg2, Object arg3) throws Throwable {
 //        throw new UnsupportedOperationException();
 //    }
 }

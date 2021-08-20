@@ -47,6 +47,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
+import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
 
 final class MethodHandleAccessorFactory {
@@ -195,48 +196,37 @@ final class MethodHandleAccessorFactory {
             int spreadArgPos = isStatic ? 0 : 1;
             target = target.asSpreader(spreadArgPos, Object[].class, paramCount);
         }
+        if (isStatic) {
+            // add leading 'this' parameter to static method which is then ignored
+            target = MethodHandles.dropArguments(target, 0, Object.class);
+        }
         return target.asType(mtype);
     }
 
     // specialize for number of formal arguments <= 3 to avoid spreader
     static final int SPECIALIZED_PARAM_COUNT = 3;
     static MethodType specializedMethodType(boolean isStatic, boolean hasCallerParameter, int paramCount) {
-        if (isStatic) {
-            return switch (paramCount) {
-                case 0 -> hasCallerParameter ? methodType(Object.class, Class.class)
-                                             : methodType(Object.class);
-                case 1 -> hasCallerParameter ? methodType(Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class);
-                case 2 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class, Object.class);
-                case 3 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class, Object.class, Object.class);
-                default -> hasCallerParameter ? methodType(Object.class, Object[].class, Class.class)
-                                              : methodType(Object.class, Object[].class);
-            };
-        } else {
-            return switch (paramCount) {
-                case 0 -> hasCallerParameter ? methodType(Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class);
-                case 1 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class, Object.class);
-                case 2 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class, Object.class, Object.class);
-                case 3 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Object.class, Object.class, Class.class)
-                                             : methodType(Object.class, Object.class, Object.class, Object.class, Object.class);
-                default -> hasCallerParameter ? methodType(Object.class, Object.class, Object[].class, Class.class)
-                                              : methodType(Object.class, Object.class, Object[].class);
-            };
-        }
+        return switch (paramCount) {
+            case 0 -> hasCallerParameter ? methodType(Object.class, Object.class, Class.class)
+                                         : genericMethodType(1);
+            case 1 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Class.class)
+                                         : genericMethodType(2);
+            case 2 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Object.class, Class.class)
+                                         : genericMethodType(3);
+            case 3 -> hasCallerParameter ? methodType(Object.class, Object.class, Object.class, Object.class, Object.class, Class.class)
+                                         : genericMethodType(4);
+            default -> hasCallerParameter ? methodType(Object.class, Object.class, Object[].class, Class.class)
+                                          : genericMethodType(1, true);
+        };
     }
 
     static MethodType specializedMethodTypeForConstructor(int paramCount) {
         return switch (paramCount) {
-            case 0 ->  methodType(Object.class);
-            case 1 ->  methodType(Object.class, Object.class);
-            case 2 ->  methodType(Object.class, Object.class, Object.class);
-            case 3 ->  methodType(Object.class, Object.class, Object.class, Object.class);
-            default -> methodType(Object.class, Object[].class);
+            case 0 ->  genericMethodType(0);
+            case 1 ->  genericMethodType(1);
+            case 2 ->  genericMethodType(2);
+            case 3 ->  genericMethodType(3);
+            default -> genericMethodType(0, true);
         };
     }
 
@@ -247,7 +237,7 @@ final class MethodHandleAccessorFactory {
     static MethodHandle makeTarget(MethodHandle dmh, boolean isStatic, boolean hasCallerParameter) {
         MethodType mtype = hasCallerParameter
                                 ? methodType(Object.class, Object.class, Object[].class, Class.class)
-                                : methodType(Object.class, Object.class, Object[].class);
+                                : genericMethodType(1, true);
         // number of formal arguments
         int paramCount = dmh.type().parameterCount() - (isStatic ? 0 : 1) - (hasCallerParameter ? 1 : 0);
         int spreadArgPos = isStatic ? 0 : 1;
@@ -272,15 +262,15 @@ final class MethodHandleAccessorFactory {
      * For a volatile field, its class name is FieldAccessorImpl_<T>_V
      * for an instance field or FieldAccessorImpl_<T>_V for a static field.
      */
-    static MHFieldAccessor newVarHandleAccessor(Field field, VarHandle varHandle) {
+    static VHInvoker newVarHandleAccessor(Field field, VarHandle varHandle) {
         var name = classNamePrefix(field);
         var cn = name + "$$" + counter.getAndIncrement();
         byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name, n -> spinByteCode(name, field));
         try {
             var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, varHandle, true);
             var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(MHFieldAccessor.class));
-            return (MHFieldAccessor) ctor.invokeExact();
+            ctor = ctor.asType(methodType(VHInvoker.class));
+            return (VHInvoker) ctor.invokeExact();
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -297,7 +287,7 @@ final class MethodHandleAccessorFactory {
      * + the number of formal parameters + "Class" if it's a caller-sensitive method
      * which has an adapter defined.
      */
-    static MHMethodAccessor newMethodHandleAccessor(Method method, MethodHandle target, boolean hasCallerParameter) {
+    static MHInvoker newMethodHandleInvoker(Method method, MethodHandle target, boolean hasCallerParameter) {
         var name = classNamePrefix(method, target.type(), hasCallerParameter);
         var cn = name + "$$" + counter.getAndIncrement();
         byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
@@ -305,8 +295,8 @@ final class MethodHandleAccessorFactory {
         try {
             var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
             var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(MHMethodAccessor.class));
-            return (MHMethodAccessor) ctor.invokeExact();
+            ctor = ctor.asType(methodType(MHInvoker.class));
+            return (MHInvoker) ctor.invokeExact();
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -318,7 +308,7 @@ final class MethodHandleAccessorFactory {
      *
      * Due to the overhead of class loading, this is not the default.
      */
-    static MHMethodAccessor newMethodHandleAccessor(Constructor<?> c, MethodHandle target) {
+    static MHInvoker newMethodHandleInvoker(Constructor<?> c, MethodHandle target) {
         var name = classNamePrefix(c, target.type());
         var cn = name + "$$" + counter.getAndIncrement();
         byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
@@ -326,8 +316,8 @@ final class MethodHandleAccessorFactory {
         try {
             var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
             var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(MHMethodAccessor.class));
-            return (MHMethodAccessor) ctor.invokeExact();
+            ctor = ctor.asType(methodType(MHInvoker.class));
+            return (MHInvoker) ctor.invokeExact();
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -387,19 +377,19 @@ final class MethodHandleAccessorFactory {
 
     private static byte[] spinByteCode(String cn, Field field) {
         var builder = new ClassByteBuilder(cn, VarHandle.class);
-        var bytes = builder.buildFieldAccessor(field);
+        var bytes = builder.buildVarHandleInvoker(field);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Method method, MethodType mtype, boolean hasCallerParameter) {
         var builder = new ClassByteBuilder(cn, MethodHandle.class);
-        var bytes = builder.buildMethodAccessor(method, mtype, hasCallerParameter);
+        var bytes = builder.buildMethodHandleInvoker(method, mtype, hasCallerParameter);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Constructor<?> ctor, MethodType mtype) {
         var builder = new ClassByteBuilder(cn, MethodHandle.class);
-        var bytes = builder.buildConstructorAccessor(ctor, mtype);
+        var bytes = builder.buildMethodHandleInvoker(ctor, mtype);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }

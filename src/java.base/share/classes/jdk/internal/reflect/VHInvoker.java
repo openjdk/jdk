@@ -25,7 +25,7 @@
 
 package jdk.internal.reflect;
 
-public interface MHFieldAccessor {
+public interface VHInvoker {
     // accessors for instance fields
     default Object get(Object obj) {
         throw new UnsupportedOperationException();

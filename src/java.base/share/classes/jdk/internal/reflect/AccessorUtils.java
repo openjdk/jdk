@@ -62,21 +62,15 @@ public class AccessorUtils {
                 // exception thrown from java.base but not from reflection internals
                 return false;
             }
-            if (isAccessorImplClass(cname)) {
+            if ((accessorType == DirectMethodAccessorImpl.class
+                    && cname.startsWith(DirectConstructorAccessorImpl.class.getName()))
+                || (accessorType == DirectConstructorAccessorImpl.class &&
+                        cname.startsWith(DirectMethodAccessorImpl.class.getName()))) {
                 // thrown from another reflection accessor impl class
                 return false;
             }
         }
         return false;
-    }
-
-    /*
-     * Returns true if it is DirectMethodAccessorImpl or DirectConstructorAccessorImpl
-     * or its subclass.
-     */
-    private static boolean isAccessorImplClass(String cn) {
-        return cn.startsWith(DirectMethodAccessorImpl.class.getName()) ||
-                cn.startsWith(DirectConstructorAccessorImpl.class.getName());
     }
 
     private static final Set<String> IMPL_PACKAGES = Set.of(

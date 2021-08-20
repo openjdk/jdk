@@ -119,9 +119,22 @@ public class ReflectionColdstartBenchmark {
     }
 
     @Benchmark
-    public void invokeMethods(Blackhole bh) throws ReflectiveOperationException {
+    public void invokeMethods() throws ReflectiveOperationException {
+        // As this is testing warmup, JITs are unlikely to progress to the
+        // point where the lack of a blackhole might lead to DCE. Omitting it
+        // makes it easier to test this code minimal use of JMH code
         for (Method m : methods) {
-            bh.consume(m.invoke(null, arg));
+            m.invoke(null, arg);
         }
+    }
+
+    /**
+     * Runs invokeMethods once without any JMH interaction, acting as an
+     * independent startup benchmark.
+     */
+    public static void main(String ... args) throws Exception {
+        var coldstart = new ReflectionColdstartBenchmark();
+        coldstart.setup();
+        coldstart.invokeMethods();
     }
 }

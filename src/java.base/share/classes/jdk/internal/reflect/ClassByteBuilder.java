@@ -47,8 +47,8 @@ public class ClassByteBuilder extends ClassWriter {
     private static final String VH_CLS = "java/lang/invoke/VarHandle";
     private static final String CLASS_DATA_BSM_DESCR =
             "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;";
-    private static final String[] METHOD_ACCESSOR_INTF = new String[] { "jdk/internal/reflect/MHMethodAccessor" };
-    private static final String[] FIELD_ACCESSOR_INTF = new String[] {  "jdk/internal/reflect/MHFieldAccessor" };
+    private static final String[] MH_INVOKER_INTF = new String[] { "jdk/internal/reflect/MHInvoker" };
+    private static final String[] VH_INVOKER_INTF = new String[] {  "jdk/internal/reflect/VHInvoker" };
     private static final String[] THROWS_THROWABLE = new String[] { "java/lang/Throwable" };
 
     private final String classname;
@@ -66,8 +66,8 @@ public class ClassByteBuilder extends ClassWriter {
         this.classDataCondy = new ConstantDynamic("_", classDataType.descriptorString(), bsm);
     }
 
-    public byte[] buildFieldAccessor(Field field) {
-        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, FIELD_ACCESSOR_INTF);
+    public byte[] buildVarHandleInvoker(Field field) {
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, VH_INVOKER_INTF);
         addConstructor();
 
         Class<?> type = field.getType().isPrimitive() ? field.getType() : Object.class;
@@ -79,8 +79,8 @@ public class ClassByteBuilder extends ClassWriter {
         return toByteArray();
     }
 
-    public byte[] buildMethodAccessor(Method method, MethodType mtype, boolean hasCallerParameter) {
-        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, METHOD_ACCESSOR_INTF);
+    public byte[] buildMethodHandleInvoker(Method method, MethodType mtype, boolean hasCallerParameter) {
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, MH_INVOKER_INTF);
         addConstructor();
 
         var isStatic = Modifier.isStatic(method.getModifiers());
@@ -89,21 +89,21 @@ public class ClassByteBuilder extends ClassWriter {
         if (lastArgIndex >= 0 && mtype.parameterType(lastArgIndex) == Object[].class) {
             addInvokeMethod(mtype);
         } else {
-            addSpecializedInvokeMethod(mtype, isStatic, hasCallerParameter, method.getParameterCount());
+            addSpecializedInvokeMethod(mtype, true, hasCallerParameter, method.getParameterCount());
         }
         visitEnd();
         return toByteArray();
     }
 
-    public byte[] buildConstructorAccessor(Constructor<?> ctor, MethodType mtype) {
-        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, METHOD_ACCESSOR_INTF);
+    public byte[] buildMethodHandleInvoker(Constructor<?> ctor, MethodType mtype) {
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, MH_INVOKER_INTF);
         addConstructor();
 
         int paramCount = ctor.getParameterCount();
         if (mtype.lastParameterType() == Object[].class) {
             addInvokeMethod(mtype);
         } else {
-            addSpecializedInvokeMethod(mtype, true /* no receiver */, false, paramCount);
+            addSpecializedInvokeMethod(mtype, false /* no receiver */, false, paramCount);
         }
         visitEnd();
         return toByteArray();
@@ -158,7 +158,7 @@ public class ClassByteBuilder extends ClassWriter {
         mv.visitEnd();
     }
 
-    private void addSpecializedInvokeMethod(MethodType mtype, boolean isStatic, boolean hasCallerParameter, int paramCount) {
+    private void addSpecializedInvokeMethod(MethodType mtype, boolean hasReceiver, boolean hasCallerParameter, int paramCount) {
         assert mtype.lastParameterType() != Object[].class;
         MethodVisitor mv = visitMethod(ACC_PUBLIC, "invoke",
                                        mtype.descriptorString(), null, THROWS_THROWABLE);
@@ -166,7 +166,7 @@ public class ClassByteBuilder extends ClassWriter {
         mv.visitLdcInsn(classDataCondy);    // load VarHandle constant
         mv.visitTypeInsn(CHECKCAST, MH_CLS);
         int slot = 1;   // first argument
-        if (!isStatic) {
+        if (hasReceiver) {
             mv.visitVarInsn(ALOAD, slot++);
         }
         for (int i=0; i < paramCount; i++) {
