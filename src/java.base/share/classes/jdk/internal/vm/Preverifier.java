@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.HashSet;
 import java.util.*;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.commons.JSRInlinerAdapter;
+import jdk.internal.org.objectweb.asm.Attribute;
 
 /**
  * Patches a java class file taken as an argument, replacing all JSR and RET instructions with a valid equivalent
@@ -72,6 +75,14 @@ public class Preverifier extends ClassVisitor {
         return cw.toByteArray();
     }
 
+    public static byte[] patch2(byte[] bytecode) {
+    	CheckingClassReader cr = new CheckingClassReader(bytecode);
+    	SafeClassWriter cw = new SafeClassWriter(cr, null, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+    	cr.accept(new Preverifier(Opcodes.ASM8, cw), 0);
+    	//checkStackSize(cw.toByteArray());
+    	return cw.toByteArray();
+    }
+
     /**
      * Constructor
      * @param api ASM API version
@@ -80,6 +91,24 @@ public class Preverifier extends ClassVisitor {
     public Preverifier(int api, ClassWriter cw) {
         super(api, cw);
     }
+
+ //    @Override
+ //    public void visit(
+ //            final int version,
+ //            final int access,
+ //            final String name,
+ //            final String signature,
+ //            final String superName,
+ //            final String[] interfaces) {
+ //    	super.visit(Opcodes.V1_7, access, name, signature, superName, interfaces);
+ //    }
+
+	// @Override
+	// public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+	// 	log("In my visit method", shouldPrint);
+	// 	MethodVisitor methodVisitor = super.visitMethod(access, name, desc, signature, exceptions);
+	// 	return new JSRInlinerAdapter(methodVisitor, access, name, desc, signature, exceptions);
+	// }
 
 	/**
 	 * Builds map for cloning instructions
