@@ -43,10 +43,12 @@ import com.sun.nio.file.ExtendedCopyOption;
 
 public class InterruptCopy {
 
-    private static final long FILE_SIZE_TO_COPY = 512L * 1024L * 1024L;
-    private static final int INTERRUPT_DELAY_IN_MS = 10;
-    private static final int CANCEL_DELAY_IN_MS = 10;
-    private static final int DURATION_MAX_IN_MS = 5000;
+    private static final long FILE_SIZE_TO_COPY = 1024L * 1024L * 1024L;
+    private static final int INTERRUPT_DELAY_IN_MS = 30;
+    private static final int INTERRUPT_RATE_IN_MS = 10;
+    private static final int CANCEL_DELAY_IN_MS = 30;
+    private static final int CANCEL_RATE_IN_MS = 10;
+    private static final int CANCEL_DURATION_IN_MS = 60000;
 
     public static void main(String[] args) throws Exception {
         Path dir = TestUtil.createTemporaryDirectory();
@@ -84,28 +86,26 @@ public class InterruptCopy {
         ScheduledExecutorService pool =
             Executors.newSingleThreadScheduledExecutor();
         try {
-            // copy source to target in main thread, interrupting it after a delay
-            final CountDownLatch ilatch = new CountDownLatch(2);
+            // copy source to target in main thread, interrupting it
+            // at a fixed rate after a delay
             final Thread me = Thread.currentThread();
-            Future<?> wakeup = pool.submit(new Runnable() {
+            Future<?> wakeup = pool.scheduleAtFixedRate(new Runnable() {
                 public void run() {
-                    ilatch.countDown();
-                    try {
-                        ilatch.await();
-                        Thread.sleep(INTERRUPT_DELAY_IN_MS);
-                    } catch (InterruptedException ignored) {
-                    }
+                    System.out.printf("Interrupting at %dms%n",
+                        System.currentTimeMillis());
                     me.interrupt();
-                }});
+                }},
+                INTERRUPT_DELAY_IN_MS,
+                INTERRUPT_RATE_IN_MS,
+                java.util.concurrent.TimeUnit.MILLISECONDS);
             System.out.println("Copying file...");
             try {
-                ilatch.countDown();
-                ilatch.await();
-                long start = System.currentTimeMillis();
+                System.out.printf("Copying at %dms%n",
+                    System.currentTimeMillis());
                 Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE);
-                long duration = System.currentTimeMillis() - start;
-                if (duration > DURATION_MAX_IN_MS)
-                    throw new RuntimeException("Copy was not interrupted");
+                System.out.printf("Done copying at %dms%n",
+                    System.currentTimeMillis());
+                throw new RuntimeException("Copy was not interrupted");
             } catch (IOException e) {
                 boolean interrupted = Thread.interrupted();
                 if (!interrupted)
@@ -117,27 +117,49 @@ public class InterruptCopy {
             } catch (InterruptedException ignore) { }
             Thread.interrupted();
 
-            // copy source to target via task in thread pool, interrupting it after
-            // a delay using cancel(true)
-            final CountDownLatch clatch = new CountDownLatch(2);
+            // copy source to target via task in thread pool, interrupting it
+            // at a fixed rate after a delay using cancel(true)
+            final CountDownLatch latch = new CountDownLatch(2);
             Future<Void> result = pool.submit(new Callable<Void>() {
                 public Void call() throws IOException {
                     System.out.println("Copying file...");
-                    clatch.countDown();
+                    latch.countDown();
                     try {
-                        clatch.await();
+                        latch.await();
                     } catch (InterruptedException ignored) {
                     }
+                    System.out.printf("Copying at %dms%n",
+                        System.currentTimeMillis());
                     Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE,
                         StandardCopyOption.REPLACE_EXISTING);
+                    System.out.printf("Done copying at %dms%n",
+                        System.currentTimeMillis());
                     return null;
                 }
             });
-            clatch.countDown();
-            clatch.await();
-            Thread.sleep(CANCEL_DELAY_IN_MS);
-            boolean cancelled = result.cancel(true);
-            if (cancelled)
+            latch.countDown();
+            try {
+                latch.await();
+                Thread.sleep(CANCEL_DELAY_IN_MS);
+            } catch (InterruptedException ignored) {
+            }
+            System.out.printf("Cancelling at %dms%n",
+                System.currentTimeMillis());
+            if (result.isDone())
+                throw new RuntimeException("Copy finished before cancellation");
+            boolean cancelled;
+            long start = System.currentTimeMillis();
+            while (!(cancelled = result.cancel(true))) {
+                System.out.printf("Cancel failed at %dms%n",
+                    System.currentTimeMillis());
+                try {
+                    Thread.sleep(CANCEL_RATE_IN_MS);
+                } catch (InterruptedException ignored) {
+                }
+                if (start - System.currentTimeMillis() > CANCEL_DURATION_IN_MS)
+                    break;
+            }
+            if (result.isCancelled())
                 System.out.println("Copy cancelled.");
             else {
                 result.get();
