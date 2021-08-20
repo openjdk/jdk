@@ -404,8 +404,8 @@ public class Window extends Container implements Accessible {
      * These fields are initialized in the native peer code
      * or via AWTAccessor's WindowAccessor.
      */
-    private transient volatile int securityWarningWidth = 0;
-    private transient volatile int securityWarningHeight = 0;
+    private transient volatile int securityWarningWidth;
+    private transient volatile int securityWarningHeight;
 
     static {
         /* ensure that the necessary native libraries are loaded */

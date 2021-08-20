@@ -161,7 +161,7 @@ public final class AppContext {
        contained in another AppContext. It is implicitly created for
        standalone apps only (i.e. not applets)
      */
-    private static volatile AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext;
 
     private static class GetAppContextLock {};
     private static final Object getAppContextLock = new GetAppContextLock();

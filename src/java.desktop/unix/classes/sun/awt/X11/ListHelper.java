@@ -79,8 +79,8 @@ final class ListHelper implements XScrollbarClient {
     // Holds the true if mouse is dragging outside of the area of the list
     // The flag is used at the moment of the dragging and releasing mouse
     // See 6243382 for more information
-    private boolean mouseDraggedOutVertically = false;
-    private volatile boolean vsbVisibilityChanged = false;
+    private boolean mouseDraggedOutVertically;
+    private volatile boolean vsbVisibilityChanged;
 
     /*
      * Comment

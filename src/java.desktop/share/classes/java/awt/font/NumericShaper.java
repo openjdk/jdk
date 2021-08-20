@@ -1364,7 +1364,7 @@ public final class NumericShaper implements java.io.Serializable {
 
     // use a binary search with a cache
 
-    private transient volatile int stCache = 0;
+    private transient volatile int stCache;
 
     private boolean isStrongDirectional(char c) {
         int cachedIndex = stCache;

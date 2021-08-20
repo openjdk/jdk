@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class XInputMethod extends X11InputMethod {
     }
 
 
-    private static volatile long xicFocus = 0;
+    private static volatile long xicFocus;
 
     protected void setXICFocus(ComponentPeer peer,
                                     boolean value, boolean active) {
