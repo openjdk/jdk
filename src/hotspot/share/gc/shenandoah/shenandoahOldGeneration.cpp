@@ -26,9 +26,11 @@
 
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
@@ -178,4 +180,30 @@ void ShenandoahOldGeneration::purge_satb_buffers(bool abandon) {
 
 bool ShenandoahOldGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_old(obj);
+}
+
+bool ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+
+  {
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states : ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
+
+    parallel_heap_region_iterate(&cl);
+    heap->assert_pinned_region_status();
+  }
+
+  {
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset : ShenandoahPhaseTimings::degen_gc_choose_cset);
+    ShenandoahHeapLocker locker(heap->lock());
+    heuristics()->choose_collection_set(nullptr, nullptr);
+  }
+
+  {
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset : ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->rebuild();
+  }
+  return false;
 }

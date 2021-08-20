@@ -97,12 +97,7 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
-      ShenandoahHeapLocker locker(heap->lock());
-      // Old-gen choose_collection_set() does not directly manipulate heap->collection_set() so no need to clear it.
-      _generation->heuristics()->choose_collection_set(nullptr, nullptr);
-    }
+    _generation->prepare_regions_and_collection_set(true);
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();

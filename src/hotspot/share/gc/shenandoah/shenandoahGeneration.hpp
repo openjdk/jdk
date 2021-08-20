@@ -93,7 +93,7 @@ public:
   virtual void prepare_gc(bool do_old_gc_bootstrap);
 
   // Return true iff prepared collection set includes at least one old-gen HeapRegion.
-  bool prepare_regions_and_collection_set(bool concurrent);
+  virtual bool prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   void cancel_marking();

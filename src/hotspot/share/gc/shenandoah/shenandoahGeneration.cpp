@@ -199,9 +199,11 @@ bool ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     parallel_heap_region_iterate(&cl);
     heap->assert_pinned_region_status();
 
-    // Also capture update_watermark for old-gen regions.
-    ShenandoahCaptureUpdateWaterMarkForOld old_cl(complete_marking_context());
-    heap->old_generation()->parallel_heap_region_iterate(&old_cl);
+    if (generation_mode() == YOUNG) {
+      // Also capture update_watermark for old-gen regions.
+      ShenandoahCaptureUpdateWaterMarkForOld old_cl(complete_marking_context());
+      heap->old_generation()->parallel_heap_region_iterate(&old_cl);
+    }
   }
 
   {
