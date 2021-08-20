@@ -41,69 +41,69 @@ package pkg;
  *</ul>
  */
 public class A1 implements java.io.Serializable {
-	/**
-	 *fields.
-	 */
-	protected Object field1;
+    /**
+     *fields.
+     */
+    protected Object field1;
 
-	/**
-	 *<a href="{@docRoot}/pkg/A1.html#functions">Creates an instance which has various functions.</a>
-	 */
-	public A1(){
-	}
+    /**
+     *<a href="{@docRoot}/pkg/A1.html#functions">Creates an instance which has various functions.</a>
+     */
+    public A1(){
+    }
 
-	/**
-	 *This is a<a href="#methods">special method</a>.
-	 *@param p1 arg1
-	 */
-	public void method1(B1.StaticInnerB1 p1){
-	}
+    /**
+     *This is a<a href="#methods">special method</a>.
+     *@param p1 arg1
+     */
+    public void method1(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *See <a href="ftp://www.domain.com/">FTP Site</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method2(B1.StaticInnerB1 p1){
-	}
+    /**
+     *See <a href="ftp://www.domain.com/">FTP Site</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method2(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *See <a href="http://www.domain.com/">HTTP Site</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method3(B1.StaticInnerB1 p1){
-	}
+    /**
+     *See <a href="http://www.domain.com/">HTTP Site</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method3(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *See <a href="https://www.domain.com/">HTTPS Site</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method4(B1.StaticInnerB1 p1){
-	}
+    /**
+     *See <a href="https://www.domain.com/">HTTPS Site</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method4(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *See <a href="file:///path/to/somefile">file service</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method5(B1.StaticInnerB1 p1){
-	}
+    /**
+     *See <a href="file:///path/to/somefile">file service</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method5(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *Contact to <a href="mailto:username@hogehoge.com">mail service</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method6(B1.StaticInnerB1 p1){
-	}
+    /**
+     *Contact to <a href="mailto:username@hogehoge.com">mail service</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method6(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *<a href="javascript:void(0)">Click here</a> for more infomation.
-	 *@param p1 arg1
-	 */
-	public void method7(B1.StaticInnerB1 p1){
-	}
+    /**
+     *<a href="javascript:void(0)">Click here</a> for more infomation.
+     *@param p1 arg1
+     */
+    public void method7(B1.StaticInnerB1 p1){
+    }
 
-	/**
-	 *Innerclass of class A1.
-	 */
-	public class InnerA1 {
-	}
+    /**
+     *Innerclass of class A1.
+     */
+    public class InnerA1 {
+    }
 }

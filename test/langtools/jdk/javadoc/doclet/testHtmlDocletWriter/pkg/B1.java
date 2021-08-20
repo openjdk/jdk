@@ -39,67 +39,67 @@ package pkg;
  *</ul>
  */
 public class B1 implements java.io.Serializable {
-	/**
-	 *fields.
-	 */
-	protected StaticInnerB1 field2;
+    /**
+     *fields.
+     */
+    protected StaticInnerB1 field2;
 
-	/**
-	 *<a href="{@docRoot}/pkg/B1.html#functions">Creates an instance which has various functions.</a>
-	 */
-	public B1(){
-	}
+    /**
+     *<a href="{@docRoot}/pkg/B1.html#functions">Creates an instance which has various functions.</a>
+     */
+    public B1(){
+    }
 
-	/**
-	 *This is a<a href="#methods">special methods</a>.
-	 *@param p1 arg1
-	 */
-	public void method1(A1 p1){
-	}
+    /**
+     *This is a<a href="#methods">special methods</a>.
+     *@param p1 arg1
+     */
+    public void method1(A1 p1){
+    }
 
-	/**
-	 *Use the InnerA1 class for the first parameter.
-	 *@param p1 class InnerA1
-	 */
-	public void method2(A1.InnerA1 p1){
-	}
+    /**
+     *Use the InnerA1 class for the first parameter.
+     *@param p1 class InnerA1
+     */
+    public void method2(A1.InnerA1 p1){
+    }
 
-	/**
-	 *Use the InnerB1 class for the first parameter.
-	 *@param p1 class InnerB1
-	 */
-	public void method3(InnerB1 p1){
-	}
+    /**
+     *Use the InnerB1 class for the first parameter.
+     *@param p1 class InnerB1
+     */
+    public void method3(InnerB1 p1){
+    }
 
-	/**
-	 *Use the InnerB2 class for the first parameter.
-	 *@param p1 class InnerB2
-	 */
-	public void method4(InnerB2 p1){
-	}
+    /**
+     *Use the InnerB2 class for the first parameter.
+     *@param p1 class InnerB2
+     */
+    public void method4(InnerB2 p1){
+    }
 
-	/**
-	 *Use the InnerB1 class for the first parameter.
-	 *@param p1 class InnerB1
-	 */
-	public void method5(StaticInnerB1 p1){
-	}
+    /**
+     *Use the InnerB1 class for the first parameter.
+     *@param p1 class InnerB1
+     */
+    public void method5(StaticInnerB1 p1){
+    }
 
-	/**
-	 *Innerclass of class B1.
-	 */
-	public class InnerB1 extends Object {
-	}
+    /**
+     *Innerclass of class B1.
+     */
+    public class InnerB1 extends Object {
+    }
 
-	/**
-	 *Innerclass of class B1.
-	 */
-	class InnerB2 extends Object {
-	}
+    /**
+     *Innerclass of class B1.
+     */
+    class InnerB2 extends Object {
+    }
 
-	/**
-	 * static Innerclass of class B1.
-	 */
-	public static class StaticInnerB1 extends Object {
-	}
+    /**
+     * static Innerclass of class B1.
+     */
+    public static class StaticInnerB1 extends Object {
+    }
 }
