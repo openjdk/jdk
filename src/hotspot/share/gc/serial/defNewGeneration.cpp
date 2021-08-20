@@ -26,7 +26,7 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
-#include "gc/serial/serialStringDedup.hpp"
+#include "gc/serial/serialStringDedup.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"

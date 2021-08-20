@@ -35,18 +35,12 @@ public:
   // String is a candidate for string deduplication.
   // precondition: StringDedup::is_enabled()
   // precondition: java_string is a Java String
-  static bool is_candidate_from_mark(oop java_string);
+  static inline bool is_candidate_from_mark(oop java_string);
 
   // Candidate selection policy for young during evacuation.
   // If to is young then age should be the new (survivor's) age.
   // if to is old then age should be the age of the copied from object.
-  static bool is_candidate_from_evacuation(oop java_string,
-                                           bool obj_is_tenured) {
-    return StringDedup::is_enabled() &&
-           java_lang_String::is_instance_inlined(java_string) &&
-           (obj_is_tenured ?
-            StringDedup::is_below_threshold_age(java_string->age()) :
-            StringDedup::is_threshold_age(java_string->age()));
-  }
+  static inline bool is_candidate_from_evacuation(oop java_string,
+                                                  bool obj_is_tenured);
 };
 #endif // SHARE_GC_SERIAL_STRINGDEDUP_HPP

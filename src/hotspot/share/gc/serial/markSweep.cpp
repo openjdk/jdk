@@ -224,5 +224,5 @@ void MarkSweep::KeepAliveClosure::do_oop(narrowOop* p) { MarkSweep::KeepAliveClo
 void MarkSweep::initialize() {
   MarkSweep::_gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
   MarkSweep::_gc_tracer = new (ResourceObj::C_HEAP, mtGC) SerialOldTracer();
-  MarkSweep::_string_dedup_requests = new (ResourceObj::C_HEAP, mtGC) StringDedup::Requests();
+  MarkSweep::_string_dedup_requests = new StringDedup::Requests();
 }
