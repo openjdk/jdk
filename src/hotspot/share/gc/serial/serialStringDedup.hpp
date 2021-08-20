@@ -34,7 +34,7 @@ public:
   // String is a candidate for string deduplication.
   // precondition: StringDedup::is_enabled()
   // precondition: java_string is a Java String
-  static inline bool is_candidate_from_mark(oop java_string);
+  static bool is_candidate_from_mark(oop java_string);
 
   // Candidate selection policy for young during evacuation.
   static inline bool is_candidate_from_evacuation(oop obj, bool obj_is_tenured);

@@ -27,16 +27,7 @@
 #include "gc/serial/serialStringDedup.hpp"
 
 #include "classfile/javaClasses.inline.hpp"
-#include "gc/serial/serialHeap.hpp"
 #include "oops/oop.inline.hpp"
-
-bool SerialStringDedup::is_candidate_from_mark(oop java_string) {
-  // Candidate if string is being evacuated from young to old but has not
-  // reached the deduplication age threshold, i.e. has not previously been a
-  // candidate during its life in the young generation.
-  return SerialHeap::heap()->young_gen()->is_in_reserved(java_string) &&
-         StringDedup::is_below_threshold_age(java_string->age());
-}
 
 bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
                                                      bool obj_is_tenured) {
