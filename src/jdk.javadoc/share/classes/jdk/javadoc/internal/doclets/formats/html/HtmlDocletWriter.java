@@ -1700,11 +1700,7 @@ public class HtmlDocletWriter {
         if (!shouldRedirectRelativeLinks(element)) {
             return text;
         }
-        String lower = Utils.toLowerCase(text);
-        if (lower.startsWith("mailto:")
-                || lower.startsWith("http:")
-                || lower.startsWith("https:")
-                || lower.startsWith("file:")) {
+        if (text.matches("^[^:/?#]+:.+$")) {
             return text;
         }
         if (text.startsWith("#")) {
