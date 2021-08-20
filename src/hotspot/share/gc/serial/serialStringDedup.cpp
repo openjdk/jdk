@@ -21,13 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
-#define SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
-
-#include "gc/serial/serialStringDedup.hpp"
-
-#include "classfile/javaClasses.inline.hpp"
+#include "precompiled.hpp"
+#include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialStringDedup.hpp"
 #include "oops/oop.inline.hpp"
 
 bool SerialStringDedup::is_candidate_from_mark(oop java_string) {
@@ -37,14 +34,3 @@ bool SerialStringDedup::is_candidate_from_mark(oop java_string) {
   return SerialHeap::heap()->young_gen()->is_in_reserved(java_string) &&
          StringDedup::is_below_threshold_age(java_string->age());
 }
-
-bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
-                                                     bool obj_is_tenured) {
-  return StringDedup::is_enabled() &&
-         java_lang_String::is_instance_inlined(obj) &&
-         (obj_is_tenured ?
-          StringDedup::is_below_threshold_age(obj->age()) :
-          StringDedup::is_threshold_age(obj->age()));
-}
-
-#endif // SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP

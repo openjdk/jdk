@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_SERIAL_STRINGDEDUP_HPP
 #define SHARE_GC_SERIAL_STRINGDEDUP_HPP
 
-#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -38,9 +37,8 @@ public:
   static inline bool is_candidate_from_mark(oop java_string);
 
   // Candidate selection policy for young during evacuation.
-  // If to is young then age should be the new (survivor's) age.
-  // if to is old then age should be the age of the copied from object.
-  static inline bool is_candidate_from_evacuation(oop java_string,
-                                                  bool obj_is_tenured);
+  static inline bool is_candidate_from_evacuation(oop obj, bool obj_is_tenured);
+
 };
+
 #endif // SHARE_GC_SERIAL_STRINGDEDUP_HPP
