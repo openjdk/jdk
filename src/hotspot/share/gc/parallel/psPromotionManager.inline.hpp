@@ -286,7 +286,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       // we'll just push its contents
       push_contents(new_obj);
 
-      if (psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
+      if (StringDedup::is_enabled() &&
+          java_lang_String::is_instance_inlined(new_obj) &&
+          psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
         _string_dedup_requests.add(o);
       }
     }

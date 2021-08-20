@@ -25,22 +25,26 @@
 #ifndef SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP
 #define SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP
 
-#include "classfile/javaClasses.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class psStringDedup : AllStatic {
 public:
-  static bool is_candidate_from_mark(oop java_string);
+  static bool is_candidate_from_mark(oop java_string) {
+    // Candidate if string is being evacuated from young to old but has not
+    // reached the deduplication age threshold, i.e. has not previously been a
+    // candidate during its life in the young generation.
+    return PSScavenge::is_obj_in_young(java_string) &&
+           StringDedup::is_below_threshold_age(java_string->age());
+  }
 
   static bool is_candidate_from_evacuation(oop obj,
                                            bool obj_is_tenured) {
-    return StringDedup::is_enabled() &&
-           java_lang_String::is_instance(obj) &&
-           (obj_is_tenured ?
-            StringDedup::is_below_threshold_age(obj->age()) :
-            StringDedup::is_threshold_age(obj->age()));
+    return obj_is_tenured ?
+           StringDedup::is_below_threshold_age(obj->age()) :
+           StringDedup::is_threshold_age(obj->age());
   }
 };
 #endif // SHARE_GC_PARALLEL_PSSTRINGDEDUP_HPP
