@@ -40,6 +40,19 @@ package gc.stringdedup;
  * @test TestStringDeduplicationPrintOptions
  * @summary Test string deduplication print options
  * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Parallel
+ */
+
+/*
+ * @test TestStringDeduplicationPrintOptions
+ * @summary Test string deduplication print options
+ * @bug 8029075
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library /
