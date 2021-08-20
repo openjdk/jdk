@@ -591,11 +591,23 @@ private:
     }
 
     virtual bool do_heap_region(HeapRegion* r) {
+      bool in_undo_mark = _cm != NULL && _cm->cm_thread()->in_undo_mark();
+      if (in_undo_mark) {
+        if (_cm->has_aborted()) {
+          return true;
+        }
+        if (_cm->live_words(r->hrm_index()) == 0) {
+          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
+          _cm->do_yield_check();
+          return _cm->has_aborted();
+        }
+        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
+      }
+
       size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
       HeapWord* cur = r->bottom();
-      HeapWord* const end = r->end();
-
+      HeapWord* const end = in_undo_mark ? r->next_top_at_mark_start() : r->end();
       while (cur < end) {
         // Abort iteration if necessary.
         if (_cm != NULL) {
@@ -617,7 +629,7 @@ private:
         assert(_cm == NULL || _cm->cm_thread()->in_progress(), "invariant");
         assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
       }
-      assert(cur == end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
+      assert(cur >= end, "Must have completed iteration over the bitmap for region %u. ", r->hrm_index());
 
       return false;
     }
