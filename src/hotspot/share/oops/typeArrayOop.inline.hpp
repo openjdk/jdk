@@ -90,96 +90,75 @@ inline jdouble* typeArrayOopDesc::double_at_addr(int which) const {
 }
 
 inline jbyte typeArrayOopDesc::byte_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *byte_at_addr(which);
 }
 inline void typeArrayOopDesc::byte_at_put(int which, jbyte contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *byte_at_addr(which) = contents;
 }
 
 inline jboolean typeArrayOopDesc::bool_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *bool_at_addr(which);
 }
 inline void typeArrayOopDesc::bool_at_put(int which, jboolean contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *bool_at_addr(which) = jboolean(contents & 1);
 }
 
 inline jchar typeArrayOopDesc::char_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *char_at_addr(which);
 }
 inline void typeArrayOopDesc::char_at_put(int which, jchar contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *char_at_addr(which) = contents;
 }
 
 inline jint typeArrayOopDesc::int_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *int_at_addr(which);
 }
 inline void typeArrayOopDesc::int_at_put(int which, jint contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *int_at_addr(which) = contents;
 }
 
 inline jshort typeArrayOopDesc::short_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *short_at_addr(which);
 }
 inline void typeArrayOopDesc::short_at_put(int which, jshort contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *short_at_addr(which) = contents;
 }
 
 inline jushort typeArrayOopDesc::ushort_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *ushort_at_addr(which);
 }
 
 inline void typeArrayOopDesc::ushort_at_put(int which, jushort contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *ushort_at_addr(which) = contents;
 }
 
 inline jlong typeArrayOopDesc::long_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *long_at_addr(which);
 }
 inline void typeArrayOopDesc::long_at_put(int which, jlong contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jlong>(which);
   *long_at_addr(which) = contents;
 }
 
 inline jfloat typeArrayOopDesc::float_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *float_at_addr(which);
 }
 
 inline void typeArrayOopDesc::float_at_put(int which, jfloat contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *float_at_addr(which) = contents;
 }
 
 inline jdouble typeArrayOopDesc::double_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *double_at_addr(which);
 }
 
 inline void typeArrayOopDesc::double_at_put(int which, jdouble contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *double_at_addr(which) = contents;
 }
 
 inline jbyte typeArrayOopDesc::byte_at_acquire(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return Atomic::load_acquire(byte_at_addr(which));
 }
 inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   Atomic::release_store(byte_at_addr(which), contents);
 }
 
@@ -188,21 +167,17 @@ inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
 // casting
 #ifdef _LP64
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *reinterpret_cast<Symbol**>(long_at_addr(which));
 }
 
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *reinterpret_cast<Symbol**>(long_at_addr(which)) = contents;
 }
 #else
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   return *reinterpret_cast<Symbol**>(int_at_addr(which));
 }
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
   *reinterpret_cast<Symbol**>(int_at_addr(which)) = contents;
 }
 #endif // _LP64
