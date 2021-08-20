@@ -596,6 +596,11 @@ private:
   }
 
   HeapWord* region_clear_limit(HeapRegion* r) {
+    // During a Concurrent Undo Mark cycle, the _next_mark_bitmap is  cleared
+    // without swapping with the _prev_mark_bitmap. Therefore, the per region
+    // next_top_at_mark_start and live_words data are current wrt
+    // _next_mark_bitmap. We use this information to only clear ranges of the
+    // bitmap that require clearing.
     if (_cm != NULL && _cm->cm_thread()->in_undo_mark()) {
       // No need to clear bitmaps for empty regions.
       if (_cm->live_words(r->hrm_index()) == 0) {
@@ -671,7 +676,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield) {
+void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
   size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
@@ -679,7 +684,7 @@ void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool 
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
-  G1ClearBitMapTask cl(bitmap, this, num_workers, may_yield);
+  G1ClearBitMapTask cl(_next_mark_bitmap, this, num_workers, may_yield);
 
   log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
@@ -697,7 +702,7 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   // is the case.
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 
-  clear_bitmap(_next_mark_bitmap, _concurrent_workers, true);
+  clear_next_bitmap(_concurrent_workers, true);
 
   // Repeat the asserts from above.
   guarantee(cm_thread()->in_progress(), "invariant");
@@ -711,7 +716,7 @@ void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   // as efficiently as possible the number of active workers are temporarily
   // increased to include all currently created workers.
   WithUpdatedActiveWorkers update(workers, workers->created_workers());
-  clear_bitmap(_next_mark_bitmap, workers, false);
+  clear_next_bitmap(workers, false);
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
