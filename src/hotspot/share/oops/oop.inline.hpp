@@ -211,13 +211,8 @@ bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
 bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
-void*    oopDesc::field_addr(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
-
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
-
-template <class T>
-T*       oopDesc::obj_field_addr(int offset) const { return (T*) field_addr(offset); }
 
 template <typename T>
 size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }

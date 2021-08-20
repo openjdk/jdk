@@ -115,14 +115,8 @@ class oopDesc {
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
 
  public:
-  // field addresses in oop
-  inline void* field_addr(int offset) const;
-
   template<typename T>
   inline T* field_addr(int offset) const;
-
-  // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr(int offset) const;
 
   template <typename T> inline size_t field_offset(T* p) const;
 
