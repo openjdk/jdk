@@ -39,9 +39,10 @@ public:
 #else
   typedef int8_t region_type_t;
 #endif
+  typedef uint8_t needs_remset_update_t;
 
 private:
-  bool _needs_remset_update;
+  needs_remset_update_t _needs_remset_update;
   region_type_t _type;
 
 public:
@@ -80,14 +81,14 @@ public:
     }
   }
 
-  bool needs_remset_update() const     { return _needs_remset_update; }
+  bool needs_remset_update() const     { return _needs_remset_update != 0; }
 
   void set_old()                       { _type = Old; }
   void clear_humongous()               {
     assert(is_humongous() || !is_in_cset(), "must be");
     _type = NotInCSet;
   }
-  void set_has_remset(bool value)      { _needs_remset_update = value; }
+  void set_has_remset(bool value)      { _needs_remset_update = value ? 1 : 0; }
 
   bool is_in_cset_or_humongous() const { return is_in_cset() || is_humongous(); }
   bool is_in_cset() const              { return type() >= Young; }
