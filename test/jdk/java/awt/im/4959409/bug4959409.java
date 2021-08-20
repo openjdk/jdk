@@ -83,8 +83,8 @@ public class bug4959409 {
                     int mod = keyEvent.getModifiersEx();
                     if (code == '1' && mod == KeyEvent.SHIFT_DOWN_MASK) {
                         keyPressedEventLatch.countDown();
-                        jLabel.setText("keyPressed receive for Shift+1");
-                        System.out.println("keyPressed receive for Shift+1");
+                        jLabel.setText("keyPressed received for Shift+1");
+                        System.out.println("keyPressed received for Shift+1");
                     } else {
                         jLabel.setText("Did not receive keyPressed for Shift+1");
                         System.out.println("Did not receive keyPressed for Shift+1");
