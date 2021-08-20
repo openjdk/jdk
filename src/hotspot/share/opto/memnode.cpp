@@ -1625,7 +1625,11 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
-        x->set_req(0, in);
+        if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL) {
+          x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
+        } else {
+          x->set_req(0, in);
+        }
       } else {
         x->set_req(0, NULL);
       }
