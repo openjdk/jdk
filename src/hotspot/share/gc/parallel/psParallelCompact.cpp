@@ -2278,7 +2278,6 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
   FillableRegionLogger region_logger;
   for (unsigned int id = to_space_id; id + 1 > old_space_id; --id) {
     SpaceInfo* const space_info = _space_info + id;
-    MutableSpace* const space = space_info->space();
     HeapWord* const new_top = space_info->new_top();
 
     const size_t beg_region = sd.addr_to_region_idx(space_info->dense_prefix());
