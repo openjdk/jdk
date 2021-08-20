@@ -162,6 +162,8 @@ public:
                             Label& slow_path_continuation) const;
 
   void patch_barrier_relocation(address addr, int format);
+
+  void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

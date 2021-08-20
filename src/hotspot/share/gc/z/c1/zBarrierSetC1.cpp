@@ -75,6 +75,7 @@ address ZLoadBarrierStubC1::runtime_stub() const {
 void ZLoadBarrierStubC1::visit(LIR_OpVisitState* visitor) {
   visitor->do_slow_case();
   visitor->do_input(_ref_addr);
+  visitor->do_input(_ref);
   visitor->do_output(_ref);
   if (_tmp->is_valid()) {
     visitor->do_temp(_tmp);
@@ -241,18 +242,23 @@ public:
     _info(info) {}
 
   virtual void visit(LIR_OpVisitState* state) {
-    state->do_input(_new_zaddress);
-    state->do_input(_addr);
+    if (_stub == NULL) {
+      state->do_input(_new_zaddress);
+      state->do_output(_new_zpointer);
+    } else {
+      state->do_input(_new_zaddress);
+      state->do_input(_addr);
 
-    // Use temp registers to ensure these they use different registers.
-    state->do_temp(_addr);
-    state->do_temp(_new_zaddress);
+      // Use temp registers to ensure these they use different registers.
+      state->do_temp(_addr);
+      state->do_temp(_new_zaddress);
 
-    state->do_output(_new_zpointer);
-    state->do_stub(_stub);
+      state->do_output(_new_zpointer);
+      state->do_stub(_stub);
 
-    if (_info != NULL) {
-      state->do_info(_info);
+      if (_info != NULL) {
+        state->do_info(_info);
+      }
     }
   }
 
@@ -262,7 +268,7 @@ public:
       ce->add_debug_info_for_null_check_here(_info);
     }
     bs_asm->generate_c1_store_barrier(ce,
-                                      _addr->as_address_ptr(),
+                                      _stub != NULL ? _addr->as_address_ptr() : NULL,
                                       _new_zaddress,
                                       _new_zpointer,
                                       (ZStoreBarrierStubC1*)_stub);
@@ -300,7 +306,7 @@ LIR_Opr ZBarrierSetC1::color(LIRAccess& access, LIR_Opr new_zaddress) const {
 
   LIR_Opr new_zpointer = new_zaddress;
 
-  __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
+  __ append(new LIR_OpZStoreBarrier(NULL /* addr  */,
                                     new_zaddress,
                                     new_zpointer,
                                     NULL /* stub */,
@@ -356,11 +362,13 @@ LIR_Opr ZBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_regist
 }
 
 void ZBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
-  BarrierSetC1::load_at_resolved(access, result);
-
-  if (barrier_needed(access)) {
-    load_barrier(access, result);
+  if (!barrier_needed(access)) {
+    BarrierSetC1::load_at_resolved(access, result);
+    return;
   }
+
+  BarrierSetC1::load_at_resolved(access, result);
+  load_barrier(access, result);
 }
 
 void ZBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
@@ -383,17 +391,20 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
   new_value.load_item();
   LIR_Opr new_value_zpointer = store_barrier(access, new_value.result(), true /* is_atomic */);
 
-#ifdef AMD64
-  cmp_value.load_item_force(FrameMap::rax_oop_opr);
-#else
-  // TODO: Check that this actually works on AArch64
   cmp_value.load_item();
   cmp_value.set_destroys_register();
-#endif
   color(access, cmp_value.result());
 
+#ifdef AMD64
+  LIR_Opr cmp_value_opr = FrameMap::rax_oop_opr;
+#else
+  // TODO: Check that this actually works on AArch64
+  LIR_Opr cmp_value_opr = access.gen()->new_register(T_OBJECT);
+#endif
+  access.gen()->lir()->move(cmp_value.result(), cmp_value_opr);
+
   __ cas_obj(access.resolved_addr()->as_address_ptr()->base(),
-             cmp_value.result(),
+             cmp_value_opr,
              new_value_zpointer,
              LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr);
   LIR_Opr result = access.gen()->new_register(T_INT);

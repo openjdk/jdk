@@ -1028,10 +1028,8 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!UseZGC) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    // Load barrier has not yet been applied, so ZGC can't verify the oop here
+    __ verify_oop(dest->as_register());
   } else if (type == T_ADDRESS && addr->disp() == oopDesc::klass_offset_in_bytes()) {
     if (UseCompressedClassPointers) {
       __ decode_klass_not_null(dest->as_register());

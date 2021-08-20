@@ -827,7 +827,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
     }
 #endif
     assert(src->is_single_cpu(), "must match");
-    if (src->type() == T_OBJECT && !UseZGC) {
+    if (src->type() == T_OBJECT) {
       __ verify_oop(src->as_register());
     }
     move_regs(src->as_register(), dest->as_register());
@@ -836,9 +836,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
 #ifdef _LP64
     if (is_reference_type(src->type())) {
       // Surprising to me but we can see move of a long to t_object
-      if (!UseZGC) {
-        __ verify_oop(src->as_register());
-      }
+      __ verify_oop(src->as_register());
       move_regs(src->as_register(), dest->as_register_lo());
       return;
     }
@@ -961,10 +959,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   Register compressed_src = rscratch1;
 
   if (is_reference_type(type)) {
-    if (!UseZGC) {
-      // TODO: Fix this
-      __ verify_oop(src->as_register());
-    }
+    __ verify_oop(src->as_register());
 #ifdef _LP64
     if (UseCompressedOops && !wide) {
       __ movptr(compressed_src, src->as_register());
@@ -1368,10 +1363,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 #endif
 
-    // Load barrier has not yet been applied, so ZGC can't verify the oop here
-    if (!UseZGC) {
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   } else if (type == T_ADDRESS && addr->disp() == oopDesc::klass_offset_in_bytes()) {
 #ifdef _LP64
     if (UseCompressedClassPointers) {

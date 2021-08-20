@@ -53,6 +53,71 @@
 #undef __
 #define __ masm->
 
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
+  // and after being colored. Therefore, we must deal with colored oops as well.
+  Label done;
+  Label check_oop;
+  Label check_zaddress;
+  int color_bits = ZAddressRemappedShift + ZAddressRemappedBits;
+
+  uintptr_t shifted_base_start_mask = (UCONST64(1) << (ZAddressHeapBaseShift + color_bits + 1)) - 1;
+  uintptr_t shifted_base_end_mask = (UCONST64(1) << (ZAddressHeapBaseShift + 1)) - 1;
+  uintptr_t shifted_base_mask = shifted_base_start_mask ^ shifted_base_end_mask;
+
+  uintptr_t shifted_address_end_mask = (UCONST64(1) << (color_bits + 1)) - 1;
+  uintptr_t shifted_address_mask = shifted_address_end_mask ^ (uintptr_t)CONST64(-1);
+
+  // Check colored null
+  __ mov64(tmp1, shifted_address_mask);
+  __ testptr(tmp1, obj);
+  __ jcc(Assembler::zero, done);
+
+  // Check for zpointer
+  __ mov64(tmp1, shifted_base_mask);
+  __ testptr(tmp1, obj);
+  __ jcc(Assembler::zero, check_oop);
+
+  // Lookup shift
+  __ movq(tmp1, obj);
+  __ mov64(tmp2, shifted_address_end_mask);
+  __ andq(tmp1, tmp2);
+  __ shrq(tmp1, ZAddressRemappedShift);
+  __ andq(tmp1, (1 << ZAddressRemappedBits) - 1);
+  __ lea(tmp2, ExternalAddress((address)&ZAddressLoadShiftTable));
+
+  // Uncolor presumed zpointer
+  assert(obj != rcx, "bad choice of register");
+  if (rcx != tmp1 && rcx != tmp2) {
+    __ push(rcx);
+  }
+  __ movl(rcx, Address(tmp2, tmp1, Address::times_4, 0));
+  __ shrq(obj);
+  if (rcx != tmp1 && rcx != tmp2) {
+    __ pop(rcx);
+  }
+
+  __ jmp(check_zaddress);
+
+  __ bind(check_oop);
+
+  // make sure klass is 'reasonable', which is not zero.
+  __ load_klass(tmp1, obj, tmp2);  // get klass
+  __ testptr(tmp1, tmp1);
+  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+
+  __ bind(check_zaddress);
+  // Check if the oop is in the right area of memory
+  __ movptr(tmp1, obj);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andptr(tmp1, tmp2);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  __ cmpptr(tmp1, tmp2);
+  __ jcc(Assembler::notZero, error);
+
+  __ bind(done);
+}
+
 // Helper for saving and restoring registers across a runtime call that does
 // not have any live vector registers.
 class ZRuntimeCallSpill {
@@ -768,9 +833,9 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                                                      ZStoreBarrierStubC1* stub) const {
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
-  Register rbase = addr->base()->as_pointer_register();
 
   if (stub != NULL) {
+    Register rbase = addr->base()->as_pointer_register();
     store_barrier_fast(ce->masm(),
                        ce->as_Address(addr),
                        rnew_zaddress,
