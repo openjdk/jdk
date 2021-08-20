@@ -968,7 +968,7 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // within them are evacuated to their destinations. These dependencies lead to
 // limited thread utilization as threads spin waiting on regions to be ready.
 // Shadow regions are utilized to address these region dependencies. The basic
-// is idea is that, if a region is unavailable because it still contains live
+// idea is that, if a region is unavailable because it still contains live
 // objects  and thus cannot serve as a destination momentarily, the GC thread
 // may allocate a shadow region as a substitute destination and directly copy
 // live objects into this shadow region. Live objects in the shadow region will
