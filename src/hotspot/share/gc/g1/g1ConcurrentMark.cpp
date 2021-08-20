@@ -629,7 +629,7 @@ private:
         assert(_cm == NULL || _cm->cm_thread()->in_progress(), "invariant");
         assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
       }
-      assert(cur >= end, "Must have completed iteration over the bitmap for region %u. ", r->hrm_index());
+      assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
       return false;
     }
