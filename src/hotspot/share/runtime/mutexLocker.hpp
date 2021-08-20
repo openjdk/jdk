@@ -96,9 +96,6 @@ extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize acc
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
 #endif // PRODUCT
-extern Mutex*   Debug1_lock;                     // A bunch of pre-allocated locks that can be used for tracing
-extern Mutex*   Debug2_lock;                     // down synchronization related bugs!
-extern Mutex*   Debug3_lock;
 
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data

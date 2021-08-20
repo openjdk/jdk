@@ -285,6 +285,10 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
 
+  assert(_rank < nonleaf || _safepoint_check_required == _safepoint_check_always ||
+         /*for now*/ _rank == Mutex::native,
+         "higher than nonleaf should safepoint %s", name);
+
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
 #endif
