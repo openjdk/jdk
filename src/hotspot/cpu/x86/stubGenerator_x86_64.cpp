@@ -7718,7 +7718,9 @@ address generate_avx_ghash_processBlocks() {
 
     if (UseAESCTRIntrinsics) {
       if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
-        StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
+        if (StubRoutines::x86::_counter_mask_addr == NULL) {
+          StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
+        }
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
       } else {
         StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
@@ -7758,7 +7760,9 @@ address generate_avx_ghash_processBlocks() {
 
     // Generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
-    StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
+      if (StubRoutines::x86::_ghash_long_swap_mask_addr == NULL) {
+        StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
+      }
     StubRoutines::x86::_ghash_byte_swap_mask_addr = generate_ghash_byte_swap_mask();
       if (VM_Version::supports_avx()) {
         StubRoutines::x86::_ghash_shuffmask_addr = ghash_shufflemask_addr();
