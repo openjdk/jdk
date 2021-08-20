@@ -78,10 +78,10 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import static org.testng.Assert.expectThrows; //Replaced by assertThrows in JUnit5
 
 /**
  * This is a test class created to check the operation of
@@ -2678,13 +2678,9 @@ public class RegExTest {
         Matcher m = p.matcher("abcd");
         StringBuffer result = new StringBuffer();
         m.find();
-        try {
-            m.appendReplacement(result, ("xyz$g"));
-            fail();
-        } catch (IllegalArgumentException iae) {
-            if (result.length() != 0)
-                fail();
-        }
+        expectThrows(IllegalArgumentException.class,
+                () -> m.appendReplacement(result, ("xyz$g")));
+        assertEquals(result.length(), 0);
 
     }
     /**
@@ -4267,7 +4263,7 @@ public class RegExTest {
             String p = (String)pm[0];
             String s = (String)pm[1];
             boolean r = (Boolean)pm[2];
-            assertSame(r, Pattern.compile(p).matcher(s).matches());
+            assertEquals(r, Pattern.compile(p).matcher(s).matches());
         }
     }
 
@@ -4278,16 +4274,10 @@ public class RegExTest {
                 "\u0060", "\u007b", "\u0416")) {
             for (String pat : List.of("(?<" + groupName + ">)",
                     "\\k<" + groupName + ">")) {
-                try {
-                    Pattern.compile(pat);
-                    fail();
-                } catch (PatternSyntaxException e) {
-                    if (!e.getMessage().startsWith(
+                var e = expectThrows(PatternSyntaxException.class, () -> Pattern.compile(pat));
+                assertTrue(e.getMessage().startsWith(
                             "capturing group name does not start with a"
-                            + " Latin letter")) {
-                        fail();
-                    }
-                }
+                            + " Latin letter"));
             }
         }
         // Invalid char in a group name
@@ -4295,15 +4285,10 @@ public class RegExTest {
                 "d\u0060", "e\u007b", "f\u0416")) {
             for (String pat : List.of("(?<" + groupName + ">)",
                     "\\k<" + groupName + ">")) {
-                try {
-                    Pattern.compile(pat);
-                    fail();
-                } catch (PatternSyntaxException e) {
-                    if (!e.getMessage().startsWith(
-                            "named capturing group is missing trailing '>'")) {
-                        fail();
-                    }
-                }
+                var e = expectThrows(PatternSyntaxException.class, () ->
+                    Pattern.compile(pat));
+                    assertTrue(e.getMessage().startsWith(
+                            "named capturing group is missing trailing '>'"));
             }
         }
     }
@@ -4319,14 +4304,9 @@ public class RegExTest {
         for (String rep : List.of("", "x", ".", ",", "-1", "2,1",
                 n, n + ",", "0," + n, n + "," + m, m, m + ",", "0," + m)) {
             String pat = ".{" + rep + "}";
-            try {
-                Pattern.compile(pat);
-                fail("Expected to fail. Pattern: " + pat);
-            } catch (PatternSyntaxException e) {
-                if (!e.getMessage().startsWith("Illegal repetition")) {
-                    fail("Unexpected error message: " + e.getMessage());
-                }
-            }
+            var e = expectThrows(PatternSyntaxException.class, () ->
+                    Pattern.compile(pat));
+            assertTrue(e.getMessage().startsWith("Illegal repetition"));
         }
     }
 
@@ -4554,15 +4534,9 @@ public class RegExTest {
     @Test
     public static void errorMessageCaretIndentation() {
         String pattern = "\t**";
-
-        try {
-            Pattern.compile(pattern);
-        } catch (PatternSyntaxException e) {
-            var message = e.getMessage();
-            var sep = System.lineSeparator();
-            if (!message.contains(sep + "\t ^")){
-                fail();
-            }
-        }
+        var e = expectThrows(PatternSyntaxException.class, () ->
+                Pattern.compile(pattern));
+        var sep = System.lineSeparator();
+        assertTrue(e.getMessage().contains(sep + "\t ^"));
     }
 }
