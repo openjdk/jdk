@@ -192,7 +192,6 @@ public final class ImagePluginStack {
 
     public void operate(ImageProvider provider) throws Exception {
         ExecutableImage img = provider.retrieve(this);
-        img.setTargetPlatform(imageBuilder.getTargetPlatform());
         List<String> arguments = new ArrayList<>();
         plugins.stream()
                 .filter(PostProcessor.class::isInstance)

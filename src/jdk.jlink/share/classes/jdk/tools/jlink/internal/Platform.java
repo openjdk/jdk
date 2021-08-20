@@ -52,7 +52,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
     /*
      * Returns the {@code Platform} based on the platformString of the form <operating system>-<arch>.
      */
-    public static Platform parseTargetPlatform(String platformString) {
+    public static Platform parsePlatform(String platformString) {
         String osName;
         String archName;
         int index = platformString.indexOf("-");
@@ -71,6 +71,14 @@ public record Platform(OperatingSystem os, Architecture arch) {
         }
         Architecture arch = toArch(archName);
         return new Platform(os, arch);
+    }
+
+    /**
+     * @return true is it's a 64-bit platform
+     */
+    public boolean is64Bit() {
+        return (arch() == Platform.Architecture.x64 ||
+                arch() == Platform.Architecture.AARCH64);
     }
 
     /**

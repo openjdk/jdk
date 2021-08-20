@@ -24,10 +24,10 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -76,12 +76,11 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         try {
             Process p = builder.inheritIO().start();
             status = p.waitFor();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (InterruptedException | IOException e) {
+            throw new PluginException(e);
         }
-        if (status == 0) {
-            System.out.println("Created " + archiveMsg + " archive successfully");
-        } else {
+
+        if (status != 0) {
             throw new PluginException("Failed creating " + archiveMsg + " archive!");
         }
     }
@@ -101,9 +100,10 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (Files.exists(classListPath)) {
             generateCDSArchive(image,false);
 
-            if (image.is64Bit()) {
+            if (targetPlatform.is64Bit()) {
                 generateCDSArchive(image,true);
             }
+            System.out.println("Created CDS archive successfully");
         } else {
             throw new PluginException("Cannot generate CDS archives: classlist not found: " +
                                       classListPath.toString());
@@ -118,10 +118,6 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        in.transformAndCopy((file) -> {
-            return file;
-            }, out);
-        return out.build();
+        return in;
     }
-
 }

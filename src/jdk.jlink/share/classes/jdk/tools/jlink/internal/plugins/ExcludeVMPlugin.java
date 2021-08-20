@@ -246,7 +246,7 @@ public final class ExcludeVMPlugin extends AbstractPlugin {
 
     private static String[] jvmlibs(ResourcePoolModule module) {
         String targetPlatform = module.targetPlatform();
-        Platform platform = Platform.parseTargetPlatform(targetPlatform);
+        Platform platform = Platform.parsePlatform(targetPlatform);
         switch (platform.os()) {
             case WINDOWS:
                 return new String[] { "jvm.dll" };

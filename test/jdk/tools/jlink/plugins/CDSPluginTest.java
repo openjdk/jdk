@@ -24,6 +24,7 @@
 import java.io.File;
 
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.*;
 
 import tests.Helper;
@@ -62,8 +63,7 @@ public class CDSPluginTest {
 
         String subDir;
         String sep = File.separator;
-        String osName = System.getProperty("os.name");
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (Platform.isWindows()) {
             subDir = "bin" + sep;
         } else {
             subDir = "lib" + sep;
@@ -73,12 +73,12 @@ public class CDSPluginTest {
                           new String[] { subDir + "classes.jsa", subDir + "classes_nocoops.jsa" });
 
        // Simulate different platforms between current runtime and target image.
-       if (osName.toLowerCase().startsWith("linux")) {
+       if (Platform.isLinux()) {
            System.out.println("---- Test different platforms scenario ----");
            String jlinkPath = JDKToolFinder.getJDKTool("jlink");
            String[] cmd = {jlinkPath, "--add-modules", "java.base,java.logging",
                            "-J-Dos.name=windows", "--generate-cds-archive",
-                           "--output", System.getProperty("test.classes") + sep + "module" + "-tmp"};
+                           "--output", System.getProperty("test.classes") + sep + module + "-tmp"};
            StringBuilder cmdLine = new StringBuilder();
            for (String s : cmd) {
                cmdLine.append(s).append(' ');

@@ -77,9 +77,9 @@ public interface ImageBuilder {
     public ExecutableImage getExecutableImage();
 
     /**
-     * Gets the target image platform.
+     * Gets the platform of the image.
      *
-     * @return Platform
+     * @return {@code Platform} object representing the platform of the image
      */
     public default Platform getTargetPlatform() {
         return Platform.UNKNOWN;

@@ -86,9 +86,9 @@ public final class DefaultImageBuilder implements ImageBuilder {
         private final Path home;
         private final List<String> args;
         private final Set<String> modules;
-        private Platform platform;
+        private final Platform platform;
 
-        DefaultExecutableImage(Path home, Set<String> modules) {
+        DefaultExecutableImage(Path home, Set<String> modules, Platform p) {
             Objects.requireNonNull(home);
             if (!Files.exists(home)) {
                 throw new IllegalArgumentException("Invalid image home");
@@ -96,7 +96,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             this.home = home;
             this.modules = Collections.unmodifiableSet(modules);
             this.args = createArgs(home);
-            this.platform = Platform.UNKNOWN;
+            this.platform = p;
         }
 
         private static List<String> createArgs(Path home) {
@@ -131,19 +131,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
 
         @Override
-        public void setTargetPlatform(Platform p) {
-            platform = p;
-        }
-
-        @Override
         public Platform getTargetPlatform() {
             return platform;
-        }
-
-        @Override
-        public boolean is64Bit() {
-            return (platform.arch() == Platform.Architecture.x64 ||
-                    platform.arch() == Platform.Architecture.AARCH64);
         }
     }
 
@@ -181,7 +170,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (value == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
-            this.platform = Platform.parseTargetPlatform(value);
+            this.platform = Platform.parsePlatform(value);
 
             checkResourcePool(files);
 
@@ -532,7 +521,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
     @Override
     public ExecutableImage getExecutableImage() {
-        return new DefaultExecutableImage(root, modules);
+        return new DefaultExecutableImage(root, modules, platform);
     }
 
     // This is experimental, we should get rid-off the scripts in a near future
@@ -574,7 +563,10 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Path binDir = root.resolve(BIN_DIRNAME);
         if (Files.exists(binDir.resolve("java")) ||
             Files.exists(binDir.resolve("java.exe"))) {
-            return new DefaultExecutableImage(root, retrieveModules(root));
+            // It may be possible to extract the platform info from the given image.
+            // --post-process-path is a hidden option and pass unknown platform for now.
+            // --generate-cds-archive plugin cannot be used with --post-process-path option.
+            return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
         }
         return null;
     }
