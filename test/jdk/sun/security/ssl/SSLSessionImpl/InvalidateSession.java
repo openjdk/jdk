@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8270344
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates
  * @summary Session resumption errors
  * @run main/othervm InvalidateSession
  */
@@ -37,40 +37,23 @@ import java.util.*;
 
 import jdk.test.lib.security.SecurityUtils;
 
-public class InvalidateSession {
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+public class InvalidateSession implements SSLContextTemplate {
+
+    static ServerSocketFactory serverSsf = null;
+    static SSLSocketFactory clientSsf = null;
+
     static Server server;
     static SSLSession cacheSession;
     static final String[] CLIENT_VERSIONS = {"TLSv1", "TLSv1.1", "TLSv1.2"};
 
     public static void main(String args[]) throws Exception {
-        String keyFilename =
-                System.getProperty("test.src", "./") + "/" + pathToStores +
-                        "/" + keyStoreFile;
-        String trustFilename =
-                System.getProperty("test.src", "./") + "/" + pathToStores +
-                        "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
         // drop the supported_versions extension to force test to use the legacy
         // TLS protocol version field during handshakes
         System.setProperty("jdk.tls.client.disableExtensions", "supported_versions");
-
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
-        server = startServer();
-        while (!server.started) {
-            Thread.yield();
-        }
 
         InvalidateSession test = new InvalidateSession();
-        test.clientTest();
+        test.sessionTest();
         server.go = false;
     }
 
@@ -86,7 +69,14 @@ public class InvalidateSession {
      * 3) 3rd iteration, same server/client config
      * - Session "B" should continue to be in use
      */
-    private void clientTest() throws Exception {
+    private void sessionTest() throws Exception {
+        serverSsf = createServerSSLContext().getServerSocketFactory();
+        clientSsf = createClientSSLContext().getSocketFactory();
+        server = startServer();
+        while (!server.started) {
+            Thread.yield();
+        }
+
         for (int i = 1; i <= 3; i++) {
             clientConnect(i);
             Thread.sleep(1000);
@@ -96,10 +86,11 @@ public class InvalidateSession {
     public void clientConnect(int testIterationCount) throws Exception {
         System.out.printf("Connecting to: localhost: %s, iteration count %d%n",
                 "localhost:" + server.port, testIterationCount);
-        SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslSocket = (SSLSocket) ssf.createSocket("localhost", server.port);
+        SSLSocket sslSocket = (SSLSocket) clientSsf.createSocket("localhost", server.port);
         sslSocket.setEnabledProtocols(CLIENT_VERSIONS);
         sslSocket.startHandshake();
+
+        System.out.println("Got session: " + sslSocket.getSession());
 
         if (testIterationCount == 2 && Objects.equals(cacheSession, sslSocket.getSession())) {
             throw new RuntimeException("Same session should not have resumed");
@@ -110,7 +101,6 @@ public class InvalidateSession {
 
         cacheSession = sslSocket.getSession();
 
-        System.out.println("Got session: " + sslSocket.getSession());
         try (
         ObjectOutputStream oos = new ObjectOutputStream(sslSocket.getOutputStream());
         ObjectInputStream ois = new ObjectInputStream(sslSocket.getInputStream())) {
@@ -138,10 +128,8 @@ public class InvalidateSession {
         @Override
         public void run() {
             try {
-                SSLContext sc = SSLContext.getDefault();
-                ServerSocketFactory fac = sc.getServerSocketFactory();
                 SSLServerSocket ssock = (SSLServerSocket)
-                        fac.createServerSocket(0);
+                        serverSsf.createServerSocket(0);
                 this.port = ssock.getLocalPort();
                 ssock.setEnabledProtocols(new String[]{"TLSv1"});
                 started = true;
@@ -171,3 +159,4 @@ public class InvalidateSession {
         }
     }
 }
+
