@@ -29,7 +29,6 @@
  */
 
 import java.awt.Container;
-import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -39,7 +38,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -56,7 +55,7 @@ public class bug4959409 {
     private static JTextField jTextField;
     private static JLabel jLabel;
 
-    public static void createUIAndTest() throws InterruptedException, InvocationTargetException, AWTException {
+    public static void createUIAndTest() throws Exception {
         CountDownLatch frameVisibleLatch = new CountDownLatch(1);
         CountDownLatch keyPressedEventLatch = new CountDownLatch(1);
         final Point[] points = new Point[1];
@@ -77,7 +76,6 @@ public class bug4959409 {
             });
 
             jTextField.addKeyListener(new KeyAdapter() {
-
                 @Override
                 public void keyPressed(KeyEvent keyEvent) {
                     super.keyPressed(keyEvent);
@@ -85,11 +83,11 @@ public class bug4959409 {
                     int mod = keyEvent.getModifiersEx();
                     if (code == '1' && mod == KeyEvent.SHIFT_DOWN_MASK) {
                         keyPressedEventLatch.countDown();
-                        jLabel.setText("keyPressed received for Shift+1");
-                        System.out.println("keyPressed received for Shift+1");
+                        jLabel.setText("keyPressed receive for Shift+1");
+                        System.out.println("keyPressed receive for Shift+1");
                     } else {
-                        jLabel.setText("Did not received keyPressed for Shift+1");
-                        System.out.println("Did not received keyPressed for Shift+1");
+                        jLabel.setText("Did not receive keyPressed for Shift+1");
+                        System.out.println("Did not receive keyPressed for Shift+1");
                     }
                 }
             });
@@ -117,7 +115,8 @@ public class bug4959409 {
             rect[0] = jTextField.getBounds();
         });
 
-        clickTextField(robot, points[0].x + rect[0].width / 2, points[0].y + rect[0].height / 2);
+        clickTextField(robot, points[0].x + rect[0].width / 2,
+                points[0].y + rect[0].height / 2);
 
         // Press SHIFT + 1 keys
         robot.waitForIdle();
@@ -128,7 +127,7 @@ public class bug4959409 {
         robot.waitForIdle();
 
         if (!keyPressedEventLatch.await(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Did not received keyPressed for Shift + 1 , test failed");
+            throw new RuntimeException("Did not receive keyPressed for Shift + 1 , test failed");
         }
     }
 
@@ -143,8 +142,7 @@ public class bug4959409 {
         robot.waitForIdle();
     }
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException,
-            AWTException {
+    public static void main(String[] args) throws Exception {
         try {
             createUIAndTest();
         } finally {
