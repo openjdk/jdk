@@ -586,36 +586,44 @@ private:
   private:
     G1CMBitMap* _bitmap;
     G1ConcurrentMark* _cm;
+
+  bool has_aborted() {
+    if (_cm != NULL) {
+      _cm->do_yield_check();
+      return _cm->has_aborted();
+    }
+    return false;
+  }
+
+  HeapWord* region_clear_limit(HeapRegion* r) {
+    if (_cm != NULL && _cm->cm_thread()->in_undo_mark()) {
+      // No need to clear bitmaps for empty regions.
+      if (_cm->live_words(r->hrm_index()) == 0) {
+        assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
+        return r->bottom();
+      }
+      // Otherwise, we only clear up to the next_top_at_mark_start
+      assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
+      return r->next_top_at_mark_start();
+    }
+    return r->end();
+  }
+
   public:
     G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _bitmap(bitmap), _cm(cm) {
     }
 
     virtual bool do_heap_region(HeapRegion* r) {
-      bool in_undo_mark = _cm != NULL && _cm->cm_thread()->in_undo_mark();
-      if (in_undo_mark) {
-        if (_cm->has_aborted()) {
-          return true;
-        }
-        if (_cm->live_words(r->hrm_index()) == 0) {
-          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
-          _cm->do_yield_check();
-          return _cm->has_aborted();
-        }
-        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
+      if (has_aborted()) {
+        return true;
       }
+
+      HeapWord* cur = r->bottom();
+      HeapWord* const end = region_clear_limit(r);
 
       size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
-      HeapWord* cur = r->bottom();
-      HeapWord* const end = in_undo_mark ? r->next_top_at_mark_start() : r->end();
       while (cur < end) {
-        // Abort iteration if necessary.
-        if (_cm != NULL) {
-          _cm->do_yield_check();
-          if (_cm->has_aborted()) {
-            return true;
-          }
-        }
 
         MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
         _bitmap->clear_range(mr);
@@ -628,6 +636,11 @@ private:
         // clearing to get some checking in the product.
         assert(_cm == NULL || _cm->cm_thread()->in_progress(), "invariant");
         assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+
+        // Abort iteration if necessary.
+        if (has_aborted()) {
+          return true;
+        }
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
@@ -651,6 +664,7 @@ public:
     SuspendibleThreadSetJoiner sts_join(_suspendible);
     G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hr_claimer, worker_id);
   }
+
 
   bool is_complete() {
     return _cl.is_complete();
