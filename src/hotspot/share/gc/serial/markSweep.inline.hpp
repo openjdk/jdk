@@ -26,9 +26,10 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
 #include "gc/serial/markSweep.hpp"
-#include "gc/serial/serialStringDedup.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "gc/serial/serialStringDedup.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
