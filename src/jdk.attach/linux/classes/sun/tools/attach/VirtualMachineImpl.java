@@ -339,7 +339,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         Path statusPath = Paths.get(statusFile);
 
         try {
-            for (String line : Files.readAllLines(statusPath, UTF_8)) {
+            for (String line : Files.readAllLines(statusPath)) {
                 String[] parts = line.split(":");
                 if (parts.length == 2 && parts[0].trim().equals("NSpid")) {
                     parts = parts[1].trim().split("\\s+");
