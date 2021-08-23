@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 // A test case consists of three lines:
 // The first line is a pattern used in the test
 // The second line is the input to search for the pattern in
-// The third line is a concatentation of the match, the number of groups,
+// The third line is a concatenation of the match, the number of groups,
 //     and the contents of the first four subexpressions.
 // Empty lines and lines beginning with comment slashes are ignored.
 

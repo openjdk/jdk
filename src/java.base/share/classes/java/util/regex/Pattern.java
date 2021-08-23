@@ -341,7 +341,7 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="quote_follow">{@code \}</th>
  *     <td headers="matches quote quote_follow">Nothing, but quotes the following character</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="quote_begin">{@code \Q}</th>
- *     <td headers="matches quote quote_begin">Nothing, but quotes all characters until {@code \E}</td></tr>
+ *     <td headers="matches quote quote_begin">Nothing, but quotes all characters until {@code \E} or the end of the pattern</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="quote_end">{@code \E}</th>
  *     <td headers="matches quote quote_end">Nothing, but ends quoting started by {@code \Q}</td></tr>
  *     <!-- Metachars: !$()*+.<>?[\]^{|} -->
@@ -698,7 +698,7 @@ import jdk.internal.util.ArraysSupport;
  *
  * <ul>
  *    <li><p> The backreference constructs, <code>\g{</code><i>n</i><code>}</code> for
- *    the <i>n</i><sup>th</sup><a href="#cg">capturing group</a> and
+ *    the <i>n</i><sup>th</sup> <a href="#cg">capturing group</a> and
  *    <code>\g{</code><i>name</i><code>}</code> for
  *    <a href="#groupname">named-capturing group</a>.
  *    </p></li>
