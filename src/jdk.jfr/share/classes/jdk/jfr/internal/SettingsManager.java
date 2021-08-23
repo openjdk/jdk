@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -140,7 +139,7 @@ final class SettingsManager {
             }
         } else {
             if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
-                Collections.sort(eventControls, (x,y) -> x.getEventType().getName().compareTo(y.getEventType().getName()));
+                eventControls.sort((x, y) -> x.getEventType().getName().compareTo(y.getEventType().getName()));
             }
             for (EventControl ec : eventControls) {
                 setEventControl(ec);

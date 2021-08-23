@@ -30,7 +30,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -213,7 +212,7 @@ public final class RepositoryFiles {
                 pathSet.remove(time);
                 pathLookup.remove(remove);
             }
-            Collections.sort(added, (p1, p2) -> p1.compareTo(p2));
+            added.sort((p1, p2) -> p1.compareTo(p2));
             for (Path p : added) {
                 // Only add files that have a complete header
                 // as the JVM may be in progress writing the file

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public final class TypeLibrary {
                 List<Type> jvmTypes;
                 try {
                     jvmTypes = MetadataLoader.createTypes();
-                    Collections.sort(jvmTypes, (a,b) -> Long.compare(a.getId(), b.getId()));
+                    jvmTypes.sort((a, b) -> Long.compare(a.getId(), b.getId()));
                 } catch (IOException e) {
                     throw new Error("JFR: Could not read metadata");
                 }

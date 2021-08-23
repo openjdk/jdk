@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +142,7 @@ final class Summary extends Command {
             println(" Start: " + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + " (UTC)");
             println(" Duration: " + (totalDuration + 500_000_000) / 1_000_000_000 + " s");
             List<Statistics> statsList = new ArrayList<>(stats.values());
-            Collections.sort(statsList, (u, v) -> Long.compare(v.count, u.count));
+            statsList.sort((u, v) -> Long.compare(v.count, u.count));
             println();
             String header = "      Count  Size (bytes) ";
             String typeHeader = " Event Type";

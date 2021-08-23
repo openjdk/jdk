@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class BasicLineNumberMapping {
       counter. This must be done before any queries are made. */
   public void sort() {
     if (infoList == null) return;
-    Collections.sort(infoList, new Comparator<>() {
+    infoList.sort(new Comparator<>() {
         public int compare(BasicLineNumberInfo l1, BasicLineNumberInfo l2) {
           Address a1 = l1.getStartPC();
           Address a2 = l2.getStartPC();

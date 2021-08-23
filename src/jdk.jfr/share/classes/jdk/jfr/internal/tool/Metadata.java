@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -205,7 +204,7 @@ final class Metadata extends Command {
             }
 
             List<Type> types = findTypes(file);
-            Collections.sort(types, new TypeComparator());
+            types.sort(new TypeComparator());
             for (Type type : types) {
                 if (filter != null) {
                     // If --events or --categories, only operate on events
