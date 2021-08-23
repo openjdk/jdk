@@ -34,6 +34,6 @@
   <key>NSHighResolutionCapable</key>
   <string>true</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>The application is requesting access to the microphone.</string>
+  <string>The application DEPLOY_LAUNCHER_NAME is requesting access to the microphone.</string>
  </dict>
 </plist>
