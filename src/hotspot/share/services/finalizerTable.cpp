@@ -50,20 +50,28 @@ const InstanceKlass* FinalizerEntry::klass() const {
   return _ik;
 }
 
-uint64_t FinalizerEntry::completed() const {
-  return Atomic::load(&_completed);
-}
-
 uint64_t FinalizerEntry::registered() const {
   return Atomic::load(&_registered);
+}
+
+uint64_t FinalizerEntry::enqueued() const {
+  return Atomic::load(&_enqueued);
+}
+
+uint64_t FinalizerEntry::finalized() const {
+  return Atomic::load(&_finalized);
 }
 
 void FinalizerEntry::on_register() {
   atomic_inc(&_registered);
 }
 
+void FinalizerEntry::on_enqueue() {
+  atomic_inc(&_enqueued);
+}
+
 void FinalizerEntry::on_complete() {
-  atomic_inc(&_completed);
+  atomic_inc(&_finalized);
 }
 
 static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
@@ -400,6 +408,14 @@ void FinalizerTable::on_register(const instanceHandle& h_i, Thread* thread) {
   FinalizerEntry* const fe = get_entry(ik, thread);
   assert(fe != nullptr, "invariant");
   fe->on_register();
+}
+
+void FinalizerTable::on_enqueue(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert(ik->has_finalizer(), "invariant");
+  FinalizerEntry* const fe = get_entry(ik, Thread::current());
+  assert(fe != nullptr, "invariant");
+  fe->on_enqueue();
 }
 
 void FinalizerTable::on_complete(const instanceHandle& h_i, JavaThread* finalizerThread) {

@@ -88,12 +88,14 @@ static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const 
   event.set_overridingClass(ik);
   event.set_codeSource(codesource_symbol_id);
   if (fe == NULL) {
-    event.set_registrations(0);
-    event.set_invocations(0);
+    event.set_registered(0);
+    event.set_enqueued(0);
+    event.set_finalized(0);
   } else {
     assert(fe->klass() == ik, "invariant");
-    event.set_registrations(fe->registered());
-    event.set_invocations(fe->completed());
+    event.set_registered(fe->registered());
+    event.set_enqueued(fe->enqueued());
+    event.set_finalized(fe->finalized());
   }
   event.commit();
 }

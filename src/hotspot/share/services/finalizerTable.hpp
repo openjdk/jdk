@@ -35,14 +35,17 @@ class Thread;
 class FinalizerEntry : public CHeapObj<mtClass> {
  private:
   const InstanceKlass* const _ik;
-  uint64_t _completed;
   uint64_t _registered;
+  uint64_t _enqueued;
+  uint64_t _finalized;
  public:
-  FinalizerEntry(const InstanceKlass* ik) : _ik(ik), _completed(0), _registered(0) {}
+  FinalizerEntry(const InstanceKlass* ik) : _ik(ik), _registered(0), _enqueued(0), _finalized(0) {}
   const InstanceKlass* klass() const NOT_MANAGEMENT_RETURN_(nullptr);
-  uint64_t completed() const NOT_MANAGEMENT_RETURN_(0L);
   uint64_t registered() const NOT_MANAGEMENT_RETURN_(0L);
+  uint64_t enqueued() const NOT_MANAGEMENT_RETURN_(0L);
+  uint64_t finalized() const NOT_MANAGEMENT_RETURN_(0L);
   void on_register() NOT_MANAGEMENT_RETURN;
+  void on_enqueue() NOT_MANAGEMENT_RETURN;
   void on_complete() NOT_MANAGEMENT_RETURN;
 };
 
@@ -61,8 +64,9 @@ class FinalizerTable : AllStatic {
   static void rehash_table() NOT_MANAGEMENT_RETURN;
   static bool needs_rehashing() NOT_MANAGEMENT_RETURN_(false);
   static void purge_unloaded() NOT_MANAGEMENT_RETURN;
-  static void on_complete(const instanceHandle& i, JavaThread* finalizerThread) NOT_MANAGEMENT_RETURN;
   static void on_register(const instanceHandle& i, Thread* thread) NOT_MANAGEMENT_RETURN;
+  static void on_enqueue(const InstanceKlass* ik) NOT_MANAGEMENT_RETURN;
+  static void on_complete(const instanceHandle& i, JavaThread* finalizerThread) NOT_MANAGEMENT_RETURN;
   static void do_entries(FinalizerEntryClosure* closure, Thread* thread) NOT_MANAGEMENT_RETURN;
   static const FinalizerEntry* lookup(const InstanceKlass* ik, Thread* thread) NOT_MANAGEMENT_RETURN_(nullptr);
 };
