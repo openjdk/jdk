@@ -671,7 +671,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
       // then it will lead to cyclic dependency.
       // Previously promoted loop predication is in the same loop of predication
       // point.
-      // This situation can occur when pinning nodes too conservatively. - can we do better?
+      // This situation can occur when pinning nodes too conservatively - can we do better?
       assert(false, "cyclic dependency prevents range check elimination");
     }
   }
