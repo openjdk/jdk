@@ -97,7 +97,7 @@ uint ZHeuristics::nconcurrent_workers() {
   // The number of concurrent threads we would like to use heavily depends
   // on the type of workload we are running. Using too many threads will have
   // a negative impact on the application throughput, while using too few
-  // threads will prolong the GC-cycle and we then risk being out-run by the
+  // threads will prolong the GC cycle and we then risk being out-run by the
   // application. When in dynamic mode, use up to 25% of the active processors.
   //  When in non-dynamic mode, use 12.5% of the active processors.
   return nworkers(UseDynamicNumberOfGCThreads ? 25.0 : 12.5);

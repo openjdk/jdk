@@ -61,7 +61,7 @@ static ZDriverRequest rule_minor_timer() {
   }
 
   // Perform GC if timer has expired.
-  const double time_since_last_gc = ZHeap::heap()->minor_cycle()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = ZHeap::heap()->minor_collector()->stat_cycle()->time_since_last();
   const double time_until_gc = ZCollectionIntervalMinor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Minor: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
@@ -85,7 +85,7 @@ static uint discrete_gc_workers(double gc_workers) {
 
 static double select_gc_workers(double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
   // Use all workers until we're warm
-  if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
+  if (!ZHeap::heap()->major_collector()->stat_cycle()->is_warm()) {
     const double not_warm_gc_workers = ConcGCThreads;
     log_debug(gc, director)("Select Minor GC Workers (Not Warm), GCWorkers: %.3f", not_warm_gc_workers);
     return not_warm_gc_workers;
@@ -97,7 +97,7 @@ static double select_gc_workers(double serial_gc_time, double parallelizable_gc_
 
   const double gc_workers = MAX2(avoid_long_gc_workers, avoid_oom_gc_workers);
   const uint actual_gc_workers = discrete_gc_workers(gc_workers);
-  const uint last_gc_workers = ZHeap::heap()->minor_cycle()->stat_cycle()->last_active_workers();
+  const uint last_gc_workers = ZHeap::heap()->minor_collector()->stat_cycle()->last_active_workers();
 
   // More than 15% division from the average is considered unsteady
   if (alloc_rate_sd_percent >= 0.15) {
@@ -114,7 +114,7 @@ static double select_gc_workers(double serial_gc_time, double parallelizable_gc_
     // next GC cycle will need to increase it again. If so, use the same number of GC workers
     // that will be needed in the next cycle.
     const double gc_duration_delta = (parallelizable_gc_time / actual_gc_workers) - (parallelizable_gc_time / last_gc_workers);
-    const double additional_time_for_allocations = ZHeap::heap()->minor_cycle()->stat_cycle()->time_since_last() - gc_duration_delta - sample_interval;
+    const double additional_time_for_allocations = ZHeap::heap()->minor_collector()->stat_cycle()->time_since_last() - gc_duration_delta - sample_interval;
     const double next_time_until_oom = time_until_oom + additional_time_for_allocations;
     const double next_avoid_oom_gc_workers = estimated_gc_workers(serial_gc_time, parallelizable_gc_time, next_time_until_oom);
 
@@ -135,7 +135,7 @@ static double select_gc_workers(double serial_gc_time, double parallelizable_gc_
 }
 
 ZDriverRequest rule_minor_allocation_rate_dynamic() {
-  if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_time_trustable()) {
+  if (!ZHeap::heap()->major_collector()->stat_cycle()->is_time_trustable()) {
     // Rule disabled
     return GCCause::_no_gc;
   }
@@ -162,8 +162,8 @@ ZDriverRequest rule_minor_allocation_rate_dynamic() {
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double parallelizable_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate number of GC workers needed to avoid OOM.
   const double gc_workers = select_gc_workers(serial_gc_time, parallelizable_gc_time, alloc_rate_sd_percent, time_until_oom);
@@ -173,7 +173,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic() {
 
   // Calculate GC duration given number of GC workers needed.
   const double actual_gc_duration = serial_gc_time + (parallelizable_gc_time / actual_gc_workers);
-  const uint last_gc_workers = ZHeap::heap()->minor_cycle()->stat_cycle()->last_active_workers();
+  const uint last_gc_workers = ZHeap::heap()->minor_collector()->stat_cycle()->last_active_workers();
 
   // Calculate time until GC given the time until OOM and GC duration.
   // We also subtract the sample interval, so that we don't overshoot the
@@ -201,7 +201,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic() {
 }
 
 static ZDriverRequest rule_minor_allocation_rate_static() {
-  if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_time_trustable()) {
+  if (!ZHeap::heap()->major_collector()->stat_cycle()->is_time_trustable()) {
     // Rule disabled
     return GCCause::_no_gc;
   }
@@ -230,8 +230,8 @@ static ZDriverRequest rule_minor_allocation_rate_static() {
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double parallelizable_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
@@ -268,7 +268,7 @@ static ZDriverRequest rule_major_timer() {
   }
 
   // Perform GC if timer has expired.
-  const double time_since_last_gc = ZHeap::heap()->major_cycle()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = ZHeap::heap()->major_collector()->stat_cycle()->time_since_last();
   const double time_until_gc = ZCollectionIntervalMajor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Major: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
@@ -294,7 +294,7 @@ static ZDriverRequest rule_major_allocation_stall() {
 }
 
 static ZDriverRequest rule_major_warmup() {
-  if (ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
+  if (ZHeap::heap()->major_collector()->stat_cycle()->is_warm()) {
     // Rule disabled
     return GCCause::_no_gc;
   }
@@ -304,7 +304,7 @@ static ZDriverRequest rule_major_warmup() {
   // duration, which is needed by the other rules.
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t used = ZHeap::heap()->used();
-  const double used_threshold_percent = (ZHeap::heap()->major_cycle()->stat_cycle()->nwarmup_cycles() + 1) * 0.1;
+  const double used_threshold_percent = (ZHeap::heap()->major_collector()->stat_cycle()->nwarmup_cycles() + 1) * 0.1;
   const size_t used_threshold = soft_max_capacity * used_threshold_percent;
 
   log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
@@ -343,7 +343,7 @@ static ZDriverRequest rule_major_high_usage() {
 }
 
 static ZDriverRequest rule_major_allocation_rate() {
-  if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_time_trustable()) {
+  if (!ZHeap::heap()->major_collector()->stat_cycle()->is_time_trustable()) {
     // Rule disabled
     return GCCause::_no_gc;
   }
@@ -359,8 +359,8 @@ static ZDriverRequest rule_major_allocation_rate() {
   const size_t used = ZHeap::heap()->used();
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const size_t old_live_for_last_gc = ZHeap::heap()->major_cycle()->stat_heap()->live_at_mark_end();
-  const size_t young_live_for_last_gc = ZHeap::heap()->minor_cycle()->stat_heap()->live_at_mark_end();
+  const size_t old_live_for_last_gc = ZHeap::heap()->major_collector()->stat_heap()->live_at_mark_end();
+  const size_t young_live_for_last_gc = ZHeap::heap()->minor_collector()->stat_heap()->live_at_mark_end();
   const size_t old_used = ZHeap::heap()->old_generation()->used_total();
   const size_t old_garbage = old_used - old_live_for_last_gc;
   const size_t young_used = ZHeap::heap()->young_generation()->used_total();
@@ -369,16 +369,16 @@ static ZDriverRequest rule_major_allocation_rate() {
 
   // Calculate max serial/parallel times of a minor GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double minor_serial_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double minor_parallelizable_gc_time = ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_cycle()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double minor_serial_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double minor_parallelizable_gc_time = ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->minor_collector()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
   const double minor_gc_duration = minor_serial_gc_time + (minor_parallelizable_gc_time / ConcGCThreads);
 
   // Calculate max serial/parallel times of a major GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double major_serial_gc_time = ZHeap::heap()->major_cycle()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->major_cycle()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double major_parallelizable_gc_time = ZHeap::heap()->major_cycle()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->major_cycle()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double major_serial_gc_time = ZHeap::heap()->major_collector()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->major_collector()->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double major_parallelizable_gc_time = ZHeap::heap()->major_collector()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->major_collector()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
   const double major_gc_duration = major_serial_gc_time + (major_parallelizable_gc_time / ConcGCThreads);
@@ -389,7 +389,7 @@ static ZDriverRequest rule_major_allocation_rate() {
   const double extra_gc_seconds_per_bytes_freed = current_minor_gc_seconds_per_bytes_freed - potential_minor_gc_seconds_per_bytes_freed;
   const double extra_gc_seconds_per_potentially_young_available_bytes = extra_gc_seconds_per_bytes_freed * (young_freeable_per_cycle + old_garbage);
 
-  int lookahead = ZCollectedHeap::heap()->total_collections() - ZHeap::heap()->major_cycle()->total_collections_at_end();
+  int lookahead = ZCollectedHeap::heap()->total_collections() - ZHeap::heap()->major_collector()->total_collections_at_end();
 
   double extra_minor_gc_seconds_for_lookahead = extra_gc_seconds_per_potentially_young_available_bytes * lookahead;
 
@@ -413,7 +413,7 @@ static ZDriverRequest rule_major_allocation_rate() {
 }
 
 static ZDriverRequest rule_major_proactive() {
-  if (!ZProactive || !ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
+  if (!ZProactive || !ZHeap::heap()->major_collector()->stat_cycle()->is_warm()) {
     // Rule disabled
     return GCCause::_no_gc;
   }
@@ -427,11 +427,11 @@ static ZDriverRequest rule_major_proactive() {
   // 10% of the max capacity since the previous GC, or more than 5 minutes has
   // passed since the previous GC. This helps avoid superfluous GCs when running
   // applications with very low allocation rate.
-  const size_t used_after_last_gc = ZHeap::heap()->major_cycle()->stat_heap()->used_at_relocate_end();
+  const size_t used_after_last_gc = ZHeap::heap()->major_collector()->stat_heap()->used_at_relocate_end();
   const size_t used_increase_threshold = ZHeap::heap()->soft_max_capacity() * 0.10; // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = ZHeap::heap()->used();
-  const double time_since_last_gc = ZHeap::heap()->major_cycle()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = ZHeap::heap()->major_collector()->stat_cycle()->time_since_last();
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
@@ -443,8 +443,8 @@ static ZDriverRequest rule_major_proactive() {
 
   const double assumed_throughput_drop_during_gc = 0.50; // 50%
   const double acceptable_throughput_drop = 0.01;        // 1%
-  const double serial_gc_time = ZHeap::heap()->major_cycle()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->major_cycle()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = ZHeap::heap()->major_cycle()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->major_cycle()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = ZHeap::heap()->major_collector()->stat_cycle()->serial_time().davg() + (ZHeap::heap()->major_collector()->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double parallelizable_gc_time = ZHeap::heap()->major_collector()->stat_cycle()->parallelizable_time().davg() + (ZHeap::heap()->major_collector()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
   const double acceptable_gc_interval = gc_duration * ((assumed_throughput_drop_during_gc / acceptable_throughput_drop) - 1.0);
   const double time_until_gc = acceptable_gc_interval - time_since_last_gc;

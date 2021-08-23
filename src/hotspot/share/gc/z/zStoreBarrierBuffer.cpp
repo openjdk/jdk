@@ -24,7 +24,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -89,8 +89,8 @@ void ZStoreBarrierBuffer::install_base_pointers() {
     volatile zpointer* p = entry._p;
     zaddress_unsafe p_unsafe = (zaddress_unsafe)(uintptr_t)p;
     zpointer ptr = ZAddress::color(safe(p_unsafe), _last_installed_color);
-    ZCycle* remap_cycle = ZHeap::heap()->remap_cycle(ptr);
-    ZForwarding* forwarding = remap_cycle->forwarding(p_unsafe);
+    ZCollector* remap_collector = ZHeap::heap()->remap_collector(ptr);
+    ZForwarding* forwarding = remap_collector->forwarding(p_unsafe);
     if (forwarding != NULL) {
       ZPage* page = forwarding->page();
       _base_pointers[i] = page->find_base(p);
@@ -145,7 +145,7 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
 }
 
 bool ZStoreBarrierBuffer::is_inside_marking_snapshot(volatile zpointer* p) {
-  bool during_major_marking = ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
+  bool during_major_marking = ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
 
   if (!during_major_marking) {
     return false;

@@ -34,11 +34,11 @@
 
 #ifdef ASSERT
 static bool during_minor_mark() {
-  return ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark;
+  return ZHeap::heap()->minor_collector()->phase() == ZPhase::Mark;
 }
 
 static bool during_major_mark() {
-  return ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
+  return ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
 }
 
 static bool during_any_mark() {
@@ -46,12 +46,12 @@ static bool during_any_mark() {
 }
 #endif
 
-zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle) {
-  return cycle->relocate_or_remap_object(addr);
+zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCollector* collector) {
+  return collector->relocate_or_remap_object(addr);
 }
 
-zaddress ZBarrier::remap(zaddress_unsafe addr, ZCycle* cycle) {
-  return cycle->remap_object(addr);
+zaddress ZBarrier::remap(zaddress_unsafe addr, ZCollector* collector) {
+  return collector->remap_object(addr);
 }
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>

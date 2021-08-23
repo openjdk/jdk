@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
@@ -77,8 +77,8 @@ ZPage::ZPage(const ZPage& other) :
 ZPage::~ZPage() {}
 
 void ZPage::reset_seqnum(ZGenerationId generation_id) {
-  Atomic::store(&_seqnum, ZHeap::heap()->get_cycle(generation_id)->seqnum());
-  Atomic::store(&_seqnum_other, ZHeap::heap()->get_cycle(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+  Atomic::store(&_seqnum, ZHeap::heap()->collector(generation_id)->seqnum());
+  Atomic::store(&_seqnum_other, ZHeap::heap()->collector(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
 void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPage::ZPageResetType type) {

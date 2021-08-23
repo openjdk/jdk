@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZSTOREBARRIERBUFFER_HPP
 
 #include "gc/z/zAddress.hpp"
-#include "gc/z/zCycle.hpp"
+#include "gc/z/zCollector.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 #include "memory/allocation.hpp"

@@ -33,7 +33,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
-class ZCycle;
+class ZCollector;
 class ZMarkCache;
 class ZPageTable;
 class ZWorkers;
@@ -58,7 +58,7 @@ public:
   static const bool Overflow      = false;
 
 private:
-  ZCycle* const       _cycle;
+  ZCollector* const   _collector;
   ZPageTable* const   _page_table;
   ZMarkStripeSet      _stripes;
   ZMarkTerminate      _terminate;
@@ -104,13 +104,11 @@ private:
   void verify_all_stacks_empty() const;
 
 public:
-  ZMark(ZCycle* cycle, ZPageTable* page_table);
+  ZMark(ZCollector* collector, ZPageTable* page_table);
 
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   void mark_object(zaddress addr);
   void mark_follow_invisible_root(zaddress addr, size_t size);
-
-  ZCycle* cycle() { return _cycle; }
 
   void start();
   void mark_roots();

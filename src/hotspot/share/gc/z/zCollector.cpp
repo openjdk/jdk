@@ -27,7 +27,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -52,14 +52,13 @@
 #include "utilities/events.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentMajorRemapRootUncolored("Concurrent Major Remap Root Uncolored");
-static const ZStatSubPhase ZSubPhaseConcurrentMajorRemapRootColored("Concurrent Major Remap Root Colored");
 
-ZCycle::ZCycle(ZCycleId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    _cycle_id(id),
+ZCollector::ZCollector(ZCollectorId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
+    _id(id),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
-    _workers(id == ZCycleId::_major ? "ZWorkerMajor" : "ZWorkerMinor"),
+    _workers(id == ZCollectorId::_major ? "ZWorkerMajor" : "ZWorkerMinor"),
     _mark(this, page_table),
     _relocate(this),
     _relocation_set(this),
@@ -73,31 +72,31 @@ ZCycle::ZCycle(ZCycleId id, ZPageTable* page_table, ZPageAllocator* page_allocat
     _stat_mark() {
 }
 
-ZWorkers* ZCycle::workers() {
+ZWorkers* ZCollector::workers() {
   return &_workers;
 }
 
-uint ZCycle::active_workers() const {
+uint ZCollector::active_workers() const {
   return _workers.active_workers();
 }
 
-void ZCycle::set_active_workers(uint nworkers) {
+void ZCollector::set_active_workers(uint nworkers) {
   _workers.set_active_workers(nworkers);
 }
 
-void ZCycle::threads_do(ThreadClosure* tc) const {
+void ZCollector::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZCycle::mark_flush_and_free(Thread* thread) {
+void ZCollector::mark_flush_and_free(Thread* thread) {
   _mark.flush_and_free(thread);
 }
 
-void ZCycle::mark_free() {
+void ZCollector::mark_free() {
    _mark.free();
 }
 
-void ZCycle::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
+void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // Freeing empty pages in bulk is an optimization to avoid grabbing
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
@@ -107,16 +106,16 @@ void ZCycle::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   }
 }
 
-void ZCycle::promote_pages(ZRelocationSetSelector* selector) {
-  if (cycle_id() == ZCycleId::_minor) {
+void ZCollector::promote_pages(ZRelocationSetSelector* selector) {
+  if (is_minor()) {
     _relocate.promote_pages(selector->not_selected_small());
     _relocate.promote_pages(selector->not_selected_medium());
     _relocate.promote_pages(selector->not_selected_large());
   }
 }
 
-void ZCycle::select_relocation_set() {
-  ZGenerationId collected_generation = ZHeap::heap()->get_generation(_cycle_id)->generation_id();
+void ZCollector::select_relocation_set() {
+  ZGenerationId collected_generation = ZHeap::heap()->get_generation(_id)->generation_id();
 
   // Register relocatable pages with selector
   ZRelocationSetSelector selector;
@@ -126,7 +125,7 @@ void ZCycle::select_relocation_set() {
       if (!page->is_relocatable()) {
         // Not relocatable, don't register
         // Note that the seqnum can change under our feet here as the page
-        // can be concurrently freed and recycled by a concurrent ZCycle.
+        // can be concurrently freed and recycled by a concurrent ZCollector.
         // However this property is stable across such transitions. If it
         // was not relocatable before recycling, then it won't be relocatable
         // after it gets recycled either, as the seqnum atomically becomes
@@ -134,7 +133,7 @@ void ZCycle::select_relocation_set() {
         // holds: if the page is relocatable, then it can't have been
         // concurrently freed; if it was re-allocated it would not be
         // relocatable, and if it was not re-allocated we know that it
-        // was allocated earlier than mark start of the current ZCycle.
+        // was allocated earlier than mark start of the current ZCollector.
         continue;
       }
 
@@ -169,12 +168,11 @@ void ZCycle::select_relocation_set() {
   }
 
   // Update statistics
-  ZCycle* cycle = ZHeap::heap()->get_cycle(_cycle_id);
-  cycle->stat_relocation()->set_at_select_relocation_set(selector.stats());
-  cycle->stat_heap()->set_at_select_relocation_set(selector.stats());
+  stat_relocation()->set_at_select_relocation_set(selector.stats());
+  stat_heap()->set_at_select_relocation_set(selector.stats());
 }
 
-void ZCycle::reset_relocation_set() {
+void ZCollector::reset_relocation_set() {
   // Reset forwarding table
   ZRelocationSetIterator iter(&_relocation_set);
   for (ZForwarding* forwarding; iter.next(&forwarding);) {
@@ -185,41 +183,41 @@ void ZCycle::reset_relocation_set() {
   _relocation_set.reset();
 }
 
-void ZCycle::synchronize_relocation() {
+void ZCollector::synchronize_relocation() {
   _relocate.synchronize();
 }
 
-void ZCycle::desynchronize_relocation() {
+void ZCollector::desynchronize_relocation() {
   _relocate.desynchronize();
 }
 
-void ZCycle::reset_statistics() {
+void ZCollector::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _reclaimed = 0;
   _used_high = _used_low = _page_allocator->used();
 }
 
-size_t ZCycle::used_high() const {
+size_t ZCollector::used_high() const {
   return _used_high;
 }
 
-size_t ZCycle::used_low() const {
+size_t ZCollector::used_low() const {
   return _used_low;
 }
 
-ssize_t ZCycle::reclaimed() const {
+ssize_t ZCollector::reclaimed() const {
   return _reclaimed;
 }
 
-void ZCycle::increase_reclaimed(size_t size) {
+void ZCollector::increase_reclaimed(size_t size) {
   _reclaimed += size;
 }
 
-void ZCycle::decrease_reclaimed(size_t size) {
+void ZCollector::decrease_reclaimed(size_t size) {
   _reclaimed -= size;
 }
 
-void ZCycle::update_used(size_t used) {
+void ZCollector::update_used(size_t used) {
   if (used > _used_high) {
     _used_high = used;
   }
@@ -228,11 +226,11 @@ void ZCycle::update_used(size_t used) {
   }
 }
 
-ConcurrentGCTimer* ZCycle::timer() {
+ConcurrentGCTimer* ZCollector::timer() {
   return &_timer;
 }
 
-void ZCycle::log_phase_switch(ZPhase from, ZPhase to) {
+void ZCollector::log_phase_switch(ZPhase from, ZPhase to) {
   const char* str[] = {
     "Minor Mark Start",
     "Minor Mark End",
@@ -244,7 +242,7 @@ void ZCycle::log_phase_switch(ZPhase from, ZPhase to) {
 
   size_t index = 0;
 
-  if (_cycle_id == ZCycleId::_major) {
+  if (is_major()) {
     index += 3;
   }
 
@@ -261,7 +259,7 @@ void ZCycle::log_phase_switch(ZPhase from, ZPhase to) {
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
 
-void ZCycle::set_phase(ZPhase new_phase) {
+void ZCollector::set_phase(ZPhase new_phase) {
 #if 0
   const ZPhase old_phase = _phase;
 
@@ -272,7 +270,7 @@ void ZCycle::set_phase(ZPhase new_phase) {
 #endif
 
   if (new_phase == ZPhase::Mark) {
-    // Increment cycle sequence number
+    // Increment sequence number
     _seqnum++;
   }
 
@@ -281,7 +279,7 @@ void ZCycle::set_phase(ZPhase new_phase) {
   _phase = new_phase;
 }
 
-const char* ZCycle::phase_to_string() const {
+const char* ZCollector::phase_to_string() const {
   switch (_phase) {
   case ZPhase::Mark:
     return "Mark";
@@ -297,14 +295,14 @@ const char* ZCycle::phase_to_string() const {
   }
 }
 
-ZMinorCycle::ZMinorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZCycle(ZCycleId::_minor, page_table, page_allocator),
+ZMinorCollector::ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+    ZCollector(ZCollectorId::_minor, page_table, page_allocator),
     _skip_mark_start(false) {}
 
 static const ZStatSubPhase ZPhasePauseMinorMarkStart1("Pause Minor Mark Start 1");
 static const ZStatSubPhase ZPhasePauseMinorMarkStart2("Pause Minor Mark Start 2");
 
-bool ZMinorCycle::should_skip_mark_start() {
+bool ZMinorCollector::should_skip_mark_start() {
   SuspendibleThreadSetJoiner sts_joiner;
   if (_skip_mark_start) {
     _skip_mark_start = false;
@@ -313,11 +311,11 @@ bool ZMinorCycle::should_skip_mark_start() {
   return false;
 }
 
-void ZMinorCycle::skip_mark_start() {
+void ZMinorCollector::skip_mark_start() {
   _skip_mark_start = true;
 }
 
-void ZMinorCycle::mark_start() {
+void ZMinorCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   { ZStatTimerMinor timer(ZPhasePauseMinorMarkStart1);
 
@@ -345,15 +343,15 @@ void ZMinorCycle::mark_start() {
   }
 }
 
-void ZMinorCycle::mark_roots() {
+void ZMinorCollector::mark_roots() {
   _mark.mark_roots();
 }
 
-void ZMinorCycle::mark_follow() {
+void ZMinorCollector::mark_follow() {
   _mark.mark_follow();
 }
 
-bool ZMinorCycle::mark_end() {
+bool ZMinorCollector::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // End marking
@@ -382,7 +380,7 @@ bool ZMinorCycle::mark_end() {
   return true;
 }
 
-void ZMinorCycle::relocate_start() {
+void ZMinorCollector::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Flip address view
@@ -401,7 +399,7 @@ void ZMinorCycle::relocate_start() {
   _relocate.start();
 }
 
-void ZMinorCycle::relocate() {
+void ZMinorCollector::relocate() {
   // Relocate relocation set
   _relocate.relocate(&_relocation_set);
 
@@ -409,7 +407,7 @@ void ZMinorCycle::relocate() {
   stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->young_generation()->relocated());
 }
 
-void ZMinorCycle::promote_flip(ZPage* old_page, ZPage* new_page) {
+void ZMinorCollector::promote_flip(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
   _relocation_set.register_promote_flip_page(old_page);
 
@@ -417,7 +415,7 @@ void ZMinorCycle::promote_flip(ZPage* old_page, ZPage* new_page) {
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
 }
 
-void ZMinorCycle::promote_reloc(ZPage* old_page, ZPage* new_page) {
+void ZMinorCollector::promote_reloc(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
   _relocation_set.register_promote_reloc_page(old_page);
 
@@ -425,22 +423,22 @@ void ZMinorCycle::promote_reloc(ZPage* old_page, ZPage* new_page) {
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
 }
 
-ZMajorCycle::ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZCycle(ZCycleId::_major, page_table, page_allocator),
+ZMajorCollector::ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+  ZCollector(ZCollectorId::_major, page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),
   _total_collections_at_end(0) {}
 
-void ZMajorCycle::reset_statistics() {
-  ZCycle::reset_statistics();
+void ZMajorCollector::reset_statistics() {
+  ZCollector::reset_statistics();
 
   // The alloc stalled count is used by the major driver,
   // so reset it from the major cycle.
   _page_allocator->reset_alloc_stalled();
 }
 
-void ZMajorCycle::mark_start() {
+void ZMajorCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Flip address view
@@ -465,14 +463,15 @@ void ZMajorCycle::mark_start() {
   stat_heap()->set_at_mark_start(_page_allocator->stats(this));
 }
 
-void ZMajorCycle::mark_roots() {
+void ZMajorCollector::mark_roots() {
   _mark.mark_roots();
 }
-void ZMajorCycle::mark_follow() {
+
+void ZMajorCollector::mark_follow() {
   _mark.mark_follow();
 }
 
-bool ZMajorCycle::mark_end() {
+bool ZMajorCollector::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Try end marking
@@ -502,7 +501,7 @@ bool ZMajorCycle::mark_end() {
   return true;
 }
 
-void ZMajorCycle::set_soft_reference_policy(bool clear) {
+void ZMajorCollector::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
@@ -515,7 +514,7 @@ public:
   }
 };
 
-void ZMajorCycle::process_non_strong_references() {
+void ZMajorCollector::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
   _reference_processor.process_references();
 
@@ -558,7 +557,7 @@ void ZMajorCycle::process_non_strong_references() {
   ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
 }
 
-void ZMajorCycle::relocate_start() {
+void ZMajorCollector::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Finish unloading stale metadata and nmethods
@@ -579,7 +578,7 @@ void ZMajorCycle::relocate_start() {
   _relocate.start();
 }
 
-void ZMajorCycle::relocate() {
+void ZMajorCollector::relocate() {
   // Relocate relocation set
   _relocate.relocate(&_relocation_set);
 
@@ -682,7 +681,7 @@ public:
   }
 };
 
-void ZMajorCycle::roots_remap() {
+void ZMajorCollector::roots_remap() {
   SuspendibleThreadSetJoiner sts_joiner;
 
   {
@@ -704,6 +703,6 @@ void ZMajorCycle::roots_remap() {
   workers()->run(&task);
 }
 
-int ZMajorCycle::total_collections_at_end() const {
+int ZMajorCollector::total_collections_at_end() const {
   return _total_collections_at_end;
 }

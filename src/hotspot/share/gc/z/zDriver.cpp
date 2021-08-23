@@ -44,8 +44,8 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
-static const ZStatPhaseCycle      ZPhaseMinorCycle(ZCycleId::_minor, "Minor Garbage Collection Cycle");
-static const ZStatPhaseCycle      ZPhaseMajorCycle(ZCycleId::_major, "Major Garbage Collection Cycle");
+static const ZStatPhaseCycle      ZPhaseMinorCycle(ZCollectorId::_minor, "Minor Garbage Collection Cycle");
+static const ZStatPhaseCycle      ZPhaseMajorCycle(ZCollectorId::_major, "Major Garbage Collection Cycle");
 
 static const ZStatPhasePause      ZPhasePauseMinorMarkStart("Pause Minor Mark Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkRoots("Concurrent Minor Mark Roots");
@@ -165,7 +165,7 @@ public:
     ZServiceabilityPauseTracer tracer;
 
     ZCollectedHeap::heap()->increment_total_collections(false /* full */);
-    ZHeap::heap()->minor_cycle()->mark_start();
+    ZHeap::heap()->minor_collector()->mark_start();
     return true;
   }
 };
@@ -179,7 +179,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerMinor timer(ZPhasePauseMinorMarkEnd);
     ZServiceabilityPauseTracer tracer;
-    return ZHeap::heap()->minor_cycle()->mark_end();
+    return ZHeap::heap()->minor_collector()->mark_end();
   }
 };
 
@@ -196,7 +196,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerMinor timer(ZPhasePauseMinorRelocateStart);
     ZServiceabilityPauseTracer tracer;
-    ZHeap::heap()->minor_cycle()->relocate_start();
+    ZHeap::heap()->minor_collector()->relocate_start();
     return true;
   }
 };
@@ -306,7 +306,7 @@ bool ZDriverMinor::pause() {
 }
 
 void ZDriverMinor::pause_mark_start() {
-  if (ZHeap::heap()->minor_cycle()->should_skip_mark_start()) {
+  if (ZHeap::heap()->minor_collector()->should_skip_mark_start()) {
     // A major mark start also performs a minor mark start. So the next
     // minor cycle after a major mark start, doesn't run minor mark start.
     return;
@@ -318,11 +318,11 @@ void ZDriverMinor::pause_mark_start() {
 void ZDriverMinor::concurrent_mark() {
   {
     ZStatTimerMinor timer(ZPhaseConcurrentMinorMarkRoots);
-    ZHeap::heap()->minor_cycle()->mark_roots();
+    ZHeap::heap()->minor_collector()->mark_roots();
   }
   {
     ZStatTimerMinor timer(ZPhaseConcurrentMinorMark);
-    ZHeap::heap()->minor_cycle()->mark_follow();
+    ZHeap::heap()->minor_collector()->mark_follow();
   }
 }
 
@@ -332,22 +332,22 @@ bool ZDriverMinor::pause_mark_end() {
 
 void ZDriverMinor::concurrent_mark_continue() {
   ZStatTimerMinor timer(ZPhaseConcurrentMinorMarkContinue);
-  ZHeap::heap()->minor_cycle()->mark_follow();
+  ZHeap::heap()->minor_collector()->mark_follow();
 }
 
 void ZDriverMinor::concurrent_mark_free() {
   ZStatTimerMinor timer(ZPhaseConcurrentMinorMarkFree);
-  ZHeap::heap()->minor_cycle()->mark_free();
+  ZHeap::heap()->minor_collector()->mark_free();
 }
 
 void ZDriverMinor::concurrent_reset_relocation_set() {
   ZStatTimerMinor timer(ZPhaseConcurrentMinorResetRelocationSet);
-  ZHeap::heap()->minor_cycle()->reset_relocation_set();
+  ZHeap::heap()->minor_collector()->reset_relocation_set();
 }
 
 void ZDriverMinor::concurrent_select_relocation_set() {
   ZStatTimerMinor timer(ZPhaseConcurrentMinorSelectRelocationSet);
-  ZHeap::heap()->minor_cycle()->select_relocation_set();
+  ZHeap::heap()->minor_collector()->select_relocation_set();
 }
 
 void ZDriverMinor::pause_relocate_start() {
@@ -356,7 +356,7 @@ void ZDriverMinor::pause_relocate_start() {
 
 void ZDriverMinor::concurrent_relocate() {
   ZStatTimerMinor timer(ZPhaseConcurrentMinorRelocated);
-  ZHeap::heap()->minor_cycle()->relocate();
+  ZHeap::heap()->minor_collector()->relocate();
 }
 
 class ZDriverMinorGCScope : public StackObj {
@@ -375,14 +375,14 @@ public:
       _timer(ZPhaseMinorCycle),
       _tracer() {
     // Update statistics
-    ZHeap::heap()->minor_cycle()->stat_cycle()->at_start();
+    ZHeap::heap()->minor_collector()->stat_cycle()->at_start();
   }
 
   ~ZDriverMinorGCScope() {
-    ZMinorCycle* cycle = ZHeap::heap()->minor_cycle();
+    ZMinorCollector* collector = ZHeap::heap()->minor_collector();
 
     // Update statistics
-    cycle->stat_cycle()->at_end(_gc_cause, cycle->active_workers());
+    collector->stat_cycle()->at_end(_gc_cause, collector->active_workers());
   }
 };
 
@@ -461,10 +461,10 @@ public:
 
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
 
-    ZHeap::heap()->major_cycle()->mark_start();
+    ZHeap::heap()->major_collector()->mark_start();
 
-    ZHeap::heap()->minor_cycle()->mark_start();
-    ZHeap::heap()->minor_cycle()->skip_mark_start();
+    ZHeap::heap()->minor_collector()->mark_start();
+    ZHeap::heap()->minor_collector()->skip_mark_start();
     return true;
   }
 };
@@ -478,7 +478,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerMajor timer(ZPhasePauseMajorMarkEnd);
     ZServiceabilityPauseTracer tracer;
-    return ZHeap::heap()->major_cycle()->mark_end();
+    return ZHeap::heap()->major_collector()->mark_end();
   }
 };
 
@@ -495,7 +495,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerMajor timer(ZPhasePauseMajorRelocateStart);
     ZServiceabilityPauseTracer tracer;
-    ZHeap::heap()->major_cycle()->relocate_start();
+    ZHeap::heap()->major_collector()->relocate_start();
     return true;
   }
 };
@@ -631,8 +631,8 @@ void ZDriverMajor::pause_mark_start() {
 void ZDriverMajor::concurrent_mark() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorMark);
   ZBreakpoint::at_after_marking_started();
-  ZHeap::heap()->major_cycle()->mark_roots();
-  ZHeap::heap()->major_cycle()->mark_follow();
+  ZHeap::heap()->major_collector()->mark_roots();
+  ZHeap::heap()->major_collector()->mark_follow();
   // The roots into the old generation are produced by the minor GC.
   // Therefore, we might run out of work before the minor GC has terminated.
   // To ensure we get all roots, we await the completion of the minor GC.
@@ -640,7 +640,7 @@ void ZDriverMajor::concurrent_mark() {
   // After waiting for the initial minor collection to have finished,
   // it is not unlikely that more work has been produced. So we call
   // mark_follow again to make sure we have terminated marking properly.
-  ZHeap::heap()->major_cycle()->mark_follow();
+  ZHeap::heap()->major_collector()->mark_follow();
   ZBreakpoint::at_before_marking_completed();
 }
 
@@ -650,23 +650,23 @@ bool ZDriverMajor::pause_mark_end() {
 
 void ZDriverMajor::concurrent_mark_continue() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorMarkContinue);
-  ZHeap::heap()->major_cycle()->mark_follow();
+  ZHeap::heap()->major_collector()->mark_follow();
 }
 
 void ZDriverMajor::concurrent_mark_free() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorMarkFree);
-  ZHeap::heap()->major_cycle()->mark_free();
+  ZHeap::heap()->major_collector()->mark_free();
 }
 
 void ZDriverMajor::concurrent_process_non_strong_references() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorProcessNonStrongReferences);
   ZBreakpoint::at_after_reference_processing_started();
-  ZHeap::heap()->major_cycle()->process_non_strong_references();
+  ZHeap::heap()->major_collector()->process_non_strong_references();
 }
 
 void ZDriverMajor::concurrent_reset_relocation_set() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorResetRelocationSet);
-  ZHeap::heap()->major_cycle()->reset_relocation_set();
+  ZHeap::heap()->major_collector()->reset_relocation_set();
 }
 
 void ZDriverMajor::pause_verify() {
@@ -694,7 +694,7 @@ void ZDriverMajor::pause_verify() {
 
 void ZDriverMajor::concurrent_select_relocation_set() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorSelectRelocationSet);
-  ZHeap::heap()->major_cycle()->select_relocation_set();
+  ZHeap::heap()->major_collector()->select_relocation_set();
 }
 
 void ZDriverMajor::pause_relocate_start() {
@@ -703,12 +703,12 @@ void ZDriverMajor::pause_relocate_start() {
 
 void ZDriverMajor::concurrent_relocate() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorRelocated);
-  ZHeap::heap()->major_cycle()->relocate();
+  ZHeap::heap()->major_collector()->relocate();
 }
 
 void ZDriverMajor::concurrent_roots_remap() {
   ZStatTimerMajor timer(ZPhaseConcurrentMajorRootsRemap);
-  ZHeap::heap()->major_cycle()->roots_remap();
+  ZHeap::heap()->major_collector()->roots_remap();
 }
 
 void ZDriverMajor::check_out_of_memory() {
@@ -775,24 +775,24 @@ public:
       _timer(ZPhaseMajorCycle),
       _tracer() {
 
-    ZMajorCycle* const cycle = ZHeap::heap()->major_cycle();
+    ZMajorCollector* const collector = ZHeap::heap()->major_collector();
 
     // Update statistics
-    cycle->stat_cycle()->at_start();
+    collector->stat_cycle()->at_start();
 
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request);
-    cycle->set_soft_reference_policy(clear);
+    collector->set_soft_reference_policy(clear);
 
     // Select number of worker threads to use
     const uint nworkers = select_active_worker_threads(request);
-    cycle->set_active_workers(nworkers);
+    collector->set_active_workers(nworkers);
   }
 
   ~ZDriverMajorGCScope() {
-    ZMajorCycle* cycle = ZHeap::heap()->major_cycle();
+    ZMajorCollector* collector = ZHeap::heap()->major_collector();
     // Update statistics
-    cycle->stat_cycle()->at_end(_gc_cause, cycle->active_workers());
+    collector->stat_cycle()->at_end(_gc_cause, collector->active_workers());
 
     // Update data used by soft reference policy
     Universe::heap()->update_capacity_and_used_at_gc();

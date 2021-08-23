@@ -27,7 +27,7 @@
 #include "gc/z/zMark.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -77,11 +77,11 @@ inline void ZMark::mark_object(zaddress addr) {
   }
 
   // Push
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
   ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
   ZMarkStackEntry entry(untype(ZAddress::offset(addr)), !mark_before_push, inc_live, follow, finalizable);
 
-  assert(ZHeap::heap()->is_young(addr) == (_cycle->cycle_id() == ZCycleId::_minor), "Phase/object mismatch");
+  assert(ZHeap::heap()->is_young(addr) == (_collector->id() == ZCollectorId::_minor), "Phase/object mismatch");
 
   stacks->push(allocator(), &_stripes, stripe, entry, publish);
 }

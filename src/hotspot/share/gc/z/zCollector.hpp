@@ -21,10 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZCYCLE_HPP
-#define SHARE_GC_Z_ZCYCLE_HPP
+#ifndef SHARE_GC_Z_ZCOLLECTOR_HPP
+#define SHARE_GC_Z_ZCOLLECTOR_HPP
 
-#include "gc/z/zCycleId.hpp"
+#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMark.hpp"
@@ -50,12 +50,12 @@ class ZPageAllocator;
 class ZPageTable;
 class ZRelocationSetSelector;
 
-class ZCycle {
+class ZCollector {
   friend class ZForwardingTest;
   friend class ZLiveMapTest;
 
 protected:
-  ZCycleId          _cycle_id;
+  ZCollectorId      _id;
   ZPageAllocator*   _page_allocator;
   ZPageTable*       _page_table;
   ZForwardingTable  _forwarding_table;
@@ -82,7 +82,7 @@ protected:
   void promote_pages(ZRelocationSetSelector* selector);
   void promote_pages(const ZArray<ZPage*>* pages);
 
-  ZCycle(ZCycleId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZCollector(ZCollectorId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(ZPhase from, ZPhase to);
 
@@ -93,7 +93,7 @@ public:
   uint32_t seqnum() const;
   const char* phase_to_string() const;
 
-  ZCycleId cycle_id() const;
+  ZCollectorId id() const;
   bool is_minor() const;
   bool is_major() const;
 
@@ -144,12 +144,12 @@ public:
   void threads_do(ThreadClosure* tc) const;
 };
 
-class ZMinorCycle : public ZCycle {
+class ZMinorCollector : public ZCollector {
 private:
   bool _skip_mark_start;
 
 public:
-  ZMinorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   // GC operations
   void mark_start();
@@ -167,7 +167,7 @@ public:
   void promote_reloc(ZPage* page, ZPage* new_page);
 };
 
-class ZMajorCycle : public ZCycle {
+class ZMajorCollector : public ZCollector {
 private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
@@ -175,7 +175,7 @@ private:
   int                 _total_collections_at_end;
 
 public:
-  ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   // Statistics
   void reset_statistics();
@@ -199,4 +199,4 @@ public:
   int total_collections_at_end() const;
 };
 
-#endif // SHARE_GC_Z_ZCYCLE_HPP
+#endif // SHARE_GC_Z_ZCOLLECTOR_HPP

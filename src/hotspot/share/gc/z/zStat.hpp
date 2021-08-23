@@ -35,7 +35,7 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
-enum class ZCycleId;
+enum class ZCollectorId;
 class ZPage;
 class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
@@ -225,10 +225,10 @@ public:
 
 class ZStatPhaseCycle : public ZStatPhase {
 private:
-  const ZCycleId _cycle_id;
+  const ZCollectorId _collector_id;
 
 public:
-  ZStatPhaseCycle(ZCycleId cycle_id, const char* name);
+  ZStatPhaseCycle(ZCollectorId collector_id, const char* name);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;

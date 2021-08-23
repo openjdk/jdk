@@ -60,7 +60,7 @@ inline void ZUncoloredRoot::barrier(ObjectFunctionT function, zaddress_unsafe* p
 inline zaddress ZUncoloredRoot::make_load_good(zaddress_unsafe addr, uintptr_t color) {
   zpointer color_ptr = ZAddress::color(zaddress::null, color);
   if (!ZPointer::is_load_good(color_ptr)) {
-    return ZBarrier::relocate_or_remap(addr, ZHeap::heap()->remap_cycle(color_ptr));
+    return ZBarrier::relocate_or_remap(addr, ZHeap::heap()->remap_collector(color_ptr));
   } else {
     return safe(addr);
   }

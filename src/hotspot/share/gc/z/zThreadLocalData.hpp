@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZTHREADLOCALDATA_HPP
 
 #include "gc/z/zMarkStack.hpp"
-#include "gc/z/zCycleId.hpp"
+#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
 #include "runtime/thread.hpp"
@@ -96,8 +96,8 @@ public:
     data(thread)->_address_uncolor_mask = mask;
   }
 
-  static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZCycleId cycle) {
-    return &data(thread)->_mark_stacks[(int)cycle];
+  static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZCollectorId collector_id) {
+    return &data(thread)->_mark_stacks[(int)collector_id];
   }
 
   static ZStoreBarrierBuffer* store_barrier_buffer(Thread* thread) {

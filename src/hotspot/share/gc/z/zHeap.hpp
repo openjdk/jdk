@@ -26,7 +26,7 @@
 
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zArray.hpp"
-#include "gc/z/zCycle.hpp"
+#include "gc/z/zCollector.hpp"
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
@@ -50,8 +50,8 @@ private:
   ZYoungGeneration    _young_generation;
   ZOldGeneration      _old_generation;
 
-  ZMinorCycle         _minor_cycle;
-  ZMajorCycle         _major_cycle;
+  ZMinorCollector     _minor_collector;
+  ZMajorCollector     _major_collector;
 
   bool                _initialized;
 
@@ -65,15 +65,15 @@ public:
   void out_of_memory();
 
   // Generations
-  ZGeneration* get_generation(ZCycleId id);
+  ZGeneration* get_generation(ZCollectorId id);
   ZGeneration* get_generation(ZGenerationId id);
   ZYoungGeneration* young_generation();
   ZOldGeneration* old_generation();
 
-  ZCycle* get_cycle(ZCycleId id);
-  ZCycle* get_cycle(ZGenerationId id);
-  ZMinorCycle* minor_cycle();
-  ZMajorCycle* major_cycle();
+  ZCollector* collector(ZCollectorId id);
+  ZCollector* collector(ZGenerationId id);
+  ZMinorCollector* minor_collector();
+  ZMajorCollector* major_collector();
 
   // Heap metrics
   size_t min_capacity() const;
@@ -108,7 +108,7 @@ public:
   void keep_alive(oop obj);
 
   // Relocating
-  ZCycle* remap_cycle(zpointer ptr);
+  ZCollector* remap_collector(zpointer ptr);
 
   // Remembering
   void remember(volatile zpointer* p);
@@ -116,10 +116,10 @@ public:
   void remember_fields(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation, ZPageAge age);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCollector* collector, ZGenerationId generation, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page, ZCycle* cycle);
-  void free_pages(const ZArray<ZPage*>* pages, ZCycle* cycle);
+  void free_page(ZPage* page, ZCollector* collector);
+  void free_pages(const ZArray<ZPage*>* pages, ZCollector* collector);
   void safe_destroy_page(ZPage* page);
   void recycle_page(ZPage* page);
 

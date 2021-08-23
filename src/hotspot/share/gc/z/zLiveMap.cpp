@@ -64,7 +64,7 @@ void ZLiveMap::reset(ZGenerationId generation_id, size_t index) {
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
   for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
-       seqnum != ZHeap::heap()->heap()->get_cycle(generation_id)->seqnum();
+       seqnum != ZHeap::heap()->heap()->collector(generation_id)->seqnum();
        seqnum = Atomic::load_acquire(&_seqnum)) {
     if ((seqnum != seqnum_initializing) &&
         (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
@@ -82,7 +82,7 @@ void ZLiveMap::reset(ZGenerationId generation_id, size_t index) {
       // before the update of the page seqnum, such that when the
       // up-to-date seqnum is load acquired, the bit maps will not
       // contain stale information.
-      Atomic::release_store(&_seqnum, ZHeap::heap()->get_cycle(generation_id)->seqnum());
+      Atomic::release_store(&_seqnum, ZHeap::heap()->collector(generation_id)->seqnum());
       break;
     }
 

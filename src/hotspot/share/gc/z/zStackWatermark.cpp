@@ -197,7 +197,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
   ZThreadLocalData::set_address_store_good_mask(_jt, ZAddressStoreGoodMask);
 
   // Retire TLAB
-  if (ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark || ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark) {
+  if (ZHeap::heap()->minor_collector()->phase() == ZPhase::Mark || ZHeap::heap()->major_collector()->phase() == ZPhase::Mark) {
     ZThreadLocalAllocBuffer::retire(_jt, &_stats);
   } else {
     ZThreadLocalAllocBuffer::remap(_jt);

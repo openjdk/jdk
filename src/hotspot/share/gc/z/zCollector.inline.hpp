@@ -21,71 +21,71 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZCYCLE_INLINE_HPP
-#define SHARE_GC_Z_ZCYCLE_INLINE_HPP
+#ifndef SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
+#define SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
 
-#include "gc/z/zCycle.hpp"
+#include "gc/z/zCollector.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZPhase ZCycle::phase() const {
+inline ZPhase ZCollector::phase() const {
   return _phase;
 }
 
-inline uint32_t ZCycle::seqnum() const {
+inline uint32_t ZCollector::seqnum() const {
   return _seqnum;
 }
 
-inline ZCycleId ZCycle::cycle_id() const {
-  return _cycle_id;
+inline ZCollectorId ZCollector::id() const {
+  return _id;
 }
 
-inline bool ZCycle::is_minor() const {
-  return _cycle_id == ZCycleId::_minor;
+inline bool ZCollector::is_minor() const {
+  return _id == ZCollectorId::_minor;
 }
 
-inline bool ZCycle::is_major() const {
-  return _cycle_id == ZCycleId::_major;
+inline bool ZCollector::is_major() const {
+  return _id == ZCollectorId::_major;
 }
 
-inline ZForwarding* ZCycle::forwarding(zaddress_unsafe addr) const {
+inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {
   return _forwarding_table.get(addr);
 }
 
-inline ZStatHeap* ZCycle::stat_heap() {
+inline ZStatHeap* ZCollector::stat_heap() {
   return &_stat_heap;
 }
 
-inline ZStatCycle* ZCycle::stat_cycle() {
+inline ZStatCycle* ZCollector::stat_cycle() {
   return &_stat_cycle;
 }
 
-inline ZStatMark* ZCycle::stat_mark() {
+inline ZStatMark* ZCollector::stat_mark() {
   return &_stat_mark;
 }
 
-inline ZStatRelocation* ZCycle::stat_relocation() {
+inline ZStatRelocation* ZCollector::stat_relocation() {
   return &_stat_relocation;
 }
 
-inline ZPageTable* ZCycle::page_table() const {
+inline ZPageTable* ZCollector::page_table() const {
   return _page_table;
 }
 
-inline const ZForwardingTable* ZCycle::forwarding_table() const {
+inline const ZForwardingTable* ZCollector::forwarding_table() const {
   return &_forwarding_table;
 }
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
-inline void ZCycle::mark_object(zaddress addr) {
+inline void ZCollector::mark_object(zaddress addr) {
   _mark.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
 }
 
-inline void ZCycle::mark_follow_invisible_root(zaddress addr, size_t size) {
+inline void ZCollector::mark_follow_invisible_root(zaddress addr, size_t size) {
   _mark.mark_follow_invisible_root(addr, size);
 }
 
-inline zaddress ZCycle::relocate_or_remap_object(zaddress_unsafe addr) {
+inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {
     // Not forwarding
@@ -96,7 +96,7 @@ inline zaddress ZCycle::relocate_or_remap_object(zaddress_unsafe addr) {
   return _relocate.relocate_object(forwarding, addr);
 }
 
-inline zaddress ZCycle::remap_object(zaddress_unsafe addr) {
+inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {
     // Not forwarding
@@ -107,8 +107,8 @@ inline zaddress ZCycle::remap_object(zaddress_unsafe addr) {
   return _relocate.forward_object(forwarding, addr);
 }
 
-inline ReferenceDiscoverer* ZMajorCycle::reference_discoverer() {
+inline ReferenceDiscoverer* ZMajorCollector::reference_discoverer() {
   return &_reference_processor;
 }
 
-#endif // SHARE_GC_Z_ZCYCLE_INLINE_HPP
+#endif // SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP

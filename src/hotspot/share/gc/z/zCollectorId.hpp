@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZCYCLEID_HPP
 #define SHARE_GC_Z_ZCYCLEID_HPP
 
-enum class ZCycleId {
+enum class ZCollectorId {
   _minor,
   _major
 };

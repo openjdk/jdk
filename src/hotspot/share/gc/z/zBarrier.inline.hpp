@@ -185,7 +185,7 @@ inline zaddress ZBarrier::make_load_good(zpointer o) {
     return ZPointer::uncolor(o);
   }
 
-  return relocate_or_remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
+  return relocate_or_remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_collector(o));
 }
 
 inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
@@ -197,7 +197,7 @@ inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
     return ZPointer::uncolor(o);
   }
 
-  return remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
+  return remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_collector(o));
 }
 
 

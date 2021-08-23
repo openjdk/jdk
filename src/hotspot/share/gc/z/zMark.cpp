@@ -30,7 +30,7 @@
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
@@ -71,13 +71,11 @@ static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootUncolored("Concurrent
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootColored("Concurrent Minor Mark Root Colored");
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemset("Concurrent Minor Mark Root Remset");
 static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
-static const ZStatSubPhase ZSubPhaseYield("Yield");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try Flush");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
-static const ZStatSubPhase ZSubPhaseMarkTryComplete("Pause Mark Try Complete");
 
-ZMark::ZMark(ZCycle* cycle, ZPageTable* page_table) :
-    _cycle(cycle),
+ZMark::ZMark(ZCollector* collector, ZPageTable* page_table) :
+    _collector(collector),
     _page_table(page_table),
     _stripes(),
     _terminate(),
@@ -122,7 +120,7 @@ void ZMark::start() {
   _stripes.set_nstripes(nstripes);
 
   // Update statistics
-  _cycle->stat_mark()->set_at_mark_start(nstripes);
+  _collector->stat_mark()->set_at_mark_start(nstripes);
 
   // Print worker/stripe distribution
   LogTarget(Debug, gc, marking) log;
@@ -138,7 +136,7 @@ void ZMark::start() {
 }
 
 ZWorkers* ZMark::workers() const {
-  return _cycle->workers();
+  return _collector->workers();
 }
 
 void ZMark::prepare_work() {
@@ -162,7 +160,7 @@ bool ZMark::is_array(zaddress addr) const {
 
 void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   assert(is_aligned(addr, ZMarkPartialArrayMinSize), "Address misaligned");
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
   ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
   const uintptr_t offset = untype(ZAddress::offset(to_zaddress(addr))) >> ZMarkPartialArrayMinSizeShift;
   const uintptr_t length = size / oopSize;
@@ -190,7 +188,7 @@ void ZMark::follow_small_array(uintptr_t addr, size_t size, bool finalizable) {
 
   log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", addr, size);
 
-  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _cycle->cycle_id() == ZCycleId::_minor);
+  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _collector->is_minor());
 }
 
 void ZMark::follow_large_array(uintptr_t addr, size_t size, bool finalizable) {
@@ -258,7 +256,7 @@ private:
 
   static ReferenceDiscoverer* discoverer() {
     if (!finalizable) {
-      return ZHeap::heap()->major_cycle()->reference_discoverer();
+      return ZHeap::heap()->major_collector()->reference_discoverer();
     } else {
       return NULL;
     }
@@ -266,7 +264,7 @@ private:
 
   static bool visit_metadata() {
     // Only visit metadata if we're marking through the major cycle
-    return ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
+    return ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
   }
 
   const bool _visit_metadata;
@@ -296,7 +294,7 @@ public:
 };
 
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
-  if (_cycle->is_major()) {
+  if (_collector->is_major()) {
     if (finalizable) {
       ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
@@ -316,7 +314,7 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
 }
 
 void ZMark::follow_object(oop obj, bool finalizable) {
-  if (_cycle->is_major()) {
+  if (_collector->is_major()) {
     if (ZHeap::heap()->is_old(to_zaddress(obj))) {
       if (finalizable) {
         ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
@@ -486,8 +484,8 @@ public:
     // Flush GC threads
     if (_gc_threads) {
       SuspendibleThreadSet::synchronize();
-      ZHeap::heap()->minor_cycle()->workers()->threads_do(_cl);
-      ZHeap::heap()->major_cycle()->workers()->threads_do(_cl);
+      ZHeap::heap()->minor_collector()->workers()->threads_do(_cl);
+      ZHeap::heap()->major_collector()->workers()->threads_do(_cl);
       SuspendibleThreadSet::desynchronize();
     }
     // Flush VM thread
@@ -513,7 +511,7 @@ bool ZMark::flush(bool gc_threads) {
 bool ZMark::try_terminate_flush() {
   Atomic::inc(&_work_nterminateflush);
 
-  ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryFlush);
+  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryFlush);
   return flush(true /* gc_threads */) ||
          _terminate.resurrected();
 }
@@ -531,13 +529,13 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryFlush);
+  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryFlush);
   SuspendibleThreadSetLeaver sts;
   return flush(false /* gc_threads */);
 }
 
 bool ZMark::try_terminate() {
-  ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMarkTryTerminate);
+  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryTerminate);
   for (;;) {
     if (_terminate.enter()) {
       // Last thread entered, terminate
@@ -556,11 +554,11 @@ bool ZMark::try_terminate() {
 }
 
 void ZMark::work() {
-  ZStatTimer timer(_cycle->timer(), ZSubPhaseConcurrentMark);
+  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
   ZMarkCache cache(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
 
   for (;;) {
     if (!drain(stripe, stacks, &cache)) {
@@ -860,7 +858,7 @@ public:
 void ZMark::mark_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
 
-  if (_cycle->is_major()) {
+  if (_collector->is_major()) {
     ZMarkOldGenRootsTask task(this);
     workers()->run(&task);
   } else {
@@ -914,7 +912,7 @@ bool ZMark::end() {
   }
 
   // Update statistics
-  _cycle->stat_mark()->set_at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
+  _collector->stat_mark()->set_at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
 
   // Mark completed
   return true;
@@ -941,7 +939,7 @@ bool ZMark::flush_and_free(Thread* thread) {
   if (thread->is_Java_thread()) {
     ZThreadLocalData::store_barrier_buffer(thread)->flush();
   }
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _cycle->cycle_id());
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _collector->id());
   const bool flushed = stacks->flush(allocator(), &_stripes);
   stacks->free(allocator());
   return flushed;
@@ -950,22 +948,22 @@ bool ZMark::flush_and_free(Thread* thread) {
 class ZVerifyMarkStacksEmptyClosure : public ThreadClosure {
 private:
   const ZMarkStripeSet* const _stripes;
-  const ZCycleId _cycle_id;
+  const ZCollectorId _collector_id;
 
 public:
-  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZCycleId cycle_id) :
+  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZCollectorId collector_id) :
       _stripes(stripes),
-      _cycle_id(cycle_id) {}
+      _collector_id(collector_id) {}
 
   void do_thread(Thread* thread) {
-    ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _cycle_id);
+    ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _collector_id);
     guarantee(stacks->is_empty(_stripes), "Should be empty");
   }
 };
 
 void ZMark::verify_all_stacks_empty() const {
   // Verify thread stacks
-  ZVerifyMarkStacksEmptyClosure cl(&_stripes, _cycle->cycle_id());
+  ZVerifyMarkStacksEmptyClosure cl(&_stripes, _collector->id());
   Threads::threads_do(&cl);
 
   // Verify stripe stacks

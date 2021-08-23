@@ -57,18 +57,18 @@ ZHeap::ZHeap() :
     _serviceability(min_capacity(), max_capacity()),
     _young_generation(&_page_table, &_page_allocator),
     _old_generation(),
-    _minor_cycle(&_page_table, &_page_allocator),
-    _major_cycle(&_page_table, &_page_allocator),
+    _minor_collector(&_page_table, &_page_allocator),
+    _major_collector(&_page_table, &_page_allocator),
     _initialized() {
   // Install global heap instance
   assert(_heap == NULL, "Already initialized");
   _heap = this;
 
-  _initialized = _page_allocator.initialize_heap(_major_cycle.workers());
+  _initialized = _page_allocator.initialize_heap(_major_collector.workers());
 
   // Update statistics
-  _minor_cycle.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
-  _major_cycle.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
+  _minor_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
+  _major_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
 }
 
 bool ZHeap::is_initialized() const {
@@ -159,14 +159,14 @@ bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
   }
 
   // Could still be a from-object during an in-place relocation
-  if (_major_cycle.phase() == ZPhase::Relocate) {
-    const ZForwarding* const forwarding = _major_cycle.forwarding(unsafe(addr));
+  if (_major_collector.phase() == ZPhase::Relocate) {
+    const ZForwarding* const forwarding = _major_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
   }
-  if (_minor_cycle.phase() == ZPhase::Relocate) {
-    const ZForwarding* const forwarding = _minor_cycle.forwarding(unsafe(addr));
+  if (_minor_collector.phase() == ZPhase::Relocate) {
+    const ZForwarding* const forwarding = _minor_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
@@ -177,8 +177,8 @@ bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
 
 void ZHeap::threads_do(ThreadClosure* tc) const {
   _page_allocator.threads_do(tc);
-  _minor_cycle.threads_do(tc);
-  _major_cycle.threads_do(tc);
+  _minor_collector.threads_do(tc);
+  _major_collector.threads_do(tc);
 }
 
 void ZHeap::out_of_memory() {
@@ -188,8 +188,8 @@ void ZHeap::out_of_memory() {
   log_info(gc)("Out Of Memory (%s)", Thread::current()->name());
 }
 
-ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle, ZGenerationId generation, ZPageAge age) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, cycle, generation, age);
+ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCollector* collector, ZGenerationId generation, ZPageAge age) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, collector, generation, age);
   if (page != NULL) {
     // Insert page table entry
     _page_table.insert(page);
@@ -208,15 +208,15 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   free_page(page, NULL /* worker_generation */);
 }
 
-void ZHeap::free_page(ZPage* page, ZCycle* cycle) {
+void ZHeap::free_page(ZPage* page, ZCollector* collector) {
   // Remove page table entry
   _page_table.remove(page);
 
   // Free page
-  _page_allocator.free_page(page, cycle);
+  _page_allocator.free_page(page, collector);
 }
 
-void ZHeap::free_pages(const ZArray<ZPage*>* pages, ZCycle* cycle) {
+void ZHeap::free_pages(const ZArray<ZPage*>* pages, ZCollector* collector) {
   // Remove page table entries
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
@@ -224,7 +224,7 @@ void ZHeap::free_pages(const ZArray<ZPage*>* pages, ZCycle* cycle) {
   }
 
   // Free pages
-  _page_allocator.free_pages(pages, cycle);
+  _page_allocator.free_pages(pages, collector);
 }
 
 void ZHeap::recycle_page(ZPage* page) {
@@ -238,8 +238,8 @@ void ZHeap::safe_destroy_page(ZPage* page) {
 }
 
 void ZHeap::mark_flush_and_free(Thread* thread) {
-  minor_cycle()->mark_flush_and_free(thread);
-  major_cycle()->mark_flush_and_free(thread);
+  minor_collector()->mark_flush_and_free(thread);
+  major_collector()->mark_flush_and_free(thread);
 }
 
 void ZHeap::keep_alive(oop obj) {
@@ -339,7 +339,7 @@ void ZHeap::verify() {
   // Heap verification can only be done between mark end and
   // relocate start. This is the only window where all oop are
   // good and the whole heap is in a consistent state.
-  guarantee(ZHeap::heap()->major_cycle()->phase() == ZPhase::MarkComplete, "Invalid phase");
+  guarantee(ZHeap::heap()->major_collector()->phase() == ZPhase::MarkComplete, "Invalid phase");
 
   ZVerify::after_weak_processing();
 }

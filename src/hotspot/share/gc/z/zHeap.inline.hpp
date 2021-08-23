@@ -28,8 +28,8 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
-#include "gc/z/zCycleId.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
@@ -43,8 +43,8 @@ inline ZHeap* ZHeap::heap() {
   return _heap;
 }
 
-inline ZGeneration* ZHeap::get_generation(ZCycleId id) {
-  if (id == ZCycleId::_minor) {
+inline ZGeneration* ZHeap::get_generation(ZCollectorId id) {
+  if (id == ZCollectorId::_minor) {
     return &_young_generation;
   } else {
     return &_old_generation;
@@ -67,28 +67,28 @@ inline ZOldGeneration* ZHeap::old_generation() {
   return &_old_generation;
 }
 
-inline ZCycle* ZHeap::get_cycle(ZCycleId id) {
-  if (id == ZCycleId::_minor) {
-    return &_minor_cycle;
+inline ZCollector* ZHeap::collector(ZCollectorId id) {
+  if (id == ZCollectorId::_minor) {
+    return &_minor_collector;
   } else {
-    return &_major_cycle;
+    return &_major_collector;
   }
 }
 
-inline ZCycle* ZHeap::get_cycle(ZGenerationId id) {
+inline ZCollector* ZHeap::collector(ZGenerationId id) {
   if (id == ZGenerationId::young) {
-    return &_minor_cycle;
+    return &_minor_collector;
   } else {
-    return &_major_cycle;
+    return &_major_collector;
   }
 }
 
-inline ZMinorCycle* ZHeap::minor_cycle() {
-  return &_minor_cycle;
+inline ZMinorCollector* ZHeap::minor_collector() {
+  return &_minor_collector;
 }
 
-inline ZMajorCycle* ZHeap::major_cycle() {
-  return &_major_cycle;
+inline ZMajorCollector* ZHeap::major_collector() {
+  return &_major_collector;
 }
 
 inline uint32_t ZHeap::hash_oop(zaddress addr) const {
@@ -105,15 +105,15 @@ inline bool ZHeap::is_old(zaddress addr) const {
   return !is_young(addr);
 }
 
-inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
+inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   assert(!ZPointer::is_load_good(ptr), "no need to remap load-good pointer");
 
   if (ZPointer::is_major_load_good(ptr)) {
-    return &_minor_cycle;
+    return &_minor_collector;
   }
 
   if (ZPointer::is_minor_load_good(ptr)) {
-    return &_major_cycle;
+    return &_major_collector;
   }
 
   // Double remap bad - the pointer is neither major load good nor
@@ -123,22 +123,22 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   const bool old_to_old_ptr = remembered_bits == ZAddressRememberedMask;
 
   if (old_to_old_ptr) {
-    return &_major_cycle;
+    return &_major_collector;
   }
 
   const zaddress_unsafe addr = ZPointer::uncolor_unsafe(ptr);
-  if (_minor_cycle.forwarding(addr) != NULL) {
-    assert(_major_cycle.forwarding(addr) == NULL, "Mutually exclusive");
-    return &_minor_cycle;
+  if (_minor_collector.forwarding(addr) != NULL) {
+    assert(_major_collector.forwarding(addr) == NULL, "Mutually exclusive");
+    return &_minor_collector;
   } else {
-    return &_major_cycle;
+    return &_major_collector;
   }
 
   // ... then the explanation. Time to put your seat belt on.
 
   // In this context we only have access to the ptr (colored oop), but we
   // don't know if this refers to a stale young gen or old gen object.
-  // However, by being careful with when we run minor and major cycles,
+  // However, by being careful with when we run minor and major collections,
   // and by explicitly remapping roots we can figure this out by looking
   // at the metadata bits in the pointer.
 
@@ -150,7 +150,7 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   //
   // 1) Minor marking remaps the roots, before the minor relocate runs
   //
-  // 2) The major roots_remap phase blocks out minor cycles and runs just
+  // 2) The major roots_remap phase blocks out minor collections and runs just
   //    before major relocate starts
 
   // *Heap object fields*:
@@ -264,7 +264,7 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   //
   // Iff we find a double remap bad pointer with *double remember bits*,
   // then we know that it is an old-to-old pointer, and we should use the
-  // forwarding table of the major cycle.
+  // forwarding table of the major collector.
   //
   // Iff we find a double remap bad pointer with a *single remember bit*,
   // then we know that it is and young-to-any pointer. We still don't know
@@ -275,12 +275,13 @@ inline ZCycle* ZHeap::remap_cycle(zpointer ptr) {
   //
   // The scenario that created a double remap bad pointer in the young
   // allocating or survivor memory is that it was written during the last
-  // minor mark before the major relocate started. At that point, the major cycle
-  // has already taken its marking snapshot, and determined what pages will be
-  // marked and therefore eligible to become part of the major relocation
-  // set. If the minor cycle relocated/freed a page (address range), and that
-  // address range was then reused for an old page, it won't be part of the
-  // major snapshot and it therefore won't be selected for major relocation.
+  // minor mark before the major relocate started. At that point, the major
+  // collector has already taken its marking snapshot, and determined what
+  // pages will be marked and therefore eligible to become part of the major
+  // relocation set. If the minor collector relocated/freed a page
+  // (address range), and that address range was then reused for an old page,
+  // it won't be part of the major snapshot and it therefore won't be selected
+  // for major relocation.
   //
   // Because of this, we know that the object written into the young
   // allocating page will at most belong to one of the two relocation sets,
@@ -307,23 +308,23 @@ inline void ZHeap::mark_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_old(addr)) {
-    if (_major_cycle.phase() == ZPhase::Mark) {
-      _major_cycle.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
+    if (_major_collector.phase() == ZPhase::Mark) {
+      _major_collector.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
     }
   } else {
-    if (_minor_cycle.phase() == ZPhase::Mark) {
-      _minor_cycle.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
+    if (_minor_collector.phase() == ZPhase::Mark) {
+      _minor_collector.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
     }
   }
 }
 
 template <bool follow, bool publish>
 inline void ZHeap::mark_minor_object(zaddress addr) {
-  assert(_minor_cycle.phase() == ZPhase::Mark, "Wrong phase");
+  assert(_minor_collector.phase() == ZPhase::Mark, "Wrong phase");
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_young(addr)) {
-    _minor_cycle.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
+    _minor_collector.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
   }
 }
 
@@ -347,11 +348,11 @@ inline bool ZHeap::is_remembered(volatile zpointer* p) {
 
 inline void ZHeap::mark_follow_invisible_root(zaddress addr, size_t size) {
   if (is_old(addr)) {
-    assert(_major_cycle.phase() == ZPhase::Mark, "Mark not allowed");
-    _major_cycle.mark_follow_invisible_root(addr, size);
+    assert(_major_collector.phase() == ZPhase::Mark, "Mark not allowed");
+    _major_collector.mark_follow_invisible_root(addr, size);
   } else {
-    assert(_minor_cycle.phase() == ZPhase::Mark, "Mark not allowed");
-    _minor_cycle.mark_follow_invisible_root(addr, size);
+    assert(_minor_collector.phase() == ZPhase::Mark, "Mark not allowed");
+    _minor_collector.mark_follow_invisible_root(addr, size);
   }
 }
 

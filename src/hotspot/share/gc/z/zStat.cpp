@@ -624,9 +624,9 @@ const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCycle::ZStatPhaseCycle(ZCycleId cycle_id, const char* name) :
+ZStatPhaseCycle::ZStatPhaseCycle(ZCollectorId collector_id, const char* name) :
     ZStatPhase("Collector", name),
-    _cycle_id(cycle_id) {}
+    _collector_id(collector_id) {}
 
 void ZStatPhaseCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
@@ -657,21 +657,21 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZCycle* cycle = ZHeap::heap()->get_cycle(_cycle_id);
+  ZCollector* collector = ZHeap::heap()->collector(_collector_id);
 
   ZStatLoad::print();
   ZStatMMU::print();
-  cycle->stat_mark()->print();
+  collector->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
   ZStatReferences::print();
-  cycle->stat_relocation()->print();
-  cycle->stat_heap()->print();
+  collector->stat_relocation()->print();
+  collector->stat_heap()->print();
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(cycle->stat_heap()->used_at_mark_start()),
-               ZSIZE_ARGS(cycle->stat_heap()->used_at_relocate_end()));
+               ZSIZE_ARGS(collector->stat_heap()->used_at_mark_start()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_relocate_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -793,10 +793,10 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
 }
 
 ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
-    ZStatTimer(ZHeap::heap()->minor_cycle()->timer(), phase) {}
+    ZStatTimer(ZHeap::heap()->minor_collector()->timer(), phase) {}
 
 ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
-    ZStatTimer(ZHeap::heap()->major_cycle()->timer(), phase) {}
+    ZStatTimer(ZHeap::heap()->major_collector()->timer(), phase) {}
 
 //
 // Stat timer

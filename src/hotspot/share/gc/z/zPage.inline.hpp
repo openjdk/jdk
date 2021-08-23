@@ -27,7 +27,7 @@
 #include "gc/z/zPage.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zNUMA.hpp"
@@ -181,11 +181,11 @@ inline uint32_t ZPage::seqnum() const {
 }
 
 inline bool ZPage::is_allocating() const {
-  return _seqnum == ZHeap::heap()->get_cycle(_generation_id)->seqnum();
+  return _seqnum == ZHeap::heap()->collector(_generation_id)->seqnum();
 }
 
 inline bool ZPage::is_relocatable() const {
-  return _seqnum < ZHeap::heap()->get_cycle(_generation_id)->seqnum();
+  return _seqnum < ZHeap::heap()->collector(_generation_id)->seqnum();
 }
 
 inline uint64_t ZPage::last_used() const {
@@ -259,8 +259,8 @@ inline bool ZPage::is_object_strongly_live(zaddress addr) const {
 inline bool ZPage::is_object_marked_live(zaddress addr) const {
   // This function is only used by the marking code and therefore has stronger
   // asserts that are not always valid to ask when checking for liveness.
-  assert(!is_old() || (ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark), "Location should match phase");
-  assert(!is_young() || (ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_old() || (ZHeap::heap()->major_collector()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_young() || (ZHeap::heap()->minor_collector()->phase() == ZPhase::Mark), "Location should match phase");
 
   return is_object_live(addr);
 }
@@ -268,8 +268,8 @@ inline bool ZPage::is_object_marked_live(zaddress addr) const {
 inline bool ZPage::is_object_marked_strong(zaddress addr) const {
   // This function is only used by the marking code and therefore has stronger
   // asserts that are not always valid to ask when checking for liveness.
-  assert(!is_old() || (ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark), "Location should match phase");
-  assert(!is_young() || (ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_old() || (ZHeap::heap()->major_collector()->phase() == ZPhase::Mark), "Location should match phase");
+  assert(!is_young() || (ZHeap::heap()->minor_collector()->phase() == ZPhase::Mark), "Location should match phase");
 
   return is_object_strongly_live(addr);
 }
@@ -292,11 +292,11 @@ inline void ZPage::inc_live(uint32_t objects, size_t bytes) {
   _livemap.inc_live(objects, bytes);
 }
 
-#define assert_zpage_mark_state()                                                                 \
-  do {                                                                                            \
-    assert(is_marked(), "Should be marked");                                                      \
-    assert(!is_young() || ZHeap::heap()->minor_cycle()->phase() != ZPhase::Mark, "Wrong phase");  \
-    assert(!is_old() || ZHeap::heap()->major_cycle()->phase() != ZPhase::Mark, "Wrong phase");    \
+#define assert_zpage_mark_state()                                                                     \
+  do {                                                                                                \
+    assert(is_marked(), "Should be marked");                                                          \
+    assert(!is_young() || ZHeap::heap()->minor_collector()->phase() != ZPhase::Mark, "Wrong phase");  \
+    assert(!is_old() || ZHeap::heap()->major_collector()->phase() != ZPhase::Mark, "Wrong phase");    \
   } while (0)
 
 inline uint32_t ZPage::live_objects() const {
@@ -364,7 +364,7 @@ inline void ZPage::oops_do_remembered(Function function) {
 template <typename Function>
 inline void ZPage::oops_do_remembered_in_live(Function function) {
   assert(!is_allocating(), "Must have liveness information");
-  assert(ZHeap::heap()->major_cycle()->phase() != ZPhase::Mark, "Must have liveness information");
+  assert(ZHeap::heap()->major_collector()->phase() != ZPhase::Mark, "Must have liveness information");
   assert(is_marked(), "Must have liveness information");
 
   ZRememberSetContainingInLiveIterator iter(this);

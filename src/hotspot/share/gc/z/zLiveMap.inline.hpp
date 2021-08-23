@@ -28,7 +28,7 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBitMap.inline.hpp"
-#include "gc/z/zCycle.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -40,7 +40,7 @@ inline void ZLiveMap::reset() {
 }
 
 inline bool ZLiveMap::is_marked(ZGenerationId generation_id) const {
-  return Atomic::load_acquire(&_seqnum) == ZHeap::heap()->get_cycle(generation_id)->seqnum();
+  return Atomic::load_acquire(&_seqnum) == ZHeap::heap()->collector(generation_id)->seqnum();
 }
 
 inline uint32_t ZLiveMap::live_objects() const {

@@ -63,14 +63,14 @@ class ZRelocate {
   friend class ZRelocateTask;
 
 private:
-  ZCycle* const  _cycle;
-  ZRelocateQueue _queue;
+  ZCollector* const _collector;
+  ZRelocateQueue    _queue;
 
   ZWorkers* workers() const;
   void work(ZRelocationSetParallelIterator* iter);
 
 public:
-  ZRelocate(ZCycle* cycle);
+  ZRelocate(ZCollector* collector);
 
   void start();
 

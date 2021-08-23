@@ -113,8 +113,8 @@ public:
   }
 };
 
-ZRelocationSet::ZRelocationSet(ZCycle* cycle) :
-    _cycle(cycle),
+ZRelocationSet::ZRelocationSet(ZCollector* collector) :
+    _collector(collector),
     _allocator(),
     _forwardings(NULL),
     _nforwardings(0),
@@ -123,11 +123,11 @@ ZRelocationSet::ZRelocationSet(ZCycle* cycle) :
     _promote_reloc_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
-  return _cycle->workers();
+  return _collector->workers();
 }
 
-ZCycle* ZRelocationSet::cycle() const {
-  return _cycle;
+ZCollector* ZRelocationSet::collector() const {
+  return _collector;
 }
 
 ZArray<ZPage*>* ZRelocationSet::promote_flip_pages() {
@@ -147,7 +147,7 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   _nforwardings = task.nforwardings();
 
   // Update statistics
-  _cycle->stat_relocation()->set_at_install_relocation_set(_allocator.size());
+  _collector->stat_relocation()->set_at_install_relocation_set(_allocator.size());
 }
 
 static void destroy_and_clear(ZArray<ZPage*>* array) {

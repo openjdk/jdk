@@ -153,12 +153,12 @@ end
 
 define zz
   printf "Major: "
-  z_print_cycle ZHeap::_heap->_major_cycle
+  z_print_cycle ZHeap::_heap->_major_collector
 
   printf " | "
 
   printf "Minor: "
-  z_print_cycle ZHeap::_heap->_minor_cycle
+  z_print_cycle ZHeap::_heap->_minor_collector
 
   printf "\n"
 end
@@ -166,10 +166,10 @@ end
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     Minor Phase:       %u\n", ZHeap::_heap->_minor_cycle->_phase
-    printf "     Major Phase:       %u\n", ZHeap::_heap->_major_cycle->_phase
-    printf "     Minor SeqNum:      %u\n", ZHeap::_heap->_minor_cycle->_phase
-    printf "     Major SeqNum:      %u\n", ZHeap::_heap->_major_cycle->_phase
+    printf "     Minor Phase:       %u\n", ZHeap::_heap->_minor_collector->_phase
+    printf "     Major Phase:       %u\n", ZHeap::_heap->_major_collector->_phase
+    printf "     Minor SeqNum:      %u\n", ZHeap::_heap->_minor_collector->_phase
+    printf "     Major SeqNum:      %u\n", ZHeap::_heap->_major_collector->_phase
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
