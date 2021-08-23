@@ -143,11 +143,11 @@ oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
 }
 
 void java_lang_ref_Reference::clear_referent(oop ref) {
-  if (UseZGC) {
-    HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(ref, _referent_offset, nullptr);
-  } else {
-    ref->obj_field_put_raw(_referent_offset, nullptr);
-  }
+  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(ref, _referent_offset, nullptr);
+}
+
+void java_lang_ref_Reference::clear_referent_raw(oop ref) {
+  ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 
 HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
