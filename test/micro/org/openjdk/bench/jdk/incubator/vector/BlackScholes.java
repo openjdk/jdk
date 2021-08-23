@@ -93,7 +93,7 @@ public class BlackScholes {
     float cdf(float inp) {
         float x = inp;
         if (inp < 0f) {
-            x = -inp; 
+            x = -inp;
         }
 
         float term = 1f / (1f + (Y * x));
@@ -112,7 +112,7 @@ public class BlackScholes {
 
         if (inp >= 0f)
             return 1f - part1 * part2;
-  	else
+        else
             return part1 * part2;
 
     }
@@ -147,7 +147,7 @@ public class BlackScholes {
         var vterm_pow4 = vterm_pow2.mul(vterm_pow2);
         var vterm_pow5 = vterm_pow2.mul(vterm_pow3);
         var vpart1 = vone.div(vtwo.mul(PI).lanewise(VectorOperators.SQRT)).mul(vx.mul(vx).neg().lanewise(VectorOperators.EXP).mul(0.5f));
-        var vpart2 = vterm.mul(A1).add(vterm_pow2.mul(A2)).add(vterm_pow3.mul(A3)).add(vterm_pow4.mul(A4)).add(vterm_pow5.mul(A5)); 
+        var vpart2 = vterm.mul(A1).add(vterm_pow2.mul(A2)).add(vterm_pow3.mul(A3)).add(vterm_pow4.mul(A4)).add(vterm_pow5.mul(A5));
         var vmask = vinp.compare(VectorOperators.GT, 0f);
         var vresult1 = vpart1.mul(vpart2);
         var vresult2 = vresult1.neg().add(vone);
