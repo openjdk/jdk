@@ -273,7 +273,7 @@ public final class String
      * @param  value
      *         The initial value of the string
      */
-    public String(char value[]) {
+    public String(char[] value) {
         this(value, 0, value.length, null);
     }
 
@@ -298,7 +298,7 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative, or
      *          {@code offset} is greater than {@code value.length - count}
      */
-    public String(char value[], int offset, int count) {
+    public String(char[] value, int offset, int count) {
         this(value, offset, count, rangeCheck(value, offset, count));
     }
 
@@ -395,7 +395,7 @@ public final class String
      * @see  #String(byte[])
      */
     @Deprecated(since="1.1")
-    public String(byte ascii[], int hibyte, int offset, int count) {
+    public String(byte[] ascii, int hibyte, int offset, int count) {
         checkBoundsOffCount(offset, count, ascii.length);
         if (count == 0) {
             this.value = "".value;
@@ -447,7 +447,7 @@ public final class String
      * @see  #String(byte[])
      */
     @Deprecated(since="1.1")
-    public String(byte ascii[], int hibyte) {
+    public String(byte[] ascii, int hibyte) {
         this(ascii, hibyte, 0, ascii.length);
     }
 
@@ -1355,7 +1355,7 @@ public final class String
      *
      * @since  1.1
      */
-    public String(byte bytes[], String charsetName)
+    public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
         this(bytes, 0, bytes.length, charsetName);
     }
@@ -1380,7 +1380,7 @@ public final class String
      *
      * @since  1.6
      */
-    public String(byte bytes[], Charset charset) {
+    public String(byte[] bytes, Charset charset) {
         this(bytes, 0, bytes.length, charset);
     }
 
@@ -1666,7 +1666,7 @@ public final class String
      *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
      *                {@code dst.length}</ul>
      */
-    public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
         if (isLatin1()) {
@@ -1720,7 +1720,7 @@ public final class String
      *          </ul>
      */
     @Deprecated(since="1.1")
-    public void getBytes(int srcBegin, int srcEnd, byte dst[], int dstBegin) {
+    public void getBytes(int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         Objects.requireNonNull(dst);
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
@@ -4232,7 +4232,7 @@ public final class String
      * @return  a {@code String} that contains the characters of the
      *          character array.
      */
-    public static String valueOf(char data[]) {
+    public static String valueOf(char[] data) {
         return new String(data);
     }
 
@@ -4256,7 +4256,7 @@ public final class String
      *          {@code offset+count} is larger than
      *          {@code data.length}.
      */
-    public static String valueOf(char data[], int offset, int count) {
+    public static String valueOf(char[] data, int offset, int count) {
         return new String(data, offset, count);
     }
 
@@ -4273,7 +4273,7 @@ public final class String
      *          {@code offset+count} is larger than
      *          {@code data.length}.
      */
-    public static String copyValueOf(char data[], int offset, int count) {
+    public static String copyValueOf(char[] data, int offset, int count) {
         return new String(data, offset, count);
     }
 
@@ -4284,7 +4284,7 @@ public final class String
      * @return  a {@code String} that contains the characters of the
      *          character array.
      */
-    public static String copyValueOf(char data[]) {
+    public static String copyValueOf(char[] data) {
         return new String(data);
     }
 
