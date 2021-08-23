@@ -1815,13 +1815,38 @@ void os::print_memory_mappings(outputStream* st) {
   os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
+// Helper for pretouch_memory. p must be int-aligned.  This must use a
+// store, not just a load. On many OSes loads from fresh memory would be
+// satisfied from a single mapped page containing all zeros.  We need to
+// store something to each page to get them backed by their own memory,
+// which is the effect we want here.  An atomic add of zero is used instead
+// of a simple store, allowing the memory to be used while pretouch is in
+// progress, rather than requiring users of the memory to wait until the
+// entire range has been touched.
+static inline void pretouch_memory_location(void* p) {
+  Atomic::add(reinterpret_cast<int*>(p), 0, memory_order_relaxed);
+}
+
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
-  for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
-    // Note: this must be a store, not a load. On many OSes loads from fresh
-    // memory would be satisfied from a single mapped page containing all zeros.
-    // We need to store something to each page to get them backed by their own
-    // memory, which is the effect we want here.
-    *p = 0;
+  assert(is_power_of_2(page_size), "page size misaligned: %zu", page_size);
+  assert(page_size >= sizeof(int), "page size too small: %zu", page_size);
+  end = align_down(end, sizeof(int));
+  if (start < end) {
+    start = align_up(start, sizeof(int)); // Can't overflow or exceed end.
+    void* last_page = align_down(reinterpret_cast<char*>(end) - 1, page_size);
+    if (start <= last_page) {
+      // Touch up to but not including the last page, to avoid using
+      // possibly overflowed final increment.
+      for (char* p = reinterpret_cast<char*>(start); p < last_page; p += page_size) {
+        pretouch_memory_location(p);
+      }
+      // Touch the last (possibly partial) page.
+      pretouch_memory_location(last_page);
+    } else if (start < end) {
+      // Exactly one partial page in the range.
+      assert(pointer_delta(end, start, 1) < page_size, "invariant");
+      pretouch_memory_location(start);
+    } // Else empty range after int-alignment.
   }
 }
 
