@@ -1773,6 +1773,8 @@ jint G1CollectedHeap::initialize() {
 
   _regions_failed_evacuation.resize(max_regions());
 
+  _evac_failure_regions.initialize();
+
   G1InitLogger::print();
 
   return JNI_OK;
@@ -3131,6 +3133,20 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   _preserved_marks_set.get(worker_id)->push_if_necessary(obj, m);
 }
 
+void G1CollectedHeap::record_evacuation_failure_region(HeapRegion* region) {
+  _evac_failure_regions.record(region);
+}
+
+void G1CollectedHeap::reset_evacuation_failure_regions() {
+  _evac_failure_regions.reset();
+}
+
+void G1CollectedHeap::iterate_evacuation_failure_regions_par(HeapRegionClosure* closure,
+                                                             HeapRegionClaimer* claimer,
+                                                             uint worker_id) {
+  _evac_failure_regions.par_iterate(closure, claimer, worker_id);
+}
+
 bool G1ParEvacuateFollowersClosure::offer_termination() {
   EventGCPhaseParallel event;
   G1ParScanThreadState* const pss = par_scan_state();
@@ -3921,6 +3937,7 @@ void G1CollectedHeap::post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks
   {
     G1PostEvacuateCollectionSetCleanupTask2 cl(preserved_marks, rdcqs, evacuation_info, surviving_young_words);
     run_batch_task(&cl);
+    G1CollectedHeap::heap()->reset_evacuation_failure_regions();
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
 }

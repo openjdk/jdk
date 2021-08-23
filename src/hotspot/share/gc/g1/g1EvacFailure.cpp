@@ -274,7 +274,8 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   // reference processing (e.g. finalizers) can make it necessary to resurrect an
   // otherwise unreachable object at the very end of the collection. That object
   // might cause an evacuation failure in any region in the collection set.
-  _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
+  // _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
+  _g1h->iterate_evacuation_failure_regions_par(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
