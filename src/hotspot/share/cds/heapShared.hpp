@@ -143,15 +143,11 @@ class HeapShared: AllStatic {
  private:
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static bool _closed_archive_heap_region_mapped;
-  static bool _open_archive_heap_region_mapped;
-  static bool _archive_heap_region_fixed;
+  static bool _closed_regions_mapped;
+  static bool _open_regions_mapped;
   static DumpedInternedStrings *_dumped_interned_strings;
 
 public:
-  static bool oop_equals(oop const& p1, oop const& p2) {
-    return p1 == p2;
-  }
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -159,15 +155,11 @@ public:
 
 private:
   typedef ResourceHashtable<oop, oop,
-      HeapShared::oop_hash,
-      HeapShared::oop_equals,
       15889, // prime number
-      ResourceObj::C_HEAP> ArchivedObjectCache;
+      ResourceObj::C_HEAP,
+      mtClassShared,
+      HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
-
-  static bool klass_equals(Klass* const& p1, Klass* const& p2) {
-    return primitive_equals<Klass*>(p1, p2);
-  }
 
   static unsigned klass_hash(Klass* const& klass) {
     // Generate deterministic hashcode even if SharedBaseAddress is changed due to ASLR.
@@ -176,10 +168,10 @@ private:
 
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
-                               HeapShared::klass_hash,
-                               HeapShared::klass_equals,
                                137, // prime number
-                               ResourceObj::C_HEAP> {
+                               ResourceObj::C_HEAP,
+                               mtClassShared,
+                               HeapShared::klass_hash> {
   public:
     int _count;
   };
@@ -200,7 +192,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static void check_closed_archive_heap_region_object(InstanceKlass* k);
+  static void check_closed_region_object(InstanceKlass* k);
 
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
@@ -231,10 +223,10 @@ private:
   static int     _narrow_oop_shift;
 
   typedef ResourceHashtable<oop, bool,
-      HeapShared::oop_hash,
-      HeapShared::oop_equals,
       15889, // prime number
-      ResourceObj::C_HEAP> SeenObjectsTable;
+      ResourceObj::C_HEAP,
+      mtClassShared,
+      HeapShared::oop_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
@@ -297,21 +289,14 @@ private:
   }
 
   static oop find_archived_heap_object(oop obj);
-  static oop archive_heap_object(oop obj);
+  static oop archive_object(oop obj);
 
   static void archive_klass_objects();
 
-  static void set_archive_heap_region_fixed() {
-    _archive_heap_region_fixed = true;
-  }
-  static bool archive_heap_region_fixed() {
-    return _archive_heap_region_fixed;
-  }
-
-  static void archive_java_heap_objects(GrowableArray<MemRegion> *closed,
-                                        GrowableArray<MemRegion> *open);
-  static void copy_closed_archive_heap_objects(GrowableArray<MemRegion> * closed_archive);
-  static void copy_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive);
+  static void archive_objects(GrowableArray<MemRegion>* closed_regions,
+                              GrowableArray<MemRegion>* open_regions);
+  static void copy_closed_objects(GrowableArray<MemRegion>* closed_regions);
+  static void copy_open_objects(GrowableArray<MemRegion>* open_regions);
 
   static oop archive_reachable_objects_from(int level,
                                             KlassSubGraphInfo* subgraph_info,
@@ -357,34 +342,34 @@ private:
   }
 
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_closed_archive_heap_region &&
-                               idx <= MetaspaceShared::last_open_archive_heap_region);)
+    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_closed_heap_region &&
+                               idx <= MetaspaceShared::last_open_heap_region);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
-  static void set_closed_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(_closed_archive_heap_region_mapped = true;)
+  static void set_closed_regions_mapped() {
+    CDS_JAVA_HEAP_ONLY(_closed_regions_mapped = true;)
     NOT_CDS_JAVA_HEAP_RETURN;
   }
-  static bool closed_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _closed_archive_heap_region_mapped;)
+  static bool closed_regions_mapped() {
+    CDS_JAVA_HEAP_ONLY(return _closed_regions_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
-  static void set_open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true;)
+  static void set_open_regions_mapped() {
+    CDS_JAVA_HEAP_ONLY(_open_regions_mapped = true;)
     NOT_CDS_JAVA_HEAP_RETURN;
   }
-  static bool open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped;)
+  static bool open_regions_mapped() {
+    CDS_JAVA_HEAP_ONLY(return _open_regions_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
   static bool is_mapped() {
-    return closed_archive_heap_region_mapped() && open_archive_heap_region_mapped();
+    return closed_regions_mapped() && open_regions_mapped();
   }
 
-  static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  static void fixup_mapped_regions() NOT_CDS_JAVA_HEAP_RETURN;
 
-  inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_archived_object_during_dumptime(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void resolve_classes(JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
@@ -397,8 +382,8 @@ private:
 
   static void init_narrow_oop_decoding(address base, int shift) NOT_CDS_JAVA_HEAP_RETURN;
 
-  static void patch_archived_heap_embedded_pointers(MemRegion mem, address  oopmap,
-                                                    size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
+  static void patch_embedded_pointers(MemRegion region, address oopmap,
+                                      size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
@@ -408,10 +393,10 @@ private:
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
   public ResourceHashtable<oop, bool,
-                           HeapShared::string_oop_hash,
-                           HeapShared::oop_equals,
                            15889, // prime number
-                           ResourceObj::C_HEAP>
+                           ResourceObj::C_HEAP,
+                           mtClassShared,
+                           HeapShared::string_oop_hash>
 {};
 #endif
 

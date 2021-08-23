@@ -2475,7 +2475,9 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.isSelfCall = true;
 
             // Attribute arguments, yielding list of argument types.
+            localEnv.info.constructorArgs = true;
             KindSelector kind = attribArgs(KindSelector.MTH, tree.args, localEnv, argtypesBuf);
+            localEnv.info.constructorArgs = false;
             argtypes = argtypesBuf.toList();
             typeargtypes = attribTypes(tree.typeargs, localEnv);
 
@@ -4339,11 +4341,14 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (isType(sitesym)) {
-            if (sym.name == names._this) {
+            if (sym.name == names._this || sym.name == names._super) {
                 // If `C' is the currently compiled class, check that
-                // C.this' does not appear in a call to a super(...)
+                // `C.this' does not appear in an explicit call to a constructor
+                // also make sure that `super` is not used in constructor invocations
                 if (env.info.isSelfCall &&
-                    site.tsym == env.enclClass.sym) {
+                        ((sym.name == names._this &&
+                        site.tsym == env.enclClass.sym) ||
+                        sym.name == names._super && env.info.constructorArgs)) {
                     chk.earlyRefError(tree.pos(), sym);
                 }
             } else {

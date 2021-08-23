@@ -377,7 +377,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _finger set in set_non_marking_state
 
   _worker_id_offset(G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
-  _max_num_tasks(ParallelGCThreads),
+  _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
 
@@ -445,7 +445,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* task_queue = new G1CMTaskQueue();
-    task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
 
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
@@ -1309,7 +1308,7 @@ void G1ConcurrentMark::compute_new_sizes() {
 
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
-  _g1h->g1mm()->update_sizes();
+  _g1h->monitoring_support()->update_sizes();
 }
 
 void G1ConcurrentMark::cleanup() {

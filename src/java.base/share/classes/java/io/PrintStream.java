@@ -561,7 +561,7 @@ public class PrintStream extends FilterOutputStream
      * @param  len   Number of bytes to write
      */
     @Override
-    public void write(byte buf[], int off, int len) {
+    public void write(byte[] buf, int off, int len) {
         try {
             synchronized (this) {
                 ensureOpen();
@@ -612,7 +612,7 @@ public class PrintStream extends FilterOutputStream
      * @since 14
      */
     @Override
-    public void write(byte buf[]) throws IOException {
+    public void write(byte[] buf) throws IOException {
         this.write(buf, 0, buf.length);
     }
 
@@ -634,7 +634,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @since 14
      */
-    public void writeBytes(byte buf[]) {
+    public void writeBytes(byte[] buf) {
         this.write(buf, 0, buf.length);
     }
 
@@ -845,7 +845,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @throws  NullPointerException  If {@code s} is {@code null}
      */
-    public void print(char s[]) {
+    public void print(char[] s) {
         write(s);
     }
 

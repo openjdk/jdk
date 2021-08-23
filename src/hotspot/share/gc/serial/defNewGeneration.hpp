@@ -31,6 +31,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
@@ -138,6 +139,8 @@ protected:
   ContiguousSpace* _to_space;
 
   STWGCTimer* _gc_timer;
+
+  StringDedup::Requests _string_dedup_requests;
 
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of

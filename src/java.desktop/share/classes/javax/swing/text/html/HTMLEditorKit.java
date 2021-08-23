@@ -22,25 +22,81 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text.html;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.event.ActionEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.Writer;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Enumeration;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.swing.Action;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JViewport;
+import javax.swing.SizeRequirements;
+import javax.swing.SwingUtilities;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.plaf.TextUI;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.BoxView;
+import javax.swing.text.ComponentView;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.Highlighter;
+import javax.swing.text.IconView;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.LabelView;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.Position;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.StyledEditorKit;
+import javax.swing.text.TextAction;
+import javax.swing.text.View;
+import javax.swing.text.ViewFactory;
+import javax.swing.text.html.parser.ParserDelegator;
 
 import sun.awt.AppContext;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import javax.swing.text.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.TextUI;
-import java.util.*;
-import javax.accessibility.*;
-import java.lang.ref.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import javax.swing.text.html.parser.ParserDelegator;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * The Swing JEditorPane text component supports different kinds
@@ -403,7 +459,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
                 Reader r = new BufferedReader(
-                        new InputStreamReader(is, "ISO-8859-1"));
+                        new InputStreamReader(is, ISO_8859_1));
                 defaultStyles.loadRules(r, null);
                 r.close();
             } catch (Throwable e) {

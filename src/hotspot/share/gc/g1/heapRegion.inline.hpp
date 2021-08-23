@@ -178,9 +178,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
-  if (addr == top()) {
-    return pointer_delta(end(), addr);
-  }
+  assert(addr < top(), "precondition");
 
   if (block_is_obj(addr)) {
     return cast_to_oop(addr)->size();

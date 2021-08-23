@@ -121,9 +121,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         Input input = new DocFinder.Input(utils, holder, this);
         DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
         if (inheritedDoc.holderTag != null) {
-            CommentHelper ch = utils.getCommentHelper(input.element);
-            ch.setOverrideElement(inheritedDoc.holder);
-            return writer.returnTagOutput(holder, (ReturnTree) inheritedDoc.holderTag, false);
+            return writer.returnTagOutput(inheritedDoc.holder, (ReturnTree) inheritedDoc.holderTag, false);
         }
         return null;
     }
