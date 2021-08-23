@@ -60,8 +60,7 @@ public class TestUnicode extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("Code.html", true,
-                """
-                        """);
+                "<div class=\"block\">Hel" + ellipsis + "lo <code>World(" + ellipsis + ")</code>.</div>");
         checkOutput("Code.html", false,
                 "\\u");
     }
