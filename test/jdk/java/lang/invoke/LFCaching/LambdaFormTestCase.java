@@ -45,8 +45,7 @@ import java.util.function.Function;
  */
 public abstract class LambdaFormTestCase {
 
-    private static final long TIMEOUT = Helper.IS_THOROUGH ?
-            0L : (long) (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9);
+    private static final long TIMEOUT = Helper.IS_THOROUGH ? 0L : 60_000L;
 
     /**
      * Reflection link to {@code j.l.i.MethodHandle.internalForm} method. It is
