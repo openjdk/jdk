@@ -112,7 +112,6 @@ class G1BlockOffsetTablePart {
 private:
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
-  size_t    _next_offset_index;      // index corresponding to that boundary
 
   // Indicates if an object can span into this G1BlockOffsetTablePart.
   debug_only(bool _object_can_span;)
@@ -166,14 +165,14 @@ private:
                                                   const void* addr);
 
   // Requires that "*threshold_" be the first array entry boundary at or
-  // above "blk_start", and that "*index_" be the corresponding array
-  // index.  If the block starts at or crosses "*threshold_", records
+  // above "blk_start".  If the block starts at or crosses "*threshold_", records
   // "blk_start" as the appropriate block start for the array index
   // starting at "*threshold_", and for any other indices crossed by the
-  // block.  Updates "*threshold_" and "*index_" to correspond to the first
-  // index after the block end.
-  void alloc_block_work(HeapWord** threshold_, size_t* index_,
-                        HeapWord* blk_start, HeapWord* blk_end);
+  // block.  Updates "*threshold_" to correspond to the first index after
+  // the block end.
+  void alloc_block_work(HeapWord** threshold_,
+                        HeapWord* blk_start,
+                        HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
@@ -214,7 +213,7 @@ public:
   // never exceeds the "_next_offset_threshold".
   void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (blk_end > _next_offset_threshold) {
-      alloc_block_work(&_next_offset_threshold, &_next_offset_index, blk_start, blk_end);
+      alloc_block_work(&_next_offset_threshold, blk_start, blk_end);
     }
   }
   void alloc_block(HeapWord* blk, size_t size) {

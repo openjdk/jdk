@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,9 +656,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
             !UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
-          Register obj_size = r2;
-          Register t1       = r19;
-          Register t2       = r4;
+          Register obj_size = r19;
+          Register t1       = r10;
+          Register t2       = r11;
           assert_different_registers(klass, obj, obj_size, t1, t2);
 
           __ stp(r19, zr, Address(__ pre(sp, -2 * wordSize)));
@@ -769,9 +769,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // allocations.
         // Otherwise, just go to the slow path.
         if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Register arr_size = r4;
-          Register t1       = r2;
-          Register t2       = r5;
+          Register arr_size = r5;
+          Register t1       = r10;
+          Register t2       = r11;
           Label slow_path;
           assert_different_registers(length, klass, obj, arr_size, t1, t2);
 
@@ -801,7 +801,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ andr(t1, t1, Klass::_lh_header_size_mask);
           __ sub(arr_size, arr_size, t1);  // body length
           __ add(t1, t1, obj);       // body start
-          __ initialize_body(t1, arr_size, 0, t2);
+          __ initialize_body(t1, arr_size, 0, t1, t2);
           __ membar(Assembler::StoreStore);
           __ verify_oop(obj);
 

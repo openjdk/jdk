@@ -128,8 +128,8 @@ public:
     virtual ~Ref() {}
 
     address obj() const {
-      // In some rare cases (see CPSlot in constantPool.hpp) we store some flags in the lowest
-      // 2 bits of a MetaspaceObj pointer. Unmask these when manipulating the pointer.
+      // In some rare cases we store some flags in the lowest 2 bits of a
+      // MetaspaceObj pointer. Unmask these when manipulating the pointer.
       uintx p = (uintx)*mpp();
       return (address)(p & (~FLAG_MASK));
     }

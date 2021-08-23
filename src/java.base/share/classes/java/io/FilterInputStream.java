@@ -102,7 +102,7 @@ public class FilterInputStream extends InputStream {
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#read(byte[], int, int)
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
@@ -128,7 +128,7 @@ public class FilterInputStream extends InputStream {
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         return in.read(b, off, len);
     }
 

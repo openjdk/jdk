@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,20 +180,24 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 // preserves obj, destroys len_in_bytes
-void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1) {
+//
+// Scratch registers: t1 = r10, t2 = r11
+//
+void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
+  assert(t1 == r10 && t2 == r11, "must be");
+
   Label done;
 
   // len_in_bytes is positive and ptr sized
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  // Preserve obj
-  if (hdr_size_in_bytes)
-    add(obj, obj, hdr_size_in_bytes);
-  zero_memory(obj, len_in_bytes, t1);
-  if (hdr_size_in_bytes)
-    sub(obj, obj, hdr_size_in_bytes);
+  // zero_words() takes ptr in r10 and count in words in r11
+  mov(rscratch1, len_in_bytes);
+  lea(t1, Address(obj, hdr_size_in_bytes));
+  lsr(t2, rscratch1, LogBytesPerWord);
+  zero_words(t1, t2);
 
   bind(done);
 }
@@ -208,6 +212,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
   initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
+// Scratch registers: t1 = r10, t2 = r11
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
@@ -218,45 +223,13 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
      // clear rest of allocated space
      const Register index = t2;
-     const int threshold = 16 * BytesPerWord;   // approximate break even point for code size (see comments below)
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       initialize_body(obj, index, hdr_size_in_bytes, t1);
-     } else if (con_size_in_bytes <= threshold) {
-       // use explicit null stores
-       int i = hdr_size_in_bytes;
-       if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) {
-         str(zr, Address(obj, i));
-         i += BytesPerWord;
-       }
-       for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
-         stp(zr, zr, Address(obj, i));
+       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
-       block_comment("zero memory");
-      // use loop to null out the fields
-
-       int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
-       mov(index,  words / 8);
-
-       const int unroll = 8; // Number of str(zr) instructions we'll unroll
-       int remainder = words % unroll;
-       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * BytesPerWord));
-
-       Label entry_point, loop;
-       b(entry_point);
-
-       bind(loop);
-       sub(index, index, 1);
-       for (int i = -unroll; i < 0; i++) {
-         if (-i == remainder)
-           bind(entry_point);
-         str(zr, Address(rscratch1, i * wordSize));
-       }
-       if (remainder == 0)
-         bind(entry_point);
-       add(rscratch1, rscratch1, unroll * wordSize);
-       cbnz(index, loop);
-
+       con_size_in_bytes -= hdr_size_in_bytes;
+       lea(t1, Address(obj, hdr_size_in_bytes));
+       zero_words(t1, con_size_in_bytes / BytesPerWord);
      }
   }
 
@@ -291,8 +264,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
 
   membar(StoreStore);
 

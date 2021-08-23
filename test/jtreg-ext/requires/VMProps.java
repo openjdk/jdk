@@ -44,10 +44,10 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.hotspot.code.Compiler;
-import sun.hotspot.cpuinfo.CPUInfo;
-import sun.hotspot.gc.GC;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
+import jdk.test.whitebox.gc.GC;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Container;
 

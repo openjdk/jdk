@@ -40,6 +40,7 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -1020,6 +1021,8 @@ void PSParallelCompact::post_compact()
     // Update top().  Must be done after clearing the bitmap and summary data.
     _space_info[id].publish_new_top();
   }
+
+  ParCompactionManager::flush_all_string_dedup_requests();
 
   MutableSpace* const eden_space = _space_info[eden_space_id].space();
   MutableSpace* const from_space = _space_info[from_space_id].space();
