@@ -714,7 +714,7 @@ void HeapRegion::verify(VerifyOption vo,
     p += obj_size;
   }
 
-  // only regions in old generation contain valid BOT
+  // Only regions in old generation contain valid BOT.
   if (!is_empty() && !is_young()) {
     _bot_part.verify();
   }
