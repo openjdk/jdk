@@ -1134,7 +1134,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) 
             continue;             // Both inputs are loop varying; cannot RCE
           }
         }
-        
+
         if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL)) {
           continue;
         }
