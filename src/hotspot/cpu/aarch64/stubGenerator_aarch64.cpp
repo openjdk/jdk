@@ -4708,6 +4708,11 @@ class StubGenerator: public StubCodeGenerator {
   // r4  = cnt2
   // r10 = tmp1
   // r11 = tmp2
+  // r12 = tmp3
+  // r14 = tmp4
+  // v0  = vtmp1
+  // v1  = vtmp2
+  // v2  = vtmp3
   address generate_compare_long_string_different_encoding(bool isLU) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isLU

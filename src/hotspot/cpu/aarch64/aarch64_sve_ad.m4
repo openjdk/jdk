@@ -938,9 +938,9 @@ dnl
 
 // Intrisics for String.compareTo()
 
-// Note that Z register alias the corresponding NEON register, we declare the vector operands of
+// Note that Z registers alias the corresponding NEON registers, we declare the vector operands of
 // these string_compare variants as NEON register type for convenience so that the prototype of
-// string_compare can be shared with all varients.
+// string_compare can be shared with all variants.
 
 dnl
 define(`STRING_COMPARETO', `
@@ -960,7 +960,7 @@ instruct string_compare$1_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
                       as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
                       StrIntrinsicNode::$1);
   %}

@@ -16509,7 +16509,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16526,26 +16526,26 @@ instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                        vRegD_V0 vtmp1, vRegD_V1 vtmp2, rFlagsReg cr)
+                        vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
   predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2,
+  effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1, $tmp2, $vtmp1, $vtmp2" %}
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1, $tmp2, $vtmp1, $vtmp2, $vtmp3" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
                       pnoreg, pnoreg, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_memory);
@@ -16553,19 +16553,19 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
 
 instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                        vRegD_V0 vtmp1, vRegD_V1 vtmp2, rFlagsReg cr)
+                        vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
   predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2,
+  effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1, $tmp2, $vtmp1, $vtmp2" %}
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1, $tmp2, $vtmp1, $vtmp2, $vtmp3" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
                       pnoreg, pnoreg, StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
