@@ -103,11 +103,11 @@ public class CustomFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "some text");
@@ -115,7 +115,7 @@ public class CustomFileSystemTest {
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -137,11 +137,11 @@ public class CustomFileSystemTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
@@ -149,7 +149,7 @@ public class CustomFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -160,11 +160,11 @@ public class CustomFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
                     .method("HEAD", HttpRequest.BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
@@ -173,7 +173,7 @@ public class CustomFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -195,11 +195,11 @@ public class CustomFileSystemTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, ""))
+            var request = HttpRequest.newBuilder(uri(server, ""))
                     .method("HEAD", HttpRequest.BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
@@ -208,7 +208,7 @@ public class CustomFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -253,11 +253,11 @@ public class CustomFileSystemTest {
             lastModified = getLastModified(file);
         }
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), contentType);
@@ -265,7 +265,7 @@ public class CustomFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedContent);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             if (serveIndexFile) {
                 Files.delete(root.resolve(filename));
             }
@@ -281,16 +281,16 @@ public class CustomFileSystemTest {
             file.toFile().setReadable(false, false);
             assert !Files.isReadable(file);
 
-            var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            ss.start();
+            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+            server.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+                var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
                 var response = client.send(request, BodyHandlers.ofString());
                 assertEquals(response.statusCode(), 403);
                 assertEquals(response.headers().firstValue("content-length").get(), "0");
             } finally {
-                ss.stop(0);
+                server.stop(0);
                 file.toFile().setReadable(true, false);
             }
         }
@@ -310,17 +310,17 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testInvalidRequestURIGET");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile?#.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -338,17 +338,17 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundGET");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -366,18 +366,18 @@ public class CustomFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundHEAD");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt"))
                     .method("HEAD", HttpRequest.BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -398,17 +398,17 @@ public class CustomFileSystemTest {
         var target = Files.writeString(root.resolve("target.txt"), "some text", CREATE);
         Files.createSymbolicLink(symlink, target);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "symlink")).build();
+            var request = HttpRequest.newBuilder(uri(server, "symlink")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -430,17 +430,17 @@ public class CustomFileSystemTest {
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, fileName)).build();
+            var request = HttpRequest.newBuilder(uri(server, fileName)).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -461,18 +461,18 @@ public class CustomFileSystemTest {
         var root = createDirectoryInCustomFs("testMovedPermanently");
         Files.createDirectory(root.resolve("aDirectory"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var uri = uri(ss, "aDirectory");
+            var uri = uri(server, "aDirectory");
             var request = HttpRequest.newBuilder(uri).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 301);
             assertEquals(response.headers().firstValue("content-length").get(), "0");
             assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -480,17 +480,17 @@ public class CustomFileSystemTest {
     public void testXss() throws Exception {
         var root = createDirectoryInCustomFs("testXss");
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "beginDelim%3C%3EEndDelim")).build();
+            var request = HttpRequest.newBuilder(uri(server, "beginDelim%3C%3EEndDelim")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertTrue(response.body().contains("beginDelim%3C%3EEndDelim"));
             assertTrue(response.body().contains("File not found"));
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 

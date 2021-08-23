@@ -38,13 +38,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -98,11 +96,11 @@ public class SimpleFileServerTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "some text");
@@ -110,7 +108,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -132,11 +130,11 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
@@ -144,7 +142,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -155,11 +153,11 @@ public class SimpleFileServerTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
@@ -168,7 +166,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -190,11 +188,11 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, ""))
+            var request = HttpRequest.newBuilder(uri(server, ""))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
@@ -203,7 +201,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -248,11 +246,11 @@ public class SimpleFileServerTest {
             lastModified = getLastModified(file);
         }
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), contentType);
@@ -260,7 +258,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedContent);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             if (serveIndexFile) {
                 Files.delete(root.resolve(filename));
             }
@@ -276,16 +274,16 @@ public class SimpleFileServerTest {
             file.toFile().setReadable(false, false);
             assert !Files.isReadable(file);
 
-            var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            ss.start();
+            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+            server.start();
             try {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+                var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
                 var response = client.send(request, BodyHandlers.ofString());
                 assertEquals(response.statusCode(), 403);
                 assertEquals(response.headers().firstValue("content-length").get(), "0");
             } finally {
-                ss.stop(0);
+                server.stop(0);
                 file.toFile().setReadable(true, false);
             }
         }
@@ -305,17 +303,17 @@ public class SimpleFileServerTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(TEST_DIR.resolve("testInvalidRequestURIGET"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile?#.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -333,17 +331,17 @@ public class SimpleFileServerTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(TEST_DIR.resolve("testNotFoundGET"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -361,18 +359,18 @@ public class SimpleFileServerTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(TEST_DIR.resolve("testNotFoundHEAD"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -393,17 +391,17 @@ public class SimpleFileServerTest {
         var target = Files.writeString(root.resolve("target.txt"), "some text", CREATE);
         Files.createSymbolicLink(symlink, target);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "symlink")).build();
+            var request = HttpRequest.newBuilder(uri(server, "symlink")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -425,17 +423,17 @@ public class SimpleFileServerTest {
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, fileName)).build();
+            var request = HttpRequest.newBuilder(uri(server, fileName)).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -455,19 +453,53 @@ public class SimpleFileServerTest {
     public void testMovedPermanently() throws Exception {
         var root = Files.createDirectory(TEST_DIR.resolve("testMovedPermanently"));
         Files.createDirectory(root.resolve("aDirectory"));
+        var expectedBody = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>Directory listing for &#x2F;aDirectory&#x2F;</h1>
+                <ul>
+                </ul>
+                </body>
+                </html>
+                """;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
-            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var uri = uri(ss, "aDirectory");
-            var request = HttpRequest.newBuilder(uri).build();
-            var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 301);
-            assertEquals(response.headers().firstValue("content-length").get(), "0");
-            assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
+            {
+                var client = HttpClient.newBuilder().proxy(NO_PROXY)
+                        .followRedirects(HttpClient.Redirect.NEVER).build();
+                var uri = uri(server, "aDirectory");
+                var request = HttpRequest.newBuilder(uri).build();
+                var response = client.send(request, BodyHandlers.ofString());
+                assertEquals(response.statusCode(), 301);
+                assertEquals(response.headers().firstValue("content-length").get(), "0");
+                assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
+
+                // tests that query component is preserved during redirect
+                var uri2 = uri(server, "aDirectory", "query");
+                var req2 = HttpRequest.newBuilder(uri2).build();
+                var res2 = client.send(req2, BodyHandlers.ofString());
+                assertEquals(res2.statusCode(), 301);
+                assertEquals(res2.headers().firstValue("content-length").get(), "0");
+                assertEquals(res2.headers().firstValue("location").get(), "/aDirectory/?query");
+            }
+
+            {   // tests that redirect to returned relative URI works
+                var client = HttpClient.newBuilder().proxy(NO_PROXY)
+                        .followRedirects(HttpClient.Redirect.ALWAYS).build();
+                var uri = uri(server, "aDirectory");
+                var request = HttpRequest.newBuilder(uri).build();
+                var response = client.send(request, BodyHandlers.ofString());
+                assertEquals(response.statusCode(), 200);
+                assertEquals(response.body(), expectedBody);
+                assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            }
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -493,16 +525,16 @@ public class SimpleFileServerTest {
 
     @Test
     public void testInitialSlashContext() {
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.INFO);
-        ss.removeContext("/"); // throws if no context
-        ss.stop(0);
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.INFO);
+        server.removeContext("/"); // throws if no context
+        server.stop(0);
     }
 
     @Test
     public void testBound() {
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.INFO);
-        var boundAddr = ss.getAddress();
-        ss.stop(0);
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.INFO);
+        var boundAddr = server.getAddress();
+        server.stop(0);
         assertTrue(boundAddr.getAddress() != null);
         assertTrue(boundAddr.getPort() > 0);
     }
@@ -556,17 +588,17 @@ public class SimpleFileServerTest {
     public void testXss() throws Exception {
         var root = Files.createDirectory(TEST_DIR.resolve("testXss"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "beginDelim%3C%3EEndDelim")).build();
+            var request = HttpRequest.newBuilder(uri(server, "beginDelim%3C%3EEndDelim")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertTrue(response.body().contains("beginDelim%3C%3EEndDelim"));
             assertTrue(response.body().contains("File not found"));
         } finally {
-            ss.stop(0);
+            server.stop(0);
         }
     }
 
@@ -583,6 +615,16 @@ public class SimpleFileServerTest {
                 .port(server.getAddress().getPort())
                 .scheme("http")
                 .path("/" + path)
+                .buildUnchecked();
+    }
+
+    static URI uri(HttpServer server, String path, String query) {
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .query(query)
                 .buildUnchecked();
     }
 

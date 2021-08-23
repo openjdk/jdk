@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -117,8 +118,14 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private void handleMovedPermanently(HttpExchange exchange) throws IOException {
-        exchange.getResponseHeaders().set("Location", exchange.getRequestURI().getRawPath() + "/");
+        exchange.getResponseHeaders().set("Location", getRedirectURI(exchange.getRequestURI()));
         exchange.sendResponseHeaders(301, -1);
+    }
+
+    private String getRedirectURI(URI uri) {
+        String query = uri.getRawQuery();
+        String redirectPath = uri.getRawPath() + "/";
+        return query == null ? redirectPath : redirectPath + "?" + query;
     }
 
     private void handleForbidden(HttpExchange exchange) throws IOException {
@@ -257,7 +264,7 @@ public final class FileServerHandler implements HttpHandler {
                 ps.flush();
             }
         } else {
-            respHdrs.set("Content-Length", Integer.toString(body.length()));
+            respHdrs.set("Content-Length", Integer.toString(body.getBytes(UTF_8).length));
             exchange.sendResponseHeaders(200, -1);
         }
     }

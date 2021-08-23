@@ -118,44 +118,44 @@ public class MapToPathTest {
     public void test() throws Exception {
         var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
         {
-            var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/", h, OUTPUT_FILTER);
-            ss.start();
+            var handler = SimpleFileServer.createFileHandler(TEST_DIR);
+            var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, OUTPUT_FILTER);
+            server.start();
             try {
-                var req1 = HttpRequest.newBuilder(uri(ss, "/")).build();
+                var req1 = HttpRequest.newBuilder(uri(server, "/")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(218L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
 
-                var req2 = HttpRequest.newBuilder(uri(ss, "/../")).build();
+                var req2 = HttpRequest.newBuilder(uri(server, "/../")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // cannot escape root
 
-                var req3 = HttpRequest.newBuilder(uri(ss, "/foo/bar/baz/c:://")).build();
+                var req3 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:://")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
                 assertEquals(res3.statusCode(), 404);  // not found
 
-                var req4 = HttpRequest.newBuilder(uri(ss, "/foo/bar/\\..\\../")).build();
+                var req4 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // not found
 
-                var req5 = HttpRequest.newBuilder(uri(ss, "/foo")).build();
+                var req5 = HttpRequest.newBuilder(uri(server, "/foo")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
                 assertEquals(res5.headers().firstValue("content-length").get(), "0");
                 assertEquals(res5.headers().firstValue("location").get(), "/foo/");
             } finally {
-                ss.stop(0);
+                server.stop(0);
             }
         }
         {
-            var h = SimpleFileServer.createFileHandler(TEST_DIR);
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", h, OUTPUT_FILTER);
-            ss.start();
+            var handler = SimpleFileServer.createFileHandler(TEST_DIR);
+            var server = HttpServer.create(LOOPBACK_ADDR, 10, "/browse/", handler, OUTPUT_FILTER);
+            server.start();
             try {
-                var req1 = HttpRequest.newBuilder(uri(ss, "/browse/file.txt")).build();
+                var req1 = HttpRequest.newBuilder(uri(server, "/browse/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.body(), "testdir");
@@ -163,20 +163,20 @@ public class MapToPathTest {
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(7L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("file.txt")));
 
-                var req2 = HttpRequest.newBuilder(uri(ss, "/store/file.txt")).build();
+                var req2 = HttpRequest.newBuilder(uri(server, "/store/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // no context found
             } finally {
-                ss.stop(0);
+                server.stop(0);
             }
         }
         {
             // Test "/foo/" context (with trailing slash)
-            var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", h, OUTPUT_FILTER);
-            ss.start();
+            var handler = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
+            var server = HttpServer.create(LOOPBACK_ADDR, 10, "/foo/", handler, OUTPUT_FILTER);
+            server.start();
             try {
-                var req1 = HttpRequest.newBuilder(uri(ss, "/foo/file.txt")).build();
+                var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.body(), "foo");
@@ -184,34 +184,34 @@ public class MapToPathTest {
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
 
-                var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/file.txt")).build();
+                var req2 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // no context found
 
-                var req3 = HttpRequest.newBuilder(uri(ss, "/foo/../foobar/file.txt")).build();
+                var req3 = HttpRequest.newBuilder(uri(server, "/foo/../foobar/file.txt")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
                 assertEquals(res3.statusCode(), 404);  // cannot escape context
 
-                var req4 = HttpRequest.newBuilder(uri(ss, "/foo/../..")).build();
+                var req4 = HttpRequest.newBuilder(uri(server, "/foo/../..")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // cannot escape root
 
-                var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
+                var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
                 assertEquals(res5.headers().firstValue("content-length").get(), "0");
                 assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
             } finally {
-                ss.stop(0);
+                server.stop(0);
             }
         }
         {
             // Test "/foo" context (without trailing slash)
-            var h = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
-            var ss = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", h, OUTPUT_FILTER);
-            ss.start();
+            var handler = SimpleFileServer.createFileHandler(TEST_DIR.resolve("foo"));
+            var server = HttpServer.create(LOOPBACK_ADDR, 10, "/foo", handler, OUTPUT_FILTER);
+            server.start();
             try {
-                var req1 = HttpRequest.newBuilder(uri(ss, "/foo/file.txt")).build();
+                var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.body(), "foo");
@@ -219,31 +219,31 @@ public class MapToPathTest {
                 assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
 
-                var req2 = HttpRequest.newBuilder(uri(ss, "/foobar/")).build();
+                var req2 = HttpRequest.newBuilder(uri(server, "/foobar/")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // handler prevents mapping to /foo/bar
 
-                var req3 = HttpRequest.newBuilder(uri(ss, "/foobar/file.txt")).build();
+                var req3 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
                 assertEquals(res3.statusCode(), 404);  // handler prevents mapping to /foo/bar/file.txt
 
-                var req4 = HttpRequest.newBuilder(uri(ss, "/file.txt")).build();
+                var req4 = HttpRequest.newBuilder(uri(server, "/file.txt")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);
 
-                var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
+                var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
                 assertEquals(res5.headers().firstValue("content-length").get(), "0");
                 assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
 
-                var req6 = HttpRequest.newBuilder(uri(ss, "/foo")).build();
+                var req6 = HttpRequest.newBuilder(uri(server, "/foo")).build();
                 var res6 = client.send(req6, BodyHandlers.ofString());
                 assertEquals(res6.statusCode(), 301);  // redirect
                 assertEquals(res6.headers().firstValue("content-length").get(), "0");
                 assertEquals(res6.headers().firstValue("location").get(), "/foo/");
             } finally {
-                ss.stop(0);
+                server.stop(0);
             }
         }
     }
@@ -300,6 +300,28 @@ public class MapToPathTest {
         }
     }
 
+    // Tests requests with queries, which are simply ignored by the handler
+    @Test
+    public void requestWithQuery() throws Exception {
+        var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+        var handler = SimpleFileServer.createFileHandler(TEST_DIR);
+        var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, OUTPUT_FILTER);
+        server.start();
+        try {
+            for (String query : List.of("x=y", "x=", "xxx", "#:?") ) {
+                out.println("uri.Query=" + query);
+                var req = HttpRequest.newBuilder(uri(server, "", query)).build();
+                var res = client.send(req, BodyHandlers.ofString());
+                assertEquals(res.statusCode(), 200);
+                assertEquals(res.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
+                assertEquals(res.headers().firstValue("content-length").get(), Long.toString(218L));
+                assertEquals(res.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+
     @AfterTest
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
@@ -313,6 +335,16 @@ public class MapToPathTest {
                 .port(server.getAddress().getPort())
                 .scheme("http")
                 .path(path)
+                .buildUnchecked();
+    }
+
+    static URI uri(HttpServer server, String path, String query) {
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path(path)
+                .query(query)
                 .buildUnchecked();
     }
 

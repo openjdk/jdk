@@ -107,25 +107,25 @@ public class HttpsServerTest {
 
     @Test
     public void testExchange() throws Exception {
-        var f = new Filter();
-        var s = HttpsServer.create(
-                new InetSocketAddress(LOOPBACK_ADDR, 0), 0, "/test", new Handler(), f);
-        s.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        s.start();
+        var filter = new Filter();
+        var server = HttpsServer.create(
+                new InetSocketAddress(LOOPBACK_ADDR, 0), 0, "/test", new Handler(), filter);
+        server.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        server.start();
         try {
             var client = HttpClient.newBuilder()
                     .proxy(NO_PROXY)
                     .sslContext(sslContext)
                     .build();
-            var request = HttpRequest.newBuilder(uri(s, "/test")).build();
+            var request = HttpRequest.newBuilder(uri(server, "/test")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "hello world");
             assertEquals(response.headers().firstValue("content-length").get(),
                     Integer.toString("hello world".length()));
-            assertEquals(response.statusCode(), f.responseCode.get().intValue());
+            assertEquals(response.statusCode(), filter.responseCode.get().intValue());
         } finally {
-            s.stop(0);
+            server.stop(0);
         }
     }
 

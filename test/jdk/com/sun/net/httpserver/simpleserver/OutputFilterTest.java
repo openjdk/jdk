@@ -93,11 +93,11 @@ public class OutputFilterTest {
 
     @Test
     public void testDescription() {
-        var f = SimpleFileServer.createOutputFilter(OUT, VERBOSE);
-        assertEquals(f.description(), "HttpExchange OutputFilter (outputLevel: VERBOSE)");
+        var filter = SimpleFileServer.createOutputFilter(OUT, VERBOSE);
+        assertEquals(filter.description(), "HttpExchange OutputFilter (outputLevel: VERBOSE)");
 
-        f = SimpleFileServer.createOutputFilter(OUT, INFO);
-        assertEquals(f.description(), "HttpExchange OutputFilter (outputLevel: INFO)");
+        filter = SimpleFileServer.createOutputFilter(OUT, INFO);
+        assertEquals(filter.description(), "HttpExchange OutputFilter (outputLevel: INFO)");
     }
 
     @Test
@@ -188,17 +188,17 @@ public class OutputFilterTest {
                     """.replaceAll("\n", System.lineSeparator()));
             assertTrue(pattern.matcher(filterOutput).matches());
 
-            //127.0.0.1 - - [12/Jul/2021:10:05:10 +0000] "GET / HTTP/1.1" 200 -
-            //> Connection: Upgrade, HTTP2-Settings
-            //> Http2-settings: AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA
-            //> Host: localhost:57931
-            //> Upgrade: h2c
-            //> User-agent: Java-http-client/18-internal
-            //> Content-length: 0
-            //>
-            //< Date: Mon, 12 Jul 2021 10:05:10 GMT
-            //< Content-length: 11
-            //<
+            //    127.0.0.1 - - [12/Jul/2021:10:05:10 +0000] "GET / HTTP/1.1" 200 -
+            //    > Connection: Upgrade, HTTP2-Settings
+            //    > Http2-settings: AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA
+            //    > Host: localhost:57931
+            //    > Upgrade: h2c
+            //    > User-agent: Java-http-client/18-internal
+            //    > Content-length: 0
+            //    >
+            //    < Date: Mon, 12 Jul 2021 10:05:10 GMT
+            //    < Content-length: 11
+            //    <
         }
     }
 

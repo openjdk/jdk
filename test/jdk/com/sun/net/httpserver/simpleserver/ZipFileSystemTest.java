@@ -92,11 +92,11 @@ public class ZipFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
@@ -105,7 +105,7 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testFileGET.zip"));
         }
@@ -127,11 +127,11 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testDirectoryGET.zip"));
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
@@ -140,7 +140,7 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testDirectoryGET.zip"));
         }
@@ -153,11 +153,11 @@ public class ZipFileSystemTest {
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
@@ -166,7 +166,7 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testFileHEAD.zip"));
         }
@@ -188,11 +188,11 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testDirectoryHEAD.zip"));
         var lastModified = getLastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, ""))
+            var request = HttpRequest.newBuilder(uri(server, ""))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             System.out.println(response.body());
@@ -202,7 +202,7 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testDirectoryHEAD.zip"));
         }
@@ -249,11 +249,11 @@ public class ZipFileSystemTest {
             lastModified = getLastModified(file);
         }
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
@@ -262,7 +262,7 @@ public class ZipFileSystemTest {
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedContent);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             if (serveIndexFile) {
                 Files.delete(root.resolve(filename));
             }
@@ -288,17 +288,17 @@ public class ZipFileSystemTest {
                 """;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testInvalidRequestURIGET.zip"));
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "aFile?#.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testInvalidRequestURIGET.zip"));
         }
@@ -318,17 +318,17 @@ public class ZipFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundGET.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testNotFoundGET.zip"));
         }
@@ -348,18 +348,18 @@ public class ZipFileSystemTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundHEAD.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt"))
+            var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), "");
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testNotFoundHEAD.zip"));
         }
@@ -370,18 +370,18 @@ public class ZipFileSystemTest {
         var root = createZipFs(TEST_DIR.resolve("testMovedPermanently.zip"));
         Files.createDirectory(root.resolve("aDirectory"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var uri = uri(ss, "aDirectory");
+            var uri = uri(server, "aDirectory");
             var request = HttpRequest.newBuilder(uri).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 301);
             assertEquals(response.headers().firstValue("content-length").get(), "0");
             assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testMovedPermanently.zip"));
         }
@@ -398,17 +398,17 @@ public class ZipFileSystemTest {
     public void testXss() throws Exception {
         var root = createZipFs(TEST_DIR.resolve("testXss.zip"));
 
-        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        ss.start();
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(ss, "beginDelim%3C%3EEndDelim")).build();
+            var request = HttpRequest.newBuilder(uri(server, "beginDelim%3C%3EEndDelim")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
             assertTrue(response.body().contains("beginDelim%3C%3EEndDelim"));
             assertTrue(response.body().contains("File not found"));
         } finally {
-            ss.stop(0);
+            server.stop(0);
             root.getFileSystem().close();
             Files.deleteIfExists(TEST_DIR.resolve("testXss.zip"));
         }
