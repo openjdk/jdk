@@ -144,6 +144,8 @@ public class MapToPathTest {
                 var req5 = HttpRequest.newBuilder(uri(ss, "/foo")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
+                assertEquals(res5.headers().firstValue("content-length").get(), "0");
+                assertEquals(res5.headers().firstValue("location").get(), "/foo/");
             } finally {
                 ss.stop(0);
             }
@@ -197,6 +199,8 @@ public class MapToPathTest {
                 var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
+                assertEquals(res5.headers().firstValue("content-length").get(), "0");
+                assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
             } finally {
                 ss.stop(0);
             }
@@ -230,6 +234,14 @@ public class MapToPathTest {
                 var req5 = HttpRequest.newBuilder(uri(ss, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 301);  // redirect
+                assertEquals(res5.headers().firstValue("content-length").get(), "0");
+                assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
+
+                var req6 = HttpRequest.newBuilder(uri(ss, "/foo")).build();
+                var res6 = client.send(req6, BodyHandlers.ofString());
+                assertEquals(res6.statusCode(), 301);  // redirect
+                assertEquals(res6.headers().firstValue("content-length").get(), "0");
+                assertEquals(res6.headers().firstValue("location").get(), "/foo/");
             } finally {
                 ss.stop(0);
             }

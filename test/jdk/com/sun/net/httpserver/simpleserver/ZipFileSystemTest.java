@@ -379,7 +379,7 @@ public class ZipFileSystemTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 301);
             assertEquals(response.headers().firstValue("content-length").get(), "0");
-            assertEquals(response.headers().firstValue("location").get(), "%s/".formatted(uri));
+            assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
         } finally {
             ss.stop(0);
             root.getFileSystem().close();
