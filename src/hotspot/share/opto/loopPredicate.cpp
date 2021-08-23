@@ -671,7 +671,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     // point.
     if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
         phase->is_dominator(predicate_proj, offset_ctrl)) {
-      assert(false, "willl lead to cyclic dependency");
+      assert(false, "cyclic dependency will lead to missed range check elimination");
     }
   }
 #endif

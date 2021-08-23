@@ -1626,6 +1626,8 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
         if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL) {
+          // Enable other optimizations such as loop predication which does not work
+          // if we directly pin the node to node `in`
           x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
         } else {
           x->set_req(0, in);
