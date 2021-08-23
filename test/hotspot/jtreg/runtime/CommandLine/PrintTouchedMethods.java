@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @library /test/lib
- * @compile TestLogTouchedMethods.java PrintTouchedMethods.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+LogTouchedMethods PrintTouchedMethods
+ * @run driver PrintTouchedMethods
  */
 
 import java.io.File;
@@ -44,7 +43,7 @@ public class PrintTouchedMethods {
           "-XX:-UnlockDiagnosticVMOptions",
           "-XX:+LogTouchedMethods",
           "-XX:+PrintTouchedMethodsAtExit",
-          "TestLogTouchedMethods");
+          TestLogTouchedMethods.class.getName());
 
       // UnlockDiagnostic turned off, should fail
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -55,7 +54,7 @@ public class PrintTouchedMethods {
           "-XX:+UnlockDiagnosticVMOptions",
           "-XX:+LogTouchedMethods",
           "-XX:+PrintTouchedMethodsAtExit",
-          "TestLogTouchedMethods");
+          TestLogTouchedMethods.class.getName());
       output = new OutputAnalyzer(pb.start());
       // check order:
       // 1 "# Method::print_touched_methods version 1" is the first in first line
@@ -82,7 +81,7 @@ public class PrintTouchedMethods {
           "-Xint",
           "-XX:+LogTouchedMethods",
           "-XX:+PrintTouchedMethodsAtExit",
-          "TestLogTouchedMethods");
+          TestLogTouchedMethods.class.getName());
       output = new OutputAnalyzer(pb.start());
       lines = output.asLines();
 
@@ -105,7 +104,7 @@ public class PrintTouchedMethods {
           "-XX:+LogTouchedMethods",
           "-XX:+PrintTouchedMethodsAtExit",
           "-XX:-TieredCompilation",
-          "TestLogTouchedMethods");
+          TestLogTouchedMethods.class.getName());
       output = new OutputAnalyzer(pb.start());
       lines = output.asLines();
 
@@ -121,16 +120,5 @@ public class PrintTouchedMethods {
       output.shouldContain("TestLogTouchedMethods.methodA:()V");
       output.shouldNotContain("TestLogTouchedMethods.methodB:()V");
       output.shouldHaveExitValue(0);
-
-      // Test jcmd PrintTouchedMethods VM.print_touched_methods
-      String pid = Long.toString(ProcessTools.getProcessId());
-      pb = new ProcessBuilder();
-      pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.print_touched_methods"});
-      output = new OutputAnalyzer(pb.start());
-      try {
-        output.shouldContain("PrintTouchedMethods.main:([Ljava/lang/String;)V");
-      } catch (RuntimeException e) {
-        output.shouldContain("Unknown diagnostic command");
-      }
-  }
+    }
 }
