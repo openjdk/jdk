@@ -3307,6 +3307,10 @@ public final class String
      * @throws NullPointerException If {@code delimiter} or {@code elements}
      *         is {@code null}
      *
+     * @implNote this method will use {@code Iterable#forEach} rather than an
+     *         iterator, allowing it to behave as an atomic operation on
+     *         synchronized collections.
+     *
      * @see    #join(CharSequence,CharSequence...)
      * @see    java.util.StringJoiner
      * @since 1.8
