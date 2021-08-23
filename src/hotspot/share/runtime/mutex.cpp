@@ -287,6 +287,11 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
+
+  // The allow_vm_block also includes allowing other non-Java threads to block or
+  // allowing Java threads to block in native.
+  assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
+         "Safepoint check never locks should always allow the vm to block");
 #endif
 }
 
