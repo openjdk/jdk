@@ -28,7 +28,7 @@
  * @summary crash in PhaseCFG::global_code_motion
  * @requires vm.compiler2.enabled
  *
- * @run main -Xbatch TestGCMRecalcPressureNodes
+ * @run main/othervm -Xbatch TestGCMRecalcPressureNodes
  */
 
 public class TestGCMRecalcPressureNodes {
