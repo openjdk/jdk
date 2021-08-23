@@ -28,8 +28,7 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
- * A tree node for an {@code @snippet} inline tag, as specified by
- * <a href="http://openjdk.java.net/jeps/413">JEP 413</a>.
+ * A tree node for an {@code @snippet} inline tag.
  *
  * <pre>
  *    {&#064;snippet :
