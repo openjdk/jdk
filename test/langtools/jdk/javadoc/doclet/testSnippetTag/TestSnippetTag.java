@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8201533
+ * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
