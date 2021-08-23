@@ -24,7 +24,6 @@
 package jdk.jfr.event.runtime;
 
 import java.util.List;
-
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
@@ -35,7 +34,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @summary The test verifies that classes overriding finalize(), loaded as well as unloaded, are represented as events.
+ * @summary The test verifies that classes overriding finalize() are represented as events.
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -47,46 +46,42 @@ public final class TestFinalizerEvent {
     private final static String TEST_CLASS_UNLOAD_NAME = "jdk.jfr.event.runtime.TestFinalizerEvent$TestClassUnloadOverridingFinalize";
     private final static String EVENT_PATH = EventNames.Finalizer;
 
-    // Declare unloadableClassLoader as "public static"
-    // to prevent the compiler to optimize away all unread writes
+    // Declare as "public static to prevent the compiler from optimizing away all unread writes
     public static TestClassLoader unloadableClassLoader;
     public static Class<?> unloadOverrideClass;
-
-    public static Object overridingInstance1;
-    public static Object overridingInstance2;
-    public static Object overridingInstance3;
+    public static Object overridingInstance;
 
     public static void main(String[] args) throws Throwable {
         Recording recording1 = new Recording();
         recording1.enable(EVENT_PATH);
         Recording recording2 = new Recording();
         recording2.enable(EVENT_PATH);
-        TestClassLoader cl = new TestClassLoader();
-        unloadableClassLoader = new TestClassLoader();
         recording1.start();
-        Class<?> overrideClass = cl.loadClass(TEST_CLASS_NAME);
-        overridingInstance1 = overrideClass.newInstance();
+        allocateAndGC();
         recording2.start(); // rotation writes an event for TEST_CLASS_NAME into recording1
-        overridingInstance2 = overrideClass.newInstance();
+        unloadableClassLoader = new TestClassLoader();
         unloadOverrideClass = unloadableClassLoader.loadClass(TEST_CLASS_UNLOAD_NAME);
         unloadOverrideClass = null;
         unloadableClassLoader = null;
-        System.gc(); // the unloading of class TEST_CLASS_UNLOAD_NAME is intercepted and an event is written into both recording1 and recording2
-
+        allocateAndGC(); // the unloading of class TEST_CLASS_UNLOAD_NAME is intercepted and an event is written into both recording1 and recording2
         recording2.stop(); // rotation writes an event for TEST_CLASS_NAME into both recording1 and recording2
-        overridingInstance3 = overrideClass.newInstance();
+        allocateAndGC();
         recording1.stop(); // rotation writes an event for TEST_CLASS_NAME into recording1 which now has 4 events reflecting this test case (3 chunks + 1 unload)
 
         try {
-            System.out.println("Verifying recording2");
             verify(recording2);
-            System.out.println("Verifying recording1");
             verify(recording1);
         }
         finally {
             recording2.close();
             recording1.close();
         }
+    }
+
+    private static void allocateAndGC() {
+        overridingInstance = new TestClassOverridingFinalize();
+        overridingInstance = null;
+        System.gc();
     }
 
     private static void verify(Recording recording) throws Throwable {
