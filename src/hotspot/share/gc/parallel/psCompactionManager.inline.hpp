@@ -111,7 +111,7 @@ inline void ParCompactionManager::mark_and_push(T* p) {
       push(obj);
 
       if (StringDedup::is_enabled() &&
-          java_lang_String::is_instance_inlined(obj) &&
+          java_lang_String::is_instance(obj) &&
           psStringDedup::is_candidate_from_mark(obj)) {
         _string_dedup_requests.add(obj);
       }
