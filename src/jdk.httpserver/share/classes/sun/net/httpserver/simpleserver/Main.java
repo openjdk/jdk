@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Programmatic entry point to start the simpleserver tool.
  *
- * <p><b>This is NOT part of any supported API.
+ * <p><b> This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interface are subject to change or deletion
  * without notice.</b>
@@ -44,7 +44,7 @@ public class Main {
     /**
      * The main entry point.
      *
-     * <p The command line arguments are parsed and the server is started. If
+     * <p> The command line arguments are parsed and the server is started. If
      * started successfully, the server will run on a new non-daemon thread,
      * and this method will return. Otherwise, if the server is not started
      * successfully, e.g. an error is encountered while parsing the arguments

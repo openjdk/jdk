@@ -97,6 +97,7 @@ public class Headers implements Map<String,List<String>> {
      * @throws NullPointerException if {@code headers} or any of its names or
      *                              values are null, or if any value contains
      *                              null.
+     * @since 18
      */
     public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
@@ -298,8 +299,9 @@ public class Headers implements Map<String,List<String>> {
      * @param headers the list of name value pairs
      * @return an immutable headers with the given name value pairs
      * @throws NullPointerException     if {@code headers} or any of its
-     *                                  elements are null
-     * @throws IllegalArgumentException if the number of supplied strings is odd
+     *                                  elements are null.
+     * @throws IllegalArgumentException if the number of supplied strings is odd.
+     * @since 18
      */
     public static Headers of(String... headers) {
         Objects.requireNonNull(headers);
@@ -330,6 +332,7 @@ public class Headers implements Map<String,List<String>> {
      * @throws NullPointerException if {@code headers} or any of its names or
      *                              values are null, or if any value contains
      *                              null.
+     * @since 18
      */
     public static Headers of(Map<String,List<String>> headers) {
         return new UnmodifiableHeaders(new Headers(headers));

@@ -123,8 +123,6 @@ public final class SimpleFileServer {
     /**
      * Describes the log message output level produced by the server when
      * processing exchanges.
-     *
-     * @since 18
      */
     public enum OutputLevel {
         /**

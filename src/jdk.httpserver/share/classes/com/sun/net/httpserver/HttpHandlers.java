@@ -101,7 +101,6 @@ public final class HttpHandlers {
      * @param fallbackHandler a fallback handler
      * @return a handler
      * @throws NullPointerException if any argument is null
-     * @since 18
      */
     public static HttpHandler handleOrElse(Predicate<Request> handlerTest,
                                            HttpHandler handler,
@@ -138,7 +137,6 @@ public final class HttpHandlers {
      * @throws IllegalArgumentException if statusCode is not a positive 3-digit
      *                                  integer, as per rfc2616, section 6.1.1
      * @throws NullPointerException     if headers or body are null
-     * @since 18
      */
     public static HttpHandler of(int statusCode, Headers headers, String body) {
         if (statusCode < 100 || statusCode > 999)

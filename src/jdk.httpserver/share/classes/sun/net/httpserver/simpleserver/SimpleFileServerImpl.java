@@ -45,13 +45,13 @@ import java.util.concurrent.Executors;
  * A class that provides a simple HTTP file server to serve the content of
  * a given directory.
  *
- * <p>The server is an HttpServer bound to a given address. It comes with an
+ * <p> The server is an HttpServer bound to a given address. It comes with an
  * HttpHandler that serves files from a given directory path
  * (and its subdirectories) on the default file system, and an optional Filter
  * that prints log messages related to the exchanges handled by the server to
  * a given output stream.
  *
- * <p>Unless specified as arguments, the default values are:<ul>
+ * <p> Unless specified as arguments, the default values are:<ul>
  * <li>bind address: wildcard address (all interfaces)</li>
  * <li>directory: current working directory</li>
  * <li>outputLevel: info</li></ul>
@@ -97,7 +97,7 @@ final class SimpleFileServerImpl {
             while (options.hasNext()) {
                 option = options.next();
                 switch (option) {
-                    case "-?", "-h", "--help" -> {
+                    case "-h", "-?", "--help" -> {
                         out.showHelp();
                         return Startup.OK.statusCode;
                     }

@@ -47,8 +47,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A basic HTTP file server handler for static content.
- * <p>
- * Must be given an absolute pathname to the directory to be served.
+ *
+ * <p> Must be given an absolute pathname to the directory to be served.
  * Supports only HEAD and GET requests. Directory listings and files can be
  * served, content types are supported on a best-guess basis.
  */
@@ -122,12 +122,6 @@ public final class FileServerHandler implements HttpHandler {
         exchange.sendResponseHeaders(301, -1);
     }
 
-    private String getRedirectURI(URI uri) {
-        String query = uri.getRawQuery();
-        String redirectPath = uri.getRawPath() + "/";
-        return query == null ? redirectPath : redirectPath + "?" + query;
-    }
-
     private void handleForbidden(HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(403, -1);
     }
@@ -154,6 +148,12 @@ public final class FileServerHandler implements HttpHandler {
         try (InputStream is = exchange.getRequestBody()) {
             is.readAllBytes();
         }
+    }
+
+    private String getRedirectURI(URI uri) {
+        String query = uri.getRawQuery();
+        String redirectPath = uri.getRawPath() + "/";
+        return query == null ? redirectPath : redirectPath + "?" + query;
     }
 
     private static boolean missingSlash(HttpExchange exchange) {
@@ -314,7 +314,7 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    // default for unknown content types, as per RFC 2046
+    // Default for unknown content types, as per RFC 2046
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private String mediaType(String file) {
