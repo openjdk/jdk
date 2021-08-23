@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestParallelRegionStride
+ * @test
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahParallelRegionStride=1    -Xmx128m TestParallelRegionStride
