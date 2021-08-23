@@ -48,7 +48,6 @@ public class ConfigFileWarning {
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:Flags=hs_flags.txt","-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
         output.shouldContain("Unrecognized VM option 'aaa'");
         output.shouldHaveExitValue(1);
 
