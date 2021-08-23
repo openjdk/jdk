@@ -25,6 +25,7 @@
 /*
  * @test MonitorMismatchTest
  * @bug 8150084
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile MonitorMismatchHelper.jasm

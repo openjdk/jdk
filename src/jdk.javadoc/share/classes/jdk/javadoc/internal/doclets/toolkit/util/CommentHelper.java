@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -87,7 +88,6 @@ public class CommentHelper {
     public final TreePath path;
     public final DocCommentTree dcTree;
     public final Element element;
-    private Element overriddenElement;
 
     public static final String SPACER = " ";
 
@@ -104,13 +104,6 @@ public class CommentHelper {
         this.element = element;
         this.path = path;
         this.dcTree = dcTree;
-    }
-
-    public void setOverrideElement(Element ove) {
-        if (this.element == ove) {
-            throw new AssertionError("cannot set given element as overridden element");
-        }
-        overriddenElement = ove;
     }
 
     public String getTagName(DocTree dtree) {
@@ -679,22 +672,28 @@ public class CommentHelper {
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (dcTree == null && overriddenElement != null) {
-            // This is an inherited comment, return path from ancestor.
-            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
-        } else if (path == null || dcTree == null || dtree == null) {
+        if (dcTree == null && element instanceof ExecutableElement ee) {
+            return getInheritedDocTreePath(dtree, ee);
+        }
+        if (path == null || dcTree == null || dtree == null) {
             return null;
         }
         DocTreePath dtPath = DocTreePath.getPath(path, dcTree, dtree);
-        if (dtPath == null && overriddenElement != null) {
+        if (dtPath == null && element instanceof ExecutableElement ee) {
             // The overriding element has a doc tree, but it doesn't contain what we're looking for.
-            return configuration.utils.getCommentHelper(overriddenElement).getDocTreePath(dtree);
+            return getInheritedDocTreePath(dtree, ee);
         }
         return dtPath;
     }
 
-    public Element getOverriddenElement() {
-        return overriddenElement;
+    private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
+        Utils utils = configuration.utils;
+        DocFinder.Output inheritedDoc =
+                DocFinder.search(configuration,
+                        new DocFinder.Input(utils, ee));
+        return inheritedDoc == null || inheritedDoc.holder == ee
+                ? null
+                : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
     }
 
     /**
@@ -708,14 +707,6 @@ public class CommentHelper {
         sb.append(element.getEnclosingElement());
         sb.append("::");
         sb.append(element);
-        sb.append(", overriddenElement=");
-        if (overriddenElement != null) {
-            sb.append(overriddenElement.getEnclosingElement());
-            sb.append("::");
-            sb.append(overriddenElement);
-        } else {
-            sb.append("<none>");
-        }
         sb.append('}');
         return sb.toString();
     }

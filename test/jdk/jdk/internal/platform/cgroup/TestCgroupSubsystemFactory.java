@@ -71,7 +71,9 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv1MntInfoSystemdOnly;
     private Path cgroupv1MntInfoDoubleCpusets;
     private Path cgroupv1MntInfoDoubleCpusets2;
+    private Path cgroupv1MntInfoColonsHierarchy;
     private Path cgroupv1SelfCgroup;
+    private Path cgroupv1SelfColons;
     private Path cgroupv2SelfCgroup;
     private Path cgroupv1SelfCgroupJoinCtrl;
     private Path cgroupv1CgroupsOnlyCPUCtrl;
@@ -150,6 +152,20 @@ public class TestCgroupSubsystemFactory {
             "41 31 0:36 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:20 - cgroup cgroup rw,blkio\n" +
             "42 31 0:37 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:21 - cgroup cgroup rw,rdma\n" +
             "43 31 0:38 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:22 - cgroup cgroup rw,freezer\n";
+    private String mntInfoColons =
+            "30 23 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:4 - tmpfs tmpfs ro,seclabel,mode=755\n" +
+            "31 30 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:5 - cgroup2 none rw,seclabel,nsdelegate\n" +
+            "32 30 0:28 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime shared:6 - cgroup none rw,seclabel,xattr,name=systemd\n" +
+            "4624 4583 0:31 /system.slice/containerd.service/kubepods-burstable-podf65e797d_d5f9_4604_9773_94f4bb9946a0.slice:cri-containerd:86ac6260f9f8a9c1276748250f330ae9c2fcefe5ae809364ad1e45f3edf7e08a /sys/fs/cgroup/memory ro,nosuid,nodev,noexec,relatime master:12 - cgroup cgroup rw,memory\n" +
+            "36 30 0:32 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:8 - cgroup none rw,seclabel,pids\n" +
+            "37 30 0:33 / /sys/fs/cgroup/perf_event rw,nosuid,nodev,noexec,relatime shared:9 - cgroup none rw,seclabel,perf_event\n" +
+            "38 30 0:34 / /sys/fs/cgroup/net_cls,net_prio rw,nosuid,nodev,noexec,relatime shared:10 - cgroup none rw,seclabel,net_cls,net_prio\n" +
+            "39 30 0:35 / /sys/fs/cgroup/hugetlb rw,nosuid,nodev,noexec,relatime shared:11 - cgroup none rw,seclabel,hugetlb\n" +
+            "40 30 0:36 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:12 - cgroup none rw,seclabel,cpu,cpuacct\n" +
+            "41 30 0:37 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:13 - cgroup none rw,seclabel,devices\n" +
+            "42 30 0:38 / /sys/fs/cgroup/cpuset rw,nosuid,nodev,noexec,relatime shared:14 - cgroup none rw,seclabel,cpuset\n" +
+            "43 30 0:39 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:15 - cgroup none rw,seclabel,blkio\n" +
+            "44 30 0:40 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:16 - cgroup none rw,seclabel,freezer\n";
     private String cgroupsNonZeroHierarchy =
             "#subsys_name hierarchy   num_cgroups enabled\n" +
             "cpuset  9   1   1\n" +
@@ -173,6 +189,23 @@ public class TestCgroupSubsystemFactory {
     private String mntInfoCgroupsV1DoubleCpuset = mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
     private String mntInfoCgroupsV1DoubleCpuset2 = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
     private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.service\n" +
+            "10:hugetlb:/\n" +
+            "9:cpuset:/\n" +
+            "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
+            "7:freezer:/\n" +
+            "6:blkio:/\n" +
+            "5:net_cls,net_prio:/\n" +
+            "4:devices:/user.slice\n" +
+            "3:perf_event:/\n" +
+            "2:cpu,cpuacct:/\n" +
+            "1:name=systemd:/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n" +
+            "0::/user.slice/user-1000.slice/user@1000.service/apps.slice/apps-org.gnome.Terminal.slice/vte-spawn-3c00b338-5b65-439f-8e97-135e183d135d.scope\n";
+
+    // `/proc/self/cgroup` should contain **three** colon-separated fields,
+    // `hierarchy-ID:controller-list:cgroup-path`. This cgroup-path intentionally
+    // contains a colon to ensure that the correct path is being extracted by the
+    // logic in CgroupSubsystemFactory.
+    private String cgroupv1SelfColonsContent = "11:memory:/system.slice/containerd.service/kubepods-burstable-podf65e797d_d5f9_4604_9773_94f4bb9946a0.slice:cri-containerd:86ac6260f9f8a9c1276748250f330ae9c2fcefe5ae809364ad1e45f3edf7e08a\n" +
             "10:hugetlb:/\n" +
             "9:cpuset:/\n" +
             "8:pids:/user.slice/user-1000.slice/user@1000.service\n" +
@@ -221,8 +254,14 @@ public class TestCgroupSubsystemFactory {
             cgroupv1MountInfoJoinControllers = Paths.get(existingDirectory.toString(), "mntinfo_cgv1_join_controllers");
             Files.writeString(cgroupv1MountInfoJoinControllers, mntInfoCgroupv1JoinControllers);
 
+            cgroupv1MntInfoColonsHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_colons");
+            Files.writeString(cgroupv1MntInfoColonsHierarchy, mntInfoColons);
+
             cgroupv1SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv1");
             Files.writeString(cgroupv1SelfCgroup, cgroupv1SelfCgroupContent);
+
+            cgroupv1SelfColons = Paths.get(existingDirectory.toString(), "self_colons_cgv1");
+            Files.writeString(cgroupv1SelfColons, cgroupv1SelfColonsContent);
 
             cgroupv2SelfCgroup = Paths.get(existingDirectory.toString(), "self_cgroup_cgv2");
             Files.writeString(cgroupv2SelfCgroup, cgroupv2SelfCgroupContent);
@@ -338,6 +377,20 @@ public class TestCgroupSubsystemFactory {
         assertEquals("/user.slice/user-1000.slice/user@1000.service", memoryInfo.getCgroupPath());
         assertEquals("/", memoryInfo.getMountRoot());
         assertEquals("/sys/fs/cgroup/memory", memoryInfo.getMountPoint());
+    }
+
+    @Test
+    public void testColonsCgroupsV1() throws IOException {
+        String cgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
+        String mountInfo = cgroupv1MntInfoColonsHierarchy.toString();
+        String selfCgroup = cgroupv1SelfColons.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups, selfCgroup);
+
+        assertTrue("Expected non-empty cgroup result", result.isPresent());
+        CgroupTypeResult res = result.get();
+        CgroupInfo memoryInfo = res.getInfos().get("memory");
+        assertEquals(memoryInfo.getCgroupPath(), "/system.slice/containerd.service/kubepods-burstable-podf65e797d_d5f9_4604_9773_94f4bb9946a0.slice:cri-containerd:86ac6260f9f8a9c1276748250f330ae9c2fcefe5ae809364ad1e45f3edf7e08a");
+        assertEquals(memoryInfo.getMountRoot(), memoryInfo.getCgroupPath());
     }
 
     @Test
