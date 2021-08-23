@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_STRINGDEDUP_HPP
+#define SHARE_GC_SERIAL_STRINGDEDUP_HPP
 
-inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in windows as of yet.
-  return ptr;
-}
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+class SerialStringDedup : AllStatic {
+public:
 
+  // Candidate selection policy for full GC, returning true if the given
+  // String is a candidate for string deduplication.
+  // precondition: StringDedup::is_enabled()
+  // precondition: java_string is a Java String
+  static bool is_candidate_from_mark(oop java_string);
+
+  // Candidate selection policy for young during evacuation.
+  static inline bool is_candidate_from_evacuation(oop obj, bool obj_is_tenured);
+
+};
+
+#endif // SHARE_GC_SERIAL_STRINGDEDUP_HPP

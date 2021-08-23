@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
+#define SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
 
-inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in windows as of yet.
-  return ptr;
+#include "gc/serial/serialStringDedup.hpp"
+
+#include "classfile/javaClasses.inline.hpp"
+#include "oops/oop.inline.hpp"
+
+bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
+                                                     bool obj_is_tenured) {
+  return StringDedup::is_enabled() &&
+         java_lang_String::is_instance_inlined(obj) &&
+         (obj_is_tenured ?
+          StringDedup::is_below_threshold_age(obj->age()) :
+          StringDedup::is_threshold_age(obj->age()));
 }
 
-#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-
+#endif // SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP

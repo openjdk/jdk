@@ -80,6 +80,9 @@ public:
   void young_process_roots(OopIterateClosure* root_closure,
                            OopIterateClosure* old_gen_closure,
                            CLDClosure* cld_closure);
+
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+#include "precompiled.hpp"
+#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialStringDedup.hpp"
+#include "oops/oop.inline.hpp"
 
-inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in windows as of yet.
-  return ptr;
+bool SerialStringDedup::is_candidate_from_mark(oop java_string) {
+  // Candidate if string is being evacuated from young to old but has not
+  // reached the deduplication age threshold, i.e. has not previously been a
+  // candidate during its life in the young generation.
+  return SerialHeap::heap()->young_gen()->is_in_reserved(java_string) &&
+         StringDedup::is_below_threshold_age(java_string->age());
 }
-
-#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-
