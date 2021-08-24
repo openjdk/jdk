@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
-import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -131,11 +130,11 @@ public class BlackScholes {
     }
 
     @Benchmark
-    public void scalar_black_scholes(Blackhole bh) {
+    public void scalar_black_scholes() {
         scalar_black_scholes_kernel(0);
     }
 
-    static final VectorSpecies<Float> fsp = FloatVector.SPECIES_256;
+    static final VectorSpecies<Float> fsp = FloatVector.SPECIES_PREFERRED;
 
     FloatVector vcdf(FloatVector vinp) {
         var vx = vinp.abs();
@@ -180,7 +179,7 @@ public class BlackScholes {
     }
 
     @Benchmark
-    public void vector_black_scholes(Blackhole bh) {
+    public void vector_black_scholes() {
         int processed = vector_black_scholes_kernel();
         if (processed < size) {
             scalar_black_scholes_kernel(processed);
