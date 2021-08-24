@@ -25,6 +25,21 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.io.IOException;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.tools.Diagnostic;
+import javax.tools.DocumentationTool.Location;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
+
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SnippetTree;
@@ -37,20 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
-import javax.tools.Diagnostic;
-import javax.tools.DocumentationTool.Location;
-import javax.tools.FileObject;
-import javax.tools.JavaFileManager;
-import java.io.IOException;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * A taglet that represents the {@code @snippet} tag.
@@ -257,7 +258,7 @@ public class SnippetTaglet extends BaseTaglet {
      *
      * There's a separate issue of mapping discrepancies back to their
      * originating source in the doc comment and the external file. Maybe there
-     * is a value in it, or may be there isn't. In any case, accurate mapping
+     * is a value in it, or maybe there isn't. In any case, accurate mapping
      * would be not trivial to code.
      */
     private static String diff(String inline, String external) {

@@ -131,7 +131,7 @@ public final class Parser {
             }
             this.eolMarker = eolMarker;
             // capture the rightmost eolMarker (e.g. "//")
-            // The bellow Pattern.compile should never throw PatternSyntaxException
+            // The below Pattern.compile should never throw PatternSyntaxException
             Pattern pattern = Pattern.compile("^(.*)(" + Pattern.quote(eolMarker) + "(\\s*@\\s*\\w+.+?))$");
             this.markedUpLine = pattern.matcher(""); // reusable matcher
         }
