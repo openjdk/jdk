@@ -63,7 +63,10 @@ private:
   bool    _is_atomic;
 
 public:
-  ZStoreBarrierStubC1(LIRAccess& access, LIR_Opr new_zaddress, LIR_Opr new_zpointer, bool is_atomic);
+  ZStoreBarrierStubC1(LIRAccess& access,
+                      LIR_Opr new_zaddress,
+                      LIR_Opr new_zpointer,
+                      bool is_atomic);
 
   LIR_Opr ref_addr() const;
   LIR_Opr new_zaddress() const;

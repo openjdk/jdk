@@ -100,7 +100,8 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
                                                  Register obj,
                                                  Register pre_val,
                                                  Register thread,
-                                                 Register tmp,
+                                                 Register tmp1,
+                                                 Register tmp2,
                                                  bool tosca_live,
                                                  bool expand_call) {
   // If expand_call is true then we expand the call_VM_leaf macro
@@ -112,8 +113,8 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   Label done;
   Label runtime;
 
-  assert_different_registers(obj, pre_val, tmp, rscratch1);
-  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
+  assert_different_registers(obj, pre_val, tmp1, tmp2);
+  assert(pre_val != noreg &&  tmp1 != noreg && tmp2 != noreg, "expecting a register");
 
   Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
   Address index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
@@ -121,12 +122,12 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
   // Is marking active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ ldrw(tmp, in_progress);
+    __ ldrw(tmp1, in_progress);
   } else {
     assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ ldrb(tmp, in_progress);
+    __ ldrb(tmp1, in_progress);
   }
-  __ cbzw(tmp, done);
+  __ cbzw(tmp1, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
@@ -140,17 +141,17 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   // Is index == 0?
   // (The index field is typed as size_t.)
 
-  __ ldr(tmp, index);                      // tmp := *index_adr
-  __ cbz(tmp, runtime);                    // tmp == 0?
+  __ ldr(tmp1, index);                      // tmp1 := *index_adr
+  __ cbz(tmp1, runtime);                    // tmp1 == 0?
                                         // If yes, goto runtime
 
-  __ sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  __ str(tmp, index);                      // *index_adr := tmp
-  __ ldr(rscratch1, buffer);
-  __ add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
+  __ sub(tmp1, tmp1, wordSize);              // tmp1 := tmp1 - wordSize
+  __ str(tmp1, index);                      // *index_adr := tmp1
+  __ ldr(tmp2, buffer);
+  __ add(tmp1, tmp1, tmp2);             // tmp1 := tmp1 + *buffer_adr
 
   // Record the previous value
-  __ str(pre_val, Address(tmp, 0));
+  __ str(pre_val, Address(tmp1, 0));
   __ b(done);
 
   __ bind(runtime);
@@ -263,12 +264,12 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                    Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                    Register dst, Address src, Register tmp1, Register tmp2) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   if (on_oop && on_reference) {
     // LR is live.  It must be saved around calls.
     __ enter(); // barrier may call runtime
@@ -278,7 +279,8 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
                          noreg /* obj */,
                          dst /* pre_val */,
                          rthread /* thread */,
-                         tmp1 /* tmp */,
+                         tmp1 /* tmp1 */,
+                         tmp2 /* tmp2 */,
                          true /* tosca_live */,
                          true /* expand_call */);
     __ leave();
@@ -301,6 +303,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                        tmp2 /* pre_val */,
                        rthread /* thread */,
                        tmp1  /* tmp */,
+                       rscratch2,
                        val != noreg /* tosca_live */,
                        false /* expand_call */);
 

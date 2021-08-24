@@ -23,10 +23,12 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/z/zAddress.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+size_t ZPointerLoadShift;
 
 size_t ZPlatformAddressOffsetBits() {
   const size_t min_address_offset_bits = 42; // 4TB
@@ -38,4 +40,8 @@ size_t ZPlatformAddressOffsetBits() {
 
 size_t ZPlatformAddressHeapBaseShift() {
   return ZPlatformAddressOffsetBits();
+}
+
+void ZGlobalsPointers::pd_set_good_masks() {
+  ZPointerLoadShift = ZPointer::load_shift_lookup(ZPointerLoadGoodMask);
 }

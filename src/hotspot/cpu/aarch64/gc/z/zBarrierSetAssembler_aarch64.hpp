@@ -31,17 +31,26 @@
 #endif // COMPILER2
 
 #ifdef COMPILER1
+class LIR_Address;
 class LIR_Assembler;
 class LIR_OprDesc;
 typedef LIR_OprDesc* LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
+class ZStoreBarrierStubC1;
 #endif // COMPILER1
 
 #ifdef COMPILER2
+class MachNode;
 class Node;
 class ZLoadBarrierStubC2;
+class ZStoreBarrierStubC2;
 #endif // COMPILER2
+
+const int ZBarrierRelocationFormatLoadGoodBeforeTbz  = 0;
+const int ZBarrierRelocationFormatMarkBadBeforeMov   = 1;
+const int ZBarrierRelocationFormatStoreGoodBeforeMov = 2;
+const int ZBarrierRelocationFormatStoreBadBeforeMov  = 3;
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
 public:
@@ -53,7 +62,26 @@ public:
                        Register tmp1,
                        Register tmp_thread);
 
-#ifdef ASSERT
+  void store_barrier_fast(MacroAssembler* masm,
+                          Address ref_addr,
+                          Register rnew_zaddress,
+                          Register rnew_zpointer,
+                          Register rtmp,
+                          bool in_nmethod,
+                          bool is_atomic,
+                          Label& medium_path,
+                          Label& medium_path_continuation) const;
+
+  void store_barrier_medium(MacroAssembler* masm,
+                            Address ref_addr,
+                            Register rtmp1,
+                            Register rtmp2,
+                            Register rtmp3,
+                            bool is_atomic,
+                            Label& medium_path_continuation,
+                            Label& slow_path,
+                            Label& slow_path_continuation) const;
+
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,
                         BasicType type,
@@ -61,7 +89,6 @@ public:
                         Register val,
                         Register tmp1,
                         Register tmp2);
-#endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
                                   DecoratorSet decorators,
@@ -71,18 +98,82 @@ public:
                                   Register count,
                                   RegSet saved_regs);
 
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            Register dst1,
+                            Register dst2,
+                            Address src,
+                            Register tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             Register src1,
+                             Register src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3);
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            FloatRegister dst1,
+                            FloatRegister dst2,
+                            Address src,
+                            Register tmp1,
+                            Register tmp2,
+                            FloatRegister vec_tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             FloatRegister src1,
+                             FloatRegister src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3,
+                             FloatRegister vec_tmp1,
+                             FloatRegister vec_tmp2,
+                             FloatRegister vec_tmp3);
+
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm,
                                              Register jni_env,
                                              Register robj,
                                              Register tmp,
                                              Label& slowpath);
 
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
+
+  virtual bool nmethod_code_patching();
+
+  void patch_barrier_relocation(address addr, int format);
+
 #ifdef COMPILER1
-  void generate_c1_load_barrier_test(LIR_Assembler* ce,
-                                     LIR_Opr ref) const;
+  void generate_c1_load_barrier(LIR_Assembler* ce,
+                                LIR_Opr ref,
+                                ZLoadBarrierStubC1* stub,
+                                bool on_non_strong) const;
+
+  void generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
 
   void generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                      ZLoadBarrierStubC1* stub) const;
+
+  void generate_c1_store_barrier(LIR_Assembler* ce,
+                                 LIR_Address* addr,
+                                 LIR_Opr new_zaddress,
+                                 LIR_Opr new_zpointer,
+                                 ZStoreBarrierStubC1* stub) const;
+
+  void generate_c1_store_barrier_stub(LIR_Assembler* ce,
+                                      ZStoreBarrierStubC1* stub) const;
 
   void generate_c1_load_barrier_runtime_stub(StubAssembler* sasm,
                                              DecoratorSet decorators) const;
@@ -94,6 +185,9 @@ public:
 
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
+  void generate_c2_store_barrier_stub(MacroAssembler* masm,
+                                      ZStoreBarrierStubC2* stub) const;
+  void prefetch_stores(MacroAssembler* masm, const MachNode* node, Register base);
 #endif // COMPILER2
 };
 

@@ -25,6 +25,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -100,4 +101,8 @@ size_t ZPlatformAddressOffsetBits() {
 
 size_t ZPlatformAddressHeapBaseShift() {
   return ZPlatformAddressOffsetBits();
+}
+
+void ZGlobalsPointers::pd_set_good_masks() {
+  BarrierSetAssembler::clear_patching_epoch();
 }

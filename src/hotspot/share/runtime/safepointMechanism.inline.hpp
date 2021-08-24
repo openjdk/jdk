@@ -70,7 +70,6 @@ bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
     // to fix the thread's oops and first few frames due to a possible safepoint.
     StackWatermarkSet::on_safepoint(thread);
     update_poll_values(thread);
-    OrderAccess::cross_modify_fence();
     return false;
   }
 }

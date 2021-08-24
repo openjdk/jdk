@@ -45,13 +45,13 @@ private:
   static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
 
   ZStoreBarrierEntry _buffer[_buffer_length];
-  
+
   // Color from previous phase this buffer was processed
   uintptr_t          _last_processed_color;
-  
+
   // Use as a claim mechansim for installing base pointers
   uintptr_t          _last_installed_color;
-  
+
   ZLock              _base_pointer_lock;
   zaddress_unsafe    _base_pointers[_buffer_length];
 

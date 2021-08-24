@@ -32,7 +32,8 @@
     // Relocations are byte-aligned.
     offset_unit        =  1,
     // Must be at least 1 for RelocInfo::narrow_oop_in_const.
-    format_width       =  1
+    // Must be at least 2 for ZGC GC barrier patching
+    format_width       =  2
   };
 
  public:

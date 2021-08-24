@@ -68,12 +68,12 @@ bool ZStoreBarrierBuffer::is_empty() const {
 }
 
 void ZStoreBarrierBuffer::install_base_pointers_inner() {
-  assert((_last_installed_color & ZPointerRemappedMask) ==
-         (_last_processed_color & ZPointerRemappedMask),
+  assert(ZPointer::remap_bits(_last_installed_color) ==
+         ZPointer::remap_bits(_last_processed_color),
          "Can't deal with two pending base pointer installations");
 
-  assert(((_last_processed_color) & ZPointerRemappedMinorMask) == 0 ||
-         ((_last_processed_color) & ZPointerRemappedMajorMask) == 0,
+  assert((ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedMinorMask) == 0 ||
+         (ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedMajorMask) == 0,
          "Should not have double bit errors");
 
   for (size_t i = current(); i < _buffer_length; ++i) {
@@ -107,8 +107,7 @@ void ZStoreBarrierBuffer::install_base_pointers() {
   // Use a lock since both the GC and the Java thread race to install the base pointers
   ZLocker<ZLock> locker(&_base_pointer_lock);
 
-  const bool should_install_base_pointers =
-      (_last_installed_color & ZPointerRemappedMask) != ZPointerRemapped;
+  const bool should_install_base_pointers = ZPointer::remap_bits(_last_installed_color) != ZPointerRemapped;
 
   if (should_install_base_pointers) {
     install_base_pointers_inner();
@@ -140,7 +139,7 @@ static volatile zpointer* make_load_good(volatile zpointer* p, zaddress_unsafe p
 }
 
 void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
-  const uintptr_t last_remap_bits = _last_processed_color & ZPointerRemappedMask;
+  const uintptr_t last_remap_bits = ZPointer::remap_bits(_last_processed_color);
   if (last_remap_bits == ZPointerRemapped) {
     // All pointers are already remapped
     return;
@@ -260,7 +259,7 @@ bool ZStoreBarrierBuffer::is_in(volatile zpointer* p) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    const uintptr_t  last_remap_bits = buffer->_last_processed_color & ZPointerRemappedMask;
+    const uintptr_t  last_remap_bits = ZPointer::remap_bits(buffer->_last_processed_color) & ZPointerRemappedMask;
     const bool needs_remap = last_remap_bits != ZPointerRemapped;
 
     for (size_t i = buffer->current(); i < _buffer_length; ++i) {

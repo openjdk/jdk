@@ -28,7 +28,7 @@ ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
     _ZAddressOffsetMask(&ZAddressOffsetMask),
     _ZPointerLoadGoodMask(&ZPointerLoadGoodMask),
     _ZPointerLoadBadMask(&ZPointerLoadBadMask),
-    _ZPointerLoadShift(&ZPointerLoadShift),
+    _ZPointerLoadShift(const_cast<size_t*>(&ZPointerLoadShift)),
     _ZPointerMarkGoodMask(&ZPointerMarkGoodMask),
     _ZPointerMarkBadMask(&ZPointerMarkBadMask),
     _ZPointerStoreGoodMask(&ZPointerStoreGoodMask),

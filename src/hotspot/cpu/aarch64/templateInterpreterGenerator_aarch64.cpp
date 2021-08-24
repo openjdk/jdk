@@ -763,7 +763,7 @@ void TemplateInterpreterGenerator::lock_method() {
     // get receiver (assume this is frequent case)
     __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ br(Assembler::EQ, done);
-    __ load_mirror(r0, rmethod);
+    __ load_mirror(r0, rmethod, r5, rscratch2);
 
 #ifdef ASSERT
     {
@@ -824,7 +824,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   }
 
   // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(r10, rmethod);
+  __ load_mirror(r10, rmethod, r5, rscratch2);
   __ stp(r10, zr, Address(sp, 4 * wordSize));
 
   __ ldr(rcpool, Address(rmethod, Method::const_offset()));
@@ -904,7 +904,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ rscratch2, /*tmp2*/ rscratch1);
+  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ r10, /*tmp2*/ r11);
 
   // areturn
   __ andr(sp, r19, -16);  // done with stack
@@ -1247,7 +1247,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_STATIC), L);
     // get mirror
-    __ load_mirror(t, rmethod);
+    __ load_mirror(t, rmethod, r10, rscratch2);
     // copy mirror into activation frame
     __ str(t, Address(rfp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // pass handle to mirror
@@ -1383,7 +1383,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ br(Assembler::NE, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);
-    __ resolve_jobject(r0, rthread, t);
+    __ resolve_jobject(r0, rthread, t, rscratch2);
     __ str(r0, Address(rfp, frame::interpreter_frame_oop_temp_offset*wordSize));
     // keep stack depth as expected by pushing oop which will eventually be discarded
     __ push(ltos);

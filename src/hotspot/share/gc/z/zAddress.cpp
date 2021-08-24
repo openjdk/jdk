@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -43,7 +44,6 @@ uintptr_t  ZPointerRemembered;
 
 uintptr_t  ZPointerLoadGoodMask;
 uintptr_t  ZPointerLoadBadMask;
-size_t     ZPointerLoadShift;
 
 uintptr_t  ZPointerMarkGoodMask;
 uintptr_t  ZPointerMarkBadMask;
@@ -72,15 +72,9 @@ static void set_vector_mask(uintptr_t vector_mask[], uintptr_t mask) {
 void ZGlobalsPointers::set_good_masks() {
   ZPointerRemapped = ZPointerRemappedMajorMask & ZPointerRemappedMinorMask;
 
-  ZPointerLoadGoodMask  = ZPointerRemapped;
+  ZPointerLoadGoodMask  = ZPointer::remap_bits(ZPointerRemapped);
   ZPointerMarkGoodMask  = ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerMarkedMajor;
   ZPointerStoreGoodMask = ZPointerMarkGoodMask | ZPointerRemembered;
-
-  ZPointerLoadGoodMask  = ZPointerRemapped;
-  ZPointerMarkGoodMask  = ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerMarkedMajor;
-  ZPointerStoreGoodMask = ZPointerMarkGoodMask | ZPointerRemembered;
-
-  ZPointerLoadShift = ZPointer::load_shift_lookup(ZPointerLoadGoodMask);
 
   ZPointerLoadBadMask  = ZPointerLoadGoodMask  ^ ZPointerLoadMetadataMask;
   ZPointerMarkBadMask  = ZPointerMarkGoodMask  ^ ZPointerMarkMetadataMask;
@@ -89,6 +83,8 @@ void ZGlobalsPointers::set_good_masks() {
   set_vector_mask(ZPointerVectorLoadBadMask, ZPointerLoadBadMask);
   set_vector_mask(ZPointerVectorStoreBadMask, ZPointerStoreBadMask);
   set_vector_mask(ZPointerVectorStoreGoodMask, ZPointerStoreGoodMask);
+
+  pd_set_good_masks();
 }
 
 void ZGlobalsPointers::initialize() {

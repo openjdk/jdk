@@ -195,6 +195,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
   ZThreadLocalData::set_mark_bad_mask(_jt, ZPointerMarkBadMask);
   ZThreadLocalData::set_store_bad_mask(_jt, ZPointerStoreBadMask);
   ZThreadLocalData::set_store_good_mask(_jt, ZPointerStoreGoodMask);
+  ZThreadLocalData::set_nmethod_disarmed(_jt, ZPointerStoreGoodMask);
 
   // Retire TLAB
   if (ZHeap::heap()->minor_collector()->is_phase_mark() || ZHeap::heap()->major_collector()->is_phase_mark()) {

@@ -1130,6 +1130,11 @@ class JavaThread: public Thread {
 
   // Support for thread handshake operations
   HandshakeState _handshake;
+
+#ifdef AARCH64
+  size_t _isb_epoch;
+#endif
+
  public:
   HandshakeState* handshake_state() { return &_handshake; }
 
@@ -1244,6 +1249,9 @@ class JavaThread: public Thread {
   bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
 
   // For assembly stub generation
+#ifdef AARCH64
+  static ByteSize isb_epoch_offset()             { return byte_offset_of(JavaThread, _isb_epoch); }
+#endif
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
   static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
   static ByteSize pending_jni_exception_check_fn_offset() {

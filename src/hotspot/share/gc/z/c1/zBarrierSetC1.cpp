@@ -92,7 +92,10 @@ void ZLoadBarrierStubC1::print_name(outputStream* out) const {
 }
 #endif // PRODUCT
 
-ZStoreBarrierStubC1::ZStoreBarrierStubC1(LIRAccess& access, LIR_Opr new_zaddress, LIR_Opr new_zpointer, bool is_atomic) :
+ZStoreBarrierStubC1::ZStoreBarrierStubC1(LIRAccess& access,
+                                         LIR_Opr new_zaddress,
+                                         LIR_Opr new_zpointer,
+                                         bool is_atomic) :
     _ref_addr(access.resolved_addr()),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
@@ -119,6 +122,7 @@ bool ZStoreBarrierStubC1::is_atomic() const {
 void ZStoreBarrierStubC1::visit(LIR_OpVisitState* visitor) {
   visitor->do_slow_case();
   visitor->do_input(_ref_addr);
+  visitor->do_temp(_new_zpointer);
 }
 
 void ZStoreBarrierStubC1::emit_code(LIR_Assembler* ce) {
@@ -341,7 +345,10 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
   }
 
   LIR_Opr new_zpointer = gen->new_register(T_OBJECT);
-  ZStoreBarrierStubC1* stub = new ZStoreBarrierStubC1(access, new_zaddress_reg, new_zpointer, is_atomic);
+  ZStoreBarrierStubC1* stub = new ZStoreBarrierStubC1(access,
+                                                      new_zaddress_reg,
+                                                      new_zpointer,
+                                                      is_atomic);
 
   __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
                                     new_zaddress_reg,
@@ -398,7 +405,6 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
 #ifdef AMD64
   LIR_Opr cmp_value_opr = FrameMap::rax_oop_opr;
 #else
-  // TODO: Check that this actually works on AArch64
   LIR_Opr cmp_value_opr = access.gen()->new_register(T_OBJECT);
 #endif
   access.gen()->lir()->move(cmp_value.result(), cmp_value_opr);
@@ -425,7 +431,11 @@ LIR_Opr ZBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value
 
   // The parent class expects the in-parameter and out-parameter to be the same.
   // Move the colored pointer to the expected register.
+#ifdef AMD64
   __ xchg(access.resolved_addr(), value_zpointer, value_zpointer, LIR_OprFact::illegalOpr);
+#else
+  __ xchg(access.resolved_addr(), value_zpointer, value_zpointer, access.gen()->new_register(T_INT));
+#endif
   __ append(new LIR_OpZUncolor(value_zpointer));
 
   return value_zpointer;

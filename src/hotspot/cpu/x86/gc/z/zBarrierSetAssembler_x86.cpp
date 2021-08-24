@@ -417,31 +417,26 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ jcc(Assembler::notEqual, slow_path);
 
     // If we get this far, we know there is a young raw NULL value in the field.
-    if (is_atomic) {
-      // Try to self-heal NULL values for atomic accesses
-      __ push(rax);
-      __ push(rbx);
-      __ push(rcx);
+    // Try to self-heal NULL values for atomic accesses
+    __ push(rax);
+    __ push(rbx);
+    __ push(rcx);
 
-      __ lea(rcx, ref_addr);
-      __ xorq(rax, rax);
-      __ movptr(rbx, Address(r15, ZThreadLocalData::store_good_mask_offset()));
+    __ lea(rcx, ref_addr);
+    __ xorq(rax, rax);
+    __ movptr(rbx, Address(r15, ZThreadLocalData::store_good_mask_offset()));
 
-      __ lock();
-      __ cmpxchgq(rbx, Address(rcx, 0));
+    __ lock();
+    __ cmpxchgq(rbx, Address(rcx, 0));
 
-      __ pop(rcx);
-      __ pop(rbx);
-      __ pop(rax);
+    __ pop(rcx);
+    __ pop(rbx);
+    __ pop(rax);
 
-      __ jcc(Assembler::notEqual, slow_path);
+    __ jcc(Assembler::notEqual, slow_path);
 
-      __ bind(slow_path_continuation);
-      __ jmp(medium_path_continuation);
-    } else {
-      __ bind(slow_path_continuation);
-      __ jmp(medium_path_continuation);
-    }
+    __ bind(slow_path_continuation);
+    __ jmp(medium_path_continuation);
   } else {
     // A non-atomic relocatable object won't get to the medium fast path due to a
     // raw NULL in the young generation. We only get here because the field is bad.
@@ -468,7 +463,6 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
-  // Verify oop store
   if (is_reference_type(type)) {
     assert_different_registers(src, tmp1, dst.base(), dst.index());
 

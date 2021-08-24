@@ -1002,7 +1002,7 @@ class barrier_Relocation : public DataRelocation {
  public:
   // The uninitialized value used before the relocation has been patched.
   // Code assumes that the unpatched value is zero.
-  static const int8_t unpatched = 0;
+  static const int16_t unpatched = 0;
 
   static RelocationHolder spec() {
     RelocationHolder rh = newHolder();

@@ -80,9 +80,10 @@ extern size_t    ZAddressOffsetMax;
 //             ---- no overlapping address and metadata zeros
 // aaa...aaa0001000MMmmFFrr0000 = Remapped11 zpointer
 //
-// The overlapping is performed because the JIT-compiled load barriers expect the
+// The overlapping is performed because the x86 JIT-compiled load barriers expect the
 // address bits to start right after the load-good bit. It allows combining the good
-// bit check and unmasking into a single speculative shift instruction.
+// bit check and unmasking into a single speculative shift instruction. On AArch64 we
+// don't do this, and hence there are no overlapping address and  metadata zeros there.
 //
 // The remapped bits are notably not grouped into two sets of bits, one for the minor
 // collection and one for the major collection, like the other bits. The reason is that
@@ -93,7 +94,9 @@ extern size_t    ZAddressOffsetMax;
 // minus the shift of the load metadata bit start encodes the numbers 0, 1, 2 and 3.
 // These numbers in binary correspond to 00, 01, 10 and 11. The low order bit in said
 // numbers correspond to the simulated RemappedMinor[0, 1] value, and the high order bit
-// corresponds to the simulated RemappedMajor[0, 1] value.
+// corresponds to the simulated RemappedMajor[0, 1] value. On AArch64, the remap bits
+// of zpointers are the complement of this bit. So there are 3 good bits and one bad bit
+// instead. This lends itself better to AArch64 instructions.
 //
 // We decide the bit to be taken by having the RemappedMinorMask and RemappedMajorMask
 // variables, which alternate between what two bits they accept for their corresponding
@@ -199,7 +202,6 @@ extern uintptr_t  ZPointerRemappedMajorMask;
 // Good/bad masks
 extern uintptr_t  ZPointerLoadGoodMask;
 extern uintptr_t  ZPointerLoadBadMask;
-extern size_t     ZPointerLoadShift;
 
 extern uintptr_t  ZPointerMarkGoodMask;
 extern uintptr_t  ZPointerMarkBadMask;
@@ -270,6 +272,7 @@ public:
 
   static constexpr int load_shift_lookup_index(uintptr_t value);
   static constexpr int load_shift_lookup(uintptr_t value);
+  static uintptr_t remap_bits(uintptr_t colored);
 };
 
 class ZAddress : public AllStatic {
@@ -294,6 +297,7 @@ class ZGlobalsPointers : public AllStatic {
 
 private:
   static void set_good_masks();
+  static void pd_set_good_masks();
 
 public:
   static void initialize();

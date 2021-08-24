@@ -32,6 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include CPU_HEADER_INLINE(gc/z/zAddress)
 
 // zoffset functions
 
@@ -84,11 +85,13 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
   }
 
   if ((value & ~ZPointerStoreMetadataMask) != 0) {
+#ifndef AARCH64
     const int index = ZPointer::load_shift_lookup_index(value);
     if (index != 0 && !is_power_of_2(index)) {
       report_is_valid_failure("Invalid remap bits");
       return false;
     }
+#endif
 
     int shift = ZPointer::load_shift_lookup(value);
     if (!is_power_of_2(value & (ZAddressHeapBase << shift))) {
@@ -102,7 +105,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
     }
   }
 
-  const uintptr_t load_metadata = value & ZPointerLoadMetadataMask;
+  const uintptr_t load_metadata = ZPointer::remap_bits(value);
   if (!is_power_of_2(load_metadata)) {
     report_is_valid_failure("Must have exactly one load metadata bit");
     return false;
@@ -387,12 +390,12 @@ inline bool ZPointer::is_load_good_or_null(zpointer ptr) {
 
 inline bool ZPointer::is_minor_load_good(zpointer ptr) {
   assert(!is_null(ptr), "not supported");
-  return (untype(ptr) & ZPointerRemappedMinorMask) != 0;
+  return (remap_bits(untype(ptr)) & ZPointerRemappedMinorMask) != 0;
 }
 
 inline bool ZPointer::is_major_load_good(zpointer ptr) {
   assert(!is_null(ptr), "not supported");
-  return (untype(ptr) & ZPointerRemappedMajorMask) != 0;
+  return (remap_bits(untype(ptr)) & ZPointerRemappedMajorMask) != 0;
 }
 
 inline bool ZPointer::is_mark_bad(zpointer ptr) {
@@ -457,7 +460,7 @@ inline bool ZPointer::is_marked_any_major(zpointer ptr) {
 
 inline bool ZPointer::is_remapped(zpointer ptr) {
   assert(!is_null(ptr), "must not be null");
-  return untype(ptr) & ZPointerRemapped;
+  return remap_bits(untype(ptr)) & ZPointerRemapped;
 }
 
 inline bool ZPointer::is_remembered_exact(zpointer ptr) {
@@ -465,14 +468,8 @@ inline bool ZPointer::is_remembered_exact(zpointer ptr) {
   return (untype(ptr) & ZPointerRemembered) == ZPointerRemembered;
 }
 
-constexpr int ZPointer::load_shift_lookup_index(uintptr_t value) {
+inline constexpr int ZPointer::load_shift_lookup_index(uintptr_t value) {
   return (value >> ZPointerRemappedShift) & ((1 << ZPointerRemappedBits) - 1);
-}
-
-constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
-  const size_t index = load_shift_lookup_index(value);
-  assert(index == 0 || is_power_of_2(index), "Incorrect load shift: " SIZE_FORMAT, index);
-  return ZPointerLoadShiftTable[index];
 }
 
 // ZAddress functions

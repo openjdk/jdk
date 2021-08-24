@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,17 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
+#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
+#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-const size_t ZPointerLoadShift = 16;
+inline uintptr_t ZPointer::remap_bits(uintptr_t colored) {
+  return (colored ^ ZPointerRemappedMask) & ZPointerRemappedMask;
+}
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressHeapBaseShift();
+inline constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
+  return ZPointerLoadShift;
+}
 
-#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
+#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP

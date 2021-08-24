@@ -109,6 +109,14 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
     }
     break;
   }
+
+  // After updating the poll value, we allow entering new nmethods
+  // through stack unwinding. The nmethods might have been processed in
+  // a concurrent thread by the GC. So we need to run a cross modify
+  // fence to ensure patching becomes visible. We may also wake up from
+  // a safepoint that has patched code. This cross modify fence will
+  // ensure such paths can observe patched code.
+  OrderAccess::cross_modify_fence();
 }
 
 void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
@@ -139,7 +147,6 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
   } while (need_rechecking);
 
   update_poll_values(thread);
-  OrderAccess::cross_modify_fence();
 }
 
 void SafepointMechanism::initialize_header(JavaThread* thread) {

@@ -88,6 +88,7 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
   ZThreadLocalData::set_mark_bad_mask(thread, ZPointerMarkBadMask);
   ZThreadLocalData::set_store_bad_mask(thread, ZPointerStoreBadMask);
   ZThreadLocalData::set_store_good_mask(thread, ZPointerStoreGoodMask);
+  ZThreadLocalData::set_nmethod_disarmed(thread, ZPointerStoreGoodMask);
   if (thread->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);

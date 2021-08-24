@@ -1034,6 +1034,9 @@ JavaThread::JavaThread() :
   _frames_to_pop_failed_realloc(0),
 
   _handshake(this),
+#ifdef AARCH64
+  _isb_epoch(0),
+#endif
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),

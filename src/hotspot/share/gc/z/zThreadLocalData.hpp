@@ -40,6 +40,7 @@ private:
   uintptr_t              _store_good_mask;
   uintptr_t              _store_bad_mask;
   uintptr_t              _uncolor_mask;
+  uintptr_t              _nmethod_disarmed;
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
   oop*                   _invisible_root;
@@ -51,6 +52,7 @@ private:
       _store_good_mask(0),
       _store_bad_mask(0),
       _uncolor_mask(0),
+      _nmethod_disarmed(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),
       _invisible_root(NULL) {}
@@ -94,6 +96,10 @@ public:
 
   static void set_uncolor_mask(Thread* thread, uintptr_t mask) {
     data(thread)->_uncolor_mask = mask;
+  }
+
+  static void set_nmethod_disarmed(Thread* thread, uintptr_t value) {
+    data(thread)->_nmethod_disarmed = value;
   }
 
   static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZCollectorId collector_id) {
@@ -143,7 +149,7 @@ public:
   }
 
   static ByteSize nmethod_disarmed_offset() {
-    return store_good_mask_offset() + in_ByteSize(ZPointerStoreGoodMaskLowOrderBitsOffset);
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _nmethod_disarmed);
   }
 
   static ByteSize store_barrier_buffer_offset() {

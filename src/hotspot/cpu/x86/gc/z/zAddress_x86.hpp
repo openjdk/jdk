@@ -26,7 +26,9 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+extern size_t ZPointerLoadShift;
+
 size_t ZPlatformAddressOffsetBits();
 size_t ZPlatformAddressHeapBaseShift();
 
-#endif // CPU_X86_GC_Z_ZGLOBALS_X86_HPP
+#endif // CPU_X86_GC_Z_ZADDRESS_X86_HPP

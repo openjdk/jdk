@@ -165,10 +165,6 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
-  disarm_with_value(nm, disarmed_value());
-}
-
 void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
