@@ -616,7 +616,7 @@ private:
           assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
           return r->bottom();
         }
-        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams"); 
+        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
       }
       return r->end();
     }
