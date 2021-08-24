@@ -258,10 +258,8 @@ public final class FileServerHandler implements HttpHandler {
         var body = dirListing(exchange, path);
         if (writeBody) {
             exchange.sendResponseHeaders(200, body.length());
-            try (OutputStream os = exchange.getResponseBody();
-                 PrintStream ps = new PrintStream(os, false, UTF_8)) {
-                ps.writeBytes(body.getBytes(UTF_8));
-                ps.flush();
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body.getBytes(UTF_8));
             }
         } else {
             respHdrs.set("Content-Length", Integer.toString(body.getBytes(UTF_8).length));
