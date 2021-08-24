@@ -156,6 +156,10 @@ public class TestGCLogMessages {
         // TLAB handling
         new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+
+        // NMethod List Cleanup
+        new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
+
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing

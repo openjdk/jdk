@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,28 @@
 
 /*
  * @test
- * @bug 8076190 8242151 8153005
- * @library /test/lib
+ * @bug 8076190 8242151 8153005 8266182
+ * @summary This is java keytool <-> openssl interop test. This test generates
+ *          some openssl keystores on the fly, java operates on it and
+ *          vice versa.
+ *
+ *          Note: This test executes some openssl command, so need to set
+ *          openssl path using system property "test.openssl.path" or it should
+ *          be available in /usr/bin or /usr/local/bin
+ *          Required OpenSSL version : OpenSSL 1.1.*
+ *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
- * @summary Customizing the generation of a PKCS12 keystore
+ * @library /test/lib
+ * @library /sun/security/pkcs11/
+ * @run main/othervm/timeout=600 KeytoolOpensslInteropTest
  */
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.security.OpensslArtifactFetcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,28 +64,79 @@ import static jdk.test.lib.security.DerUtils.*;
 import static sun.security.util.KnownOIDs.*;
 import static sun.security.pkcs.ContentInfo.*;
 
-public class ParamsTest  {
+public class KeytoolOpensslInteropTest {
 
     public static void main(String[] args) throws Throwable {
-
-        // De-BASE64 textual files in ./params to `pwd`
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
-                Path.of(System.getProperty("test.src"), "params"),
-                p -> !p.getFileName().toString().equals("README"))) {
-            stream.forEach(p -> {
-                try (InputStream is = Files.newInputStream(p);
-                     OutputStream os = Files.newOutputStream(p.getFileName())) {
-                    Base64.getMimeDecoder().wrap(is).transferTo(os);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+        String opensslPath = OpensslArtifactFetcher.getOpenssl1dot1dotStar();
+        if (opensslPath != null) {
+            // if preferred version of openssl is available perform all
+            // keytool <-> openssl interop tests
+            generateInitialKeystores(opensslPath);
+            testWithJavaCommands();
+            testWithOpensslCommands(opensslPath);
+        } else {
+            // since preferred version of openssl is not available skip all
+            // openssl command dependent tests with a warning
+            System.out.println("\n\u001B[31mWarning: Can't find openssl "
+                    + "(version 1.1.*) binary on this machine, please install"
+                    + " and set openssl path with property "
+                    + "'test.openssl.path'. Now running only half portion of "
+                    + "the test, skipping all tests which depends on openssl "
+                    + "commands.\u001B[0m\n");
+            // De-BASE64 textual files in ./params to `pwd`
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                    Path.of(System.getProperty("test.src"), "params"),
+                    p -> !p.getFileName().toString().equals("README"))) {
+                stream.forEach(p -> {
+                    try (InputStream is = Files.newInputStream(p);
+                        OutputStream os = Files.newOutputStream(
+                                p.getFileName())) {
+                        Base64.getMimeDecoder().wrap(is).transferTo(os);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+            }
+            testWithJavaCommands();
         }
+    }
 
+    private static void generateInitialKeystores(String opensslPath)
+            throws Throwable {
+        keytool("-keystore ks -keyalg ec -genkeypair -storepass"
+                + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-in", "ks",
+                "-nodes", "-out", "kandc", "-passin", "pass:changeit")
+                .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                "kandc", "-out", "os2", "-name", "a", "-passout",
+                "pass:changeit", "-certpbe", "NONE", "-nomac")
+                .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                "kandc", "-out", "os3", "-name", "a", "-passout",
+                "pass:changeit", "-certpbe", "NONE")
+                .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                "kandc", "-out", "os4", "-name", "a", "-passout",
+                "pass:changeit", "-certpbe", "PBE-SHA1-RC4-128", "-keypbe",
+                "PBE-SHA1-RC4-128", "-macalg", "SHA224")
+                .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                "kandc", "-out", "os5", "-name", "a", "-passout",
+                "pass:changeit", "-certpbe", "AES-256-CBC", "-keypbe",
+                "AES-256-CBC", "-macalg", "SHA512")
+                .shouldHaveExitValue(0);
+    }
+
+    private static void testWithJavaCommands() throws Throwable {
         byte[] data;
 
         // openssl -> keytool interop check
-
         // os2. no cert pbe, no mac.
         check("os2", "a", null, "changeit", true, true, true);
         check("os2", "a", "changeit", "changeit", true, true, true);
@@ -392,6 +455,74 @@ public class ParamsTest  {
                 .shouldHaveExitValue(0);
     }
 
+    private static void testWithOpensslCommands(String opensslPath)
+            throws Throwable {
+
+        OutputAnalyzer output1 = ProcessTools.executeCommand(opensslPath,
+                "pkcs12", "-in", "ksnormal", "-passin", "pass:changeit",
+                "-info", "-nokeys", "-nocerts");
+        output1.shouldHaveExitValue(0)
+            .shouldContain("MAC: sha256, Iteration 10000")
+            .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
+                    + " Iteration 10000, PRF hmacWithSHA256")
+            .shouldContain("PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC,"
+                    + " Iteration 10000, PRF hmacWithSHA256");
+
+        OutputAnalyzer output2 = ProcessTools.executeCommand(opensslPath,
+                "pkcs12", "-in", "ksnormaldup", "-passin", "pass:changeit",
+                "-info", "-nokeys", "-nocerts");
+        output2.shouldHaveExitValue(0);
+        if(!output1.getStderr().equals(output2.getStderr())) {
+            throw new RuntimeException("Duplicate pkcs12 keystores"
+                    + " ksnormal & ksnormaldup show different info");
+        }
+
+        output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
+                "ksnopass", "-passin", "pass:changeit", "-info", "-nokeys",
+                "-nocerts");
+        output1.shouldNotHaveExitValue(0);
+
+        output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
+                "ksnopass", "-passin", "pass:changeit", "-info", "-nokeys",
+                "-nocerts", "-nomacver");
+        output1.shouldHaveExitValue(0)
+            .shouldNotContain("PKCS7 Encrypted data:")
+            .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
+                    + " Iteration 10000, PRF hmacWithSHA256")
+            .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"
+                    + " Iteration 10000");
+
+        output2 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
+                "ksnopassdup", "-passin", "pass:changeit", "-info", "-nokeys",
+                "-nocerts", "-nomacver");
+        output2.shouldHaveExitValue(0);
+        if(!output1.getStderr().equals(output2.getStderr())) {
+            throw new RuntimeException("Duplicate pkcs12 keystores"
+                    + " ksnopass & ksnopassdup show different info");
+        }
+
+        output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
+                "ksnewic", "-passin", "pass:changeit", "-info", "-nokeys",
+                "-nocerts");
+        output1.shouldHaveExitValue(0)
+            .shouldContain("MAC: sha256, Iteration 5555")
+            .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
+                    + " Iteration 7777, PRF hmacWithSHA256")
+            .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"
+                    + " Iteration 10000")
+            .shouldContain("PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC,"
+                    + " Iteration 6666, PRF hmacWithSHA256");
+
+        output2 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
+                "ksnewicdup", "-passin", "pass:changeit", "-info", "-nokeys",
+                "-nocerts");
+        output2.shouldHaveExitValue(0);
+        if(!output1.getStderr().equals(output2.getStderr())) {
+            throw new RuntimeException("Duplicate pkcs12 keystores"
+                    + " ksnewic & ksnewicdup show different info");
+        }
+    }
+
     /**
      * Check keystore loading and key/cert reading.
      *
@@ -447,7 +578,7 @@ public class ParamsTest  {
         Asserts.assertEQ(expectedKey, actualKey, label + "-key");
     }
 
-    static OutputAnalyzer keytool(String s) throws Throwable {
+    private static OutputAnalyzer keytool(String s) throws Throwable {
         return SecurityTools.keytool(s);
     }
 }
