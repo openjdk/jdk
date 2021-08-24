@@ -326,7 +326,7 @@ public class DerInputStream {
      * @return true if matches, false if not or stream is at end.
      * @throws IOException if an I/O error happens while peeking the byte
      */
-    public boolean checkNextTag(Predicate<Byte> rule) throws IOException {
+    private boolean checkNextTag(Predicate<Byte> rule) {
         return available() > 0 && rule.test(data[pos]);
     }
 
@@ -337,8 +337,23 @@ public class DerInputStream {
      * @return true if matches, false if not or stream is at end.
      * @throws IOException if an I/O error happens while peeking the byte
      */
-    public boolean checkNextTag(byte tag) throws IOException {
+    private boolean checkNextTag(byte tag) {
         return checkNextTag(t -> t == tag);
+    }
+
+    /**
+     * Returns the next DerValue if its tag is the given one.
+     *
+     * @param tag the expected tag
+     * @return the next DerValue, or empty if not found or stream at end
+     * @throws IOException if an I/O error happens
+     */
+    public Optional<DerValue> getOptional(byte tag) throws IOException {
+        if (checkNextTag(tag)) {
+            return Optional.of(getDerValue());
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**

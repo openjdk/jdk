@@ -31,14 +31,15 @@ import java.util.Arrays;
 /**
  * @test
  * @bug 8246797
- * @summary Ensures OAEPParameters read correct encoding
+ * @summary Ensures OAEPParameters read correct encoding and
+ * reject encoding with invalid ordering
  */
 
 public class OAEPOrder {
     public static void main(String[] args) throws Exception {
         // Do not use default fields
         OAEPParameterSpec spec = new OAEPParameterSpec(
-                "SHA-1", "MGF1", MGF1ParameterSpec.SHA1,
+                "SHA-384", "MGF1", MGF1ParameterSpec.SHA384,
                 new PSource.PSpecified(new byte[10]));
         AlgorithmParameters alg = AlgorithmParameters.getInstance("OAEP");
         alg.init(spec);

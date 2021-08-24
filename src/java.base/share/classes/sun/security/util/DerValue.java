@@ -303,7 +303,7 @@ public class DerValue {
     }
 
     /**
-     * Wraps a byte array at a single DerValue.
+     * Wraps a byte array as a single DerValue.
      *
      * Attention: no cloning is made.
      *
@@ -316,7 +316,7 @@ public class DerValue {
     }
 
     /**
-     * Wraps a byte array at a single DerValue.
+     * Wraps a byte array as a single DerValue.
      *
      * Attention: no cloning is made.
      *
@@ -1254,7 +1254,7 @@ public class DerValue {
      * @param startLen estimated number of sub-values
      * @return the sub-values in an array
      */
-    DerValue[] subs(byte expectedTag, int startLen) throws IOException {
+    public DerValue[] subs(byte expectedTag, int startLen) throws IOException {
         if (expectedTag != 0 && expectedTag != tag) {
             throw new IOException("Not the correct tag");
         }
