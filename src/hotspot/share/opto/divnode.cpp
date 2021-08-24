@@ -466,20 +466,6 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( t == TypeInt::ONE )       // Identity?
     return NULL;                // Skip it
 
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  uint op1 = in1->Opcode();
-
-  // Converts (x * y) / y => x
-  if (op1 == Op_MulI && in1->in(2) == in2) {
-    return new AddINode(in1->in(1), phase->intcon(0));
-  }
-
-  // Converts (x * y) / x => y
-  if (op1 == Op_MulI && in1->in(1) == in2) {
-    return new AddINode(in1->in(2), phase->intcon(0));
-  }
-
   const TypeInt *ti = t->isa_int();
   if( !ti ) return NULL;
 
@@ -585,20 +571,6 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   const Type *t = phase->type( in(2) );
   if( t == TypeLong::ONE )      // Identity?
     return NULL;                // Skip it
-
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  uint op1 = in1->Opcode();
-
-  // Converts (x * y) / y => x
-  if (op1 == Op_MulL && in1->in(2) == in2) {
-    return new AddLNode(in1->in(1), phase->longcon(0));
-  }
-
-  // Converts (x * y) / x => y
-  if (op1 == Op_MulL && in1->in(1) == in2) {
-    return new AddLNode(in1->in(2), phase->longcon(0));
-  }
 
   const TypeLong *tl = t->isa_long();
   if( !tl ) return NULL;

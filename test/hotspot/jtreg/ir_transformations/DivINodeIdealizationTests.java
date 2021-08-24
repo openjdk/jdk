@@ -68,28 +68,6 @@ public class DivINodeIdealizationTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
-    // Checks (x * c) / c => x
-    public int cancelOutDenominatorConstant(int x) {
-        return (x * 13) / 13;
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
-    // Checks (x * y) / y => x
-    // The denominator can only be cancelled out if it's different of zero.
-    public int cancelOutDenominatorVariable(int x, int y) {
-        if (y != 0) {
-            return (x * y) / y;
-        }
-        else {
-            return x;
-        }
-    }
-
-    @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.ADD, IRNode.SUB})
     @IR(counts = {IRNode.MUL_I, "1",

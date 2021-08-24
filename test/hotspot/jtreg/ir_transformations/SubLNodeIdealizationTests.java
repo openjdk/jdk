@@ -79,15 +79,6 @@ public class SubLNodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks (x - y) - x => 0 - y
-    public long simpleFive(long x, long y) {
-        return (x - y) - x;
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (y + x) => 0 - y
     public long simpleSix(long x, long y) {
         return x - (y + x);
@@ -172,21 +163,5 @@ public class SubLNodeIdealizationTests {
     // Checks 0 - (0 - x) => x
     public long simpleFifteen(long x) {
         return 0 - (0 - x);
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
-    // Checks (x + y) - y => x
-    public long simpleSixteen(long x, long y) {
-        return (x + y) - y;
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
-    // Checks (x + y) - x => y
-    public long simpleSeventeen(long x, long y) {
-        return (x + y) - x;
     }
 }
