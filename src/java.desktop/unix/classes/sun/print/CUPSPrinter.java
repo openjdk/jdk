@@ -503,7 +503,9 @@ public class CUPSPrinter  {
     public static boolean isCupsRunning() {
         IPPPrintService.debug_println(debugPrefix+"libFound "+libFound);
         if (libFound) {
-            String server = getDomainSocketPathname() != null ? getDomainSocketPathname() : getServer();
+            String server = getDomainSocketPathname() != null
+                    ? getDomainSocketPathname()
+                    : getServer();
             IPPPrintService.debug_println(debugPrefix+"CUPS server "+server+
                                           " port "+getPort()+
                                           (getDomainSocketPathname() != null
