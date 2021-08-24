@@ -572,8 +572,8 @@ class MimeType implements Serializable, Cloneable {
         }
         LexicalAnalyzer theLexer = new LexicalAnalyzer (s);
         ArrayList<String> thePieces = new ArrayList<>();
-        boolean mediaTypeIsText;
-        boolean parameterNameIsCharset;
+        boolean mediaTypeIsText = false;
+        boolean parameterNameIsCharset = false;
 
         // Parse media type.
         if (theLexer.getLexemeType() == TOKEN_LEXEME) {

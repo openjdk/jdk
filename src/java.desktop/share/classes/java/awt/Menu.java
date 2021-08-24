@@ -32,8 +32,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.EventListener;
-import java.util.Iterator;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -487,15 +487,15 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
         return null;
     }
 
-    synchronized Iterator<MenuShortcut> shortcuts() {
-        ArrayList<MenuShortcut> shortcuts = new ArrayList<>();
+    synchronized Enumeration<MenuShortcut> shortcuts() {
+        Vector<MenuShortcut> shortcuts = new Vector<>();
         int nitems = getItemCount();
         for (int i = 0 ; i < nitems ; i++) {
             MenuItem mi = getItem(i);
             if (mi instanceof Menu) {
-                Iterator<MenuShortcut> e = ((Menu)mi).shortcuts();
-                while (e.hasNext()) {
-                    shortcuts.add(e.next());
+                Enumeration<MenuShortcut> e = ((Menu)mi).shortcuts();
+                while (e.hasMoreElements()) {
+                    shortcuts.addElement(e.nextElement());
                 }
             } else {
                 MenuShortcut ms = mi.getShortcut();
@@ -504,7 +504,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                 }
             }
         }
-        return shortcuts.iterator();
+        return shortcuts.elements();
     }
 
     void deleteShortcut(MenuShortcut s) {

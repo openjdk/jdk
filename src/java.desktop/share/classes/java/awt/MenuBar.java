@@ -33,7 +33,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.util.Enumeration;
 import java.util.EventListener;
-import java.util.Iterator;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -343,9 +342,9 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
         Vector<MenuShortcut> shortcuts = new Vector<>();
         int nmenus = getMenuCount();
         for (int i = 0 ; i < nmenus ; i++) {
-            Iterator<MenuShortcut> e = getMenu(i).shortcuts();
-            while (e.hasNext()) {
-                shortcuts.addElement(e.next());
+            Enumeration<MenuShortcut> e = getMenu(i).shortcuts();
+            while (e.hasMoreElements()) {
+                shortcuts.addElement(e.nextElement());
             }
         }
         return shortcuts.elements();
