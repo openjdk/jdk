@@ -564,12 +564,18 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" file=<filename>");
   out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
   out->print_cr("  Additional output-options for file outputs:");
-  out->print_cr("   filesize=..  - Target byte size for log rotation (supports K/M/G suffix)."
-                                    " If set to 0, log rotation will not trigger automatically,"
-                                    " but can be performed manually (see the VM.log DCMD).");
-  out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
-                                    " If set to 0, log rotation is disabled."
-                                    " This will cause existing log files to be overwritten.");
+  out->print_cr("   filesize=..       - Target byte size for log rotation (supports K/M/G suffix)."
+                                         " If set to 0, log rotation will not trigger automatically,"
+                                         " but can be performed manually (see the VM.log DCMD).");
+  out->print_cr("   filecount=..      - Number of files to keep in rotation (not counting the active file)."
+                                         " If set to 0, log rotation is disabled."
+                                         " This will cause existing log files to be overwritten.");
+  out->print_cr("   foldmultilines=.. - The switch to replace newline characters with multiline log event"
+                                         " with the character sequence."
+                                         " Escape newline (\\n) and backslash (\\) characters in the UL output"
+                                         " if it is set to true."
+                                         " Note that it works on file output only.");
+
   out->cr();
   out->print_cr("\nAsynchronous logging (off by default):");
   out->print_cr(" -Xlog:async");
