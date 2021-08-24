@@ -139,7 +139,7 @@ public class CommentHelper {
 
     public String getParameterName(DocTree dtree) {
         if (dtree.getKind() == PARAM) {
-            return ((ParamTree) dtree).getName().toString();
+            return ((ParamTree) dtree).getName().getName().toString();
         } else {
             return null;
         }
