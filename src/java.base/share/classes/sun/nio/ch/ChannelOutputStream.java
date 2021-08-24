@@ -33,8 +33,8 @@ import java.util.Objects;
 
 /**
  * This class is defined here rather than in java.nio.channels.Channels
- * so that it will be visible to java.nio.channels.Channels and
- * sun.nio.ch.ChannelInputStream but not be part of the java.base module API.
+ * so that it will be accessible from java.nio.channels.Channels and
+ * sun.nio.ch.ChannelInputStream.
  *
  *
  * @author Mark Reinhold
