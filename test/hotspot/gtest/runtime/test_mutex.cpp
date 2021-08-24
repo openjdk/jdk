@@ -251,4 +251,14 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
   monitor_rank_tty->unlock();
   monitor_rank_special->unlock();
 }
+
+TEST_VM_ASSERT_MSG(MutexRank, monitor_special_vm_block,
+                   ".*Safepoint check never locks should always allow the vm to block") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", false, Mutex::_safepoint_check_never);
+  monitor_rank_special->lock_without_safepoint_check();
+  monitor_rank_special->unlock();
+}
 #endif // ASSERT
