@@ -454,6 +454,7 @@ tier3 = \
   -:tier1 \
   -:tier2 \
   :hotspot_tier3_runtime \
+  -runtime/InvocationTests \
   :tier3_gc_shenandoah
 
 hotspot_tier2_runtime = \
@@ -477,7 +478,6 @@ hotspot_tier2_runtime_platform_agnostic = \
 
 hotspot_tier3_runtime = \
   runtime/ \
- -runtime/InvocationTests \
  -:tier1_runtime \
  -:hotspot_tier2_runtime_platform_agnostic \
  -:hotspot_tier2_runtime
