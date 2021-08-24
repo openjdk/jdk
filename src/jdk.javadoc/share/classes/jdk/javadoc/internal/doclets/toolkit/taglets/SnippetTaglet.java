@@ -93,7 +93,7 @@ public class SnippetTaglet extends BaseTaglet {
             }
             // two like-named attributes found; although we report on the most
             // recently encountered of two, the iteration order might differ
-            // from the source order
+            // from the source order (see JDK-8266826)
             error(writer, holder, a, "doclet.tag.attribute.repeated", a.getName().toString());
             return badSnippet(writer);
         }
