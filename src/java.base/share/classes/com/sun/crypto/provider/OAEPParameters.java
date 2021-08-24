@@ -93,14 +93,13 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     }
 
     protected void engineInit(byte[] encoded) throws IOException {
-        mdName = "SHA-1";
-        mgfSpec = MGF1ParameterSpec.SHA1;
-        p = new byte[0];
 
         DerInputStream der = DerValue.wrap(encoded).data();
         var sub = der.getOptionalExplicitContextSpecific(0);
         if (sub.isPresent()) {
             mdName = AlgorithmId.parse(sub.get()).getName();
+        } else {
+            mdName = "SHA-1";
         }
         sub = der.getOptionalExplicitContextSpecific(1);
         if (sub.isPresent()) {
@@ -110,25 +109,19 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             }
             AlgorithmId params = AlgorithmId.parse(
                     new DerValue(val.getEncodedParams()));
-            String mgfDigestName = params.getName();
-            if (mgfDigestName.equals("SHA-1")) {
-                mgfSpec = MGF1ParameterSpec.SHA1;
-            } else if (mgfDigestName.equals("SHA-224")) {
-                mgfSpec = MGF1ParameterSpec.SHA224;
-            } else if (mgfDigestName.equals("SHA-256")) {
-                mgfSpec = MGF1ParameterSpec.SHA256;
-            } else if (mgfDigestName.equals("SHA-384")) {
-                mgfSpec = MGF1ParameterSpec.SHA384;
-            } else if (mgfDigestName.equals("SHA-512")) {
-                mgfSpec = MGF1ParameterSpec.SHA512;
-            } else if (mgfDigestName.equals("SHA-512/224")) {
-                mgfSpec = MGF1ParameterSpec.SHA512_224;
-            } else if (mgfDigestName.equals("SHA-512/256")) {
-                mgfSpec = MGF1ParameterSpec.SHA512_256;
-            } else {
-                throw new IOException(
+            mgfSpec = switch (params.getName()) {
+                case "SHA-1" -> MGF1ParameterSpec.SHA1;
+                case "SHA-224" -> MGF1ParameterSpec.SHA224;
+                case "SHA-256" -> MGF1ParameterSpec.SHA256;
+                case "SHA-384" -> MGF1ParameterSpec.SHA384;
+                case "SHA-512" -> MGF1ParameterSpec.SHA512;
+                case "SHA-512/224" -> MGF1ParameterSpec.SHA512_224;
+                case "SHA-512/256" -> MGF1ParameterSpec.SHA512_256;
+                default -> throw new IOException(
                         "Unrecognized message digest algorithm");
-            }
+            };
+        } else {
+            mgfSpec = MGF1ParameterSpec.SHA1;
         }
         sub = der.getOptionalExplicitContextSpecific(2);
         if (sub.isPresent()) {
@@ -136,11 +129,9 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             if (!val.getOID().equals(OID_PSpecified)) {
                 throw new IOException("Wrong OID for pSpecified");
             }
-            DerInputStream dis = new DerInputStream(val.getEncodedParams());
-            p = dis.getOctetString();
-            if (dis.available() != 0) {
-                throw new IOException("Extra data for pSpecified");
-            }
+            p = DerValue.wrap(val.getEncodedParams()).getOctetString();
+        } else {
+            p = new byte[0];
         }
         der.atEnd();
     }
