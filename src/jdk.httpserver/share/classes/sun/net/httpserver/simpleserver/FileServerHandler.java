@@ -256,16 +256,14 @@ public final class FileServerHandler implements HttpHandler {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", "text/html; charset=UTF-8");
         respHdrs.set("Last-Modified", getLastModified(path));
-        var body = dirListing(exchange, path);
+        var bodyBytes = dirListing(exchange, path).getBytes(UTF_8);
         if (writeBody) {
-            exchange.sendResponseHeaders(200, body.length());
-            try (OutputStream os = exchange.getResponseBody();
-                 PrintStream ps = new PrintStream(os, false, UTF_8)) {
-                ps.writeBytes(body.getBytes(UTF_8));
-                ps.flush();
+            exchange.sendResponseHeaders(200, bodyBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bodyBytes);
             }
         } else {
-            respHdrs.set("Content-Length", Integer.toString(body.getBytes(UTF_8).length));
+            respHdrs.set("Content-Length", Integer.toString(bodyBytes.length));
             exchange.sendResponseHeaders(200, -1);
         }
     }
