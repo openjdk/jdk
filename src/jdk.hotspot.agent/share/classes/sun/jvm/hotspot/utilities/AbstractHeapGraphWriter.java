@@ -127,9 +127,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         }
     }
 
-    protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
-        return 0;
-    }
+    abstract protected int calculateOopDumpRecordSize(Oop oop) throws IOException;
 
     protected void writeJavaThreads() throws IOException {
         Threads threads = VM.getVM().getThreads();
