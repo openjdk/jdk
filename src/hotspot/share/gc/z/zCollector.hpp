@@ -82,7 +82,7 @@ protected:
   void promote_pages(ZRelocationSetSelector* selector);
   void promote_pages(const ZArray<ZPage*>* pages);
 
-  ZCollector(ZCollectorId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(ZPhase from, ZPhase to);
 

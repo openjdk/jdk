@@ -89,8 +89,8 @@ private:
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
-  void increase_used(size_t size, ZCollector* collector, ZGenerationId generation);
-  void decrease_used(size_t size, ZCollector* collector, ZGenerationId generation);
+  void increase_used(size_t size, bool gc_relocation, ZGenerationId id);
+  void decrease_used(size_t size, bool reclaimed, ZGenerationId id);
 
   bool commit_page(ZPage* page);
   void uncommit_page(ZPage* page);
@@ -112,7 +112,7 @@ private:
 
   void satisfy_stalled();
 
-  void free_page_inner(ZPage* page, ZCollector* collector);
+  void free_page_inner(ZPage* page, bool reclaimed);
 
   size_t uncommit(uint64_t* timeout);
 
@@ -132,11 +132,11 @@ public:
 
   ZPageAllocatorStats stats(ZCollector* collector) const;
 
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCollector* collector, ZGenerationId generation_id, ZPageAge age);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age);
   void recycle_page(ZPage* page);
   void safe_destroy_page(ZPage* page);
-  void free_page(ZPage* page, ZCollector* collector);
-  void free_pages(const ZArray<ZPage*>* pages, ZCollector* collector);
+  void free_page(ZPage* page, bool reclaimed);
+  void free_pages(const ZArray<ZPage*>* pages, bool gc_relocation);
 
   void enable_deferred_destroy() const;
   void disable_deferred_destroy() const;

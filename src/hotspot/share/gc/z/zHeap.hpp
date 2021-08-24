@@ -65,11 +65,12 @@ public:
   void out_of_memory();
 
   // Generations
-  ZGeneration* get_generation(ZCollectorId id);
-  ZGeneration* get_generation(ZGenerationId id);
+  ZGeneration* generation(ZCollectorId id);
+  ZGeneration* generation(ZGenerationId id);
   ZYoungGeneration* young_generation();
   ZOldGeneration* old_generation();
 
+  // Collectors
   ZCollector* collector(ZCollectorId id);
   ZCollector* collector(ZGenerationId id);
   ZMinorCollector* minor_collector();
@@ -116,10 +117,10 @@ public:
   void remember_fields(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCollector* collector, ZGenerationId generation, ZPageAge age);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page, ZCollector* collector);
-  void free_pages(const ZArray<ZPage*>* pages, ZCollector* collector);
+  void free_page(ZPage* page, bool reclaimed);
+  void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
   void safe_destroy_page(ZPage* page);
   void recycle_page(ZPage* page);
 

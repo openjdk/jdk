@@ -188,8 +188,8 @@ void ZHeap::out_of_memory() {
   log_info(gc)("Out Of Memory (%s)", Thread::current()->name());
 }
 
-ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCollector* collector, ZGenerationId generation, ZPageAge age) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, collector, generation, age);
+ZPage* ZHeap::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, generation, age);
   if (page != NULL) {
     // Insert page table entry
     _page_table.insert(page);
@@ -205,18 +205,18 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
                 ZThread::id(), ZThread::name(), p2i(page), page->size());
 
-  free_page(page, NULL /* worker_generation */);
+  free_page(page, false /* reclaimed */);
 }
 
-void ZHeap::free_page(ZPage* page, ZCollector* collector) {
+void ZHeap::free_page(ZPage* page, bool reclaimed) {
   // Remove page table entry
   _page_table.remove(page);
 
   // Free page
-  _page_allocator.free_page(page, collector);
+  _page_allocator.free_page(page, reclaimed);
 }
 
-void ZHeap::free_pages(const ZArray<ZPage*>* pages, ZCollector* collector) {
+void ZHeap::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
   // Remove page table entries
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
@@ -224,7 +224,7 @@ void ZHeap::free_pages(const ZArray<ZPage*>* pages, ZCollector* collector) {
   }
 
   // Free pages
-  _page_allocator.free_pages(pages, collector);
+  _page_allocator.free_pages(pages, reclaimed);
 }
 
 void ZHeap::recycle_page(ZPage* page) {

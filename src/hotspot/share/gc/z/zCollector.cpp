@@ -53,12 +53,12 @@
 
 static const ZStatSubPhase ZSubPhaseConcurrentMajorRemapRootUncolored("Concurrent Major Remap Root Uncolored");
 
-ZCollector::ZCollector(ZCollectorId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
-    _workers(id == ZCollectorId::_major ? "ZWorkerMajor" : "ZWorkerMinor"),
+    _workers(worker_prefix),
     _mark(this, page_table),
     _relocate(this),
     _relocation_set(this),
@@ -115,7 +115,7 @@ void ZCollector::promote_pages(ZRelocationSetSelector* selector) {
 }
 
 void ZCollector::select_relocation_set() {
-  ZGenerationId collected_generation = ZHeap::heap()->get_generation(_id)->generation_id();
+  ZGenerationId collected_generation = ZHeap::heap()->generation(_id)->generation_id();
 
   // Register relocatable pages with selector
   ZRelocationSetSelector selector;
@@ -296,7 +296,7 @@ const char* ZCollector::phase_to_string() const {
 }
 
 ZMinorCollector::ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZCollector(ZCollectorId::_minor, page_table, page_allocator),
+    ZCollector(ZCollectorId::_minor, "ZWorkerMinor", page_table, page_allocator),
     _skip_mark_start(false) {}
 
 static const ZStatSubPhase ZPhasePauseMinorMarkStart1("Pause Minor Mark Start 1");
@@ -424,7 +424,7 @@ void ZMinorCollector::promote_reloc(ZPage* old_page, ZPage* new_page) {
 }
 
 ZMajorCollector::ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZCollector(ZCollectorId::_major, page_table, page_allocator),
+  ZCollector(ZCollectorId::_major, "ZWorkerMajor", page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),

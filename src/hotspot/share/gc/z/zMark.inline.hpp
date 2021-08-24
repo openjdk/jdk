@@ -81,7 +81,7 @@ inline void ZMark::mark_object(zaddress addr) {
   ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
   ZMarkStackEntry entry(untype(ZAddress::offset(addr)), !mark_before_push, inc_live, follow, finalizable);
 
-  assert(ZHeap::heap()->is_young(addr) == (_collector->id() == ZCollectorId::_minor), "Phase/object mismatch");
+  assert(ZHeap::heap()->is_young(addr) == _collector->is_minor(), "Phase/object mismatch");
 
   stacks->push(allocator(), &_stripes, stripe, entry, publish);
 }
