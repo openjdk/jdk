@@ -2161,7 +2161,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
-          if (cbuf) {
+        if (is64) {
             __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {

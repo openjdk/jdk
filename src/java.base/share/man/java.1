@@ -1747,6 +1747,9 @@ written when the recording is stopped, for example:
 \f[CB]/home/user/recordings/recording.jfr\f[R]
 .IP \[bu] 2
 \f[CB]c:\\recordings\\recording.jfr\f[R]
+.PP
+If \f[CB]%p\f[R] and/or \f[CB]%t\f[R] is specified in the filename, it expands to the JVM\[aq]s
+PID and the current timestamp, respectively.
 .RE
 .TP
 .B \f[CB]name=\f[R]\f[I]identifier\f[R]
@@ -1813,6 +1816,30 @@ is needed.
 .PP
 You can specify values for multiple parameters by separating them with a
 comma.
+Event settings and .jfc options can be specified using the following
+syntax:
+.TP
+.B \f[CB]option=\f[R]\f[I]value\f[R]
+Specifies the option value to modify.
+To list available options, use the \f[CB]JAVA_HOME\f[R]/bin/jfr tool.
+.RS
+.RE
+.TP
+.B \f[CB]event\-setting\f[R]=\f[I]value\f[R]
+Specifies the event setting value to modify.
+Use the form: #= To add a new event setting, prefix the event name with
+\[aq]+\[aq].
+.RS
+.RE
+.PP
+You can specify values for multiple event settings and .jfc options by
+separating them with a comma.
+In case of a conflict between a parameter and a .jfc option, the
+parameter will take precedence.
+The whitespace delimiter can be omitted for timespan values, i.e.
+20ms.
+For more information about the settings syntax, see Javadoc of the
+jdk.jfr package.
 .RE
 .TP
 .B \f[CB]\-XX:ThreadStackSize=\f[R]\f[I]size\f[R]

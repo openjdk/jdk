@@ -928,6 +928,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void setOpaque(boolean isOpaque) {
+        contentView.setWindowLayerOpaque(isOpaque);
         execute(ptr -> CWrapper.NSWindow.setOpaque(ptr, isOpaque));
         boolean isTextured = (peer == null) ? false : peer.isTextured();
         if (!isTextured) {

@@ -854,7 +854,7 @@ void JavaThread::collect_counters(jlong* array, int length) {
   for (int i = 0; i < length; i++) {
     array[i] = _jvmci_old_thread_counters[i];
   }
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
+  for (JavaThread* tp : ThreadsListHandle()) {
     if (jvmci_counters_include(tp)) {
       for (int i = 0; i < length; i++) {
         array[i] += tp->_jvmci_counters[i];
@@ -915,7 +915,7 @@ class VM_JVMCIResizeCounters : public VM_Operation {
     }
 
     // Now resize each threads array
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
+    for (JavaThread* tp : ThreadsListHandle()) {
       if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
         _failed = true;
         break;
@@ -1015,8 +1015,8 @@ JavaThread::JavaThread() :
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _jvmci_counters(nullptr),
-  _jvmci_reserved0(nullptr),
-  _jvmci_reserved1(nullptr),
+  _jvmci_reserved0(0),
+  _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
 #endif // INCLUDE_JVMCI
 

@@ -52,7 +52,7 @@ public class TestDockerMemoryMetrics {
         // container include the Java test class to be run along with the
         // resource to be examined and expected result.
 
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
         try {
             testMemoryLimit("200m");
             testMemoryLimit("1g");

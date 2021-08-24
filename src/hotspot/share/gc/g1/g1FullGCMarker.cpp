@@ -46,8 +46,6 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
   _mark_stats_cache.reset();
-  _oop_stack.initialize();
-  _objarray_stack.initialize();
 }
 
 G1FullGCMarker::~G1FullGCMarker() {

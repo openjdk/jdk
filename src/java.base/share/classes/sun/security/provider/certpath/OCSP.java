@@ -55,6 +55,8 @@ import sun.security.x509.PKIXExtensions;
 import sun.security.x509.URIName;
 import sun.security.x509.X509CertImpl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * This is a class that checks the revocation status of a certificate(s) using
  * OCSP. It is not a PKIXCertPathChecker and therefore can be used outside of
@@ -176,7 +178,7 @@ public final class OCSP {
         try {
             String encodedGetReq = responderURI.toString() + "/" +
                     URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
-                            "UTF-8");
+                                      UTF_8);
 
             if (encodedGetReq.length() <= 255) {
                 url = new URL(encodedGetReq);
