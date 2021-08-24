@@ -1256,6 +1256,7 @@ public class ClassReader {
       */
     private int readMethod(
             final ClassVisitor classVisitor, final Context context, final int methodInfoOffset) {
+        boolean haveCodeAttr = false;
         char[] charBuffer = context.charBuffer;
 
         // Read the access_flags, name_index and descriptor_index fields.
@@ -1307,8 +1308,12 @@ public class ClassReader {
             // The tests are sorted in decreasing frequency order (based on frequencies observed on
             // typical classes).
             if (Constants.CODE.equals(attributeName)) {
+                if (haveCodeAttr) {
+                    throw new ClassFormatError("Multiple Code attributes");
+                }
                 if ((context.parsingOptions & SKIP_CODE) == 0) {
                     codeOffset = currentOffset;
+                    haveCodeAttr = true;
                 }
             } else if (Constants.EXCEPTIONS.equals(attributeName)) {
                 exceptionsOffset = currentOffset;
@@ -1355,6 +1360,9 @@ public class ClassReader {
                 attributes = attribute;
             }
             currentOffset += attributeLength;
+        }
+        if (!haveCodeAttr) {
+            throw new ClassFormatError("No code attribute");
         }
 
         // Visit the method declaration.

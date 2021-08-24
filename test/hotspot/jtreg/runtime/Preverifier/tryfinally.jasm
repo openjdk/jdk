@@ -1,0 +1,59 @@
+
+super class tryfinally
+	version 45:3
+{
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+  public static Method main:"([Ljava/lang/String;)V"
+	stack 0 locals 1
+  {
+		invokestatic	Method tryCatchFinally:"()V";
+		return;
+  }
+  static Method tryCatchFinally:"()V"
+	stack 1 locals 3
+  {
+		try t0, t1;
+		invokestatic	Method tryItOut:"()V";
+		endtry t0;
+		jsr	L26;
+		goto	L32;
+		catch t0 java/lang/Exception;
+		astore_0;
+		aload_0;
+		invokestatic	Method handleExc:"(Ljava/lang/Exception;)V";
+		jsr	L26;
+		goto	L32;
+		endtry t1;
+		catch t1 #0;
+		astore_1;
+		jsr	L26;
+		aload_1;
+		athrow;
+	L26:	astore_2;
+		invokestatic	Method wrapItUp:"()V";
+		ret	2;
+	L32:	return;
+  }
+  public static Method tryItOut:"()V"
+	stack 0 locals 0
+  {
+		return;
+  }
+  public static Method handleExc:"(Ljava/lang/Exception;)V"
+	stack 0 locals 1
+  {
+		return;
+  }
+  public static Method wrapItUp:"()V"
+	stack 0 locals 0
+  {
+		return;
+  }
+
+} // end Class tryfinally

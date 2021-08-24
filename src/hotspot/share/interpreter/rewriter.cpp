@@ -503,6 +503,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
   // have to be rewritten, so we run the oopMapGenerator on the method
   if (nof_jsrs > 0) {
     method->set_has_jsrs();
+    //tty->print_cr("nof_jsrs = %d", nof_jsrs);
     // Second pass will revisit this method.
     assert(method->has_jsrs(), "didn't we just set this?");
   }

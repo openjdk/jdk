@@ -302,7 +302,6 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
 Symbol* Verifier::inference_verify(
     InstanceKlass* klass, char* message, size_t message_len, TRAPS) {
   JavaThread* thread = THREAD;
-
   verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 
   if (verify_func == NULL) {
@@ -312,7 +311,7 @@ Symbol* Verifier::inference_verify(
 
   ResourceMark rm(thread);
   log_info(verification)("Verifying class %s with old format", klass->external_name());
-
+  //tty->print_cr("Verifying class %s with old format", klass->external_name());
   jclass cls = (jclass) JNIHandles::make_local(thread, klass->java_mirror());
   jint result;
 
