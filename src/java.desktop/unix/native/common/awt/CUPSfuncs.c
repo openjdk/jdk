@@ -222,7 +222,7 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
                                                         jobject printObj)
 {
     cups_dest_t *dests;
-    int i, num_dests;
+    int i, j, num_dests;
     jstring utf_str;
     jclass cls;
     jobjectArray nameArray = NULL;
@@ -248,7 +248,14 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
     for (i = 0; i < num_dests; i++) {
             utf_str = JNU_NewStringPlatform(env, dests[i].name);
             if (utf_str == NULL) {
+                for (j = i - 1; j >= 0; j--) {
+                    utf_str = (*env)->GetObjectArrayElement(env, nameArray, j);
+                    (*env)->SetObjectArrayElement(env, nameArray, j, NULL);
+                    (*env)->DeleteLocalRef(env, utf_str);
+                    utf_str = NULL;
+                }
                 j2d_cupsFreeDests(num_dests, dests);
+                (*env)->DeleteLocalRef(env, nameArray);
                 DPRINTF("CUPSfuncs::bad alloc new string ->name\n", "")
                 JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
                 return NULL;
