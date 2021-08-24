@@ -264,7 +264,7 @@ private:
 
   static bool visit_metadata() {
     // Only visit metadata if we're marking through the major cycle
-    return ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
+    return ZHeap::heap()->major_collector()->is_phase_mark();
   }
 
   const bool _visit_metadata;

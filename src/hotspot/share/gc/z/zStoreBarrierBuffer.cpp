@@ -145,7 +145,7 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
 }
 
 bool ZStoreBarrierBuffer::is_inside_marking_snapshot(volatile zpointer* p) {
-  bool during_major_marking = ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
+  bool during_major_marking = ZHeap::heap()->major_collector()->is_phase_mark();
 
   if (!during_major_marking) {
     return false;

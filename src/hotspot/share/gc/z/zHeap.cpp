@@ -159,13 +159,13 @@ bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
   }
 
   // Could still be a from-object during an in-place relocation
-  if (_major_collector.phase() == ZPhase::Relocate) {
+  if (_major_collector.is_phase_relocate()) {
     const ZForwarding* const forwarding = _major_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
   }
-  if (_minor_collector.phase() == ZPhase::Relocate) {
+  if (_minor_collector.is_phase_relocate()) {
     const ZForwarding* const forwarding = _minor_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
@@ -339,7 +339,7 @@ void ZHeap::verify() {
   // Heap verification can only be done between mark end and
   // relocate start. This is the only window where all oop are
   // good and the whole heap is in a consistent state.
-  guarantee(ZHeap::heap()->major_collector()->phase() == ZPhase::MarkComplete, "Invalid phase");
+  guarantee(ZHeap::heap()->major_collector()->is_phase_mark_complete(), "Invalid phase");
 
   ZVerify::after_weak_processing();
 }

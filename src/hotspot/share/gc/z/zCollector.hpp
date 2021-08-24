@@ -37,12 +37,6 @@
 #include "gc/z/zWorkers.hpp"
 #include "memory/allocation.hpp"
 
-enum class ZPhase {
-  Mark,
-  MarkComplete,
-  Relocate
-};
-
 class ThreadClosure;
 class ZForwardingTable;
 class ZPage;
@@ -55,6 +49,12 @@ class ZCollector {
   friend class ZLiveMapTest;
 
 protected:
+  enum class Phase {
+    Mark,
+    MarkComplete,
+    Relocate
+  };
+
   ZCollectorId      _id;
   ZPageAllocator*   _page_allocator;
   ZPageTable*       _page_table;
@@ -68,7 +68,7 @@ protected:
   size_t            _used_low;
   ssize_t           _reclaimed;
 
-  ZPhase            _phase;
+  Phase             _phase;
   uint32_t          _seqnum;
 
   ZStatHeap         _stat_heap;
@@ -84,14 +84,17 @@ protected:
 
   ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
-  void log_phase_switch(ZPhase from, ZPhase to);
+  void log_phase_switch(Phase from, Phase to);
 
 public:
   // GC phases
-  void set_phase(ZPhase new_phase);
-  ZPhase phase() const;
-  uint32_t seqnum() const;
+  void set_phase(Phase new_phase);
+  bool is_phase_relocate() const;
+  bool is_phase_mark() const;
+  bool is_phase_mark_complete() const;
   const char* phase_to_string() const;
+
+  uint32_t seqnum() const;
 
   ZCollectorId id() const;
   bool is_minor() const;

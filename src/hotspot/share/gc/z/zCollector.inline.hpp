@@ -28,8 +28,16 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZPhase ZCollector::phase() const {
-  return _phase;
+inline bool ZCollector::is_phase_relocate() const {
+  return _phase == Phase::Relocate;
+}
+
+inline bool ZCollector::is_phase_mark() const {
+  return _phase == Phase::Mark;
+}
+
+inline bool ZCollector::is_phase_mark_complete() const {
+  return _phase == Phase::MarkComplete;
 }
 
 inline uint32_t ZCollector::seqnum() const {

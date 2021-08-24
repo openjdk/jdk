@@ -34,11 +34,11 @@
 
 #ifdef ASSERT
 static bool during_minor_mark() {
-  return ZHeap::heap()->minor_collector()->phase() == ZPhase::Mark;
+  return ZHeap::heap()->minor_collector()->is_phase_mark();
 }
 
 static bool during_major_mark() {
-  return ZHeap::heap()->major_collector()->phase() == ZPhase::Mark;
+  return ZHeap::heap()->major_collector()->is_phase_mark();
 }
 
 static bool during_any_mark() {

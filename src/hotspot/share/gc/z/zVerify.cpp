@@ -469,8 +469,8 @@ public:
 
 void ZVerify::objects(bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(ZHeap::heap()->minor_collector()->phase() == ZPhase::MarkComplete ||
-         ZHeap::heap()->major_collector()->phase() == ZPhase::MarkComplete, "Invalid phase");
+  assert(ZHeap::heap()->minor_collector()->is_phase_mark_complete() ||
+         ZHeap::heap()->major_collector()->is_phase_mark_complete(), "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   ZVerifyObjectClosure object_cl(verify_weaks);

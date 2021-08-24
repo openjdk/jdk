@@ -308,11 +308,11 @@ inline void ZHeap::mark_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_old(addr)) {
-    if (_major_collector.phase() == ZPhase::Mark) {
+    if (_major_collector.is_phase_mark()) {
       _major_collector.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
     }
   } else {
-    if (_minor_collector.phase() == ZPhase::Mark) {
+    if (_minor_collector.is_phase_mark()) {
       _minor_collector.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
     }
   }
@@ -320,7 +320,7 @@ inline void ZHeap::mark_object(zaddress addr) {
 
 template <bool follow, bool publish>
 inline void ZHeap::mark_minor_object(zaddress addr) {
-  assert(_minor_collector.phase() == ZPhase::Mark, "Wrong phase");
+  assert(_minor_collector.is_phase_mark(), "Wrong phase");
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_young(addr)) {
@@ -348,10 +348,10 @@ inline bool ZHeap::is_remembered(volatile zpointer* p) {
 
 inline void ZHeap::mark_follow_invisible_root(zaddress addr, size_t size) {
   if (is_old(addr)) {
-    assert(_major_collector.phase() == ZPhase::Mark, "Mark not allowed");
+    assert(_major_collector.is_phase_mark(), "Mark not allowed");
     _major_collector.mark_follow_invisible_root(addr, size);
   } else {
-    assert(_minor_collector.phase() == ZPhase::Mark, "Mark not allowed");
+    assert(_minor_collector.is_phase_mark(), "Mark not allowed");
     _minor_collector.mark_follow_invisible_root(addr, size);
   }
 }

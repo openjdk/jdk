@@ -65,7 +65,7 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _used_high(),
     _used_low(),
     _reclaimed(),
-    _phase(ZPhase::Relocate),
+    _phase(Phase::Relocate),
     _seqnum(1),
     _stat_heap(),
     _stat_cycle(),
@@ -230,7 +230,7 @@ ConcurrentGCTimer* ZCollector::timer() {
   return &_timer;
 }
 
-void ZCollector::log_phase_switch(ZPhase from, ZPhase to) {
+void ZCollector::log_phase_switch(Phase from, Phase to) {
   const char* str[] = {
     "Minor Mark Start",
     "Minor Mark End",
@@ -246,11 +246,11 @@ void ZCollector::log_phase_switch(ZPhase from, ZPhase to) {
     index += 3;
   }
 
-  if (to == ZPhase::Relocate) {
+  if (to == Phase::Relocate) {
     index += 2;
   }
 
-  if (from == ZPhase::Mark && to == ZPhase::MarkComplete) {
+  if (from == Phase::Mark && to == Phase::MarkComplete) {
     index += 1;
   }
 
@@ -259,17 +259,17 @@ void ZCollector::log_phase_switch(ZPhase from, ZPhase to) {
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
 
-void ZCollector::set_phase(ZPhase new_phase) {
+void ZCollector::set_phase(Phase new_phase) {
 #if 0
-  const ZPhase old_phase = _phase;
+  const Phase old_phase = _phase;
 
-  assert((new_phase == ZPhase::Mark && old_phase == ZPhase::Relocate) ||
-         (new_phase == ZPhase::MarkComplete && old_phase == ZPhase::Mark) ||
-         (new_phase == ZPhase::Relocate && old_phase == ZPhase::MarkComplete),
+  assert((new_phase == Phase::Mark && old_phase == Phase::Relocate) ||
+         (new_phase == Phase::MarkComplete && old_phase == Phase::Mark) ||
+         (new_phase == Phase::Relocate && old_phase == Phase::MarkComplete),
          "Invalid phase change");
 #endif
 
-  if (new_phase == ZPhase::Mark) {
+  if (new_phase == Phase::Mark) {
     // Increment sequence number
     _seqnum++;
   }
@@ -281,13 +281,13 @@ void ZCollector::set_phase(ZPhase new_phase) {
 
 const char* ZCollector::phase_to_string() const {
   switch (_phase) {
-  case ZPhase::Mark:
+  case Phase::Mark:
     return "Mark";
 
-  case ZPhase::MarkComplete:
+  case Phase::MarkComplete:
     return "MarkComplete";
 
-  case ZPhase::Relocate:
+  case Phase::Relocate:
     return "Relocate";
 
   default:
@@ -330,7 +330,7 @@ void ZMinorCollector::mark_start() {
   }
   { ZStatTimerMinor timer(ZPhasePauseMinorMarkStart2);
     // Enter mark phase
-  set_phase(ZPhase::Mark);
+  set_phase(Phase::Mark);
 
   // Reset marking information and mark roots
   _mark.start();
@@ -361,7 +361,7 @@ bool ZMinorCollector::mark_end() {
   }
 
   // Enter mark completed phase
-  set_phase(ZPhase::MarkComplete);
+  set_phase(Phase::MarkComplete);
 
   if (!ZResurrection::is_blocked()) {
     // FIXME: Always verify
@@ -387,7 +387,7 @@ void ZMinorCollector::relocate_start() {
   ZGlobalsPointers::flip_minor_relocate_start();
 
   // Enter relocate phase
-  set_phase(ZPhase::Relocate);
+  set_phase(Phase::Relocate);
 
 
   // Update statistics
@@ -454,7 +454,7 @@ void ZMajorCollector::mark_start() {
   _reference_processor.reset_statistics();
 
   // Enter mark phase
-  set_phase(ZPhase::Mark);
+  set_phase(Phase::Mark);
 
   // Reset marking information and mark roots
   _mark.start();
@@ -481,7 +481,7 @@ bool ZMajorCollector::mark_end() {
   }
 
   // Enter mark completed phase
-  set_phase(ZPhase::MarkComplete);
+  set_phase(Phase::MarkComplete);
 
   // Verify after mark
   ZVerify::after_mark();
@@ -567,7 +567,7 @@ void ZMajorCollector::relocate_start() {
   ZGlobalsPointers::flip_major_relocate_start();
 
   // Enter relocate phase
-  set_phase(ZPhase::Relocate);
+  set_phase(Phase::Relocate);
 
   // Update statistics
   stat_heap()->set_at_relocate_start(_page_allocator->stats(this));
