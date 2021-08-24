@@ -63,11 +63,6 @@ public class CPlatformView extends CFRetainedResource {
 
         this.windowLayer = CGraphicsDevice.usingMetalPipeline()? createMTLLayer() : createCGLayer();
 
-        // if the peer was made translucent before the window layer creation,
-        // we need to change the layer opacity accordingly
-        if (peer.isTranslucent()) {
-            this.windowLayer.setOpaque(false);
-        }
         setPtr(nativeCreateView(0, 0, 0, 0, getWindowLayerPtr()));
     }
 

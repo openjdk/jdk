@@ -334,7 +334,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         responder = createPlatformResponder();
         contentView.initialize(peer, responder);
-
+        if (peer != null) { // Not applicable to CWarningWindow
+            peer.setTextured(IS(TEXTURED, styleBits));
+        }
         Rectangle bounds;
         if (!IS(DECORATED, styleBits)) {
             // For undecorated frames the move/resize event does not come if the frame is centered on the screen
@@ -529,8 +531,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, IS_MODAL, true);
             }
         }
-
-        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }

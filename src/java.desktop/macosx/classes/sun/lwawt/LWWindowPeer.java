@@ -521,7 +521,7 @@ public class LWWindowPeer
     public final void setTextured(final boolean isTextured) {
         if (textured != isTextured) {
             textured = isTextured;
-            if (isVisible()) updateOpaque();
+            updateOpaque();
         }
     }
 
