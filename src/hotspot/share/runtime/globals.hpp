@@ -1400,14 +1400,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(intx, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                \
           "Extra method data trap entries for speculation")                 \
                                                                             \
-  develop(intx, InlineFrequencyRatio,    20,                                \
+  product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, InlineFrequencyCount, DIAGNOSTIC,                        \
-          "Count of call site execution necessary to trigger frequent "     \
-          "inlining")                                                       \
-          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \
