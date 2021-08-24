@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=passive
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -44,7 +44,7 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=default
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -67,7 +67,7 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=iu
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
