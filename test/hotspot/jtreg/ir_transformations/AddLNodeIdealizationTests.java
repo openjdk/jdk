@@ -121,15 +121,6 @@ public class AddLNodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks (a - b) + (b - c) => (a - c)
-    public long simpleEight(long a, long b, long c) {
-        return (a - b) + (b - c);
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
     // Checks (a - b) + (c - a) => (c - b)
     public long simpleNine(long a, long b, long c) {
         return (a - b) + (c - a);
