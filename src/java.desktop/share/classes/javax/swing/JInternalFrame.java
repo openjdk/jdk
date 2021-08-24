@@ -189,7 +189,7 @@ public class JInternalFrame extends JComponent implements
     /**
      * The icon that is displayed when this internal frame is iconified.
      * Subclassers must ensure this is set to a non-null value
-     * during construction and nor subsequently set this to null.
+     * during construction and not subsequently set this to null.
      * @see #iconable
      */
     protected JDesktopIcon desktopIcon;
