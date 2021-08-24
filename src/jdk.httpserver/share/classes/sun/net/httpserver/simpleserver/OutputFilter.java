@@ -123,7 +123,8 @@ public final class OutputFilter extends Filter {
             filter.doFilter(exchange, chain);
         } catch (Throwable t) {
             if (!outputLevel.equals(OutputLevel.NONE)) {
-                reportError(getMessage("err.server.handle.failed", t.getMessage()));
+                reportError(ResourceBundleHelper.getMessage("err.server.handle.failed",
+                        t.getMessage()));
             }
             throw t;
         }
@@ -133,26 +134,6 @@ public final class OutputFilter extends Filter {
     public String description() { return filter.description(); }
 
     private void reportError(String message) {
-        printStream.println(getMessage("error.prefix") + " " + message);
-    }
-
-    private static String getMessage(String key, Object... args) {
-        try {
-            return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
-        } catch (MissingResourceException e) {
-            throw new InternalError("Missing message: " + key);
-        }
-    }
-
-    private static class ResourceBundleHelper {
-        static final ResourceBundle bundle;
-
-        static {
-            try {
-                bundle = ResourceBundle.getBundle("sun.net.httpserver.simpleserver.resources.simpleserver");
-            } catch (MissingResourceException e) {
-                throw new InternalError("Cannot find simpleserver resource bundle for locale " + Locale.getDefault());
-            }
-        }
+        printStream.println(ResourceBundleHelper.getMessage("error.prefix") + " " + message);
     }
 }

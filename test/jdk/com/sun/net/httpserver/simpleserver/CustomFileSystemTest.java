@@ -121,17 +121,12 @@ public class CustomFileSystemTest {
 
     @Test
     public void testDirectoryGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 <li><a href="aFile.txt">aFile.txt</a></li>
                 </ul>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testDirectoryGET");
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
@@ -180,17 +175,12 @@ public class CustomFileSystemTest {
     @Test
     public void testDirectoryHEAD() throws Exception {
         var expectedLength = Integer.toString(
-                """
-                <!DOCTYPE html>
-                <html>
-                <body>
+                (openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 <li><a href="aFile.txt">aFile.txt</a></li>
                 </ul>
-                </body>
-                </html>
-                """.getBytes(UTF_8).length);
+                """ + closeHTML).getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testDirectoryHEAD");
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
@@ -214,28 +204,18 @@ public class CustomFileSystemTest {
 
     @DataProvider
     public Object[][] indexFiles() {
-        var fileContent = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var fileContent = openHTML + """
                 <h1>This is an index file</h1>
-                </body>
-                </html>
-                """;
-        var dirListing = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+                """ + closeHTML;
+        var dirListing = openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
-                </ul>
-                </body>
-                </html>
-                """;
+                </ul>                
+                """ + closeHTML;
         return new Object[][] {
-                {"1", "index.html", "text/html",                "77", fileContent, true},
-                {"2", "index.htm",  "text/html",                "77", fileContent, true},
-                {"3", "index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
+                {"1", "index.html", "text/html",                "116", fileContent, true},
+                {"2", "index.htm",  "text/html",                "116", fileContent, true},
+                {"3", "index.txt",  "text/html; charset=UTF-8", "134", dirListing,  false}
         };
     }
 
@@ -298,15 +278,10 @@ public class CustomFileSystemTest {
 
     @Test
     public void testInvalidRequestURIGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;aFile?#.txt</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testInvalidRequestURIGET");
 
@@ -326,15 +301,10 @@ public class CustomFileSystemTest {
 
     @Test
     public void testNotFoundGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;doesNotExist.txt</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundGET");
 
@@ -354,15 +324,10 @@ public class CustomFileSystemTest {
 
     @Test
     public void testNotFoundHEAD() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;doesNotExist.txt</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testNotFoundHEAD");
 
@@ -383,15 +348,10 @@ public class CustomFileSystemTest {
 
     @Test
     public void testSymlinkGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;symlink</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createDirectoryInCustomFs("testSymlinkGET");
         var symlink = root.resolve("symlink");
@@ -417,17 +377,12 @@ public class CustomFileSystemTest {
         var root = createDirectoryInCustomFs("testHiddenFileGET");
         var file = createHiddenFile(root);
         var fileName = file.getFileName().toString();
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;""" + fileName +
                 """
                 </p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
@@ -503,6 +458,20 @@ public class CustomFileSystemTest {
         }
         return dir.toAbsolutePath();
     }
+
+    static final String openHTML = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <meta charset="utf-8"/>
+                </head>
+                <body>
+                """;
+
+    static final String closeHTML = """        
+                </body>
+                </html>
+                """;
 
     static URI uri(HttpServer server, String path) {
         return URIBuilder.newBuilder()

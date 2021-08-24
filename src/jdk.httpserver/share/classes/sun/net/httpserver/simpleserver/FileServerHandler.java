@@ -127,8 +127,9 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private void handleNotFound(HttpExchange exchange) throws IOException {
+        String fileNotFound = ResourceBundleHelper.getMessage("html.not.found");
         var bytes = (openHTML
-                + "<h1>File not found</h1>\n"
+                + "<h1>" + fileNotFound + "</h1>\n"
                 + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "</p>\n"
                 + closeHTML).getBytes(UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
@@ -272,6 +273,9 @@ public final class FileServerHandler implements HttpHandler {
     private static final String openHTML = """
             <!DOCTYPE html>
             <html>
+            <head>
+            <meta charset="utf-8"/>
+            </head>
             <body>
             """;
 
@@ -281,15 +285,16 @@ public final class FileServerHandler implements HttpHandler {
             """;
 
     private static String dirListing(HttpExchange exchange, Path path) throws IOException {
+        String dirListing = ResourceBundleHelper.getMessage("html.dir.list");
         var sb = new StringBuffer(openHTML
-                + "<h1>Directory listing for "
+                + "<h1>" + dirListing + " "
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
                 + "</h1>\n"
                 + "<ul>\n");
         try (var paths = Files.list(path)) {
             paths.filter(p -> !isHiddenOrSymLink(p))
-                 .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
-                 .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+                 .map(p -> path.toUri().relativize(p.toUri()))
+                 .forEach(uri -> sb.append("<li><a href=\"" + uri.toASCIIString() + "\">" + sanitize.apply(uri.getPath(), chars) + "</a></li>\n"));
         }
         sb.append("</ul>\n");
         sb.append(closeHTML);

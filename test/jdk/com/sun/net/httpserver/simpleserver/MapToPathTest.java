@@ -126,26 +126,30 @@ public class MapToPathTest {
                 var res1 = client.send(req1, BodyHandlers.ofString());
                 assertEquals(res1.statusCode(), 200);
                 assertEquals(res1.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(218L));
+                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(257L));
                 assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/../")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
                 assertEquals(res2.statusCode(), 404);  // cannot escape root
 
-                var req3 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:://")).build();
+                var req3 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c://")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
                 assertEquals(res3.statusCode(), 404);  // not found
 
-                var req4 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
+                var req4 = HttpRequest.newBuilder(uri(server, "/foo/file:" + TEST_DIR.getParent())).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // not found
 
-                var req5 = HttpRequest.newBuilder(uri(server, "/foo")).build();
+                var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
-                assertEquals(res5.statusCode(), 301);  // redirect
-                assertEquals(res5.headers().firstValue("content-length").get(), "0");
-                assertEquals(res5.headers().firstValue("location").get(), "/foo/");
+                assertEquals(res5.statusCode(), 404);  // not found
+
+                var req6 = HttpRequest.newBuilder(uri(server, "/foo")).build();
+                var res6 = client.send(req6, BodyHandlers.ofString());
+                assertEquals(res6.statusCode(), 301);  // redirect
+                assertEquals(res6.headers().firstValue("content-length").get(), "0");
+                assertEquals(res6.headers().firstValue("location").get(), "/foo/");
             } finally {
                 server.stop(0);
             }
@@ -314,7 +318,7 @@ public class MapToPathTest {
                 var res = client.send(req, BodyHandlers.ofString());
                 assertEquals(res.statusCode(), 200);
                 assertEquals(res.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-                assertEquals(res.headers().firstValue("content-length").get(), Long.toString(218L));
+                assertEquals(res.headers().firstValue("content-length").get(), Long.toString(257L));
                 assertEquals(res.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
             }
         } finally {

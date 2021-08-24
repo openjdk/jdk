@@ -61,10 +61,10 @@ import java.util.concurrent.Executors;
  * module.
  */
 final class SimpleFileServerImpl {
-    private static final InetAddress ADDR = null;
-    private static final int PORT = 8000;
-    private static final Path ROOT = Path.of("").toAbsolutePath();
-    private static final OutputLevel OUTPUT_LEVEL = OutputLevel.INFO;
+    private static final InetAddress DEFAULT_ADDR = null;
+    private static final int DEFAULT_PORT = 8000;
+    private static final Path DEFAULT_ROOT = Path.of("").toAbsolutePath();
+    private static final OutputLevel DEFAULT_OUTPUT_LEVEL = OutputLevel.INFO;
 
     private SimpleFileServerImpl() { throw new AssertionError(); }
 
@@ -84,10 +84,10 @@ final class SimpleFileServerImpl {
         }
         Out out = new Out(writer);
 
-        InetAddress addr = ADDR;
-        int port = PORT;
-        Path root = ROOT;
-        OutputLevel outputLevel = OUTPUT_LEVEL;
+        InetAddress addr = DEFAULT_ADDR;
+        int port = DEFAULT_PORT;
+        Path root = DEFAULT_ROOT;
+        OutputLevel outputLevel = DEFAULT_OUTPUT_LEVEL;
 
         // parse options
         Iterator<String> options = Arrays.asList(args).iterator();
@@ -114,14 +114,14 @@ final class SimpleFileServerImpl {
                 }
             }
         } catch (AssertionError ae) {
-            out.reportError(getMessage("err.unknown.option", option));
+            out.reportError(ResourceBundleHelper.getMessage("err.unknown.option", option));
             out.showUsage();
             return Startup.CMDERR.statusCode;
         } catch (NoSuchElementException nsee) {
-            out.reportError(getMessage("err.missing.arg", option));
+            out.reportError(ResourceBundleHelper.getMessage("err.missing.arg", option));
             return Startup.CMDERR.statusCode;
         } catch (Exception e) {
-            out.reportError(getMessage("err.invalid.arg", option, optionArg));
+            out.reportError(ResourceBundleHelper.getMessage("err.invalid.arg", option, optionArg));
             e.printStackTrace(out.writer);
             return Startup.CMDERR.statusCode;
         } finally {
@@ -136,7 +136,7 @@ final class SimpleFileServerImpl {
             server.start();
             out.printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
         } catch (Throwable t) {
-            out.reportError(getMessage("err.server.config.failed", t.getMessage()));
+            out.reportError(ResourceBundleHelper.getMessage("err.server.config.failed", t.getMessage()));
             return Startup.SYSERR.statusCode;
         } finally {
             out.flush();
@@ -170,40 +170,20 @@ final class SimpleFileServerImpl {
         }
 
         void showUsage() {
-            writer.println(getMessage("usage"));
+            writer.println(ResourceBundleHelper.getMessage("usage"));
         }
 
         void showHelp() {
-            writer.println(getMessage("usage"));
-            writer.println(getMessage("options"));
+            writer.println(ResourceBundleHelper.getMessage("usage"));
+            writer.println(ResourceBundleHelper.getMessage("options"));
         }
 
         void reportError(String message) {
-            writer.println(getMessage("error.prefix") + " " + message);
+            writer.println(ResourceBundleHelper.getMessage("error.prefix") + " " + message);
         }
 
         void flush() {
             writer.flush();
-        }
-    }
-
-    private static String getMessage(String key, Object... args) {
-        try {
-            return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
-        } catch (MissingResourceException e) {
-            throw new InternalError("Missing message: " + key);
-        }
-    }
-
-    private static class ResourceBundleHelper {
-        static final ResourceBundle bundle;
-
-        static {
-            try {
-                bundle = ResourceBundle.getBundle("sun.net.httpserver.simpleserver.resources.simpleserver");
-            } catch (MissingResourceException e) {
-                throw new InternalError("Cannot find simpleserver resource bundle for locale " + Locale.getDefault());
-            }
         }
     }
 

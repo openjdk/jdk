@@ -113,16 +113,11 @@ public class ZipFileSystemTest {
 
     @Test
     public void testDirectoryGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 </ul>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testDirectoryGET.zip"));
         var lastModified = getLastModified(root);
@@ -175,16 +170,11 @@ public class ZipFileSystemTest {
     @Test
     public void testDirectoryHEAD() throws Exception {
         var expectedLength = Integer.toString(
-                """
-                <!DOCTYPE html>
-                <html>
-                <body>
+                (openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 </ul>
-                </body>
-                </html>
-                """.getBytes(UTF_8).length);
+                """ + closeHTML).getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testDirectoryHEAD.zip"));
         var lastModified = getLastModified(root);
 
@@ -210,28 +200,18 @@ public class ZipFileSystemTest {
 
     @DataProvider
     public Object[][] indexFiles() {
-        var fileContent = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var fileContent = openHTML + """
                 <h1>This is an index file</h1>
-                </body>
-                </html>
-                """;
-        var dirListing = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+                """ + closeHTML;
+        var dirListing = openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 </ul>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         return new Object[][] {
-                {"1", "index.html", "text/html",                "77", fileContent, true},
-                {"2", "index.htm",  "text/html",                "77", fileContent, true},
-                {"3", "index.txt",  "text/html; charset=UTF-8", "95", dirListing,  false}
+                {"1", "index.html", "text/html",                "116", fileContent, true},
+                {"2", "index.htm",  "text/html",                "116", fileContent, true},
+                {"3", "index.txt",  "text/html; charset=UTF-8", "134", dirListing,  false}
         };
     }
 
@@ -277,15 +257,10 @@ public class ZipFileSystemTest {
 
     @Test
     public void testInvalidRequestURIGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;aFile?#.txt</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testInvalidRequestURIGET.zip"));
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
@@ -306,15 +281,10 @@ public class ZipFileSystemTest {
 
     @Test
     public void testNotFoundGET() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;doesNotExist.txt</p>
-                </body>
-                </html>
-                """;
+                """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundGET.zip"));
 
@@ -336,15 +306,11 @@ public class ZipFileSystemTest {
 
     @Test
     public void testNotFoundHEAD() throws Exception {
-        var expectedBody = """
-                <!DOCTYPE html>
-                <html>
-                <body>
+        var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;doesNotExist.txt</p>
-                </body>
-                </html>
-                """;
+                """
+                + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = createZipFs(TEST_DIR.resolve("testNotFoundHEAD.zip"));
 
@@ -420,6 +386,20 @@ public class ZipFileSystemTest {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
     }
+
+    static final String openHTML = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <meta charset="utf-8"/>
+                </head>
+                <body>
+                """;
+
+    static final String closeHTML = """        
+                </body>
+                </html>
+                """;
 
     static URI uri(HttpServer server, String path) {
         return URIBuilder.newBuilder()
