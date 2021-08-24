@@ -251,11 +251,6 @@ Node* PhaseIdealLoop::clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* 
     Node* clone = next->clone();
     _igvn.register_new_node_with_optimizer(clone);
     old_new->map(next->_idx, clone);
-    if (next->in(0) == uncommon_proj) {
-      // Found the last data node in the chain. Do not break, because we might have some unprocessed nodes
-      // on some path.
-      continue;
-    }
     for (uint k = 1; k < next->req(); k++) {
       Node* in = next->in(k);
       if (!in->is_Phi() && get_ctrl(in) == uncommon_proj) {
@@ -270,20 +265,21 @@ Node* PhaseIdealLoop::clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* 
     Node* clone = old_new->at(next->_idx);
     assert(clone != NULL && clone->_idx >= last_idx, "must exist and be a proper clone");
     if (next->in(0) == uncommon_proj) {
-      // For the last data node in the chain, we only need to update the control input to the new uncommon trap projection.
+      // All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
+      // projection (could not only be the last data node in the chain but also, for example, a DivNode within the chain).
       _igvn.replace_input_of(clone, 0, if_uct);
       set_ctrl(clone, if_uct);
-    } else {
-      // All other nodes require a rewiring to the cloned input nodes.
-      for (uint k = 1; k < next->req(); k++) {
-        Node* in = next->in(k);
-        if (!in->is_Phi()) {
-          assert(!in->is_CFG(), "must be data node");
-          Node* in_clone = old_new->at(in->_idx);
-          if (in_clone != NULL && in_clone->_idx >= last_idx) {
-            _igvn.replace_input_of(clone, k, in_clone);
-            set_ctrl(clone, if_uct);
-          }
+    }
+
+    // Rewire the inputs of the cloned nodes to the old nodes to the new clones.
+    for (uint k = 1; k < next->req(); k++) {
+      Node* in = next->in(k);
+      if (!in->is_Phi()) {
+        assert(!in->is_CFG(), "must be data node");
+        Node* in_clone = old_new->at(in->_idx);
+        if (in_clone != NULL && in_clone->_idx >= last_idx) {
+          _igvn.replace_input_of(clone, k, in_clone);
+          set_ctrl(clone, if_uct);
         }
       }
     }
