@@ -156,15 +156,15 @@ public class ChannelInputStream
     }
 
     private static long transfer(FileChannel src, FileChannel dst) throws IOException {
-        long bytesWritten = 0L;
-        long srcPos = src.position();
+        long initialPos = src.position();
+        long pos = initialPos;
         try {
-            while (srcPos + bytesWritten < src.size()) {
-                bytesWritten += src.transferTo(srcPos + bytesWritten, Long.MAX_VALUE, dst);
+            while (pos < src.size()) {
+                pos += src.transferTo(pos, Long.MAX_VALUE, dst);
             }
-            return bytesWritten;
         } finally {
-            src.position(srcPos + bytesWritten);
+            src.position(pos);
         }
+        return pos - initialPos;
     }
 }
