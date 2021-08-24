@@ -28,7 +28,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/concurrentHashTable.inline.hpp"
 
 
 uintx G1EvacuationFailureRegions::HashTableConfig::get_hash(Value const& value, bool* is_dead) {
@@ -53,19 +52,9 @@ G1EvacuationFailureRegions::~G1EvacuationFailureRegions() {
 }
 
 void G1EvacuationFailureRegions::initialize() {
-  Atomic::store(&_evac_failure_regions_cur_length, (size_t)0);
+  Atomic::store(&_evac_failure_regions_cur_length, 0u);
   _table = new HashTable();
   _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, G1CollectedHeap::heap()->max_reserved_regions(), mtGC);
-}
-
-void G1EvacuationFailureRegions::record(HeapRegion* region) {
-  HashTableLookUp lookup(region->hrm_index());
-  uint idx = region->hrm_index();
-  bool success = _table->insert(Thread::current(), lookup, idx);
-  if (success) {
-    size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
-    _evac_failure_regions[offset] = idx;
-  }
 }
 
 void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure, HeapRegionClaimer* _hrclaimer, uint worker_id) {
@@ -95,7 +84,16 @@ void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure, HeapReg
 }
 
 void G1EvacuationFailureRegions::reset() {
-  Atomic::store(&_evac_failure_regions_cur_length, (size_t)0);
+  Atomic::store(&_evac_failure_regions_cur_length, 0u);
   delete _table;
   _table = new HashTable();
 }
+
+static void found_func(uint* region_idx) { }
+
+bool G1EvacuationFailureRegions::contains(uint region_idx) const {
+  HashTableLookUp lookup(region_idx);
+  return _table->get(Thread::current(), lookup, found_func);
+  return false;
+}
+

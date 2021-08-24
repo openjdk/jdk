@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
 
 #include "utilities/concurrentHashTable.hpp"
+#include "utilities/concurrentHashTable.inline.hpp"
 
-class HeapRegion;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
@@ -61,15 +61,28 @@ class G1EvacuationFailureRegions {
 
   HashTable* _table;
   uint* _evac_failure_regions;
-  volatile size_t _evac_failure_regions_cur_length;
+  volatile uint _evac_failure_regions_cur_length;
 
 public:
   G1EvacuationFailureRegions();
   ~G1EvacuationFailureRegions();
   void initialize();
-  void record(HeapRegion* region);
+
+  bool record(uint region_idx) {
+    HashTableLookUp lookup(region_idx);
+    bool success = _table->insert(Thread::current(), lookup, region_idx);
+    if (success) {
+      size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
+      _evac_failure_regions[offset] = region_idx;
+    }
+    return success;
+  }
   void par_iterate(HeapRegionClosure* closure, HeapRegionClaimer* _hrclaimer, uint worker_id);
   void reset();
+  bool contains(uint region_idx) const;
+  uint num_regions_failed_evacuation() const {
+    return Atomic::load(&_evac_failure_regions_cur_length);
+  }
 };
 
 

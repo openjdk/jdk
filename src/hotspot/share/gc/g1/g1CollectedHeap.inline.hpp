@@ -196,19 +196,15 @@ bool G1CollectedHeap::evacuation_failed() const {
 }
 
 bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
-  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
+  return _evac_failure_regions.contains(region_idx);
 }
 
 uint G1CollectedHeap::num_regions_failed_evacuation() const {
-  return Atomic::load(&_num_regions_failed_evacuation);
+  return _evac_failure_regions.num_regions_failed_evacuation();
 }
 
 bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
-  bool result = _regions_failed_evacuation.par_set_bit(region_idx, memory_order_relaxed);
-  if (result) {
-    Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
-  }
-  return result;
+  return _evac_failure_regions.record(region_idx);
 }
 
 #ifndef PRODUCT

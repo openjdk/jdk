@@ -1475,8 +1475,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm_thread(NULL),
   _cr(NULL),
   _task_queues(NULL),
-  _num_regions_failed_evacuation(0),
-  _regions_failed_evacuation(mtGC),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -1770,8 +1768,6 @@ jint G1CollectedHeap::initialize() {
   _preserved_marks_set.init(ParallelGCThreads);
 
   _collection_set.initialize(max_reserved_regions());
-
-  _regions_failed_evacuation.resize(max_regions());
 
   _evac_failure_regions.initialize();
 
@@ -3133,14 +3129,6 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   _preserved_marks_set.get(worker_id)->push_if_necessary(obj, m);
 }
 
-void G1CollectedHeap::record_evacuation_failure_region(HeapRegion* region) {
-  _evac_failure_regions.record(region);
-}
-
-void G1CollectedHeap::reset_evacuation_failure_regions() {
-  _evac_failure_regions.reset();
-}
-
 void G1CollectedHeap::iterate_evacuation_failure_regions_par(HeapRegionClosure* closure,
                                                              HeapRegionClaimer* claimer,
                                                              uint worker_id) {
@@ -3529,8 +3517,6 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
 
   _bytes_used_during_gc = 0;
 
-  Atomic::store(&_num_regions_failed_evacuation, 0u);
-
   gc_prologue(false);
 
   {
@@ -3548,7 +3534,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
     phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
   }
 
-  _regions_failed_evacuation.clear();
+  _evac_failure_regions.reset();
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();
@@ -3937,7 +3923,6 @@ void G1CollectedHeap::post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks
   {
     G1PostEvacuateCollectionSetCleanupTask2 cl(preserved_marks, rdcqs, evacuation_info, surviving_young_words);
     run_batch_task(&cl);
-    G1CollectedHeap::heap()->reset_evacuation_failure_regions();
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
 }

@@ -876,11 +876,6 @@ public:
   G1ScannerTasksQueueSet *_task_queues;
 
   G1EvacuationFailureRegions _evac_failure_regions;
-  // TODO: FIXME: reconsider below classes.
-  // Number of regions evacuation failed in the current collection.
-  volatile uint _num_regions_failed_evacuation;
-  // Records for every region on the heap whether evacuation failed for it.
-  CHeapBitMap _regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 
@@ -890,8 +885,6 @@ public:
   // word being overwritten with a self-forwarding-pointer.
   void preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m);
 
-  void record_evacuation_failure_region(HeapRegion* region);
-  void reset_evacuation_failure_regions();
   void iterate_evacuation_failure_regions_par(HeapRegionClosure* closure,
                                               HeapRegionClaimer* claimer,
                                               uint worker_id);
