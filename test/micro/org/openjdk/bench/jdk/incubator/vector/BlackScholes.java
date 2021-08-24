@@ -81,13 +81,13 @@ public class BlackScholes {
         put = new float[size];
     }
 
-    static float Y = 0.2316419f;
-    static float A1 = 0.31938153f;
-    static float A2 = -0.356563782f;
-    static float A3 = 1.781477937f;
-    static float A4 = -1.821255978f;
-    static float A5 = 1.330274429f;
-    static float PI = (float)Math.PI;
+    static final float Y = 0.2316419f;
+    static final float A1 = 0.31938153f;
+    static final float A2 = -0.356563782f;
+    static final float A3 = 1.781477937f;
+    static final float A4 = -1.821255978f;
+    static final float A5 = 1.330274429f;
+    static final float PI = (float)Math.PI;
 
     float cdf(float inp) {
         float x = inp;
