@@ -396,6 +396,7 @@ public class CUPSPrinter  {
                 }
                 return printerURIs;
             }
+            return null;
         }
 
         try {
