@@ -581,42 +581,53 @@ public:
   static size_t chunk_size() { return M; }
 
 private:
-  // Heap region closure used for clearing the given mark bitmap.
+  // Heap region closure used for clearing the _next_mark_bitmap.
   class G1ClearBitmapHRClosure : public HeapRegionClosure {
   private:
-    G1CMBitMap* _bitmap;
     G1ConcurrentMark* _cm;
+    G1CMBitMap* _bitmap;
+    bool _suspendible; // If suspendible, do yield checks.
 
-  bool has_aborted() {
-    if (_cm != NULL) {
-      _cm->do_yield_check();
-      return _cm->has_aborted();
+    bool suspendible() {
+      return _suspendible;
     }
-    return false;
-  }
 
-  HeapWord* region_clear_limit(HeapRegion* r) {
-    // During a Concurrent Undo Mark cycle, the _next_mark_bitmap is  cleared
-    // without swapping with the _prev_mark_bitmap. Therefore, the per region
-    // next_top_at_mark_start and live_words data are current wrt
-    // _next_mark_bitmap. We use this information to only clear ranges of the
-    // bitmap that require clearing.
-    if (_cm != NULL && _cm->cm_thread()->in_undo_mark()) {
-      // No need to clear bitmaps for empty regions.
-      if (_cm->live_words(r->hrm_index()) == 0) {
-        assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
-        return r->bottom();
+    bool is_clear_concurrent_undo() {
+      return suspendible() && _cm->cm_thread()->in_undo_mark();
+    }
+
+    bool has_aborted() {
+      if (suspendible()) {
+        _cm->do_yield_check();
+        return _cm->has_aborted();
       }
-      // Otherwise, we only clear up to the next_top_at_mark_start
-      assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
-      return r->next_top_at_mark_start();
+      return false;
     }
-    return r->end();
-  }
+
+    HeapWord* region_clear_limit(HeapRegion* r) {
+      // During a Concurrent Undo Mark cycle, the _next_mark_bitmap is  cleared
+      // without swapping with the _prev_mark_bitmap. Therefore, the per region
+      // next_top_at_mark_start and live_words data are current wrt
+      // _next_mark_bitmap. We use this information to only clear ranges of the
+      // bitmap that require clearing.
+      if (is_clear_concurrent_undo()) {
+        // No need to clear bitmaps for empty regions.
+        if (_cm->live_words(r->hrm_index()) == 0) {
+          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
+          return r->bottom();
+        }
+        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams"); 
+      }
+      return r->end();
+    }
 
   public:
-    G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _bitmap(bitmap), _cm(cm) {
-    }
+    G1ClearBitmapHRClosure(G1ConcurrentMark* cm, bool suspendible) :
+      HeapRegionClosure(),
+      _cm(cm),
+      _bitmap(cm->next_mark_bitmap()),
+      _suspendible(suspendible)
+    { }
 
     virtual bool do_heap_region(HeapRegion* r) {
       if (has_aborted()) {
@@ -639,8 +650,8 @@ private:
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
         // clearing to get some checking in the product.
-        assert(_cm == NULL || _cm->cm_thread()->in_progress(), "invariant");
-        assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+        assert(!suspendible() || _cm->cm_thread()->in_progress(), "invariant");
+        assert(!suspendible() || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 
         // Abort iteration if necessary.
         if (has_aborted()) {
@@ -658,9 +669,9 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1CMBitMap* bitmap, G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
     AbstractGangTask("G1 Clear Bitmap"),
-    _cl(bitmap, suspendible ? cm : NULL),
+    _cl(cm, suspendible),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
   { }
@@ -669,7 +680,6 @@ public:
     SuspendibleThreadSetJoiner sts_join(_suspendible);
     G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hr_claimer, worker_id);
   }
-
 
   bool is_complete() {
     return _cl.is_complete();
@@ -684,7 +694,7 @@ void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers, bool may_yield) {
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
-  G1ClearBitMapTask cl(_next_mark_bitmap, this, num_workers, may_yield);
+  G1ClearBitMapTask cl(this, num_workers, may_yield);
 
   log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
