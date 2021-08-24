@@ -546,9 +546,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private int calculateClassDumpRecordSize(Klass k) throws IOException {
-
+        // tag + javaMirror + DUMMY_STACK_TRACE_ID + super
         int size = (int)BYTE_SIZE + (int)INT_SIZE + (int)OBJ_ID_SIZE * 2;
-
         if (k instanceof InstanceKlass) {
             InstanceKlass ik = (InstanceKlass) k;
             List<Field> fields = getInstanceFields(ik);
@@ -556,9 +555,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             List<Field> staticFields = new ArrayList<>();
             List<Field> instanceFields = new ArrayList<>();
             Iterator<Field> itr = null;
-
+            // loader + signer + protectionDomain + 2 reserved + fieldSize + cpool entris number
             size += OBJ_ID_SIZE * 5 + INT_SIZE + SHORT_SIZE;
-
             for (itr = declaredFields.iterator(); itr.hasNext();) {
                 Field field = itr.next();
                 if (field.isStatic()) {
@@ -567,10 +565,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                     instanceFields.add(field);
                 }
             }
-
             // size of static field descriptors
             size += calculateFieldDescriptorsDumpRecordSize(staticFields, ik);
-
             // size of instance field descriptors
             size += calculateFieldDescriptorsDumpRecordSize(instanceFields, null);
         } else {
@@ -582,12 +578,12 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private int calculateFieldDescriptorsDumpRecordSize(List<Field> fields, InstanceKlass ik)
             throws IOException {
         int size = 0;
-        // ik == null for instance fields.
         size += SHORT_SIZE;
         for (Iterator<Field> itr = fields.iterator(); itr.hasNext();) {
             Field field = itr.next();
             char typeCode = (char) field.getSignature().getByteAt(0);
             size += OBJ_ID_SIZE + BYTE_SIZE;
+            // ik == null for instance fields
             if (ik != null) {
                 // static field
                 size += calculateFieldDumpRecordSize(field, ik.getJavaMirror());
@@ -681,9 +677,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             out.writeInt(0);
         }
     }
-
-    @Override
-    protected void writeHeapRecordEpilogue() throws IOException { }
 
     private void fillInHeapRecordLength() throws IOException {
         assert !useSegmentedHeapDump : "fillInHeapRecordLength is not supported for segmented heap dump";
@@ -949,7 +942,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         writeObjectID(jt.getThreadObj());
         out.writeInt(index);
         out.writeInt(DUMMY_STACK_TRACE_ID);
-
         writeLocalJNIHandles(jt, index);
     }
 

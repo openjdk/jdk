@@ -127,14 +127,6 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         }
     }
 
-    protected int calculateGlobalJNIHandlesDumpRecordSize() {
-        return 0;
-    }
-
-    protected int calculateJavaThreadsDumpRecordSize() {
-        return 0;
-    }
-
     protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
         return 0;
     }
