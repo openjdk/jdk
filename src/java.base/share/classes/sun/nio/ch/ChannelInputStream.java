@@ -146,7 +146,9 @@ public class ChannelInputStream
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
 
-        if (out instanceof ChannelOutputStream cos && ch instanceof FileChannel fc && cos.channel() instanceof FileChannel dst) {
+        if (out instanceof ChannelOutputStream cos
+                && ch instanceof FileChannel fc
+                && cos.channel() instanceof FileChannel dst) {
             return transfer(fc, dst);
         }
 
