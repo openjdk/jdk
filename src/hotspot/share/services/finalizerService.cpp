@@ -25,16 +25,24 @@
 #include "precompiled.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
-#include "services/finalizerTable.hpp"
+#include "services/finalizerService.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"
+
+FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
+    _ik(ik),
+    _registered(0),
+    _enqueued(0),
+    _finalized(0) {}
 
 static inline void atomic_inc(uint64_t* volatile dest) {
   assert(VM_Version::supports_cx8(), "invariant");
@@ -331,23 +339,23 @@ static bool do_table_rehash() {
   return true;
 }
 
-bool FinalizerTable::needs_rehashing() {
+bool FinalizerService::needs_rehashing() {
   return _needs_rehashing;
 }
 
-void FinalizerTable::rehash_table() {
+void FinalizerService::rehash() {
   static bool rehashed = false;
-  log_debug(finalizertable)("Table imbalanced, rehashing called.");
+  log_debug(finalizer)("Table imbalanced, rehashing called.");
   // Grow instead of rehash.
   if (table_load_factor() > PREF_AVG_LIST_LEN && !_table->is_max_size_reached()) {
-    log_debug(finalizertable)("Choosing growing over rehashing.");
+    log_debug(finalizer)("Choosing growing over rehashing.");
     trigger_table_cleanup();
     _needs_rehashing = false;
     return;
   }
   // Already rehashed.
   if (rehashed) {
-    log_warning(finalizertable)("Rehashing already done, still long lists.");
+    log_warning(finalizer)("Rehashing already done, still long lists.");
     trigger_table_cleanup();
     _needs_rehashing = false;
     return;
@@ -355,28 +363,27 @@ void FinalizerTable::rehash_table() {
   if (do_table_rehash()) {
     rehashed = true;
   } else {
-    log_info(finalizertable)("Resizes in progress rehashing skipped.");
+    log_debug(finalizer)("Resizes in progress rehashing skipped.");
   }
   _needs_rehashing = false;
 }
 
-bool FinalizerTable::has_work() {
+bool FinalizerService::has_work() {
   return _has_work;
 }
 
-void FinalizerTable::do_concurrent_work(JavaThread* service_thread) {
+void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
   assert(service_thread != nullptr, "invariant");
   if (_has_work) {
     do_table_concurrent_work(service_thread);
   }
 }
 
-bool FinalizerTable::create_table() {
+void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
   const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
   _table_size = ((size_t)1) << start_size_log_2;
   _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, REHASH_LEN);
-  return _table != nullptr;
 }
 
 static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {
@@ -387,45 +394,71 @@ static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {
   return felg.result();
 }
 
-static FinalizerEntry* get_entry(const InstanceKlass* ik, Thread* thread) {
-  assert(ik != nullptr, "invariant");
-  FinalizerEntry* const entry = lookup_entry(ik, thread);
-  return entry != nullptr ? entry : add_to_table_if_needed(ik, thread);
-}
-
-const FinalizerEntry* FinalizerTable::lookup(const InstanceKlass* ik, Thread* thread) {
+const FinalizerEntry* FinalizerService::lookup(const InstanceKlass* ik, Thread* thread) {
   assert(ik != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   assert(ik->has_finalizer(), "invariant");
   return lookup_entry(ik, thread);
 }
 
-void FinalizerTable::on_register(const instanceHandle& h_i, Thread* thread) {
-  assert(h_i.not_null(), "invariant");
-  const InstanceKlass* const ik = InstanceKlass::cast(h_i->klass());
+// Add if not exist.
+static FinalizerEntry* get_entry(const InstanceKlass* ik, Thread* thread) {
   assert(ik != nullptr, "invariant");
   assert(ik->has_finalizer(), "invariant");
-  FinalizerEntry* const fe = get_entry(ik, thread);
+  FinalizerEntry* const entry = lookup_entry(ik, thread);
+  return entry != nullptr ? entry : add_to_table_if_needed(ik, thread);
+}
+
+static FinalizerEntry* get_entry(oop finalizee, Thread* thread) {
+  assert(finalizee != nullptr, "invariant");
+  assert(finalizee->is_instance(), "invariant");
+  return get_entry(InstanceKlass::cast(finalizee->klass()), thread);
+}
+
+static void log_registered(oop finalizee, Thread* thread) {
+  ResourceMark rm(thread);
+  const intptr_t identity_hash = ObjectSynchronizer::FastHashCode(thread, finalizee);
+  log_info(finalizer)("Registered object (" INTPTR_FORMAT ") of class %s as finalizable", identity_hash, finalizee->klass()->external_name());
+}
+
+void FinalizerService::on_register(oop finalizee, Thread* thread) {
+  FinalizerEntry* const fe = get_entry(finalizee, thread);
   assert(fe != nullptr, "invariant");
   fe->on_register();
+  if (log_is_enabled(Info, finalizer)) {
+    log_registered(finalizee, thread);
+  }
 }
 
-void FinalizerTable::on_enqueue(const InstanceKlass* ik) {
-  assert(ik != nullptr, "invariant");
-  assert(ik->has_finalizer(), "invariant");
-  FinalizerEntry* const fe = get_entry(ik, Thread::current());
+// Can't use FastHashCode for object identification here.
+static void log_enqueued(oop finalizee, Thread* thread) {
+  ResourceMark rm(thread);
+  log_debug(finalizer)("Enqueued an object of class %s for finalization", finalizee->klass()->external_name());
+}
+
+void FinalizerService::on_enqueue(oop finalizee) {
+  Thread* const thread = Thread::current();
+  FinalizerEntry* const fe = get_entry(finalizee, thread);
   assert(fe != nullptr, "invariant");
   fe->on_enqueue();
+  if (log_is_enabled(Debug, finalizer)) {
+    log_enqueued(finalizee, thread);
+  }
 }
 
-void FinalizerTable::on_complete(const instanceHandle& h_i, JavaThread* finalizerThread) {
-  assert(h_i.not_null(), "invariant");
-  const InstanceKlass* const ik = InstanceKlass::cast(h_i->klass());
-  assert(ik != nullptr, "invariant");
-  assert(ik->has_finalizer(), "invariant");
-  FinalizerEntry* const fe = get_entry(ik, finalizerThread);
+static void log_completed(oop finalizee, Thread* thread) {
+  ResourceMark rm(thread);
+  const intptr_t identity_hash = ObjectSynchronizer::FastHashCode(thread, finalizee);
+  log_info(finalizer)("Finalization complete for object (" INTPTR_FORMAT ") of class %s", identity_hash, finalizee->klass()->external_name());
+}
+
+void FinalizerService::on_complete(oop finalizee, JavaThread* finalizer_thread) {
+  FinalizerEntry* const fe = get_entry(finalizee, finalizer_thread);
   assert(fe != nullptr, "invariant");
   fe->on_complete();
+  if (log_is_enabled(Info, finalizer)) {
+    log_completed(finalizee, finalizer_thread);
+  }
 }
 
 class FinalizerScan : public StackObj {
@@ -438,7 +471,7 @@ class FinalizerScan : public StackObj {
   }
 };
 
-void FinalizerTable::do_entries(FinalizerEntryClosure* closure, Thread* thread) {
+void FinalizerService::do_entries(FinalizerEntryClosure* closure, Thread* thread) {
   assert(closure != nullptr, "invariant");
   FinalizerScan scan(closure);
   _table->do_scan(thread, scan);
@@ -461,7 +494,7 @@ static void on_unloading(Klass* klass) {
   }
 }
 
-void FinalizerTable::purge_unloaded() {
+void FinalizerService::purge_unloaded() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::classes_unloading_do(&on_unloading);
 }

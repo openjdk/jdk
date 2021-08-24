@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_SERVICES_FINALIZERTABLE_HPP
-#define SHARE_SERVICES_FINALIZERTABLE_HPP
+#ifndef SHARE_SERVICES_FINALIZERSERVICE_HPP
+#define SHARE_SERVICES_FINALIZERSERVICE_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-class instanceHandle;
 class InstanceKlass;
 class JavaThread;
 class Thread;
@@ -39,7 +39,7 @@ class FinalizerEntry : public CHeapObj<mtClass> {
   uint64_t _enqueued;
   uint64_t _finalized;
  public:
-  FinalizerEntry(const InstanceKlass* ik) : _ik(ik), _registered(0), _enqueued(0), _finalized(0) {}
+  FinalizerEntry(const InstanceKlass* ik);
   const InstanceKlass* klass() const NOT_MANAGEMENT_RETURN_(nullptr);
   uint64_t registered() const NOT_MANAGEMENT_RETURN_(0L);
   uint64_t enqueued() const NOT_MANAGEMENT_RETURN_(0L);
@@ -54,21 +54,21 @@ class FinalizerEntryClosure : public StackObj {
   virtual bool do_entry(const FinalizerEntry* fe) = 0;
 };
 
-class FinalizerTable : AllStatic {
+class FinalizerService : AllStatic {
   friend class ServiceThread;
  private:
   static bool has_work() NOT_MANAGEMENT_RETURN_(false);
   static void do_concurrent_work(JavaThread* service_thread) NOT_MANAGEMENT_RETURN;;
  public:
-  static bool create_table() NOT_MANAGEMENT_RETURN_(false);
-  static void rehash_table() NOT_MANAGEMENT_RETURN;
+  static void init() NOT_MANAGEMENT_RETURN;
+  static void rehash() NOT_MANAGEMENT_RETURN;
   static bool needs_rehashing() NOT_MANAGEMENT_RETURN_(false);
   static void purge_unloaded() NOT_MANAGEMENT_RETURN;
-  static void on_register(const instanceHandle& i, Thread* thread) NOT_MANAGEMENT_RETURN;
-  static void on_enqueue(const InstanceKlass* ik) NOT_MANAGEMENT_RETURN;
-  static void on_complete(const instanceHandle& i, JavaThread* finalizerThread) NOT_MANAGEMENT_RETURN;
+  static void on_register(oop finalizee, Thread* thread) NOT_MANAGEMENT_RETURN;
+  static void on_enqueue(oop finalizee) NOT_MANAGEMENT_RETURN;
+  static void on_complete(oop finalizee, JavaThread* finalizer_thread) NOT_MANAGEMENT_RETURN;
   static void do_entries(FinalizerEntryClosure* closure, Thread* thread) NOT_MANAGEMENT_RETURN;
   static const FinalizerEntry* lookup(const InstanceKlass* ik, Thread* thread) NOT_MANAGEMENT_RETURN_(nullptr);
 };
 
-#endif // SHARE_SERVICES_FINALIZERTABLE_HPP
+#endif // SHARE_SERVICES_FINALIZERSERVICE_HPP

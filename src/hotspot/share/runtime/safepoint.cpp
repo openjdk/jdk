@@ -66,7 +66,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
-#include "services/finalizerTable.hpp"
+#include "services/finalizerService.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -593,9 +593,9 @@ public:
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_FINALIZER_TABLE_REHASH)) {
-      if (FinalizerTable::needs_rehashing()) {
+      if (FinalizerService::needs_rehashing()) {
         Tracer t("rehashing finalizer table");
-        FinalizerTable::rehash_table();
+        FinalizerService::rehash();
       }
     }
 

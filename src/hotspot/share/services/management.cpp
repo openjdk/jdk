@@ -55,7 +55,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
-#include "services/finalizerTable.hpp"
+#include "services/finalizerService.hpp"
 #include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -95,7 +95,7 @@ void management_init() {
   ThreadService::init();
   RuntimeService::init();
   ClassLoadingService::init();
-  FinalizerTable::create_table();
+  FinalizerService::init();
 #else
   ThreadService::init();
 #endif // INCLUDE_MANAGEMENT
@@ -2084,9 +2084,7 @@ jlong Management::ticks_to_ms(jlong ticks) {
 }
 
 JVM_ENTRY(void, jmm_ReportFinalizationComplete(JNIEnv* env, jobject finalizee))
-  HandleMark hm(THREAD);
-  instanceHandle h_i(THREAD, instanceOop(JNIHandles::resolve_non_null(finalizee)));
-  FinalizerTable::on_complete(h_i, THREAD);
+  FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);
 JVM_END
 
 #endif // INCLUDE_MANAGEMENT
