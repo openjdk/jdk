@@ -702,10 +702,6 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   // Reset marking state.
   reset();
 
-  // For each region note start of marking.
-  NoteStartOfMarkHRClosure startcl;
-  _g1h->heap_region_iterate(&startcl);
-
   _root_regions.reset();
 
   _gc_tracer_cm->set_gc_cause(cause);
