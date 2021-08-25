@@ -68,9 +68,8 @@ class G1EvacuationFailureObjsInHR {
     typedef Node<NODE_SIZE, Elem> NODE_XXX;
 
   private:
-    static const uint64_t TMP = 1l << 32;
-    static const uint64_t LOW_MASK = TMP - 1;
-    static const uint64_t HIGH_MASK = LOW_MASK << 32;
+    const uint64_t low_mask;
+    const uint64_t high_mask;
     const uint32_t _max_nodes_length;
 
     volatile uint64_t _cur_pos;
@@ -79,10 +78,10 @@ class G1EvacuationFailureObjsInHR {
 
   private:
     uint64_t low(uint64_t n) {
-      return (n & LOW_MASK);
+      return (n & low_mask);
     }
     uint64_t high(uint64_t n) {
-      return (n & HIGH_MASK);
+      return (n & high_mask);
     }
     uint32_t elem_index(uint64_t n) {
       assert(low(n) < NODE_XXX::LENGTH, "must be");
@@ -95,20 +94,24 @@ class G1EvacuationFailureObjsInHR {
     uint64_t next(uint64_t n) {
       uint64_t lo = low(n);
       uint64_t hi = high(n);
-      assert((lo < NODE_XXX::LENGTH) && (NODE_XXX::LENGTH <= LOW_MASK), "must be");
-      assert(hi < HIGH_MASK, "must be");
+      assert((lo < NODE_XXX::LENGTH) && (NODE_XXX::LENGTH <= low_mask), "must be");
+      assert(hi < high_mask, "must be");
       if ((lo+1) == NODE_XXX::LENGTH) {
         lo = 0;
-        hi += (1l << 32);
+        hi += ((uint64_t)1 << 32);
       } else {
         lo++;
       }
-      assert(hi <= HIGH_MASK, "must be");
+      assert(hi <= high_mask, "must be");
       return hi | lo;
     }
 
   public:
-    Array(uint32_t max_nodes_length) : _max_nodes_length(max_nodes_length) {
+    Array(uint32_t max_nodes_length) :
+      low_mask(((uint64_t)1 << 32) - 1),
+      high_mask(low_mask << 32),
+      _max_nodes_length(max_nodes_length) {
+
       _nodes = (NODE_XXX**)AllocateHeap(_max_nodes_length * sizeof(NODE_XXX*), mtGC);
       for (uint32_t i = 0; i < _max_nodes_length; i++) {
         Atomic::store(&_nodes[i], (NODE_XXX *)NULL);
@@ -193,7 +196,6 @@ public:
 
 private:
   static const uint32_t NODE_LENGTH = 256;
-  const uint64_t offset_mask;
   const uint _region_idx;
   const HeapWord* _bottom;
   Array<NODE_LENGTH, Elem> _nodes_array;
@@ -202,13 +204,12 @@ private:
 
 private:
   oop cast_from_offset(Elem offset) {
-    return oop(_bottom + offset);
+    return cast_to_oop(_bottom + offset);
   }
   Elem cast_from_oop_addr(oop obj) {
     const HeapWord* o = cast_from_oop<const HeapWord*>(obj);
     size_t offset = pointer_delta(o, _bottom);
-    assert(offset_mask >= offset, "must be");
-    return offset & offset_mask;
+    return static_cast<Elem>(offset);
   }
   void visit(Elem);
   void visit(Array<NODE_LENGTH, Elem>::NODE_XXX* node, uint32_t limit);
