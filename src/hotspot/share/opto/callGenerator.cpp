@@ -327,7 +327,9 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
  public:
   LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool is_pure_call = false) :
-    DirectCallGenerator(method, true), _unique_id(0), _is_pure_call(is_pure_call), _inline_cg(inline_cg) {}
+    DirectCallGenerator(method, true), _unique_id(0), _is_pure_call(is_pure_call), _inline_cg(inline_cg) {
+    assert(IncrementalInline, "required");
+  }
 
   virtual bool is_late_inline() const { return true; }
 
@@ -459,7 +461,9 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  public:
   LateInlineVirtualCallGenerator(ciMethod* method, int vtable_index, float prof_factor)
   : VirtualCallGenerator(method, vtable_index, true /*separate_io_projs*/),
-    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {}
+    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {
+    assert(IncrementalInlineVirtual, "required");
+  }
 
   virtual bool is_late_inline() const { return true; }
 
