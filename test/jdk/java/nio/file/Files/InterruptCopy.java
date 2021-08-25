@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,25 @@
  * @library ..
  */
 
-import java.nio.file.*;
-import java.io.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import com.sun.nio.file.ExtendedCopyOption;
 
 public class InterruptCopy {
 
-    private static final long FILE_SIZE_TO_COPY = 512L * 1024L * 1024L;
-    private static final int DELAY_IN_MS = 500;
-    private static final int DURATION_MAX_IN_MS = 5000;
+    private static final long FILE_SIZE_TO_COPY = 1024L * 1024L * 1024L;
+    private static final int INTERRUPT_DELAY_IN_MS = 50;
+    private static final int DURATION_MAX_IN_MS = 3*INTERRUPT_DELAY_IN_MS;
+    private static final int CANCEL_DELAY_IN_MS = 10;
 
     public static void main(String[] args) throws Exception {
         Path dir = TestUtil.createTemporaryDirectory();
@@ -74,46 +83,76 @@ public class InterruptCopy {
 
         ScheduledExecutorService pool =
             Executors.newSingleThreadScheduledExecutor();
+
         try {
-            // copy source to target in main thread, interrupting it after a delay
+            // copy source to target in main thread, interrupting it
+            // after a delay
             final Thread me = Thread.currentThread();
-            Future<?> wakeup = pool.schedule(new Runnable() {
+            final CountDownLatch interruptLatch = new CountDownLatch(1);
+            Future<?> wakeup = pool.submit(new Runnable() {
                 public void run() {
+                    try {
+                        interruptLatch.await();
+                        Thread.sleep(INTERRUPT_DELAY_IN_MS);
+                    } catch (InterruptedException ignore) {
+                    }
+                    System.out.printf("Interrupting at %d ms...%n",
+                        System.currentTimeMillis());
                     me.interrupt();
-                }}, DELAY_IN_MS, TimeUnit.MILLISECONDS);
-            System.out.println("Copying file...");
+                }
+            });
             try {
-                long start = System.currentTimeMillis();
+                interruptLatch.countDown();
+                long theBeginning = System.currentTimeMillis();
+                System.out.printf("Copying file at %d ms...%n", theBeginning);
                 Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE);
-                long duration = System.currentTimeMillis() - start;
+                long theEnd = System.currentTimeMillis();
+                System.out.printf("Done copying at %d ms...%n", theEnd);
+                long duration = theEnd - theBeginning;
                 if (duration > DURATION_MAX_IN_MS)
                     throw new RuntimeException("Copy was not interrupted");
             } catch (IOException e) {
                 boolean interrupted = Thread.interrupted();
                 if (!interrupted)
                     throw new RuntimeException("Interrupt status was not set");
-                System.out.println("Copy failed (this is expected)");
+                System.out.println("Copy failed (this is expected).");
             }
             try {
                 wakeup.get();
             } catch (InterruptedException ignore) { }
             Thread.interrupted();
 
-            // copy source to target via task in thread pool, interrupting it after
-            // a delay using cancel(true)
+            // copy source to target via task in thread pool, interrupting it
+            // after a delay using cancel(true)
+            CountDownLatch cancelLatch = new CountDownLatch(1);
             Future<Void> result = pool.submit(new Callable<Void>() {
                 public Void call() throws IOException {
-                    System.out.println("Copying file...");
+                    cancelLatch.countDown();
+                    System.out.printf("Copying file at %d ms...%n",
+                        System.currentTimeMillis());
                     Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE,
                         StandardCopyOption.REPLACE_EXISTING);
+                    System.out.printf("Done copying at %d ms...%n",
+                        System.currentTimeMillis());
                     return null;
                 }
             });
-            Thread.sleep(DELAY_IN_MS);
-            boolean cancelled = result.cancel(true);
-            if (!cancelled)
+            try {
+                cancelLatch.await();
+                Thread.sleep(CANCEL_DELAY_IN_MS);
+            } catch (InterruptedException ignore) {
+            }
+            if (result.isDone())
+                throw new RuntimeException("Copy finished before cancellation");
+            System.out.printf("Cancelling at %d ms...%n",
+                System.currentTimeMillis());
+            boolean cancelled  = result.cancel(true);
+            if (cancelled)
+                System.out.println("Copy cancelled.");
+            else {
                 result.get();
-            System.out.println("Copy cancelled.");
+                throw new RuntimeException("Copy was not cancelled");
+            }
         } finally {
             pool.shutdown();
         }

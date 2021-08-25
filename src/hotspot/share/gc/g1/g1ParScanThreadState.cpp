@@ -464,11 +464,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
   const oop obj = cast_to_oop(obj_ptr);
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
     {
       const uint young_index = from_region->young_index_in_cset();
@@ -480,19 +480,9 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     if (dest_attr.is_young()) {
       if (age < markWord::max_age) {
         age++;
-      }
-      if (old_mark.has_displaced_mark_helper()) {
-        // In this case, we have to install the old mark word containing the
-        // displacement tag, and update the age in the displaced mark word.
-        markWord new_mark = old_mark.displaced_mark_helper().set_age(age);
-        old_mark.set_displaced_mark_helper(new_mark);
-        obj->set_mark(old_mark);
-      } else {
-        obj->set_mark(old_mark.set_age(age));
+        obj->incr_age();
       }
       _age_table.add(age, word_sz);
-    } else {
-      obj->set_mark(old_mark);
     }
 
     // Most objects are not arrays, so do one array check rather than
@@ -558,10 +548,7 @@ void G1ParScanThreadStateSet::flush() {
 
   for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
     G1ParScanThreadState* pss = _states[worker_id];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     G1GCPhaseTimes* p = _g1h->phase_times();
 
@@ -584,10 +571,7 @@ void G1ParScanThreadStateSet::flush() {
 void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
-
-    if (pss == NULL) {
-      continue;
-    }
+    assert(pss != nullptr, "must be initialized");
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
     _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_index, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);

@@ -68,9 +68,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
-                                                 // queue shared by
-                                                 // non-Java threads.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
