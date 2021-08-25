@@ -29,15 +29,24 @@
  * @run main/othervm NTLMHeadTest SERVER
  * @run main/othervm NTLMHeadTest PROXY
  * @run main/othervm NTLMHeadTest TUNNEL
- * @summary test for the incorrect logic in reading (and discarding) HTTP response body when
- *      processing NTLMSSP_CHALLENGE response from server. When this response is
- *      received by client, reset() is called on the connection to read and discard the
- *      response body. This code path was broken when initial client request uses "HEAD"
- *      method, in this case response body is not read from the socket. This does not cause
- *      problems with the majority of (proxy) servers because InputStream opened over the response
- *      socket is buffered with 8kb buffer size. Problem is only reproducible if the response
- *      size (headers + body) is larger than 8kb. There are three code paths (modes) where NTLM
- *      auth can be used: direct server (SERVER), HTTP proxying (PROXY) and HTTPS tunneling (TUNNEL).
+ * @summary test for the incorrect logic in reading (and discarding) HTTP
+ *      response body when processing NTLMSSP_CHALLENGE response
+ *      (to CONNECT request) from proxy server. When this response is received
+ *      by client, reset() is called on the connection to read and discard the
+ *      response body. This code path was broken when initial client request
+ *      uses HEAD method and HTTPS resource, in this case CONNECT is sent to
+ *      proxy server (to establish TLS tunnel) and response body is not read
+ *      from a socket (because initial method on client connection is HEAD).
+ *      This does not cause problems with the majority of proxy servers because
+ *      InputStream opened over the response socket is buffered with 8kb buffer
+ *      size. Problem is only reproducible if the response size (headers +
+ *      body) is larger than 8kb. The code path with HTTPS tunneling is checked
+ *      with TUNNEL argument. Additional checks for HEAD handling are included
+ *      for direct server (SERVER) and HTTP proxying (PROXY) code paths, in
+ *      these (non-tunnel) cases client must NOT attempt to read response data
+ *      (to not block on socket read) because HEAD is sent to server and
+ *      NTLMSSP_CHALLENGE response includes Content-Length, but does not
+ *      include the body.
  */
 
 import java.net.*;
@@ -56,7 +65,7 @@ public class NTLMHeadTest {
             "HTTP/1.1 401 Unauthorized\r\n" +
             "WWW-Authenticate: NTLM\r\n" +
             "Connection: close\r\n" +
-            "Content-Length: 0\r\n" +
+            "Content-Length: " + BODY_LEN + "\r\n" +
             "\r\n";
 
     static final String RESP_SERVER_NTLM =
@@ -64,13 +73,12 @@ public class NTLMHeadTest {
             "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
-            "\r\n" +
-            generateBody(BODY_LEN);
+            "\r\n";
 
-    static final String RESP_SERVER_DEST =
+    static final String RESP_SERVER_OR_PROXY_DEST =
             "HTTP/1.1 200 OK\r\n" +
             "Connection: close\r\n" +
-            "Content-Length: 0\r\n" +
+            "Content-Length: 42\r\n" +
             "\r\n";
 
     static final String RESP_PROXY_AUTH =
@@ -78,7 +86,7 @@ public class NTLMHeadTest {
             "Proxy-Authenticate: NTLM\r\n" +
             "Proxy-Connection: close\r\n" +
             "Connection: close\r\n" +
-            "Content-Length: 0\r\n" +
+            "Content-Length: " + BODY_LEN + "\r\n" +
             "\r\n";
 
     static final String RESP_PROXY_NTLM =
@@ -87,15 +95,31 @@ public class NTLMHeadTest {
             "Proxy-Connection: Keep-Alive\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
+            "\r\n";
+
+    static final String RESP_TUNNEL_AUTH =
+            "HTTP/1.1 407 Proxy Authentication Required\r\n" +
+            "Proxy-Authenticate: NTLM\r\n" +
+            "Proxy-Connection: close\r\n" +
+            "Connection: close\r\n" +
+            "Content-Length: " + BODY_LEN + "\r\n" +
             "\r\n" +
             generateBody(BODY_LEN);
 
-    static final String RESP_PROXY_TUNNEL =
+    static final String RESP_TUNNEL_NTLM =
+            "HTTP/1.1 407 Proxy Authentication Required\r\n" +
+            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "Proxy-Connection: Keep-Alive\r\n" +
+            "Connection: Keep-Alive\r\n" +
+            "Content-Length: " + BODY_LEN + "\r\n" +
+            "\r\n" +
+            generateBody(BODY_LEN);
+
+    static final String RESP_TUNNEL_ESTABLISHED =
             "HTTP/1.1 200 Connection Established\r\n\r\n";
 
     public static void main(String[] args) throws Exception {
         Authenticator.setDefault(new TestAuthenticator());
-
         if (1 != args.length) {
             throw new IllegalArgumentException("Mode value must be specified, one of: [SERVER, PROXY, TUNNEL]");
         }
@@ -109,7 +133,7 @@ public class NTLMHeadTest {
         }
     }
 
-    private static void testSever() throws Exception {
+    static void testSever() throws Exception {
         try (NTLMServer server = startServer(new ServerSocket(0, 0, InetAddress.getLoopbackAddress()), Mode.SERVER)) {
             URL url = URIBuilder.newBuilder()
                     .scheme("http")
@@ -119,17 +143,11 @@ public class NTLMHeadTest {
                     .toURLUnchecked();
             HttpURLConnection uc = (HttpURLConnection) url.openConnection();
             uc.setRequestMethod("HEAD");
-            try {
-                uc.getInputStream().readAllBytes();
-            } catch(IOException e) {
-                // Invalid Http response
-                System.err.println("Error: cannot read 200 response code");
-                throw e;
-            }
+            uc.getInputStream().readAllBytes();
         }
     }
 
-    private static void testProxy() throws Exception {
+    static void testProxy() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try (NTLMServer server = startServer(new ServerSocket(0, 0, loopback), Mode.PROXY)) {
             SocketAddress proxyAddr = new InetSocketAddress(loopback, server.getLocalPort());
@@ -142,17 +160,11 @@ public class NTLMHeadTest {
                     .toURLUnchecked();
             HttpURLConnection uc = (HttpURLConnection) url.openConnection(proxy);
             uc.setRequestMethod("HEAD");
-            try {
-                uc.getInputStream().readAllBytes();
-            } catch(IOException e) {
-                // Invalid Http response
-                System.err.println("Error: cannot read 200 response code");
-                throw e;
-            }
+            uc.getInputStream().readAllBytes();
         }
     }
 
-    private static void testTunnel() throws Exception {
+    static void testTunnel() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try (NTLMServer server = startServer(new ServerSocket(0, 0, loopback), Mode.TUNNEL)) {
             SocketAddress proxyAddr = new InetSocketAddress(loopback, server.getLocalPort());
@@ -190,7 +202,7 @@ public class NTLMHeadTest {
             this.mode = mode;
         }
 
-       public int getLocalPort() { return ss.getLocalPort(); }
+        int getLocalPort() { return ss.getLocalPort(); }
 
         @Override
         public void run() {
@@ -200,32 +212,27 @@ public class NTLMHeadTest {
                     Socket s = ss.accept();
                     InputStream is = s.getInputStream();
                     OutputStream os = s.getOutputStream();
-
+                    switch(mode) {
+                        case SERVER:
+                            doServer(is, os, doing2ndStageNTLM);
+                            break;
+                        case PROXY:
+                            doProxy(is, os, doing2ndStageNTLM);
+                            break;
+                        case TUNNEL:
+                            doTunnel(is, os, doing2ndStageNTLM);
+                            break;
+                        default: throw new IllegalArgumentException();
+                    }
                     if (!doing2ndStageNTLM) {
-                        new MessageHeader(is);
-                        if (Mode.SERVER == mode) {
-                            os.write(RESP_SERVER_AUTH.getBytes("ASCII"));
-                        } else {
-                            os.write(RESP_PROXY_AUTH.getBytes("ASCII"));
-                        }
                         doing2ndStageNTLM = true;
                     } else {
-                        new MessageHeader(is);
-                        if (Mode.SERVER == mode) {
-                            os.write(RESP_SERVER_NTLM.getBytes("ASCII"));
-                        } else {
-                            os.write(RESP_PROXY_NTLM.getBytes("ASCII"));
-                        }
-                        new MessageHeader(is);
-                        if (Mode.TUNNEL == mode) {
-                            os.write(RESP_PROXY_TUNNEL.getBytes("ASCII"));
-                        } else {
-                            os.write(RESP_SERVER_DEST.getBytes("ASCII"));
-                        }
                         os.close();
                     }
                 } catch (IOException ioe) {
-                    if (!closed) ioe.printStackTrace();
+                    if (!closed) {
+                        ioe.printStackTrace();
+                    }
                 }
             }
         }
@@ -241,18 +248,54 @@ public class NTLMHeadTest {
         }
     }
 
-    public static NTLMServer startServer(ServerSocket serverSS, Mode mode) {
+    static NTLMServer startServer(ServerSocket serverSS, Mode mode) {
         NTLMServer server = new NTLMServer(serverSS, mode);
         server.start();
         return server;
     }
 
-    private static String generateBody(int length) {
+    static String generateBody(int length) {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < length; i++) {
             sb.append(i % 10);
         }
         return sb.toString();
+    }
+
+    static void doServer(InputStream is, OutputStream os, boolean doing2ndStageNTLM) throws IOException {
+        if (!doing2ndStageNTLM) {
+            new MessageHeader(is);
+            os.write(RESP_SERVER_AUTH.getBytes("ASCII"));
+        } else {
+            new MessageHeader(is);
+            os.write(RESP_SERVER_NTLM.getBytes("ASCII"));
+            new MessageHeader(is);
+            os.write(RESP_SERVER_OR_PROXY_DEST.getBytes("ASCII"));
+        }
+    }
+
+    static void doProxy(InputStream is, OutputStream os, boolean doing2ndStageNTLM) throws IOException {
+        if (!doing2ndStageNTLM) {
+            new MessageHeader(is);
+            os.write(RESP_PROXY_AUTH.getBytes("ASCII"));
+        } else {
+            new MessageHeader(is);
+            os.write(RESP_PROXY_NTLM.getBytes("ASCII"));
+            new MessageHeader(is);
+            os.write(RESP_SERVER_OR_PROXY_DEST.getBytes("ASCII"));
+        }
+    }
+
+    static void doTunnel(InputStream is, OutputStream os, boolean doing2ndStageNTLM) throws IOException {
+        if (!doing2ndStageNTLM) {
+            new MessageHeader(is);
+            os.write(RESP_TUNNEL_AUTH.getBytes("ASCII"));
+        } else {
+            new MessageHeader(is);
+            os.write(RESP_TUNNEL_NTLM.getBytes("ASCII"));
+            new MessageHeader(is);
+            os.write(RESP_TUNNEL_ESTABLISHED.getBytes("ASCII"));
+        }
     }
 
     static class TestAuthenticator extends java.net.Authenticator {
