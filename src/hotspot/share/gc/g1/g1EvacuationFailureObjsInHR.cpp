@@ -53,11 +53,9 @@ void G1EvacuationFailureObjsInHR::compact() {
   _nodes_array.reset();
 }
 
-static int32_t order_oop(G1EvacuationFailureObjsInHR::Elem a,
-                         G1EvacuationFailureObjsInHR::Elem b) {
-  // assert(a != b, "must be");
-  int r = a-b;
-  return r;
+static int order_oop(G1EvacuationFailureObjsInHR::Elem a,
+                     G1EvacuationFailureObjsInHR::Elem b) {
+  return static_cast<int>(a-b);
 }
 
 void G1EvacuationFailureObjsInHR::sort() {
@@ -80,12 +78,12 @@ void G1EvacuationFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
 }
 
 G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWord* bottom) :
-  offset_mask((1l << HeapRegion::LogOfHRGrainBytes) - 1),
   _region_idx(region_idx),
   _bottom(bottom),
   _nodes_array(HeapRegion::GrainWords / NODE_LENGTH + 1),
   _offset_array(NULL),
   _objs_num(0) {
+  assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
 G1EvacuationFailureObjsInHR::~G1EvacuationFailureObjsInHR() {
