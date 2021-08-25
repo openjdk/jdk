@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -449,12 +450,8 @@ public abstract class MethodHandle implements Constable {
     @interface PolymorphicSignature { }
 
     private final MethodType type;
-    /*private*/
-    final LambdaForm form;
-    // form is not private so that invokers can easily fetch it
-    /*private*/
-    MethodHandle asTypeCache;
-    // asTypeCache is not private so that invokers can easily fetch it
+    /*private*/ final LambdaForm form; // form is not private so that invokers can easily fetch it
+    private MethodHandle asTypeCache;
 
     private byte customizationCount;
 
@@ -855,18 +852,24 @@ public abstract class MethodHandle implements Constable {
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
-    public MethodHandle asType(MethodType newType) {
+    public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
         if (newType == type) {
             return this;
         }
         // Return 'this.asTypeCache' if the conversion is already memoized.
-        MethodHandle atc = asTypeCached(newType);
-        if (atc != null) {
-            return atc;
+        MethodHandle at = asTypeCached(newType);
+        if (at != null) {
+            return at;
         }
-        return asTypeUncached(newType);
+        at = asTypeUncached(newType);
+        // Don't cache if newType depends on any class loader other than
+        // this.type already does to avoid class loader leaks.
+        if (isSafeToCache(newType)) {
+            asTypeCache = at;
+        }
+        return at;
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
@@ -880,9 +883,78 @@ public abstract class MethodHandle implements Constable {
     /** Override this to change asType behavior. */
     /*non-public*/
     MethodHandle asTypeUncached(MethodType newType) {
-        if (!type.isConvertibleTo(newType))
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert " + this + " to " + newType);
+        }
+        return MethodHandleImpl.makePairwiseConvert(this, newType, true);
+    }
+
+    /**
+     * Returns true if {@code newType} does not depend on any class loader other than {@code type} already does.
+     * May conservatively return false in order to be efficient.
+     */
+    private boolean isSafeToCache(MethodType newType) {
+        ClassLoader loader = getApproximateCommonClassLoader(type);
+        return keepsAlive(newType, loader);
+    }
+
+    /* Returns true when {@code loader} keeps {@code mt} either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
+        for (Class<?> ptype : mt.ptypes()) {
+            if (!keepsAlive(ptype, loader)) {
+                return false;
+            }
+        }
+        return keepsAlive(mt.rtype(), loader);
+    }
+
+    /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
+        boolean result = keepsAlive(cls.getClassLoader(), loader);
+        assert result : cls.getName() + ":" + cls.getClassLoader() + " </= " + loader;
+        return result;
+    }
+
+    /**
+     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
+     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
+     */
+    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
+        ClassLoader loader = ClassLoaders.appClassLoader();
+        if (keepsAlive(mt.rtype().getClassLoader(), loader)) {
+            loader = mt.rtype().getClassLoader();
+        }
+        for (Class<?> ptype : mt.ptypes()) {
+            ClassLoader ploader = ptype.getClassLoader();
+            if (loader != ploader && keepsAlive(loader, ploader)) {
+                loader = ploader;
+            } else {
+                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
+                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
+                // doesn't compromise correctness.
+            }
+        }
+        return loader;
+    }
+
+    /* Determine whether {@code descendant} keeps {@code ancestor} alive through the loader delegation chain. */
+    private static boolean keepsAlive(ClassLoader ancestor, ClassLoader descendant) {
+        if (isSystemLoader(ancestor)) {
+            return true; // system loaders are always reachable
+        }
+        // Climb up the descendant chain until a system loader is found.
+        for (ClassLoader loader = descendant; !isSystemLoader(loader); loader = loader.getParent()) {
+            if (loader == ancestor) {
+                return true;
+            }
+        }
+        return false; // no direct relation between loaders is found
+    }
+
+    private static boolean isSystemLoader(ClassLoader loader) {
+        return loader == null ||
+               loader == ClassLoaders.platformClassLoader() ||
+               loader == ClassLoaders.appClassLoader();
     }
 
     /**
