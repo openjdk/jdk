@@ -83,7 +83,7 @@ public class Basic {
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
     static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
 
-    /* Path to native executables;  sleepmillis */
+    /* Path to native executables;  basicsleep */
     static final Path TEST_NATIVEPATH = Path.of(System.getProperty("test.nativepath", "."));
 
     /**
@@ -2627,17 +2627,22 @@ public class Basic {
 
     /**
      * Return the list of process arguments for a child to sleep 10 minutes (600000 milliseconds).
+     *
      * @return A list of process arguments to sleep 10 minutes.
      */
     private static List<String> getSleepArgs() {
         List<String> childArgs = null;
-        Path sleepExe = TEST_NATIVEPATH.resolve("sleepmillis");
-        if (sleepExe.toFile().canExecute()) {
-            childArgs = List.of(sleepExe.toString(), "600000");
+        String exeName = "BasicSleep" + (Windows.is() ? ".exe" : "");
+        Path exePath = TEST_NATIVEPATH.resolve(exeName);
+        if (exePath.toFile().canExecute()) {
+            childArgs = List.of(exePath.toString(), "600");
         } else {
             // Fallback to the JavaChild sleep does a sleep for 10 minutes.
+            // The fallback the Java child is used if the test is run without building
+            // the basicsleep native executable.
             childArgs = new ArrayList<>(javaChildArgs);
             childArgs.add("sleep");
+            System.out.println("Using fallback to JavaChild: " + childArgs);
         }
         return childArgs;
     }

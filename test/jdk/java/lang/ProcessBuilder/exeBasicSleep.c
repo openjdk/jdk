@@ -22,28 +22,32 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
 /**
  * Command line program to sleep at least given number of seconds.
+ * Actual time sleeping may vary if interrupted, the remaining time
+ * returned from sleep has limited accuracy.
  *
  * Note: the file name prefix "exe" identifies the source should be built into SleepMillis(.exe).
  */
 int main(int argc, char** argv) {
-    // Use higher resolution nanosleep to be able to retry accurately if interrupted
-    struct timespec sleeptime;
-    int millis;
+    int seconds;
 
-    if (argc < 2 || (millis = atoi(argv[1])) < 0) {
-        fprintf(stderr, "usage: sleepmillis <non-negative milli-seconds>\n");
+    if (argc < 2 || (seconds = atoi(argv[1])) < 0) {
+        fprintf(stderr, "usage: basicsleep <non-negative seconds>\n");
         exit(1);
     }
 
-    sleeptime.tv_sec = millis / 1000;
-    sleeptime.tv_nsec = (millis % 1000) * 1000 * 1000;
-    int rc;
-    while ((rc = nanosleep(&sleeptime, &sleeptime)) > 0) {
-        // Repeat until == 0 or negative (error)
+#ifdef _WIN32
+    Sleep(seconds * 1000);
+#else
+    while ((seconds = sleep(seconds)) > 0) {
+        // until no more to sleep
     }
-    exit(rc == 0 ? 0 : 1);
+#endif
 }
