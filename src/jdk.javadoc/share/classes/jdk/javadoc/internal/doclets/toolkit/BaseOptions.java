@@ -978,7 +978,7 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --snippet-path}.
-     * The path to for external snippets.
+     * The path for external snippets.
      */
     public String snippetPath() {
         return snippetPath;
