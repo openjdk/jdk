@@ -295,10 +295,6 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
 #endif
 }
 
-Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) :
-  Mutex(Rank, name, allow_vm_block, safepoint_check_required) {}
-
 bool Mutex::owned_by_self() const {
   return owner() == Thread::current();
 }

@@ -160,6 +160,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
  public:
   Mutex(int rank, const char *name, bool allow_vm_block = false,
         SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
+  Mutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
+    Mutex(rank, name, safepoint_check_required == _safepoint_check_never ? true : false, safepoint_check_required) {}
+
   ~Mutex();
 
   void lock(); // prints out warning if VM thread blocks
@@ -199,9 +202,13 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
 class Monitor : public Mutex {
  public:
-   Monitor(int rank, const char *name, bool allow_vm_block = false,
-         SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
-   // default destructor
+  Monitor(int rank, const char *name, bool allow_vm_block = false,
+         SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
+    Mutex(rank, name, allow_vm_block, safepoint_check_required) {}
+
+  Monitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
+    Mutex(rank, name, safepoint_check_required) {}
+  // default destructor
 
   // Wait until monitor is notified (or times out).
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
@@ -223,6 +230,8 @@ public:
   PaddedMutex(int rank, const char *name, bool allow_vm_block = false,
               SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
     Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
+  PaddedMutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
+    Mutex(rank, name, safepoint_check_required) {};
 };
 
 class PaddedMonitor : public Monitor {
@@ -235,6 +244,8 @@ class PaddedMonitor : public Monitor {
   PaddedMonitor(int rank, const char *name, bool allow_vm_block = false,
                SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
     Monitor(rank, name, allow_vm_block, safepoint_check_required) {};
+  PaddedMonitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
+    Monitor(rank, name, safepoint_check_required) {};
 };
 
 #endif // SHARE_RUNTIME_MUTEX_HPP

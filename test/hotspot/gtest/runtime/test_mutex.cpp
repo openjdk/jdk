@@ -35,7 +35,7 @@ static Mutex* m[iterations];
 static int i = 0;
 
 static void create_mutex(Thread* thr) {
-  m[i] = new Mutex(Mutex::leaf, FormatBuffer<128>("MyLock lock #%u", i), true, Mutex::_safepoint_check_never);
+  m[i] = new Mutex(Mutex::leaf, FormatBuffer<128>("MyLock lock #%u", i), Mutex::_safepoint_check_never);
   i++;
 }
 
@@ -134,8 +134,8 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_access_leaf,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Mutex* mutex_rank_access = new Mutex(Mutex::access, "mutex_rank_access", true, Mutex::_safepoint_check_never);
-  Mutex* mutex_rank_leaf = new Mutex(Mutex::leaf, "mutex_rank_leaf", true, Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_access = new Mutex(Mutex::access, "mutex_rank_access", Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_leaf = new Mutex(Mutex::leaf, "mutex_rank_leaf", Mutex::_safepoint_check_never);
 
   mutex_rank_access->lock_without_safepoint_check();
   mutex_rank_leaf->lock_without_safepoint_check();
@@ -149,8 +149,8 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_tty_special,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Mutex* mutex_rank_tty = new Mutex(Mutex::tty, "mutex_rank_tty", true, Mutex::_safepoint_check_never);
-  Mutex* mutex_rank_special = new Mutex(Mutex::special, "mutex_rank_special", true, Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_tty = new Mutex(Mutex::tty, "mutex_rank_tty", Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_special = new Mutex(Mutex::special, "mutex_rank_special", Mutex::_safepoint_check_never);
 
   mutex_rank_tty->lock_without_safepoint_check();
   mutex_rank_special->lock_without_safepoint_check();
@@ -210,8 +210,8 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", true, Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_special_minus_one = new Monitor(Mutex::special - 1, "monitor_rank_special_minus_one", true, Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_special_minus_one = new Monitor(Mutex::special - 1, "monitor_rank_special_minus_one", Mutex::_safepoint_check_never);
 
   monitor_rank_special->lock_without_safepoint_check();
   monitor_rank_special_minus_one->lock_without_safepoint_check();
@@ -226,8 +226,8 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_access_leaf,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", true, Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_access = new Monitor(Mutex::access, "monitor_rank_access", true, Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_access = new Monitor(Mutex::access, "monitor_rank_access", Mutex::_safepoint_check_never);
 
   monitor_rank_tty->lock_without_safepoint_check();
   monitor_rank_access->lock_without_safepoint_check();
@@ -242,8 +242,8 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", true, Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", true, Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", Mutex::_safepoint_check_never);
 
   monitor_rank_special->lock_without_safepoint_check();
   monitor_rank_tty->lock_without_safepoint_check();

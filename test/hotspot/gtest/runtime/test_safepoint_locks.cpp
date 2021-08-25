@@ -38,7 +38,7 @@ TEST_VM_ASSERT_MSG(SafepointLockAssertTest, always_check,
 
 TEST_VM_ASSERT_MSG(SafepointLockAssertTest, never_check,
     ".*This lock should never have a safepoint check for Java threads: SFPT_Test_lock") {
-  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, Mutex::_safepoint_check_never),
+  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", Mutex::_safepoint_check_never),
                  Mutex::_safepoint_check_flag);
 }
 
@@ -52,7 +52,7 @@ TEST_VM_ASSERT_MSG(SafepointLockAssertTest, possible_safepoint_lock,
     ".* Possible safepoint reached by thread that does not allow it") {
   JavaThread* thread = JavaThread::current();
   ThreadInVMfromNative in_native(thread);
-  MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", /*vm_block*/true, Mutex::_safepoint_check_never),
+  MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", Mutex::_safepoint_check_never),
                    Mutex::_no_safepoint_check_flag);
   thread->print_thread_state_on(tty);
   // If the lock above succeeds, try to safepoint to test the NSV implied with this special lock.
