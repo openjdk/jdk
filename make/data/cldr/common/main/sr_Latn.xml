@@ -7737,6 +7737,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>ge sila</displayName>
 				<unitPattern count="one">{0} ge sila</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ge silu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ge sile</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ge silom</unitPattern>
 				<unitPattern count="few">{0} ge sila</unitPattern>
 				<unitPattern count="other">{0} ge sila</unitPattern>
 			</unit>
@@ -7750,6 +7753,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>obrtaj</displayName>
 				<unitPattern count="one">{0} obrtaj</unitPattern>
+				<unitPattern count="one" case="accusative">{0} obrtaj</unitPattern>
+				<unitPattern count="one" case="genitive">{0} obrtaja</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} obrtajem</unitPattern>
 				<unitPattern count="few">{0} obrtaja</unitPattern>
 				<unitPattern count="other">{0} obrtaja</unitPattern>
 			</unit>
@@ -7757,6 +7763,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>radijani</displayName>
 				<unitPattern count="one">{0} radijan</unitPattern>
+				<unitPattern count="one" case="accusative">{0} radijan</unitPattern>
+				<unitPattern count="one" case="genitive">{0} radijana</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} radijanom</unitPattern>
 				<unitPattern count="few">{0} radijana</unitPattern>
 				<unitPattern count="other">{0} radijana</unitPattern>
 			</unit>
@@ -7764,6 +7773,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>stepeni</displayName>
 				<unitPattern count="one">{0} stepen</unitPattern>
+				<unitPattern count="one" case="accusative">{0} stepen</unitPattern>
+				<unitPattern count="one" case="genitive">{0} stepena</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} stepenom</unitPattern>
 				<unitPattern count="few">{0} stepena</unitPattern>
 				<unitPattern count="other">{0} stepeni</unitPattern>
 			</unit>
@@ -7771,6 +7783,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>lučni minuti</displayName>
 				<unitPattern count="one">{0} lučni minut</unitPattern>
+				<unitPattern count="one" case="accusative">{0} lučni minut</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lučnog minuta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} lučnim minutom</unitPattern>
 				<unitPattern count="few">{0} lučna minuta</unitPattern>
 				<unitPattern count="other">{0} lučnih minuta</unitPattern>
 			</unit>
@@ -7778,6 +7793,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>lučne sekunde</displayName>
 				<unitPattern count="one">{0} lučna sekunda</unitPattern>
+				<unitPattern count="one" case="accusative">{0} lučnu sekundu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lučne sekunde</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} lučnom sekundom</unitPattern>
 				<unitPattern count="few">{0} lučne sekunde</unitPattern>
 				<unitPattern count="other">{0} lučnih sekundi</unitPattern>
 			</unit>
@@ -7792,6 +7810,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>hektari</displayName>
 				<unitPattern count="one">{0} hektar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektara</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektarom</unitPattern>
 				<unitPattern count="few">{0} hektara</unitPattern>
 				<unitPattern count="other">{0} hektara</unitPattern>
 			</unit>
@@ -7851,6 +7872,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>karati</displayName>
 				<unitPattern count="one">{0} karat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karatom</unitPattern>
 				<unitPattern count="few">{0} karata</unitPattern>
 				<unitPattern count="other">{0} karata</unitPattern>
 			</unit>
@@ -7876,6 +7900,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>čestica na milion</displayName>
 				<unitPattern count="one">{0} čestica na milion</unitPattern>
+				<unitPattern count="one" case="accusative">{0} česticu na milion</unitPattern>
+				<unitPattern count="one" case="genitive">{0} čestice na milion</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} česticom na milion</unitPattern>
 				<unitPattern count="few">{0} čestice na milion</unitPattern>
 				<unitPattern count="other">{0} čestica na milion</unitPattern>
 			</unit>
@@ -7883,6 +7910,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>procenat</displayName>
 				<unitPattern count="one">{0} procenat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} procenat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} procenta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} procentom</unitPattern>
 				<unitPattern count="few">{0} procenata</unitPattern>
 				<unitPattern count="other">{0} procenata</unitPattern>
 			</unit>
@@ -7890,18 +7920,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>promil</displayName>
 				<unitPattern count="one">{0} promil</unitPattern>
+				<unitPattern count="one" case="accusative">{0} promil</unitPattern>
+				<unitPattern count="one" case="genitive">{0} promila</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} promilom</unitPattern>
 				<unitPattern count="few">{0} promila</unitPattern>
 				<unitPattern count="other">{0} promila</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="few">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>inanimate</gender>
 				<displayName>moli</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mol</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mola</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} molom</unitPattern>
 				<unitPattern count="few">{0} mola</unitPattern>
+				<unitPattern count="few" case="accusative">{0} mola</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mola</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} mola</unitPattern>
 				<unitPattern count="other">{0} mola</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mola</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mola</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mola</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litri po kilometru</displayName>
@@ -7985,6 +8030,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>bajtovi</displayName>
 				<unitPattern count="one">{0} bajt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bajtom</unitPattern>
 				<unitPattern count="few">{0} bajta</unitPattern>
 				<unitPattern count="other">{0} bajtova</unitPattern>
 			</unit>
@@ -7992,6 +8040,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>bitovi</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bita</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bitom</unitPattern>
 				<unitPattern count="few">{0} bita</unitPattern>
 				<unitPattern count="other">{0} bitova</unitPattern>
 			</unit>
@@ -7999,6 +8050,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>vekovi</displayName>
 				<unitPattern count="one">{0} vek</unitPattern>
+				<unitPattern count="one" case="accusative">{0} vek</unitPattern>
+				<unitPattern count="one" case="genitive">{0} veka</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} vekom</unitPattern>
 				<unitPattern count="few">{0} veka</unitPattern>
 				<unitPattern count="other">{0} vekova</unitPattern>
 			</unit>
@@ -8006,6 +8060,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>decenije</displayName>
 				<unitPattern count="one">{0} decenija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} deceniju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decenije</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} decenijom</unitPattern>
 				<unitPattern count="few">{0} decenije</unitPattern>
 				<unitPattern count="few" case="accusative">{0} decenije</unitPattern>
 				<unitPattern count="few" case="genitive">{0} decenije</unitPattern>
@@ -8016,6 +8073,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>godine</displayName>
 				<unitPattern count="one">{0} godina</unitPattern>
+				<unitPattern count="one" case="accusative">{0} godinu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} godine</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} godinom</unitPattern>
 				<unitPattern count="few">{0} godine</unitPattern>
 				<unitPattern count="other">{0} godina</unitPattern>
 				<perUnitPattern>{0} godišnje</perUnitPattern>
@@ -8024,6 +8084,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>meseci</displayName>
 				<unitPattern count="one">{0} mesec</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mesec</unitPattern>
+				<unitPattern count="one" case="genitive">{0} meseca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mesecom</unitPattern>
 				<unitPattern count="few">{0} meseca</unitPattern>
 				<unitPattern count="other">{0} meseci</unitPattern>
 				<perUnitPattern>{0} mesečno</perUnitPattern>
@@ -8032,6 +8095,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>nedelje</displayName>
 				<unitPattern count="one">{0} nedelja</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nedelju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nedelje</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nedeljom</unitPattern>
 				<unitPattern count="few">{0} nedelje</unitPattern>
 				<unitPattern count="other">{0} nedelja</unitPattern>
 				<perUnitPattern>{0} nedeljno</perUnitPattern>
@@ -8040,6 +8106,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>dani</displayName>
 				<unitPattern count="one">{0} dan</unitPattern>
+				<unitPattern count="one" case="accusative">{0} dan</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dana</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} danom</unitPattern>
 				<unitPattern count="few">{0} dana</unitPattern>
 				<unitPattern count="other">{0} dana</unitPattern>
 				<perUnitPattern>{0}/dnevno</perUnitPattern>
@@ -8048,6 +8117,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>sati</displayName>
 				<unitPattern count="one">{0} sat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} sat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} sata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} satom</unitPattern>
 				<unitPattern count="few">{0} sata</unitPattern>
 				<unitPattern count="other">{0} sati</unitPattern>
 				<perUnitPattern>{0}/sat</perUnitPattern>
@@ -8056,6 +8128,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>minuti</displayName>
 				<unitPattern count="one">{0} minut</unitPattern>
+				<unitPattern count="one" case="accusative">{0} minut</unitPattern>
+				<unitPattern count="one" case="genitive">{0} minuta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} minutom</unitPattern>
 				<unitPattern count="few">{0} minuta</unitPattern>
 				<unitPattern count="other">{0} minuta</unitPattern>
 				<perUnitPattern>{0} u minutu</perUnitPattern>
@@ -8064,6 +8139,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>sekunde</displayName>
 				<unitPattern count="one">{0} sekunda</unitPattern>
+				<unitPattern count="one" case="accusative">{0} sekundu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} sekunde</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} sekundom</unitPattern>
 				<unitPattern count="few">{0} sekunde</unitPattern>
 				<unitPattern count="other">{0} sekundi</unitPattern>
 				<perUnitPattern>{0}/u sekundi</perUnitPattern>
@@ -8090,6 +8168,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>amperi</displayName>
 				<unitPattern count="one">{0} amper</unitPattern>
+				<unitPattern count="one" case="accusative">{0} amper</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ampera</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} amperom</unitPattern>
 				<unitPattern count="few">{0} ampera</unitPattern>
 				<unitPattern count="other">{0} ampera</unitPattern>
 			</unit>
@@ -8103,6 +8184,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>omi</displayName>
 				<unitPattern count="one">{0} om</unitPattern>
+				<unitPattern count="one" case="accusative">{0} om</unitPattern>
+				<unitPattern count="one" case="genitive">{0} oma</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} omom</unitPattern>
 				<unitPattern count="few">{0} oma</unitPattern>
 				<unitPattern count="other">{0} oma</unitPattern>
 			</unit>
@@ -8110,6 +8194,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>volti</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} volt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} volta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} voltom</unitPattern>
 				<unitPattern count="few">{0} volta</unitPattern>
 				<unitPattern count="other">{0} volti</unitPattern>
 			</unit>
@@ -8123,6 +8210,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>kalorije</displayName>
 				<unitPattern count="one">{0} kalorija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kaloriju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kalorije</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kalorijom</unitPattern>
 				<unitPattern count="few">{0} kalorije</unitPattern>
 				<unitPattern count="other">{0} kalorija</unitPattern>
 			</unit>
@@ -8142,6 +8232,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>džuli</displayName>
 				<unitPattern count="one">{0} džul</unitPattern>
+				<unitPattern count="one" case="accusative">{0} džul</unitPattern>
+				<unitPattern count="one" case="genitive">{0} džula</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} džulom</unitPattern>
 				<unitPattern count="few">{0} džula</unitPattern>
 				<unitPattern count="other">{0} džula</unitPattern>
 			</unit>
@@ -8176,6 +8269,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>njutni</displayName>
 				<unitPattern count="one">{0} njutn</unitPattern>
+				<unitPattern count="one" case="accusative">{0} njutn</unitPattern>
+				<unitPattern count="one" case="genitive">{0} njutna</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} njutnom</unitPattern>
 				<unitPattern count="few">{0} njutna</unitPattern>
 				<unitPattern count="other">{0} njutna</unitPattern>
 			</unit>
@@ -8201,14 +8297,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>herci</displayName>
 				<unitPattern count="one">{0} herc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} herc</unitPattern>
+				<unitPattern count="one" case="genitive">{0} herca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hercom</unitPattern>
 				<unitPattern count="few">{0} herca</unitPattern>
 				<unitPattern count="other">{0} herca</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>inanimate</gender>
+				<unitPattern count="one">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>tačka</displayName>
@@ -8231,6 +8332,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>metri</displayName>
 				<unitPattern count="one">{0} metar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrom</unitPattern>
 				<unitPattern count="few">{0} metra</unitPattern>
 				<unitPattern count="other">{0} metara</unitPattern>
 				<perUnitPattern>{0}/m</perUnitPattern>
@@ -8338,6 +8442,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>skandinavska milja</displayName>
 				<unitPattern count="one">{0} skandinavska milja</unitPattern>
+				<unitPattern count="one" case="accusative">{0} skandinavsku milju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} skandinavske milje</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} skandinavskom miljom</unitPattern>
 				<unitPattern count="few">{0} skandinavske milje</unitPattern>
 				<unitPattern count="other">{0} skandinavskih milja</unitPattern>
 			</unit>
@@ -8357,6 +8464,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>luks</displayName>
 				<unitPattern count="one">{0} luks</unitPattern>
+				<unitPattern count="one" case="accusative">{0} luks</unitPattern>
+				<unitPattern count="one" case="genitive">{0} luksa</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} luksom</unitPattern>
 				<unitPattern count="few">{0} luksa</unitPattern>
 				<unitPattern count="other">{0} luksa</unitPattern>
 			</unit>
@@ -8364,6 +8474,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>kandela</displayName>
 				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kandelu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kandele</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kandelom</unitPattern>
 				<unitPattern count="few">{0} kandele</unitPattern>
 				<unitPattern count="other">{0} kandela</unitPattern>
 			</unit>
@@ -8371,6 +8484,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>lumen</displayName>
 				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="one" case="accusative">{0} lumen</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lumena</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} lumenom</unitPattern>
 				<unitPattern count="few">{0} lumena</unitPattern>
 				<unitPattern count="other">{0} lumena</unitPattern>
 			</unit>
@@ -8378,6 +8494,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>metričke tone</displayName>
 				<unitPattern count="one">{0} metrička tona</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metričku tonu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metričke tone</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metričkom tonom</unitPattern>
 				<unitPattern count="few">{0} metričke tone</unitPattern>
 				<unitPattern count="other">{0} metričkih tona</unitPattern>
 			</unit>
@@ -8385,6 +8504,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>kilogrami</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilogram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilograma</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilogramom</unitPattern>
 				<unitPattern count="few">{0} kilograma</unitPattern>
 				<unitPattern count="other">{0} kilograma</unitPattern>
 				<perUnitPattern>{0} po kilogramu</perUnitPattern>
@@ -8393,6 +8515,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>grami</displayName>
 				<unitPattern count="one">{0} gram</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} grama</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gramom</unitPattern>
 				<unitPattern count="few">{0} grama</unitPattern>
 				<unitPattern count="other">{0} grama</unitPattern>
 				<perUnitPattern>{0} po gramu</perUnitPattern>
@@ -8445,6 +8570,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>karati</displayName>
 				<unitPattern count="one">{0} karat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karatom</unitPattern>
 				<unitPattern count="few">{0} karata</unitPattern>
 				<unitPattern count="other">{0} karata</unitPattern>
 			</unit>
@@ -8494,6 +8622,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>vati</displayName>
 				<unitPattern count="one">{0} vat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} vat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} vata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} vatom</unitPattern>
 				<unitPattern count="few">{0} vata</unitPattern>
 				<unitPattern count="other">{0} vati</unitPattern>
 			</unit>
@@ -8531,6 +8662,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>bari</displayName>
 				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bara</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} barom</unitPattern>
 				<unitPattern count="few">{0} bara</unitPattern>
 				<unitPattern count="other">{0} bara</unitPattern>
 			</unit>
@@ -8544,6 +8678,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>atmosfere</displayName>
 				<unitPattern count="one">{0} atmosfera</unitPattern>
+				<unitPattern count="one" case="accusative">{0} atmosferu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} atmosfere</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} atmosferom</unitPattern>
 				<unitPattern count="few">{0} atmosfere</unitPattern>
 				<unitPattern count="other">{0} atmosfera</unitPattern>
 			</unit>
@@ -8551,6 +8688,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>paskali</displayName>
 				<unitPattern count="one">{0} paskal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} paskal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} paskala</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} paskalom</unitPattern>
 				<unitPattern count="few">{0} paskala</unitPattern>
 				<unitPattern count="other">{0} paskala</unitPattern>
 			</unit>
@@ -8607,6 +8747,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>stepeni Celzijusa</displayName>
 				<unitPattern count="one">{0} stepen Celzijusa</unitPattern>
+				<unitPattern count="one" case="accusative">{0} stepen Celzijusa</unitPattern>
+				<unitPattern count="one" case="genitive">{0} stepena Celzijusa</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} stepenom Celzijusa</unitPattern>
 				<unitPattern count="few">{0} stepena Celzijusa</unitPattern>
 				<unitPattern count="other">{0} stepeni Celzijusa</unitPattern>
 			</unit>
@@ -8620,6 +8763,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>kelvin</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kelvina</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kelvinom</unitPattern>
 				<unitPattern count="few">{0} kelvina</unitPattern>
 				<unitPattern count="other">{0} kelvina</unitPattern>
 			</unit>
@@ -8695,6 +8841,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>inanimate</gender>
 				<displayName>litri</displayName>
 				<unitPattern count="one">{0} litar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} litar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} litrom</unitPattern>
 				<unitPattern count="few">{0} litra</unitPattern>
 				<unitPattern count="other">{0} litara</unitPattern>
 				<perUnitPattern>{0} po litri</perUnitPattern>
@@ -8721,6 +8870,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>metričke pinte</displayName>
 				<unitPattern count="one">{0} metrička pinta</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metričku pintu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metričke pinte</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metričkom pintom</unitPattern>
 				<unitPattern count="few">{0} metričke pinte</unitPattern>
 				<unitPattern count="other">{0} metričkih pinti</unitPattern>
 			</unit>
@@ -8728,6 +8880,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>metrička šolja</displayName>
 				<unitPattern count="one">{0} metrička šolja</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metričku šolju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metričke šolje</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metričkom šoljom</unitPattern>
 				<unitPattern count="few">{0} metričke šolje</unitPattern>
 				<unitPattern count="other">{0} metričkih šolja</unitPattern>
 			</unit>

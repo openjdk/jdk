@@ -1584,8 +1584,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} àmì ìdínwɔ̀n ayé</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<displayName>lumɛ́ɛ̀nì</displayName>
-				<unitPattern count="other">{0} lumɛ́ɛ̀nì</unitPattern>
+				<displayName>àmì lumɛ́ɛ̀nì</displayName>
+				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>shíbí oúnjɛ́ kékeré</displayName>

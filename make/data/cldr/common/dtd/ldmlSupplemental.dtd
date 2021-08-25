@@ -20,7 +20,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST version cldrVersion CDATA #FIXED "40" >
     <!--@MATCH:version-->
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "13.0.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "14.0.0" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 
@@ -417,7 +417,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@MATCH:regex/[-+*/\._ 0-9a-zA-Z]+-->
     <!--@VALUE-->
 <!ATTLIST convertUnit systems NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other -->
+    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other-->
     <!--@VALUE-->
 <!ATTLIST convertUnit description CDATA #IMPLIED >
     <!--@METADATA-->
