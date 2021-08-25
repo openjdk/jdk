@@ -924,9 +924,7 @@ public abstract class MethodHandle implements Constable {
 
     /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
     private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
-        boolean result = keepsAlive(cls.getClassLoader(), loader);
-        assert result : cls.getName() + ":" + cls.getClassLoader() + " </= " + loader;
-        return result;
+        return keepsAlive(cls.getClassLoader(), loader);
     }
 
     /**
