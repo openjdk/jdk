@@ -47,6 +47,7 @@ public:
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
                                (HeapWord*)&_oop_head;
   }
+  inline void add_as_head(oop o);
   inline void set_head(oop o);
   inline bool is_empty() const;
   size_t length()               { return _len; }
@@ -328,6 +329,10 @@ private:
     return id;
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
+  inline void add_to_discovered_list(DiscoveredList& refs_list, oop obj,
+                                     HeapWord* discovered_addr);
+  inline void add_to_discovered_list_st(DiscoveredList& refs_list, oop obj,
+                                        HeapWord* discovered_addr);
   inline void add_to_discovered_list_mt(DiscoveredList& refs_list, oop obj,
                                         HeapWord* discovered_addr);
 
