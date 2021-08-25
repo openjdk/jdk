@@ -243,7 +243,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 Node* PhaseIdealLoop::clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new) {
   // Step 1: Clone all nodes on the data chain but do not rewire anything, yet. Keep track of the cloned nodes
   // by using the old_new mapping. This mapping is then used in step 2 to rewire the cloned nodes accordingly.
-  uint last_idx = C->unique();
+  DEBUG_ONLY(uint last_idx = C->unique();)
   Unique_Node_List list;
   list.push(phi_input);
   for (uint j = 0; j < list.size(); j++) {
@@ -277,7 +277,8 @@ Node* PhaseIdealLoop::clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* 
       if (!in->is_Phi()) {
         assert(!in->is_CFG(), "must be data node");
         Node* in_clone = old_new->at(in->_idx);
-        if (in_clone != NULL && in_clone->_idx >= last_idx) {
+        if (in_clone != NULL) {
+          assert(in_clone->_idx >= last_idx, "must be a valid clone");
           _igvn.replace_input_of(clone, k, in_clone);
           set_ctrl(clone, if_uct);
         }
