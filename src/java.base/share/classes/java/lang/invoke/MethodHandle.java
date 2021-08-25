@@ -34,6 +34,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -452,6 +453,7 @@ public abstract class MethodHandle implements Constable {
     private final MethodType type;
     /*private*/ final LambdaForm form; // form is not private so that invokers can easily fetch it
     private MethodHandle asTypeCache;
+    private SoftReference<MethodHandle> asTypeSoftCache;
 
     private byte customizationCount;
 
@@ -864,20 +866,32 @@ public abstract class MethodHandle implements Constable {
             return at;
         }
         at = asTypeUncached(newType);
-        // Don't cache if newType depends on any class loader other than
-        // this.type already does to avoid class loader leaks.
-        if (isSafeToCache(newType)) {
-            asTypeCache = at;
-        }
-        return at;
+        return setAsTypeCache(at);
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
         MethodHandle atc = asTypeCache;
         if (atc != null && newType == atc.type) {
-            return atc;
+            return atc; // cache hit
+        }
+        if (asTypeSoftCache != null) {
+            atc = asTypeSoftCache.get();
+            if (newType == atc.type) {
+                return atc; // soft cache hit
+            }
         }
         return null;
+    }
+
+    private MethodHandle setAsTypeCache(MethodHandle at) {
+        // Don't introduce a strong reference in the cache if newType depends on any class loader other than
+        // current method handle already does to avoid class loader leaks.
+        if (isSafeToCache(at.type)) {
+            asTypeCache = at;
+        } else {
+            asTypeSoftCache = new SoftReference<>(at);
+        }
+        return at;
     }
 
     /** Override this to change asType behavior. */
@@ -890,7 +904,7 @@ public abstract class MethodHandle implements Constable {
     }
 
     /**
-     * Returns true if {@code newType} does not depend on any class loader other than {@code type} already does.
+     * Returns true if {@code newType} does not depend on any class loader other than current method handle already does.
      * May conservatively return false in order to be efficient.
      */
     private boolean isSafeToCache(MethodType newType) {
