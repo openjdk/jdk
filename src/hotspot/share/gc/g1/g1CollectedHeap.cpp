@@ -3052,17 +3052,17 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // determining collector state.
     G1YoungGCTraceTime tm(gc_cause());
 
-    // Create the heap printer before internal pause timing to have
-    // heap information printed as last part of detailed GC log.
-    G1HeapPrinterMark hpm(this);
-    // Young GC internal pause timing
-    G1YoungGCNotifyPauseMark npm;
     // JFR
     G1YoungGCJFRTracerMark jtm(_gc_timer_stw, _gc_tracer_stw, gc_cause());
     // JStat/MXBeans
     G1MonitoringScope ms(monitoring_support(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
+    // Create the heap printer before internal pause timing to have
+    // heap information printed as last part of detailed GC log.
+    G1HeapPrinterMark hpm(this);
+    // Young GC internal pause timing
+    G1YoungGCNotifyPauseMark npm;
 
     // Verification may use the gang workers, so they must be set up before.
     // Individual parallel phases may override this.
