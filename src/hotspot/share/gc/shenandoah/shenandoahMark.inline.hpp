@@ -68,9 +68,9 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
-      dedup_string<STRING_DEDUP>(obj, req);
       // Case 1: Normal oop, process as usual.
       obj->oop_iterate(cl);
+      dedup_string<STRING_DEDUP>(obj, req);
     } else if (obj->is_objArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.

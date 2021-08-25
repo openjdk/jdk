@@ -65,7 +65,7 @@ public class TestJcmdWithSideCar {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(IMAGE_NAME, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(IMAGE_NAME);
 
         try {
             // Start the loop process in the "main" container, then run test cases

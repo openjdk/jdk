@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary test that --patch-module works with CDS
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

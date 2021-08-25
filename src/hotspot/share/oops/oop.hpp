@@ -246,7 +246,6 @@ class oopDesc {
   void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
 
   inline void forward_to(oop p);
-  inline bool cas_forward_to(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
@@ -292,7 +291,6 @@ class oopDesc {
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
-  inline bool mark_must_be_preserved_for_promotion_failure(markWord m) const;
 
   static bool has_klass_gap();
 

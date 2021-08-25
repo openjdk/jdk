@@ -117,7 +117,7 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
   }
 }
 
-template <class T, bool CANCELLABLE,StringDedupMode STRING_DEDUP>
+template <class T, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
   uintx stride = ShenandoahMarkLoopStride;
 

@@ -201,7 +201,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @throws  IOException  If an I/O error occurs
      */
-    public void write(char cbuf[], int off, int len) throws IOException {
+    public void write(char[] cbuf, int off, int len) throws IOException {
         se.write(cbuf, off, len);
     }
 

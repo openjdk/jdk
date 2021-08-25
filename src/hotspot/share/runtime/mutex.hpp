@@ -54,10 +54,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // inherently a bit more special than even locks of the 'special' rank.
   // NOTE: It is critical that the rank 'special' be the lowest (earliest)
   // (except for "event" and "access") for the deadlock detection to work correctly.
-  // The rank native was only for use in Mutexes created by JVM_RawMonitorCreate,
-  // which being external to the VM are not subject to deadlock detection,
-  // however it has now been used by other locks that don't fit into the
-  // deadlock detection scheme.
   // While at a safepoint no mutexes of rank safepoint are held by any thread.
   // The rank named "leaf" is probably historical (and should
   // be changed) -- mutexes of this rank aren't really leaf mutexes
@@ -65,15 +61,15 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   enum lock_types {
        event,
        access         = event          +   1,
-       tty            = access         +   2,
+       service        = access         +   3,
+       tty            = service        +   3,
        special        = tty            +   3,
        oopstorage     = special        +   3,
        leaf           = oopstorage     +   2,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
        nonleaf        = barrier        +   1,
-       max_nonleaf    = nonleaf        + 900,
-       native         = max_nonleaf    +   1
+       max_nonleaf    = nonleaf        + 900
   };
 
  private:
