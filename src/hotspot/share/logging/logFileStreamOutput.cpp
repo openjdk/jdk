@@ -53,40 +53,6 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
   }
 }
 
-bool LogFileStreamOutput::initialize(const char* options, outputStream* errstream) {
-  if (options == NULL || strlen(options) == 0) {
-    return true;
-  }
-
-  char* opts = os::strdup_check_oom(options, mtLogging);
-  char* equals_pos = strchr(opts, '=');
-  bool success = false;
-  if (equals_pos == NULL) {
-    errstream->print_cr("Invalid option '%s' for log file stream output.", opts);
-  } else {
-    char* key = opts;
-    char* value_str = equals_pos + 1;
-    *equals_pos = '\0';
-
-    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
-      if (strcmp(value_str, "true") == 0) {
-        _fold_multilines = true;
-        success = true;
-      } else if (strcmp(value_str, "false") == 0) {
-        _fold_multilines = false;
-        success = true;
-      } else {
-        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
-      }
-    } else {
-      errstream->print_cr("Invalid option '%s' for log file stream output.", options);
-    }
-  }
-
-  os::free(opts);
-  return success;
-}
-
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
   char buf[LogDecorations::max_decoration_size + 1];

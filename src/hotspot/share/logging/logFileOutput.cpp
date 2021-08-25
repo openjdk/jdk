@@ -196,12 +196,13 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
     *equals_pos = '\0';
 
     if (strcmp(FoldMultilinesOptionKey, key) == 0) {
-      // We need to pass <key>=<value> style option to LogFileStreamOutput::initialize().
-      // Thus we restore '=' temporally.
-      *equals_pos = '=';
-      success = LogFileStreamOutput::initialize(pos, errstream);
-      *equals_pos = '\0';
-      if (!success) {
+      if (strcmp(value_str, "true") == 0) {
+        _fold_multilines = true;
+      } else if (strcmp(value_str, "false") == 0) {
+        _fold_multilines = false;
+      } else {
+        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
+        success = false;
         break;
       }
     } else if (strcmp(FileCountOptionKey, key) == 0) {
