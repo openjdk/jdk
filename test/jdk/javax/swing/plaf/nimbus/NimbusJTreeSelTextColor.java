@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8266510 8271315 
+ * @bug 8266510 8271315
  * @summary  Verifies Nimbus JTree default tree cell renderer use selected text color
  * @run main/manual NimbusJTreeSelTextColor
  */
@@ -67,7 +67,7 @@ public class NimbusJTreeSelTextColor {
 
         if (!testResult) {
             throw new RuntimeException("Selected text color not same as selected tree leaf icon color!");
-        }	    
+        }
     }
 
     private static void createUI() {
@@ -75,7 +75,7 @@ public class NimbusJTreeSelTextColor {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }	    
+        }
 
         JFrame mainFrame = new JFrame();
         GridBagLayout layout = new GridBagLayout();
