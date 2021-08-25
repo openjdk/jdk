@@ -33,7 +33,6 @@ import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
@@ -363,25 +362,10 @@ class DirectMethodHandle extends MethodHandle {
             VerifyAccess.isSamePackage(ValueConversions.class, cls)) {
             // It is a system class.  It is probably in the process of
             // being initialized, but we will help it along just to be safe.
-            if (UNSAFE.shouldBeInitialized(cls)) {
-                UNSAFE.ensureClassInitialized(cls);
-            }
+            UNSAFE.ensureClassInitialized(cls);
             return false;
         }
         return UNSAFE.shouldBeInitialized(cls);
-    }
-
-    private static class EnsureInitialized extends ClassValue<WeakReference<Thread>> {
-        @Override
-        protected WeakReference<Thread> computeValue(Class<?> type) {
-            UNSAFE.ensureClassInitialized(type);
-            if (UNSAFE.shouldBeInitialized(type))
-                // If the previous call didn't block, this can happen.
-                // We are executing inside <clinit>.
-                return new WeakReference<>(Thread.currentThread());
-            return null;
-        }
-        static final EnsureInitialized INSTANCE = new EnsureInitialized();
     }
 
     private void ensureInitialized() {
@@ -397,24 +381,8 @@ class DirectMethodHandle extends MethodHandle {
     }
     private static boolean checkInitialized(MemberName member) {
         Class<?> defc = member.getDeclaringClass();
-        WeakReference<Thread> ref = EnsureInitialized.INSTANCE.get(defc);
-        if (ref == null) {
-            return true;  // the final state
-        }
-        // Somebody may still be running defc.<clinit>.
-        if (ref.refersTo(Thread.currentThread())) {
-            // If anybody is running defc.<clinit>, it is this thread.
-            if (UNSAFE.shouldBeInitialized(defc))
-                // Yes, we are running it; keep the barrier for now.
-                return false;
-        } else {
-            // We are in a random thread.  Block.
-            UNSAFE.ensureClassInitialized(defc);
-        }
-        assert(!UNSAFE.shouldBeInitialized(defc));
-        // put it into the final state
-        EnsureInitialized.INSTANCE.remove(defc);
-        return true;
+        UNSAFE.ensureClassInitialized(defc); // initialization barrier; blocks unless called by the initializing thread
+        return !UNSAFE.shouldBeInitialized(defc); // keep the barrier if the initialization is still in progress
     }
 
     /*non-public*/
