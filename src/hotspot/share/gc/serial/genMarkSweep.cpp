@@ -112,6 +112,8 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   deallocate_stacks();
 
+  MarkSweep::_string_dedup_requests->flush();
+
   // If compaction completely evacuated the young generation then we
   // can clear the card table.  Otherwise, we must invalidate
   // it (consider all cards dirty).  In the future, we might consider doing

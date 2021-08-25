@@ -90,10 +90,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
@@ -1228,10 +1226,10 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Adds the inline comment.
+     * Adds the full-body content of the given element.
      *
-     * @param element the Element for which the inline comments will be generated
-     * @param htmltree the documentation tree to which the inline comments will be added
+     * @param element the element for which the content will be added
+     * @param htmltree the documentation tree to which the content will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
         addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);

@@ -374,18 +374,16 @@ void Mutex::check_rank(Thread* thread) {
 
   if (!SafepointSynchronize::is_at_safepoint()) {
     // We expect the locks already acquired to be in increasing rank order,
-    // modulo locks of native rank or acquired in try_lock_without_rank_check()
+    // modulo locks acquired in try_lock_without_rank_check()
     for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
       if (tmp->next() != NULL) {
-        assert(tmp->rank() == Mutex::native || tmp->rank() < tmp->next()->rank()
+        assert(tmp->rank() < tmp->next()->rank()
                || tmp->skip_rank_check(), "mutex rank anomaly?");
       }
     }
   }
 
-  // Locks with rank native are an exception and are not
-  // subject to the verification rules.
-  bool check_can_be_skipped = this->rank() == Mutex::native || SafepointSynchronize::is_at_safepoint();
+  bool check_can_be_skipped = SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
