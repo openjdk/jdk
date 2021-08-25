@@ -968,7 +968,7 @@ setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder
                                                                              stencilNeeded:[mtlc.clip isShape]];
         [encoder setRenderPipelineState:pipelineState];
     } else {
-      // Fallback to valid pipeline state
+      // Fallback to default pipeline state
       [MTLColorPaint setPipelineState:encoder
                             context:mtlc
                       renderOptions:renderOptions
@@ -1017,7 +1017,7 @@ setTxtUniforms(MTLContext *mtlc, int color, id <MTLRenderCommandEncoder> encoder
                                                                              stencilNeeded:[mtlc.clip isShape]];
         [encoder setRenderPipelineState:pipelineState];
     } else {
-      // Fallback to valid pipeline state
+      // Fallback to default pipeline state
       [MTLColorPaint setPipelineState:encoder
                             context:mtlc
                       renderOptions:renderOptions
