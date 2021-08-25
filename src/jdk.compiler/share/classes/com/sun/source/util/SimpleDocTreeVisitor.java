@@ -464,7 +464,9 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}

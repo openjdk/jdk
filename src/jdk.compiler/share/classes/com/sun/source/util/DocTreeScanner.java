@@ -510,7 +510,9 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
