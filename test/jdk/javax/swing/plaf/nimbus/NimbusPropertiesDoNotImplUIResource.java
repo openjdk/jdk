@@ -42,7 +42,7 @@ public class NimbusPropertiesDoNotImplUIResource {
             "Tree.textForeground", "Tree.selectionBackground",
             "Tree.textBackground", "Tree.selectionBorderColor"};
 
-    private static String failedKeys = null;
+    private static String failedKeys;
 
     public static void main(String[] args) throws Exception {
         UIManager.LookAndFeelInfo[] installedLookAndFeels;
@@ -55,30 +55,30 @@ public class NimbusPropertiesDoNotImplUIResource {
                 for (String propertyKey : defPropertyKeys) {
                     verifyProperty(propertyKey);
                 }
-                if(failedKeys != null) {
+                if (failedKeys != null) {
                     throw new RuntimeException("JTree renderer Properties " +
                             failedKeys + " are not instance of UIResource for "
                             + LF.getClassName());
                 }
-            } catch(UnsupportedLookAndFeelException e) {
+            } catch (UnsupportedLookAndFeelException e) {
                 System.out.println("Note: LookAndFeel " + LF.getClassName()
                         + " is not supported on this configuration");
             }
         }
 
-        //Check that the both uiResource option true and false are working for
-        //getDerivedColor method of NimbusLookAndFeel
+        // Check that both uiResource option true and false work for
+        // getDerivedColor method of NimbusLookAndFeel
         UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         Color color1 = ((NimbusLookAndFeel)UIManager.getLookAndFeel())
                 .getDerivedColor("text", 0, 0, 0, 0, false);
-        if(color1 instanceof UIResource) {
+        if (color1 instanceof UIResource) {
             throw new RuntimeException("color1 should not be instance of " +
                     "UIResource");
         }
 
         Color color2 = ((NimbusLookAndFeel)UIManager.getLookAndFeel())
                 .getDerivedColor("text", 0, 0, 0, 0, true);
-        if(!(color2 instanceof UIResource)) {
+        if (!(color2 instanceof UIResource)) {
             throw new RuntimeException("color2 should be instance of " +
                     "UIResource");
         }
@@ -91,7 +91,7 @@ public class NimbusPropertiesDoNotImplUIResource {
             return;
         }
         if (!(property instanceof UIResource)) {
-            if(failedKeys == null) {
+            if (failedKeys == null) {
                 failedKeys = ":" + propertyKey;
             } else {
                 failedKeys += "," + propertyKey;
