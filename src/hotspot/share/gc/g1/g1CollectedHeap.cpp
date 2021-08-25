@@ -3446,13 +3446,12 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
         _g1h->set_humongous_reclaim_candidate(index, false);
         _g1h->register_region_with_region_attr(hr);
       }
-      log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked (prev/next) %d/%d reclaim candidate %d type array %d",
+      log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked %d reclaim candidate %d type array %d",
                                index,
                                (size_t)cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->strong_code_roots_list_length(),
-                               _g1h->concurrent_mark()->prev_mark_bitmap()->is_marked(hr->bottom()),
                                _g1h->concurrent_mark()->next_mark_bitmap()->is_marked(hr->bottom()),
                                _g1h->is_humongous_reclaim_candidate(index),
                                cast_to_oop(hr->bottom())->is_typeArray()
