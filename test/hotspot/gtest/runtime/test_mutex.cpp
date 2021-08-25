@@ -129,7 +129,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_access_leaf,
-                   ".* Attempting to acquire lock mutex_rank_leaf/11 out of order with lock mutex_rank_access/1 "
+                   ".* Attempting to acquire lock mutex_rank_leaf/.* out of order with lock mutex_rank_access/1 "
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -144,7 +144,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_access_leaf,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_tty_special,
-                   ".* Attempting to acquire lock mutex_rank_special/6 out of order with lock mutex_rank_tty/3 "
+                   ".* Attempting to acquire lock mutex_rank_special/.* out of order with lock mutex_rank_tty/.*"
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -205,7 +205,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
-                   ".* Attempting to wait on monitor monitor_rank_special_minus_one/5 while holding lock monitor_rank_special/6 "
+                   ".* Attempting to wait on monitor monitor_rank_special_minus_one/.* while holding lock monitor_rank_special/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -221,7 +221,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_access_leaf,
-                   ".* Attempting to wait on monitor monitor_rank_access/1 while holding lock monitor_rank_tty/3 "
+                   ".* Attempting to wait on monitor monitor_rank_access/1 while holding lock monitor_rank_tty/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
@@ -237,7 +237,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_access_leaf,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
-                   ".* Attempting to wait on monitor monitor_rank_tty/3 while holding lock monitor_rank_special/6 "
+                   ".* Attempting to wait on monitor monitor_rank_tty/.* while holding lock monitor_rank_special/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
