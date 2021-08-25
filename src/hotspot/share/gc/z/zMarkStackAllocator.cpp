@@ -32,10 +32,6 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-uintptr_t ZMarkStackSpaceStart;
-
-ZMarkStackAllocator* ZMarkStackAllocator::_instance = NULL;
-
 ZMarkStackSpace::ZMarkStackSpace() :
     _expand_lock(),
     _start(0),
@@ -54,15 +50,16 @@ ZMarkStackSpace::ZMarkStackSpace() :
   // Successfully initialized
   _start = _top = _end = addr;
 
-  // Register mark stack space start
-  ZMarkStackSpaceStart = _start;
-
   // Prime space
   _end += expand_space();
 }
 
 bool ZMarkStackSpace::is_initialized() const {
   return _start != 0;
+}
+
+uintptr_t ZMarkStackSpace::start() const {
+  return _start;
 }
 
 size_t ZMarkStackSpace::size() const {
@@ -171,21 +168,16 @@ void ZMarkStackSpace::free() {
   _top = _start;
 }
 
-void ZMarkStackAllocator::initialize() {
-  assert(_instance == NULL, "Should only initialize once");
-  _instance = new ZMarkStackAllocator();
-}
-
-ZMarkStackAllocator* ZMarkStackAllocator::instance() {
-  return _instance;
-}
-
 ZMarkStackAllocator::ZMarkStackAllocator() :
-    _freelist(),
-    _space() {}
+    _space(),
+    _freelist(_space.start()) {}
 
 bool ZMarkStackAllocator::is_initialized() const {
   return _space.is_initialized();
+}
+
+uintptr_t ZMarkStackAllocator::start() const {
+  return _space.start();
 }
 
 size_t ZMarkStackAllocator::size() const {

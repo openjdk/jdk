@@ -201,6 +201,10 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
   _initialized = true;
 }
 
+bool ZPageAllocator::is_initialized() const {
+  return _initialized;
+}
+
 class ZPreTouchTask : public ZTask {
 private:
   const ZPhysicalMemoryManager* const _physical;
@@ -230,15 +234,18 @@ public:
   }
 };
 
-bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
-  ZAllocationFlags flags;
+void ZPageAllocator::prime_cache(ZWorkers* workers) {
+  assert(is_initialized(), "Should be initialized");
 
+  ZAllocationFlags flags;
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden);
+  ZPage* const page = alloc_page(ZPageTypeLarge, _initial_capacity, flags, ZGenerationId::young, ZPageAge::eden);
   if (page == NULL) {
-    return false;
+    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", _initial_capacity / M);
+    _initialized = false;
+    return;
   }
 
   if (AlwaysPreTouch) {
@@ -248,21 +255,6 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   }
 
   free_page(page, false /* reclaimed */);
-
-  return true;
-}
-
-bool ZPageAllocator::initialize_heap(ZWorkers* workers) {
-  if (!_initialized) {
-    return false;
-  }
-
-  if (!prime_cache(workers, _initial_capacity)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", _initial_capacity / M);
-    return false;
-  }
-
-  return true;
 }
 
 size_t ZPageAllocator::min_capacity() const {

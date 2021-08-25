@@ -72,6 +72,10 @@ ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* p
     _stat_mark() {
 }
 
+bool ZCollector::is_initialized() const {
+  return _mark.is_initialized();
+}
+
 ZWorkers* ZCollector::workers() {
   return &_workers;
 }

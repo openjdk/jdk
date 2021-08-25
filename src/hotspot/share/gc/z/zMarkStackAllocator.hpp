@@ -49,6 +49,7 @@ public:
 
   bool is_initialized() const;
 
+  uintptr_t start() const;
   size_t size() const;
 
   uintptr_t alloc(size_t size);
@@ -57,21 +58,17 @@ public:
 
 class ZMarkStackAllocator : public CHeapObj<mtGC> {
 private:
-  static ZMarkStackAllocator* _instance;
-
-  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
-
-  ZMarkStackAllocator();
-
-  bool is_initialized() const;
+  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
 
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
 public:
-  static void initialize();
-  static ZMarkStackAllocator* instance();
+  ZMarkStackAllocator();
 
+  bool is_initialized() const;
+
+  uintptr_t start() const;
   size_t size() const;
 
   ZMarkStackMagazine* alloc_magazine();

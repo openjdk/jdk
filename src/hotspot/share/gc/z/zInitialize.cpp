@@ -54,7 +54,6 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZLargePages::initialize();
   ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
-  ZMarkStackAllocator::initialize();
   ZJNICritical::initialize();
 
   pd_initialize();

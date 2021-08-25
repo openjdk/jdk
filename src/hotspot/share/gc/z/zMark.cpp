@@ -77,7 +77,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark 
 ZMark::ZMark(ZCollector* collector, ZPageTable* page_table) :
     _collector(collector),
     _page_table(page_table),
-    _stripes(),
+    _allocator(),
+    _stripes(_allocator.start()),
     _terminate(),
     _work_nproactiveflush(0),
     _work_nterminateflush(0),
@@ -87,8 +88,8 @@ ZMark::ZMark(ZCollector* collector, ZPageTable* page_table) :
     _ncontinue(0),
     _nworkers(0) {}
 
-ZMarkStackAllocator* ZMark::allocator() {
-  return ZMarkStackAllocator::instance();
+bool ZMark::is_initialized() const {
+  return _allocator.is_initialized();
 }
 
 size_t ZMark::calculate_nstripes(uint nworkers) const {
@@ -169,7 +170,7 @@ void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (" SIZE_FORMAT "), stripe: " SIZE_FORMAT,
                                  addr, size, _stripes.stripe_id(stripe));
 
-  stacks->push(allocator(), &_stripes, stripe, entry, false /* publish */);
+  stacks->push(&_allocator, &_stripes, stripe, entry, false /* publish */);
 }
 
 static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool finalizable, bool young) {
@@ -383,7 +384,7 @@ bool ZMark::drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCach
   size_t processed = 0;
 
   // Drain stripe stacks
-  while (stacks->pop(allocator(), &_stripes, stripe, entry)) {
+  while (stacks->pop(&_allocator, &_stripes, stripe, entry)) {
     mark_and_follow(cache, entry);
 
     if ((processed++ & 31) == 0) {
@@ -582,7 +583,7 @@ void ZMark::work() {
   }
 
   // Free remaining stacks
-  stacks->free(allocator());
+  stacks->free(&_allocator);
 }
 
 class ZMarkOopClosure : public OopClosure {
@@ -919,15 +920,11 @@ bool ZMark::end() {
 }
 
 void ZMark::free() {
-  // FIXME: Implement stack freeing. There's only one allocator,
-  // so the major and minor collections need to coordinate this.
-#if 0
   // Free any unused mark stack space
   _allocator.free();
 
   // Update statistics
-  ZStatMark::set_at_mark_free(_allocator.size());
-#endif
+  _collector->stat_mark()->set_at_mark_free(_allocator.size());
 }
 
 void ZMark::flush_and_free() {
@@ -940,8 +937,8 @@ bool ZMark::flush_and_free(Thread* thread) {
     ZThreadLocalData::store_barrier_buffer(thread)->flush();
   }
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _collector->id());
-  const bool flushed = stacks->flush(allocator(), &_stripes);
-  stacks->free(allocator());
+  const bool flushed = stacks->flush(&_allocator, &_stripes);
+  stacks->free(&_allocator);
   return flushed;
 }
 

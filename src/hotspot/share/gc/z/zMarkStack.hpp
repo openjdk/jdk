@@ -52,13 +52,14 @@ public:
 template <typename T>
 class ZStackList {
 private:
+  uintptr_t   _base;
   T* volatile _head;
 
   T* encode_versioned_pointer(const T* stack, uint32_t version) const;
   void decode_versioned_pointer(const T* vstack, T** stack, uint32_t* version) const;
 
 public:
-  ZStackList();
+  ZStackList(uintptr_t base);
 
   bool is_empty() const;
 
@@ -82,7 +83,7 @@ private:
   ZCACHE_ALIGNED ZMarkStackList _overflowed;
 
 public:
-  ZMarkStripe();
+  ZMarkStripe(uintptr_t base = 0);
 
   bool is_empty() const;
 
@@ -97,7 +98,7 @@ private:
   ZMarkStripe _stripes[ZMarkStripesMax];
 
 public:
-  ZMarkStripeSet();
+  ZMarkStripeSet(uintptr_t base);
 
   size_t nstripes() const;
   void set_nstripes(size_t nstripes);

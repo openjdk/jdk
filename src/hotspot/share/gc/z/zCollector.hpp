@@ -87,6 +87,8 @@ protected:
   void log_phase_switch(Phase from, Phase to);
 
 public:
+  bool is_initialized() const;
+
   // GC phases
   void set_phase(Phase new_phase);
   bool is_phase_relocate() const;

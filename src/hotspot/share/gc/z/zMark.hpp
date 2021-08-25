@@ -60,6 +60,7 @@ public:
 private:
   ZCollector* const   _collector;
   ZPageTable* const   _page_table;
+  ZMarkStackAllocator _allocator;
   ZMarkStripeSet      _stripes;
   ZMarkTerminate      _terminate;
   volatile size_t     _work_nproactiveflush;
@@ -69,8 +70,6 @@ private:
   size_t              _ntrycomplete;
   size_t              _ncontinue;
   uint                _nworkers;
-
-  ZMarkStackAllocator* allocator();
 
   size_t calculate_nstripes(uint nworkers) const;
 
@@ -105,6 +104,8 @@ private:
 
 public:
   ZMark(ZCollector* collector, ZPageTable* page_table);
+
+  bool is_initialized() const;
 
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   void mark_object(zaddress addr);

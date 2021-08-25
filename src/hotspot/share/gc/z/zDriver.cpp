@@ -51,8 +51,8 @@ static const ZStatPhasePause      ZPhasePauseMinorMarkStart("Pause Minor Mark St
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkRoots("Concurrent Minor Mark Roots");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMark("Concurrent Minor Mark");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkContinue("Concurrent Minor Mark Continue");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkFree("Concurrent Minor Mark Free");
 static const ZStatPhasePause      ZPhasePauseMinorMarkEnd("Pause Minor Mark End");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMinorMarkFree("Concurrent Minor Mark Free");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorResetRelocationSet("Concurrent Minor Reset Relocation Set");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMinorSelectRelocationSet("Concurrent Minor Select Relocation Set");
 static const ZStatPhasePause      ZPhasePauseMinorRelocateStart("Pause Minor Relocate Start");
@@ -61,8 +61,8 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentMinorRelocated("Concurrent Min
 static const ZStatPhasePause      ZPhasePauseMajorMarkStart("Pause Major Mark Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMajorMark("Concurrent Major Mark");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMajorMarkContinue("Concurrent Major Mark Continue");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMajorMarkFree("Concurrent Major Mark Free");
 static const ZStatPhasePause      ZPhasePauseMajorMarkEnd("Pause Major Mark End");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMajorMarkFree("Concurrent Major Mark Free");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMajorProcessNonStrongReferences("Concurrent Major Process Non-Strong References");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMajorResetRelocationSet("Concurrent Major Reset Relocation Set");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMajorSelectRelocationSet("Concurrent Major Select Relocation Set");

@@ -115,7 +115,7 @@ extern uintptr_t  ZAddressHeapBaseShift;
 // **********         : Used by mark barrier
 // ************       : Used by store barrier
 //             ****   : Reserved bits
-// 
+//
 // The table below describes what each color does.
 //
 // +-------------+-------------------+--------------------------+
@@ -259,7 +259,6 @@ const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
 #define           ZCACHE_ALIGNED                ATTRIBUTE_ALIGNED(ZCacheLineSize)
 
 // Mark stack space
-extern uintptr_t  ZMarkStackSpaceStart;
 const size_t      ZMarkStackSpaceExpandSize     = (size_t)1 << 25; // 32M
 
 // Mark stack and magazine sizes

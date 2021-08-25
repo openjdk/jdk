@@ -84,8 +84,6 @@ private:
   mutable ZSafePageRecycle   _safe_recycle;
   bool                       _initialized;
 
-  bool prime_cache(ZWorkers* workers, size_t size);
-
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
@@ -121,7 +119,9 @@ public:
                  size_t initial_capacity,
                  size_t max_capacity);
 
-  bool initialize_heap(ZWorkers* workers);
+  bool is_initialized() const;
+
+  void prime_cache(ZWorkers* workers);
 
   size_t min_capacity() const;
   size_t max_capacity() const;
