@@ -241,7 +241,13 @@ public class AudioSystem {
             }
         }
 
-        return list.toArray(new Line.Info[0]);
+        Line.Info[] returnedArray = new Line.Info[list.size()];
+
+        for (int i = 0; i < returnedArray.length; i++) {
+            returnedArray[i] = list.get(i);
+        }
+
+        return returnedArray;
     }
 
     /**
@@ -273,7 +279,13 @@ public class AudioSystem {
             }
         }
 
-        return list.toArray(new Line.Info[0]);
+        Line.Info[] returnedArray = new Line.Info[list.size()];
+
+        for (int i = 0; i < returnedArray.length; i++) {
+            returnedArray[i] = list.get(i);
+        }
+
+        return returnedArray;
     }
 
     /**
