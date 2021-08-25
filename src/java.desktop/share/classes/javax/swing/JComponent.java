@@ -181,11 +181,15 @@ import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
  * need a specific value for a particular property you should
  * explicitly set it.
  * <p>
- * Containers inherited from <code>JComponent</code> can contain any
- * number of default components as children. This behaviour can also
- * change according to look and feel, as some look and feels may add a
- * default component to a container, where as other look and feels may
- * choose not to do so.
+ * A <code>JComponent</code> may contain any number of default or initial
+ * components as children. This behaviour may change according to look and
+ * feel, therefore a <code>JComponent</code> may contain some default or
+ * initial components as children for a particular Look and Feel, whereas it
+ * may not do so for some other Look and Feel. Within a particular Look and
+ * Feel also, this behaviour may change depending upon the configuration
+ * properties of the <code>JComponent</code>. In summary, it is not valid
+ * to assume a JComponent has no children just because the application
+ * did not directly add them.
  * <p>
  * In release 1.4, the focus subsystem was rearchitected.
  * For more information, see
