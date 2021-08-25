@@ -33,6 +33,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
+import sun.swing.ImageIconUIResource;
 import sun.swing.SwingUtilities2;
 
 import apple.laf.JRSUIConstants.*;
@@ -157,7 +158,7 @@ public class AquaMenuPainter {
         selectedMenuItemPainter.get().paintBorder(null, g, 0, 0, width, height);
     }
 
-    protected void paintMenuItem(final Client client, final Graphics g, final JComponent c, final Icon checkIcon, final Icon arrowIcon, final Color background, final Color foreground, final Color disabledForeground, final Color selectionForeground, final int defaultTextIconGap, final Font acceleratorFont) {
+    protected void paintMenuItem(final Client client, final Graphics g, final JComponent c, final Icon checkIcon, Icon arrowIcon, final Color background, final Color foreground, final Color disabledForeground, final Color selectionForeground, final int defaultTextIconGap, final Font acceleratorFont) {
         final JMenuItem b = (JMenuItem)c;
         final ButtonModel model = b.getModel();
 
@@ -294,6 +295,10 @@ public class AquaMenuPainter {
 
         // Paint the Arrow
         if (arrowIcon != null) {
+            if (!isEnabled && (arrowIcon instanceof ImageIcon)) {
+                arrowIcon = new ImageIconUIResource(GrayFilter.
+                        createDisabledImage(((ImageIcon)arrowIcon).getImage()));
+            }
             paintArrow(g, b, model, arrowIcon, arrowIconRect);
         }
 
