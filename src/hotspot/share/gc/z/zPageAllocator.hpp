@@ -121,7 +121,7 @@ public:
 
   bool is_initialized() const;
 
-  void prime_cache(ZWorkers* workers);
+  bool prime_cache(ZWorkers* workers);
 
   size_t min_capacity() const;
   size_t max_capacity() const;

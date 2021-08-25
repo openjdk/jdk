@@ -53,6 +53,8 @@ private:
   ZMinorCollector     _minor_collector;
   ZMajorCollector     _major_collector;
 
+  bool                _initialized;
+
 public:
   static ZHeap* heap();
 

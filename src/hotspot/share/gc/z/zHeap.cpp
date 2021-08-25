@@ -58,26 +58,32 @@ ZHeap::ZHeap() :
     _young_generation(&_page_table, &_page_allocator),
     _old_generation(),
     _minor_collector(&_page_table, &_page_allocator),
-    _major_collector(&_page_table, &_page_allocator) {
+    _major_collector(&_page_table, &_page_allocator),
+    _initialized(false) {
 
   // Install global heap instance
   assert(_heap == NULL, "Already initialized");
   _heap = this;
 
-  if (!is_initialized()) {
+  if (!_page_allocator.is_initialized() || !_minor_collector.is_initialized() || !_major_collector.is_initialized()) {
     return;
   }
 
   // Prime cache
-  _page_allocator.prime_cache(_major_collector.workers());
+  if (!_page_allocator.prime_cache(_major_collector.workers())) {
+    return;
+  }
 
   // Update statistics
   _minor_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
   _major_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
+
+  // Successfully initialized
+  _initialized = true;
 }
 
 bool ZHeap::is_initialized() const {
-  return _page_allocator.is_initialized() && _minor_collector.is_initialized() && _major_collector.is_initialized();
+  return _initialized;
 }
 
 size_t ZHeap::min_capacity() const {
