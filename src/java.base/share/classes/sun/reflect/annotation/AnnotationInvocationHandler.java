@@ -371,8 +371,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (!type.isInstance(o))
             return false;
         for (Method memberMethod : getMemberMethods()) {
-            if (memberMethod.isSynthetic())
-                continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
             Object hisValue = null;
@@ -469,14 +467,18 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     @SuppressWarnings("removal")
     private Method[] computeMemberMethods() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Method[]>() {
-                public Method[] run() {
-                    final Method[] methods = type.getDeclaredMethods();
-                    validateAnnotationMethods(methods);
-                    AccessibleObject.setAccessible(methods, true);
-                    return methods;
-                }});
+        return AccessController.doPrivileged((PrivilegedAction<Method[]>) () -> {
+            final Method[] methods = Arrays.stream(type.getDeclaredMethods())
+                    // Skip over synthetic methods. It may be a static initializer
+                    // or similar construct. A static initializer may be used for
+                    // purposes such as initializing a lambda stored in an
+                    // interface field.
+                    .filter(method -> !method.isSynthetic())
+                    .toArray(Method[]::new);
+            validateAnnotationMethods(methods);
+            AccessibleObject.setAccessible(methods, true);
+            return methods;
+        });
     }
 
     private transient volatile Method[] memberMethods;
@@ -498,17 +500,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         for(Method method : memberMethods) {
             currentMethod = method;
             int modifiers = method.getModifiers();
-            // Skip over methods that may be a static initializer or
-            // similar construct. A static initializer may be used for
-            // purposes such as initializing a lambda stored in an
-            // interface field.
-            // Methods that have no arguments (lambdas without parameters)
-            // as well as methods with arguments (lambdas with parameters)
-            // should be skipped.
-            if (method.isSynthetic() &&
-                (modifiers & (Modifier.STATIC | Modifier.PRIVATE)) != 0) {
-                continue;
-            }
 
             /*
              * "By virtue of the AnnotationTypeElementDeclaration
@@ -578,11 +569,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 break;
             }
         }
-        if (valid)
-            return;
-        else
-            throw new AnnotationFormatError("Malformed method on an annotation type: " +
-                                            currentMethod.toString());
+        if (!valid)
+            throw new AnnotationFormatError("Malformed method on an annotation type: "
+                    + currentMethod);
     }
 
     /**
