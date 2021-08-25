@@ -4070,6 +4070,17 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   return true;
 }
 
+//----------------------needs_mem_bar-------------------------
+bool LibraryCallKit::needs_mem_bar(Node* base, Node* addr) {
+  const Type* base_t = _gvn.type(base);
+  bool in_native = (base_t == TypePtr::NULL_PTR);
+  bool in_heap = !TypePtr::NULL_PTR->higher_equal(base_t);
+  bool is_mixed  = !in_heap && !in_native;
+
+  bool is_array = _gvn.type(addr)->isa_aryptr();
+  return is_mixed || (in_heap && !is_array);
+}
+
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
@@ -4091,9 +4102,13 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   Node* src = make_unsafe_address(src_ptr, src_off);
   Node* dst = make_unsafe_address(dst_ptr, dst_off);
 
-  // Conservatively insert a memory barrier on all memory slices.
-  // Do not let writes of the copy source or destination float below the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  bool needs_cpu_mem_bar = needs_mem_bar(src_ptr, src) ||
+                           needs_mem_bar(dst_ptr, dst);
+
+  if (needs_cpu_mem_bar) {
+    // Do not let writes of the copy source or destination float below the copy.
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
@@ -4103,18 +4118,34 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
+  // Adjust memory effects
+  const TypePtr* dst_type = TypeRawPtr::BOTTOM;
+  int flags = RC_LEAF | RC_NO_FP;
+  if (!needs_cpu_mem_bar) {
+    dst_type = _gvn.type(dst)->is_ptr(); // narrow out memory
+
+    const TypePtr* src_type = _gvn.type(src)->is_ptr();
+    bool wide_out = (C->get_alias_index(dst_type) == Compile::AliasIdxBot);
+    bool has_narrow_mem = !wide_out && (C->get_alias_index(src_type) == C->get_alias_index(dst_type));
+    if (has_narrow_mem) {
+      flags |= RC_NARROW_MEM;
+    }
+  }
+
   // Call it.  Note that the length argument is not scaled.
-  make_runtime_call(RC_LEAF|RC_NO_FP,
+  make_runtime_call(flags,
                     OptoRuntime::fast_arraycopy_Type(),
                     StubRoutines::unsafe_arraycopy(),
                     "unsafe_arraycopy",
-                    TypeRawPtr::BOTTOM,
+                    dst_type,
                     src, dst, size XTOP);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
-  // Do not let reads of the copy destination float above the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  if (needs_cpu_mem_bar) {
+    // Do not let reads of the copy destination float above the copy.
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
 
   return true;
 }
