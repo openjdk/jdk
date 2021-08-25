@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -1043,6 +1044,7 @@ final class CertificateMessage {
             }
 
             Collection<String> checkedKeyTypes = new HashSet<>();
+            LinkedHashSet<String> allAuths = new LinkedHashSet<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
                 if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -1068,7 +1070,7 @@ final class CertificateMessage {
                     continue;
                 }
 
-                SSLAuthentication ka = X509Authentication.valueOf(ss);
+                X509Authentication ka = X509Authentication.valueOf(ss);
                 if (ka == null) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
@@ -1077,23 +1079,20 @@ final class CertificateMessage {
                     checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
+                allAuths.add(ss.keyAlgorithm);
+            }
 
-                SSLPossession pos = ka.createPossession(hc);
-                if (pos == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unavailable authentication scheme: " + ss.name);
-                    }
-                    continue;
+            X509Authentications ka
+                    = new X509Authentications(allAuths.toArray(String[]::new));
+            SSLPossession pos = ka.createPossession(hc);
+            if (pos == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning(
+                            "Unavailable authentication scheme: " + allAuths);
                 }
-
-                return pos;
+                return null;
             }
-
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning("No available authentication scheme");
-            }
-            return null;
+            return pos;
         }
 
         private byte[] onProduceCertificate(ClientHandshakeContext chc,
