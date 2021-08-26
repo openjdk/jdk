@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,12 +405,12 @@ public class GSSCredentialImpl implements GSSCredential {
             throw new IllegalStateException("This credential is " +
                                         "no longer valid");
         }
-        Vector<Oid> result = new Vector<Oid>(hashtable.size());
+        ArrayList<Oid> result = new ArrayList<Oid>(hashtable.size());
 
         for (Enumeration<SearchKey> e = hashtable.keys();
                                                 e.hasMoreElements(); ) {
             SearchKey tempKey = e.nextElement();
-            result.addElement(tempKey.getMech());
+            result.add(tempKey.getMech());
         }
         return result.toArray(new Oid[0]);
     }
