@@ -80,12 +80,13 @@ void G1EvacuationFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
 }
 
 G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWord* bottom) :
-  _max_offset(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize)),
+  _max_offset(static_cast<Elem>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize))),
   _region_idx(region_idx),
   _bottom(bottom),
   _nodes_array(HeapRegion::GrainWords / NODE_LENGTH + 2),
-  _offset_array(NULL) {
-  _objs_num = 0;
+  _offset_array(NULL),
+  _objs_num(0)
+  {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
