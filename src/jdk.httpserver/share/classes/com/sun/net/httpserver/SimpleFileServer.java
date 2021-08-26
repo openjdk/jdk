@@ -186,6 +186,9 @@ public final class SimpleFileServer {
      *         is not a directory, or is not readable
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if any argument is null
+     * @throws SecurityException if a security manager is installed and a
+     *         recursive {@link java.io.FilePermission} "{@code read}" of the
+     *         rootDirectory is denied
      */
     public static HttpServer createFileServer(InetSocketAddress addr,
                                               Path rootDirectory,
@@ -228,6 +231,9 @@ public final class SimpleFileServer {
      * @throws IllegalArgumentException if rootDirectory does not exist,
      *         is not absolute, is not a directory, or is not readable
      * @throws NullPointerException if the argument is null
+     * @throws SecurityException if a security manager is installed and a
+     *         recursive {@link java.io.FilePermission} "{@code read}" of the
+     *         rootDirectory is denied
      */
     public static HttpHandler createFileHandler(Path rootDirectory) {
         Objects.requireNonNull(rootDirectory);

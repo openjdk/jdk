@@ -63,13 +63,13 @@ import static java.nio.file.StandardOpenOption.CREATE;
  *     1) security manager enabled and "read" FilePermission granted
  *     2) security manager enabled and "read" FilePermission NOT granted
  *     3) security manager NOT enabled
- * 2) misses the required permissions to call many of the java.nio.Files methods,
+ * 2) misses the required permissions to call many of the java.nio.file methods,
  * the test works around this by reusing the test directory created in the
  * previous run.
 * */
 public class SecurityManagerTest {
 
-    static final Path CWD = Path.of(".").toAbsolutePath();
+    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("SecurityManagerTest");
     static final InetSocketAddress LOOPBACK_ADDR =
             new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);

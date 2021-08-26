@@ -66,7 +66,7 @@ public final class FileServerHandler implements HttpHandler {
         @SuppressWarnings("removal")
         var securityManager = System.getSecurityManager();
         if (securityManager != null)
-            securityManager.checkRead(root.toString());
+            securityManager.checkRead(pathForSecurityCheck(root.toString()));
 
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
@@ -79,6 +79,10 @@ public final class FileServerHandler implements HttpHandler {
         this.root = root;
         this.mimeTable = mimeTable;
         this.logger = System.getLogger("com.sun.net.httpserver");
+    }
+
+    private static String pathForSecurityCheck(String path) {
+        return path.endsWith("/") ? path + "-" : path + "/-";
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
