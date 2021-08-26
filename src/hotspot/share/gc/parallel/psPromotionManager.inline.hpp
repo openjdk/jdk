@@ -32,6 +32,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
@@ -284,6 +285,12 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     } else {
       // we'll just push its contents
       push_contents(new_obj);
+
+      if (StringDedup::is_enabled() &&
+          java_lang_String::is_instance(new_obj) &&
+          psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
+        _string_dedup_requests.add(o);
+      }
     }
     return new_obj;
   } else {

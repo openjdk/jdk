@@ -116,7 +116,7 @@ size_t StringDedup::Config::desired_table_size(size_t entry_count) {
 bool StringDedup::Config::ergo_initialize() {
   if (!UseStringDeduplication) {
     return true;
-  } else if (!UseG1GC && !UseShenandoahGC && !UseZGC) {
+  } else if (!UseG1GC && !UseShenandoahGC && !UseZGC && !UseParallelGC && !UseSerialGC) {
     // String deduplication requested but not supported by the selected GC.
     // Warn and force disable, but don't error except in debug build with
     // incorrect default.
