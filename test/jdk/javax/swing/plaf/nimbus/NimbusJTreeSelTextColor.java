@@ -23,7 +23,6 @@
 /*
  * @test
  * @bug 8266510 8271315 8273043
- * @key headful
  * @summary  Verifies Nimbus JTree default tree cell renderer uses selected text color
  * @run main/othervm -Dawt.useSystemAAFontSettings=off NimbusJTreeSelTextColor
  */
