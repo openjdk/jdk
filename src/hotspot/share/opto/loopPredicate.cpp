@@ -222,6 +222,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
       Node* data = uncommon_proj->fast_out(j);
       if (!data->is_CFG()) {
         _igvn.replace_input_of(data, 0, if_uct);
+        set_ctrl(data, if_uct);
         --j;
         --jmax;
       }
