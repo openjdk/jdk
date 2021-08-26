@@ -179,6 +179,7 @@ class LocPusher {
 private:
   char* end;
 
+  ATTRIBUTE_PRINTF(3, 4)
   void push(ciEnv* ci, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -187,6 +188,7 @@ private:
   }
 
 public:
+  ATTRIBUTE_PRINTF(3, 0)
   void push_va(ciEnv* ci, const char* fmt, va_list args) {
     char *e = ci->_dyno_name + strlen(ci->_dyno_name);
     char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
@@ -194,6 +196,7 @@ public:
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 
+  ATTRIBUTE_PRINTF(3, 4)
   LocPusher(ciEnv* ci, const char* fmt, ...) {
     end = ci->_dyno_name + strlen(ci->_dyno_name);
     va_list args;
