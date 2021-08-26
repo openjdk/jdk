@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,20 @@
  *     1)
  *     - adds the <can_generate_field_modification_events>,
  *       <can_generate_field_access_events> capabilities during the OnLoad phase;
- *     - sets callbacks for VM_INIT and choosen events during the OnLoad phase;
+ *     - sets callbacks for VM_INIT and chosen events during the OnLoad phase;
  *     - enables all optional events via SetEventNotificationMode during
  *       the OnLoad phase;
  *     - reads and modifies static integer fields;
- *     - expects that each of choosen events is sent at least 1 time.
+ *     - expects that each of chosen events is sent at least 1 time.
  *     2)
- *     - changes callbacks for choosen event;
+ *     - changes callbacks for chosen event;
  *     - reads and modifies static integer fields;
- *     - checks that altered callback works and each of choosen events
+ *     - checks that altered callback works and each of chosen events
  *       is sent at least 1 time.
  *     3)
- *     - sets off callbacks for choosen event;
+ *     - sets off callbacks for chosen event;
  *     - sets callback for VM_DEATH event;
- *     - checks that no choosen events are sent until VMDeath event.
+ *     - checks that no chosen events are sent until VMDeath event.
  * COMMENTS
  *     Modified due to fix of the bug
  *     5010571 TEST_BUG: jvmti tests with VMObjectAlloc callbacks should

@@ -1056,9 +1056,11 @@ private:
     Coarsened,    // Lock was coarsened
     Nested        // Nested lock
   } _kind;
+
+  static const char* _kind_names[Nested+1];
+
 #ifndef PRODUCT
   NamedCounter* _counter;
-  static const char* _kind_names[Nested+1];
 #endif
 
 protected:
@@ -1101,7 +1103,7 @@ public:
   bool is_nested()      const { return (_kind == Nested); }
 
   const char * kind_as_string() const;
-  void log_lock_optimization(Compile* c, const char * tag) const;
+  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = NULL) const;
 
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }

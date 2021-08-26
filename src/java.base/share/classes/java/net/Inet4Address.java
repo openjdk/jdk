@@ -106,7 +106,7 @@ class Inet4Address extends InetAddress {
         holder().family = IPv4;
     }
 
-    Inet4Address(String hostName, byte addr[]) {
+    Inet4Address(String hostName, byte[] addr) {
         holder().hostName = hostName;
         holder().family = IPv4;
         if (addr != null) {

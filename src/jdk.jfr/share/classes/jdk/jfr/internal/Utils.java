@@ -445,23 +445,17 @@ public final class Utils {
 
     public static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
-        try {
-            Field f = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
-            SecuritySupport.setAccessible(f);
-            return (EventHandler) f.get(null);
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-            throw new InternalError("Could not access event handler");
+        Object handler = JVM.getJVM().getHandler(eventClass);
+        if (handler == null || handler instanceof EventHandler) {
+            return (EventHandler) handler;
         }
+        throw new InternalError("Could not access event handler");
     }
 
     static synchronized void setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler) {
         Utils.ensureValidEventSubclass(eventClass);
-        try {
-            Field field = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);
-            SecuritySupport.setAccessible(field);
-            field.set(null, handler);
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-            throw new InternalError("Could not access event handler");
+        if (!JVM.getJVM().setHandler(eventClass, handler)) {
+            throw new InternalError("Could not set event handler");
         }
     }
 

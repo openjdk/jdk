@@ -29,6 +29,7 @@
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 
@@ -45,9 +46,10 @@ public:
     G1VerifyYoungNormal     =  1, // -XX:VerifyGCType=young-normal
     G1VerifyConcurrentStart =  2, // -XX:VerifyGCType=concurrent-start
     G1VerifyMixed           =  4, // -XX:VerifyGCType=mixed
-    G1VerifyRemark          =  8, // -XX:VerifyGCType=remark
-    G1VerifyCleanup         = 16, // -XX:VerifyGCType=cleanup
-    G1VerifyFull            = 32, // -XX:VerifyGCType=full
+    G1VerifyYoungEvacFail   =  8, // -XX:VerifyGCType=young-evac-fail
+    G1VerifyRemark          = 16, // -XX:VerifyGCType=remark
+    G1VerifyCleanup         = 32, // -XX:VerifyGCType=cleanup
+    G1VerifyFull            = 64, // -XX:VerifyGCType=full
     G1VerifyAll             = -1
   };
 
@@ -78,7 +80,7 @@ public:
   void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
-  double verify(G1VerifyType type, VerifyOption vo, const char* msg);
+  void verify(G1VerifyType type, VerifyOption vo, const char* msg);
   void verify_before_gc(G1VerifyType type);
   void verify_after_gc(G1VerifyType type);
 

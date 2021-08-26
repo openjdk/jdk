@@ -49,7 +49,6 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1398,10 +1397,6 @@ void ObjectMarker::init() {
   // create stacks for interesting headers
   _saved_mark_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<markWord>(4000, mtServiceability);
   _saved_oop_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(4000, mtServiceability);
-
-  if (UseBiasedLocking) {
-    BiasedLocking::preserve_marks();
-  }
 }
 
 // Object marking is done so restore object headers
@@ -1422,10 +1417,6 @@ void ObjectMarker::done() {
     oop o = _saved_oop_stack->at(i);
     markWord mark = _saved_mark_stack->at(i);
     o->set_mark(mark);
-  }
-
-  if (UseBiasedLocking) {
-    BiasedLocking::restore_marks();
   }
 
   // free the stacks

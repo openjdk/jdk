@@ -66,7 +66,6 @@ class RecordComponent;
   f(java_lang_reflect_Constructor) \
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
-  f(java_nio_Buffer) \
   f(reflect_ConstantPool) \
   f(reflect_UnsafeStaticFieldAccessorImpl) \
   f(java_lang_reflect_Parameter) \
@@ -128,6 +127,8 @@ class java_lang_String : AllStatic {
   // returning true if the bit was already set.
   static bool test_and_set_flag(oop java_string, uint8_t flag_mask);
 
+  static inline unsigned int hash_code_impl(oop java_string, bool update);
+
  public:
 
   // Coders
@@ -146,7 +147,6 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
-  static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
   static void set_compact_strings(bool value);
 
@@ -224,23 +224,21 @@ class java_lang_String : AllStatic {
   }
 
   static unsigned int hash_code(oop java_string);
+  static unsigned int hash_code_noupdate(oop java_string);
 
   static bool equals(oop java_string, const jchar* chars, int len);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
-  // Conversion between '.' and '/' formats
-  static Handle externalize_classname(Handle java_string, TRAPS) {
-    return char_converter(java_string, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, THREAD);
-  }
+  // Conversion between '.' and '/' formats, and allocate a String from the result.
+  static Handle externalize_classname(Symbol* java_name, TRAPS);
 
   // Conversion
   static Symbol* as_symbol(oop java_string);
   static Symbol* as_symbol_or_null(oop java_string);
 
-  // Testers
-  static bool is_instance(oop obj);
-  static inline bool is_instance_inlined(oop obj);
+  // Tester
+  static inline bool is_instance(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st);
@@ -323,7 +321,6 @@ class java_lang_Class : AllStatic {
 
   // Conversion
   static Klass* as_Klass(oop java_class);
-  static Klass* as_Klass_raw(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
@@ -369,10 +366,8 @@ class java_lang_Class : AllStatic {
   static void set_source_file(oop java_class, oop source_file);
 
   static int oop_size(oop java_class);
-  static int oop_size_raw(oop java_class);
   static void set_oop_size(HeapWord* java_class, int size);
   static int static_oop_field_count(oop java_class);
-  static int static_oop_field_count_raw(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
   static GrowableArray<Klass*>* fixup_mirror_list() {
@@ -567,6 +562,10 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
+
+  // For recreating class initialization error exceptions.
+  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+
   // Printing
   static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
@@ -1355,7 +1354,7 @@ class java_lang_ClassLoader : AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   static ClassLoaderData* loader_data_acquire(oop loader);
-  static ClassLoaderData* loader_data_raw(oop loader);
+  static ClassLoaderData* loader_data(oop loader);
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
   static oop parent(oop loader);
@@ -1583,16 +1582,6 @@ class java_lang_AssertionStatusDirectives: AllStatic {
   friend class JavaClasses;
 };
 
-
-class java_nio_Buffer: AllStatic {
- private:
-  static int _limit_offset;
-
- public:
-  static int  limit_offset() { CHECK_INIT(_limit_offset); }
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-};
 
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:

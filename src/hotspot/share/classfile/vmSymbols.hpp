@@ -124,6 +124,7 @@
   template(java_io_FileInputStream,                   "java/io/FileInputStream")                  \
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
+  template(java_nio_Buffer,                           "java/nio/Buffer")                          \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
   template(java_util_Objects,                         "java/util/Objects")                        \
   template(java_util_Properties,                      "java/util/Properties")                     \
@@ -368,6 +369,7 @@
   template(class_initializer_name,                    "<clinit>")                                 \
   template(println_name,                              "println")                                  \
   template(printStackTrace_name,                      "printStackTrace")                          \
+  template(getStackTrace_name,                        "getStackTrace")                            \
   template(main_name,                                 "main")                                     \
   template(name_name,                                 "name")                                     \
   template(priority_name,                             "priority")                                 \
@@ -482,6 +484,7 @@
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
+  template(checkIndex_name,                           "checkIndex")                               \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -593,7 +596,9 @@
   template(int_String_signature,                      "(I)Ljava/lang/String;")                                    \
   template(boolean_boolean_int_signature,             "(ZZ)I")                                                    \
   template(big_integer_shift_worker_signature,        "([I[IIII)V")                                               \
-  template(reflect_method_signature,                  "Ljava/lang/reflect/Method;")                                                    \
+  template(reflect_method_signature,                  "Ljava/lang/reflect/Method;")                               \
+  template(getStackTrace_signature,                    "()[Ljava/lang/StackTraceElement;")                        \
+                                                                                                                  \
   /* signature symbols needed by intrinsics */                                                                    \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, template, VM_ALIAS_IGNORE)            \
                                                                                                                   \

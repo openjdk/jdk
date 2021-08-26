@@ -29,7 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/linkedlist.hpp"
 
 template <typename E, MEMFLAGS F>
@@ -91,24 +91,28 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 };
 
 class AsyncLogMessage {
-  LogFileOutput& _output;
+  LogFileOutput* _output;
   const LogDecorations _decorations;
   char* _message;
 
 public:
-  AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, char* msg)
+  AsyncLogMessage(LogFileOutput* output, const LogDecorations& decorations, char* msg)
     : _output(output), _decorations(decorations), _message(msg) {}
 
   // placeholder for LinkedListImpl.
   bool equals(const AsyncLogMessage& o) const { return false; }
 
-  LogFileOutput* output() const { return &_output; }
+  LogFileOutput* output() const { return _output; }
   const LogDecorations& decorations() const { return _decorations; }
   char* message() const { return _message; }
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
+typedef ResourceHashtable<LogFileOutput*,
+                          uint32_t,
+                          17, /*table_size*/
+                          ResourceObj::C_HEAP,
+                          mtLogging> AsyncLogMap;
 
 //
 // ASYNC LOGGING SUPPORT
@@ -121,25 +125,24 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // initialize() is called once when JVM is initialized. It creates and initializes the singleton instance of AsyncLogWriter.
 // Once async logging is established, there's no way to turn it off.
 //
-// instance() is MT-safe and returns the pointer of the singleton instance if and only if async logging is enabled and has well
-// initialized. Clients can use its return value to determine async logging is established or not.
+// instance() is MT-safe and returns the pointer of the singleton instance if and only if async logging is enabled and has
+// successfully initialized. Clients can use its return value to determine async logging is established or not.
 //
-// The basic operation of AsyncLogWriter is enqueue(). 2 overloading versions of it are provided to match LogOutput::write().
+// enqueue() is the basic operation of AsyncLogWriter. Two overloading versions of it are provided to match LogOutput::write().
 // They are both MT-safe and non-blocking. Derived classes of LogOutput can invoke the corresponding enqueue() in write() and
 // return 0. AsyncLogWriter is responsible of copying neccessary data.
 //
-// The static member function flush() is designated to flush out all pending messages when JVM is terminating.
-// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). flush() is MT-safe and can be invoked arbitrary
-// times. It is no-op if async logging is not established.
-//
+// flush() ensures that all pending messages have been written out before it returns. It is not MT-safe in itself. When users
+// change the logging configuration via jcmd, LogConfiguration::configure_output() calls flush() under the protection of the
+// ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
-  static AsyncLogWriter* _instance;
-  // _sem is a semaphore whose value denotes how many messages have been enqueued.
-  // It decreases in AsyncLogWriter::run()
-  static Semaphore _sem;
-  // A lock of IO
-  static Semaphore _io_sem;
+  class AsyncLogLocker;
 
+  static AsyncLogWriter* _instance;
+  Semaphore _flush_sem;
+  // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
+  os::PlatformMonitor _lock;
+  bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
   AsyncLogBuffer _buffer;
@@ -156,8 +159,8 @@ class AsyncLogWriter : public NonJavaThread {
     NonJavaThread::pre_run();
     log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
   }
-  char* name() const override { return (char*)"AsyncLog Thread"; }
-  bool is_Named_thread() const override { return true; }
+  const char* name() const override { return "AsyncLog Thread"; }
+  const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {
     st->print("\"%s\" ", name());
     Thread::print_on(st);

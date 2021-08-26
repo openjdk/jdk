@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref BadEnd.out BadEnd.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref BadEnd.out BadEnd.java
  */
 
 // tidy: Warning: <.*> is probably intended as </.*>

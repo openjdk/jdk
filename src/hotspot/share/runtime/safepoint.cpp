@@ -510,7 +510,7 @@ class ParallelSPCleanupThreadClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
     }
   }
 };
@@ -705,45 +705,34 @@ void SafepointSynchronize::block(JavaThread *thread) {
   }
 
   JavaThreadState state = thread->thread_state();
+  assert(is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
   thread->frame_anchor()->make_walkable(thread);
 
   uint64_t safepoint_id = SafepointSynchronize::safepoint_counter();
-  // Check that we have a valid thread_state at this point
-  switch(state) {
-    case _thread_in_vm_trans:
-    case _thread_in_Java:        // From compiled code
-    case _thread_in_native_trans:
-    case _thread_blocked_trans:
-    case _thread_new_trans:
 
-      // We have no idea where the VMThread is, it might even be at next safepoint.
-      // So we can miss this poll, but stop at next.
+  // We have no idea where the VMThread is, it might even be at next safepoint.
+  // So we can miss this poll, but stop at next.
 
-      // Load dependent store, it must not pass loading of safepoint_id.
-      thread->safepoint_state()->set_safepoint_id(safepoint_id); // Release store
+  // Load dependent store, it must not pass loading of safepoint_id.
+  thread->safepoint_state()->set_safepoint_id(safepoint_id); // Release store
 
-      // This part we can skip if we notice we miss or are in a future safepoint.
-      OrderAccess::storestore();
-      // Load in wait barrier should not float up
-      thread->set_thread_state_fence(_thread_blocked);
+  // This part we can skip if we notice we miss or are in a future safepoint.
+  OrderAccess::storestore();
+  // Load in wait barrier should not float up
+  thread->set_thread_state_fence(_thread_blocked);
 
-      _wait_barrier->wait(static_cast<int>(safepoint_id));
-      assert(_state != _synchronized, "Can't be");
+  _wait_barrier->wait(static_cast<int>(safepoint_id));
+  assert(_state != _synchronized, "Can't be");
 
-      // If barrier is disarmed stop store from floating above loads in barrier.
-      OrderAccess::loadstore();
-      thread->set_thread_state(state);
+  // If barrier is disarmed stop store from floating above loads in barrier.
+  OrderAccess::loadstore();
+  thread->set_thread_state(state);
 
-      // Then we reset the safepoint id to inactive.
-      thread->safepoint_state()->reset_safepoint_id(); // Release store
+  // Then we reset the safepoint id to inactive.
+  thread->safepoint_state()->reset_safepoint_id(); // Release store
 
-      OrderAccess::fence();
+  OrderAccess::fence();
 
-      break;
-
-    default:
-     fatal("Illegal threadstate encountered: %d", state);
-  }
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
@@ -928,6 +917,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   if( nm->is_at_poll_return(real_return_addr) ) {
     // See if return type is an oop.
     bool return_oop = nm->method()->is_returning_oop();
+    HandleMark hm(self);
     Handle return_value;
     if (return_oop) {
       // The oop result has been saved on the stack together with all

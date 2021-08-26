@@ -53,7 +53,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
-#include "services/memTracker.hpp"
+#include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -525,9 +525,18 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
-  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+
+  // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
+
+  // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "InlineFrequencyCount",         JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "G1RSetRegionEntries",          JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "G1RSetSparseRegionEntries",    JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -537,17 +546,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
-
-  // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
-
-  // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
-  { "TraceSuspendWaitFailures",     JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 #ifdef ASSERT
-  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
+  { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
@@ -1112,7 +1112,14 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
   if (_java_class_path != NULL) {
     char* path = _java_class_path->value();
-    st->print_cr("java_class_path (initial): %s", strlen(path) == 0 ? "<not set>" : path );
+    size_t len = strlen(path);
+    st->print("java_class_path (initial): ");
+    // Avoid using st->print_cr() because path length maybe longer than O_BUFLEN.
+    if (len == 0) {
+      st->print_raw_cr("<not set>");
+    } else {
+      st->print_raw_cr(path, len);
+    }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
@@ -1983,17 +1990,6 @@ bool Arguments::check_vm_args_consistency() {
                 "not " SIZE_FORMAT "\n",
                 TLABRefillWasteFraction);
     status = false;
-  }
-
-  if (PrintNMTStatistics) {
-#if INCLUDE_NMT
-    if (MemTracker::tracking_level() == NMT_off) {
-#endif // INCLUDE_NMT
-      warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
-      PrintNMTStatistics = false;
-#if INCLUDE_NMT
-    }
-#endif
   }
 
   status = CompilerConfig::check_args_consistency(status);
@@ -3107,10 +3103,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
-    // Disable biased locking now as it interferes with the clean up of
-    // the archived Klasses and Java string objects (at dump time only).
-    UseBiasedLocking = false;
-
     // Compiler threads may concurrently update the class metadata (such as method entries), so it's
     // unsafe with DumpSharedSpaces (which modifies the class metadata in place). Let's disable
     // compiler just to be safe.
@@ -3706,29 +3698,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       JVMFlag::printFlags(tty, false);
       vm_exit(0);
     }
-    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
-#if INCLUDE_NMT
-      // The launcher did not setup nmt environment variable properly.
-      if (!MemTracker::check_launcher_nmt_support(tail)) {
-        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
-      }
-
-      // Verify if nmt option is valid.
-      if (MemTracker::verify_nmt_option()) {
-        // Late initialization, still in single-threaded mode.
-        if (MemTracker::tracking_level() >= NMT_summary) {
-          MemTracker::init();
-        }
-      } else {
-        vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
-      }
-      continue;
-#else
-      jio_fprintf(defaultStream::error_stream(),
-        "Native Memory Tracking is not supported in this VM\n");
-      return JNI_ERR;
-#endif
-    }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments")) {
@@ -3980,6 +3949,26 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
+#if INCLUDE_NMT
+  // Verify NMT arguments
+  const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
+  if (lvl == NMT_unknown) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
+    return JNI_ERR;
+  }
+  if (PrintNMTStatistics && lvl == NMT_off) {
+    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+#else
+  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
+    warning("Native Memory Tracking is not supported in this VM");
+    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+#endif // INCLUDE_NMT
+
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {
       warning("TraceDependencies results may be inflated by VerifyDependencies");
@@ -3987,6 +3976,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   apply_debugger_ergo();
+
+  if (log_is_enabled(Info, arguments)) {
+    LogStream st(Log(arguments)::info());
+    Arguments::print_on(&st);
+  }
 
   return JNI_OK;
 }
@@ -4024,30 +4018,9 @@ jint Arguments::apply_ergo() {
     return code;
   }
 
-  // Turn off biased locking for locking debug mode flags,
-  // which are subtly different from each other but neither works with
-  // biased locking
-  if (UseHeavyMonitors
-#ifdef COMPILER1
-      || !UseFastLocking
-#endif // COMPILER1
-#if INCLUDE_JVMCI
-      || !JVMCIUseFastLocking
-#endif
-    ) {
-    if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
-      // flag set to true on command line; warn the user that they
-      // can't enable biased locking here
-      warning("Biased Locking is not supported with locking debug flags"
-              "; ignoring UseBiasedLocking flag." );
-    }
-    UseBiasedLocking = false;
-  }
-
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
-  FLAG_SET_DEFAULT(UseBiasedLocking, false);
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -4078,18 +4051,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-  // Apply CPU specific policy for the BiasedLocking
-  if (UseBiasedLocking) {
-    if (!VM_Version::use_biased_locking() &&
-        !(FLAG_IS_CMDLINE(UseBiasedLocking))) {
-      UseBiasedLocking = false;
-    }
-  }
 #ifdef COMPILER2
-  if (!UseBiasedLocking) {
-    UseOptoBiasInlining = false;
-  }
-
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");

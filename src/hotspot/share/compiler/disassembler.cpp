@@ -166,12 +166,6 @@ class decode_env {
     };
     Link *head, *tail;
 
-    static unsigned hash(const address& a) {
-      return primitive_hash<address>(a);
-    }
-    static bool equals(const address& a0, const address& a1) {
-      return primitive_equals<address>(a0, a1);
-    }
     void append(const char* file, int line) {
       if (tail != NULL && tail->file == file && tail->line == line) {
         // Don't print duplicated lines at the same address. This could happen with C
@@ -193,8 +187,6 @@ class decode_env {
 
   typedef ResourceHashtable<
       address, SourceFileInfo,
-      SourceFileInfo::hash,
-      SourceFileInfo::equals,
       15889,      // prime number
       ResourceObj::C_HEAP> SourceFileInfoTable;
 
@@ -684,7 +676,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
     raw = format+1;
   }
   if (raw != NULL) {
-    st->print_raw(raw, (int) flen);
+    st->print_raw(raw, flen);
     return (int) flen;
   }
   va_list ap;
@@ -755,6 +747,17 @@ address decode_env::decode_instructions(address start, address end, address orig
 // Each method will create a decode_env before decoding.
 // You can call the decode_env methods directly if you already have one.
 
+void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
+  int sz = buflen - offset;
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  if (written < sz) { // written successfully, not truncated.
+    if (Verbose) st->print_cr("Trying to load: %s", buf);
+    return os::dll_load(buf, ebuf, ebuflen);
+  } else if (Verbose) {
+    st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
+  }
+  return NULL;
+}
 
 bool Disassembler::load_library(outputStream* st) {
   // Do not try to load multiple times. Failed once -> fails always.
@@ -804,24 +807,10 @@ bool Disassembler::load_library(outputStream* st) {
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-    if (jvm_offset + strlen(hsdis_library_name) + strlen(os::dll_file_extension()) < JVM_MAXPATHLEN) {
-      strcpy(&buf[jvm_offset], hsdis_library_name);
-      strcat(&buf[jvm_offset], os::dll_file_extension());
-      if (Verbose) st->print_cr("Trying to load: %s", buf);
-      _library = os::dll_load(buf, ebuf, sizeof ebuf);
-    } else {
-      if (Verbose) st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
-    }
+    _library = dll_load(buf, sizeof buf, jvm_offset, ebuf, sizeof ebuf, st);
     if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
-      if (lib_offset + strlen(hsdis_library_name) + strlen(os::dll_file_extension()) < JVM_MAXPATHLEN) {
-        strcpy(&buf[lib_offset], hsdis_library_name);
-        strcat(&buf[lib_offset], os::dll_file_extension());
-        if (Verbose) st->print_cr("Trying to load: %s", buf);
-        _library = os::dll_load(buf, ebuf, sizeof ebuf);
-      } else {
-        if (Verbose) st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
-      }
+      _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
     }
     if (_library == NULL && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
@@ -829,23 +818,12 @@ bool Disassembler::load_library(outputStream* st) {
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
-        if (lib_offset + strlen(hsdis_library_name) + strlen(os::dll_file_extension()) < JVM_MAXPATHLEN) {
-          strcpy(&buf[lib_offset], hsdis_library_name);
-          strcat(&buf[lib_offset], os::dll_file_extension());
-          if (Verbose) st->print_cr("Trying to load: %s", buf);
-          _library = os::dll_load(buf, ebuf, sizeof ebuf);
-        } else {
-          if (Verbose) st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
-        }
+        _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
       }
     }
   }
   if (_library == NULL) {
-    // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
-    strcpy(&buf[0], hsdis_library_name);
-    strcat(&buf[0], os::dll_file_extension());
-    if (Verbose) st->print_cr("Trying to load: %s via LD_LIBRARY_PATH or equivalent", buf);
-    _library = os::dll_load(buf, ebuf, sizeof ebuf);
+    _library = dll_load(buf, sizeof buf, 0, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.

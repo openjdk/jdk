@@ -139,6 +139,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Returns JNI_OK on success
   virtual jint initialize();
 
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
+
   void post_initialize();
   void update_counters();
 
@@ -246,13 +249,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
-
-  // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkScope {
-   public:
-    ParStrongRootsScope();
-    ~ParStrongRootsScope();
-  };
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }

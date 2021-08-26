@@ -59,7 +59,8 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public.  No additional access checks are performed.
+     * The interface must be public and not {@linkplain Class#isSealed() sealed}.
+     * No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
      * invocation of the type's uniquely named method by calling
@@ -156,6 +157,8 @@ public class MethodHandleProxies {
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw newIllegalArgumentException("not a public interface", intfc.getName());
+        if (intfc.isSealed())
+            throw newIllegalArgumentException("a sealed interface", intfc.getName());
         final MethodHandle mh;
         if (System.getSecurityManager() != null) {
             final Class<?> caller = Reflection.getCallerClass();
@@ -274,32 +277,26 @@ public class MethodHandleProxies {
     }
 
     private static boolean isObjectMethod(Method m) {
-        switch (m.getName()) {
-        case "toString":
-            return (m.getReturnType() == String.class
-                    && m.getParameterCount() == 0);
-        case "hashCode":
-            return (m.getReturnType() == int.class
-                    && m.getParameterCount() == 0);
-        case "equals":
-            return (m.getReturnType() == boolean.class
-                    && m.getParameterCount() == 1
-                    && m.getParameterTypes()[0] == Object.class);
-        }
-        return false;
+        return switch (m.getName()) {
+            case "toString" -> m.getReturnType() == String.class
+                               && m.getParameterCount() == 0;
+            case "hashCode" -> m.getReturnType() == int.class
+                               && m.getParameterCount() == 0;
+            case "equals"   -> m.getReturnType() == boolean.class
+                               && m.getParameterCount() == 1
+                               && m.getParameterTypes()[0] == Object.class;
+            default -> false;
+        };
     }
 
     private static Object callObjectMethod(Object self, Method m, Object[] args) {
         assert(isObjectMethod(m)) : m;
-        switch (m.getName()) {
-        case "toString":
-            return self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
-        case "hashCode":
-            return System.identityHashCode(self);
-        case "equals":
-            return (self == args[0]);
-        }
-        return null;
+        return switch (m.getName()) {
+            case "toString" -> self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
+            case "hashCode" -> System.identityHashCode(self);
+            case "equals"   -> (self == args[0]);
+            default -> null;
+        };
     }
 
     private static Method[] getSingleNameMethods(Class<?> intfc) {

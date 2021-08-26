@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -61,7 +60,7 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
   }
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register scratch, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
@@ -80,11 +79,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
     tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_case);
-  }
-
-  if (UseBiasedLocking) {
-    assert(scratch != noreg, "should have scratch register at this point");
-    biased_locking_enter(disp_hdr, obj, hdr, scratch, false, done, &slow_case);
   }
 
   // Load object header
@@ -122,10 +116,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   cbnz(hdr, slow_case);
   // done
   bind(done);
-  if (PrintBiasedLockingStatistics) {
-    lea(rscratch2, ExternalAddress((address)BiasedLocking::fast_path_entry_count_addr()));
-    addmw(Address(rscratch2, 0), 1, rscratch1);
-  }
   return null_check_offset;
 }
 
@@ -136,21 +126,13 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
   Label done;
 
-  if (UseBiasedLocking) {
-    // load object
-    ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    biased_locking_exit(obj, hdr, done);
-  }
-
   // load displaced header
   ldr(hdr, Address(disp_hdr, 0));
   // if the loaded hdr is NULL we had recursive locking
   // if we had recursive locking, we are done
   cbz(hdr, done);
-  if (!UseBiasedLocking) {
-    // load object
-    ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-  }
+  // load object
+  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
   verify_oop(obj);
   // test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object - if the object header is not pointing to
@@ -179,13 +161,8 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
-  if (UseBiasedLocking && !len->is_valid()) {
-    assert_different_registers(obj, klass, len, t1, t2);
-    ldr(t1, Address(klass, Klass::prototype_header_offset()));
-  } else {
-    // This assumes that all prototype bits fit in an int32_t
-    mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
-  }
+  // This assumes that all prototype bits fit in an int32_t
+  mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
   str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseCompressedClassPointers) { // Take care not to kill klass
@@ -203,20 +180,24 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 // preserves obj, destroys len_in_bytes
-void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1) {
+//
+// Scratch registers: t1 = r10, t2 = r11
+//
+void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
+  assert(t1 == r10 && t2 == r11, "must be");
+
   Label done;
 
   // len_in_bytes is positive and ptr sized
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  // Preserve obj
-  if (hdr_size_in_bytes)
-    add(obj, obj, hdr_size_in_bytes);
-  zero_memory(obj, len_in_bytes, t1);
-  if (hdr_size_in_bytes)
-    sub(obj, obj, hdr_size_in_bytes);
+  // zero_words() takes ptr in r10 and count in words in r11
+  mov(rscratch1, len_in_bytes);
+  lea(t1, Address(obj, hdr_size_in_bytes));
+  lsr(t2, rscratch1, LogBytesPerWord);
+  zero_words(t1, t2);
 
   bind(done);
 }
@@ -231,6 +212,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
   initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
+// Scratch registers: t1 = r10, t2 = r11
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
@@ -241,45 +223,13 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
      // clear rest of allocated space
      const Register index = t2;
-     const int threshold = 16 * BytesPerWord;   // approximate break even point for code size (see comments below)
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       initialize_body(obj, index, hdr_size_in_bytes, t1);
-     } else if (con_size_in_bytes <= threshold) {
-       // use explicit null stores
-       int i = hdr_size_in_bytes;
-       if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) {
-         str(zr, Address(obj, i));
-         i += BytesPerWord;
-       }
-       for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
-         stp(zr, zr, Address(obj, i));
+       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
-       block_comment("zero memory");
-      // use loop to null out the fields
-
-       int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
-       mov(index,  words / 8);
-
-       const int unroll = 8; // Number of str(zr) instructions we'll unroll
-       int remainder = words % unroll;
-       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * BytesPerWord));
-
-       Label entry_point, loop;
-       b(entry_point);
-
-       bind(loop);
-       sub(index, index, 1);
-       for (int i = -unroll; i < 0; i++) {
-         if (-i == remainder)
-           bind(entry_point);
-         str(zr, Address(rscratch1, i * wordSize));
-       }
-       if (remainder == 0)
-         bind(entry_point);
-       add(rscratch1, rscratch1, unroll * wordSize);
-       cbnz(index, loop);
-
+       con_size_in_bytes -= hdr_size_in_bytes;
+       lea(t1, Address(obj, hdr_size_in_bytes));
+       zero_words(t1, con_size_in_bytes / BytesPerWord);
      }
   }
 
@@ -314,8 +264,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
 
   membar(StoreStore);
 

@@ -47,6 +47,7 @@ import tests.JImageGenerator;
  * @bug 8189777
  * @bug 8194922
  * @bug 8206962
+ * @bug 8240349
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
@@ -365,6 +366,19 @@ public class JLinkTest {
                     .addMods("java.base")
                     .option("--release-info=del")
                     .call().assertFailure("Error: No key specified for delete");
+        }
+        {
+            String imageDir = "bug8240349";
+            Path imagePath = helper.createNewImageDir(imageDir);
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(imagePath)
+                    .addMods("java.base")
+                    .option("--vm=client")
+                    .call().assertFailure("Error: Selected VM client doesn't exist");
+            if (!Files.notExists(imagePath)) {
+                throw new RuntimeException("bug8240349 directory not deleted");
+            }
         }
     }
 

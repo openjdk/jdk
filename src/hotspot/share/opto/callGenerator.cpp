@@ -515,6 +515,10 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
 
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
+  if (!allow_inline && _callee->holder()->is_interface()) {
+    // Don't convert the interface call to a direct call guarded by an interface subtype check.
+    return false;
+  }
   CallGenerator* cg = C->call_generator(_callee,
                                         vtable_index(),
                                         false /*call_does_dispatch*/,
@@ -732,13 +736,6 @@ void CallGenerator::do_late_inline_helper() {
       C->set_default_node_notes(entry_nn);
     }
 
-    // Virtual call involves a receiver null check which can be made implicit.
-    if (is_virtual_late_inline()) {
-      GraphKit kit(jvms);
-      kit.null_check_receiver();
-      jvms = kit.transfer_exceptions_into_jvms();
-    }
-
     // Now perform the inlining using the synthesized JVMState
     JVMState* new_jvms = inline_cg()->generate(jvms);
     if (new_jvms == NULL)  return;  // no change
@@ -953,12 +950,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   if (kit.stopped()) {
-    // Instance exactly does not matches the desired type.
+    // Instance does not match the predicted type.
     kit.set_jvms(slow_jvms);
     return kit.transfer_exceptions_into_jvms();
   }
 
-  // fall through if the instance exactly matches the desired type
+  // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:
@@ -1147,7 +1144,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            const Type* recv_type = arg_type->join_speculative(sig_type); // keep speculative part
+            const Type* recv_type = arg_type->filter_speculative(sig_type); // keep speculative part
             Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
             kit.set_argument(0, cast_obj);
           }
@@ -1160,7 +1157,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              const Type* narrowed_arg_type = arg_type->join_speculative(sig_type); // keep speculative part
+              const Type* narrowed_arg_type = arg_type->filter_speculative(sig_type); // keep speculative part
               Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
               kit.set_argument(receiver_skip + j, cast_obj);
             }

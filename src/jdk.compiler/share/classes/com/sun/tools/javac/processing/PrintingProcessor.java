@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_18)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -88,7 +88,6 @@ public class PrintingProcessor extends AbstractProcessor {
     /**
      * Used for the -Xprint option and called by Elements.printElements
      */
-    @SuppressWarnings("preview")
     public static class PrintingElementVisitor
         extends SimpleElementVisitor14<PrintingElementVisitor, Boolean> {
         int indentation; // Indentation level;

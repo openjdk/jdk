@@ -124,6 +124,7 @@ class KWUtil {
             }
         }
         System.arraycopy(buffer, 0, icvOut, 0, SEMI_BLKSIZE);
+        Arrays.fill(buffer, (byte)0);
         return inLen - SEMI_BLKSIZE;
     }
 }

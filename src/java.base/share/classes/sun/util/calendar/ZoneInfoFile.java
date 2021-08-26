@@ -57,7 +57,6 @@ import sun.security.action.GetPropertyAction;
  * <p>
  * @since 1.8
  */
-@SuppressWarnings("removal")
 public final class ZoneInfoFile {
 
     /**
@@ -249,6 +248,11 @@ public final class ZoneInfoFile {
                 .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
                 .toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
+        loadTZDB();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadTZDB() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jdk.test.lib.RandomFactory;
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main ReadAllReadNTransferTo
- * @bug 8180451
+ * @bug 6766844 8180451
  * @summary Verify ByteArrayInputStream readAllBytes, readNBytes, and transferTo
  * @key randomness
  */
@@ -48,8 +48,16 @@ public class ReadAllReadNTransferTo {
         int position = random.nextInt(SIZE/2);
         int size = random.nextInt(SIZE - position);
 
-        ByteArrayInputStream bais =
-            new ByteArrayInputStream(buf, position, size);
+        ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+        bais.readAllBytes();
+        if (bais.read(new byte[0]) != -1) {
+            throw new RuntimeException("read(byte[]) did not return -1");
+        }
+        if (bais.read(new byte[1], 0, 0) != -1) {
+            throw new RuntimeException("read(byte[],int,int) did not return -1");
+        }
+
+        bais = new ByteArrayInputStream(buf, position, size);
         int off = size < 2 ? 0 : random.nextInt(size / 2);
         int len = size - off < 1 ? 0 : random.nextInt(size - off);
 
@@ -72,7 +80,6 @@ public class ReadAllReadNTransferTo {
             throw new RuntimeException("readAllBytes content");
         }
 
-        // XXX transferTo()
         bais = new ByteArrayInputStream(buf);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(buf.length);
         if (bais.transferTo(baos) != buf.length) {
