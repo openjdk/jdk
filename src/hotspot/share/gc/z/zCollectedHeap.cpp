@@ -308,7 +308,14 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
-  return VirtualSpaceSummary((HeapWord*)0, (HeapWord*)capacity(), (HeapWord*)max_capacity());
+  const uintptr_t start = ZAddressHeapBase;
+
+  // Fake values. ZGC does not commit memory contiguously in the reserved
+  // address space, and the reserved space is larger than MaxHeapSize.
+  const uintptr_t committed_end = ZAddressHeapBase + capacity();
+  const uintptr_t reserved_end = ZAddressHeapBase + max_capacity();
+
+  return VirtualSpaceSummary((HeapWord*)start, (HeapWord*)committed_end, (HeapWord*)reserved_end);
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
