@@ -63,7 +63,7 @@ void G1EvacuationFailureObjsInHR::sort() {
 }
 
 void G1EvacuationFailureObjsInHR::clear_array() {
-  FREE_C_HEAP_ARRAY(oop, _offset_array);
+  FREE_C_HEAP_ARRAY(Elem, _offset_array);
   _offset_array = NULL;
   _objs_num = 0;
 }
@@ -71,18 +71,21 @@ void G1EvacuationFailureObjsInHR::clear_array() {
 void G1EvacuationFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
   Elem prev = 0;
   for (uint i = 0; i < _objs_num; i++) {
-    assert(prev < _offset_array[i], "must be");
+    assert(i == 0 ? (prev <= _offset_array[i]) : (prev < _offset_array[i]),
+           "must be, %u, %u, %u", i, prev, _offset_array[i]);
+    assert(prev < _max_offset, "must be, %u", prev);
     closure->do_object(cast_from_offset(prev = _offset_array[i]));
   }
   clear_array();
 }
 
 G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWord* bottom) :
+  _max_offset(1u << HeapRegion::LogOfHRGrainBytes-LogHeapWordSize),
   _region_idx(region_idx),
   _bottom(bottom),
   _nodes_array(HeapRegion::GrainWords / NODE_LENGTH + 1),
   _offset_array(NULL),
-  _objs_num(0) {
+  _objs_num(0u) {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
@@ -92,10 +95,10 @@ G1EvacuationFailureObjsInHR::~G1EvacuationFailureObjsInHR() {
 
 void G1EvacuationFailureObjsInHR::record(oop obj) {
   assert(obj != NULL, "must be");
-  assert(G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index() == _region_idx, "must be");
+  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
   Elem offset = cast_from_oop_addr(obj);
   assert(obj == cast_from_offset(offset), "must be");
-  assert(offset < (1<<25), "must be");
+  assert(offset < _max_offset, "must be, %u", offset);
   _nodes_array.add(offset);
 }
 

@@ -36,6 +36,9 @@ class G1EvacuationFailureObjsInHR {
   template<uint32_t LEN, typename Elem>
   class Array;
 
+
+  // === Node ===
+
   template<uint32_t LEN, typename Elem>
   class Node : public CHeapObj<mtGC>{
     friend G1EvacuationFailureObjsInHR;
@@ -61,6 +64,9 @@ class G1EvacuationFailureObjsInHR {
       delete(node);
     }
   };
+
+
+  // === Array ===
 
   template<uint32_t NODE_SIZE, typename Elem>
   class Array : public CHeapObj<mtGC> {
@@ -191,11 +197,15 @@ class G1EvacuationFailureObjsInHR {
     }
   };
 
+
+  // === G1EvacuationFailureObjsInHR ===
+
 public:
   typedef uint32_t Elem;
 
 private:
   static const uint32_t NODE_LENGTH = 256;
+  const Elem _max_offset;
   const uint _region_idx;
   const HeapWord* _bottom;
   Array<NODE_LENGTH, Elem> _nodes_array;
