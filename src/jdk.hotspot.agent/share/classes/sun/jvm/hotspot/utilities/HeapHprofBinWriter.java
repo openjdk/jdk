@@ -610,10 +610,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         // Now the total size of data to dump is known and can be filled to segment header.
-        // Enable unbuffered mode to avoid memory consumption and internal buffer copies.
+        // Disable buffer mode to avoid memory consumption and internal buffer copies.
         if (useSegmentedHeapDump) {
             int size = (int) (length * typeSize + headerSize);
-            hprofBufferedOut.fillSegmentSizeAndEnableUnbufferedMode(size);
+            hprofBufferedOut.fillSegmentSizeAndDisableBufferMode(size);
         }
 
         return (int) length;
@@ -1341,7 +1341,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         public SegmentedOutputStream(OutputStream out, boolean allowSegmented) {
             super(out, 8192);
             segmentMode = false;
-            unbufferedMode = false;
+            bufferMode = true;
             this.allowSegmented = allowSegmented;
             segmentBuffer = new byte[SEGMENT_BUFFER_SIZE];
             segmentWritten = 0;
@@ -1364,7 +1364,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          */
         @Override
         public synchronized void write(int b) throws IOException {
-           if (segmentMode && !unbufferedMode) {
+           if (segmentMode && bufferMode) {
                if (segmentWritten == 0) {
                    // At the begining of the segment.
                    writeSegmentHeader();
@@ -1392,7 +1392,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          */
         @Override
         public synchronized void write(byte b[], int off, int len) throws IOException {
-            if (segmentMode && !unbufferedMode) {
+            if (segmentMode && bufferMode) {
                 if (segmentWritten == 0) {
                     writeSegmentHeader();
                 }
@@ -1419,7 +1419,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          */
         @Override
         public synchronized void flush() throws IOException {
-            if (segmentMode && !unbufferedMode) {
+            if (segmentMode && bufferMode) {
                 // The case that nothing has been written in segment.
                 if (segmentWritten == 0) return;
                 // There must be more data than just header size written for non-empty segment.
@@ -1460,7 +1460,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 flush();
                 assert segmentWritten == 0;
                 segmentMode = false;
-                unbufferedMode = false;
+                bufferMode = true;
             }
         }
 
@@ -1469,10 +1469,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * @param    force    flush data regardless whether the buffer is full
          */
         public void exitSegmentMode() throws IOException {
-            if (unbufferedMode) {
+            if (!bufferMode) {
                 // no data in internal buffer.
                 assert segmentWritten == 0;
-                unbufferedMode = false;
+                bufferMode = true;
             }
             if (allowSegmented && segmentMode && shouldFlush()) {
                 flush();
@@ -1482,20 +1482,18 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         /**
-         * Fill segment size and enable unbuffered mode
+         * Fill segment size and disable bufferMode
          * @param    size    size of data to be written
          */
-        public void fillSegmentSizeAndEnableUnbufferedMode(int size) throws IOException {
+        public void fillSegmentSizeAndDisableBufferMode(int size) throws IOException {
             assert segmentMode == true;
-            assert unbufferedMode == false;
+            assert bufferMode == true;
             if (segmentWritten != 0) {
                 // flush previous written data and clear the internal buffer.
                 flush();
             }
-            // buffer must be empty now.
-            assert (segmentMode && (segmentWritten == 0) && (unbufferedMode == false)) : "Wrong Status";
-            // enable unbuffered mode.
-            unbufferedMode = true;
+            // disable buffer mode to write data through to underlying file.
+            bufferMode = false;
             writeSegmentHeader(size);
         }
 
@@ -1507,8 +1505,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * If it is too large, lots of memory is used in RAM.
          */
         private boolean shouldFlush() {
-            // unbuffered mode always flushes data.
-            if (unbufferedMode) return true;
+            // flushes data if not in bufferMode.
+            if (!bufferMode) return true;
             // return true if data in segmentBuffer has been extended.
             return segmentWritten > SEGMENT_BUFFER_SIZE;
         }
@@ -1519,7 +1517,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         private void writeSegmentHeader(int size) throws IOException {
             assert segmentWritten == 0 : "initializing non empty segment";
             byte flag = (byte)HPROF_HEAP_DUMP_SEGMENT;
-            if (unbufferedMode) {
+            if (!bufferMode) {
                 super.write(flag);
             } else {
                 segmentBuffer[segmentWritten++] = flag;
@@ -1541,8 +1539,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * Fills the segmented data size into the header.
          */
         private void fillSegmentSize(int size) {
-            // unbuffered mode has assumption that data size is already filled in header.
-            assert !unbufferedMode;
+            assert bufferMode == true;
             byte[] lenBytes = genByteArrayFromInt(size);
             System.arraycopy(lenBytes, 0, segmentBuffer, 5, 4);
         }
@@ -1553,7 +1550,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          */
         private final void writeInteger(int value) throws IOException {
             byte[] intBytes = genByteArrayFromInt(value);
-            if (!unbufferedMode) {
+            if (bufferMode) {
                 System.arraycopy(intBytes, 0, segmentBuffer, segmentWritten, 4);
                 segmentWritten += 4;
             } else {
@@ -1577,7 +1574,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         private boolean segmentMode;
         private boolean allowSegmented;
         // Write data directly to underlying stream. Don't use internal buffer.
-        private boolean unbufferedMode;
+        private boolean bufferMode;
         private byte segmentBuffer[];
         private int segmentWritten;
     }
