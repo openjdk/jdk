@@ -57,7 +57,7 @@ public class BlackScholes {
 
 
     float randFloat(float low, float high) {
-       float val = rand.nextFloat()/Float.MAX_VALUE;
+       float val = rand.nextFloat();
        return (1.0f - val) * low + val * high;
     }
 
